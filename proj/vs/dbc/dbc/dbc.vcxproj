@@ -1,0 +1,280 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{2A3D977C-1F64-4D15-BF74-07DB579503AC}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>dbc</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <SourcePath>$(VC_SourcePath);</SourcePath>
+    <ReferencePath>$(VC_ReferencesPath_x86)</ReferencePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST)\;$(DBC_CODE_HOME)\src\3rd\network\thrift\;$(DBC_CODE_HOME)\src\core\storage\;$(DBC_CODE_HOME)\src\core\timer_service\;$(DBC_CODE_HOME)\src\core\service_module\pc\;$(DBC_CODE_HOME)\src\core\service_module\;$(DBC_CODE_HOME)\src\core\common\;$(DBC_CODE_HOME)\src\core\log\;$(DBC_CODE_HOME)\src\core\conf\;$(DBC_CODE_HOME)\src\core\alarm\;$(DBC_CODE_HOME)\src\core\data_structure\;$(DBC_CODE_HOME)\src\core\env\;$(DBC_CODE_HOME)\src\core\module\;$(DBC_CODE_HOME)\src\core\monitor\;$(DBC_CODE_HOME)\src\core\memory\;$(DBC_CODE_HOME)\src\core\math\;$(DBC_CODE_HOME)\src\core\initiator\;$(DBC_CODE_HOME)\src\core\service_bus\;$(DBC_CODE_HOME)\src\core\sem\;$(DBC_CODE_HOME)\src\core\codec\;$(DBC_CODE_HOME)\src\core\network\;$(DBC_CODE_HOME)\src\core\mutex\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\conf\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\network\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\codec\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\initiator\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\codec\thrift\</IncludePath>
+    <OutDir>..\..\..\..\output\</OutDir>
+    <LibraryPath>$(BOOST)\vc141-x64\lib\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST)\;$(DBC_CODE_HOME)\src\3rd\network\thrift\;$(DBC_CODE_HOME)\src\core\storage\;$(DBC_CODE_HOME)\src\core\timer_service\;$(DBC_CODE_HOME)\src\core\service_module\pc\;$(DBC_CODE_HOME)\src\core\service_module\;$(DBC_CODE_HOME)\src\core\common\;$(DBC_CODE_HOME)\src\core\log\;$(DBC_CODE_HOME)\src\core\conf\;$(DBC_CODE_HOME)\src\core\alarm\;$(DBC_CODE_HOME)\src\core\data_structure\;$(DBC_CODE_HOME)\src\core\env\;$(DBC_CODE_HOME)\src\core\module\;$(DBC_CODE_HOME)\src\core\monitor\;$(DBC_CODE_HOME)\src\core\memory\;$(DBC_CODE_HOME)\src\core\math\;$(DBC_CODE_HOME)\src\core\initiator\;$(DBC_CODE_HOME)\src\core\service_bus\;$(DBC_CODE_HOME)\src\core\sem\;$(DBC_CODE_HOME)\src\core\codec\;$(DBC_CODE_HOME)\src\core\network\;$(DBC_CODE_HOME)\src\core\mutex\;$(DBC_CODE_HOME)\src\service_core\p2pnet\;$(DBC_CODE_HOME)\src\service_core\network\;$(DBC_CODE_HOME)\src\service_core\codec\;$(DBC_CODE_HOME)\src\service_core\codec\thrift\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\conf\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\initiator\</IncludePath>
+    <LibraryPath>$(BOOST)\vc141-x64\lib\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <OutDir>..\..\..\..\output\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x601</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;__DEBUG;_CONSOLE;%(PreprocessorDefinitions);CRT_SECURE_NO_WARNINGS;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x601</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\core\alarm\alarm.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\common\common_def.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\conf\conf_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\initiator\server_initiator_factory.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\initiator\start_up.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\math\os_math.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\memory\byte_buf.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\module\module.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\module\module_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\nio_loop_group.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\tcp_acceptor.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\tcp_connector.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\tcp_socket_channel.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\publisher.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\service_bus.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\subscriber.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_data_mailbox.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_entry.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_registry.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_module\pc\pc_service_module.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_module\rtx\rtx_service_module.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\service_module\service_message.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\timer_service\timer.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\timer_service\timer_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\main.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\codec\matrix_coder.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_constants.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\core\alarm\alarm.h" />
+    <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h" />
+    <ClInclude Include="..\..\..\..\src\core\codec\protocol.h" />
+    <ClInclude Include="..\..\..\..\src\core\codec\decoder.h" />
+    <ClInclude Include="..\..\..\..\src\core\codec\encoder.h" />
+    <ClInclude Include="..\..\..\..\src\core\codec\length_field_frame_decoder.h" />
+    <ClInclude Include="..\..\..\..\src\core\codec\message_to_byte_encoder.h" />
+    <ClInclude Include="..\..\..\..\src\core\codec\TToString.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\common.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\common_def.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\error.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\function_traits.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\std_types.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\version.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\visibility.h" />
+    <ClInclude Include="..\..\..\..\src\core\conf\conf_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\conf\conf_validator.h" />
+    <ClInclude Include="..\..\..\..\src\core\data_structure\cs_string.h" />
+    <ClInclude Include="..\..\..\..\src\core\data_structure\list.h" />
+    <ClInclude Include="..\..\..\..\src\core\data_structure\map.h" />
+    <ClInclude Include="..\..\..\..\src\core\data_structure\tree.h" />
+    <ClInclude Include="..\..\..\..\src\core\env\env_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\initiator\server.h" />
+    <ClInclude Include="..\..\..\..\src\core\initiator\server_initiator.h" />
+    <ClInclude Include="..\..\..\..\src\core\initiator\server_initiator_factory.h" />
+    <ClInclude Include="..\..\..\..\src\core\initiator\start_up.h" />
+    <ClInclude Include="..\..\..\..\src\core\log\log.h" />
+    <ClInclude Include="..\..\..\..\src\core\math\os_math.h" />
+    <ClInclude Include="..\..\..\..\src\core\memory\byte_buf.h" />
+    <ClInclude Include="..\..\..\..\src\core\module\module.h" />
+    <ClInclude Include="..\..\..\..\src\core\module\module_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\monitor\monitor.h" />
+    <ClInclude Include="..\..\..\..\src\core\mutex\mutex.h" />
+    <ClInclude Include="..\..\..\..\src\core\mutex\rw_lock.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\channel.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\channel_handler_context.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\connection_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\handler_create_functor.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\io_service_wrapper.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\nio_loop_group.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\socket_channel_handler.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\socket_id.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\tcp_acceptor.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\tcp_connector.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\tcp_socket_channel.h" />
+    <ClInclude Include="..\..\..\..\src\core\sem\rtx\rtx_sem.h" />
+    <ClInclude Include="..\..\..\..\src\core\sem\sem.h" />
+    <ClInclude Include="..\..\..\..\src\core\sem\sem_def.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\publisher.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\service_bus.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\subscriber.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_data_mailbox.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_entry.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_registry.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\pc\pc_service_module.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\rtx\rtx_service_module.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_message.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_message_def.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_message_id.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_module.h" />
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer.h" />
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_manager.h" />
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h" />
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\codec\matrix_coder.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_constants.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

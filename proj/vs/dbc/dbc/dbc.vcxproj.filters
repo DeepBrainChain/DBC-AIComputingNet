@@ -1,0 +1,457 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{d45bf6f9-2c6b-4285-84a6-6b1c7e3869c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service_core">
+      <UniqueIdentifier>{50d7f450-22c2-4dd5-9c23-87b1015ae3a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service">
+      <UniqueIdentifier>{0498edc0-f179-4849-8600-e4995201ccc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\api">
+      <UniqueIdentifier>{8a62739b-db80-4ea6-8ed4-15fba1891d40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd">
+      <UniqueIdentifier>{eada37b1-14fc-4510-afc5-eb292a607347}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\alarm">
+      <UniqueIdentifier>{1ac2fb1e-31f4-4817-9eaa-4124ad73c9b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\common">
+      <UniqueIdentifier>{22c37fd3-4d0c-467e-a772-18b96bbb8133}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\conf">
+      <UniqueIdentifier>{4ba572f2-67c0-429e-b76d-ab1209fb8d09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\data_structure">
+      <UniqueIdentifier>{3ecdd4cc-43dc-4a16-a00e-8ba301624c21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\initiator">
+      <UniqueIdentifier>{b2cbff5e-a2d6-40bf-8255-9a4bfe9b8f94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\math">
+      <UniqueIdentifier>{da14787c-9887-4df2-8d2b-859d1b880333}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\monitor">
+      <UniqueIdentifier>{f41ec75b-80e4-415c-981d-47e4c0a68335}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\mutex">
+      <UniqueIdentifier>{b8fd8f20-8ba3-4f7d-b484-9c97bf8f189d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\sem">
+      <UniqueIdentifier>{0e153562-5b58-4298-a70d-3d7381579fe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\service_bus">
+      <UniqueIdentifier>{5031677d-4f41-4595-9ea0-48ab3f1017cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\timer_service">
+      <UniqueIdentifier>{b2326f07-7301-48ec-bb3f-b4173b6d2fe3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\network">
+      <UniqueIdentifier>{91170a5e-9410-4e4b-8ad5-f7e4a1f35a5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\storage">
+      <UniqueIdentifier>{bdf2014b-6025-4d01-8a04-40ba0b4bf149}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\module">
+      <UniqueIdentifier>{6b73c76c-ed42-433e-8d43-aa2afb1f6b72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\service_module">
+      <UniqueIdentifier>{a00fd614-61e6-4e05-876a-c4ffc601ecc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\service_module\rtx">
+      <UniqueIdentifier>{68a68f1f-d32c-47ee-a8c9-c6c9c0c1a9c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\service_module\pc">
+      <UniqueIdentifier>{936eeca9-9d3a-4995-a4f3-f8d85cb48fd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\sem\rtx">
+      <UniqueIdentifier>{0505d832-012b-4736-bcab-2563dddd2ece}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\codec">
+      <UniqueIdentifier>{d80118db-cc88-4bdb-acc4-b130b56b6fe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\memory">
+      <UniqueIdentifier>{cfe1d997-92ed-4e30-b76d-ed04b5fa3c7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service_core\p2pnet">
+      <UniqueIdentifier>{ab21944b-94c9-4f99-84c0-76930dc41ec8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\env">
+      <UniqueIdentifier>{9e60f250-e138-419c-a84c-7792275d5769}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service\deep_brain_chain">
+      <UniqueIdentifier>{8c92d102-3c95-4cda-89e8-fb39b7033682}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service\deep_brain_chain\initiator">
+      <UniqueIdentifier>{a55ee183-3ba9-413f-a78c-189759620582}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service\deep_brain_chain\conf">
+      <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\log">
+      <UniqueIdentifier>{3593eebd-6c0f-4cf4-a80b-b57009f13e6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service_core\network">
+      <UniqueIdentifier>{0bbe636b-e723-4058-8061-7b1d32633f79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service_core\codec">
+      <UniqueIdentifier>{ffb912b7-74bc-4a13-8267-d18edf1b4935}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service_core\codec\thrift">
+      <UniqueIdentifier>{faf5feb8-d8ef-4a83-902c-9281fef0ff69}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\alarm\alarm.cpp">
+      <Filter>src\core\alarm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\common\common_def.cpp">
+      <Filter>src\core\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp">
+      <Filter>src\core\initiator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\initiator\server_initiator_factory.cpp">
+      <Filter>src\core\initiator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\initiator\start_up.cpp">
+      <Filter>src\core\initiator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\math\os_math.cpp">
+      <Filter>src\core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\timer_service\timer.cpp">
+      <Filter>src\core\timer_service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\timer_service\timer_manager.cpp">
+      <Filter>src\core\timer_service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\publisher.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\service_bus.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\subscriber.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_data_mailbox.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_entry.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_manager.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_bus\topic_registry.cpp">
+      <Filter>src\core\service_bus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.cpp">
+      <Filter>src\service\deep_brain_chain\initiator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp">
+      <Filter>src\service\deep_brain_chain\conf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_module\pc\pc_service_module.cpp">
+      <Filter>src\core\service_module\pc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_module\service_message.cpp">
+      <Filter>src\core\service_module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\service_module\rtx\rtx_service_module.cpp">
+      <Filter>src\core\service_module\rtx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.cpp">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\conf\conf_manager.cpp">
+      <Filter>src\core\conf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\module\module_manager.cpp">
+      <Filter>src\core\module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp">
+      <Filter>src\core\env</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\tcp_socket_channel.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\tcp_connector.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\tcp_acceptor.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\nio_loop_group.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\module\module.cpp">
+      <Filter>src\core\module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\memory\byte_buf.cpp">
+      <Filter>src\core\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.cpp">
+      <Filter>src\service_core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\codec\matrix_coder.cpp">
+      <Filter>src\service_core\codec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.cpp">
+      <Filter>src\service_core\codec\thrift</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_constants.cpp">
+      <Filter>src\service_core\codec\thrift</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.cpp">
+      <Filter>src\service_core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.cpp">
+      <Filter>src\service_core\network</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
+      <Filter>src\core\alarm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\common_def.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\error.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\std_types.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\visibility.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\data_structure\cs_string.h">
+      <Filter>src\core\data_structure</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\data_structure\list.h">
+      <Filter>src\core\data_structure</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\data_structure\map.h">
+      <Filter>src\core\data_structure</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\data_structure\tree.h">
+      <Filter>src\core\data_structure</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\initiator\server.h">
+      <Filter>src\core\initiator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\initiator\start_up.h">
+      <Filter>src\core\initiator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\math\os_math.h">
+      <Filter>src\core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\monitor\monitor.h">
+      <Filter>src\core\monitor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\mutex\mutex.h">
+      <Filter>src\core\mutex</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer.h">
+      <Filter>src\core\timer_service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_manager.h">
+      <Filter>src\core\timer_service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\publisher.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\service_bus.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\subscriber.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_data_mailbox.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_entry.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_manager.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_bus\topic_registry.h">
+      <Filter>src\core\service_bus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\pc\pc_service_module.h">
+      <Filter>src\core\service_module\pc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_message.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_message_id.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_module.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\rtx\rtx_service_module.h">
+      <Filter>src\core\service_module\rtx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\sem\sem.h">
+      <Filter>src\core\sem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\sem\sem_def.h">
+      <Filter>src\core\sem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\sem\rtx\rtx_sem.h">
+      <Filter>src\core\sem\rtx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\TToString.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\tcp_socket_channel.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\tcp_connector.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\tcp_acceptor.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\socket_id.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\socket_channel_handler.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\nio_loop_group.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\io_service_wrapper.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\connection_manager.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\channel_handler_context.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\alarm\alarm.h">
+      <Filter>src\core\alarm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\decoder.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\encoder.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\length_field_frame_decoder.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\message_to_byte_encoder.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\protocol.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\common.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\function_traits.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\conf\conf_manager.h">
+      <Filter>src\core\conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\conf\conf_validator.h">
+      <Filter>src\core\conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\env\env_manager.h">
+      <Filter>src\core\env</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\initiator\server_initiator.h">
+      <Filter>src\core\initiator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\initiator\server_initiator_factory.h">
+      <Filter>src\core\initiator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\log\log.h">
+      <Filter>src\core\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\memory\byte_buf.h">
+      <Filter>src\core\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\module\module.h">
+      <Filter>src\core\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\module\module_manager.h">
+      <Filter>src\core\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\mutex\rw_lock.h">
+      <Filter>src\core\mutex</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_message_def.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h">
+      <Filter>src\service\deep_brain_chain\conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h">
+      <Filter>src\service\deep_brain_chain\initiator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.h">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\channel.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\version.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\handler_create_functor.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.h">
+      <Filter>src\service_core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\codec\matrix_coder.h">
+      <Filter>src\service_core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.h">
+      <Filter>src\service_core\codec\thrift</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_constants.h">
+      <Filter>src\service_core\codec\thrift</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h">
+      <Filter>src\service_core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.h">
+      <Filter>src\service_core\network</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
