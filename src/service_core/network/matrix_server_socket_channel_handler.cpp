@@ -25,6 +25,12 @@ namespace matrix
             {
                 if (error)
                 {
+                    //operation_aborted
+                    if (995 == error.value())
+                    {
+                        return;
+                    }
+
                     LOG_ERROR << "matrix server socket channel handler timer error: " << error;
                     m_channel->on_error();
                     return;
@@ -48,6 +54,12 @@ namespace matrix
             {
                 if (error)
                 {
+                    //operation_aborted
+                    if (995 == error.value())
+                    {
+                        return;
+                    }
+
                     LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error;
                     m_channel->on_error();
                     return;
@@ -148,7 +160,7 @@ namespace matrix
         void matrix_server_socket_channel_handler::start_wait_ver_req_timer()
         {
             m_wait_ver_req_timer.expires_from_now(std::chrono::seconds(DEFAULT_WAIT_VER_REQ_INTERVAL));
-            m_wait_ver_req_timer.async_wait(m_timer_handler);
+            m_wait_ver_req_timer.async_wait(m_wait_ver_req_timer_handler);
 
             LOG_DEBUG << "matrix server socket channel handler start wait ver req timer, " << m_channel->id().to_string();
         }

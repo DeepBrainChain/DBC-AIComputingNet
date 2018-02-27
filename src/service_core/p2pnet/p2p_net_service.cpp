@@ -51,12 +51,12 @@ namespace matrix
 
             //main net
             LOG_DEBUG << "p2p net service init main net, ip: " << m_host_ip << " port: " << m_main_net_listen_port;
-            g_server->get_connection_manager()->start_listen(ep, &matrix_server_socket_channel_handler::create);
+            CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
 
             //test net
             ep.port(m_test_net_listen_port);
             LOG_DEBUG << "p2p net service init test net, ip: " << m_host_ip << " port: " << m_test_net_listen_port;
-            g_server->get_connection_manager()->start_listen(ep, handler_creator_func);
+            CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
 
             //ipv6 left to later
 
@@ -101,7 +101,7 @@ namespace matrix
 
                     //start connect
                     LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
-                    g_server->get_connection_manager()->start_connect(ep, &matrix_client_socket_channel_handler::create);
+                    CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
                     count++;
                 }
                 catch (const std::exception &e)
@@ -211,11 +211,11 @@ namespace matrix
 
         int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<message> &msg)
         {
-            std::shared_ptr<client_tcp_connect_notification> notification_content;
-            notification_content = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg->content);
+            auto notification_content = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg);
 
             if (CLIENT_CONNECT_SUCCESS == notification_content->status)
             {
+                //create ver_req message
                 std::shared_ptr<message> req_msg = std::make_shared<message>();
                 std::shared_ptr<matrix::service_core::ver_req> req_content = std::make_shared<matrix::service_core::ver_req>();
 

@@ -38,7 +38,13 @@ namespace matrix
 
             matrix_socket_channel_handler(channel *ch);
 
-            virtual ~matrix_socket_channel_handler() = default;
+            virtual ~matrix_socket_channel_handler();
+
+        public:
+
+            virtual int32_t start() { return E_SUCCESS; }
+
+            virtual int32_t stop();
 
             virtual int32_t on_read(channel_handler_context &ctx, byte_buf &in);  
 

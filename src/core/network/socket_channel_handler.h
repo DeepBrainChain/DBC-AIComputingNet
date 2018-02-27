@@ -22,11 +22,19 @@ namespace matrix
         {
         public:
 
+            virtual int32_t start() = 0;
+
+            virtual int32_t stop() = 0;
+
+        public:
+
             virtual int32_t on_read(channel_handler_context &ctx, byte_buf &in) = 0;
 
             virtual int32_t on_write(channel_handler_context &ctx, message &msg, byte_buf &buf) = 0;
 
             virtual int32_t on_error() = 0;
+
+        public:
 
             virtual int32_t on_before_msg_send(message &msg) = 0;
 

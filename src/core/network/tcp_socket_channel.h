@@ -44,7 +44,7 @@ namespace matrix
 
             tcp_socket_channel(ios_ptr ios, socket_id sid, handler_create_functor func, int32_t len = DEFAULT_BUF_LEN);
 
-            virtual ~tcp_socket_channel() {}
+            virtual ~tcp_socket_channel();
 
             tcp::socket & get_socket() { return m_socket; }
 
@@ -65,6 +65,8 @@ namespace matrix
             io_service *get_io_service() { return m_ios.get(); }
 
         protected:
+
+            void init_option();
 
             void async_read();
 

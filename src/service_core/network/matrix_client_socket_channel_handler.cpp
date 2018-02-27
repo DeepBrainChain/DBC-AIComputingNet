@@ -22,8 +22,14 @@ namespace matrix
             {
                 if (error)
                 {
+                    //operation_aborted
+                    if (995 == error.value())
+                    {
+                        return;
+                    }
+
                     LOG_ERROR << "matrix client socket channel handler timer error: " << error;
-                    m_channel->on_error();
+                    m_channel->on_error();            //this line may cause on_error called duplicately.
                     return;
                 }
 

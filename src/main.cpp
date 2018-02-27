@@ -56,5 +56,3 @@ int main(int argc, char* argv[])
 
 #endif
 
-
-/******************* (C) COPYRIGHT 2017 Robot OS -- Bruce Feng *****END OF FILE****/
