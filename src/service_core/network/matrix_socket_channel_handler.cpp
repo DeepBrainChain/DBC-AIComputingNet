@@ -26,26 +26,37 @@ namespace matrix
             , m_shake_hand_timer(*(ch->get_io_service()))
         {}
 
+        matrix_socket_channel_handler::~matrix_socket_channel_handler()
+        {
+            
+        }
+
+        int32_t matrix_socket_channel_handler::stop()
+        {
+            stop_shake_hand_timer();
+            return E_SUCCESS;
+        }
+
         int32_t matrix_socket_channel_handler::on_read(channel_handler_context &ctx, byte_buf &in)
         {
-            shared_ptr<message> message_ptr;
-
             //decode until buffer is not enough to do
             while (true)
             {
-
-                message_ptr = std::make_shared<message>();
-                decode_status status = m_coder->decode(ctx, in, message_ptr);
+                shared_ptr<message> msg = std::make_shared<message>();
+                decode_status status = m_coder->decode(ctx, in, msg);
 
                 //decode success
                 if (DECODE_SUCCESS == status)
                 {
                     //send to bus
-                    message_ptr->header.src_sid = m_channel->id();
-                    TOPIC_MANAGER->publish<int32_t, shared_ptr<message>&>(message_ptr->get_name(), message_ptr);
+                    msg->header.src_sid = m_channel->id();
+                    TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+
+                    //callback
+                    on_after_msg_received(*msg);
 
                     //has message
-                    set_has_message(*message_ptr);
+                    set_has_message(*msg);
 
                     continue;
                 }

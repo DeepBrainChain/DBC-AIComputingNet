@@ -25,7 +25,7 @@ namespace matrix
                 , m_reconnect_times(0)
                 , m_connect_addr(connect_addr)
                 , m_worker_group(worker_group)
-                , m_sid(socket_id_allocator::get_mutable_instance().alloc_server_socket_id())
+                , m_sid(socket_id_allocator::get_mutable_instance().alloc_client_socket_id())
                 , m_handler_create_func(func)
             {                
             }
@@ -119,15 +119,18 @@ namespace matrix
 
             void tcp_connector::connect_notification(CLIENT_CONNECT_STATUS status)
             {
-                auto *success_msg = new client_tcp_connect_notification();
-                success_msg->set_name(CLIENT_CONNECT_NOTIFICATION);
-                success_msg->header.src_sid = this->m_sid;
-                success_msg->ep = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_remote_addr();
-                success_msg->status = status;
-                std::shared_ptr<message> msg(success_msg);
+                auto msg = std::make_shared<client_tcp_connect_notification>();
+
+                msg->set_name(CLIENT_CONNECT_NOTIFICATION);
+                msg->header.src_sid = this->m_sid;
+                msg->ep = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_remote_addr();
+                msg->status = status;
+
+                msg->set_name(CLIENT_CONNECT_NOTIFICATION);
+                auto send_msg = std::dynamic_pointer_cast<message>(msg);
 
                 //notify this to service layer
-                TOPIC_MANAGER->publish<int32_t, std::shared_ptr<message>&>(msg->get_name(), msg);
+                TOPIC_MANAGER->publish<int32_t>(msg->get_name(), send_msg);
             }
 
     }

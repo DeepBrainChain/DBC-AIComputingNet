@@ -26,21 +26,23 @@ namespace matrix
             , m_socket(*ios)
             , m_socket_handler(func(this))
         {
-            socket_base::send_buffer_size send_buf_size_option(DEFAULT_TCP_SOCKET_SEND_BUF_LEN);
-            m_socket.set_option(send_buf_size_option);
 
-            socket_base::receive_buffer_size recv_buf_size_option(DEFAULT_TCP_SOCKET_RECV_BUF_LEN);
-            m_socket.set_option(recv_buf_size_option);
+        }
 
-            m_socket.non_blocking(true);
-            m_socket.set_option(tcp::no_delay(true));
-            m_socket.set_option(socket_base::keep_alive(true));
+        tcp_socket_channel::~tcp_socket_channel()
+        {
+            LOG_DEBUG << "tcp socket channel destroyed, " << m_sid.to_string();
         }
 
         int32_t tcp_socket_channel::start()
         {
+            init_option();
+
             //get remote addr and begin to read
             m_remote_addr = m_socket.remote_endpoint();
+
+            //start handler
+            m_socket_handler->start();
 
             //callback handler
             m_socket_handler->on_before_msg_receive();
@@ -51,6 +53,9 @@ namespace matrix
         int32_t tcp_socket_channel::stop()
         {
             boost::system::error_code error;
+
+            //stop handler
+            m_socket_handler->stop();
 
             //cancel
             m_socket.cancel(error);
@@ -76,6 +81,19 @@ namespace matrix
         {
             async_read();
             return E_SUCCESS;
+        }
+
+        void tcp_socket_channel::init_option()
+        {
+            socket_base::send_buffer_size send_buf_size_option(DEFAULT_TCP_SOCKET_SEND_BUF_LEN);
+            m_socket.set_option(send_buf_size_option);
+
+            socket_base::receive_buffer_size recv_buf_size_option(DEFAULT_TCP_SOCKET_RECV_BUF_LEN);
+            m_socket.set_option(recv_buf_size_option);
+
+            m_socket.non_blocking(true);
+            m_socket.set_option(tcp::no_delay(true));
+            m_socket.set_option(socket_base::keep_alive(true));
         }
 
         void tcp_socket_channel::async_read()
@@ -125,7 +143,7 @@ namespace matrix
                 }
 
                 //log
-                LOG_DEBUG << "tcp socket channel rev buf: " << m_recv_buf.to_string();
+                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " rev buf: " << m_recv_buf.to_string();
 
                 //call back handler on_read
                 if (E_SUCCESS == m_socket_handler->on_read(m_handler_context, m_recv_buf))
@@ -186,7 +204,7 @@ namespace matrix
                 }
 
                 //reset
-                m_send_buf.reset();                     //queue is empty means send buf has been sent completely
+                m_send_buf->reset();                     //queue is empty means send buf has been sent completely
 
                 //encode
                 if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
@@ -196,7 +214,7 @@ namespace matrix
                     return E_DEFAULT;
                 }
 
-                LOG_DEBUG << "tcp socket channel send buffer: " << m_send_buf->to_string();
+                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buffer: " << m_send_buf->to_string();
 
                 //send directly
                 async_write(m_send_buf);
@@ -259,7 +277,7 @@ namespace matrix
                     std::unique_lock<std::mutex> lock(m_queue_mutex);
 
                     //reset
-                    m_send_buf.reset();
+                    m_send_buf->reset();
 
                     //callback
                     shared_ptr<message> msg = m_send_queue.front();
@@ -279,7 +297,7 @@ namespace matrix
                             return;
                         }
 
-                        LOG_DEBUG << "tcp socket channel send buffer: " << m_send_buf->to_string();
+                        LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buffer: " << m_send_buf->to_string();
 
                         //new message send
                         async_write(m_send_buf);
@@ -318,13 +336,15 @@ namespace matrix
 
         void tcp_socket_channel::error_notify()
         {
-            auto *error_msg = new tcp_socket_channel_error_msg();
+            auto error_msg = std::make_shared<tcp_socket_channel_error_msg>();
+
             error_msg->header.src_sid = this->m_sid;
             error_msg->set_name(TCP_CHANNEL_ERROR);
-            std::shared_ptr<message> msg(error_msg);
+
+            std::shared_ptr<message> msg = std::dynamic_pointer_cast<message>(error_msg);
 
             //notify this to service layer
-            TOPIC_MANAGER->publish<int32_t, std::shared_ptr<message>&>(msg->get_name(), msg);
+            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
         }
 
         void tcp_socket_channel::release()

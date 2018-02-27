@@ -76,8 +76,6 @@ namespace matrix
 
             std::list<tcp::endpoint> m_peer_addresses;
 
-            handler_create_functor handler_creator_func;
-
         };
 
     }

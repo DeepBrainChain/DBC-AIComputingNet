@@ -105,7 +105,7 @@ namespace matrix
 
                 read_lock_guard<rw_lock> lock_guard(m_lock);
                 auto range = m_topic_registry.equal_range(msg_type);
-                if (range.first == m_topic_registry.end())
+                if (range.first == range.second)
                 {
                     LOG_ERROR << "topic manager could not find topic invoke function: " << topic;
                     return;
