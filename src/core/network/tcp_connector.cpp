@@ -79,7 +79,7 @@ namespace matrix
                     if (m_reconnect_times < MAX_RECONNECT_TIMES)
                     {
                         //try again
-                        std::this_thread::sleep_for(3s);
+                        std::this_thread::sleep_for(std::chrono::seconds(3));
                         async_connect();
                     }
                     else
