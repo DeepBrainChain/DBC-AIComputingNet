@@ -110,7 +110,7 @@ namespace matrix
             signal(SIGTERM, SIG_IGN);
             signal(SIGINT, SIG_IGN);
             signal(SIGHUP, SIG_IGN);
-            register_signal_function(SIG_USR1, signal_usr1_handler);
+            register_signal_function(SIGUSR1, signal_usr1_handler);
 #endif
         }
 

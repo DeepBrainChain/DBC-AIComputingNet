@@ -34,7 +34,7 @@ namespace matrix
         {
             while (!m_exited)
             {
-                std::this_thread::sleep_for(1s);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
 
                 //to do idle task.
                 do_cycle_task();
