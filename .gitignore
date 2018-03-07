@@ -5,3 +5,12 @@ output/
 *.tlog
 *.idb
 *.pdb
+
+*.cmake
+CMakeFiles/
+CMakeCache.txt
+Makefile
+
+build/*
+build-debug/*
+cmake-build-debug/*
