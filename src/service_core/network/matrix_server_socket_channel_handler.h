@@ -33,6 +33,8 @@ namespace matrix
 
             virtual ~matrix_server_socket_channel_handler() = default;
 
+            virtual int32_t stop();
+
             virtual int32_t on_after_msg_received(message &msg);
 
             virtual int32_t on_after_msg_sent(message &msg);

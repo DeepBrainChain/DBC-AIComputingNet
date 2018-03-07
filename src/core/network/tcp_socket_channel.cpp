@@ -52,6 +52,9 @@ namespace matrix
 
         int32_t tcp_socket_channel::stop()
         {
+            //remove from connection manager
+            CONNECTION_MANAGER->remove_channel(m_sid);
+
             boost::system::error_code error;
 
             //stop handler
@@ -331,7 +334,7 @@ namespace matrix
         {
             LOG_ERROR << "tcp socket channel error and ready to say bye!";
             error_notify();
-            this->release();
+            this->stop();
         }
 
         void tcp_socket_channel::error_notify()
@@ -345,12 +348,6 @@ namespace matrix
 
             //notify this to service layer
             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-        }
-
-        void tcp_socket_channel::release()
-        {
-            this->stop();
-            CONNECTION_MANAGER->remove_channel(m_sid);          //auto release memory
         }
 
     }
