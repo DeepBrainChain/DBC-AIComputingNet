@@ -144,7 +144,7 @@ namespace matrix
             template<typename ret_type, typename...args_type>
             void unsubscribe(const std::string &topic)
             {
-                using function_type = std::function<ret_type(args...)>;
+                using function_type = std::function<ret_type(args_type...)>;
                 std::string msg_type = topic + typeid(function_type).name();
 
                 write_lock_guard<rw_lock> lock_guard(m_lock);

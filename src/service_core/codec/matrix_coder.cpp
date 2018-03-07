@@ -24,7 +24,9 @@ namespace matrix
 
         void matrix_coder::init_decode_invoker()
         {
-            auto invoker = std::bind(&matrix_coder::decode_invoker<ver_req>, this, std::placeholders::_1, std::placeholders::_2);
+            decode_invoker_type invoker;
+            
+            invoker = std::bind(&matrix_coder::decode_invoker<ver_req>, this, std::placeholders::_1, std::placeholders::_2);
             m_decode_invokers.insert({ VER_REQ,{ invoker } });
 
             invoker = std::bind(&matrix_coder::decode_invoker<ver_resp>, this, std::placeholders::_1, std::placeholders::_2);

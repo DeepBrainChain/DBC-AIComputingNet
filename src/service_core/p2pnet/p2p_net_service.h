@@ -18,6 +18,8 @@
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
+#define DEFAULT_CONNECT_PEER_NODE      10240                            //default connect peer nodes
+
 namespace matrix
 {
     namespace service_core
