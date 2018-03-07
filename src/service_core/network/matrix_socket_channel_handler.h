@@ -78,7 +78,7 @@ namespace matrix
 
             steady_timer m_shake_hand_timer;
 
-            std::function<timer_handler_type> m_timer_handler;
+            std::function<timer_handler_type> m_shake_hand_timer_handler;
 
             bool m_has_message;
 
