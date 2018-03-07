@@ -20,19 +20,21 @@ namespace matrix
             , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
             , m_wait_ver_req_timer(*(ch->get_io_service()))
         {
-            m_timer_handler =
+            m_shake_hand_timer_handler =
                 [&](const boost::system::error_code & error)
             {
                 if (error)
                 {
+                    //if timer handler on_error called, it will cause release resource duplicatedly. so i delete these codes here and just leave log.
+
                     //operation_aborted
-                    if (995 == error.value())
-                    {
-                        return;
-                    }
+                    //if (995 == error.value())
+                    //{
+                    //    return;
+                    //}
 
                     LOG_ERROR << "matrix server socket channel handler timer error: " << error;
-                    m_channel->on_error();
+                    //m_channel->on_error();
                     return;
                 }
 
@@ -46,7 +48,7 @@ namespace matrix
 
                 //async wait
                 m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
-                m_shake_hand_timer.async_wait(m_timer_handler);
+                m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
             };
 
             m_wait_ver_req_timer_handler =
@@ -54,14 +56,16 @@ namespace matrix
             {
                 if (error)
                 {
+                    //if timer handler on_error called, it will cause release resource duplicatedly. so i delete these codes here and just leave log.
+
                     //operation_aborted
-                    if (995 == error.value())
-                    {
-                        return;
-                    }
+                    //if (995 == error.value())
+                    //{
+                    //    return;
+                    //}
 
                     LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error;
-                    m_channel->on_error();
+                    //m_channel->on_error();
                     return;
                 }
 
@@ -78,6 +82,15 @@ namespace matrix
                 //restart timer for not time out
                 start_wait_ver_req_timer();
             };
+        }
+
+        int32_t matrix_server_socket_channel_handler::stop()
+        {
+            //release timer
+            stop_wait_ver_req_timer();
+            stop_shake_hand_timer();
+
+            return E_SUCCESS;
         }
 
         int32_t matrix_server_socket_channel_handler::on_after_msg_received(message &msg)
