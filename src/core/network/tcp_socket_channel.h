@@ -77,8 +77,6 @@ namespace matrix
             virtual void on_write(const boost::system::error_code& error, size_t bytes_transferred);
 
             virtual void error_notify();
-
-            void release();
             
         protected:
 

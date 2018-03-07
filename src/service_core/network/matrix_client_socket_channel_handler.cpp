@@ -17,23 +17,24 @@ namespace matrix
         matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(channel *ch)
             : matrix_socket_channel_handler(ch)
         {
-            m_timer_handler =
+            m_shake_hand_timer_handler =
                 [&](const boost::system::error_code & error)
             {
                 if (error)
                 {
+                    //if timer handler on_error called, it will cause release resource duplicatedly. so i delete these codes here and just leave log.
                     //operation_aborted
-                    if (995 == error.value())
-                    {
-                        return;
-                    }
+                    //if (995 == error.value())
+                    //{
+                    //    return;
+                    //}
 
                     LOG_ERROR << "matrix client socket channel handler timer error: " << error;
-                    m_channel->on_error();            //this line may cause on_error called duplicately.
+                    //m_channel->on_error();            //this line may cause on_error called duplicately.
                     return;
                 }
 
-                //login success and no message, send shake hand
+                //login success and no message, time out and send shake hand
                 if (true == m_login_success && false == m_has_message)
                 {
                     send_shake_hand_req();
@@ -42,9 +43,9 @@ namespace matrix
                 //reset
                 reset_has_message();
 
-                //async wait
+                //next time async wait
                 m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
-                m_shake_hand_timer.async_wait(m_timer_handler);
+                m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
             };
         }
 
