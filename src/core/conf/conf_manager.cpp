@@ -36,8 +36,8 @@ namespace matrix
                 ("peer", bpo::value<std::vector<std::string>>(), "");
 
             //file path
-            const std::string &&conf_path = env_manager::get_conf_path().generic_string();
-            const std::string &&peer_path = env_manager::get_peer_path().generic_string();
+            const std::string &conf_path = env_manager::get_conf_path().generic_string();
+            const std::string &peer_path = env_manager::get_peer_path().generic_string();
 
             try
             {

@@ -13,8 +13,7 @@
 #ifdef WIN32
 // Need to come before any Windows.h includes
 #include <Winsock2.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
+#elif defined(__linux__) || defined(MAC_OSX)
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif

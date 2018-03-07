@@ -24,7 +24,7 @@ using namespace std;
 
 #define DEFAULT_WAIT_MILLISECONDS       0                           //default 0, no wait
 #define DEFAULT_MESSAGE_COUNT               1000                     //default message count
-#define DEFAULT_CONNECT_PEER_NODE      8                            //default connect peer nodes
+
 
 namespace matrix
 {

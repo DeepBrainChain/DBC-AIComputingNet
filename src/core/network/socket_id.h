@@ -99,8 +99,11 @@ namespace matrix
 
         protected:
 
+#ifdef WIN32
             std::atomic_uint64_t m_cur_idx;
-
+#else
+            std::atomic<std::uint64_t> m_cur_idx;
+#endif
         };
 
     }
