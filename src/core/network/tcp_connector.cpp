@@ -74,8 +74,8 @@ namespace matrix
             {
                 if (error)
                 {
-                    LOG_ERROR << "tcp connector on connect error, reconnect times: " << ++m_reconnect_times << ", " << m_sid.to_string() << " ,error code: " << error.message();
-
+                    LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr << ", reconnect times: " << ++m_reconnect_times
+                        << ", sid: " << m_sid.to_string() << ", error code: " << error.message();
                     if (m_reconnect_times < MAX_RECONNECT_TIMES)
                     {
                         //try again
@@ -109,11 +109,11 @@ namespace matrix
                 //start to work
                 if (E_SUCCESS != m_client_channel->start())
                 {
-                    LOG_ERROR << "tcp connector channel start work error " << m_sid.to_string();
+                    LOG_ERROR << "tcp connector channel start work error " << m_connect_addr << m_sid.to_string();
                 }
                 else
                 {
-                    LOG_DEBUG << "tcp connector channel start work successfully " << m_sid.to_string();
+                    LOG_DEBUG << "tcp connector channel start work successfully " << m_connect_addr << m_sid.to_string();
                 }
             }
 
@@ -121,7 +121,6 @@ namespace matrix
             {
                 auto msg = std::make_shared<client_tcp_connect_notification>();
 
-                msg->set_name(CLIENT_CONNECT_NOTIFICATION);
                 msg->header.src_sid = this->m_sid;
                 msg->ep = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_remote_addr();
                 msg->status = status;
