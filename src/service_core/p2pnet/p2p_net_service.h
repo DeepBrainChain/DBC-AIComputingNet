@@ -45,9 +45,9 @@ namespace matrix
 
             void init_conf();
 
-            void init_acceptor();
+            int32_t init_acceptor();
 
-            void init_connector();
+            int32_t init_connector();
 
             void init_subscription();
 

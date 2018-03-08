@@ -41,7 +41,7 @@ namespace matrix
             m_test_net_listen_port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<uint16_t>() : DEFAULT_TEST_NET_LISTEN_PORT;
         }
 
-        void p2p_net_service::init_acceptor()
+        int32_t p2p_net_service::init_acceptor()
         {
             //init ip and port
             init_conf();
@@ -49,27 +49,40 @@ namespace matrix
             //ipv4 default
             tcp::endpoint ep(ip::address::from_string(m_host_ip), m_main_net_listen_port);
 
+            int32_t ret = E_SUCCESS;
+
             //main net
             LOG_DEBUG << "p2p net service init main net, ip: " << m_host_ip << " port: " << m_main_net_listen_port;
-            CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
+            ret = CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "p2p net service init main net error, ip: " << m_host_ip << " port: " << m_main_net_listen_port;
+                return ret;
+            }
 
             //test net
             ep.port(m_test_net_listen_port);
             LOG_DEBUG << "p2p net service init test net, ip: " << m_host_ip << " port: " << m_test_net_listen_port;
-            CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
+            ret = CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "p2p net service init test net error, ip: " << m_host_ip << " port: " << m_test_net_listen_port;
+                return ret;
+            }
 
             //ipv6 left to later
 
+            return E_SUCCESS;
         }
 
-        void p2p_net_service::init_connector()
+        int32_t p2p_net_service::init_connector()
         {
             conf_manager *manager = (conf_manager *)g_server->get_module_manager()->get(conf_manager_name).get();
 
             if (!manager->count("peer"))
             {
                 LOG_DEBUG << "local peer address is empty and will not connect peer nodes by conf";
-                return;
+                return E_DEFAULT;
             }
 
             //config format: peer address=117.30.51.196:11107
@@ -92,28 +105,28 @@ namespace matrix
 
                 //later check ip format later!!!
 
-                try
-                {
-                    uint16_t port = (uint16_t)std::stoul(str_port);
+                uint16_t port = (uint16_t)std::stoul(str_port);
 
-                    tcp::endpoint ep(address_v4::from_string(ip), port);
-                    m_peer_addresses.push_back(ep);
+                tcp::endpoint ep(address_v4::from_string(ip), port);
+                m_peer_addresses.push_back(ep);
 
-                    //start connect
-                    LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
-                    CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
-                    count++;
-                }
-                catch (const std::exception &e)
+                //start connect
+                LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
+                int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
+                if (E_SUCCESS != ret)
                 {
-                    LOG_DEBUG << "invalid peer address, ip: " << addr << " port: " << str_port << "exception: " << e.what();
-                    continue;
+                    LOG_ERROR << "matrix init connector invalid peer address, ip: " << addr << " port: " << str_port;
                 }
+
+                count++;
             }
+
+            return E_SUCCESS;
         }
 
         int32_t p2p_net_service::service_init(bpo::variables_map &options)
         {
+            int32_t ret = E_SUCCESS;
             //init topic
             init_subscription();
 
@@ -121,10 +134,18 @@ namespace matrix
             init_invoker();
 
             //init listen
-            init_acceptor();
+            ret = init_acceptor();
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
 
             //init connect
             init_connector();
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
 
             return E_SUCCESS;
         }
