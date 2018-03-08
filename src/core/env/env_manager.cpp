@@ -69,7 +69,7 @@ namespace matrix
         void env_manager::init_core_path()
         {
             //home path
-            fs::path m_home_path = fs::current_path();            
+            fs::path m_home_path = fs::current_path();
 
             //conf file full path
             m_conf_path = m_home_path;
