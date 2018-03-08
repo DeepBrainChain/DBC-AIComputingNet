@@ -36,24 +36,24 @@ namespace matrix
                 ("peer", bpo::value<std::vector<std::string>>(), "");
 
             //file path
-            const std::string &conf_path = env_manager::get_conf_path().generic_string();
-            const std::string &peer_path = env_manager::get_peer_path().generic_string();
+            const fs::path &conf_path = env_manager::get_conf_path();
+            const fs::path &peer_path = env_manager::get_peer_path();
 
             try
             {
                 //core.conf
-                std::ifstream conf_ifs(conf_path);
+                std::ifstream conf_ifs(conf_path.generic_string());
                 bpo::store(bpo::parse_config_file(conf_ifs, core_opts), m_args);
 
                 //peer.conf
-                std::ifstream peer_ifs(peer_path);
+                std::ifstream peer_ifs(peer_path.generic_string());
                 bpo::store(bpo::parse_config_file(peer_ifs, peer_opts), m_args);
 
                 bpo::notify(m_args);
             }
             catch (const boost::exception & e)
             {
-                LOG_ERROR << "conf mananger parse local conf error: " << diagnostic_information(e);
+                LOG_ERROR << "conf manager parse local conf error: " << diagnostic_information(e);
                 return E_DEFAULT;
             }
 
