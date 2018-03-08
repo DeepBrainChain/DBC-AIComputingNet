@@ -8,8 +8,10 @@
 * author            £ºBruce Feng
 **********************************************************************************/
 #include "connection_manager.h"
+#include <boost/exception/all.hpp>
 #include "log.h"
 #include "channel.h"
+
 
 using namespace matrix::core;
 
@@ -193,21 +195,34 @@ namespace matrix
 
         int32_t connection_manager::start_listen(tcp::endpoint ep, handler_create_functor func)
         {
-            LOG_DEBUG << "connection manager start listening at port: " << ep.port();
+            LOG_DEBUG << "connection manager start listening at ip: " << ep.address().to_string() << " at port: " << ep.port();
 
-            std::shared_ptr<io_service> ios(m_acceptor_group->get_io_service());
-            std::shared_ptr<tcp_acceptor> acceptor = std::make_shared<tcp_acceptor>(ios, m_worker_group, ep, func);
-            assert(acceptor != nullptr);
-
-            int32_t ret = acceptor->start();
-            if (E_SUCCESS != ret)
+            try
             {
-                LOG_ERROR << "connection manager start listen failed at port: " << ep.port();
-                return ret;
-            }
+                std::shared_ptr<io_service> ios(m_acceptor_group->get_io_service());
+                std::shared_ptr<tcp_acceptor> acceptor = std::make_shared<tcp_acceptor>(ios, m_worker_group, ep, func);
+                assert(acceptor != nullptr);
 
-            write_lock_guard<rw_lock> lock(m_lock);
-            m_acceptors.push_back(acceptor);
+                int32_t ret = acceptor->start();
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "connection manager start listen failed at port: " << ep.port();
+                    return ret;
+                }
+
+                write_lock_guard<rw_lock> lock(m_lock);
+                m_acceptors.push_back(acceptor);
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "connection_manager start listen exception error: " << diagnostic_information(e);
+                return E_SUCCESS;               //if formal release version, here should be return ERROR!!!
+            }
+            catch (...)
+            {
+                LOG_ERROR << "connection_manager start listen exception error!";
+                return E_SUCCESS;               //if formal release version, here should be return ERROR!!!
+            }
 
             return E_SUCCESS;
         }
@@ -238,19 +253,32 @@ namespace matrix
         {
             LOG_DEBUG << "connection manager stop connect at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
 
-            std::shared_ptr<tcp_connector> connector = std::make_shared<tcp_connector>(m_worker_group, connect_addr, func);
-            assert(connector != nullptr);
-
-            //start
-            int32_t ret = connector->start();
-            if (E_SUCCESS != ret)
+            try
             {
-                LOG_ERROR << "connection manager start connect failed at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
-                return ret;
-            }
+                std::shared_ptr<tcp_connector> connector = std::make_shared<tcp_connector>(m_worker_group, connect_addr, func);
+                assert(connector != nullptr);
 
-            write_lock_guard<rw_lock> lock(m_lock);
-            m_connectors.push_back(connector);
+                //start
+                int32_t ret = connector->start();
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "connection manager start connect failed at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
+                    return ret;
+                }
+
+                write_lock_guard<rw_lock> lock(m_lock);
+                m_connectors.push_back(connector);
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "connection_manager start connect exception error: " << diagnostic_information(e);
+                return E_DEFAULT;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "connection_manager start connect exception error!";
+                return E_DEFAULT;
+            }
 
             return E_SUCCESS;
         }
