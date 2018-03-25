@@ -200,7 +200,7 @@ namespace matrix
             try
             {
                 std::shared_ptr<io_service> ios(m_acceptor_group->get_io_service());
-                std::shared_ptr<tcp_acceptor> acceptor = std::make_shared<tcp_acceptor>(ios, m_worker_group, ep, func);
+                std::shared_ptr<tcp_acceptor> acceptor(new tcp_acceptor(ios, m_worker_group, ep, func));
                 assert(acceptor != nullptr);
 
                 int32_t ret = acceptor->start();
@@ -316,7 +316,7 @@ namespace matrix
             }
             else
             {
-                LOG_ERROR << "connection manager add channel successfully " << sid.to_string();
+                LOG_DEBUG << "connection manager add channel successfully " << sid.to_string();
                 return E_SUCCESS;
             }
         }
@@ -336,7 +336,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            LOG_INFO << "connection manager send message to socket, " << sid.to_string() << ", message name: " << msg->get_name();
+            LOG_DEBUG << "connection manager send message to socket, " << sid.to_string() << ", message name: " << msg->get_name();
             return it->second->write(msg);
         }
 

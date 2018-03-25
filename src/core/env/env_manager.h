@@ -51,11 +51,11 @@ namespace matrix
 
         public:
 
-            static fs::path get_conf_path() { return m_conf_path;}
+            static const fs::path & get_conf_path() { return m_conf_path;}
             
-            static fs::path get_peer_path() { return m_peer_path; }
+            static const fs::path & get_peer_path() { return m_peer_path; }
 
-            static fs::path get_home_path() { return m_home_path;}
+            static const fs::path & get_home_path() { return m_home_path;}
 
             static endian_type get_endian_type() { return m_endian_type; }
 

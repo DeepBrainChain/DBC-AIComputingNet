@@ -47,16 +47,22 @@ namespace matrix
 
             static int32_t init()
             {
-                //attribute
-                keywords::file_name = "matrix_core_%N.log";
-                keywords::rotation_size = 10 * 1024 * 1024;
-                keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0);
-                keywords::format = "[%TimeStamp%]: %Message%";
+                boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
 
-                //logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+                auto sink = logging::add_file_log
+                (
+                    //attribute
+                    keywords::file_name = "matrix_core_%N.log",
+                    keywords::rotation_size = 100 * 1024 * 1024,
+                    keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
+                    keywords::format = "[%TimeStamp%][%Severity%]: %Message%"
+                );
+
+                logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
+                sink->locked_backend()->auto_flush(true);
                 logging::add_common_attributes();
 
-                BOOST_LOG_TRIVIAL(info) << "init core log success.";
+                //BOOST_LOG_TRIVIAL(info) << "init core log success.";
 
                 return E_SUCCESS;
             }

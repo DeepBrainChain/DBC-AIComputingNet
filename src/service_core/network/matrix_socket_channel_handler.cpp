@@ -49,8 +49,12 @@ namespace matrix
                 if (DECODE_SUCCESS == status)
                 {
                     //send to bus
-                    msg->header.src_sid = m_channel->id();
-                    TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                    if (msg->get_name() != SHAKE_HAND_REQ 
+                        && msg->get_name() != SHAKE_HAND_RESP)
+                    {
+                        msg->header.src_sid = m_channel->id();
+                        TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                    }
 
                     //callback
                     on_after_msg_received(*msg);
@@ -68,7 +72,7 @@ namespace matrix
                 //decode error
                 else
                 {
-                    LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error";
+                    LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_channel->id().to_string();
                     on_error();
                     return E_DEFAULT;
                 }

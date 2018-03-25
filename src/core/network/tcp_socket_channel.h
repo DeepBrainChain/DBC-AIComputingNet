@@ -27,8 +27,8 @@ using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-#define DEFAULT_TCP_SOCKET_SEND_BUF_LEN                  (32 * 1000)
-#define DEFAULT_TCP_SOCKET_RECV_BUF_LEN                  (32 * 1000)
+#define DEFAULT_TCP_SOCKET_SEND_BUF_LEN                  (64 * 1000)
+#define DEFAULT_TCP_SOCKET_RECV_BUF_LEN                  (64 * 1000)
 
 
 namespace matrix

@@ -43,6 +43,7 @@ namespace matrix
                 uint64_t frame_len = get_unadjusted_frame_length(in, 6, 4);
                 if (frame_len > m_max_frame_len)
                 {
+                    LOG_ERROR << "matrix decode msg_len too long: " << frame_len;
                     return DECODE_ERROR;
                 }
 

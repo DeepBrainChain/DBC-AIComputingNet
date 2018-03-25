@@ -9,6 +9,7 @@
 **********************************************************************************/
 
 #include <functional>
+#include <chrono>
 #include "log.h"
 #include "start_up.h"
 #include "dbc_server_initiator.h"
@@ -23,8 +24,13 @@ int main(void)
 
 #elif defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
+
+using namespace std::chrono;
 using namespace ai::dbc;
 using namespace matrix::core;
+
+
+high_resolution_clock::time_point server_start_time;
 
 //define how to create initiator
 server_initiator * create_initiator()
@@ -35,13 +41,16 @@ server_initiator * create_initiator()
 //prepare for main task
 int pre_main_task()
 {
-    LOG_DEBUG << "------dbc is starting------";
+    //start time point
+    server_start_time = high_resolution_clock::now();
 
     //init log
     log::init();
 
     //bind init creator
+    LOG_DEBUG << "------dbc is starting------";
     server_initiator_factory::bind_creator(create_functor_type(create_initiator));
+
     return 0;
 }
 

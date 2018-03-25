@@ -52,6 +52,8 @@ namespace matrix
 
         int32_t tcp_socket_channel::stop()
         {
+            LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string();
+
             //remove from connection manager
             CONNECTION_MANAGER->remove_channel(m_sid);
 
@@ -64,14 +66,14 @@ namespace matrix
             m_socket.cancel(error);
             if (error)
             {
-                LOG_ERROR << "tcp socket channel cancel error: " << error;
+                LOG_ERROR << "tcp socket channel cancel error: " << error << m_sid.to_string();
             }
 
             //close
             m_socket.close(error);
             if (error)
             {
-                LOG_ERROR << "tcp socket channel close error: " << error;
+                LOG_ERROR << "tcp socket channel close error: " << error << m_sid.to_string();
             }
 
             std::unique_lock<std::mutex> lock(m_queue_mutex);
@@ -108,7 +110,7 @@ namespace matrix
             if (0 == m_recv_buf.get_valid_write_len())
             {
                 //error: illegal remote socket send illegal message and server counld not decode
-                LOG_ERROR << "tcp socket channel buf is zero not enough to receive socket message!";
+                LOG_ERROR << "tcp socket channel buf is zero not enough to receive socket message!" << m_sid.to_string();
                 on_error();
                 return;
             }
@@ -123,7 +125,15 @@ namespace matrix
             //read error
             if (error)
             {
-                LOG_ERROR << "tcp socket channel on read error: " << error;
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "tcp socket channel on read aborted: " << error.value() << " " << error.message() << m_sid.to_string();
+                    return;
+                }
+
+                //other error
+                LOG_ERROR << "tcp socket channel on read error: " << error.value() << " "  << error.message() << m_sid.to_string();
                 on_error();
                 return;
             }
@@ -140,7 +150,7 @@ namespace matrix
                 //move byte_buf's write ptr location 
                 if (E_SUCCESS != m_recv_buf.move_write_ptr((uint32_t)bytes_transferred))
                 {
-                    LOG_ERROR << "tcp socket channel move write ptr error, bytes transfered: " << bytes_transferred;
+                    LOG_ERROR << "tcp socket channel move write ptr error, bytes transfered: " << bytes_transferred << m_sid.to_string();
                     on_error();
                     return;
                 }
@@ -156,23 +166,23 @@ namespace matrix
                 }
                 else
                 {
-                    LOG_ERROR << "tcp socket channel call socket handler on read error and ready to release socket channel";
+                    LOG_ERROR << "tcp socket channel call socket handler on read error and ready to release socket channel" << m_sid.to_string();
                     on_error();
                 }
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "tcp socket channel on read exception error " << e.what();
+                LOG_ERROR << "tcp socket channel on read exception error " << e.what() << m_sid.to_string();
                 on_error();
             }
             catch (const boost::exception & e)
             {
-                LOG_ERROR << "tcp socket channel on read exception error " << diagnostic_information(e);
+                LOG_ERROR << "tcp socket channel on read exception error " << diagnostic_information(e) << m_sid.to_string();
                 on_error();
             }
             catch (...)
             {
-                LOG_ERROR << "tcp socket channel on read exception error!";
+                LOG_ERROR << "tcp socket channel on read exception error!" << m_sid.to_string();
                 on_error();
             }
         }
@@ -185,7 +195,7 @@ namespace matrix
                 //async_write();
                 if (m_send_queue.size() > MAX_SEND_QUEUE_MSG_COUNT)
                 {
-                    LOG_ERROR << "tcp socket channel send queue is full";
+                    LOG_ERROR << "tcp socket channel send queue is full" << m_sid.to_string();
                     return E_DEFAULT;
                 }
             }
@@ -212,7 +222,7 @@ namespace matrix
                 //encode
                 if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
                 {
-                    LOG_ERROR << "tcp socket channel handler on write error";
+                    LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                     on_error();
                     return E_DEFAULT;
                 }
@@ -224,19 +234,19 @@ namespace matrix
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "tcp socket channel write error " << e.what();
+                LOG_ERROR << "tcp socket channel write error " << e.what() << m_sid.to_string();
                 on_error();
 
                 return E_DEFAULT;
             }
             catch (const boost::exception & e)
             {
-                LOG_ERROR << "tcp socket channel write error " << diagnostic_information(e);
+                LOG_ERROR << "tcp socket channel write error " << diagnostic_information(e) << m_sid.to_string();
                 on_error();
             }
             catch (...)
             {
-                LOG_ERROR << "tcp socket channel write error!";
+                LOG_ERROR << "tcp socket channel write error!" << m_sid.to_string();
                 on_error();
             }
 
@@ -253,7 +263,14 @@ namespace matrix
         {
             if (error)
             {
-                LOG_ERROR << "tcp socket channel on write error: " << error;
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "tcp socket channel on write aborted: " << error.value() << " " << error.message() << m_sid.to_string();
+                    return;
+                }
+
+                LOG_ERROR << "tcp socket channel on write error: " << error.value() << " " << error.message() << m_sid.to_string();
                 on_error();
                 return;
             }
@@ -295,7 +312,7 @@ namespace matrix
                         //encode
                         if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
                         {
-                            LOG_ERROR << "tcp socket channel handler on write error";
+                            LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                             on_error();
                             return;
                         }
@@ -309,30 +326,30 @@ namespace matrix
                 //larger than valid read bytes
                 else
                 {
-                    LOG_ERROR << "tcp socket channel on write error, bytes_transferred: " << bytes_transferred << " larger than valid read len: " << m_send_buf->get_valid_read_len();
+                    LOG_ERROR << "tcp socket channel on write error, bytes_transferred: " << bytes_transferred << " larger than valid read len: " << m_send_buf->get_valid_read_len() << m_sid.to_string();
                     on_error();
                 }
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "tcp socket channel on write error " << e.what();
+                LOG_ERROR << "tcp socket channel on write error " << e.what() << m_sid.to_string();
                 on_error();
             }
             catch (const boost::exception & e)
             {
-                LOG_ERROR << "tcp socket channel on write error " << diagnostic_information(e);
+                LOG_ERROR << "tcp socket channel on write error " << diagnostic_information(e) << m_sid.to_string();
                 on_error();
             }
             catch (...)
             {
-                LOG_ERROR << "tcp socket channel on write error!";
+                LOG_ERROR << "tcp socket channel on write error!" << m_sid.to_string();
                 on_error();
             }
         }
 
         void tcp_socket_channel::on_error()
         {
-            LOG_ERROR << "tcp socket channel error and ready to say bye!";
+            LOG_ERROR << "tcp socket channel error and ready to say bye!" << m_sid.to_string();
             error_notify();
             this->stop();
         }

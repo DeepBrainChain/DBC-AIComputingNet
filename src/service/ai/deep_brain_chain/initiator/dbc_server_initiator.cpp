@@ -16,9 +16,12 @@
 #include "version.h"
 #include "p2p_net_service.h"
 
-
+using namespace std::chrono;
 using namespace matrix::core;
 using namespace matrix::service_core;
+
+
+extern std::chrono::high_resolution_clock::time_point server_start_time;
 
 
 namespace ai
@@ -109,7 +112,11 @@ namespace ai
             mdl->start();
             LOG_DEBUG << "init p2p net service succefully";
 
-            LOG_DEBUG << "init dbc core successfully";
+            //log cost time
+            high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
+            auto time_span_ms = duration_cast<milliseconds>(init_end_time - server_start_time);
+            LOG_DEBUG << "init dbc core successfully, cost time: " << time_span_ms.count() << " ms";
+
             return E_SUCCESS;
         }
 

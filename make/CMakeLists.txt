@@ -55,7 +55,7 @@ SET(Boost_USE_MULTITHREADED   ON)
 SET(Boost_USE_STATIC_RUNTIME  ON)
 
 					 
-FIND_PACKAGE(Boost 1.66 REQUIRED COMPONENTS thread date_time system filesystem log exception program_options serialization signals serialization chrono unit_test_framework context)
+FIND_PACKAGE(Boost 1.66 REQUIRED COMPONENTS thread date_time system filesystem log log_setup exception program_options serialization signals serialization chrono unit_test_framework context)
 
 ############################################################################
 
@@ -70,6 +70,7 @@ ${SRC_PATH}/core/alarm
 ${SRC_PATH}/core/codec 
 ${SRC_PATH}/core/common 
 ${SRC_PATH}/core/conf 
+${SRC_PATH}/core/conf/validator
 ${SRC_PATH}/core/data_structure 
 ${SRC_PATH}/core/env 
 ${SRC_PATH}/core/initiator 
@@ -116,6 +117,7 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/alarm CORE_ALARM_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/codec CORE_CODEC_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/common CORE_COMMON_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/conf CORE_CONF_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/conf/validator CORE_CONF_VALIDATOR_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/data_structure CORE_DATA_STRU_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/env CORE_ENV_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/initiator CORE_INITIATOR_SRCS)
@@ -160,6 +162,7 @@ ${CORE_ALARM_SRCS}
 ${CORE_CODEC_SRCS} 
 ${CORE_COMMON_SRCS} 
 ${CORE_CONF_SRCS} 
+${CORE_CONF_VALIDATOR_SRCS}
 ${CORE_DATA_STRU_SRCS} 
 ${CORE_ENV_SRCS} 
 ${CORE_INITIATOR_SRCS} 
@@ -191,7 +194,7 @@ SET(LIBRARIES)
 
 #target link
 MESSAGE(STATUS "${Boost_LIBRARIES}")
-#libboost_thread.a
+#libboost_thread.a -lboost_log_setup
 TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} libboost_thread.a)
 
 ############################################################################

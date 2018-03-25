@@ -25,16 +25,15 @@ namespace matrix
             {
                 if (error)
                 {
-                    //if timer handler on_error called, it will cause release resource duplicatedly. so i delete these codes here and just leave log.
+                    //aborted, maybe cancel triggered
+                    if (boost::asio::error::operation_aborted == error.value())
+                    {
+                        LOG_DEBUG << "matrix client socket channel handler timer aborted." << m_channel->id().to_string();
+                        return;
+                    }
 
-                    //operation_aborted
-                    //if (995 == error.value())
-                    //{
-                    //    return;
-                    //}
-
-                    LOG_ERROR << "matrix server socket channel handler timer error: " << error;
-                    //m_channel->on_error();
+                    LOG_ERROR << "matrix server socket channel handler timer error: " << error.value() << " " << error.message() << m_channel->id().to_string();
+                    m_channel->on_error();
                     return;
                 }
 
@@ -56,16 +55,15 @@ namespace matrix
             {
                 if (error)
                 {
-                    //if timer handler on_error called, it will cause release resource duplicatedly. so i delete these codes here and just leave log.
+                    //aborted, maybe cancel triggered
+                    if (boost::asio::error::operation_aborted == error.value())
+                    {
+                        LOG_DEBUG << "matrix server socket channel handler wait ver req timer aborted." << m_channel->id().to_string();
+                        return;
+                    }
 
-                    //operation_aborted
-                    //if (995 == error.value())
-                    //{
-                    //    return;
-                    //}
-
-                    LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error;
-                    //m_channel->on_error();
+                    LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error.value() << " " << error.message() << m_channel->id().to_string();
+                    m_channel->on_error();
                     return;
                 }
 

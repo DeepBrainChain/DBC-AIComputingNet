@@ -19,6 +19,9 @@
 #include "matrix_server_socket_channel_handler.h"
 #include "handler_create_functor.h"
 #include "channel.h"
+#include "ip_validator.h"
+#include "port_validator.h"
+
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -30,21 +33,64 @@ namespace matrix
     namespace service_core
     {
 
-        void p2p_net_service::init_conf()
+        int32_t p2p_net_service::init_conf()
         {
+            variable_value val;
+            ip_validator ip_vdr;
+            port_validator port_vdr;
+
             conf_manager *manager = (conf_manager *)g_server->get_module_manager()->get(conf_manager_name).get();
-            assert(manager != NULL);
+            assert(manager != nullptr);
 
             //get listen ip and port conf
-            m_host_ip = manager->count("host_ip") ? (*manager)["host_ip"].as<std::string>() : ip::address_v4::any().to_string(); 
-            m_main_net_listen_port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<uint16_t>() : DEFAULT_MAIN_NET_LISTEN_PORT;
-            m_test_net_listen_port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<uint16_t>() : DEFAULT_TEST_NET_LISTEN_PORT;
+            std::string host_ip  = manager->count("host_ip") ? (*manager)["host_ip"].as<std::string>() : ip::address_v4::any().to_string();
+            val.value() = host_ip;
+            
+            if (!ip_vdr.validate(val))
+            {
+                LOG_ERROR << "p2p_net_service init_conf invalid host ip: " << host_ip;
+                return E_DEFAULT;
+            }
+            else
+            {
+                m_host_ip = host_ip;
+            }
+
+            unsigned long port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<unsigned long>() : DEFAULT_MAIN_NET_LISTEN_PORT;
+            val.value() = port;
+            if (false == port_vdr.validate(val))
+            {
+                LOG_ERROR << "p2p_net_service init_conf invalid main net port: " << port;
+                return E_DEFAULT;
+            }
+            else
+            {
+                m_main_net_listen_port = (uint16_t)port;
+            }
+
+            port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<unsigned long>() : DEFAULT_TEST_NET_LISTEN_PORT;
+            val.value() = port;
+            if (false == port_vdr.validate(val))
+            {
+                LOG_ERROR << "p2p_net_service init_conf invalid test net port: " << port;
+                return E_DEFAULT;
+            }
+            else
+            {
+                m_test_net_listen_port = (uint16_t)port;
+            }
+
+            return E_SUCCESS;
         }
 
         int32_t p2p_net_service::init_acceptor()
         {
             //init ip and port
-            init_conf();
+            if (E_SUCCESS != init_conf())
+            {
+                LOG_ERROR << "p2p_net_service init acceptor error and exit";
+                return E_DEFAULT;
+            }
 
             //ipv4 default
             tcp::endpoint ep(ip::address::from_string(m_host_ip), m_main_net_listen_port);
@@ -89,9 +135,12 @@ namespace matrix
             std::vector<std::string> str_address = (*manager)["peer"].as<std::vector<std::string>>();
 
             int count = 0;
+            ip_validator ip_vdr;
+            port_validator port_vdr;
             for (auto it = str_address.begin(); it != str_address.end() && count <DEFAULT_CONNECT_PEER_NODE; it++)
             {
                 std::string &addr = *it;
+                string_util::trim(addr);
                 size_t pos = addr.find(':');
                 if (pos == std::string::npos)
                 {
@@ -103,11 +152,41 @@ namespace matrix
                 std::string ip = addr.substr(0, pos);
                 std::string str_port = addr.substr(pos + 1, std::string::npos);
 
-                //later check ip format later!!!
+                //validate ip
+                variable_value val;
+                val.value() = ip;
+                if (false == ip_vdr.validate(val))
+                {
+                    LOG_ERROR << "p2p_net_service init_connect invalid ip: " << ip;
+                    continue;
+                }
 
-                uint16_t port = (uint16_t)std::stoul(str_port);
+                //validate port
+                if (str_port.empty())
+                {
+                    LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
+                    continue;
+                }
 
-                tcp::endpoint ep(address_v4::from_string(ip), port);
+                unsigned long port = 0;
+                try
+                {
+                    port = std::stoul(str_port);
+                }
+                catch (const std::exception &e)
+                {
+                    LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port << ", " << e.what();
+                    continue;
+                }
+
+                val.value() = port;
+                if (false == port_vdr.validate(val))
+                {
+                    LOG_ERROR << "p2p_net_service init_connect invalid port: " << port;
+                    continue;
+                }
+
+                tcp::endpoint ep(address_v4::from_string(ip),(uint16_t) port);
                 m_peer_addresses.push_back(ep);
 
                 //start connect
