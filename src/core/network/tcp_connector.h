@@ -23,7 +23,7 @@
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-#define MAX_RECONNECT_TIMES                 60
+#define MAX_RECONNECT_TIMES                 300
 
 namespace matrix
 {

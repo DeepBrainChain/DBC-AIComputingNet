@@ -20,10 +20,26 @@
 #endif
 
 
+#ifdef WIN32
+BOOL WINAPI ConsoleHandler(DWORD msgType)
+{
+    switch (msgType)
+    {
+    case CTRL_CLOSE_EVENT:
+        g_server->set_exited();
+        return TRUE;
+    default:
+        return FALSE;
+    }
+
+    return FALSE;
+}
+#elif defined(__linux__) || defined(MAC_OSX)
 void signal_usr1_handler(int)
 {
     g_server->set_exited();
 }
+#endif
 
 namespace matrix
 {
@@ -105,7 +121,9 @@ namespace matrix
 
         void env_manager::init_signal()
         {
-#if defined(__linux__) || defined(MAC_OSX)
+#ifdef WIN32
+            SetConsoleCtrlHandler(ConsoleHandler, TRUE);
+#elif defined(__linux__) || defined(MAC_OSX)
             signal(SIGPIPE, SIG_IGN);
             signal(SIGTERM, SIG_IGN);
             signal(SIGINT, SIG_IGN);

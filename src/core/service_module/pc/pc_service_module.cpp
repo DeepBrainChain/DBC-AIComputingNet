@@ -43,7 +43,7 @@ namespace matrix
 
         int32_t service_module::start()
         {
-            m_thread = std::thread(m_module_task, this);
+            m_thread = std::make_shared<std::thread> (m_module_task, this);
             return E_SUCCESS;
         }
 
@@ -73,8 +73,11 @@ namespace matrix
         {
             m_exited = true;
 
-            //have a rest
-            m_thread.join();
+            //have a rest           
+            if (m_thread != nullptr)
+            {
+                m_thread->join();
+            }
 
             return E_SUCCESS;
         }

@@ -80,9 +80,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST)\;$(DBC_CODE_HOME)\src\3rd\network\thrift\;$(DBC_CODE_HOME)\src\core\storage\;$(DBC_CODE_HOME)\src\core\timer_service\;$(DBC_CODE_HOME)\src\core\service_module\pc\;$(DBC_CODE_HOME)\src\core\service_module\;$(DBC_CODE_HOME)\src\core\common\;$(DBC_CODE_HOME)\src\core\log\;$(DBC_CODE_HOME)\src\core\conf\;$(DBC_CODE_HOME)\src\core\alarm\;$(DBC_CODE_HOME)\src\core\data_structure\;$(DBC_CODE_HOME)\src\core\env\;$(DBC_CODE_HOME)\src\core\module\;$(DBC_CODE_HOME)\src\core\monitor\;$(DBC_CODE_HOME)\src\core\memory\;$(DBC_CODE_HOME)\src\core\math\;$(DBC_CODE_HOME)\src\core\initiator\;$(DBC_CODE_HOME)\src\core\service_bus\;$(DBC_CODE_HOME)\src\core\sem\;$(DBC_CODE_HOME)\src\core\codec\;$(DBC_CODE_HOME)\src\core\network\;$(DBC_CODE_HOME)\src\core\mutex\;$(DBC_CODE_HOME)\src\service_core\p2pnet\;$(DBC_CODE_HOME)\src\service_core\network\;$(DBC_CODE_HOME)\src\service_core\codec\;$(DBC_CODE_HOME)\src\service_core\codec\thrift\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\conf\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\initiator\</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST)\;$(DBC_CODE_HOME)\src\3rd\network\thrift\;$(DBC_CODE_HOME)\src\core\storage\;$(DBC_CODE_HOME)\src\core\timer_service\;$(DBC_CODE_HOME)\src\core\service_module\pc\;$(DBC_CODE_HOME)\src\core\service_module\;$(DBC_CODE_HOME)\src\core\common\;$(DBC_CODE_HOME)\src\core\log\;$(DBC_CODE_HOME)\src\core\conf\;$(DBC_CODE_HOME)\src\core\conf\validator\;$(DBC_CODE_HOME)\src\core\alarm\;$(DBC_CODE_HOME)\src\core\data_structure\;$(DBC_CODE_HOME)\src\core\env\;$(DBC_CODE_HOME)\src\core\module\;$(DBC_CODE_HOME)\src\core\monitor\;$(DBC_CODE_HOME)\src\core\memory\;$(DBC_CODE_HOME)\src\core\math\;$(DBC_CODE_HOME)\src\core\initiator\;$(DBC_CODE_HOME)\src\core\service_bus\;$(DBC_CODE_HOME)\src\core\sem\;$(DBC_CODE_HOME)\src\core\codec\;$(DBC_CODE_HOME)\src\core\network\;$(DBC_CODE_HOME)\src\core\mutex\;$(DBC_CODE_HOME)\src\service_core\p2pnet\;$(DBC_CODE_HOME)\src\service_core\network\;$(DBC_CODE_HOME)\src\service_core\codec\;$(DBC_CODE_HOME)\src\service_core\codec\thrift\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\conf\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\initiator\</IncludePath>
     <LibraryPath>$(BOOST)\vc141-x64\lib\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>..\..\..\..\output\</OutDir>
+    <EnableCppCoreCheck>true</EnableCppCoreCheck>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -114,6 +115,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;__DEBUG;_CONSOLE;%(PreprocessorDefinitions);CRT_SECURE_NO_WARNINGS;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x601</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -212,10 +214,13 @@
     <ClInclude Include="..\..\..\..\src\core\common\error.h" />
     <ClInclude Include="..\..\..\..\src\core\common\function_traits.h" />
     <ClInclude Include="..\..\..\..\src\core\common\std_types.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\util.h" />
     <ClInclude Include="..\..\..\..\src\core\common\version.h" />
     <ClInclude Include="..\..\..\..\src\core\common\visibility.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\conf_validator.h" />
+    <ClInclude Include="..\..\..\..\src\core\conf\validator\ip_validator.h" />
+    <ClInclude Include="..\..\..\..\src\core\conf\validator\port_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\data_structure\cs_string.h" />
     <ClInclude Include="..\..\..\..\src\core\data_structure\list.h" />
     <ClInclude Include="..\..\..\..\src\core\data_structure\map.h" />

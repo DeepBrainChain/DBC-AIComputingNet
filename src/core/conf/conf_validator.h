@@ -25,7 +25,8 @@ namespace matrix
         {
         public:
 
-            virtual bool validate(const std::string& name, variable_value &val) = 0;
+            virtual bool validate(const variable_value &val) = 0;
+
         };
 
     }

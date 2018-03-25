@@ -23,7 +23,7 @@
 using namespace std;
 
 #define DEFAULT_WAIT_MILLISECONDS       0                           //default 0, no wait
-#define DEFAULT_MESSAGE_COUNT               1000                     //default message count
+#define DEFAULT_MESSAGE_COUNT               102400                     //default message count
 
 
 namespace matrix
@@ -85,7 +85,7 @@ namespace matrix
 
             mutex m_mutex;
 
-            thread m_thread;
+            std::shared_ptr<std::thread> m_thread;
 
             queue_type m_msg_queue;
 

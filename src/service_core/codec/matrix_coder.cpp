@@ -67,12 +67,12 @@ namespace matrix
             }
             catch (std::exception &e)
             {
-                LOG_ERROR << "matrix decode exception: " << e.what();
+                LOG_ERROR << "matrix decode exception: " << e.what() << " " << in.to_string();
                 return DECODE_ERROR;
             }
             catch (...)
             {
-                LOG_ERROR << "matrix decode exception!";
+                LOG_ERROR << "matrix decode exception: " << in.to_string();
                 return DECODE_ERROR;
             }
 
@@ -98,8 +98,16 @@ namespace matrix
 
             char *ptr = in.get_read_ptr();
 
-            //skip struct begin
-            ptr += 3;
+            //T_STRUCT 01
+            ftype = *ptr++;
+            fid = *((uint16_t *)ptr);
+            fid = byte_order::ntoh16(fid);
+            ptr += 2;
+            if (1 != fid || T_STRUCT != ftype)
+            {
+                LOG_ERROR << "matrix decoder decode header struct error: " << in.to_string();
+                return DECODE_ERROR;
+            }
 
             //msg_len
             ftype = *ptr++;
@@ -108,6 +116,7 @@ namespace matrix
             ptr += 2;
             if (1 != fid || T_I32 != ftype)
             {
+                LOG_ERROR << "matrix decoder decode header msg_len error: " << in.to_string();
                 return DECODE_ERROR;
             }
 
@@ -122,6 +131,7 @@ namespace matrix
             ptr += 2;
             if (2 != fid || T_I32 != ftype)
             {
+                LOG_ERROR << "matrix decoder decode header magic error: " << in.to_string();
                 return DECODE_ERROR;
             }
 
@@ -136,6 +146,7 @@ namespace matrix
             ptr += 2;
             if (3 != fid || T_STRING != ftype)
             {
+                LOG_ERROR << "matrix decoder decode header msg_name string length error: " << in.to_string();
                 return DECODE_ERROR;
             }
 
@@ -147,6 +158,7 @@ namespace matrix
             //msg_name string
             if (msg_name_len > (in.get_valid_read_len() - DEFAULT_DECODE_HEADER_LEN))
             {
+                LOG_ERROR << "matrix decoder decode header msg_name string length too long error: " << in.to_string();
                 return DECODE_ERROR;
             }
 

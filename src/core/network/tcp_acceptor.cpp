@@ -82,7 +82,7 @@ namespace matrix
         {
             if (error)
             {
-                LOG_ERROR << "tcp acceptor on accept call back error: " << error;
+                LOG_ERROR << "tcp acceptor on accept call back error: " << error.value() << " " << error.message();
 
                 //new channel
                 create_channel();

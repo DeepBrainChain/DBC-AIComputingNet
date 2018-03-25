@@ -107,6 +107,9 @@
     <Filter Include="src\service_core\codec\thrift">
       <UniqueIdentifier>{faf5feb8-d8ef-4a83-902c-9281fef0ff69}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\conf\validator">
+      <UniqueIdentifier>{f79a5d2c-e9e8-43df-bd6b-46fea231e936}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -452,6 +455,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.h">
       <Filter>src\service_core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\conf\validator\ip_validator.h">
+      <Filter>src\core\conf\validator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\conf\validator\port_validator.h">
+      <Filter>src\core\conf\validator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\util.h">
+      <Filter>src\core\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

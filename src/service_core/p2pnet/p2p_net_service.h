@@ -18,7 +18,7 @@
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
-#define DEFAULT_CONNECT_PEER_NODE      10240                            //default connect peer nodes
+#define DEFAULT_CONNECT_PEER_NODE      102400                            //default connect peer nodes
 
 namespace matrix
 {
@@ -43,7 +43,7 @@ namespace matrix
 
         protected:
 
-            void init_conf();
+            int32_t init_conf();
 
             int32_t init_acceptor();
 

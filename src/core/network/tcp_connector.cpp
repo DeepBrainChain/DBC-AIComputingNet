@@ -74,12 +74,15 @@ namespace matrix
             {
                 if (error)
                 {
-                    LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr << ", reconnect times: " << ++m_reconnect_times
-                        << ", sid: " << m_sid.to_string() << ", error code: " << error.message();
+                    LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr
+                        << ", reconnect times: " << ++m_reconnect_times
+                        << ", error: " << error.value() << " " << error.message()
+                        << m_sid.to_string();
+
                     if (m_reconnect_times < MAX_RECONNECT_TIMES)
                     {
                         //try again
-                        std::this_thread::sleep_for(std::chrono::seconds(3));
+                        //std::this_thread::sleep_for(std::chrono::seconds(3));
                         async_connect();
                     }
                     else

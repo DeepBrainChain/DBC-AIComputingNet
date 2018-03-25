@@ -53,7 +53,7 @@ namespace matrix
             std::string to_string() const 
             { 
                 std::stringstream str_stream;
-                str_stream << "socket type: " << ((m_type == CLIENT_SOCKET) ? "client " : "server ") << " socket id: " << m_id;              
+                str_stream << " socket type: " << ((m_type == CLIENT_SOCKET) ? "client" : "server") << " socket id: " << m_id;            
                 return  str_stream.str();
             }
 

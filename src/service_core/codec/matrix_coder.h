@@ -22,7 +22,7 @@ using namespace matrix::core;
 
 #define MAIN_NET                                                          0xF1E1B0A7
 #define TEST_NET                                                           0XE1D1A097
-#define PROTOCO_VERSION                                           0x00000001
+#define PROTOCO_VERSION                                         0x00000001
 
 #define MATRIX_MSG_LENGTH_FIELD_END_OFFSET              10                                //from msg frame begin to length field end is 10 bytes
 #define MAX_MATRIX_MSG_LEN                                  (4 * 1024 * 1024)                    //max 4M bytes
