@@ -55,6 +55,7 @@ namespace matrix
                 LOG_ERROR << "connection manager init connector group failed";
                 m_acceptor_group->exit();
                 m_worker_group->exit();
+
                 return ret;
             }
 
@@ -101,8 +102,10 @@ namespace matrix
             m_worker_group->exit();
             m_connector_group->exit();
 
+            write_lock_guard<rw_lock> lock(m_lock);
             m_acceptors.clear();
             m_connectors.clear();
+            m_channels.clear();
             return E_SUCCESS;
         }
 
@@ -213,6 +216,11 @@ namespace matrix
                 write_lock_guard<rw_lock> lock(m_lock);
                 m_acceptors.push_back(acceptor);
             }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << "connection_manager start listen exception error: " << e.what();
+                return E_SUCCESS;
+            }
             catch (const boost::exception & e)
             {
                 LOG_ERROR << "connection_manager start listen exception error: " << diagnostic_information(e);
@@ -268,6 +276,11 @@ namespace matrix
 
                 write_lock_guard<rw_lock> lock(m_lock);
                 m_connectors.push_back(connector);
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << "connection_manager start connect exception error: " << e.what();
+                return E_SUCCESS;
             }
             catch (const boost::exception & e)
             {
@@ -329,6 +342,8 @@ namespace matrix
 
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)
         {
+            read_lock_guard<rw_lock> lock(m_lock);
+
             auto it = m_channels.find(sid);
             if (it == m_channels.end())
             {

@@ -100,6 +100,8 @@ namespace matrix
 
             tcp::endpoint m_remote_addr;
 
+            handler_create_functor m_handler_functor;
+
         };
 
     }

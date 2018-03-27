@@ -28,11 +28,11 @@ namespace matrix
 
         public:
 
-            matrix_client_socket_channel_handler(channel *ch);
+            matrix_client_socket_channel_handler(std::shared_ptr<channel> ch);
 
             virtual ~matrix_client_socket_channel_handler() = default;
 
-            static socket_channel_handler * create(channel *ch) { return new matrix_client_socket_channel_handler(ch); }
+            static socket_channel_handler * create(std::shared_ptr<channel> ch) { return new matrix_client_socket_channel_handler(ch); }
 
             virtual int32_t on_after_msg_received(message &msg);
 

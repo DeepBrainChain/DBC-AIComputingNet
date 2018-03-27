@@ -18,7 +18,7 @@ namespace matrix
     namespace service_core
     {
 
-        matrix_socket_channel_handler::matrix_socket_channel_handler(channel *ch)
+        matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<channel> ch)
             : m_channel(ch)
             , m_coder(new matrix_coder())
             , m_has_message(false)
