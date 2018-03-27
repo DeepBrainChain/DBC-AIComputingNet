@@ -42,6 +42,40 @@ namespace matrix
                 }
             }
 
+            static void split(char *str, char delim, int &argc, char* argv[])
+            {
+                if (nullptr == str || nullptr == argv || argc <= 0)
+                {
+                    argc = 0;
+                    return;
+                }
+
+                int i = 0;
+                char  *p = str;
+
+                while (*p)
+                {
+                    if (delim == *p)
+                    {
+                        *p++ = '\0';
+                        continue;
+                    }
+
+                    argv[i++] = p;
+                    if (i >= argc)
+                    {
+                        return;         //argc is unchanged
+                    }
+
+                    while (*p && delim != *p)
+                    {
+                        p++;
+                    }
+                }
+
+                argc = i;
+            }
+
             static void trim(std::string & str)
             {
                 if (str.empty())

@@ -11,6 +11,7 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 #include "common.h"
 #include "conf_manager.h"
 #include "topic_manager.h"
@@ -48,6 +49,7 @@ namespace matrix
         {
             
             using init_factory = server_initiator_factory ;
+            using idle_task_functor_type = std::function<void()>;
 
         public:
 
@@ -67,7 +69,9 @@ namespace matrix
 
             virtual bool is_init_ok() { return (m_init_result == E_SUCCESS); }
 
-            virtual shared_ptr<module_manager> get_module_manager() { return m_module_manager; }
+            void bind_idle_task(idle_task_functor_type functor) { m_idle_task = functor; }
+
+            shared_ptr<module_manager> get_module_manager() { return m_module_manager; }
 
             conf_manager *get_conf_manager() { return (conf_manager *)(m_module_manager->get(conf_manager_name).get()); }
 
@@ -92,6 +96,8 @@ namespace matrix
             shared_ptr<module_manager> m_module_manager;
 
             init_factory m_init_factory;
+
+            idle_task_functor_type m_idle_task;
             
         };
 
