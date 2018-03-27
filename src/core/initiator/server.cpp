@@ -34,9 +34,6 @@ namespace matrix
         {
             while (!m_exited)
             {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-
-                //to do idle task.
                 do_cycle_task();
             }
 
@@ -45,7 +42,10 @@ namespace matrix
 
         void server::do_cycle_task()
         {
-            //LOG_DEBUG << "server is running and doing idle cycle task";
+            if (m_idle_task)
+            {
+                m_idle_task();
+            }
         }
 
         int32_t server::exit()

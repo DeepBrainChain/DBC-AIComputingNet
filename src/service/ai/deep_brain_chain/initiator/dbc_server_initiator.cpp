@@ -15,10 +15,12 @@
 #include "topic_manager.h"
 #include "version.h"
 #include "p2p_net_service.h"
+#include "cmd_line_service.h"
 
 using namespace std::chrono;
 using namespace matrix::core;
 using namespace matrix::service_core;
+using namespace ai::dbc;
 
 
 extern std::chrono::high_resolution_clock::time_point server_start_time;
@@ -112,6 +114,19 @@ namespace ai
             mdl->start();
             LOG_DEBUG << "init p2p net service succefully";
 
+            //cmd line service
+            LOG_DEBUG << "begin to init comand line service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai::dbc::cmd_line_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                //logging
+                return ret;
+            }
+            mdl->start();
+            LOG_DEBUG << "init comand line service succefully";
+
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
             auto time_span_ms = duration_cast<milliseconds>(init_end_time - server_start_time);
@@ -128,31 +143,39 @@ namespace ai
         //parse command line
         int32_t dbc_server_initiator::parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm)
         {
-            options_description opts("dbc options");
+            options_description opts("dbc command options");
             opts.add_options()
-                ("help,h", bpo::value<std::string>(), "get dbc core help info")
-                ("version,v", bpo::value<std::string>(), "get core version info");
+                ("help,h", "get dbc core help info")
+                ("version,v", "get core version info");
 
-            //parse
-            bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
-            bpo::notify(vm);
-
-            //help
-            if (vm.count("help") || vm.count("h"))
+            try
             {
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                //help
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return E_EXIT_PARSE_COMMAND_LINE;
+                }
+                //version
+                else if (vm.count("version") || vm.count("v"))
+                {
+                    cout << CORE_VERSION << endl;
+                    return E_EXIT_PARSE_COMMAND_LINE;
+                }
+                //ignore
+                else
+                {
+                    return E_SUCCESS;
+                }
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid command option" << endl;
                 cout << opts;
-                return E_EXIT_PARSE_COMMAND_LINE;
-            }
-            //version
-            else if (vm.count("version") || vm.count("v"))
-            {
-                cout << CORE_VERSION;
-                return E_EXIT_PARSE_COMMAND_LINE;
-            }
-            //ignore
-            else
-            {
-                return E_SUCCESS;
             }
 
         }

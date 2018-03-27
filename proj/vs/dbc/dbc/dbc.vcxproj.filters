@@ -232,6 +232,12 @@
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.cpp">
       <Filter>src\service_core\network</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\api\cmd_line_service.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\api\api_call_handler.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -464,6 +470,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\common\util.h">
       <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\api\api_call_handler.h">
+      <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\api\cmd_line_service.h">
+      <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
