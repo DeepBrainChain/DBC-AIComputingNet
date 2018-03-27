@@ -13,5 +13,7 @@
 #include "channel.h"
 #include "socket_channel_handler.h"
 
+using namespace std;
+using namespace matrix::core;
 
-using handler_create_functor = std::function<matrix::core::socket_channel_handler * (matrix::core::channel *ch)>;
+typedef  function<socket_channel_handler * (shared_ptr<channel> ch)> handler_create_functor;

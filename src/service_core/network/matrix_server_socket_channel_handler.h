@@ -29,7 +29,7 @@ namespace matrix
         {
         public:
 
-            matrix_server_socket_channel_handler(channel *ch);
+            matrix_server_socket_channel_handler(std::shared_ptr<channel> ch);
 
             virtual ~matrix_server_socket_channel_handler() = default;
 
@@ -41,7 +41,7 @@ namespace matrix
 
             virtual int32_t on_before_msg_receive();
 
-            static socket_channel_handler * create(channel *ch) { return new matrix_server_socket_channel_handler(ch); }
+            static socket_channel_handler * create(std::shared_ptr<channel> ch) { return new matrix_server_socket_channel_handler(ch); }
 
         protected:
 

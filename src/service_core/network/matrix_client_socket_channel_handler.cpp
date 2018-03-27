@@ -14,7 +14,7 @@ namespace matrix
     namespace service_core
     {
 
-        matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(channel *ch)
+        matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(std::shared_ptr<channel> ch)
             : matrix_socket_channel_handler(ch)
         {
             m_shake_hand_timer_handler =
@@ -25,7 +25,7 @@ namespace matrix
                     //aborted, maybe cancel triggered
                     if (boost::asio::error::operation_aborted == error.value())
                     {
-                        LOG_DEBUG << "matrix client socket channel handler timer aborted." << m_channel->id().to_string();
+                        LOG_DEBUG << "matrix client socket channel handler timer aborted.";
                         return;
                     }
 

@@ -12,6 +12,7 @@
 
 #include <boost/asio/steady_timer.hpp>
 #include "channel.h"
+#include "tcp_socket_channel.h"
 #include "socket_channel_handler.h"
 #include "matrix_coder.h"
 #include "matrix_types.h"
@@ -36,7 +37,7 @@ namespace matrix
 
             typedef void (timer_handler_type)(const boost::system::error_code &);
 
-            matrix_socket_channel_handler(channel *ch);
+            matrix_socket_channel_handler(std::shared_ptr<channel> ch);
 
             virtual ~matrix_socket_channel_handler();
 
@@ -74,7 +75,7 @@ namespace matrix
 
             std::shared_ptr<matrix_coder> m_coder;
 
-            channel *m_channel;
+            std::shared_ptr<channel> m_channel;
 
             steady_timer m_shake_hand_timer;
 

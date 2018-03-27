@@ -24,7 +24,7 @@ namespace matrix
             , m_recv_buf(len)
             , m_send_buf(new byte_buf(DEFAULT_BUF_LEN))
             , m_socket(*ios)
-            , m_socket_handler(func(this))
+            , m_handler_functor(func)
         {
 
         }
@@ -36,6 +36,8 @@ namespace matrix
 
         int32_t tcp_socket_channel::start()
         {
+            m_socket_handler.reset(m_handler_functor(shared_from_this()));
+
             init_option();
 
             //get remote addr and begin to read
@@ -128,7 +130,7 @@ namespace matrix
                 //aborted, maybe cancel triggered
                 if (boost::asio::error::operation_aborted == error.value())
                 {
-                    LOG_DEBUG << "tcp socket channel on read aborted: " << error.value() << " " << error.message() << m_sid.to_string();
+                    LOG_DEBUG << "tcp socket channel on read aborted: " << error.value() << " " << error.message();
                     return;
                 }
 
@@ -266,7 +268,7 @@ namespace matrix
                 //aborted, maybe cancel triggered
                 if (boost::asio::error::operation_aborted == error.value())
                 {
-                    LOG_DEBUG << "tcp socket channel on write aborted: " << error.value() << " " << error.message() << m_sid.to_string();
+                    LOG_DEBUG << "tcp socket channel on write aborted: " << error.value() << " " << error.message();
                     return;
                 }
 
