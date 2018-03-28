@@ -23,7 +23,7 @@ using namespace boost::asio;
 using namespace boost::asio::ip;
 
 
-#define DEFAULT_LISTEN_BACKLOG                          8                               //default listen backlog
+#define DEFAULT_LISTEN_BACKLOG                          32                               //default listen backlog
 
 
 namespace matrix
