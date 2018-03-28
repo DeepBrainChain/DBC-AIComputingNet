@@ -13,7 +13,7 @@
 #include "service_message_id.h"
 
 
-#pragma warning(disable : 4996)
+//#pragma warning(disable : 4996)
 
 namespace matrix
 {

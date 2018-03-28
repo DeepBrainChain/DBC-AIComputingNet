@@ -19,11 +19,13 @@ namespace matrix
     {
 
         matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<channel> ch)
-            : m_channel(ch)
+            : m_stopped(false)
+            , m_channel(ch)
             , m_coder(new matrix_coder())
             , m_has_message(false)
             , m_login_success(false)
             , m_shake_hand_timer(*(ch->get_io_service()))
+            , m_sid(ch->id())
         {}
 
         matrix_socket_channel_handler::~matrix_socket_channel_handler()
@@ -34,6 +36,8 @@ namespace matrix
         int32_t matrix_socket_channel_handler::stop()
         {
             stop_shake_hand_timer();
+            m_stopped = true;
+
             return E_SUCCESS;
         }
 
@@ -52,7 +56,7 @@ namespace matrix
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
                     {
-                        msg->header.src_sid = m_channel->id();
+                        msg->header.src_sid = m_sid;
                         TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
                     }
 
@@ -72,7 +76,7 @@ namespace matrix
                 //decode error
                 else
                 {
-                    LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_channel->id().to_string();
+                    LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_sid.to_string();
                     on_error();
                     return E_DEFAULT;
                 }

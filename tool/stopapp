@@ -1,0 +1,242 @@
+#!/bin/sh
+#set -x
+
+###############################################
+# 获取启动了哪些进程和shell脚本
+# 结果输出到app.proc.argv文件中
+# 行记录格式: 进程名 进程ID [命令行参数...]
+#
+
+USERID=`id -u`
+
+GetProcArgv()
+{
+    APP_MPROC_LIST="dbc"
+    
+    for PROC_NAME in ${APP_MPROC_LIST}
+    do
+        #ps -efa | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}'") || ($8~/\/'${PROC_NAME}'$/)) && ($0~/-t [0-9]+/) && ($0~/-n [0-9]+/)) print}' | sed 's/java.*-t/so -t/' >> ${APP_PROC_ARGV_FILE}
+        #PROC_ID=`ps -efa | awk '{ if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}'") || ($8~/\/'${PROC_NAME}'$/)) && ($0~/-t [0-9]+/) && ($0~/-n [0-9]+/)) print $2}'`
+        #PIDINFO="$PROC_ID $PIDINFO"
+
+        if [ "${PROC_NAME}" = "nginx" ]; then
+            ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}:'") || ($8~/\/'${PROC_NAME}:'$/)) && ($9 == "master")) print}' | sed 's/nginx.*/nginx/' >> ${APP_PROC_ARGV_FILE}
+            
+            PROC_ID=`ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}:'") || ($8~/\/'${PROC_NAME}:'$/)) && ($9 == "master")) print $2}'`
+            PIDINFO="$PROC_ID $PIDINFO"
+        else
+            ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}'") || ($8~/\/'${PROC_NAME}'$/))) print}' | sed 's/java.*-t/so -t/' | sed 's/java.*DnodeType=90.*/coportal/' | sed 's/java.*DnodeType=801.*/bfmsso/' | sed 's/java.*DnodeType=80.*/bfm/' >> ${APP_PROC_ARGV_FILE}
+
+            PROC_ID=`ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}'") || ($8~/\/'${PROC_NAME}'$/))) print $2}'`
+            PIDINFO="$PROC_ID $PIDINFO"
+        fi
+
+    done
+}
+
+PrintAlign()
+{
+    echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb" >>$LOG_FILE
+    
+    # $1进程名, $2节点类型, $3节点ID
+    NODE_TYPE_TMP=`echo $2 | sed 's/ //g'`
+    if [ "${NODE_TYPE_TMP}" = "" ]; then
+        PROC_INFO="$1"
+    else
+        PROC_INFO="$1 -t $2 -n $3"
+    fi
+    
+    # 计算长度    
+    STR_LEN=`echo $PROC_INFO|awk '{print length($0)}'`
+    
+
+    echo $aaa "${PROC_INFO} $bbb" | tee -a $LOG_FILE
+
+    SEPIND=""
+    COUNTER=$STR_LEN
+      
+    while [ $COUNTER -lt 50 ]
+    do
+        SEPIND="$SEPIND."
+        COUNTER=`expr $COUNTER + 1`
+    done
+    echo $aaa "$SEPIND $bbb" | tee -a $LOG_FILE
+}
+
+sleep 1
+
+UNAME=`uname -s`
+#mkdir -p ${STARTAPP_ROOT}/log
+LOG_FILE=./stopapp.log
+if [ !  -f  $LOG_FILE ]; then
+rm -rf LOG_FILE > /dev/null 2>&1
+cat >$LOG_FILE<<! 
+!
+fi
+
+aaa='-n'              #echo后不要换行,Linux下是 echo -n string 其他平台是 echo string \c
+bbb='\c'              #
+SYSTEM=`uname -s`
+if [ "$SYSTEM" = "Linux" ] 
+then
+    aaa='-n'
+    bbb=""
+else
+    aaa=""
+    bbb='\c'
+fi
+
+echo "" | tee -a $LOG_FILE
+echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb"  >>$LOG_FILE
+echo "stopapp V1.0"  | tee -a $LOG_FILE
+echo ""
+echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb" >>$LOG_FILE
+echo "shutdown all processes" | tee -a $LOG_FILE
+PIDINFO=""
+
+
+# 用于保存网关启动的所有进程完成命令行参数信息
+# 行记录格式: 进程名 进程ID [命令行参数...]
+APP_PROC_ARGV_FILE="stopapp.proc"
+if [ -f ${APP_PROC_ARGV_FILE} ]; then
+    rm -rf ${APP_PROC_ARGV_FILE}
+fi
+
+# 获取启动了哪些进程和shell脚本，输出到app.proc.argv文件
+# 文件内容格式: 进程名 进程PID [节点类型] [节点ID]
+GetProcArgv
+
+# 获取startapp进程id, HP下$9为"startapp"
+STARTAPP_PID=`ps -efa |awk '{ if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && ($8 == "startapp" || $8~/\/startapp$/ || $9 == "startapp" || $9~/\/startapp$/) ) print $2}' | tr -s "\n" " "`
+#echo $STARTAPP_PID
+
+
+PIDINFO="$STARTAPP_PID $PIDINFO"
+
+for iPID in $PIDINFO
+do
+    kill -CONT $iPID > /dev/null 2>&1
+done
+
+# startapp不存在
+if test "$STARTAPP_PID" = ""
+then
+    # 进程不是startapp拉起的情况
+    # 需要单独kill掉每个进程
+
+    # 从APP_PROC_ARGV_FILE文件中kill掉进程
+    if [ -f ${APP_PROC_ARGV_FILE} ]
+    then
+        while read USERNAME PROCPID PARENTPID C STIME TTY STARTTIME PROCNAME PARAMTYPE NODETYPE PARAMID NODEID 
+        do
+            if test "${PROCPID}" != ""
+            then
+                if [ "${PROCNAME}" = "nginx" ]; then
+                    kill -TERM ${PROCPID} > /dev/null 2>&1
+                elif [ "${PROCNAME}" = "bfm" ]; then
+                    kill -9 ${PROCPID} > /dev/null 2>&1
+                elif [ "${PROCNAME}" = "bfmsso" ]; then
+                    kill -9 ${PROCPID} > /dev/null 2>&1
+                elif [ "${PROCNAME}" = "coportal" ]; then
+                    kill -9 ${PROCPID} > /dev/null 2>&1
+                else
+                    kill -USR2 ${PROCPID} > /dev/null 2>&1
+                fi
+            fi
+        done < ${APP_PROC_ARGV_FILE}
+    fi
+else
+    # 进程是startapp拉起的情况
+    # 只需要给startapp发送kill信号, startapp会处理信号, 退出所有子进程
+    if test "$STARTAPP_PID" != ""
+    then
+    for PID in $STARTAPP_PID
+    do
+        if kill -USR2 $PID > /dev/null 2>&1
+        then
+            echo $aaa $bbb
+        else
+            echo "Process startapp($PID) can not be stopped at " `date` >>$LOG_FILE
+        fi
+    done
+    fi   
+fi
+
+
+#sleep before kill pids
+#CONF_FILE=${STARTAPP_ROOT}/conf/config.xml
+#awk -F">" '{print $2}' $CONF_FILE| grep sleepTime > timeStop.txt
+#timeStop=`awk -F"<" '{print $1}' timeStop.txt` 
+#rm timeStop.txt
+
+#if [ $timeStop -ge 0 ] > /dev/null 2>&1
+#then 
+#    echo "wait $timeStop seconds before exit app."
+#    echo ""
+#else
+#    echo "sleepTime is not correct, using default value 30."
+#    echo ""
+#    timeStop=30
+#fi
+
+
+# 从APP_PROC_ARGV_FILE文件中读取进程信息
+# 查找进程是否还存在, 如果存在等待3s之后, 直接kill -9杀掉
+if [ -f ${APP_PROC_ARGV_FILE} ]
+then
+    while read USERNAME PROCPID PARENTPID C STIME TTY STARTTIME PROCNAME PARAMTYPE NODETYPE PARAMID NODEID
+    do
+        PrintAlign ${PROCNAME} ${NODETYPE} ${NODEID}
+        LOOPCNT=0
+        while true
+        do
+            sleep 1
+            
+            LOOPCNT=`expr $LOOPCNT + 1`
+            
+            PROC_PID=`ps -efa | awk '{ if ($2 == "'${PROCPID}'") print $2}'`
+
+            if test "${PROC_PID}" = ""
+            then
+                echo "[OK]" | tee -a $LOG_FILE
+                break
+            elif test ${LOOPCNT} -ge $timeStop
+            then
+                if [ "${PROCNAME}" = "nginx" ]; then
+                    kill -TERM ${PROCPID} > /dev/null 2>&1
+                else
+                    # sleep了timeStop秒, 直接kill -9
+                    kill -9 ${PROCPID} > /dev/null 2>&1
+                fi
+                echo "[OK]*" | tee -a $LOG_FILE
+                break
+            fi
+        done
+    done < ${APP_PROC_ARGV_FILE}
+fi
+
+
+# 最后记得删除临时文件
+if [ -f ${APP_PROC_ARGV_FILE} ]; then
+    rm -rf ${APP_PROC_ARGV_FILE}
+fi
+
+
+#=================================================================================
+STARTAPP_PID=`ps -efa |awk '{ if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) &&  \
+        ( ($8 == "startapp") || (($8 == "sh" || $8 == "/bin/sh") && ($9  =="startapp" || $9  == "'${STARTAPP_ROOT}/bin'/startapp" || $9  =="./startapp")) || \
+          ($9 == "startapp") || (($9 == "sh" || $9 == "/bin/sh") && ($10 =="startapp" || $10 == "'${STARTAPP_ROOT}/bin'/startapp" || $9  =="./startapp")) )) \
+        print $2}' |head -1`
+
+if test "${STARTAPP_PID}" != "" 
+then
+    kill -9 $STARTAPP_PID > /dev/null 2>&1
+fi
+#=================================================================================
+
+echo ""
+echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb" >>$LOG_FILE
+echo "system is down." | tee -a $LOG_FILE
+echo ""
+
+exit 0

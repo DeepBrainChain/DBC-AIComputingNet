@@ -25,7 +25,7 @@
 #include "common_def.h"
 #include "log.h"
 
-#pragma warning(disable : 4996)
+//#pragma warning(disable : 4996)
 
 
 

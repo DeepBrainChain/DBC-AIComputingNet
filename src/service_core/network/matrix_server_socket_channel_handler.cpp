@@ -20,9 +20,16 @@ namespace matrix
             , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
             , m_wait_ver_req_timer(*(ch->get_io_service()))
         {
+            //shake hand timer
             m_shake_hand_timer_handler =
                 [&](const boost::system::error_code & error)
             {
+                if (true == m_stopped)
+                {
+                    LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
+                    return;
+                }
+
                 if (error)
                 {
                     //aborted, maybe cancel triggered
@@ -32,7 +39,7 @@ namespace matrix
                         return;
                     }
 
-                    LOG_ERROR << "matrix server socket channel handler timer error: " << error.value() << " " << error.message() << m_channel->id().to_string();
+                    LOG_ERROR << "matrix server socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
                     m_channel->on_error();
                     return;
                 }
@@ -50,9 +57,16 @@ namespace matrix
                 m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
             };
 
+            //wait ver req timer
             m_wait_ver_req_timer_handler =
                 [&](const boost::system::error_code & error)
             {
+                if (true == m_stopped)
+                {
+                    LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and m_wait_ver_req_timer_handler exit directly" << m_sid.to_string();
+                    return;
+                }
+
                 if (error)
                 {
                     //aborted, maybe cancel triggered
@@ -62,7 +76,7 @@ namespace matrix
                         return;
                     }
 
-                    LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error.value() << " " << error.message() << m_channel->id().to_string();
+                    LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error.value() << " " << error.message() << m_sid.to_string();
                     m_channel->on_error();
                     return;
                 }
@@ -70,9 +84,9 @@ namespace matrix
                 //time out and disconnect tcp socket
                 if (m_wait_ver_req_timer.expires_at() < std::chrono::steady_clock::now())
                 {
-                    LOG_ERROR << "matrix server socket channel handler connect successfully but no message received, " << m_channel->id().to_string();
+                    LOG_ERROR << "matrix server socket channel handler connect successfully but no message received, " << m_sid.to_string();
 
-                    stop_wait_ver_req_timer();
+                    //stop_wait_ver_req_timer();
                     m_channel->on_error();
                     return;
                 }
@@ -87,6 +101,8 @@ namespace matrix
             //release timer
             stop_wait_ver_req_timer();
             stop_shake_hand_timer();
+
+            m_stopped = true;
 
             return E_SUCCESS;
         }
@@ -135,7 +151,7 @@ namespace matrix
                 m_login_success = true;
                 start_shake_hand_timer();
 
-                LOG_DEBUG << "matrix server socket channel handler start shake hand timer, socket number: " << m_channel->id().get_id();
+                LOG_DEBUG << "matrix server socket channel handler start shake hand timer, " << m_sid.to_string();
                 return E_SUCCESS;
             }
 
@@ -173,7 +189,7 @@ namespace matrix
             m_wait_ver_req_timer.expires_from_now(std::chrono::seconds(DEFAULT_WAIT_VER_REQ_INTERVAL));
             m_wait_ver_req_timer.async_wait(m_wait_ver_req_timer_handler);
 
-            LOG_DEBUG << "matrix server socket channel handler start wait ver req timer, " << m_channel->id().to_string();
+            LOG_DEBUG << "matrix server socket channel handler start wait ver req timer, " << m_sid.to_string();
         }
 
         void matrix_server_socket_channel_handler::stop_wait_ver_req_timer()
@@ -187,7 +203,7 @@ namespace matrix
             }
             else
             {
-                LOG_DEBUG << "matrix server socket channel handler stop wait ver req timer, " << m_channel->id().to_string();
+                LOG_DEBUG << "matrix server socket channel handler stop wait ver req timer, " << m_sid.to_string();
             }
         }
 
