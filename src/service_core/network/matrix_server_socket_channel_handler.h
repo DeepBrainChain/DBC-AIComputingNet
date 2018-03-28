@@ -14,8 +14,8 @@
 #include "matrix_socket_channel_handler.h"
 
 
-#define LOST_SHAKE_HAND_COUNT_MAX               30                  //max lost 10 shake hand req
-#define DEFAULT_WAIT_VER_REQ_INTERVAL         120                   //wait VER_REQ interval while socket accepted
+#define LOST_SHAKE_HAND_COUNT_MAX               60                  //max lost 10 shake hand req
+#define DEFAULT_WAIT_VER_REQ_INTERVAL         180                   //wait VER_REQ interval while socket accepted
 
 
 using namespace boost::asio;
@@ -33,6 +33,8 @@ namespace matrix
 
             virtual ~matrix_server_socket_channel_handler() = default;
 
+            virtual int32_t start();
+
             virtual int32_t stop();
 
             virtual int32_t on_after_msg_received(message &msg);
@@ -41,7 +43,7 @@ namespace matrix
 
             virtual int32_t on_before_msg_receive();
 
-            static socket_channel_handler * create(std::shared_ptr<channel> ch) { return new matrix_server_socket_channel_handler(ch); }
+            static std::shared_ptr<socket_channel_handler> create(std::shared_ptr<channel> ch);
 
         protected:
 

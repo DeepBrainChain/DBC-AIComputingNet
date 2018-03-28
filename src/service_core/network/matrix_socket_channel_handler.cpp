@@ -52,6 +52,9 @@ namespace matrix
                 //decode success
                 if (DECODE_SUCCESS == status)
                 {
+
+                    LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
+
                     //send to bus
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
@@ -85,6 +88,9 @@ namespace matrix
 
         int32_t matrix_socket_channel_handler::on_write(channel_handler_context &ctx, message &msg, byte_buf &buf)
         {
+
+            LOG_DEBUG << "socket channel handler send msg: " << msg.get_name() << m_sid.to_string();
+
             encode_status status = m_coder->encode(ctx, msg, buf);
             if (ENCODE_SUCCESS == status)
             {

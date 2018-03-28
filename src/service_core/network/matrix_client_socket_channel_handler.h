@@ -32,7 +32,9 @@ namespace matrix
 
             virtual ~matrix_client_socket_channel_handler() = default;
 
-            static socket_channel_handler * create(std::shared_ptr<channel> ch) { return new matrix_client_socket_channel_handler(ch); }
+            virtual int32_t start();
+
+            static std::shared_ptr<socket_channel_handler> create(std::shared_ptr<channel> ch);
 
             virtual int32_t on_after_msg_received(message &msg);
 

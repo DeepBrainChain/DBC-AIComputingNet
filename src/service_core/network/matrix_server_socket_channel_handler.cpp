@@ -20,10 +20,18 @@ namespace matrix
             , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
             , m_wait_ver_req_timer(*(ch->get_io_service()))
         {
+
+        }
+
+        int32_t matrix_server_socket_channel_handler::start()
+        {
+            auto self(shared_from_this());
+
             //shake hand timer
             m_shake_hand_timer_handler =
-                [=](const boost::system::error_code & error)
+                [this, self](const boost::system::error_code & error)
             {
+
                 if (true == m_stopped)
                 {
                     LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
@@ -65,7 +73,7 @@ namespace matrix
 
             //wait ver req timer
             m_wait_ver_req_timer_handler =
-                [=](const boost::system::error_code & error)
+                [this, self] (const boost::system::error_code & error)
             {
                 if (true == m_stopped)
                 {
@@ -106,6 +114,9 @@ namespace matrix
                 //restart timer for not time out
                 start_wait_ver_req_timer();
             };
+
+            return E_SUCCESS;
+
         }
 
         int32_t matrix_server_socket_channel_handler::stop()
@@ -182,6 +193,12 @@ namespace matrix
         {
             start_wait_ver_req_timer();
             return E_SUCCESS;
+        }
+
+        std::shared_ptr<socket_channel_handler> matrix_server_socket_channel_handler::create(std::shared_ptr<channel> ch)
+        { 
+            shared_ptr<socket_channel_handler> handler(new matrix_server_socket_channel_handler(ch));
+            return handler->shared_from_this();
         }
 
         void matrix_server_socket_channel_handler::send_shake_hand_resp()
