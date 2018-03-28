@@ -321,6 +321,9 @@ namespace matrix
         int32_t connection_manager::add_channel(socket_id sid, shared_ptr<channel> channel)
         {
             write_lock_guard<rw_lock> lock(m_lock);
+
+            LOG_DEBUG << "channel add channel begin use count " << channel.use_count() << channel->id().to_string();
+
             std::pair<std::map<socket_id, shared_ptr<matrix::core::channel>, cmp_key>::iterator, bool> ret = m_channels.insert(make_pair(sid, channel));
             if (!ret.second)
             {
@@ -330,6 +333,8 @@ namespace matrix
             else
             {
                 LOG_DEBUG << "connection manager add channel successfully " << sid.to_string();
+                LOG_DEBUG << "channel add channel end use count " << channel.use_count() << channel->id().to_string();
+
                 return E_SUCCESS;
             }
         }
@@ -337,8 +342,15 @@ namespace matrix
         void connection_manager::remove_channel(socket_id sid)
         {
             write_lock_guard<rw_lock> lock(m_lock);
+
+            //log use count
+            shared_ptr<channel> ch = m_channels.find(sid)->second;
+            LOG_DEBUG << "channel remove_channel begin use count " << ch.use_count() << ch->id().to_string();
+
             m_channels.erase(sid);
             LOG_DEBUG << "connection manager remove channel successfully " << sid.to_string();
+
+            LOG_DEBUG << "channel remove_channel end use count " << ch.use_count() << ch->id().to_string();
         }
 
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)

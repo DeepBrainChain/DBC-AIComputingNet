@@ -40,7 +40,10 @@ namespace matrix
                     }
 
                     LOG_ERROR << "matrix server socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return;
                 }
 
@@ -48,7 +51,10 @@ namespace matrix
                 if (++m_lost_shake_hand_count >= m_lost_shake_hand_count_max)
                 {
                     LOG_ERROR << "matrix server socket channel handler lost shake hand count error timers: " << m_lost_shake_hand_count;
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return;
                 }
 
@@ -77,7 +83,10 @@ namespace matrix
                     }
 
                     LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return;
                 }
 
@@ -87,7 +96,10 @@ namespace matrix
                     LOG_ERROR << "matrix server socket channel handler connect successfully but no message received, " << m_sid.to_string();
 
                     //stop_wait_ver_req_timer();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return;
                 }
 
@@ -114,7 +126,10 @@ namespace matrix
                 if (VER_REQ != msg.get_name())
                 {
                     LOG_ERROR << "matrix server socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return E_SUCCESS;
                 }
             }
@@ -124,7 +139,10 @@ namespace matrix
                 if (true == m_login_success)
                 {
                     LOG_ERROR << "matrix server socket channel received duplicated VER_REQ message" << msg.header.src_sid.to_string();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return E_SUCCESS;
                 }
                 else
@@ -181,7 +199,11 @@ namespace matrix
 
             resp_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             resp_msg->set_name(SHAKE_HAND_RESP);
-            m_channel->write(resp_msg);
+
+            if (auto ch = m_channel.lock())
+            {
+                ch->write(resp_msg);
+            }
         }
 
         void matrix_server_socket_channel_handler::start_wait_ver_req_timer()
