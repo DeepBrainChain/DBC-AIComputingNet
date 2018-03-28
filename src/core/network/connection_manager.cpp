@@ -341,6 +341,17 @@ namespace matrix
             return it->second->write(msg);
         }
 
+		void connection_manager::broadcast_message(std::shared_ptr<message> msg)
+		{
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
+			auto it = m_channels.begin();
+			for (; it != m_channels.end(); ++it)
+			{
+				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
+				it->second->write(msg);
+			}			
+		}
+
     }
 
 }
