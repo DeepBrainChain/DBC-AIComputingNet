@@ -82,8 +82,12 @@ namespace matrix
             virtual int32_t stop_all_channel();
 
         protected:
+			//mutex
+            rw_lock m_lock_conn;//connector
 
-            rw_lock m_lock;
+			rw_lock m_lock_accp;//acceptor
+
+			rw_lock m_lock_chnl;//channels
 
             //io service group
             nio_loop_ptr m_worker_group;

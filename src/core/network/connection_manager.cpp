@@ -159,7 +159,7 @@ namespace matrix
 
          int32_t connection_manager::stop_all_listen()
         {
-            read_lock_guard<rw_lock> lock(m_lock);
+            read_lock_guard<rw_lock> lock(m_lock_accp);
             for (auto it = m_acceptors.begin(); it != m_acceptors.end(); it++)
             {
                 LOG_DEBUG << "connection manager stop listening at port: " << (*it)->get_endpoint().port();
@@ -171,7 +171,7 @@ namespace matrix
 
         int32_t connection_manager::stop_all_connect()
         {
-            read_lock_guard<rw_lock> lock(m_lock);
+            read_lock_guard<rw_lock> lock(m_lock_conn);
             for (auto it = m_connectors.begin(); it != m_connectors.end(); it++)
             {
                 LOG_DEBUG << "connection manager stop connect at addr: " << (*it)->get_connect_addr().address() << " port: " << (*it)->get_connect_addr().port();
@@ -183,7 +183,7 @@ namespace matrix
 
         int32_t connection_manager::stop_all_channel()
         {
-            read_lock_guard<rw_lock> lock(m_lock);
+            read_lock_guard<rw_lock> lock(m_lock_chnl);
             for (auto it = m_channels.begin(); it != m_channels.end(); it++)
             {
                 LOG_DEBUG << "connection manager stop tcp channel at  " << it->second->id().to_string();
@@ -210,7 +210,7 @@ namespace matrix
                     return ret;
                 }
 
-                write_lock_guard<rw_lock> lock(m_lock);
+                write_lock_guard<rw_lock> lock(m_lock_accp);
                 m_acceptors.push_back(acceptor);
             }
             catch (const boost::exception & e)
@@ -229,7 +229,7 @@ namespace matrix
 
         int32_t connection_manager::stop_listen(tcp::endpoint ep)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_accp);
             for (auto it = m_acceptors.begin(); it != m_acceptors.end(); it++)
             {
                 if (ep != (*it)->get_endpoint())
@@ -266,7 +266,7 @@ namespace matrix
                     return ret;
                 }
 
-                write_lock_guard<rw_lock> lock(m_lock);
+                write_lock_guard<rw_lock> lock(m_lock_conn);
                 m_connectors.push_back(connector);
             }
             catch (const boost::exception & e)
@@ -285,7 +285,7 @@ namespace matrix
 
         int32_t connection_manager::stop_connect(tcp::endpoint connect_addr)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_conn);
             for (auto it = m_connectors.begin(); it != m_connectors.end(); it++)
             {
                 if (connect_addr != (*it)->get_connect_addr())
@@ -307,7 +307,7 @@ namespace matrix
 
         int32_t connection_manager::add_channel(socket_id sid, shared_ptr<channel> channel)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_chnl);
             std::pair<std::map<socket_id, shared_ptr<matrix::core::channel>, cmp_key>::iterator, bool> ret = m_channels.insert(make_pair(sid, channel));
             if (!ret.second)
             {
@@ -323,12 +323,13 @@ namespace matrix
 
         void connection_manager::remove_channel(socket_id sid)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_chnl);
             m_channels.erase(sid);
         }
 
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)
         {
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
             auto it = m_channels.find(sid);
             if (it == m_channels.end())
             {
