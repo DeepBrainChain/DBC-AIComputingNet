@@ -181,7 +181,7 @@ namespace matrix
                     else if (move_len < m_len)
                     {
                         //move bytes
-                        memcpy(m_buf.get(), m_read_ptr, move_len);
+                        memmove(m_buf.get(), m_read_ptr, move_len);
 
                         //move ptr
                         m_read_ptr = m_buf.get();
