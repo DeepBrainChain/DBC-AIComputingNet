@@ -178,6 +178,7 @@ namespace ai
                 cout << opts;
             }
 
+			return E_BAD_PARAM;
         }
 
     }
