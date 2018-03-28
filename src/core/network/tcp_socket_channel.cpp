@@ -209,7 +209,7 @@ namespace matrix
             if (true == m_stopped)
             {
                 LOG_DEBUG << "tcp socket channel has been stopped and write exit directly: " << m_sid.to_string();
-                return;
+                return E_DEFAULT;
             }
 
             {
