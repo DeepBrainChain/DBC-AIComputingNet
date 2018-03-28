@@ -148,6 +148,13 @@ namespace matrix
                     return;
                 }
 
+                if (121 == error.value())
+                {
+                    LOG_DEBUG << "tcp socket channel transmission timeout: " << error.value() << " " << error.message();
+                    async_read();
+                    return;
+                }
+
                 //other error
                 LOG_ERROR << "tcp socket channel on read error: " << error.value() << " "  << error.message() << m_sid.to_string();
                 on_error();
