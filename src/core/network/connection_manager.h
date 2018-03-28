@@ -20,9 +20,9 @@
 using namespace std;
 
 
-#define DEFAULT_ACCEPTOR_THREAD_COUNT           1
+#define DEFAULT_ACCEPTOR_THREAD_COUNT            1
 #define DEFAULT_CONNECTOR_THREAD_COUNT        1
-#define DEFAULT_WORKER_THREAD_COUNT              4
+#define DEFAULT_WORKER_THREAD_COUNT               8
 
 namespace matrix
 {
