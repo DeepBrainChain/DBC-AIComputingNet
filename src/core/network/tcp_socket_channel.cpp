@@ -37,14 +37,14 @@ namespace matrix
 
         int32_t tcp_socket_channel::start()
         {
-            //delay inject
-            m_socket_handler.reset(m_handler_functor(shared_from_this()));
-
             //option
             init_option();
 
             //get remote addr and begin to read
             m_remote_addr = m_socket.remote_endpoint();
+
+            //delay inject
+            m_socket_handler = m_handler_functor(shared_from_this());
 
             //start handler
             m_socket_handler->start();

@@ -17,8 +17,15 @@ namespace matrix
         matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(std::shared_ptr<channel> ch)
             : matrix_socket_channel_handler(ch)
         {
+ 
+        }
+
+        int32_t matrix_client_socket_channel_handler::start()
+        {
+            auto self(shared_from_this());
+
             m_shake_hand_timer_handler =
-                [=](const boost::system::error_code & error)
+                [this, self](const boost::system::error_code & error)
             {
                 if (true == m_stopped)
                 {
@@ -56,6 +63,8 @@ namespace matrix
                 m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
                 m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
             };
+
+            return E_SUCCESS;
         }
 
         int32_t matrix_client_socket_channel_handler::on_after_msg_received(message &msg)
@@ -92,6 +101,12 @@ namespace matrix
             }
 
             return E_SUCCESS;
+        }
+
+        std::shared_ptr<socket_channel_handler> matrix_client_socket_channel_handler::create(std::shared_ptr<channel> ch)
+        {
+            shared_ptr<socket_channel_handler> handler(new matrix_client_socket_channel_handler(ch));
+            return handler->shared_from_this();
         }
 
         void matrix_client_socket_channel_handler::send_shake_hand_req()

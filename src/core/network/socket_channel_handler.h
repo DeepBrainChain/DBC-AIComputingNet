@@ -9,16 +9,19 @@
 **********************************************************************************/
 #pragma once
 
+#include <boost/enable_shared_from_this.hpp>
 #include "byte_buf.h"
 #include "service_message.h"
 #include "channel_handler_context.h"
+
+
 
 namespace matrix
 {
     namespace core
     {
 
-        class socket_channel_handler
+        class socket_channel_handler : public std::enable_shared_from_this<socket_channel_handler>, public boost::noncopyable
         {
         public:
 
