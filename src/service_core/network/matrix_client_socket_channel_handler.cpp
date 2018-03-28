@@ -36,7 +36,10 @@ namespace matrix
                     }
 
                     LOG_ERROR << "matrix client socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return;
                 }
 
@@ -60,7 +63,10 @@ namespace matrix
             if (false == m_login_success && VER_RESP != msg.get_name())
             {
                 LOG_ERROR << "matrix client socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
-                m_channel->on_error();
+                if (auto ch = m_channel.lock())
+                {
+                    ch->on_error();
+                }
                 return E_SUCCESS;
             }
 
@@ -77,7 +83,10 @@ namespace matrix
                 else
                 {
                     LOG_ERROR << "matrix client socket channel handler received duplicated VER_RESP" << m_sid.to_string();
-                    m_channel->on_error();
+                    if (auto ch = m_channel.lock())
+                    {
+                        ch->on_error();
+                    }
                     return E_DEFAULT;
                 }
             }
@@ -100,7 +109,11 @@ namespace matrix
 
             req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             req_msg->set_name(SHAKE_HAND_REQ);
-            m_channel->write(req_msg);
+
+            if (auto ch = m_channel.lock())
+            {
+                ch->write(req_msg);
+            }
         }
 
     }

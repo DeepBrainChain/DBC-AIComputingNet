@@ -113,7 +113,10 @@ namespace matrix
 
         int32_t matrix_socket_channel_handler::on_error()
         {
-            m_channel->on_error();
+            if (auto ch = m_channel.lock())
+            {
+                ch->on_error();
+            }
             return E_SUCCESS;
         }
 

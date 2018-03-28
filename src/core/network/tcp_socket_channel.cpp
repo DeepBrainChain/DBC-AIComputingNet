@@ -250,6 +250,7 @@ namespace matrix
                 m_send_buf->reset();                     //queue is empty means send buf has been sent completely
 
                 //encode
+                assert(nullptr != m_socket_handler);
                 if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
                 {
                     LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
@@ -257,7 +258,7 @@ namespace matrix
                     return E_DEFAULT;
                 }
 
-                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buffer: " << m_send_buf->to_string();
+                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buf: " << m_send_buf->to_string();
 
                 //send directly
                 async_write(m_send_buf);
@@ -353,7 +354,7 @@ namespace matrix
                             return;
                         }
 
-                        LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buffer: " << m_send_buf->to_string();
+                        LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buf: " << m_send_buf->to_string();
 
                         //new message send
                         async_write(m_send_buf);

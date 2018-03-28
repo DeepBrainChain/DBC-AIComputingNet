@@ -77,7 +77,7 @@ namespace matrix
 
             std::shared_ptr<matrix_coder> m_coder;
 
-            std::shared_ptr<channel> m_channel;
+            std::weak_ptr<channel> m_channel;
 
             steady_timer m_shake_hand_timer;
 
