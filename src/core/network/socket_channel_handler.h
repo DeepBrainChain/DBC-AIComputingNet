@@ -20,6 +20,10 @@ namespace matrix
 
         class socket_channel_handler
         {
+		public:
+
+			virtual ~socket_channel_handler() {}
+
         public:
 
             virtual int32_t start() = 0;
