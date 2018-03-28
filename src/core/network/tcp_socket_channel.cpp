@@ -205,6 +205,13 @@ namespace matrix
 
         int32_t tcp_socket_channel::write(std::shared_ptr<message> msg)
         {
+
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "tcp socket channel has been stopped and write exit directly: " << m_sid.to_string();
+                return;
+            }
+
             {
                 std::unique_lock<std::mutex> lock(m_queue_mutex);
 
