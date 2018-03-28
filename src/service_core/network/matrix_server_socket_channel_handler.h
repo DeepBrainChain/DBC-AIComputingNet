@@ -15,7 +15,7 @@
 
 
 #define LOST_SHAKE_HAND_COUNT_MAX               3                  //max lost 10 shake hand req
-#define DEFAULT_WAIT_VER_REQ_INTERVAL           30                   //wait VER_REQ interval while socket accepted
+#define DEFAULT_WAIT_VER_REQ_INTERVAL         120                   //wait VER_REQ interval while socket accepted
 
 
 using namespace boost::asio;

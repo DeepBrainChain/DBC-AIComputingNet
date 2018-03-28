@@ -20,6 +20,12 @@ namespace matrix
             m_shake_hand_timer_handler =
                 [&](const boost::system::error_code & error)
             {
+                if (true == m_stopped)
+                {
+                    LOG_DEBUG << "matrix_client_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
+                    return;
+                }
+
                 if (error)
                 {
                     //aborted, maybe cancel triggered
@@ -29,7 +35,7 @@ namespace matrix
                         return;
                     }
 
-                    LOG_ERROR << "matrix client socket channel handler timer error: " << error.value() << " " << error.message() << m_channel->id().to_string();
+                    LOG_ERROR << "matrix client socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
                     m_channel->on_error();
                     return;
                 }
@@ -65,12 +71,12 @@ namespace matrix
                     m_login_success = true;
                     start_shake_hand_timer();
 
-                    LOG_DEBUG << "matrix client socket channel handler start shake hand timer, socket number: " << m_channel->id().get_id();
+                    LOG_DEBUG << "matrix client socket channel handler start shake hand timer, " << m_sid.to_string();
                     return E_SUCCESS;
                 }
                 else
                 {
-                    LOG_ERROR << "matrix client socket channel handler received duplicated VER_RESP" << msg.header.src_sid.to_string();
+                    LOG_ERROR << "matrix client socket channel handler received duplicated VER_RESP" << m_sid.to_string();
                     m_channel->on_error();
                     return E_DEFAULT;
                 }

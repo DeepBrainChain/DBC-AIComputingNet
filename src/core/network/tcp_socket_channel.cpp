@@ -11,7 +11,7 @@
 #include "service_message_id.h"
 #include <boost/exception/all.hpp>
 
-#pragma warning(disable : 4996)
+//#pragma warning(disable : 4996)
 
 namespace matrix
 {
@@ -19,7 +19,8 @@ namespace matrix
     {
 
         tcp_socket_channel::tcp_socket_channel(ios_ptr ios, socket_id sid, handler_create_functor func, int32_t len)
-            : m_ios(ios)
+            : m_stopped(false)
+            , m_ios(ios)
             , m_sid(sid)
             , m_recv_buf(len)
             , m_send_buf(new byte_buf(DEFAULT_BUF_LEN))
@@ -36,8 +37,10 @@ namespace matrix
 
         int32_t tcp_socket_channel::start()
         {
+            //delay inject
             m_socket_handler.reset(m_handler_functor(shared_from_this()));
 
+            //option
             init_option();
 
             //get remote addr and begin to read
@@ -65,6 +68,7 @@ namespace matrix
             m_socket_handler->stop();
 
             //cancel
+            LOG_DEBUG << "tcp socket channel cancel socket: " << m_sid.to_string();
             m_socket.cancel(error);
             if (error)
             {
@@ -72,6 +76,7 @@ namespace matrix
             }
 
             //close
+            LOG_DEBUG << "tcp socket channel close socket: " << m_sid.to_string();
             m_socket.close(error);
             if (error)
             {
@@ -79,7 +84,10 @@ namespace matrix
             }
 
             std::unique_lock<std::mutex> lock(m_queue_mutex);
+            LOG_DEBUG << "tcp socket channel clear send queue: " << m_sid.to_string();
             m_send_queue.clear();
+
+            m_stopped = true;           //notify nio call back function, now i'm stopped and should exit ASAP
 
             return E_SUCCESS;
         }
@@ -124,6 +132,12 @@ namespace matrix
 
         void tcp_socket_channel::on_read(const boost::system::error_code& error, size_t bytes_transferred)
         {
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "tcp socket channel has been stopped and on_read exit directly: " << m_sid.to_string();
+                return;
+            }
+
             //read error
             if (error)
             {
@@ -158,7 +172,7 @@ namespace matrix
                 }
 
                 //log
-                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " rev buf: " << m_recv_buf.to_string();
+                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " recv buf: " << m_recv_buf.to_string();
 
                 //call back handler on_read
                 if (E_SUCCESS == m_socket_handler->on_read(m_handler_context, m_recv_buf))
@@ -263,6 +277,12 @@ namespace matrix
 
         void tcp_socket_channel::on_write(const boost::system::error_code& error, size_t bytes_transferred)
         {
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "tcp socket channel has been stopped and on_write exit directly: " << m_sid.to_string();
+                return;
+            }
+
             if (error)
             {
                 //aborted, maybe cancel triggered

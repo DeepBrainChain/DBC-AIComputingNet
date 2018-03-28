@@ -338,6 +338,7 @@ namespace matrix
         {
             write_lock_guard<rw_lock> lock(m_lock);
             m_channels.erase(sid);
+            LOG_DEBUG << "connection manager remove channel successfully " << sid.to_string();
         }
 
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)

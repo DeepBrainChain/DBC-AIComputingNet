@@ -116,6 +116,7 @@
       <PreprocessorDefinitions>WIN32;__DEBUG;_CONSOLE;%(PreprocessorDefinitions);CRT_SECURE_NO_WARNINGS;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x601</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <BrowseInformation>true</BrowseInformation>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

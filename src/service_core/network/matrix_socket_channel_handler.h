@@ -73,6 +73,8 @@ namespace matrix
 
         protected:
 
+            bool m_stopped;
+
             std::shared_ptr<matrix_coder> m_coder;
 
             std::shared_ptr<channel> m_channel;
@@ -84,6 +86,8 @@ namespace matrix
             bool m_has_message;
 
             bool m_login_success;
+
+            socket_id m_sid;
         };
 
     }
