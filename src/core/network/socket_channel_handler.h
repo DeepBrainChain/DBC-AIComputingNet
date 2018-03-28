@@ -22,7 +22,7 @@ namespace matrix
         {
 		public:
 
-			virtual ~socket_channel_handler() {}
+			virtual ~socket_channel_handler() = default;
 
         public:
 
