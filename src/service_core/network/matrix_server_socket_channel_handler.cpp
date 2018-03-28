@@ -22,7 +22,7 @@ namespace matrix
         {
             //shake hand timer
             m_shake_hand_timer_handler =
-                [&](const boost::system::error_code & error)
+                [=](const boost::system::error_code & error)
             {
                 if (true == m_stopped)
                 {
@@ -65,7 +65,7 @@ namespace matrix
 
             //wait ver req timer
             m_wait_ver_req_timer_handler =
-                [&](const boost::system::error_code & error)
+                [=](const boost::system::error_code & error)
             {
                 if (true == m_stopped)
                 {

@@ -18,7 +18,7 @@ namespace matrix
             : matrix_socket_channel_handler(ch)
         {
             m_shake_hand_timer_handler =
-                [&](const boost::system::error_code & error)
+                [=](const boost::system::error_code & error)
             {
                 if (true == m_stopped)
                 {
