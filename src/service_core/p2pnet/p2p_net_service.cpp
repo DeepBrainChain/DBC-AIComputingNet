@@ -132,7 +132,7 @@ namespace matrix
             }
 
             //config format: peer address=117.30.51.196:11107
-            std::vector<std::string> str_address = (*manager)["peer"].as<std::vector<std::string>>();
+            std::vector<std::string> str_address = (*manager)["peer"].as<std::vector<std::string> >();
 
             int count = 0;
             ip_validator ip_vdr;

@@ -67,6 +67,8 @@ namespace matrix
 
             int32_t send_message(socket_id sid, std::shared_ptr<message> msg);
 
+			void broadcast_message(std::shared_ptr<message> msg);
+
         protected:
 
             //io_services
