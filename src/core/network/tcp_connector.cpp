@@ -98,17 +98,6 @@ namespace matrix
                 //reset
                 m_reconnect_times = 0;
 
-                //add to connection manager
-                int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
-                if (E_SUCCESS != ret)
-                {
-                    LOG_ERROR << "tcp connector on connect error, add channel failed";
-                    return;
-                }
-
-                //publish
-                connect_notification(CLIENT_CONNECT_SUCCESS);
-
                 //start to work
                 if (E_SUCCESS != m_client_channel->start())
                 {
@@ -117,6 +106,17 @@ namespace matrix
                 else
                 {
                     LOG_DEBUG << "tcp connector channel start work successfully " << m_connect_addr << m_sid.to_string();
+
+                    //add to connection manager
+                    int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
+                    if (E_SUCCESS != ret)
+                    {
+                        LOG_ERROR << "tcp connector on connect error, add channel failed";
+                        return;
+                    }
+
+                    //publish
+                    connect_notification(CLIENT_CONNECT_SUCCESS);
                 }
             }
 
