@@ -200,6 +200,7 @@
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\p2pnet\peer_node.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -245,8 +246,10 @@
     <ClInclude Include="..\..\..\..\src\core\network\channel.h" />
     <ClInclude Include="..\..\..\..\src\core\network\channel_handler_context.h" />
     <ClInclude Include="..\..\..\..\src\core\network\connection_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\endpoint_address.h" />
     <ClInclude Include="..\..\..\..\src\core\network\handler_create_functor.h" />
     <ClInclude Include="..\..\..\..\src\core\network\io_service_wrapper.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\net_address.h" />
     <ClInclude Include="..\..\..\..\src\core\network\nio_loop_group.h" />
     <ClInclude Include="..\..\..\..\src\core\network\socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\core\network\socket_id.h" />
@@ -282,6 +285,7 @@
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_node.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

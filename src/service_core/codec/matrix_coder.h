@@ -9,6 +9,7 @@
 **********************************************************************************/
 #pragma once
 
+#include <unordered_map>
 #include "message_to_byte_encoder.h"
 #include "length_field_frame_decoder.h"
 #include "protocol.h"
@@ -53,7 +54,7 @@ namespace matrix
 
         protected:
 
-            std::map<std::string, decode_invoker_type> m_decode_invokers;
+            std::unordered_map<std::string, decode_invoker_type> m_decode_invokers;
 
         };
 

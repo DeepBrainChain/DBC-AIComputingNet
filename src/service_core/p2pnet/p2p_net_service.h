@@ -10,11 +10,16 @@
 #pragma once
 
 
-#include "service_module.h"
 #include <boost/asio.hpp>
 #include <string>
+#include<unordered_map>
+#include "service_module.h"
 #include "handler_create_functor.h"
+#include "peer_node.h"
 
+
+using namespace std;
+using namespace stdext;
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
@@ -27,6 +32,10 @@ namespace matrix
 
         class p2p_net_service : public service_module
         {
+
+            using peer_list_type = typename std::list<std::shared_ptr<peer_node>>;
+            using peer_map_type = typename unordered_map<std::string, std::shared_ptr<peer_node>>;
+
         public:
 
             p2p_net_service() = default;
@@ -35,6 +44,14 @@ namespace matrix
 
             virtual std::string module_name() const { return p2p_manager_name; }
 
+        public:
+
+            //peer node
+            void get_all_peer_nodes(peer_list_type &nodes);
+
+            std::shared_ptr<peer_node> get_peer_node(const std::string &id);
+
+            //config param
             std::string get_host_ip() const { return m_host_ip; }
 
             uint16_t get_main_net_listen_port() const {return m_main_net_listen_port;}
@@ -78,9 +95,14 @@ namespace matrix
 
             std::list<tcp::endpoint> m_peer_addresses;
 
+            rw_lock m_nodes_lock;
+
+            //peer_list_type m_peer_nodes;
+
+            peer_map_type m_peer_nodes_map;
+
         };
 
     }
 
 }
-

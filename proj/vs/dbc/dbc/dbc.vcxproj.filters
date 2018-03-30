@@ -238,6 +238,9 @@
     <ClCompile Include="..\..\..\..\src\api\api_call_handler.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\p2pnet\peer_node.cpp">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -476,6 +479,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\api\cmd_line_service.h">
       <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_node.h">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\net_address.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\endpoint_address.h">
+      <Filter>src\core\network</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
