@@ -49,21 +49,27 @@ namespace matrix
 
         int32_t service_module::run()
         {
+			queue_type tmp_msg_queue;
             while (!m_exited)
             {
                 //check memory leak
-                std::shared_ptr<message> msg;
 
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
                     m_cond.wait(lock, [this]()->bool {return !(this->is_empty());});
 
-                    //pop msg
-                    msg = m_msg_queue.front();
-                    m_msg_queue.pop();
+					m_msg_queue.swap(tmp_msg_queue);
                 }
 
-                on_invoke(msg);
+				//invoke each
+				std::shared_ptr<message> msg;
+				while(!tmp_msg_queue.empty())
+				{
+					//pop msg
+					msg = tmp_msg_queue.front();
+					tmp_msg_queue.pop();
+					on_invoke(msg);
+				}
             }
 
             return E_SUCCESS;
