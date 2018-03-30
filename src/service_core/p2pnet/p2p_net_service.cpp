@@ -33,6 +33,28 @@ namespace matrix
     namespace service_core
     {
 
+        void p2p_net_service::get_all_peer_nodes(peer_list_type &nodes)
+        {
+            read_lock_guard<rw_lock> lock(m_nodes_lock);
+            for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); it++)
+            {
+                nodes.push_back(it->second);
+            }
+        }
+
+        std::shared_ptr<peer_node> p2p_net_service::get_peer_node(const std::string &id)
+        {
+            read_lock_guard<rw_lock> lock(m_nodes_lock);
+
+            auto it = m_peer_nodes_map.find(id);
+            if (it == m_peer_nodes_map.end())
+            {
+                return nullptr;
+            }
+
+            return it->second;            
+        }
+
         int32_t p2p_net_service::init_conf()
         {
             variable_value val;

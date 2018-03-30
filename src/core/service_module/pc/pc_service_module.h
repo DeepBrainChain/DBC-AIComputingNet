@@ -11,6 +11,7 @@
 
 #include <thread>
 #include <queue>
+#include <unordered_map>
 #include "module.h"
 #include "timer.h"
 #include "common.h"
@@ -95,7 +96,7 @@ namespace matrix
 
             timer_manager * m_timer_manager;
 
-            std::map<std::string, invoker_type> m_invokers;
+            std::unordered_map<std::string, invoker_type> m_invokers;
         };
 
     }
