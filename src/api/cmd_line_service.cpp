@@ -1,5 +1,7 @@
 
 #include <iostream>
+#include <limits>
+#include <cstdint>
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
@@ -49,7 +51,8 @@ namespace ai
             //read user input
             cin.get(m_cmd_line_buf, MAX_CMD_LINE_BUF_LEN);
             cin.clear();
-            cin.ignore(std::numeric_limits<int>::max(), '\n');
+            //cin.ignore(std::numeric_limits<int>::max(), '\n');
+            cin.ignore(INT_MIN, '\n');
 
             int m_argc = MAX_CMD_LINE_ARGS_COUNT;
             string_util::split(m_cmd_line_buf, ' ', m_argc, m_argv);
@@ -87,8 +90,19 @@ namespace ai
 
                 if (vm.count("config") || vm.count("c"))
                 {
-                    //cout << vm["file"].as<std::string>() << endl;
-                    //handler
+                    std::shared_ptr<cmd_start_training_req> req(new cmd_start_training_req);
+                    req->task_file_path = vm["config"].as<std::string>();
+
+                    std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
+
+                    if (nullptr == resp)
+                    {
+                        cout << " command time out" << endl;
+                    }
+                    else
+                    {
+                        //format display
+                    }
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
