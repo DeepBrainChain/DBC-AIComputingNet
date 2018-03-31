@@ -25,8 +25,8 @@ namespace matrix
         {
         public:
 
-            length_field_frame_decoder(uint32_t length_field_end_offset, uint32_t max_frame_len)
-                : m_length_field_end_offset(length_field_end_offset)
+            length_field_frame_decoder(uint32_t min_read_length, uint32_t max_frame_len)
+                : m_min_read_length(min_read_length)
                 , m_max_frame_len(max_frame_len)
             {
             }
@@ -34,13 +34,13 @@ namespace matrix
             virtual decode_status decode(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &message)
             {
                 //less than complete length field len
-                if (in.get_valid_read_len() < m_length_field_end_offset)
+                if (in.get_valid_read_len() < m_min_read_length)
                 {
                     return DECODE_LENGTH_IS_NOT_ENOUGH;
                 }
 
                 //msg_len offset is 6 bytes and size is 4 bytes
-                uint64_t frame_len = get_unadjusted_frame_length(in, 6, 4);
+                uint64_t frame_len = get_unadjusted_frame_length(in, 0, 4);
                 if (frame_len > m_max_frame_len)
                 {
                     LOG_ERROR << "matrix decode msg_len too long: " << frame_len;
@@ -53,6 +53,7 @@ namespace matrix
                     return DECODE_LENGTH_IS_NOT_ENOUGH;
                 }
 
+                //decode frame
                 return decode_frame(ctx, in, message);
             }
 
@@ -125,7 +126,8 @@ namespace matrix
 
             uint32_t m_max_frame_len;
 
-            uint32_t m_length_field_end_offset;
+            uint32_t m_min_read_length;
+
         };
 
     }
