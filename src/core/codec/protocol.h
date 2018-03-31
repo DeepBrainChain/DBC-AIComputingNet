@@ -712,8 +712,8 @@ namespace matrix
             virtual ~base() = default;
 
             virtual uint32_t validate() const { return E_SUCCESS; }
-            virtual uint32_t read(protocol * iprot) = 0;
-            virtual uint32_t write(protocol * oprot) const = 0;
+            virtual uint32_t read(protocol * iprot) { return E_SUCCESS; }
+            virtual uint32_t write(protocol * oprot) { return E_SUCCESS; }
         };
 
     }

@@ -10,35 +10,21 @@
 
 #include "api_call_handler.h"
 
+
 namespace ai
 {
     namespace dbc
     {
 
-        void api_call_handler::start_training(start_training_req &req, start_training_resp &resp, variables_map &call_context)
+        void api_call_handler::init_subscription()
         {
-
+            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_start_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_stop_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_start_multi_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_list_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_get_peer_nodes_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
         }
 
-        void api_call_handler::stop_training(stop_training_req &req, stop_training_resp &resp, variables_map &call_context)
-        {
-
-        }
-
-        void api_call_handler::start_multi_training(start_multi_training_req &req, start_multi_training_resp &resp, variables_map &call_context)
-        {
-
-        }
-
-        void api_call_handler::list_training(list_training_req &req, list_training_resp &resp, variables_map &call_context)
-        {
-
-        }
-
-        void api_call_handler::get_peers(get_peers_req &req, get_peers_resp &resp, variables_map &call_context)
-        {
-
-        }
     }
 
 }

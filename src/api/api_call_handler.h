@@ -10,11 +10,20 @@
 
 #pragma once
 
-
+#include <list>
 #include <boost/program_options.hpp>
+#include "service_message.h"
+#include "callback_wait.h"
+#include "server.h"
 
 
+using namespace std;
 using namespace boost::program_options;
+using namespace matrix::core;
+
+
+#define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(3000)                    //unit: ms
+#define GET_TYPE_NAME(TYPE)                                                        #TYPE
 
 
 namespace ai
@@ -22,73 +31,142 @@ namespace ai
     namespace dbc
     {
 
-        struct start_training_req
+        class cmd_start_training_req : public matrix::core::base
+        {
+        public:
+            std::string task_file_path;
+        };
+
+        class cmd_start_training_resp : public matrix::core::base
+        {
+        public:
+            int32_t result;
+            std::string result_info;
+
+            std::string task_id;
+        };
+
+        class cmd_stop_training_req : public matrix::core::base
+        {
+        public:
+            std::string task_id;
+        };
+
+        class cmd_stop_training_resp : public matrix::core::base
+        {
+        public:
+            int32_t result;
+            std::string result_info;
+        };
+
+        class cmd_start_multi_training_req : public matrix::core::base
+        {
+        public:
+            std::string mulit_task_file_path;
+        };
+
+        class cmd_start_multi_training_resp : public matrix::core::base
+        {
+        public:
+            int32_t result;
+            std::string result_info;
+        };
+
+        class cmd_list_training_req : public matrix::core::base
+        {
+        public:
+            int8_t list_type;                                   //0: list all tasks; 1: list specific tasks
+            std::list<std::string > task_list;
+        };
+
+        class task_status
+        {
+        public:
+            std::string task_id;
+            int8_t status;
+        };
+
+        class cmd_list_training_resp : public matrix::core::base
+        {
+        public:
+            int32_t result;
+            std::string result_info;
+
+            std::list<task_status> task_status_list;
+        };
+
+        class network_address
+        {
+        public:
+            std::string ip;
+            int16_t port;
+        };
+
+        class peer_node_info
+        {
+        public:
+            std::string peer_node_id;
+            int32_t live_time_stamp;
+            network_address addr;
+            std::list<std::string> service_list;
+        };
+
+        class cmd_get_peer_nodes_req : public matrix::core::base
         {
 
         };
 
-        struct start_training_resp
+        class cmd_get_peer_nodes_resp : public matrix::core::base
         {
+        public:
+            int32_t result;
+            std::string result_info;
 
-        };
-
-        struct stop_training_req
-        {
-
-        };
-
-        struct stop_training_resp
-        {
-
-        };
-
-        struct start_multi_training_req
-        {
-
-        };
-
-        struct start_multi_training_resp
-        {
-
-        };
-
-        struct list_training_req
-        {
-
-        };
-
-        struct list_training_resp
-        {
-
-        };
-
-        struct get_peers_req
-        {
-
-        };
-
-        struct get_peers_resp
-        {
-
+            std::list<peer_node_info> peer_nodes_list;
         };
 
         class api_call_handler
         {
         public:
 
-            api_call_handler() = default;
+            api_call_handler() : m_wait(new callback_wait<>) {}
 
             ~api_call_handler() = default;
 
-            void start_training(start_training_req &req, start_training_resp &resp, variables_map &call_context);
+            void init_subscription();
 
-            void stop_training(stop_training_req &req, stop_training_resp &resp, variables_map &call_context);
+            template<typename req_type, typename resp_type>
+            std::shared_ptr<resp_type> invoke(std::shared_ptr<req_type> req)
+            {
+                //construct message
+                std::shared_ptr<message> msg(new message);
+                msg->set_name(GET_TYPE_NAME(req_type));
+                msg->set_content(std::dynamic_pointer_cast<base>(req));
 
-            void start_multi_training(start_multi_training_req &req, start_multi_training_resp &resp, variables_map &call_context);
+                //publish
+                TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
-            void list_training(list_training_req &req, list_training_resp &resp, variables_map &call_context);
+                //synchronous wait for resp
+                m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
+                if (true == m_wait->flag())
+                {
+                    return std::dynamic_pointer_cast<resp_type>(m_resp);
+                }
+                else
+                {
+                    LOG_DEBUG << "api_call_handler time out: " << msg->get_name();
+                    return nullptr;
+                }
 
-            void get_peers(get_peers_req &req, get_peers_resp &resp, variables_map &call_context);
+            }
+
+        private:
+
+            //std::mutex m_mutex;           currently no need. 
+
+            std::shared_ptr<message> m_resp;
+
+            std::shared_ptr<callback_wait<>> m_wait;
 
         };
 

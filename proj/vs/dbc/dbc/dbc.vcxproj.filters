@@ -241,6 +241,9 @@
     <ClCompile Include="..\..\..\..\src\service_core\p2pnet\peer_node.cpp">
       <Filter>src\service_core\p2pnet</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\common\callback_wait.cpp">
+      <Filter>src\core\common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -488,6 +491,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\network\endpoint_address.h">
       <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\callback_wait.h">
+      <Filter>src\core\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
