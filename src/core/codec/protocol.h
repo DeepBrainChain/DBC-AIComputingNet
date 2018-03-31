@@ -38,7 +38,7 @@ namespace matrix
 
         enum TType 
         {
-            T_STOP = 0,
+            T_STOP = 0x7F,
             T_VOID = 1,
             T_BOOL = 2,
             T_BYTE = 3,
@@ -248,6 +248,8 @@ namespace matrix
 
             virtual ~protocol() = default;
 
+            virtual void init_buf(byte_buf *buf) = 0;
+
             virtual uint32_t writeMessageBegin(const std::string& name,
                 const TMessageType messageType,
                 const int32_t seqid) = 0;
@@ -342,6 +344,12 @@ namespace matrix
         {
         public:
 
+            binary_protocol(int32_t string_limit = MAX_STRING_LIMIT, int32_t container_limit = MAX_CONTAINER_LIMIT)
+                : m_buf(nullptr)
+                , m_string_limit(string_limit)
+                , m_container_limit(container_limit)
+            {}
+
             binary_protocol(byte_buf *buf, int32_t string_limit = MAX_STRING_LIMIT, int32_t container_limit = MAX_CONTAINER_LIMIT)
                 : m_buf(buf) 
                 , m_string_limit(string_limit)
@@ -349,6 +357,8 @@ namespace matrix
             {}
 
             virtual ~binary_protocol() = default;
+
+            void init_buf(byte_buf *buf) { m_buf = buf; }
 
             virtual uint32_t writeMessageBegin(const std::string& name,
                 const TMessageType messageType,

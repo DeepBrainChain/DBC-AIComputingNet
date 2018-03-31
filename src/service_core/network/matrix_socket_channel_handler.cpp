@@ -84,11 +84,6 @@ namespace matrix
             encode_status status = m_coder->encode(ctx, msg, buf);
             if (ENCODE_SUCCESS == status)
             {
-                //get msg length and net endiuan and fill in
-                uint32_t msg_len = buf.get_valid_read_len();
-                msg_len = byte_order::hton32(msg_len);
-                memcpy(buf.get_read_ptr() + 6, &msg_len, sizeof(msg_len));
-
                 //has message
                 set_has_message(msg);
 

@@ -17,53 +17,91 @@ namespace matrix
     {
 
         matrix_coder::matrix_coder() 
-            : length_field_frame_decoder(MATRIX_MSG_LENGTH_FIELD_END_OFFSET, MAX_MATRIX_MSG_LEN)
+            : length_field_frame_decoder(MATRIX_MSG_MIN_READ_LENGTH, MAX_MATRIX_MSG_LEN)
         {
+            init_decode_proto();
+            
             init_decode_invoker();
+            init_encode_invoker();
+        }
+
+        void matrix_coder::init_decode_proto()
+        {
+            m_decode_protos[THRIFT_BINARY_PROTO] = make_shared<binary_protocol>();
         }
 
         void matrix_coder::init_decode_invoker()
         {
-            decode_invoker_type invoker;
+            DECLARE_DECODE_INVOKER
             
-            invoker = std::bind(&matrix_coder::decode_invoker<ver_req>, this, std::placeholders::_1, std::placeholders::_2);
-            m_decode_invokers.insert({ VER_REQ,{ invoker } });
+            BIND_DECODE_INVOKER(ver_req);
+            BIND_DECODE_INVOKER(ver_resp);
 
-            invoker = std::bind(&matrix_coder::decode_invoker<ver_resp>, this, std::placeholders::_1, std::placeholders::_2);
-            m_decode_invokers.insert({ VER_RESP,{ invoker } });
+            BIND_DECODE_INVOKER(shake_hand_req);
+            BIND_DECODE_INVOKER(shake_hand_resp);
 
-            invoker = std::bind(&matrix_coder::decode_invoker<shake_hand_req>, this, std::placeholders::_1, std::placeholders::_2);
-            m_decode_invokers.insert({ SHAKE_HAND_REQ,{ invoker } });
+            BIND_DECODE_INVOKER(get_peer_nodes_req);
+            BIND_DECODE_INVOKER(get_peer_nodes_resp);
 
-            invoker = std::bind(&matrix_coder::decode_invoker<shake_hand_resp>, this, std::placeholders::_1, std::placeholders::_2);
-            m_decode_invokers.insert({ SHAKE_HAND_RESP,{ invoker } });
+            BIND_DECODE_INVOKER(peer_nodes_broadcast_req);
+
+            BIND_DECODE_INVOKER(start_training_req);
+            BIND_DECODE_INVOKER(stop_training_req);
+            BIND_DECODE_INVOKER(list_training_req);
+        }
+
+        void matrix_coder::init_encode_invoker()
+        {
+            DECLARE_ENCODE_INVOKER
+
+            BIND_ENCODE_INVOKER(ver_req);
+            BIND_ENCODE_INVOKER(ver_resp);
+
+            BIND_ENCODE_INVOKER(shake_hand_req);
+            BIND_ENCODE_INVOKER(shake_hand_resp);
+
+            BIND_ENCODE_INVOKER(get_peer_nodes_req);
+            BIND_ENCODE_INVOKER(get_peer_nodes_resp);
+
+            BIND_ENCODE_INVOKER(peer_nodes_broadcast_req);
+
+            BIND_ENCODE_INVOKER(start_training_req);
+            BIND_ENCODE_INVOKER(stop_training_req);
+            BIND_ENCODE_INVOKER(list_training_req);
+
+        }
+
+        std::shared_ptr<protocol> matrix_coder::get_protocol(int32_t type)
+        {
+            auto it = m_decode_protos.find(type);
+            if (it == m_decode_protos.end())
+            {
+                return nullptr;
+            }
+
+            return it->second;
         }
 
         decode_status matrix_coder::decode_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg)
         {
-            uint32_t magic = 0;
-            uint32_t msg_len = 0;
-            std::string msg_name;
-
-            //try decode header key fields
-            auto status = decode_header_fields(ctx, in, msg_len, magic, msg_name);
-            if (DECODE_SUCCESS != status)
-            {
-                return status;
-            }
-
             try
             {
-                auto it = m_decode_invokers.find(msg_name);
-                if (it == m_decode_invokers.end())
+                //packet header
+                matrix_packet_header packet_header;
+                decode_packet_header(in, packet_header);
+
+                //get decode protocol
+                std::shared_ptr<protocol> proto = get_protocol(packet_header.packet_type);
+                if (nullptr == proto)
                 {
-                    LOG_ERROR << "matrix decoder received unknown message: " << msg_name;
                     return DECODE_ERROR;
                 }
+                else
+                {
+                    proto->init_buf(&in);
+                }
 
-                auto decode_invoker = it->second;
-                std::shared_ptr<binary_protocol> proto(new binary_protocol(&in));
-                decode_invoker(msg, proto);
+                return decode_service_frame(ctx, in, msg, proto);
             }
             catch (std::exception &e)
             {
@@ -76,96 +114,114 @@ namespace matrix
                 return DECODE_ERROR;
             }
 
-            return DECODE_SUCCESS;
+        }
 
+        void matrix_coder::decode_packet_header(byte_buf &in, matrix_packet_header &packet_header)
+        {
+            assert(in.get_valid_read_len() >= sizeof(matrix_packet_header));
+
+            //packet len + packet type
+            int32_t *ptr = (int32_t *)in.get_read_ptr();
+            packet_header.packet_len = byte_order::ntoh32(*ptr);
+            packet_header.packet_type = byte_order::ntoh32(*(ptr + 1));
+
+            in.move_read_ptr(sizeof(matrix_packet_header));                    //be careful of size
+        }
+
+        void matrix_coder::encode_packet_header(matrix_packet_header &packet_header, byte_buf &out)
+        {
+            //net endian
+            packet_header.packet_len = 0;
+            packet_header.packet_type = THRIFT_BINARY_PROTO;
+
+            //packet len + packet type
+            out.write_to_byte_buf((char*)&packet_header.packet_len, 4);
+            out.write_to_byte_buf((char*)&packet_header.packet_type, 4);
+        }
+
+        decode_status matrix_coder::decode_service_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg, std::shared_ptr<protocol> proto)
+        {
+            //service header
+            msg_header header;
+            header.read(proto.get());
+
+            //find decoder
+            auto it = m_binary_decode_invokers.find(header.msg_name);
+            if (it == m_binary_decode_invokers.end())
+            {
+                LOG_ERROR << "matrix decoder received unknown message: " << header.msg_name;
+                return DECODE_ERROR;
+            }
+
+            //body invoker
+            auto invoker = it->second;
+            invoker(msg, header, proto);
+            
+            return DECODE_SUCCESS;
         }
 
         template<typename msg_type>
-        void matrix_coder::decode_invoker(std::shared_ptr<message> &msg, std::shared_ptr<binary_protocol> &proto)
+        void matrix_coder::decode_invoke(std::shared_ptr<message> &msg, msg_header &header, std::shared_ptr<protocol> &proto)
         {
-            uint32_t xfer = 0;
             std::shared_ptr<msg_type> content(new msg_type);
-            xfer = content->read(proto.get());
+
+            content->header = header;
+            content->body.read(proto.get());
+
             msg->set_content(content);
             msg->set_name(content->header.msg_name);
         }
 
-        decode_status matrix_coder::decode_header_fields(channel_handler_context &ctx, byte_buf &in, uint32_t &msg_len, uint32_t &magic, std::string &msg_name)
+        encode_status matrix_coder::encode(channel_handler_context &ctx, message & msg, byte_buf &out)
         {
-            //key header fields
-            uint8_t ftype = 0;
-            uint16_t fid = 0;
 
-            char *ptr = in.get_read_ptr();
-
-            //T_STRUCT 01
-            ftype = *ptr++;
-            fid = *((uint16_t *)ptr);
-            fid = byte_order::ntoh16(fid);
-            ptr += 2;
-            if (1 != fid || T_STRUCT != ftype)
+            try
             {
-                LOG_ERROR << "matrix decoder decode header struct error: " << in.to_string();
-                return DECODE_ERROR;
+                matrix_packet_header packet_header;
+                encode_packet_header(packet_header, out);
+
+                //find encoder
+                auto it = m_binary_encode_invokers.find(msg.get_name());
+                if (it == m_binary_encode_invokers.end())
+                {
+                    LOG_ERROR << "matrix encoder received unknown message: " << msg.get_name();
+                    return ENCODE_ERROR;
+                }
+
+                std::shared_ptr<protocol> proto = get_protocol(THRIFT_BINARY_PROTO);
+                assert(proto != nullptr);
+                proto->init_buf(&out);
+
+                //body invoker
+                auto invoker = it->second;
+                invoker(msg, out, proto);
+
+                //get msg length and net endiuan and fill in
+                uint32_t msg_len = out.get_valid_read_len();
+                msg_len = byte_order::hton32(msg_len);
+                memcpy(out.get_read_ptr(), &msg_len, sizeof(msg_len));
+            }
+            catch (std::exception &e)
+            {
+                LOG_ERROR << "matrix encode message error: " << e.what();
+                return ENCODE_ERROR;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "matrix encode message error!";
+                return ENCODE_ERROR;
             }
 
-            //msg_len
-            ftype = *ptr++;
-            fid = *((uint16_t *)ptr);
-            fid = byte_order::ntoh16(fid);
-            ptr += 2;
-            if (1 != fid || T_I32 != ftype)
-            {
-                LOG_ERROR << "matrix decoder decode header msg_len error: " << in.to_string();
-                return DECODE_ERROR;
-            }
+            return ENCODE_SUCCESS;
+        }
 
-            memcpy(&msg_len, ptr, sizeof(msg_len));
-            msg_len = byte_order::ntoh32(msg_len);
-            ptr += sizeof(msg_len);
+        template<typename msg_type>
+        void matrix_coder::encode_invoke(message & msg, byte_buf &out, std::shared_ptr<protocol> &proto)
+        {
+            std::shared_ptr<msg_type> content = std::dynamic_pointer_cast<msg_type>(msg.content);
 
-            //magic
-            ftype = *ptr++;
-            fid = *((uint16_t *)ptr);
-            fid = byte_order::ntoh16(fid);
-            ptr += 2;
-            if (2 != fid || T_I32 != ftype)
-            {
-                LOG_ERROR << "matrix decoder decode header magic error: " << in.to_string();
-                return DECODE_ERROR;
-            }
-
-            memcpy(&magic, ptr, sizeof(magic));
-            magic = byte_order::ntoh32(magic);
-            ptr += sizeof(magic);
-
-            //msg_name string length
-            ftype = *ptr++;
-            fid = *((uint16_t *)ptr);
-            fid = byte_order::ntoh16(fid);
-            ptr += 2;
-            if (3 != fid || T_STRING != ftype)
-            {
-                LOG_ERROR << "matrix decoder decode header msg_name string length error: " << in.to_string();
-                return DECODE_ERROR;
-            }
-
-            uint32_t msg_name_len = 0;
-            memcpy(&msg_name_len, ptr, sizeof(msg_name_len));
-            msg_name_len = byte_order::ntoh32(msg_name_len);
-            ptr += sizeof(msg_name_len);
-
-            //msg_name string
-            if (msg_name_len > (in.get_valid_read_len() - DEFAULT_DECODE_HEADER_LEN))
-            {
-                LOG_ERROR << "matrix decoder decode header msg_name string length too long error: " << in.to_string();
-                return DECODE_ERROR;
-            }
-
-            msg_name.resize(msg_name_len, 0x00);
-            memcpy(&msg_name[0], ptr, msg_name_len);
-
-            return DECODE_SUCCESS;
+            content->header.write(proto.get());
+            content->body.write(proto.get());
         }
 
     }

@@ -291,7 +291,7 @@ namespace matrix
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
             //header
-            resp_content->header.length = 0;
+            //resp_content->header.length = 0;
             resp_content->header.magic = TEST_NET;
             resp_content->header.msg_name = VER_RESP;
             resp_content->header.check_sum = 0;
@@ -342,7 +342,7 @@ namespace matrix
                 std::shared_ptr<matrix::service_core::ver_req> req_content = std::make_shared<matrix::service_core::ver_req>();
 
                 //header
-                req_content->header.length = 0;
+                //req_content->header.length = 0;
                 req_content->header.magic = TEST_NET;
                 req_content->header.msg_name = VER_REQ;
                 req_content->header.check_sum = 0;

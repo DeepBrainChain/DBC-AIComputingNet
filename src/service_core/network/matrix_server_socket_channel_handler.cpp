@@ -157,7 +157,7 @@ namespace matrix
             std::shared_ptr<matrix::service_core::shake_hand_resp> req_content = std::make_shared<matrix::service_core::shake_hand_resp>();
 
             //header
-            req_content->header.length = 0;
+            //req_content->header.length = 0;
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = SHAKE_HAND_RESP;
             req_content->header.check_sum = 0;
