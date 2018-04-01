@@ -5,6 +5,7 @@
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
+#include "console_printer.h"
 
 
 void cmd_line_task()
@@ -51,15 +52,10 @@ namespace ai
             //read user input
             cin.get(m_cmd_line_buf, MAX_CMD_LINE_BUF_LEN);
             cin.clear();
-            //cin.ignore(std::numeric_limits<int>::max(), '\n');
-            cin.ignore(INT_MIN, '\n');
+            cin.ignore((std::numeric_limits<int>::max)(), '\n');
 
             int m_argc = MAX_CMD_LINE_ARGS_COUNT;
             string_util::split(m_cmd_line_buf, ' ', m_argc, m_argv);
-            //for (int i = 0; i < m_argc; i++)
-            //{
-            //    cout << m_argv[i] << endl;
-            //}
 
             auto it = m_invokers.find(m_argv[0]);
             if (it == m_invokers.end())
@@ -94,14 +90,13 @@ namespace ai
                     req->task_file_path = vm["config"].as<std::string>();
 
                     std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
-
                     if (nullptr == resp)
                     {
-                        cout << " command time out" << endl;
+                        cout << "command time out" << endl;
                     }
                     else
                     {
-                        //format display
+                        format_output(resp);
                     }
                 }
                 else if (vm.count("help") || vm.count("h"))
@@ -120,7 +115,7 @@ namespace ai
                 cout << opts;
             }
         }
-
+        
         void cmd_line_service::stop_training(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -138,8 +133,18 @@ namespace ai
 
                 if (vm.count("task") || vm.count("t"))
                 {
-                    //cout << vm["file"].as<std::string>() << endl;
-                    //handler
+                    std::shared_ptr<cmd_stop_training_req> req(new cmd_stop_training_req);
+                    req->task_id = vm["task"].as<std::string>();
+
+                    std::shared_ptr<cmd_stop_training_resp> resp = m_handler.invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
@@ -157,7 +162,7 @@ namespace ai
                 cout << opts;
             }
         }
-
+        
         void cmd_line_service::start_multi_training(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -175,8 +180,18 @@ namespace ai
 
                 if (vm.count("config") || vm.count("c"))
                 {
-                    //cout << vm["file"].as<std::string>() << endl;
-                    //handler
+                    std::shared_ptr<cmd_start_multi_training_req> req(new cmd_start_multi_training_req);
+                    req->mulit_task_file_path = vm["config"].as<std::string>();
+
+                    std::shared_ptr<cmd_start_multi_training_resp> resp = m_handler.invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
@@ -194,7 +209,7 @@ namespace ai
                 cout << opts;
             }
         }
-
+        
         void cmd_line_service::list_training(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -205,7 +220,7 @@ namespace ai
                 opts.add_options()
                     ("help,h", "list task")
                     ("all,a", "list all task")
-                    ("task,t", bpo::value<std::string>(), "list a task");
+                    ("task,t", bpo::value<std::vector<std::string>>(), "list a task");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -213,13 +228,36 @@ namespace ai
 
                 if (vm.count("all") || vm.count("a"))
                 {
-                    //cout << vm["file"].as<std::string>() << endl;
-                    //handler
+                    std::shared_ptr<cmd_list_training_req> req(new cmd_list_training_req);
+                    req->list_type = LIST_ALL_TASKS;
+
+                    std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
                 }
                 else if (vm.count("task") || vm.count("t"))
                 {
-                    //cout << vm["file"].as<std::string>() << endl;
-                    //handler
+                    std::shared_ptr<cmd_list_training_req> req(new cmd_list_training_req);
+                    req->list_type = LIST_SPECIFIC_TASKS;
+                    std::vector<std::string> task_vector = vm["task"].as<std::vector<std::string>>();
+                    std::copy(std::make_move_iterator(task_vector.begin()), std::make_move_iterator(task_vector.end()), std::back_inserter(req->task_list));
+                    task_vector.clear();
+
+                    std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
@@ -237,7 +275,7 @@ namespace ai
                 cout << opts;
             }
         }
-
+        
         void cmd_line_service::get_peers(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -255,8 +293,17 @@ namespace ai
 
                 if (vm.count("all") || vm.count("a"))
                 {
-                    //cout << vm["file"].as<std::string>() << endl;
-                    //handler
+                    std::shared_ptr<cmd_get_peer_nodes_req> req(new cmd_get_peer_nodes_req);
+
+                    std::shared_ptr<cmd_get_peer_nodes_resp> resp = m_handler.invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
@@ -272,6 +319,66 @@ namespace ai
             {
                 cout << argv[0] << " invalid option" << endl;
                 cout << opts;
+            }
+        }
+
+        void cmd_line_service::format_output(std::shared_ptr<cmd_start_training_resp> resp)
+        {
+            if (E_SUCCESS != resp->result)
+            {
+                cout << resp->result_info << endl;
+            }
+
+            cout << resp->task_id << endl;
+        }
+
+        void cmd_line_service::format_output(std::shared_ptr<cmd_stop_training_resp> resp)
+        {
+            if (E_SUCCESS != resp->result)
+            {
+                cout << resp->result_info << endl;
+            }
+
+            cout << "stopping training task......" << endl;
+        }
+
+        void cmd_line_service::format_output(std::shared_ptr<cmd_list_training_resp> resp)
+        {
+            console_printer printer;            
+            printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 10);
+
+            printer << matrix::core::init << "task_id" << "task_status" << matrix::core::endl;
+
+            auto it = resp->task_status_list.begin();
+            for (; it != resp->task_status_list.end(); it++)
+            {
+                printer << matrix::core::init << it->task_id << it->status << matrix::core::endl;
+            }
+        }
+
+        void cmd_line_service::format_output(std::shared_ptr<cmd_start_multi_training_resp> resp)
+        {
+            cout << "task_id" << endl;
+
+            auto it = resp->task_list.begin();
+            for ( ; it != resp->task_list.end(); it++)
+            {
+                cout << *it << endl;
+            }
+        }
+
+        void cmd_line_service::format_output(std::shared_ptr<cmd_get_peer_nodes_resp> resp)
+        {
+            console_printer printer;
+            printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 64)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
+
+            printer << matrix::core::init << "peer_id" << "time_stamp" << "ip" << "port" << "service_list" << matrix::core::endl;
+
+            auto it = resp->peer_nodes_list.begin();
+            for (; it != resp->peer_nodes_list.end(); it++)
+            {
+                std::string service_list;  //left to later
+                printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << service_list << matrix::core::endl;
             }
         }
 

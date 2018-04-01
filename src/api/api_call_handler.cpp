@@ -18,11 +18,11 @@ namespace ai
 
         void api_call_handler::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_start_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_stop_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_start_multi_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_list_training_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(GET_TYPE_NAME(cmd_get_peer_nodes_resp), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_start_training_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_list_training_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
         }
 
     }

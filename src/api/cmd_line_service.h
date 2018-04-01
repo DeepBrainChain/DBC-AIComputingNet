@@ -62,15 +62,27 @@ namespace ai
 
         protected:
 
+            void format_output(std::shared_ptr<cmd_start_training_resp> resp);
+
+            void format_output(std::shared_ptr<cmd_stop_training_resp> resp);
+
+            void format_output(std::shared_ptr<cmd_list_training_resp> resp);
+
+            void format_output(std::shared_ptr<cmd_start_multi_training_resp> resp);
+
+            void format_output(std::shared_ptr<cmd_get_peer_nodes_resp> resp);
+
+        protected:
+
             api_call_handler m_handler;
 
             processor_invoker m_invokers;
 
-            char m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN];
-
             int m_argc;
 
             char *m_argv[MAX_CMD_LINE_ARGS_COUNT];
+
+            char m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN];
 
         };
 

@@ -22,8 +22,11 @@ using namespace boost::program_options;
 using namespace matrix::core;
 
 
-#define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(3000)                    //unit: ms
+#define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(30000)                    //unit: ms
 #define GET_TYPE_NAME(TYPE)                                                        #TYPE
+
+#define LIST_ALL_TASKS                                                                          0
+#define LIST_SPECIFIC_TASKS                                                                 1
 
 
 namespace ai
@@ -70,6 +73,8 @@ namespace ai
         public:
             int32_t result;
             std::string result_info;
+
+            std::list<std::string > task_list;
         };
 
         class cmd_list_training_req : public matrix::core::base
@@ -79,7 +84,7 @@ namespace ai
             std::list<std::string > task_list;
         };
 
-        class task_status
+        class cmd_task_status
         {
         public:
             std::string task_id;
@@ -92,22 +97,22 @@ namespace ai
             int32_t result;
             std::string result_info;
 
-            std::list<task_status> task_status_list;
+            std::list<cmd_task_status> task_status_list;
         };
 
-        class network_address
+        class cmd_network_address
         {
         public:
             std::string ip;
             int16_t port;
         };
 
-        class peer_node_info
+        class cmd_peer_node_info
         {
         public:
             std::string peer_node_id;
             int32_t live_time_stamp;
-            network_address addr;
+            cmd_network_address addr;
             std::list<std::string> service_list;
         };
 
@@ -122,14 +127,17 @@ namespace ai
             int32_t result;
             std::string result_info;
 
-            std::list<peer_node_info> peer_nodes_list;
+            std::list<cmd_peer_node_info> peer_nodes_list;
         };
 
         class api_call_handler
         {
         public:
 
-            api_call_handler() : m_wait(new callback_wait<>) {}
+            api_call_handler() : m_wait(new callback_wait<>) 
+            {
+                init_subscription();
+            }
 
             ~api_call_handler() = default;
 
@@ -140,7 +148,7 @@ namespace ai
             {
                 //construct message
                 std::shared_ptr<message> msg(new message);
-                msg->set_name(GET_TYPE_NAME(req_type));
+                msg->set_name(typeid(req_type).name());
                 msg->set_content(std::dynamic_pointer_cast<base>(req));
 
                 //publish
