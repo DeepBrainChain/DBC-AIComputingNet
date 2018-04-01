@@ -244,6 +244,9 @@
     <ClCompile Include="..\..\..\..\src\core\common\callback_wait.cpp">
       <Filter>src\core\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\api\console_printer.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -494,6 +497,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\common\callback_wait.h">
       <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\api\console_printer.h">
+      <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
