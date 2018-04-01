@@ -23,7 +23,11 @@
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-#define MAX_RECONNECT_TIMES                 300
+
+#define RECONNECT_INTERVAL                     2                    //2->4->8->16->32->64...
+#define MAX_RECONNECT_TIMES                 10
+
+
 
 namespace matrix
 {
@@ -35,9 +39,11 @@ namespace matrix
             using ios_ptr = typename std::shared_ptr<io_service>;
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
 
+            typedef void (timer_handler_type)(const boost::system::error_code &);
+
         public:
 
-            tcp_connector(nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func);
+            tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func);
 
             virtual ~tcp_connector() = default;
 
@@ -70,6 +76,10 @@ namespace matrix
             std::shared_ptr<channel> m_client_channel;
 
             handler_create_functor m_handler_create_func;
+
+            steady_timer m_reconnect_timer;
+
+            std::function<timer_handler_type> m_reconnect_timer_handler;
 
         };
 
