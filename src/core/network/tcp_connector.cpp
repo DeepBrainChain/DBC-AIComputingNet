@@ -13,27 +13,49 @@
 #include "service_message_id.h"
 
 
-//#pragma warning(disable : 4996)
+#pragma warning(disable : 4996)
 
 namespace matrix
 {
     namespace core
     {
 
-        tcp_connector::tcp_connector(nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func)
+        tcp_connector::tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func)
                 : m_connected(false)
                 , m_reconnect_times(0)
                 , m_connect_addr(connect_addr)
                 , m_worker_group(worker_group)
                 , m_sid(socket_id_allocator::get_mutable_instance().alloc_client_socket_id())
                 , m_handler_create_func(func)
-            {                
+                , m_reconnect_timer(*(connector_group->get_io_service()))
+            {
+
             }
 
             int32_t tcp_connector::start()
             {
+                auto self(shared_from_this());
+                m_reconnect_timer_handler = [this, self](const boost::system::error_code & error)
+                {
+                    if (error)
+                    {
+                        //aborted, maybe cancel triggered
+                        if (boost::asio::error::operation_aborted == error.value())
+                        {
+                            LOG_DEBUG << "tcp_connector reconnect timer aborted.";
+                            return;
+                        }
+
+                        LOG_ERROR << "tcp_connector reconnect timer error: " << error.value() << " " << error.message() << m_sid.to_string();
+                        return;
+                    }
+
+                    LOG_DEBUG << "tcp_connector reconnect timer expires and begin to async connect.";
+                    async_connect();
+                };
+
                 //create tcp socket channel and async connect
-                m_client_channel = std::dynamic_pointer_cast<channel>(std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), m_sid, m_handler_create_func, DEFAULT_BUF_LEN));
+                m_client_channel = std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), m_sid, m_handler_create_func, DEFAULT_BUF_LEN);
                 async_connect();
                 return E_SUCCESS;
             }
@@ -46,7 +68,14 @@ namespace matrix
                     return E_SUCCESS;
                 }
 
+                //not connected, means is reconnecting......
                 boost::system::error_code error;
+
+                m_reconnect_timer.cancel(error);
+                if (error)
+                {
+                    LOG_ERROR << "tcp connector connect timer cancel error: " << error;
+                }
 
                 //cancel
                 std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_socket().cancel(error);
@@ -74,19 +103,28 @@ namespace matrix
             {
                 if (error)
                 {
-                    LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr
-                        << ", reconnect times: " << ++m_reconnect_times
-                        << ", error: " << error.value() << " " << error.message()
-                        << m_sid.to_string();
-
                     if (m_reconnect_times < MAX_RECONNECT_TIMES)
                     {
                         //try again
-                        //std::this_thread::sleep_for(std::chrono::seconds(3));
-                        async_connect();
+                        int32_t interval = RECONNECT_INTERVAL << m_reconnect_times++;
+
+                        LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr
+                            << ", reconnect times: " << m_reconnect_times
+                            << ", reconnect seconds: " << interval
+                            << ", error: " << error.value() << " " << error.message()
+                            << m_sid.to_string();
+
+                        m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
+                        m_reconnect_timer.async_wait(m_reconnect_timer_handler);
                     }
                     else
                     {
+                        LOG_ERROR << "tcp connector on connect error and stop reconnect, addr: " << m_connect_addr
+                            << ", reconnect times: " << m_reconnect_times
+                            << ", error: " << error.value() << " " << error.message()
+                            << m_sid.to_string();
+
+                        //not reconnect, just notification
                         connect_notification(CLIENT_CONNECT_ERROR);
                     }
 
@@ -98,6 +136,17 @@ namespace matrix
                 //reset
                 m_reconnect_times = 0;
 
+                //add to connection manager
+                int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "tcp connector on connect error, add channel failed";
+                    return;
+                }
+
+                //publish
+                connect_notification(CLIENT_CONNECT_SUCCESS);
+
                 //start to work
                 if (E_SUCCESS != m_client_channel->start())
                 {
@@ -106,17 +155,6 @@ namespace matrix
                 else
                 {
                     LOG_DEBUG << "tcp connector channel start work successfully " << m_connect_addr << m_sid.to_string();
-
-                    //add to connection manager
-                    int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
-                    if (E_SUCCESS != ret)
-                    {
-                        LOG_ERROR << "tcp connector on connect error, add channel failed";
-                        return;
-                    }
-
-                    //publish
-                    connect_notification(CLIENT_CONNECT_SUCCESS);
                 }
             }
 

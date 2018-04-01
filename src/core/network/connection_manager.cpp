@@ -263,7 +263,7 @@ namespace matrix
 
             try
             {
-                std::shared_ptr<tcp_connector> connector = std::make_shared<tcp_connector>(m_worker_group, connect_addr, func);
+                std::shared_ptr<tcp_connector> connector = std::make_shared<tcp_connector>(m_connector_group, m_worker_group, connect_addr, func);
                 assert(connector != nullptr);
 
                 //start
