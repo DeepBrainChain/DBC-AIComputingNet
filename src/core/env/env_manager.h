@@ -20,10 +20,11 @@ namespace fs = boost::filesystem;
 extern void signal_usr1_handler(int);
 
 
-#define CONF_DIR_NAME                          "conf"
-#define CONF_FILE_NAME                         "core.conf"
-#define PEER_FILE_NAME                         "peer.conf"
-#define DEFAULT_PATH_BUF_LEN            512
+#define CONF_DIR_NAME                         "conf"
+#define DAT_DIR_NAME                            "dat"
+#define CONF_FILE_NAME                        "core.conf"
+#define PEER_FILE_NAME                        "peer.conf"
+#define DEFAULT_PATH_BUF_LEN         512
 
 
 namespace matrix
@@ -51,7 +52,9 @@ namespace matrix
 
         public:
 
-            static const fs::path & get_conf_path() { return m_conf_path;}
+            static const fs::path & get_conf_path() { return m_conf_path; }
+
+            static const fs::path & get_dat_path() { return m_dat_path; }
             
             static const fs::path & get_peer_path() { return m_peer_path; }
 
@@ -76,6 +79,8 @@ namespace matrix
         protected:
 
             static fs::path m_conf_path;
+
+            static fs::path m_dat_path;
 
             static fs::path m_peer_path;
 
