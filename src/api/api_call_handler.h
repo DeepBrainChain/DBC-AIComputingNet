@@ -25,8 +25,8 @@ using namespace matrix::core;
 #define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(30000)                    //unit: ms
 #define GET_TYPE_NAME(TYPE)                                                        #TYPE
 
-#define LIST_ALL_TASKS                                                                          0
-#define LIST_SPECIFIC_TASKS                                                                 1
+#define LIST_ALL_TASKS							                                   0
+#define LIST_SPECIFIC_TASKS                                                        1
 
 
 namespace ai
@@ -154,6 +154,7 @@ namespace ai
                 //publish
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
+				cout << "waiting for resp............";
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
                 if (true == m_wait->flag())
