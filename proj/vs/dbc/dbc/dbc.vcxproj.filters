@@ -110,6 +110,9 @@
     <Filter Include="src\core\conf\validator">
       <UniqueIdentifier>{f79a5d2c-e9e8-43df-bd6b-46fea231e936}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\service\deep_brain_chain\ai_training">
+      <UniqueIdentifier>{cf630f79-bc4e-43ef-b530-c7c4eed9e640}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -246,6 +249,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp">
       <Filter>src\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_model_service.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -500,6 +509,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\api\console_printer.h">
       <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_model_service.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

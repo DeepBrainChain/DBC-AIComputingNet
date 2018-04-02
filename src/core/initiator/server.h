@@ -17,6 +17,8 @@
 #include "topic_manager.h"
 #include "connection_manager.h"
 #include "p2p_net_service.h"
+#include "ai_power_service.h"
+#include "ai_model_service.h"
 #include "module_manager.h"
 #include "server_initiator_factory.h"
 
@@ -30,78 +32,82 @@ using namespace matrix::service_core;
 #define P2P_SERVICE                                      (g_server->get_p2p_net_service())
 
 
+
 namespace matrix
 {
-    namespace core
-    {
+	namespace core
+	{
 
-        class server;
-        class conf_manager;
-        class server_initiator;
-        class server_initiator_factory;
-        class topic_manager;
-        class connection_manager;
-        class p2p_net_service;
+		class server;
+		class conf_manager;
+		class server_initiator;
+		class server_initiator_factory;
+		class topic_manager;
+		class connection_manager;
+		class p2p_net_service;
 
-        extern std::unique_ptr<server> g_server;
+		extern std::unique_ptr<server> g_server;
 
-        class server
-        {
-            
-            using init_factory = server_initiator_factory ;
-            using idle_task_functor_type = std::function<void()>;
+		class server
+		{
 
-        public:
+			using init_factory = server_initiator_factory;
+			using idle_task_functor_type = std::function<void()>;
 
-            server() : m_init_result(E_SUCCESS), m_exited(false), m_module_manager(new module_manager()) {}
+		public:
 
-            virtual ~server() = default;
+			server() : m_init_result(E_SUCCESS), m_exited(false), m_module_manager(new module_manager()) {}
 
-            virtual int32_t init(int argc, char* argv[]);
+			virtual ~server() = default;
 
-            virtual int32_t idle();
+			virtual int32_t init(int argc, char* argv[]);
 
-            virtual int32_t exit();
+			virtual int32_t idle();
 
-            virtual bool is_exited() { return m_exited; }
+			virtual int32_t exit();
 
-            virtual void set_exited(bool exited = true) { m_exited = exited; }
+			virtual bool is_exited() { return m_exited; }
 
-            virtual bool is_init_ok() { return (m_init_result == E_SUCCESS); }
+			virtual void set_exited(bool exited = true) { m_exited = exited; }
 
-            void bind_idle_task(idle_task_functor_type functor) { m_idle_task = functor; }
+			virtual bool is_init_ok() { return (m_init_result == E_SUCCESS); }
 
-            shared_ptr<module_manager> get_module_manager() { return m_module_manager; }
+			void bind_idle_task(idle_task_functor_type functor) { m_idle_task = functor; }
 
-            conf_manager *get_conf_manager() { return (conf_manager *)(m_module_manager->get(conf_manager_name).get()); }
+			shared_ptr<module_manager> get_module_manager() { return m_module_manager; }
 
-            topic_manager *get_topic_manager() { return (topic_manager *)(m_module_manager->get(topic_manager_name).get()); }
+			conf_manager *get_conf_manager() { return (conf_manager *)(m_module_manager->get(conf_manager_name).get()); }
 
-            connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
+			topic_manager *get_topic_manager() { return (topic_manager *)(m_module_manager->get(topic_manager_name).get()); }
 
-            matrix::service_core::p2p_net_service * get_p2p_net_service() { return (matrix::service_core::p2p_net_service *)(m_module_manager->get(p2p_manager_name).get()); }
+			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
-        protected:
+			matrix::service_core::p2p_net_service * get_p2p_net_service() { return (matrix::service_core::p2p_net_service *)(m_module_manager->get(p2p_manager_name).get()); }
+			matrix::service_core::ai_power_service * get_ai_power_service() { return (matrix::service_core::ai_power_service *)(m_module_manager->get(ai_power_service_manager_name).get()); }
+			matrix::service_core::ai_model_service * get_ai_model_service() { return (matrix::service_core::ai_model_service *)(m_module_manager->get(ai_model_service_manager_name).get()); }
 
-            virtual void do_cycle_task();
 
-        protected:
+		protected:
 
-            bool m_exited;
+			virtual void do_cycle_task();
 
-            int32_t m_init_result;
+		protected:
 
-            shared_ptr<server_initiator> m_initiator;
+			bool m_exited;
 
-            shared_ptr<module_manager> m_module_manager;
+			int32_t m_init_result;
 
-            init_factory m_init_factory;
+			shared_ptr<server_initiator> m_initiator;
 
-            idle_task_functor_type m_idle_task;
-            
-        };
+			shared_ptr<module_manager> m_module_manager;
 
-    }
+			init_factory m_init_factory;
+
+			idle_task_functor_type m_idle_task;
+
+		};
+
+	}
 
 }
 
