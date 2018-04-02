@@ -8,8 +8,8 @@
 * author            ��
 **********************************************************************************/
 
-#include <service_core/codec/thrift/matrix_types.h>
-#include <service_core/codec/matrix_coder.h>
+#include "matrix_types.h"
+#include "matrix_coder.h"
 #include "api_call_handler.h"
 #include "matrix_coder.h"
 #include "service_message_id.h"
