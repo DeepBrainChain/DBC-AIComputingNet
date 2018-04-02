@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºapi_call_handler.h
-* description    £ºapi call handler for command line, json rpc
+* file name        api_call_handler.h
+* description    api call handler for command line, json rpc
 * date                  : 2018.03.25
-* author            £º
+* author
 **********************************************************************************/
 
 #pragma once
@@ -74,14 +74,14 @@ namespace ai
             int32_t result;
             std::string result_info;
 
-            std::list<std::string > task_list;
+            std::list<std::string> task_list;
         };
 
         class cmd_list_training_req : public matrix::core::base
         {
         public:
             int8_t list_type;                                   //0: list all tasks; 1: list specific tasks
-            std::list<std::string > task_list;
+            std::list<std::string> task_list;
         };
 
         class cmd_task_status
@@ -134,7 +134,7 @@ namespace ai
         {
         public:
 
-            api_call_handler() : m_wait(new callback_wait<>) 
+            api_call_handler() : m_wait(new callback_wait<>)
             {
                 init_subscription();
             }
@@ -167,6 +167,9 @@ namespace ai
                 }
 
             }
+
+        protected:
+            int32_t on_cmd_stop_training_req(const std::shared_ptr<message> &msg) const;
 
         private:
 

@@ -87,6 +87,8 @@ namespace matrix
 
             int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
 
+            int32_t on_stop_training_req(std::shared_ptr<message> &msg);
+
         protected:
 
             std::string m_host_ip;

@@ -26,6 +26,7 @@
 #define CLIENT_CONNECT_NOTIFICATION                   "client_connect_notification"                        //client tcp connect remote notification
 #define TCP_CHANNEL_ERROR                                      "tcp_socket_channel_error"                         //network transport error
 
+#define STOP_TRAINING_REQ "stop_training_req"
 
 
 #endif
