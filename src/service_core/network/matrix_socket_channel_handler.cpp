@@ -30,13 +30,13 @@ namespace matrix
 
         matrix_socket_channel_handler::~matrix_socket_channel_handler()
         {
-            
+            LOG_DEBUG << "socket channel handler destroyed, " << m_sid.to_string();
         }
 
         int32_t matrix_socket_channel_handler::stop()
         {
-            stop_shake_hand_timer();
             m_stopped = true;
+            stop_shake_hand_timer();
 
             return E_SUCCESS;
         }
