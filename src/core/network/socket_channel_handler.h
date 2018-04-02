@@ -25,6 +25,8 @@ namespace matrix
         {
         public:
 
+            virtual ~socket_channel_handler() = default;
+
             virtual int32_t start() = 0;
 
             virtual int32_t stop() = 0;
