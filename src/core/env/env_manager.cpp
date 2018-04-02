@@ -92,6 +92,10 @@ namespace matrix
             m_conf_path /= fs::path(CONF_DIR_NAME);
             m_conf_path /= fs::path(CONF_FILE_NAME);
 
+            //dat file full path
+            m_dat_path = m_home_path;
+            m_dat_path /= fs::path(DAT_DIR_NAME);
+
             //addr file full path
             m_peer_path = m_home_path;
             m_peer_path /= fs::path(CONF_DIR_NAME);

@@ -18,7 +18,23 @@ namespace matrix
         int32_t conf_manager::init(bpo::variables_map &options)
         {
             //parse local conf
-            return parse_local_conf();
+            int32_t ret = E_SUCCESS;
+            
+            ret = parse_local_conf();
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "conf manager parse local conf error and exit";
+                return ret;
+            }
+
+            ret = parse_node_dat();
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "conf manager parse node dat error and exit";
+                return ret;
+            }
+
+            return E_SUCCESS;
         }
 
         int32_t conf_manager::parse_local_conf()
@@ -58,6 +74,41 @@ namespace matrix
             }
 
             return E_SUCCESS;
+        }
+
+        int32_t conf_manager::parse_node_dat()
+        {
+            //node dat description
+            bpo::options_description node_dat_opts("node dat description");
+            node_dat_opts.add_options()
+                ("node_id", bpo::value<std::string>(), "")
+                ("node_private_key", bpo::value<std::string>(), "");
+
+            //node.dat path
+            fs::path node_dat_path = env_manager::get_dat_path();
+            node_dat_path /= fs::path(NODE_FILE_NAME);
+
+            try
+            {
+                std::ifstream node_dat_ifs(node_dat_path.generic_string());
+                bpo::store(bpo::parse_config_file(node_dat_ifs, node_dat_opts), m_args);
+
+                bpo::notify(m_args);
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
+                return E_DEFAULT;
+            }
+        }
+
+        int32_t conf_manager::init_params()
+        {
+            assert(m_args.count("node_id") > 0);
+            m_node_id = m_args["node_id"].as<std::string>();
+
+            assert(m_args.count("node_private_key") > 0);
+            m_node_private_key = m_args["node_private_key"].as<std::string>();
         }
 
     }

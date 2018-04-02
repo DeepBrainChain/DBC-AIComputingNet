@@ -17,9 +17,11 @@
 using namespace boost::program_options;
 
 
+#define NODE_FILE_NAME                                                  "node.dat"
 #define DEFAULT_MAIN_NET_LISTEN_PORT                11107
 #define DEFAULT_TEST_NET_LISTEN_PORT                 21107
-#define DEFAULT_BIND_LOCAL_IP                             "127.0.0.1"
+#define DEFAULT_BIND_LOCAL_IP                                   "127.0.0.1"
+
 
 extern const std::string conf_manager_name;
 
@@ -43,13 +45,27 @@ namespace matrix
 
             bool count(const std::string& name) const { return m_args.count(name);}
 
+        public:
+
+            const std::string & get_node_id() const { return m_node_id; }
+
+            const std::string  & get_node_private_key() const {return m_node_private_key;}
+
         protected:
 
             int32_t parse_local_conf();
 
+            int32_t parse_node_dat();
+
+            int32_t init_params();
+
         protected:
 
             variables_map m_args;
+
+            std::string m_node_id;
+
+            std::string m_node_private_key;
         };
 
     }
