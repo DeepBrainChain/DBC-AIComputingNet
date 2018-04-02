@@ -2,13 +2,17 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºapi_call_handler.h
-* description    £ºapi call handler for command line, json rpc
+* file name        ï¿½ï¿½api_call_handler.h
+* description    ï¿½ï¿½api call handler for command line, json rpc
 * date                  : 2018.03.27
-* author            £º
+* author            ï¿½ï¿½
 **********************************************************************************/
 
+#include <service_core/codec/thrift/matrix_types.h>
+#include <service_core/codec/matrix_coder.h>
 #include "api_call_handler.h"
+#include "matrix_coder.h"
+#include "service_message_id.h"
 
 
 namespace ai
@@ -23,8 +27,28 @@ namespace ai
             TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_list_training_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_resp).name(), [this](std::shared_ptr<message> msg) {m_resp = msg; m_wait->set(); });
+
+            TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_stop_training_req(msg);});
         }
 
+        int32_t api_call_handler::on_cmd_stop_training_req(const std::shared_ptr<message> &msg) const
+        {
+            const std::string &task_id = std::dynamic_pointer_cast<cmd_stop_training_req>(msg->get_content())->task_id;
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            std::shared_ptr<matrix::service_core::stop_training_req> req_content = std::make_shared<matrix::service_core::stop_training_req>();
+            //header
+            req_content->header.magic = TEST_NET;
+            req_content->header.msg_name = STOP_TRAINING_REQ;
+            req_content->header.check_sum = 0;
+            req_content->header.session_id = 0;
+            //body
+            req_content->body.task_id = task_id;
+
+            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_name(req_content->header.msg_name);
+            CONNECTION_MANAGER->broadcast_message(req_msg);
+            return E_SUCCESS;
+        }
     }
 
 }
