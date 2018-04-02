@@ -2,24 +2,26 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºp2p_net_service.h
-* description    £ºp2p net service
+* file name      p2p_net_service.h
+* description    p2p net service
 * date                  : 2018.01.28
-* author            £ºBruce Feng
+* author            Bruce Feng
 **********************************************************************************/
 #pragma once
 
 
 #include <boost/asio.hpp>
 #include <string>
-#include<unordered_map>
+#include <unordered_map>
 #include "service_module.h"
 #include "handler_create_functor.h"
 #include "peer_node.h"
 
 
 using namespace std;
+#ifdef WIN32
 using namespace stdext;
+#endif
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
@@ -34,7 +36,7 @@ namespace matrix
         {
 
             using peer_list_type = typename std::list<std::shared_ptr<peer_node>>;
-            using peer_map_type = typename unordered_map<std::string, std::shared_ptr<peer_node>>;
+            using peer_map_type = typename std::unordered_map<std::string, std::shared_ptr<peer_node>>;
 
         public:
 
