@@ -88,6 +88,8 @@ namespace matrix
             xfer = content->read(proto.get());
             msg->set_content(content);
             msg->set_name(content->header.msg_name);
+
+            LOG_DEBUG << "matrix coder decode message: " << content->header.msg_name << ", message length: " << xfer;
         }
 
         decode_status matrix_coder::decode_header_fields(channel_handler_context &ctx, byte_buf &in, uint32_t &msg_len, uint32_t &magic, std::string &msg_name)
