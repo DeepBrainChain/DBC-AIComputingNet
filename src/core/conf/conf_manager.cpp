@@ -27,10 +27,19 @@ namespace matrix
                 return ret;
             }
 
+            //parse node.dat
             ret = parse_node_dat();
             if (E_SUCCESS != ret)
             {
                 LOG_ERROR << "conf manager parse node dat error and exit";
+                return ret;
+            }
+
+            //init params
+            ret = init_params();
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "conf manager init params error and exit";
                 return ret;
             }
 
@@ -104,11 +113,22 @@ namespace matrix
 
         int32_t conf_manager::init_params()
         {
-            assert(m_args.count("node_id") > 0);
+            if (0 == m_args.count("node_id"))
+            {
+                LOG_ERROR << "conf_manager has no node id error";
+                return E_DEFAULT;
+            }
             m_node_id = m_args["node_id"].as<std::string>();
 
-            assert(m_args.count("node_private_key") > 0);
+
+            if (0 == m_args.count("node_private_key"))
+            {
+                LOG_ERROR << "conf_manager has no node private key error";
+                return E_DEFAULT;
+            }
             m_node_private_key = m_args["node_private_key"].as<std::string>();
+
+            return E_SUCCESS;
         }
 
     }
