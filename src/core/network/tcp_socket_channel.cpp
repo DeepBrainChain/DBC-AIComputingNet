@@ -59,6 +59,8 @@ namespace matrix
         {
             LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string();
 
+            m_stopped = true;           //notify nio call back function, now i'm stopped and should exit ASAP
+
             //remove from connection manager
             CONNECTION_MANAGER->remove_channel(m_sid);
 
@@ -86,8 +88,6 @@ namespace matrix
             std::unique_lock<std::mutex> lock(m_queue_mutex);
             LOG_DEBUG << "tcp socket channel clear send queue: " << m_sid.to_string();
             m_send_queue.clear();
-
-            m_stopped = true;           //notify nio call back function, now i'm stopped and should exit ASAP
 
             return E_SUCCESS;
         }

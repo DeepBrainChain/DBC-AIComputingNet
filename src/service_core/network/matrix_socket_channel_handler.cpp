@@ -80,7 +80,7 @@ namespace matrix
                 else
                 {
                     LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_sid.to_string();
-                    on_error();
+                    //on_error();
                     return E_DEFAULT;
                 }
             }

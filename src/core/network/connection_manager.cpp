@@ -259,7 +259,7 @@ namespace matrix
 
         int32_t connection_manager::start_connect(tcp::endpoint connect_addr, handler_create_functor func)
         {
-            LOG_DEBUG << "connection manager stop connect at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
+            LOG_DEBUG << "connection manager start connect at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
 
             try
             {
