@@ -17,9 +17,9 @@ namespace matrix
     {
         int32_t conf_manager::init(bpo::variables_map &options)
         {
-            //parse local conf
             int32_t ret = E_SUCCESS;
             
+            //parse local conf
             ret = parse_local_conf();
             if (E_SUCCESS != ret)
             {
