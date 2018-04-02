@@ -92,7 +92,7 @@ namespace ai
                     std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
                     if (nullptr == resp)
                     {
-                        cout << "command time out" << endl;
+                        cout << endl << "command time out" << endl;
                     }
                     else
                     {
@@ -139,7 +139,7 @@ namespace ai
                     std::shared_ptr<cmd_stop_training_resp> resp = m_handler.invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
                     if (nullptr == resp)
                     {
-                        cout << "command time out" << endl;
+                        cout << endl << "command time out" << endl;
                     }
                     else
                     {
@@ -186,7 +186,7 @@ namespace ai
                     std::shared_ptr<cmd_start_multi_training_resp> resp = m_handler.invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
                     if (nullptr == resp)
                     {
-                        cout << "command time out" << endl;
+                        cout << endl << "command time out" << endl;
                     }
                     else
                     {
@@ -234,7 +234,7 @@ namespace ai
                     std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                     if (nullptr == resp)
                     {
-                        cout << "command time out" << endl;
+                        cout << endl << "command time out" << endl;
                     }
                     else
                     {
@@ -252,7 +252,7 @@ namespace ai
                     std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                     if (nullptr == resp)
                     {
-                        cout << "command time out" << endl;
+                        cout << endl << "command time out" << endl;
                     }
                     else
                     {
@@ -298,7 +298,7 @@ namespace ai
                     std::shared_ptr<cmd_get_peer_nodes_resp> resp = m_handler.invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
                     if (nullptr == resp)
                     {
-                        cout << "command time out" << endl;
+                        cout << endl << "command time out" << endl;
                     }
                     else
                     {
