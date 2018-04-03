@@ -22,6 +22,7 @@ extern void signal_usr1_handler(int);
 
 #define CONF_DIR_NAME                         "conf"
 #define DAT_DIR_NAME                            "dat"
+#define DB_DIR_NAME                              "db"
 #define CONF_FILE_NAME                        "core.conf"
 #define PEER_FILE_NAME                        "peer.conf"
 #define DEFAULT_PATH_BUF_LEN         512
@@ -55,6 +56,8 @@ namespace matrix
             static const fs::path & get_conf_path() { return m_conf_path; }
 
             static const fs::path & get_dat_path() { return m_dat_path; }
+
+            static const fs::path & get_db_path() { return m_db_path; }
             
             static const fs::path & get_peer_path() { return m_peer_path; }
 
@@ -81,6 +84,8 @@ namespace matrix
             static fs::path m_conf_path;
 
             static fs::path m_dat_path;
+
+            static fs::path m_db_path;
 
             static fs::path m_peer_path;
 
