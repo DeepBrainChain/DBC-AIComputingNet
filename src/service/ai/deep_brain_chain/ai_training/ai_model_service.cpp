@@ -78,7 +78,6 @@ namespace matrix
 			std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
 			assert(nullptr != req);
 
-			bpo::variables_map vm;
 			bpo::options_description task_config_opts("task config file options");
 			task_config_opts.add_options()
 				("task_id", bpo::value<std::string>(), "")

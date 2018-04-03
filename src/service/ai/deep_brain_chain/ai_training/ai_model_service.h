@@ -51,6 +51,7 @@ namespace matrix
 		protected:
 
 			std::vector<std::string> task_id_set;
+			bpo::variables_map vm;
 		};
 
 	}
