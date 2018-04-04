@@ -28,8 +28,8 @@
 
 #define STOP_TRAINING_REQ "stop_training_req"
 
-#define CMD_AI_TRAINGING_NOTIFICATION_REQ                    "cmd_start_training_req"
-#define AI_TRAINGING_NOTIFICATION_REQ                     "start_training_req"
+#define CMD_AI_TRAINING_NOTIFICATION_REQ                    "cmd_start_training_req"
+#define AI_TRAINING_NOTIFICATION_REQ                     "start_training_req"
 
 
 

@@ -59,7 +59,7 @@ namespace matrix
 
 		void ai_power_service::init_subscription()
 		{
-			TOPIC_MANAGER->subscribe(AI_TRAINGING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+			TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 		}
 
 		void ai_power_service::init_invoker()
@@ -67,7 +67,7 @@ namespace matrix
 			invoker_type invoker;
 
 			invoker = std::bind(&ai_power_service::on_start_training_req, this, std::placeholders::_1);
-			m_invokers.insert({ AI_TRAINGING_NOTIFICATION_REQ,{ invoker } });
+			m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
 
 		}
 
