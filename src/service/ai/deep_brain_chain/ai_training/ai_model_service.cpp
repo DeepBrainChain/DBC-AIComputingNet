@@ -60,7 +60,7 @@ namespace matrix
 
 		void ai_model_service::init_subscription()
 		{
-			TOPIC_MANAGER->subscribe(CMD_AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
 		}
 
 		void ai_model_service::init_invoker()
@@ -104,7 +104,6 @@ namespace matrix
 			{
 				LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
 			}
-
 			std::shared_ptr<message> req_msg = std::make_shared<message>();
 			std::shared_ptr<matrix::service_core::start_training_req> resp_content = std::make_shared<matrix::service_core::start_training_req>();
 
