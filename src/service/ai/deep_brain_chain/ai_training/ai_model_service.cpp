@@ -60,19 +60,19 @@ namespace matrix
 
 		void ai_model_service::init_subscription()
 		{
-			TOPIC_MANAGER->subscribe(AI_TRAINGING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+			TOPIC_MANAGER->subscribe(CMD_AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 		}
 
 		void ai_model_service::init_invoker()
 		{
 			invoker_type invoker;
 
-			invoker = std::bind(&ai_model_service::on_start_training_req, this, std::placeholders::_1);
-			m_invokers.insert({ AI_TRAINGING_NOTIFICATION_REQ,{ invoker } });
+			invoker = std::bind(&ai_model_service::cmd_on_start_training_req, this, std::placeholders::_1);
+			m_invokers.insert({ CMD_AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
 
 		}
 
-		int32_t ai_model_service::on_start_training_req(std::shared_ptr<message> &msg)
+		int32_t ai_model_service::cmd_on_start_training_req(std::shared_ptr<message> &msg)
 		{
 			std::shared_ptr<base> content = msg->get_content();
 			std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
@@ -109,7 +109,7 @@ namespace matrix
 			std::shared_ptr<matrix::service_core::start_training_req> resp_content = std::make_shared<matrix::service_core::start_training_req>();
 
 			resp_content->header.magic = TEST_NET;
-			resp_content->header.msg_name = AI_TRAINGING_NOTIFICATION_RESP;
+			resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
 			resp_content->header.check_sum = 0;
 			resp_content->header.session_id = 0;
 
@@ -127,7 +127,7 @@ namespace matrix
 			resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
 
 			req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
-			req_msg->set_name(AI_TRAINGING_NOTIFICATION_RESP);
+			req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
 			CONNECTION_MANAGER->broadcast_message(req_msg);
 
