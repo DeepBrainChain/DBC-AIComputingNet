@@ -29,8 +29,8 @@
 #define STOP_TRAINING_REQ "stop_training_req"
 #define LIST_TRAINING_REQ "list_training_req"
 
-#define AI_TRAINGING_NOTIFICATION_REQ                    "cmd_start_training_req"
-#define AI_TRAINGING_NOTIFICATION_RESP                     "cmd_start_training_resp"
+#define CMD_AI_TRAINING_NOTIFICATION_REQ                    "cmd_start_training_req"
+#define AI_TRAINING_NOTIFICATION_REQ                     "start_training_req"
 
 
 

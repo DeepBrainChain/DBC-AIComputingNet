@@ -59,27 +59,21 @@ namespace matrix
 
 		void ai_power_service::init_subscription()
 		{
-			TOPIC_MANAGER->subscribe(AI_TRAINGING_NOTIFICATION_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
+			TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 		}
 
 		void ai_power_service::init_invoker()
 		{
 			invoker_type invoker;
 
-			invoker = std::bind(&ai_power_service::on_start_training_resp, this, std::placeholders::_1);
-			m_invokers.insert({ AI_TRAINGING_NOTIFICATION_RESP,{ invoker } });
+			invoker = std::bind(&ai_power_service::on_start_training_req, this, std::placeholders::_1);
+			m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
 
 		}
 
 
-		int32_t ai_power_service::on_start_training_resp(std::shared_ptr<message> &msg)
+		int32_t ai_power_service::on_start_training_req(std::shared_ptr<message> &msg)
 		{
-			std::shared_ptr<base> content = msg->get_content();
-			std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(content);
-			//verify arguments
-			//
-
-		    //start docker option
 			return E_SUCCESS;
 		}
 
