@@ -45,7 +45,7 @@ namespace matrix
 
 		protected:
 
-			int32_t on_start_training_resp(std::shared_ptr<message> &msg);
+			int32_t on_start_training_req(std::shared_ptr<message> &msg);
 
 		protected:
 
