@@ -113,6 +113,9 @@
     <Filter Include="src\service\deep_brain_chain\ai_training">
       <UniqueIdentifier>{cf630f79-bc4e-43ef-b530-c7c4eed9e640}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\crypto">
+      <UniqueIdentifier>{5c5cb578-a3d3-4aa0-a69e-5ed4b09aadfc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -255,6 +258,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp">
+      <Filter>src\core\common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -515,6 +521,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.h">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\id_generator.h">
+      <Filter>src\core\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

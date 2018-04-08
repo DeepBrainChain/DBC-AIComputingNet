@@ -46,6 +46,8 @@ namespace matrix
 
             virtual std::string module_name() const { return p2p_manager_name; }
 
+			virtual int32_t init(bpo::variables_map &options);
+
         public:
 
             //peer node
@@ -77,6 +79,10 @@ namespace matrix
 
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
 
+			bool add_peer_node(const socket_id &sid);
+
+			void remove_peer_node(const std::string &id);
+
         protected:
 
             int32_t on_ver_req(std::shared_ptr<message> &msg);
@@ -88,6 +94,10 @@ namespace matrix
             int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
 
             int32_t on_stop_training_req(std::shared_ptr<message> &msg);
+
+			int32_t on_get_peer_nodes_req(std::shared_ptr<message> &msg);
+
+			int32_t on_get_peer_nodes_resp(std::shared_ptr<message> &msg);
 
         protected:
 
@@ -104,6 +114,8 @@ namespace matrix
             //peer_list_type m_peer_nodes;
 
             peer_map_type m_peer_nodes_map;
+
+			std::string m_my_node_id;
 
         };
 
