@@ -11,6 +11,7 @@
 #pragma once
 
 #include "net_address.h"
+#include "boost/asio.hpp"
 
 
 namespace matrix
@@ -27,6 +28,15 @@ namespace matrix
             virtual ~endpoint_address() = default;
 
             endpoint_address(const std::string &ip, uint16_t port) : net_address(ip), m_port(port) {}
+
+			endpoint_address(const boost::asio::ip::tcp::endpoint &ep) : net_address(ep.address().to_string()), m_port(ep.port()) {}
+
+			endpoint_address& operator=(const boost::asio::ip::tcp::endpoint &ep) 
+			{
+				m_ip = ep.address().to_string(); 
+				m_port = ep.port();
+				return *this;
+			}
 
             uint16_t get_port() const { return m_port; }
 

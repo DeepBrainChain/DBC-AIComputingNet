@@ -165,6 +165,7 @@
     <ClCompile Include="..\..\..\..\src\core\alarm\alarm.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\callback_wait.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\common_def.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp" />
     <ClCompile Include="..\..\..\..\src\core\conf\conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="..\..\..\..\src\core\common\common_def.h" />
     <ClInclude Include="..\..\..\..\src\core\common\error.h" />
     <ClInclude Include="..\..\..\..\src\core\common\function_traits.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\id_generator.h" />
     <ClInclude Include="..\..\..\..\src\core\common\std_types.h" />
     <ClInclude Include="..\..\..\..\src\core\common\util.h" />
     <ClInclude Include="..\..\..\..\src\core\common\version.h" />
