@@ -11,6 +11,7 @@
 #include "p2p_net_service.h"
 #include "server.h"
 #include "tcp_socket_channel.h"
+#include "service_proto_filter.h"
 
 
 namespace matrix
@@ -52,6 +53,10 @@ namespace matrix
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
                     {
+                        if (service_proto_filter::get_mutable_instance().check_dup(msg))
+                        {
+                            return E_SUCCESS;
+                        }                            
                         msg->header.src_sid = m_channel->id();
                         TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
                     }

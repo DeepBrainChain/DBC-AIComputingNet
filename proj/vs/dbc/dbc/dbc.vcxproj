@@ -282,7 +282,9 @@
     <ClInclude Include="..\..\..\..\src\core\service_module\service_message_def.h" />
     <ClInclude Include="..\..\..\..\src\core\service_module\service_message_id.h" />
     <ClInclude Include="..\..\..\..\src\core\service_module\service_module.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_proto_filter.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer.h" />
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_def.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_manager.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_model_service.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.h" />
