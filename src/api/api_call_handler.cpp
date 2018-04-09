@@ -72,5 +72,4 @@ namespace ai
             return E_SUCCESS;
         }
     }
-
 }

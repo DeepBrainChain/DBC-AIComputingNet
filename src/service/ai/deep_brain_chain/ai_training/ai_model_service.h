@@ -46,6 +46,7 @@ namespace matrix
 		protected:
 
 			int32_t cmd_on_start_training_req(std::shared_ptr<message> &msg);
+			int32_t on_cmd_start_multi_training_req(std::shared_ptr<message> &msg);
 
 		protected:
 
