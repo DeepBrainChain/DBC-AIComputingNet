@@ -2,15 +2,15 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtime_point_notification.cpp
-* description    £ºtime_point_notification for all service module
+* file name        £ºtime_tick_notification.cpp
+* description    £ºtime_tick_notification for all service module
 * date                  : 2018.01.20
 * author            £ºBruce Feng
 **********************************************************************************/
 
 #include "timer_matrix_manager.h"
 #include "common.h"
-#include "time_point_notification.h"
+#include "time_tick_notification.h"
 #include "service_message.h"
 #include "service_message_id.h"
 #include "server.h"
@@ -56,7 +56,7 @@ namespace matrix
                 ++m_cur_tick;
 
                 //publish notification
-                std::shared_ptr<message> msg = make_time_point_notification();
+                std::shared_ptr<message> msg = make_time_tick_notification();
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
                 //next
@@ -114,16 +114,16 @@ namespace matrix
             }
         }
 
-        std::shared_ptr<message> timer_matrix_manager::make_time_point_notification()
+        std::shared_ptr<message> timer_matrix_manager::make_time_tick_notification()
         {
             //notification
-            std::shared_ptr<time_point_notification> content(new time_point_notification);
+            std::shared_ptr<time_tick_notification> content(new time_tick_notification);
             content->time_tick = m_cur_tick;
 
             //message
             std::shared_ptr<message> msg = std::make_shared<message>();
             msg->set_content(std::dynamic_pointer_cast<base>(content));
-            msg->set_name(TIMER_POINT_NOTIFICATION);
+            msg->set_name(TIMER_TICK_NOTIFICATION);
 
             return msg;
         }

@@ -15,7 +15,7 @@
 
 
 #define DEFAULT_MESSAGE_NAME                              "default"
-#define TIMER_POINT_NOTIFICATION                        "time_point_notification"
+#define TIMER_TICK_NOTIFICATION                        "time_tick_notification"
 
 #define VER_REQ                                                             "ver_req"
 #define VER_RESP                                                           "ver_resp"
@@ -26,8 +26,8 @@
 #define CLIENT_CONNECT_NOTIFICATION                   "client_connect_notification"                        //client tcp connect remote notification
 #define TCP_CHANNEL_ERROR                                      "tcp_socket_channel_error"                         //network transport error
 
-#define STOP_TRAINING_REQ "stop_training_req"
-#define LIST_TRAINING_REQ "list_training_req"
+#define STOP_TRAINING_REQ                                           "stop_training_req"
+#define LIST_TRAINING_REQ                                               "list_training_req"
 
 #define CMD_AI_TRAINING_NOTIFICATION_REQ                    "cmd_start_training_req"
 #define AI_TRAINING_NOTIFICATION_REQ                     "start_training_req"

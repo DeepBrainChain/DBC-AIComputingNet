@@ -618,9 +618,6 @@
     <ClInclude Include="..\..\..\..\src\core\container\container_client.h">
       <Filter>src\core\container</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\core\timer_service\time_point_notification.h">
-      <Filter>src\core\timer_service</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.h">
       <Filter>src\core\timer_service</Filter>
     </ClInclude>
@@ -806,6 +803,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\container\container_message.h">
       <Filter>src\core\container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\time_tick_notification.h">
+      <Filter>src\core\timer_service</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

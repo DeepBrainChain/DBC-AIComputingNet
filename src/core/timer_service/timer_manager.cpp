@@ -8,7 +8,7 @@
 * author            ：Bruce Feng
 **********************************************************************************/
 #include "timer_manager.h"
-#include "time_point_notification.h"
+#include "time_tick_notification.h"
 #include "timer_matrix_manager.h"
 #ifdef __RTX
 #include "os_time.h"
@@ -61,7 +61,7 @@ namespace matrix
 
         void timer_manager::on_time_point_notification(std::shared_ptr<message> msg)
         {
-            std::shared_ptr<time_point_notification> notification = std::dynamic_pointer_cast<time_point_notification>(msg->get_content());
+            std::shared_ptr<time_tick_notification> notification = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
             assert(nullptr != notification);
 
             this->process(notification->time_tick);
