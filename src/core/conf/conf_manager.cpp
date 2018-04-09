@@ -109,6 +109,7 @@ namespace matrix
                 LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
                 return E_DEFAULT;
             }
+
             return E_SUCCESS;
         }
 

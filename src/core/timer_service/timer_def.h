@@ -1,7 +1,7 @@
 #pragma once
 
 /*--------------------timer name------------------------*/
-#define TIMER_NAME_FILTER_CLEAN             0xFF000001
+#define TIMER_NAME_FILTER_CLEAN             "timer name filter clean"
 
 
 /*--------------------timer interval----------------------*/
