@@ -15,6 +15,7 @@
 #include "service_message.h"
 #include "callback_wait.h"
 #include "server.h"
+#include "matrix_types.h"
 
 
 using namespace std;
@@ -113,7 +114,17 @@ namespace ai
             std::string peer_node_id;
             int32_t live_time_stamp;
             cmd_network_address addr;
-            std::list<std::string> service_list;
+            std::vector<std::string> service_list;
+
+			cmd_peer_node_info& operator=(const matrix::service_core::peer_node_info &info)
+			{
+				peer_node_id = info.peer_node_id;
+				live_time_stamp = info.live_time_stamp;
+				addr.ip = info.addr.ip;
+				addr.port = info.addr.port;
+				service_list = info.service_list;
+				return *this;
+			}
         };
 
         class cmd_get_peer_nodes_req : public matrix::core::base
@@ -127,7 +138,7 @@ namespace ai
             int32_t result;
             std::string result_info;
 
-            std::list<cmd_peer_node_info> peer_nodes_list;
+            std::vector<cmd_peer_node_info> peer_nodes_list;
         };
 
         class api_call_handler
@@ -173,6 +184,8 @@ namespace ai
             int32_t on_cmd_stop_training_req(const std::shared_ptr<message> &msg) const;
             int32_t on_cmd_list_training_req(const std::shared_ptr<message> &msg) const;
             int32_t on_cmd_start_multi_training_req(const std::shared_ptr<message> &msg) const;
+
+			int32_t on_cmd_get_peer_nodes_req(const std::shared_ptr<message> &msg);
 
         private:
 
