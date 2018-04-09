@@ -130,7 +130,7 @@ namespace ai
 
 
 			LOG_DEBUG << "begin to init ai_model_service";
-			mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::ai_power_service>());
+			mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_service>());
 			g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
 			ret = mdl->init(vm);
 			if (E_SUCCESS != ret)

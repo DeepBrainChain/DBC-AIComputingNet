@@ -24,6 +24,7 @@
 
 using namespace std;
 using namespace matrix::service_core;
+using namespace ai::dbc;
 
 
 #define TOPIC_MANAGER                               (g_server->get_topic_manager())
@@ -82,9 +83,9 @@ namespace matrix
 
 			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
-			matrix::service_core::p2p_net_service * get_p2p_net_service() { return (matrix::service_core::p2p_net_service *)(m_module_manager->get(p2p_manager_name).get()); }
-			matrix::service_core::ai_power_service * get_ai_power_service() { return (matrix::service_core::ai_power_service *)(m_module_manager->get(ai_power_service_manager_name).get()); }
-			matrix::service_core::ai_model_service * get_ai_model_service() { return (matrix::service_core::ai_model_service *)(m_module_manager->get(ai_model_service_manager_name).get()); }
+			p2p_net_service * get_p2p_net_service() { return (p2p_net_service *)(m_module_manager->get(p2p_manager_name).get()); }
+			ai_power_service * get_ai_power_service() { return (ai_power_service *)(m_module_manager->get(ai_power_service_manager_name).get()); }
+			ai_model_service * get_ai_model_service() { return (ai_model_service *)(m_module_manager->get(ai_model_service_manager_name).get()); }
 
 
 		protected:

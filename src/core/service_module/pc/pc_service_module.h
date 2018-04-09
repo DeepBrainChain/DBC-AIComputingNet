@@ -12,6 +12,7 @@
 #include <thread>
 #include <queue>
 #include <unordered_map>
+#include <limits>
 #include "module.h"
 #include "timer.h"
 #include "common.h"
@@ -21,9 +22,10 @@
 
 #if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
+
 using namespace std;
 
-#define DEFAULT_WAIT_MILLISECONDS       0                           //default 0, no wait
+
 #define DEFAULT_MESSAGE_COUNT               102400                     //default message count
 
 
@@ -33,6 +35,8 @@ namespace matrix
     {
 
         using invoker_type = typename std::function<int32_t(std::shared_ptr<message> &msg)>;
+
+        using timer_invoker_type = typename std::function<int32_t(std::shared_ptr<core_timer> timer)>;
 
         class service_module : public module
         {
@@ -61,13 +65,15 @@ namespace matrix
 
             virtual int32_t send(std::shared_ptr<message> msg);
 
-            bool is_empty() { return m_msg_queue.empty(); }
+            bool is_empty() const { return m_msg_queue.empty(); }
 
         protected:
 
             virtual int32_t on_invoke(std::shared_ptr<message> &msg);
 
             virtual void init_invoker() {}
+
+            virtual void init_timer_invoker() {}
 
         protected:
 
@@ -79,6 +85,10 @@ namespace matrix
             virtual int32_t service_msg(std::shared_ptr<message> &msg);
 
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
+
+            uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times = ULLONG_MAX);                         //period, unit: ms
+
+            void remove_timer(uint32_t timer_id);
 
         protected:
 
@@ -94,9 +104,11 @@ namespace matrix
 
             task_functor m_module_task;
 
-            timer_manager * m_timer_manager;
+            std::shared_ptr<timer_manager> m_timer_manager;
 
             std::unordered_map<std::string, invoker_type> m_invokers;
+
+            std::unordered_map<std::string, timer_invoker_type> m_timer_invokers;
         };
 
     }

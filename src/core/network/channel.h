@@ -14,7 +14,7 @@
 #include <boost/asio.hpp>
 #include "service_message.h"
 
-#define DEFAULT_BUF_LEN     512 
+
 #define MAX_SEND_QUEUE_MSG_COUNT            102400
 
 using namespace boost::asio;
