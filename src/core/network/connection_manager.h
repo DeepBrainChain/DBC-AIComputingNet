@@ -65,6 +65,8 @@ namespace matrix
 
             void remove_channel(socket_id sid);
 
+			shared_ptr<channel> get_channel(socket_id sid);
+
             int32_t send_message(socket_id sid, std::shared_ptr<message> msg);
 
 			void broadcast_message(std::shared_ptr<message> msg);

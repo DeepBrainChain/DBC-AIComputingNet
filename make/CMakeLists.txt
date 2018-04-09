@@ -94,7 +94,8 @@ ${SRC_PATH}/service_core/network
 ${SRC_PATH}/service_core/p2pnet 
 
 ${SRC_PATH}/service/ai/deep_brain_chain/conf 
-${SRC_PATH}/service/ai/deep_brain_chain/initiator 
+${SRC_PATH}/service/ai/deep_brain_chain/initiator
+${SRC_PATH}/service/ai/deep_brain_chain/ai_training
 )
 
 
@@ -142,6 +143,7 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/p2pnet SERVICE_CORE_P2PNET_SRCS)
 
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/conf SERVICE_DBC_CONF_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/initiator SERVICE_DBC_INITIATOR_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training SERVICE_DBC_TRAINING_SRCS)
 
 ############################################################################
 
@@ -184,7 +186,8 @@ ${SERVICE_CORE_CODEC_THRIFT_SRCS}
 ${SERVICE_CORE_NETWORK_SRCS} 
 ${SERVICE_CORE_P2PNET_SRCS} 
 ${SERVICE_DBC_CONF_SRCS} 
-${SERVICE_DBC_INITIATOR_SRCS})
+${SERVICE_DBC_INITIATOR_SRCS}
+${SERVICE_DBC_TRAINING_SRCS})
 
 ############################################################################
 

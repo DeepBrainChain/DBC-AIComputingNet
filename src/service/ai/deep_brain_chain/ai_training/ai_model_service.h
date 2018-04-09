@@ -43,10 +43,14 @@ namespace matrix
 
 			virtual int32_t service_init(bpo::variables_map &options);
 
-
 		protected:
 
-			int32_t on_start_training_req(std::shared_ptr<message> &msg);
+			int32_t cmd_on_start_training_req(std::shared_ptr<message> &msg);
+			int32_t on_cmd_start_multi_training_req(std::shared_ptr<message> &msg);
+
+        protected:
+			void add_task_config_opts(bpo::options_description &opts) const;
+			std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts);
 
 		protected:
 

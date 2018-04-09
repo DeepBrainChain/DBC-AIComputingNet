@@ -12,3 +12,4 @@
 //major version . minor version. bug fix version
 //version should be revised when official release
 #define CORE_VERSION                        "0.1.0"
+//#define PROTOCOL_VERSION					"0.1.0"
