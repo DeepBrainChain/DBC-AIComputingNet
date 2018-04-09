@@ -15,7 +15,7 @@
 #include "service_message_id.h"
 #include "timer_matrix_manager.h"
 #include "server.h"
-#include "time_point_notification.h"
+#include "time_tick_notification.h"
 #include "timer_def.h"
 #include "service_proto_filter.h"
 
@@ -43,7 +43,7 @@ namespace matrix
         
         int32_t service_module::init(bpo::variables_map &options)
         {
-            TOPIC_MANAGER->subscribe(TIMER_POINT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
+            TOPIC_MANAGER->subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             this->add_timer(TIMER_NAME_FILTER_CLEAN, TIMER_INTERV_SEC_FILTER_CLEAN);
             return service_init(options);
         }
@@ -103,9 +103,9 @@ namespace matrix
         int32_t service_module::on_invoke(std::shared_ptr<message> &msg)
         {
             //timer point notification trigger timer process
-            if (msg->get_name() == TIMER_POINT_NOTIFICATION)
+            if (msg->get_name() == TIMER_TICK_NOTIFICATION)
             {
-                std::shared_ptr<time_point_notification> content = std::dynamic_pointer_cast<time_point_notification>(msg->get_content());
+                std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
                 assert(nullptr != content);
 
                 return m_timer_manager->process(content->time_tick);
