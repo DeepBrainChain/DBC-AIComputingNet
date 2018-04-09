@@ -62,6 +62,8 @@ namespace matrix
 
             tcp::endpoint get_remote_addr() const { return m_remote_addr; }
 
+			tcp::endpoint get_local_addr() const { return m_local_addr; }
+
             io_service *get_io_service() { return m_ios.get(); }
 
         protected:
@@ -99,6 +101,8 @@ namespace matrix
             tcp::socket m_socket;
 
             tcp::endpoint m_remote_addr;
+
+			tcp::endpoint m_local_addr;
 
         };
 

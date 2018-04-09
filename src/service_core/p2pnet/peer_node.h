@@ -34,6 +34,8 @@ namespace matrix
 
         class peer_node
         {
+			friend class p2p_net_service;
+
         public:
 
             peer_node() = default;

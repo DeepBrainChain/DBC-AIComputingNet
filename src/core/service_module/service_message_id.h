@@ -32,6 +32,11 @@
 #define CMD_AI_TRAINING_NOTIFICATION_REQ                    "cmd_start_training_req"
 #define AI_TRAINING_NOTIFICATION_REQ                     "start_training_req"
 
+#define CMD_GET_PEER_NODES_REQ								"cmd_get_peer_nodes_req"
+#define CMD_GET_PEER_NODES_RESP								"cmd_get_peer_nodes_resp"
+#define P2P_GET_PEER_NODES_REQ								"get_peer_nodes_req"
+#define P2P_GET_PEER_NODES_RESP								"get_peer_nodes_resp"
+
 
 
 #endif
