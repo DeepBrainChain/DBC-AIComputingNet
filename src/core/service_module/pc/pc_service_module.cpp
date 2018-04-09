@@ -13,6 +13,9 @@
 #include "service_bus.h"
 #include "service_module.h"
 #include "service_message_id.h"
+#include "timer_matrix_manager.h"
+#include "server.h"
+#include "time_point_notification.h"
 #include "timer_def.h"
 #include "service_proto_filter.h"
 
@@ -40,7 +43,8 @@ namespace matrix
         
         int32_t service_module::init(bpo::variables_map &options)
         {
-            m_timer_manager->add_timer(TIMER_NAME_FILTER_CLEAN, TIMER_INTERV_SEC_FILTER_CLEAN);
+            TOPIC_MANAGER->subscribe(TIMER_POINT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
+            this->add_timer(TIMER_NAME_FILTER_CLEAN, TIMER_INTERV_SEC_FILTER_CLEAN);
             return service_init(options);
         }
 
@@ -98,11 +102,14 @@ namespace matrix
 
         int32_t service_module::on_invoke(std::shared_ptr<message> &msg)
         {
-            //timer click notification
-            if (!msg->get_name().compare(TIMER_CLICK_MESSAGE))
+            //timer point notification trigger timer process
+            if (msg->get_name() == TIMER_POINT_NOTIFICATION)
             {
-                m_timer_manager->process();
-                return E_SUCCESS;
+                std::shared_ptr<time_point_notification> content = std::dynamic_pointer_cast<time_point_notification>(msg->get_content());
+                assert(nullptr != content);
+
+                return m_timer_manager->process(content->time_tick);
+
             }
             else
             {
@@ -147,20 +154,28 @@ namespace matrix
 
         int32_t service_module::on_time_out(std::shared_ptr<core_timer> timer)
         {
-            switch (timer->get_name())
+            auto it = m_timer_invokers.find(timer->get_name());
+            if (it == m_timer_invokers.end())
             {
-            case DEFAULT_TIMER:
-                break;
-            case TIMER_NAME_FILTER_CLEAN:
-                service_proto_filter::get_mutable_instance().regular_clean();
-                break;
-            default:
-                break;
+                LOG_ERROR << this->module_name() << " received unknown timer: " << timer->get_name();
+                return E_DEFAULT;
             }
 
-            return E_SUCCESS;
+            auto func = it->second;
+            return func(timer);
         }
 
+
+        uint32_t service_module::add_timer(std::string name, uint32_t period, uint64_t repeat_times)
+        {
+            return m_timer_manager->add_timer(name, period, repeat_times);
+        }
+
+        void service_module::remove_timer(uint32_t timer_id)
+        {
+            m_timer_manager->remove_timer(timer_id);
+        }
+		
     }
 
 }

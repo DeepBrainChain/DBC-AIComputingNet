@@ -113,6 +113,36 @@
     <Filter Include="src\service\deep_brain_chain\ai_training">
       <UniqueIdentifier>{cf630f79-bc4e-43ef-b530-c7c4eed9e640}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\3rd\db">
+      <UniqueIdentifier>{2d25222a-846b-4a65-992b-5a8ca6746a37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\db\leveldb">
+      <UniqueIdentifier>{f464e9c9-405f-41e8-9c31-c3e84960f6c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\container">
+      <UniqueIdentifier>{70a26086-b03e-4e95-ac8c-6c87f0a9f113}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network">
+      <UniqueIdentifier>{da8b453f-0356-4ff9-967e-6e73f5007c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network\rapidjson">
+      <UniqueIdentifier>{a586fc4c-0f6d-43f5-92af-ef50bdb732c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network\rapidjson\error">
+      <UniqueIdentifier>{cdac1df2-5cf9-4117-b1ee-ac133ac0f5e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network\rapidjson\internal">
+      <UniqueIdentifier>{1f107753-7aa2-4e0b-a405-492dc8403e9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network\rapidjson\msinttypes">
+      <UniqueIdentifier>{32a233de-3387-47fa-9bdd-e0c7bd937e75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network\libevent">
+      <UniqueIdentifier>{bc2bd1cd-6725-4a02-81c2-628a7cafcf95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\network\libevent\event2">
+      <UniqueIdentifier>{734ff8c2-79a9-407d-83b7-215e38788ad8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\crypto">
       <UniqueIdentifier>{5c5cb578-a3d3-4aa0-a69e-5ed4b09aadfc}</UniqueIdentifier>
     </Filter>
@@ -258,6 +288,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\container\container_client.cpp">
+      <Filter>src\core\container</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.cpp">
+      <Filter>src\core\timer_service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\http_client.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\container\container_message.cpp">
+      <Filter>src\core\container</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp">
       <Filter>src\core\common</Filter>
@@ -525,11 +570,242 @@
     <ClInclude Include="..\..\..\..\src\core\common\id_generator.h">
       <Filter>src\core\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\core\service_module\service_proto_filter.h">
-      <Filter>src\core\service_module</Filter>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\c.h">
+      <Filter>src\3rd\db\leveldb</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_def.h">
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\cache.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\comparator.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\db.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\dumpfile.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\env.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\filter_policy.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\iterator.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\options.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\slice.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\status.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\table.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\table_builder.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\write_batch.h">
+      <Filter>src\3rd\db\leveldb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\container\container_client.h">
+      <Filter>src\core\container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\time_point_notification.h">
       <Filter>src\core\timer_service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.h">
+      <Filter>src\core\timer_service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\module\module_macro.h">
+      <Filter>src\core\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\allocators.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\document.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\encodedstream.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\encodings.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\filereadstream.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\filewritestream.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\memorybuffer.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\memorystream.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\prettywriter.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\rapidjson.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\reader.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\stringbuffer.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\writer.h">
+      <Filter>src\3rd\network\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\error\en.h">
+      <Filter>src\3rd\network\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\error\error.h">
+      <Filter>src\3rd\network\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\biginteger.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\diyfp.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\dtoa.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\ieee754.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\itoa.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\meta.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\pow10.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\stack.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\strfunc.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\internal\strtod.h">
+      <Filter>src\3rd\network\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\msinttypes\inttypes.h">
+      <Filter>src\3rd\network\rapidjson\msinttypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\rapidjson\msinttypes\stdint.h">
+      <Filter>src\3rd\network\rapidjson\msinttypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\evdns.h">
+      <Filter>src\3rd\network\libevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event.h">
+      <Filter>src\3rd\network\libevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\evhttp.h">
+      <Filter>src\3rd\network\libevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\evrpc.h">
+      <Filter>src\3rd\network\libevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\evutil.h">
+      <Filter>src\3rd\network\libevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\buffer.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\buffer_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\bufferevent.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\bufferevent_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\bufferevent_ssl.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\bufferevent_struct.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\dns.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\dns_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\dns_struct.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\event.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\event_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\event_struct.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\http.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\http_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\http_struct.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\keyvalq_struct.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\listener.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\rpc.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\rpc_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\rpc_struct.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\tag.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\tag_compat.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\thread.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\util.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\visibility.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\http_client.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\libevent\event2\event-config.h">
+      <Filter>src\3rd\network\libevent\event2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\container\container_message.h">
+      <Filter>src\core\container</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

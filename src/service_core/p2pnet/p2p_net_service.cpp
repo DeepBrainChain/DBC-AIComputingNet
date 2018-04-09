@@ -374,7 +374,6 @@ namespace matrix
 
         int32_t p2p_net_service::on_ver_resp(std::shared_ptr<message> &msg)
         {
-
             return E_SUCCESS;
         }
 
@@ -416,8 +415,8 @@ namespace matrix
                 //body
                 req_content->body.version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
-                req_content->body.addr_me.ip = g_server->get_p2p_net_service()->get_host_ip();
-                req_content->body.addr_me.port = g_server->get_p2p_net_service()->get_main_net_listen_port();
+                req_content->body.addr_me.ip = get_host_ip();
+                req_content->body.addr_me.port = get_main_net_listen_port();
 
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
                 req_content->body.addr_you.ip = ep.address().to_string();

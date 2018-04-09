@@ -15,7 +15,7 @@
 
 
 #define DEFAULT_MESSAGE_NAME                              "default"
-#define TIMER_CLICK_MESSAGE                                   "timer_tick"
+#define TIMER_POINT_NOTIFICATION                        "time_point_notification"
 
 #define VER_REQ                                                             "ver_req"
 #define VER_RESP                                                           "ver_resp"
@@ -31,6 +31,7 @@
 
 #define CMD_AI_TRAINING_NOTIFICATION_REQ                    "cmd_start_training_req"
 #define AI_TRAINING_NOTIFICATION_REQ                     "start_training_req"
+#define AI_TRAINGING_NOTIFICATION_RESP                "start_training_resp"
 
 #define CMD_GET_PEER_NODES_REQ								"cmd_get_peer_nodes_req"
 #define CMD_GET_PEER_NODES_RESP								"cmd_get_peer_nodes_resp"
