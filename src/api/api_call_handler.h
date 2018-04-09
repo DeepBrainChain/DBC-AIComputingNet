@@ -172,6 +172,7 @@ namespace ai
         protected:
             int32_t on_cmd_stop_training_req(const std::shared_ptr<message> &msg) const;
             int32_t on_cmd_list_training_req(const std::shared_ptr<message> &msg) const;
+            int32_t on_cmd_start_multi_training_req(const std::shared_ptr<message> &msg) const;
 
         private:
 

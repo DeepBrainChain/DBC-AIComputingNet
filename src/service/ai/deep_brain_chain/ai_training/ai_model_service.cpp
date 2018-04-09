@@ -61,6 +61,7 @@ namespace matrix
 		void ai_model_service::init_subscription()
 		{
 			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
+			TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
 		}
 
 		void ai_model_service::init_invoker()
@@ -131,6 +132,10 @@ namespace matrix
 			CONNECTION_MANAGER->broadcast_message(req_msg);
 
 			return E_SUCCESS;
+		}
+
+		int32_t ai_model_service::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
+		{
 		}
 
 	}
