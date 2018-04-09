@@ -525,5 +525,11 @@
     <ClInclude Include="..\..\..\..\src\core\common\id_generator.h">
       <Filter>src\core\common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_proto_filter.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_def.h">
+      <Filter>src\core\timer_service</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

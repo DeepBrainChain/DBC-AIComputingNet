@@ -13,6 +13,8 @@
 #include "service_bus.h"
 #include "service_module.h"
 #include "service_message_id.h"
+#include "timer_def.h"
+#include "service_proto_filter.h"
 
 
 namespace matrix
@@ -38,6 +40,7 @@ namespace matrix
         
         int32_t service_module::init(bpo::variables_map &options)
         {
+            m_timer_manager->add_timer(TIMER_NAME_FILTER_CLEAN, TIMER_INTERV_SEC_FILTER_CLEAN);
             return service_init(options);
         }
 
@@ -148,7 +151,9 @@ namespace matrix
             {
             case DEFAULT_TIMER:
                 break;
-
+            case TIMER_NAME_FILTER_CLEAN:
+                service_proto_filter::get_mutable_instance().regular_clean();
+                break;
             default:
                 break;
             }
