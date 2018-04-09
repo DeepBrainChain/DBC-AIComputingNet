@@ -14,6 +14,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
+
+#include <cassert>
+#include <memory>
+
+#endif
+
 #ifdef __RTX
 #include "rtl.h"
 #endif

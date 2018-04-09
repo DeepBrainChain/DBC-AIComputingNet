@@ -8,9 +8,9 @@
 * author            ：Bruce Feng
 **********************************************************************************/
 
-#ifndef _BASE_TIME_H_
-#define _BASE_TIME_H_
+#pragma once
 
+#include <string>
 #include <chrono>
 #include "common.h"
 
@@ -22,54 +22,52 @@ namespace matrix
         {
         public:
 
-            //unit: second
-            core_timer(uint32_t name, uint32_t period, uint32_t delay = 0);
+            //unit: ms
+            core_timer(const std::string &name, uint32_t period, uint64_t repeat_times);
 
             void init();
 
-            uint32_t get_name();
+            const std::string &get_name() const;
 
-            //timer ID
-            uint32_t get_timer_id();
+            uint32_t get_timer_id() const;
 
             void set_timer_id(uint32_t timer_id);
 
-            //time out tick
+            //time out point
 #ifdef __RTX
             uint32_t get_time_out_tick();
 #else
-            std::chrono::time_point<std::chrono::steady_clock> get_time_out_tick();
+            uint64_t get_time_out_tick() const;
 #endif
 
             void cal_time_out_tick();
 
-            //virtual void on_time_out() = 0;    
+            void desc_repeat_times() { if (m_repeat_times > 0) m_repeat_times--; }
+
+            uint64_t get_repeat_times() const { return m_repeat_times; }
 
         protected:
 
-            uint32_t m_name;
+            std::string m_name;
 
-            bool m_is_first_start;                      //is first start
+            uint32_t m_period;                          //timer period: ms
 
-            uint32_t m_delay;                             //delay first time
-
-            uint32_t m_period;                          //timer period
+            uint64_t m_repeat_times;
 
             uint32_t m_timer_id;                        //timer id
 
 #ifdef __RTX
-            uint64_t m_time_out_tick;               //超时tick, 1 ms / 1 tick
+            uint32_t m_time_out_tick;                   //超时tick, 1 ms / 1 tick
 #else
-            std::chrono::time_point<std::chrono::steady_clock> m_time_out_tick;
+            uint64_t m_time_out_tick;                   //DEFAULT_TIMER_INTERVAL ms / 1 tick
 #endif
+
+            uint32_t m_period_as_tick;
 
         };
 
     }
 
 }
-
-
-#endif
 
 

@@ -8,6 +8,8 @@
 * author            ：Bruce Feng
 **********************************************************************************/
 #include "timer_manager.h"
+#include "time_point_notification.h"
+#include "timer_matrix_manager.h"
 #ifdef __RTX
 #include "os_time.h"
 #endif
@@ -21,7 +23,7 @@ namespace matrix
             : m_module(mdl)
             , m_timer_alloc_id(0)
         {
-            assert(m_module != nullptr);
+            assert(nullptr != m_module);
         }
 
         timer_manager::~timer_manager()
@@ -29,10 +31,16 @@ namespace matrix
             remove_all_timers();
         }
 
-        uint32_t timer_manager::add_timer(uint32_t name, uint32_t period, uint32_t delay)
+        uint32_t timer_manager::add_timer(const std::string &name, uint32_t period, uint64_t repeat_times)
         {
-            std::shared_ptr<core_timer> timer(new core_timer(name, period, delay));
-            timer->set_timer_id(m_timer_alloc_id++);
+            if (repeat_times < 1 || period < DEFAULT_TIMER_INTERVAL)
+            {
+                LOG_ERROR << "timer manager add timer error: repeat times or period";
+                return E_DEFAULT;
+            }
+
+            std::shared_ptr<core_timer> timer(new core_timer(name, period, repeat_times));
+            timer->set_timer_id(++m_timer_alloc_id);                //timer id begins from 1, 0 is invalid timer id
             m_timer_queue.push_back(timer);
 
             return timer->get_timer_id();
@@ -51,18 +59,43 @@ namespace matrix
             }
         }
 
-        void timer_manager::process()
+        void timer_manager::on_time_point_notification(std::shared_ptr<message> msg)
         {
-            auto now = std::chrono::steady_clock::now();
+            std::shared_ptr<time_point_notification> notification = std::dynamic_pointer_cast<time_point_notification>(msg->get_content());
+            assert(nullptr != notification);
+
+            this->process(notification->time_tick);
+        }
+
+        int32_t timer_manager::process(uint64_t time_tick)
+        {
+            std::shared_ptr<core_timer> timer;
+
             for (auto it = m_timer_queue.begin(); it != m_timer_queue.end(); it++)
             {
-                std::shared_ptr<core_timer> timer = *it;
-                if (timer->get_time_out_tick() < now)
+                timer  = *it;
+
+                if (timer->get_time_out_tick() <= time_tick)
                 {
+                    //module callback
                     m_module->on_time_out(timer);
-                    timer->cal_time_out_tick();
+
+                    assert(timer->get_repeat_times() > 0);
+
+                    //minus repeat times
+                    timer->desc_repeat_times();
+                    if (0 == timer->get_repeat_times())
+                    {
+                        remove_timer(timer->get_timer_id());                    //remove timer life period
+                    }
+                    else
+                    {
+                        timer->cal_time_out_tick();                            //update next time out point
+                    }
                 }
             }
+
+            return E_SUCCESS;
         }
 
         void timer_manager::remove_all_timers()

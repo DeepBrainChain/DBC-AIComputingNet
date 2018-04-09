@@ -8,19 +8,23 @@
 * author            ：Bruce Feng
 **********************************************************************************/
 
-#ifndef _TIMER_MANAGER_H_
-#define _TIMER_MANAGER_H_
+#pragma once
+
 
 #include <list>
 #include "timer.h"
 #include "common.h"
 #include "module.h"
+#include "service_message.h"
+
+
+#define INVALID_TIMER_ID                        0
+
 
 namespace matrix
 {
     namespace core
     {
-        #define DEFAULT_TIMER              0xFFFFFFFF
 
         class timer_manager
         {
@@ -30,11 +34,13 @@ namespace matrix
 
             virtual ~timer_manager();
 
-            uint32_t add_timer(uint32_t name, uint32_t period, uint32_t delay = 0);         //unit: second
+            uint32_t add_timer(const std::string &name, uint32_t period, uint64_t repeat_times);                //period, unit: ms
 
             void remove_timer(uint32_t timer_id);
 
-            void process();
+            void on_time_point_notification(std::shared_ptr<message> msg);
+
+            int32_t process(uint64_t time_tick);
 
         protected:
 
@@ -42,7 +48,7 @@ namespace matrix
 
         protected:
 
-            module *m_module;
+            module * m_module;
 
             std::list<std::shared_ptr<core_timer>>  m_timer_queue;
 
@@ -54,7 +60,5 @@ namespace matrix
 
 }
 
-
-#endif
 
 
