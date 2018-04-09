@@ -41,6 +41,8 @@ namespace matrix
             //get remote addr and begin to read
             m_remote_addr = m_socket.remote_endpoint();
 
+			m_local_addr = m_socket.local_endpoint();
+
             //start handler
             m_socket_handler->start();
 

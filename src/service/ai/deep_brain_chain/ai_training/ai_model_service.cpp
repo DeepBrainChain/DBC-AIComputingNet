@@ -60,19 +60,20 @@ namespace matrix
 
 		void ai_model_service::init_subscription()
 		{
-			TOPIC_MANAGER->subscribe(AI_TRAINGING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
+			TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
 		}
 
 		void ai_model_service::init_invoker()
 		{
 			invoker_type invoker;
 
-			invoker = std::bind(&ai_model_service::on_start_training_req, this, std::placeholders::_1);
-			m_invokers.insert({ AI_TRAINGING_NOTIFICATION_REQ,{ invoker } });
+			invoker = std::bind(&ai_model_service::cmd_on_start_training_req, this, std::placeholders::_1);
+			m_invokers.insert({ CMD_AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
 
 		}
 
-		int32_t ai_model_service::on_start_training_req(std::shared_ptr<message> &msg)
+		int32_t ai_model_service::cmd_on_start_training_req(std::shared_ptr<message> &msg)
 		{
 			std::shared_ptr<base> content = msg->get_content();
 			std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
@@ -104,12 +105,11 @@ namespace matrix
 			{
 				LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
 			}
-
 			std::shared_ptr<message> req_msg = std::make_shared<message>();
 			std::shared_ptr<matrix::service_core::start_training_req> resp_content = std::make_shared<matrix::service_core::start_training_req>();
 
 			resp_content->header.magic = TEST_NET;
-			resp_content->header.msg_name = AI_TRAINGING_NOTIFICATION_RESP;
+			resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
 			resp_content->header.check_sum = 0;
 			resp_content->header.session_id = 0;
 
@@ -127,13 +127,85 @@ namespace matrix
 			resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
 
 			req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
-			req_msg->set_name(AI_TRAINGING_NOTIFICATION_RESP);
+			req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
 			CONNECTION_MANAGER->broadcast_message(req_msg);
 
 			return E_SUCCESS;
 		}
 
+		int32_t ai_model_service::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
+		{
+			std::shared_ptr<base> content = msg->get_content();
+			std::shared_ptr<cmd_start_multi_training_req> req = std::dynamic_pointer_cast<cmd_start_multi_training_req>(content);
+			assert(nullptr != req);
+
+			bpo::options_description opts("task config file options");
+			add_task_config_opts(opts);
+
+			std::vector<std::string> files;
+            string_util::split(req->mulit_task_file_path, ",", files);
+			for (auto &file : files) {
+				auto req_msg = create_task_msg_from_file(file, opts);
+				CONNECTION_MANAGER->broadcast_message(req_msg);
+			}
+			return E_SUCCESS;
+		}
+
+        void ai_model_service::add_task_config_opts(bpo::options_description &opts) const
+		{
+			opts.add_options()
+					("task_id", bpo::value<std::string>(), "")
+					("select_mode", bpo::value<int8_t>()->default_value(0), "")
+					("master", bpo::value<std::string>(), "")
+					("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
+					("server_specification", bpo::value<std::string>(), "")
+					("server_count", bpo::value<int32_t>(), "")
+					("training_engine", bpo::value<int32_t>(), "")
+					("code_dir", bpo::value<std::string>(), "")
+					("entry_file", bpo::value<std::string>(), "")
+					("data_dir", bpo::value<std::string>(), "")
+					("checkpoint_dir", bpo::value<std::string>(), "")
+					("hyper_parameters", bpo::value<std::string>(), "");
+		}
+
+		std::shared_ptr<message> ai_model_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts)
+		{
+			try
+			{
+				std::ifstream conf_task(task_file);
+				::store(bpo::parse_config_file(conf_task, opts), vm);
+				bpo::notify(vm);
+			}
+			catch (const boost::exception & e)
+			{
+				LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
+			}
+			std::shared_ptr<message> req_msg = std::make_shared<message>();
+			std::shared_ptr<matrix::service_core::start_training_req> resp_content = std::make_shared<matrix::service_core::start_training_req>();
+
+			resp_content->header.magic = TEST_NET;
+			resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
+			resp_content->header.check_sum = 0;
+			resp_content->header.session_id = 0;
+
+			resp_content->body.task_id = vm["task_id"].as<std::string>();
+			resp_content->body.select_mode = vm["select_mode"].as<int8_t>();
+			resp_content->body.master = vm["master"].as<std::string>();
+			resp_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
+			resp_content->body.server_specification = vm["server_specification"].as<std::string>();
+			resp_content->body.server_count = vm["server_count"].as<int32_t>();
+			resp_content->body.training_engine = vm["training_engine"].as<int32_t>();
+			resp_content->body.code_dir = vm["code_dir"].as<std::string>();
+			resp_content->body.entry_file = vm["entry_file"].as<std::string>();
+			resp_content->body.data_dir = vm["data_dir"].as<std::string>();
+			resp_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
+			resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
+
+			req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
+			req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
+            return req_msg;
+		}
 	}
 
 }

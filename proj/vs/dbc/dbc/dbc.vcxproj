@@ -165,6 +165,7 @@
     <ClCompile Include="..\..\..\..\src\core\alarm\alarm.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\callback_wait.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\common_def.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp" />
     <ClCompile Include="..\..\..\..\src\core\conf\conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="..\..\..\..\src\core\common\common_def.h" />
     <ClInclude Include="..\..\..\..\src\core\common\error.h" />
     <ClInclude Include="..\..\..\..\src\core\common\function_traits.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\id_generator.h" />
     <ClInclude Include="..\..\..\..\src\core\common\std_types.h" />
     <ClInclude Include="..\..\..\..\src\core\common\util.h" />
     <ClInclude Include="..\..\..\..\src\core\common\version.h" />
@@ -280,7 +282,9 @@
     <ClInclude Include="..\..\..\..\src\core\service_module\service_message_def.h" />
     <ClInclude Include="..\..\..\..\src\core\service_module\service_message_id.h" />
     <ClInclude Include="..\..\..\..\src\core\service_module\service_module.h" />
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_proto_filter.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer.h" />
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_def.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_manager.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_model_service.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.h" />

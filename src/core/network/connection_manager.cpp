@@ -327,6 +327,18 @@ namespace matrix
             m_channels.erase(sid);
         }
 
+		std::shared_ptr<channel> connection_manager::get_channel(socket_id sid)
+		{
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
+			auto it = m_channels.find(sid);
+			if (it != m_channels.end())
+			{
+				return it->second;
+			}
+
+			return nullptr;
+		}
+
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)
         {
 			read_lock_guard<rw_lock> lock(m_lock_chnl);
