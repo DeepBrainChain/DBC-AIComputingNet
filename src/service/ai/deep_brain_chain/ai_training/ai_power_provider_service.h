@@ -2,8 +2,8 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºai_power_service_provider.h
-* description    £ºai_power_service_provider
+* file name        £ºai_power_provider_service.h
+* description    £ºai_power_provider_service
 * date                  : 2018.04.05
 * author            £ºBruce Feng
 **********************************************************************************/
@@ -60,13 +60,13 @@ namespace ai
             }
         };
 
-        class ai_power_service_provider : public service_module
+        class ai_power_provider_service : public service_module
         {
         public:
 
-            ai_power_service_provider();
+            ai_power_provider_service();
 
-            virtual ~ai_power_service_provider() = default;
+            virtual ~ai_power_provider_service() = default;
 
             virtual std::string module_name() const { return ai_power_provider_service_name; }
 

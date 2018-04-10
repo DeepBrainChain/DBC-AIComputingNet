@@ -201,8 +201,8 @@
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\main.cpp" />
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_requestor.cpp" />
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_provider.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_requestor_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.cpp" />
@@ -370,8 +370,8 @@
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\time_tick_notification.h" />
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_requestor.h" />
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_provider.h" />
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_requestor_service.h" />
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h" />

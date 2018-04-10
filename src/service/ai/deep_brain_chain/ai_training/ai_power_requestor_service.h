@@ -2,8 +2,8 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºai_power_service_requestor.h
-* description    £ºai_power_service_requestor
+* file name        £ºai_power_requestor_service.h
+* description    £ºai_power_requestor_service
 * date                  : 2018.01.28
 * author            £ºBruce Feng
 **********************************************************************************/
@@ -23,13 +23,13 @@ namespace matrix
 	namespace service_core
 	{
 
-		class ai_power_service_requestor : public service_module
+		class ai_power_requestor_service : public service_module
 		{
 		public:
 
-			ai_power_service_requestor() = default;
+			ai_power_requestor_service() = default;
 
-			virtual ~ai_power_service_requestor() = default;
+			virtual ~ai_power_requestor_service() = default;
 
 			virtual std::string module_name() const { return ai_power_requestor_service_name; }
 
