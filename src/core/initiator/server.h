@@ -17,8 +17,8 @@
 #include "topic_manager.h"
 #include "connection_manager.h"
 #include "p2p_net_service.h"
-#include "ai_power_service.h"
-#include "ai_model_service.h"
+#include "ai_power_service_requestor.h"
+#include "ai_power_service_provider.h"
 #include "module_manager.h"
 #include "server_initiator_factory.h"
 
@@ -84,8 +84,8 @@ namespace matrix
 			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
 			p2p_net_service * get_p2p_net_service() { return (p2p_net_service *)(m_module_manager->get(p2p_manager_name).get()); }
-			ai_power_service * get_ai_power_service() { return (ai_power_service *)(m_module_manager->get(ai_power_service_manager_name).get()); }
-			ai_model_service * get_ai_model_service() { return (ai_model_service *)(m_module_manager->get(ai_model_service_manager_name).get()); }
+			ai_power_service_provider * get_ai_power_service_provider() { return (ai_power_service_provider *)(m_module_manager->get(ai_power_service_manager_name).get()); }
+			ai_power_service_requestor * get_ai_power_service_requestor() { return (ai_power_service_requestor *)(m_module_manager->get(ai_model_service_manager_name).get()); }
 
 
 		protected:
