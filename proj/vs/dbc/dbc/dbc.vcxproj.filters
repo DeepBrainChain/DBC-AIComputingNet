@@ -146,6 +146,9 @@
     <Filter Include="src\service\deep_brain_chain\ai_training\conf">
       <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\service_core\common">
+      <UniqueIdentifier>{e9055c14-cd6a-4a9c-a3ce-cbd724d94982}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -306,6 +309,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\common\common_service.cpp">
+      <Filter>src\service_core\common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -806,6 +812,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.h">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\common\common_service.h">
+      <Filter>src\service_core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\timer_service\timer_def.h">
+      <Filter>src\core\timer_service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\common\service_proto_filter.h">
+      <Filter>src\service_core\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
