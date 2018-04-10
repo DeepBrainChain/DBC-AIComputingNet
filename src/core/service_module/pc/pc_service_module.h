@@ -73,7 +73,11 @@ namespace matrix
 
             virtual void init_invoker() {}
 
-            virtual void init_timer_invoker() {}
+            virtual void init_timer() {}
+
+            virtual void init_subscription() {}
+
+            virtual void init_time_tick_subscription();
 
         protected:
 

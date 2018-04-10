@@ -46,21 +46,10 @@ namespace ai
         {
             int32_t ret = E_SUCCESS;
 
-            init_subscription();
-
-            init_invoker();
-
             ret = init_db();
             if (E_SUCCESS != ret)
             {
                 LOG_ERROR << "ai power service init db error";
-                return ret;
-            }
-
-            ret = init_timer();
-            if (E_SUCCESS != ret)
-            {
-                LOG_ERROR << "ai power service init timer error";
                 return ret;
             }
 
@@ -71,24 +60,6 @@ namespace ai
         {
             remove_timer(m_training_task_timer_id);
             return E_SUCCESS;
-        }
-
-        void ai_power_provider_service::init_timer_invoker()
-        {
-            m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
-        }
-
-        int32_t ai_power_provider_service::on_time_out(std::shared_ptr<core_timer> timer)
-        {
-            assert(nullptr != timer);
-
-            if (timer->get_name() == AI_TRAINING_TASK_TIMER)
-            {
-                return on_training_task_timer(timer);
-            }
-
-            return E_SUCCESS;
-
         }
 
         void ai_power_provider_service::init_subscription()
@@ -102,10 +73,6 @@ namespace ai
 
 			invoker = std::bind(&ai_power_provider_service::on_start_training_req, this, std::placeholders::_1);
 			m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
-			
-		    invoker = std::bind(&ai_power_provider_service::on_start_training_resp, this, std::placeholders::_1);
-            m_invokers.insert({ AI_TRAINGING_NOTIFICATION_RESP,{ invoker } });
-
         }
 
         int32_t ai_power_provider_service::init_db()
@@ -135,27 +102,11 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_provider_service::init_timer()
+        void ai_power_provider_service::init_timer()
         {
+            m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
             m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, AI_TRAINING_TASK_TIMER_INTERVAL);
-            if (INVALID_TIMER_ID == m_training_task_timer_id)
-            {
-                LOG_ERROR << "ai power service add training task timer error";
-                return E_DEFAULT;
-            }
-
-            return E_SUCCESS;
-        }
-
-        int32_t ai_power_provider_service::on_start_training_resp(std::shared_ptr<message> &msg)
-        {
-            std::shared_ptr<base> content = msg->get_content();
-            std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(content);
-            //verify arguments
-            //
-
-            //start docker option
-            return E_SUCCESS;
+            assert(INVALID_TIMER_ID != m_training_task_timer_id);
         }
 
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)

@@ -42,10 +42,21 @@ namespace matrix
         }
         
         int32_t service_module::init(bpo::variables_map &options)
-        {
-            TOPIC_MANAGER->subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            this->add_timer(TIMER_NAME_FILTER_CLEAN, TIMER_INTERV_SEC_FILTER_CLEAN);
+        {            
+            init_timer();
+
+            init_invoker();
+
+            init_subscription();
+
+            init_time_tick_subscription();
+
             return service_init(options);
+        }
+
+        void service_module::init_time_tick_subscription()
+        {
+            TOPIC_MANAGER->subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg); });
         }
 
         int32_t service_module::start()
