@@ -15,8 +15,8 @@
 #include "topic_manager.h"
 #include "version.h"
 #include "p2p_net_service.h"
-#include "ai_model_service.h"
-#include "ai_power_service.h"
+#include "ai_power_service_requestor.h"
+#include "ai_power_service_provider.h"
 #include "cmd_line_service.h"
 
 using namespace std::chrono;
@@ -116,8 +116,8 @@ namespace ai
 			mdl->start();
 			LOG_DEBUG << "init p2p net service succefully";
 
-			LOG_DEBUG << "begin to init ai_model_service";
-			mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::ai_model_service>());
+			LOG_DEBUG << "begin to init ai_power_service_requestor";
+			mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::ai_power_service_requestor>());
 			g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
 			ret = mdl->init(vm);
 			if (E_SUCCESS != ret)
@@ -126,11 +126,11 @@ namespace ai
 				return ret;
 			}
 			mdl->start();
-			LOG_DEBUG << "init p2p ai_model_servic succefully";
+			LOG_DEBUG << "init p2p ai_power_service_requestor succefully";
 
 
-			LOG_DEBUG << "begin to init ai_model_service";
-			mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_service>());
+			LOG_DEBUG << "begin to init ai_power_service_provider";
+			mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_service_provider>());
 			g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
 			ret = mdl->init(vm);
 			if (E_SUCCESS != ret)
@@ -139,7 +139,7 @@ namespace ai
 				return ret;
 			}
 			mdl->start();
-			LOG_DEBUG << "init ai_model_service succefully";
+			LOG_DEBUG << "init ai_power_service_provider succefully";
 
 			//cmd line service
 			LOG_DEBUG << "begin to init comand line service";

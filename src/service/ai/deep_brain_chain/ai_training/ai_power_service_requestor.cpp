@@ -2,8 +2,8 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºp2p_net_service.cpp
-* description    £ºp2p net service
+* file name        £ºai_power_service_requestor.cpp
+* description    £ºai_power_service_requestor
 * date                  : 2018.01.28
 * author            £ºBruce Feng
 **********************************************************************************/
@@ -24,7 +24,7 @@
 #include "port_validator.h"
 #include <boost/exception/all.hpp>
 #include <iostream>
-#include "ai_model_service.h"
+#include "ai_power_service_requestor.h"
 
 
 
@@ -41,12 +41,12 @@ namespace matrix
 	namespace service_core
 	{
 
-		int32_t ai_model_service::init_conf()
+		int32_t ai_power_service_requestor::init_conf()
 		{
 			return E_SUCCESS;
 		}
 
-		int32_t ai_model_service::service_init(bpo::variables_map &options)
+		int32_t ai_power_service_requestor::service_init(bpo::variables_map &options)
 		{
 			int32_t ret = E_SUCCESS;
 
@@ -58,22 +58,22 @@ namespace matrix
 		}
 
 
-		void ai_model_service::init_subscription()
+		void ai_power_service_requestor::init_subscription()
 		{
 			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
 			TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
 		}
 
-		void ai_model_service::init_invoker()
+		void ai_power_service_requestor::init_invoker()
 		{
 			invoker_type invoker;
 
-			invoker = std::bind(&ai_model_service::cmd_on_start_training_req, this, std::placeholders::_1);
+			invoker = std::bind(&ai_power_service_requestor::cmd_on_start_training_req, this, std::placeholders::_1);
 			m_invokers.insert({ CMD_AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
 
 		}
 
-		int32_t ai_model_service::cmd_on_start_training_req(std::shared_ptr<message> &msg)
+		int32_t ai_power_service_requestor::cmd_on_start_training_req(std::shared_ptr<message> &msg)
 		{
 			std::shared_ptr<base> content = msg->get_content();
 			std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
@@ -134,7 +134,7 @@ namespace matrix
 			return E_SUCCESS;
 		}
 
-		int32_t ai_model_service::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
+		int32_t ai_power_service_requestor::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
 		{
 			std::shared_ptr<base> content = msg->get_content();
 			std::shared_ptr<cmd_start_multi_training_req> req = std::dynamic_pointer_cast<cmd_start_multi_training_req>(content);
@@ -152,7 +152,7 @@ namespace matrix
 			return E_SUCCESS;
 		}
 
-        void ai_model_service::add_task_config_opts(bpo::options_description &opts) const
+        void ai_power_service_requestor::add_task_config_opts(bpo::options_description &opts) const
 		{
 			opts.add_options()
 					("task_id", bpo::value<std::string>(), "")
@@ -169,7 +169,7 @@ namespace matrix
 					("hyper_parameters", bpo::value<std::string>(), "");
 		}
 
-		std::shared_ptr<message> ai_model_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts)
+		std::shared_ptr<message> ai_power_service_requestor::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts)
 		{
 			try
 			{
