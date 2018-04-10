@@ -48,12 +48,6 @@ namespace matrix
 
 		int32_t ai_power_requestor_service::service_init(bpo::variables_map &options)
 		{
-			int32_t ret = E_SUCCESS;
-
-			init_subscription();
-
-			init_invoker();
-
 			return E_SUCCESS;
 		}
 

@@ -78,23 +78,19 @@ namespace ai
 
             void init_invoker();
 
-            int32_t init_db();
+            void init_timer();
 
-            int32_t init_timer();
+            int32_t init_db();
 
             int32_t service_init(bpo::variables_map &options);
 
             int32_t service_exit();
 
-            int32_t on_time_out(std::shared_ptr<core_timer> timer);
 
-            void init_timer_invoker();
 
         protected:
 
             int32_t on_start_training_req(std::shared_ptr<message> &msg);
-
-            int32_t on_start_training_resp(std::shared_ptr<message> &msg);
 
         protected:
 
@@ -111,8 +107,6 @@ namespace ai
             int32_t load_task_from_db();
 
         protected:
-
-            std::vector<std::string> task_id_set;
 
             std::shared_ptr<leveldb::DB> m_training_task_db;
 

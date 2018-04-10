@@ -237,11 +237,6 @@ namespace matrix
         int32_t p2p_net_service::service_init(bpo::variables_map &options)
         {
             int32_t ret = E_SUCCESS;
-            //init topic
-            init_subscription();
-
-            //init invoker
-            init_invoker();
 
             //init listen
             ret = init_acceptor();
