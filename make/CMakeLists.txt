@@ -89,8 +89,9 @@ ${SRC_PATH}/core/storage
 ${SRC_PATH}/core/timer_service 
 
 ${SRC_PATH}/service_core/codec 
-${SRC_PATH}/service_core/codec/thrift 
-${SRC_PATH}/service_core/network 
+${SRC_PATH}/service_core/codec/thrift
+${SRC_PATH}/service_core/common
+${SRC_PATH}/service_core/network
 ${SRC_PATH}/service_core/p2pnet 
 
 ${SRC_PATH}/service/ai/deep_brain_chain/conf 
@@ -146,6 +147,7 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/timer_service CORE_TIMER_SERVICE_SRCS)
 
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/codec SERVICE_CORE_CODEC_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/codec/thrift SERVICE_CORE_CODEC_THRIFT_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/common SERVICE_CORE_COMMON)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/network SERVICE_CORE_NETWORK_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/p2pnet SERVICE_CORE_P2PNET_SRCS)
 
@@ -198,8 +200,9 @@ ${CORE_SERVICE_MODULE_PC_SRCS}
 ${CORE_STORAGE_SRCS} 
 ${CORE_TIMER_SERVICE_SRCS} 
 ${SERVICE_CORE_CODEC_SRCS} 
-${SERVICE_CORE_CODEC_THRIFT_SRCS} 
-${SERVICE_CORE_NETWORK_SRCS} 
+${SERVICE_CORE_CODEC_THRIFT_SRCS}
+${SERVICE_CORE_COMMON}
+${SERVICE_CORE_NETWORK_SRCS}
 ${SERVICE_CORE_P2PNET_SRCS} 
 ${SERVICE_DBC_CONF_SRCS} 
 ${SERVICE_DBC_INITIATOR_SRCS}
