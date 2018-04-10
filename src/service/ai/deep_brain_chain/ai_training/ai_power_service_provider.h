@@ -4,7 +4,7 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        £ºai_power_service_provider.h
 * description    £ºai_power_service_provider
-* date                  : 2018.01.28
+* date                  : 2018.04.05
 * author            £ºBruce Feng
 **********************************************************************************/
 #pragma once
@@ -38,7 +38,7 @@ namespace ai
 
         enum training_task_status
         {
-            task_unknown     =         0,
+            task_unknown = 0,
             task_queueing,
             task_running,
             task_succefully_closed,
@@ -47,7 +47,7 @@ namespace ai
 
         enum container_status
         {
-            container_unknown     =           0,
+            container_unknown = 0,
             container_running,
             container_closed
         };
@@ -60,29 +60,29 @@ namespace ai
             }
         };
 
-		class ai_power_service_provider : public service_module
-		{
-		public:
+        class ai_power_service_provider : public service_module
+        {
+        public:
 
-			ai_power_service_provider();
+            ai_power_service_provider();
 
-			virtual ~ai_power_service_provider() = default;
+            virtual ~ai_power_service_provider() = default;
 
-			virtual std::string module_name() const { return ai_power_service_manager_name; }
+            virtual std::string module_name() const { return ai_power_provider_service_name; }
 
-		protected:
+        protected:
 
-			int32_t init_conf();
+            int32_t init_conf();
 
-			void init_subscription();
+            void init_subscription();
 
-			void init_invoker();
+            void init_invoker();
 
             int32_t init_db();
 
             int32_t init_timer();
 
-			int32_t service_init(bpo::variables_map &options);
+            int32_t service_init(bpo::variables_map &options);
 
             int32_t service_exit();
 
@@ -90,12 +90,12 @@ namespace ai
 
             void init_timer_invoker();
 
-		protected:
+        protected:
 
-			int32_t on_start_training_req(std::shared_ptr<message> &msg);
+            int32_t on_start_training_req(std::shared_ptr<message> &msg);
 
-			int32_t on_start_training_resp(std::shared_ptr<message> &msg);
-			
+            int32_t on_start_training_resp(std::shared_ptr<message> &msg);
+
         protected:
 
             //ai power provider service
@@ -110,9 +110,9 @@ namespace ai
 
             int32_t load_task_from_db();
 
-		protected:
+        protected:
 
-			std::vector<std::string> task_id_set;
+            std::vector<std::string> task_id_set;
 
             std::shared_ptr<leveldb::DB> m_training_task_db;
 
@@ -124,7 +124,7 @@ namespace ai
 
             uint32_t m_training_task_timer_id;
 
-		};
+        };
 
 	}
 

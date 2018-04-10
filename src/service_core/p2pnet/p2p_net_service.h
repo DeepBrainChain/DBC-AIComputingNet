@@ -44,7 +44,7 @@ namespace matrix
 
             virtual ~p2p_net_service() = default;
 
-            virtual std::string module_name() const { return p2p_manager_name; }
+            virtual std::string module_name() const { return p2p_service_name; }
 
 			virtual int32_t init(bpo::variables_map &options);
 

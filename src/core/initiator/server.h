@@ -83,9 +83,11 @@ namespace matrix
 
 			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
-			p2p_net_service * get_p2p_net_service() { return (p2p_net_service *)(m_module_manager->get(p2p_manager_name).get()); }
-			ai_power_service_provider * get_ai_power_service_provider() { return (ai_power_service_provider *)(m_module_manager->get(ai_power_service_manager_name).get()); }
-			ai_power_service_requestor * get_ai_power_service_requestor() { return (ai_power_service_requestor *)(m_module_manager->get(ai_model_service_manager_name).get()); }
+			p2p_net_service * get_p2p_net_service() { return (p2p_net_service *)(m_module_manager->get(p2p_service_name).get()); }
+
+			ai_power_service_provider * get_ai_power_service_provider() { return (ai_power_service_provider *)(m_module_manager->get(ai_power_provider_service_name).get()); }
+
+			ai_power_service_requestor * get_ai_power_service_requestor() { return (ai_power_service_requestor *)(m_module_manager->get(ai_power_requestor_service_name).get()); }
 
 
 		protected:

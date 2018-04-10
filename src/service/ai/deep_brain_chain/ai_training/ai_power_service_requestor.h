@@ -31,7 +31,7 @@ namespace matrix
 
 			virtual ~ai_power_service_requestor() = default;
 
-			virtual std::string module_name() const { return ai_model_service_manager_name; }
+			virtual std::string module_name() const { return ai_power_requestor_service_name; }
 
 		protected:
 
