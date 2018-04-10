@@ -5,4 +5,4 @@
 
 
 /*--------------------timer interval----------------------*/
-#define TIMER_INTERV_SEC_FILTER_CLEAN    180
+#define TIMER_INTERV_SEC_FILTER_CLEAN    120
