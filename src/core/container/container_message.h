@@ -2,16 +2,16 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºcontainer_message.h
-* description    £ºcontainer message definition
+* file name        ï¿½ï¿½container_message.h
+* description    ï¿½ï¿½container message definition
 * date                  : 2018.04.07
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 
 #pragma once
 
 #include "common.h"
-#include <StringBuffer.h>
+#include <stringbuffer.h>
 
 
 #define STRING_REF(VAR)                        rapidjson::StringRef(VAR.c_str(), VAR.length())

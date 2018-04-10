@@ -355,6 +355,9 @@
 #define EVENT__socklen_t unsigned int
 
 /* Define to `int' if <sys/types.h> does not define. */
+//4>todo: check other macro
+#ifdef WIN32
 #define EVENT__ssize_t SSIZE_T
+#endif
 
 #endif
