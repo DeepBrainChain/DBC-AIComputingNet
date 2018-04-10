@@ -92,9 +92,6 @@
     <Filter Include="src\service\deep_brain_chain\initiator">
       <UniqueIdentifier>{a55ee183-3ba9-413f-a78c-189759620582}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\service\deep_brain_chain\conf">
-      <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\log">
       <UniqueIdentifier>{3593eebd-6c0f-4cf4-a80b-b57009f13e6e}</UniqueIdentifier>
     </Filter>
@@ -145,6 +142,9 @@
     </Filter>
     <Filter Include="src\core\crypto">
       <UniqueIdentifier>{5c5cb578-a3d3-4aa0-a69e-5ed4b09aadfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service\deep_brain_chain\ai_training\conf">
+      <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -206,7 +206,7 @@
       <Filter>src\service\deep_brain_chain\initiator</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp">
-      <Filter>src\service\deep_brain_chain\conf</Filter>
+      <Filter>src\service\deep_brain_chain\ai_training\conf</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\service_module\pc\pc_service_module.cpp">
       <Filter>src\core\service_module\pc</Filter>
@@ -283,12 +283,6 @@
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_model_service.cpp">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.cpp">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
@@ -306,6 +300,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp">
       <Filter>src\core\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_requestor.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_provider.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -496,7 +496,7 @@
       <Filter>src\core\service_module</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h">
-      <Filter>src\service\deep_brain_chain\conf</Filter>
+      <Filter>src\service\deep_brain_chain\ai_training\conf</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h">
       <Filter>src\service\deep_brain_chain\initiator</Filter>
@@ -560,12 +560,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\api\console_printer.h">
       <Filter>src\api</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_model_service.h">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service.h">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\common\id_generator.h">
       <Filter>src\core\common</Filter>
@@ -806,6 +800,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\timer_service\time_tick_notification.h">
       <Filter>src\core\timer_service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_provider.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_service_requestor.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
