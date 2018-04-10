@@ -2,8 +2,8 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºai_power_service_provider.cpp
-* description    £ºai_power_service_provider
+* file name        £ºai_power_provider_service.cpp
+* description    £ºai_power_provider_service
 * date                  : 2018.01.28
 * author            £ºBruce Feng
 **********************************************************************************/
@@ -13,7 +13,7 @@
 #include "server.h"
 #include "api_call_handler.h"
 #include "conf_manager.h"
-#include "ai_power_service_provider.h"
+#include "ai_power_provider_service.h"
 #include "peer_node.h"
 #include "service_message_id.h"
 #include "matrix_types.h"
@@ -31,18 +31,18 @@ namespace ai
     namespace dbc
     {
 
-		ai_power_service_provider::ai_power_service_provider()
+		ai_power_provider_service::ai_power_provider_service()
             : m_training_task_timer_id(INVALID_TIMER_ID)
         {
 
         }
 
-        int32_t ai_power_service_provider::init_conf()
+        int32_t ai_power_provider_service::init_conf()
         {
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::service_init(bpo::variables_map &options)
+        int32_t ai_power_provider_service::service_init(bpo::variables_map &options)
         {
             int32_t ret = E_SUCCESS;
 
@@ -67,18 +67,18 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::service_exit()
+        int32_t ai_power_provider_service::service_exit()
         {
             remove_timer(m_training_task_timer_id);
             return E_SUCCESS;
         }
 
-        void ai_power_service_provider::init_timer_invoker()
+        void ai_power_provider_service::init_timer_invoker()
         {
-            m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_service_provider::on_training_task_timer, this, std::placeholders::_1);
+            m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
         }
 
-        int32_t ai_power_service_provider::on_time_out(std::shared_ptr<core_timer> timer)
+        int32_t ai_power_provider_service::on_time_out(std::shared_ptr<core_timer> timer)
         {
             assert(nullptr != timer);
 
@@ -91,24 +91,24 @@ namespace ai
 
         }
 
-        void ai_power_service_provider::init_subscription()
+        void ai_power_provider_service::init_subscription()
         {
             TOPIC_MANAGER->subscribe(AI_TRAINGING_NOTIFICATION_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
         }
 
-        void ai_power_service_provider::init_invoker()
+        void ai_power_provider_service::init_invoker()
         {
             invoker_type invoker;
 
-			invoker = std::bind(&ai_power_service_provider::on_start_training_req, this, std::placeholders::_1);
+			invoker = std::bind(&ai_power_provider_service::on_start_training_req, this, std::placeholders::_1);
 			m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
 			
-		    invoker = std::bind(&ai_power_service_provider::on_start_training_resp, this, std::placeholders::_1);
+		    invoker = std::bind(&ai_power_provider_service::on_start_training_resp, this, std::placeholders::_1);
             m_invokers.insert({ AI_TRAINGING_NOTIFICATION_RESP,{ invoker } });
 
         }
 
-        int32_t ai_power_service_provider::init_db()
+        int32_t ai_power_provider_service::init_db()
         {
             leveldb::DB *db = nullptr;
             leveldb::Options  options;
@@ -135,7 +135,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::init_timer()
+        int32_t ai_power_provider_service::init_timer()
         {
             m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, AI_TRAINING_TASK_TIMER_INTERVAL);
             if (INVALID_TIMER_ID == m_training_task_timer_id)
@@ -147,7 +147,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::on_start_training_resp(std::shared_ptr<message> &msg)
+        int32_t ai_power_provider_service::on_start_training_resp(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<base> content = msg->get_content();
             std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(content);
@@ -158,7 +158,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::on_start_training_req(std::shared_ptr<message> &msg)
+        int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<start_training_req> req = std::dynamic_pointer_cast<start_training_req>(msg->get_content());
             assert(nullptr != req);
@@ -233,7 +233,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::on_training_task_timer(std::shared_ptr<core_timer> timer)
+        int32_t ai_power_provider_service::on_training_task_timer(std::shared_ptr<core_timer> timer)
         {
             if (0 == m_queueing_tasks.size())
             {
@@ -260,7 +260,7 @@ namespace ai
             }
         }
 
-        int32_t ai_power_service_provider::start_exec_training_task(std::shared_ptr<ai_training_task> task)
+        int32_t ai_power_provider_service::start_exec_training_task(std::shared_ptr<ai_training_task> task)
         {
             //judge retry times
             if (task->retry_times > AI_TRAINING_MAX_RETRY_TIMES)
@@ -321,7 +321,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::check_training_task_status(std::shared_ptr<ai_training_task> task)
+        int32_t ai_power_provider_service::check_training_task_status(std::shared_ptr<ai_training_task> task)
         {
             //judge retry times
             if (task->retry_times > AI_TRAINING_MAX_RETRY_TIMES)
@@ -377,7 +377,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::write_task_to_db(std::shared_ptr<ai_training_task> task)
+        int32_t ai_power_provider_service::write_task_to_db(std::shared_ptr<ai_training_task> task)
         {
             assert(nullptr != m_training_task_db && nullptr != task);
 
@@ -396,7 +396,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_service_provider::load_task_from_db()
+        int32_t ai_power_provider_service::load_task_from_db()
         {
             try
             {
