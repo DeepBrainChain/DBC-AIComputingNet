@@ -94,7 +94,6 @@ namespace matrix
 				::store(bpo::parse_config_file(conf_task, task_config_opts), vm);
 				bpo::notify(vm);
 			}
-
 			catch (const boost::exception & e)
 			{
 				LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);

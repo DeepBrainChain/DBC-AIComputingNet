@@ -479,7 +479,7 @@ namespace matrix
 				read_lock_guard<rw_lock> lock(m_nodes_lock);
 				for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
 				{
-					if (it->second->m_id == m_my_node_id)
+					if (it->second->m_id == CONF_MANAGER->get_node_id())
 					{
 						resp_msg->header.src_sid = it->second->m_sid;
 						continue;

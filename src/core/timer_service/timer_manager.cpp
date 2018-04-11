@@ -50,11 +50,11 @@ namespace matrix
         {
             for (auto it = m_timer_queue.begin(); it != m_timer_queue.end(); it++)
             {
-                auto found = it;
                 std::shared_ptr<core_timer> timer = *it;
                 if (timer_id == timer->get_timer_id())
                 {
-                    m_timer_queue.erase(found);
+                    m_timer_queue.erase(it);
+                    break;
                 }
             }
         }
