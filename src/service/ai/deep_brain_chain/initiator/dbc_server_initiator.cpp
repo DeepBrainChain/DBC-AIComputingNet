@@ -18,6 +18,7 @@
 #include "ai_power_requestor_service.h"
 #include "ai_power_provider_service.h"
 #include "cmd_line_service.h"
+#include "common_service.h"
 
 using namespace std::chrono;
 using namespace matrix::core;
@@ -153,6 +154,20 @@ namespace ai
 			}
 			mdl->start();
 			LOG_DEBUG << "init comand line service succefully";
+
+            //common service
+            LOG_DEBUG << "begin to init common service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::common_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                //logging
+                return ret;
+            }
+            mdl->start();
+            LOG_DEBUG << "init common service succefully";
+
 
 			//log cost time
 			high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
