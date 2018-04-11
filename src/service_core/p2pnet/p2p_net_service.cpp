@@ -261,7 +261,6 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            TOPIC_MANAGER->subscribe(STOP_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(LIST_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
 			TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 			TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
@@ -286,10 +285,6 @@ namespace matrix
             //ver resp
             invoker = std::bind(&p2p_net_service::on_ver_resp, this, std::placeholders::_1);
             m_invokers.insert({ VER_RESP, { invoker } });
-
-            // temporary, move to training service in future
-            invoker = std::bind(&p2p_net_service::on_stop_training_req, this, std::placeholders::_1);
-            m_invokers.insert({ STOP_TRAINING_REQ, { invoker } });
 
             // temporary, move to training service in future
             invoker = std::bind(&p2p_net_service::on_list_training_req, this, std::placeholders::_1);
@@ -431,17 +426,6 @@ namespace matrix
                 //cancel connect and connect next
                 return E_SUCCESS;
             } 
-        }
-
-        int32_t p2p_net_service::on_stop_training_req(std::shared_ptr<message> &msg)
-        {
-            std::shared_ptr<message> resp_msg = std::make_shared<message>();
-            const std::string& task_id = std::dynamic_pointer_cast<stop_training_req>(msg->get_content())->body.task_id;
-            //4>todo: check task_id running?
-            //4>todo: try go on broadcasting
-            cout << endl << "recv stop training req: task_id = " << task_id << endl;
-            LOG_DEBUG << "recv stop training req: task_id = " << task_id << endl;
-            return E_SUCCESS;
         }
 
         int32_t p2p_net_service::on_list_training_req(std::shared_ptr<message> &msg)

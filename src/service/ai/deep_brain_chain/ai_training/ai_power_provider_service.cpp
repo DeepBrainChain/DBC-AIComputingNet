@@ -86,6 +86,8 @@ namespace ai
         void ai_power_provider_service::init_subscription()
         {
             TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            //stop training
+            TOPIC_MANAGER->subscribe(STOP_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
         }
 
         void ai_power_provider_service::init_invoker()
@@ -94,6 +96,10 @@ namespace ai
 
             invoker = std::bind(&ai_power_provider_service::on_start_training_req, this, std::placeholders::_1);
             m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
+
+            //stop training
+            invoker = std::bind(&ai_power_provider_service::on_stop_training_req, this, std::placeholders::_1);
+            m_invokers.insert({ STOP_TRAINING_REQ,{ invoker } });
         }
 
         int32_t ai_power_provider_service::init_db()
@@ -203,6 +209,56 @@ namespace ai
             //add to task queue
             m_queueing_tasks.push_back(task);
             m_training_tasks[task->task_id] = task;
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::on_stop_training_req(std::shared_ptr<message> &msg)
+        {
+            std::shared_ptr<stop_training_req> req = std::dynamic_pointer_cast<stop_training_req>(msg->get_content());
+            assert(nullptr != req);
+            //relay on stop_training to network(maybe task running on multiple nodes)
+            LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes" << req->body.task_id;
+            CONNECTION_MANAGER->broadcast_message(msg);
+
+            //check task_id
+            if (0 == m_queueing_tasks.size())
+            {
+                LOG_DEBUG << "ai power provider service training queuing task is empty";
+                return E_SUCCESS;
+            }   
+            std::shared_ptr<ai_training_task> sp_task;
+            const std::string& task_id = std::dynamic_pointer_cast<stop_training_req>(msg->get_content())->body.task_id;
+            for (auto task : m_queueing_tasks)
+            {
+                if (task->task_id == task_id)
+                {
+                    sp_task = task;
+                    break;
+                }
+            }
+
+            if (sp_task)//found
+            {
+                LOG_DEBUG << "stop training, task_status=" << sp_task->status << endl;
+
+                if (sp_task->status == task_running)
+                {
+                    //stop container
+                    int32_t ret = m_container_client->stop_container(sp_task->container_id);
+                    if (E_SUCCESS != ret)
+                    {
+                        LOG_ERROR << "ai power provider service stop container error, container id: " << sp_task->container_id;
+                        return E_DEFAULT;
+                    }
+                }
+                else if (sp_task->status == task_queueing)
+                {
+                    sp_task->status = task_stopped;
+                    //flush to db: update status
+                    write_task_to_db(sp_task);
+                }
+            }
 
             return E_SUCCESS;
         }

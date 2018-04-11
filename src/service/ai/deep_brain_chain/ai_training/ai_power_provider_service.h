@@ -40,7 +40,8 @@ namespace ai
         {
             task_unknown = 0,
             task_queueing,
-            task_running,
+            task_running, 
+            task_stopped,
             task_succefully_closed,
             task_abnormally_closed
         };
@@ -91,6 +92,10 @@ namespace ai
         protected:
 
             int32_t on_start_training_req(std::shared_ptr<message> &msg);
+
+            int32_t on_stop_training_req(std::shared_ptr<message> &msg);
+
+            int32_t on_list_training_req(std::shared_ptr<message> &msg);
 
         protected:
 
