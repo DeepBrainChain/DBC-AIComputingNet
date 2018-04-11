@@ -9,7 +9,7 @@ namespace matrix
         class common_service : public matrix::core::service_module
         {
         public:
-            common_service() = default;
+            common_service();
 
             virtual ~common_service() = default;
 
@@ -22,7 +22,12 @@ namespace matrix
 
             virtual int32_t service_init(bpo::variables_map &options);
 
+            virtual int32_t service_exit();
+
             int32_t on_timer_filter_clean(std::shared_ptr<matrix::core::core_timer> timer);
+
+        private:
+            uint32_t m_timer_id_filter_clean;
 
         };
 

@@ -53,12 +53,11 @@ namespace matrix
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
                     {
-                        if (service_proto_filter::get_mutable_instance().check_dup(msg))
+                        if (!service_proto_filter::get_mutable_instance().check_dup(msg))
                         {
-                            return E_SUCCESS;
-                        }                            
-                        msg->header.src_sid = m_channel->id();
-                        TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                            msg->header.src_sid = m_channel->id();
+                            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                        }
                     }
 
                     //callback

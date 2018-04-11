@@ -116,7 +116,7 @@ namespace matrix
 
             peer_map_type m_peer_nodes_map;
 
-			std::string m_my_node_id;
+			//std::string m_my_node_id;
 
         };
 
