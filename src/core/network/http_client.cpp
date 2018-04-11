@@ -2,15 +2,16 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºhttp_client.cpp
-* description    £ºhttp client for rpc
+* file name        ï¿½ï¿½http_client.cpp
+* description    ï¿½ï¿½http client for rpc
 * date                  : 2018.04.07
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 
 #include "http_client.h"
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
+#include <event2/http.h>
 
 
 namespace matrix

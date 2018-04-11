@@ -54,7 +54,6 @@ SET(Boost_USE_STATIC_LIBS     ON)
 SET(Boost_USE_MULTITHREADED   ON)
 SET(Boost_USE_STATIC_RUNTIME  ON)
 
-					 
 FIND_PACKAGE(Boost 1.66 REQUIRED COMPONENTS thread date_time system filesystem log log_setup exception program_options serialization signals serialization chrono unit_test_framework context)
 
 ############################################################################
@@ -71,7 +70,8 @@ ${SRC_PATH}/core/codec
 ${SRC_PATH}/core/common 
 ${SRC_PATH}/core/conf 
 ${SRC_PATH}/core/conf/validator
-${SRC_PATH}/core/data_structure 
+${SRC_PATH}/core/container
+${SRC_PATH}/core/data_structure
 ${SRC_PATH}/core/env 
 ${SRC_PATH}/core/initiator 
 ${SRC_PATH}/core/log 
@@ -89,13 +89,21 @@ ${SRC_PATH}/core/storage
 ${SRC_PATH}/core/timer_service 
 
 ${SRC_PATH}/service_core/codec 
-${SRC_PATH}/service_core/codec/thrift 
-${SRC_PATH}/service_core/network 
+${SRC_PATH}/service_core/codec/thrift
+${SRC_PATH}/service_core/common
+${SRC_PATH}/service_core/network
 ${SRC_PATH}/service_core/p2pnet 
 
 ${SRC_PATH}/service/ai/deep_brain_chain/conf 
 ${SRC_PATH}/service/ai/deep_brain_chain/initiator
 ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
+
+${SRC_PATH}/3rd/db/leveldb
+${SRC_PATH}/3rd/network/rapidjson
+${SRC_PATH}/3rd/network/rapidjson/internal
+${SRC_PATH}/3rd/network/rapidjson/error
+${SRC_PATH}/3rd/network/libevent
+${SRC_PATH}/3rd/network/libevent/event2
 )
 
 
@@ -119,6 +127,7 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/codec CORE_CODEC_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/common CORE_COMMON_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/conf CORE_CONF_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/conf/validator CORE_CONF_VALIDATOR_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/container CORE_CONTAINER)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/data_structure CORE_DATA_STRU_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/env CORE_ENV_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/initiator CORE_INITIATOR_SRCS)
@@ -138,12 +147,20 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/timer_service CORE_TIMER_SERVICE_SRCS)
 
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/codec SERVICE_CORE_CODEC_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/codec/thrift SERVICE_CORE_CODEC_THRIFT_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/common SERVICE_CORE_COMMON)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/network SERVICE_CORE_NETWORK_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/p2pnet SERVICE_CORE_P2PNET_SRCS)
 
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/conf SERVICE_DBC_CONF_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/initiator SERVICE_DBC_INITIATOR_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training SERVICE_DBC_TRAINING_SRCS)
+
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/db/leveldb THIRD_LEVEL_DB_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson THIRD_RAPIDJSON_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/internal THIRD_RAPIDJSON_INTERNAL_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/error THIRD_RAPIDJSON_ERROR_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent THIRD_LIBEVENT_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent/event2 THIRD_LIBEVENT_EVENT2_SRCS)
 
 ############################################################################
 
@@ -165,7 +182,8 @@ ${CORE_CODEC_SRCS}
 ${CORE_COMMON_SRCS} 
 ${CORE_CONF_SRCS} 
 ${CORE_CONF_VALIDATOR_SRCS}
-${CORE_DATA_STRU_SRCS} 
+${CORE_CONTAINER}
+${CORE_DATA_STRU_SRCS}
 ${CORE_ENV_SRCS} 
 ${CORE_INITIATOR_SRCS} 
 ${CORE_LOG_SRCS} 
@@ -182,12 +200,19 @@ ${CORE_SERVICE_MODULE_PC_SRCS}
 ${CORE_STORAGE_SRCS} 
 ${CORE_TIMER_SERVICE_SRCS} 
 ${SERVICE_CORE_CODEC_SRCS} 
-${SERVICE_CORE_CODEC_THRIFT_SRCS} 
-${SERVICE_CORE_NETWORK_SRCS} 
+${SERVICE_CORE_CODEC_THRIFT_SRCS}
+${SERVICE_CORE_COMMON}
+${SERVICE_CORE_NETWORK_SRCS}
 ${SERVICE_CORE_P2PNET_SRCS} 
 ${SERVICE_DBC_CONF_SRCS} 
 ${SERVICE_DBC_INITIATOR_SRCS}
-${SERVICE_DBC_TRAINING_SRCS})
+${SERVICE_DBC_TRAINING_SRCS}
+${THIRD_LEVEL_DB_SRCS}
+${THIRD_RAPIDJSON_SRCS}
+${THIRD_RAPIDJSON_INTERNAL_SRCS}
+${THIRD_RAPIDJSON_ERROR_SRCS}
+${THIRD_LIBEVENT_SRCS}
+${THIRD_LIBEVENT_EVENT2_SRCS})
 
 ############################################################################
 
@@ -198,7 +223,7 @@ SET(LIBRARIES)
 #target link
 MESSAGE(STATUS "${Boost_LIBRARIES}")
 #libboost_thread.a -lboost_log_setup
-TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} libboost_thread.a)
+TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb libboost_thread.a)
 
 ############################################################################
 

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtime_tick_notification.cpp
-* description    £ºtime_tick_notification for all service module
+* file name        ï¿½ï¿½time_tick_notification.cpp
+* description    ï¿½ï¿½time_tick_notification for all service module
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 
 #include "timer_matrix_manager.h"
@@ -22,7 +22,7 @@ namespace matrix
     namespace core
     {
 
-        tick_type timer_matrix_manager::m_cur_tick = 0;
+        tick_type timer_matrix_manager::m_cur_tick = {0};
 
         timer_matrix_manager::timer_matrix_manager()
             : m_timer_group(new nio_loop_group())
