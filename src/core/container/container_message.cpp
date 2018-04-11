@@ -18,7 +18,7 @@ namespace matrix
     namespace core
     {
 
-        std::shared_ptr<rapidjson::StringBuffer> container_config::to_buf()
+        std::string container_config::to_string()
         {
             rapidjson::Document document;
             rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
@@ -95,7 +95,6 @@ namespace matrix
             rapidjson::Value json_volumes(rapidjson::kObjectType);
             for (auto it = this->volumes.dests.begin(); it != this->volumes.dests.end(); it++)
             {
-                //json_dests.PushBack(rapidjson::Value().SetString(it->c_str(), it->length()), allocator);
                 json_volumes.AddMember(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), rapidjson::Value().SetString("{}"), allocator);
             }
             root.AddMember("Volumes", json_volumes, allocator);
@@ -104,12 +103,56 @@ namespace matrix
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
 
-            return buffer;
+            return buffer->GetString();
         }
 
-        void container_inspect_response::from_buf(std::shared_ptr<rapidjson::StringBuffer> json_buf)
+        void container_create_resp::from_string(const std::string & buf)
         {
+            //parse resp
+            rapidjson::Document doc;
+            doc.Parse<0>(buf.c_str());
 
+            //id
+            if (false == doc.HasMember("id"))
+            {
+                LOG_ERROR << "container client create container resp has no id field";
+            }
+            rapidjson::Value &id = doc["id"];
+            this->container_id = id.GetString();
+
+            //warinings
+            if (doc.HasMember("Warnings"))
+            {
+                rapidjson::Value &warnings = doc["Warnings"];
+                if (warnings.IsArray())
+                {
+                    for (rapidjson::SizeType i = 0; i < warnings.Size(); i++)
+                    {
+                        const rapidjson::Value& object = warnings[i];
+                        this->warnings.push_back(object.GetString());
+                    }
+                }
+            }
+
+        }
+
+        void container_inspect_response::from_string(const std::string & buf)
+        {
+            rapidjson::Document doc;
+            doc.Parse<0>(buf.c_str());              //left to later not all fields set
+
+            //message
+            if (!doc.HasMember("State"))
+            {
+                return;
+            }
+
+            rapidjson::Value &state = doc["State"];
+            rapidjson::Value &running = state["Running"];
+            rapidjson::Value &exit_code = state["ExitCode"];
+
+            this->state.running = running.GetBool();
+            this->state.exit_code = exit_code.GetInt();
         }
 
     }

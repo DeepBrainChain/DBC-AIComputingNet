@@ -41,7 +41,7 @@ namespace matrix
 
         static void http_request_done(struct evhttp_request *req, void *ctx)
         {
-            http_reply *reply = static_cast<http_reply*>(ctx);
+            http_response *reply = static_cast<http_response*>(ctx);
 
             if (req == nullptr) 
             {
@@ -67,7 +67,7 @@ namespace matrix
 
         static void http_error_cb(enum evhttp_request_error err, void *ctx)
         {
-            http_reply *reply = static_cast<http_reply*>(ctx);
+            http_response *reply = static_cast<http_response*>(ctx);
             reply->error = err;
         }
 
@@ -84,7 +84,7 @@ namespace matrix
             m_remote_port = remote_port;
         }
 
-        int32_t http_client::post(const std::string &endpoint, const kvs &headers, rapidjson::StringBuffer & req_content, http_reply &resp)
+        int32_t http_client::post(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp)
         {
             //event base
             raii_event_base base = obtain_event_base();
@@ -112,7 +112,7 @@ namespace matrix
             }
 
             // request data
-            std::string strRequest = req_content.GetString() + std::string("\n");
+            std::string strRequest = req_content + std::string("\n");
             struct evbuffer* output_buffer = evhttp_request_get_output_buffer(req.get());
             assert(output_buffer);
             evbuffer_add(output_buffer, strRequest.data(), strRequest.size());
@@ -139,19 +139,19 @@ namespace matrix
             }
             else if (resp.status >= 400 && resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
-                LOG_ERROR << "http client error:  server returned HTTP error " << resp.status;
+                LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
                 return E_DEFAULT;
             }
             else if (resp.body.empty())
             {
-                LOG_ERROR << "http client error:  no resp from server";
+                LOG_ERROR << "http client error: no resp from server";
                 return E_DEFAULT;
             }            
 
             return E_SUCCESS;
         }
 
-        int32_t http_client::get(const std::string &endpoint, const kvs &headers, http_reply &resp)
+        int32_t http_client::get(const std::string &endpoint, const kvs &headers, http_response &resp)
         {
             //event base
             raii_event_base base = obtain_event_base();
@@ -200,19 +200,19 @@ namespace matrix
             }
             else if (resp.status >= 400 && resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
-                LOG_ERROR << "http client error:  server returned HTTP error " << resp.status;
+                LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
                 return E_DEFAULT;
             }
             else if (resp.body.empty())
             {
-                LOG_ERROR << "http client error:  no resp from server";
+                LOG_ERROR << "http client error: no resp from server";
                 return E_DEFAULT;
             }
 
             return E_SUCCESS;
         }
 
-        int32_t http_client::del(const std::string &endpoint, const kvs &headers, http_reply &resp)
+        int32_t http_client::del(const std::string &endpoint, const kvs &headers, http_response &resp)
         {
             //event base
             raii_event_base base = obtain_event_base();
@@ -261,12 +261,12 @@ namespace matrix
             }
             else if (resp.status >= 400 && resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
-                LOG_ERROR << "http client error:  server returned HTTP error " << resp.status;
+                LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
                 return E_DEFAULT;
             }
             else if (resp.body.empty())
             {
-                LOG_ERROR << "http client error:  no resp from server";
+                LOG_ERROR << "http client error: no resp from server";
                 return E_DEFAULT;
             }
 

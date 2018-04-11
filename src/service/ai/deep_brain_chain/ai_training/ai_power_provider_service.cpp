@@ -31,14 +31,28 @@ namespace ai
     namespace dbc
     {
 
-		ai_power_provider_service::ai_power_provider_service()
-            : m_training_task_timer_id(INVALID_TIMER_ID)
+        ai_power_provider_service::ai_power_provider_service()
+            : m_training_task_db()
+            , m_container_ip(DEFAULT_LOCAL_IP)
+            , m_container_port(DEFAULT_CONTAINER_LISTEN_PORT)
+            , m_container_client(std::make_shared<container_client>(m_container_ip, m_container_port))
+            , m_training_task_timer_id(INVALID_TIMER_ID)
         {
 
         }
 
         int32_t ai_power_provider_service::init_conf()
         {
+            if (CONF_MANAGER->count("container_ip"))
+            {
+                m_container_ip = (*CONF_MANAGER)["container_ip"].as<std::string>();
+            }
+
+            if (CONF_MANAGER->count("container_ip"))
+            {
+                m_container_port = (*CONF_MANAGER)["container_port"].as<unsigned long>();
+            }
+
             return E_SUCCESS;
         }
 
@@ -46,10 +60,17 @@ namespace ai
         {
             int32_t ret = E_SUCCESS;
 
+            ret = init_conf();
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "ai power provider service init config error";
+                return ret;
+            }
+
             ret = init_db();
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "ai power service init db error";
+                LOG_ERROR << "ai power provider service init db error";
                 return ret;
             }
 
@@ -64,15 +85,15 @@ namespace ai
 
         void ai_power_provider_service::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(AI_TRAINGING_NOTIFICATION_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
         }
 
         void ai_power_provider_service::init_invoker()
         {
             invoker_type invoker;
 
-			invoker = std::bind(&ai_power_provider_service::on_start_training_req, this, std::placeholders::_1);
-			m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
+            invoker = std::bind(&ai_power_provider_service::on_start_training_req, this, std::placeholders::_1);
+            m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
         }
 
         int32_t ai_power_provider_service::init_db()
@@ -115,7 +136,7 @@ namespace ai
             assert(nullptr != req);
 
             //relay start training in network
-            LOG_DEBUG << "ai power service relay broadcast start training req to neighbour peer nodes" << req->body.task_id;
+            LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbour peer nodes" << req->body.task_id;
             CONNECTION_MANAGER->broadcast_message(msg);
 
             //check node id
@@ -125,7 +146,7 @@ namespace ai
             {
                 if ((*it) == CONF_MANAGER->get_node_id())
                 {
-                    LOG_DEBUG << "ai power service found self node id in on start training: " << req->body.task_id << " node id: " << (*it);
+                    LOG_DEBUG << "ai power provider service found self node id in on start training: " << req->body.task_id << " node id: " << (*it);
                     break;
                 }
             }
@@ -133,13 +154,13 @@ namespace ai
             //not found self just return
             if (it == peer_nodes.end())
             {
-                LOG_DEBUG << "ai power service found start training req " << req->body.task_id << " is not self and exit function";
+                LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
                 return E_SUCCESS;
             }
 
             if (nullptr == m_training_task_db)
             {
-                LOG_ERROR << "ai power service training task db is nullptr";
+                LOG_ERROR << "ai power provider service training task db is nullptr";
                 return E_DEFAULT;
             }
 
@@ -148,9 +169,11 @@ namespace ai
             leveldb::Status status = m_training_task_db->Get(leveldb::ReadOptions(), req->body.task_id, &task_value);
             if (status.ok())                //already exists and directly return
             {
-                LOG_DEBUG << "ai power service on start training already had task: " << req->body.task_id;
+                LOG_DEBUG << "ai power provider service on start training already had task: " << req->body.task_id;
                 return E_SUCCESS;
             }
+
+            assert(0 == m_training_tasks.count(req->body.task_id));
 
             std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
             assert(nullptr != task);
@@ -175,10 +198,10 @@ namespace ai
 
             //flush to db
             write_task_to_db(task);
+            LOG_DEBUG << "ai power provider service flush task to db: " << req->body.task_id;
 
             //add to task queue
             m_queueing_tasks.push_back(task);
-            assert(0 == m_training_tasks.count(task->task_id));             //memory should be consistent with db
             m_training_tasks[task->task_id] = task;
 
             return E_SUCCESS;
@@ -188,7 +211,7 @@ namespace ai
         {
             if (0 == m_queueing_tasks.size())
             {
-                LOG_DEBUG << "ai power service training queueing task is empty";
+                LOG_DEBUG << "ai power provider service training queueing task is empty";
                 return E_SUCCESS;
             }
 
@@ -196,17 +219,17 @@ namespace ai
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
             if (task_queueing == task->status)
             {
-                LOG_DEBUG << "ai power service training start exec ai training task: " << task->task_id;
+                LOG_DEBUG << "ai power provider service training start exec ai training task: " << task->task_id;
                 return start_exec_training_task(task);
             }
             else if (task_running == task->status)
             {
-                LOG_DEBUG << "ai power service training start check ai training task status" << task->task_id;
+                LOG_DEBUG << "ai power provider service training start check ai training task status" << task->task_id;
                 return check_training_task_status(task);
             }
             else
             {
-                LOG_ERROR << "ai power service training start exec ai training task: " << task->task_id << " invalid status: " << task->status;
+                LOG_ERROR << "ai power provider service training start exec ai training task: " << task->task_id << " invalid status: " << task->status;
                 return E_DEFAULT;
             }
         }
@@ -224,51 +247,50 @@ namespace ai
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
-                LOG_DEBUG << "ai power service restart container too many times, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_DEBUG << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
             }
 
             //create container
             std::shared_ptr<container_config> config = std::make_shared<container_config>();
 
-            //exec cmd
+            //exec cmd: python training_task --task=ai_training_task.py
             std::string exec_cmd = "python ";
             exec_cmd += AI_TRAINING_PYTHON_SCRIPT;
             exec_cmd += AI_TRAINING_PYTHON_SCRIPT_OPTION;
             exec_cmd += task->entry_file;
 
-            std::list<std::string> &cmd = config->cmd;
-            cmd.push_back(exec_cmd);                                    //download file + exec training 
+            config->cmd.push_back(exec_cmd);                                    //download file + exec training 
             config->image = AI_TRAINING_IMAGE_NAME;
-            
+
             //create container
             std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config);
             if (nullptr == resp || resp->container_id.empty())
             {
                 task->retry_times++;
-                LOG_ERROR << "ai power  service create container error";
+                LOG_ERROR << "ai power provider service create container error";
                 return E_DEFAULT;
             }
 
             task->container_id = resp->container_id;
-            LOG_DEBUG << "ai power  service create container successfully, container id: " << task->container_id;
+            LOG_DEBUG << "ai power provider service create container successfully, container id: " << task->container_id;
 
             //start container
             int32_t ret = m_container_client->start_container(task->container_id);
             if (E_SUCCESS != ret)
             {
                 task->retry_times++;
-                LOG_ERROR << "ai power  service start container error, container id: " << task->container_id;
+                LOG_ERROR << "ai power provider service start container error, container id: " << task->container_id;
                 return E_DEFAULT;
             }
 
             //update status and container id
             task->status = task_running;
 
-            //flush to db
+            //flush to db: update status
             write_task_to_db(task);
 
-            LOG_DEBUG << "ai power  service start container update task " << task->task_id << " status runing, container id " << task->container_id << " and flush to db successfully";
+            LOG_DEBUG << "ai power provider service start container successfully and update task status runing, task id: " << task->task_id << "  container id: " << task->container_id;
             return E_SUCCESS;
         }
 
@@ -285,7 +307,7 @@ namespace ai
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
-                LOG_DEBUG << "ai power service restart container too many times, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_DEBUG << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
             }
 
@@ -294,17 +316,18 @@ namespace ai
             if (nullptr == resp)
             {
                 task->retry_times++;
-                LOG_ERROR << "ai power  service check container error, container id: " << task->container_id;
+                LOG_ERROR << "ai power provider service check container error, container id: " << task->container_id;
                 return E_DEFAULT;
             }
-           
+
             if (true == resp->state.running)
             {
+                LOG_DEBUG << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_SUCCESS;
             }
             else if (0 != resp->state.exit_code)
             {
-                LOG_DEBUG << "ai power service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
                 //restart container
                 task->retry_times++;
@@ -313,19 +336,17 @@ namespace ai
             }
             else
             {
-                //
+                task->status = task_succefully_closed;
+                LOG_DEBUG << "ai power provider service restart container while inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
+
+                //flush to db
+                write_task_to_db(task);
+
+                //pop from task queue
+                m_queueing_tasks.pop_front();
+
+                return E_SUCCESS;
             }
-
-            task->status = task_succefully_closed;
-            LOG_DEBUG << "ai power service restart container while inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
-           
-            //flush to db
-            write_task_to_db(task);
-
-            //pop from task queue
-            m_queueing_tasks.pop_front();
-
-            return E_SUCCESS;
         }
 
         int32_t ai_power_provider_service::write_task_to_db(std::shared_ptr<ai_training_task> task)
@@ -368,12 +389,12 @@ namespace ai
 
                     if (0 != m_training_tasks.count(task->task_id))
                     {
-                        LOG_ERROR << "ai power service trainning task duplicated: " << task->task_id;
+                        LOG_ERROR << "ai power provider service trainning task duplicated: " << task->task_id;
                         continue;
                     }
 
                     //insert training task
-                    m_training_tasks.insert({task->task_id, task});
+                    m_training_tasks.insert({ task->task_id, task });
 
                     //go next
                     if (task_running == task->status || task_queueing == task->status)
@@ -388,7 +409,7 @@ namespace ai
             }
             catch (...)
             {
-                LOG_ERROR << "ai power service load task from db exception";
+                LOG_ERROR << "ai power provider service load task from db exception";
                 return E_DEFAULT;
             }
 

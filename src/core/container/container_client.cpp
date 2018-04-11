@@ -47,36 +47,30 @@ namespace matrix
             }
 
             //req content, headers, resp
-            std::shared_ptr<rapidjson::StringBuffer> req_content = config->to_buf();
+            std::string && req_content = config->to_string();
             kvs headers;
-            http_reply resp;
+            headers.push_back({"Content-Type", "application/json"});
+            http_response resp;
+            int32_t ret = E_SUCCESS;
             
-            int32_t ret = m_http_client.post(endpoint, headers, *req_content, resp);
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, req_content, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client create container error: " << e.what();
+                return nullptr;
+            }
+
             if (E_SUCCESS != ret)
             {
                 return nullptr;
             }
 
              //parse resp
-             rapidjson::Document doc;
-             doc.Parse<0>(resp.body.c_str());
-
              std::shared_ptr<container_create_resp> create_resp = std::make_shared<container_create_resp>();
-
-             //id
-             rapidjson::Value &id = doc["id"];
-             create_resp->container_id = id.GetString();
-
-             //warinings
-             rapidjson::Value &warnings = doc["Warnings"];
-             if (warnings.IsArray())
-             {
-                 for (rapidjson::SizeType i = 0; i < warnings.Size(); i++)
-                 {
-                     const rapidjson::Value& object = warnings[i];
-                     create_resp->warnings.push_back(object.GetString());
-                 }
-             }
+             create_resp->from_string(resp.body);
 
              return create_resp;
         }
@@ -99,20 +93,34 @@ namespace matrix
             endpoint += "/start";
 
             //req content, headers, resp
-            rapidjson::StringBuffer req_content;
+            std::string req_content;
             kvs headers;
-            http_reply resp;
+            headers.push_back({ "Content-Type", "application/json" });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
 
-            int32_t ret = m_http_client.post(endpoint, headers, req_content, resp);
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, req_content, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client start container error: " << e.what();
+                return E_DEFAULT;
+            }
+
             if (E_SUCCESS != ret)
             {
                 //parse resp
                 rapidjson::Document doc;
                 doc.Parse<0>(resp.body.c_str());
 
-                //id
-                rapidjson::Value &message = doc["message"];
-                LOG_DEBUG << "start container message: " << message.GetString();
+                //message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "start container message: " << message.GetString();
+                }
                 return ret;
             }
 
@@ -143,20 +151,33 @@ namespace matrix
             }
 
             //req content, headers, resp
-            rapidjson::StringBuffer req_content;
+            std::string req_content;
             kvs headers;
-            http_reply resp;
+            http_response resp;
+            int32_t ret = E_SUCCESS;
 
-            int32_t ret = m_http_client.post(endpoint, headers, req_content, resp);
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, req_content, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client stop container error: " << e.what();
+                return E_DEFAULT;
+            }
+
             if (E_SUCCESS != ret)
             {
                 //parse resp
                 rapidjson::Document doc;
                 doc.Parse<0>(resp.body.c_str());
 
-                //id
-                rapidjson::Value &message = doc["message"];
-                LOG_DEBUG << "start container message: " << message.GetString();
+                //message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "stop container message: " << message.GetString();
+                }
                 return ret;
             }
 
@@ -176,20 +197,33 @@ namespace matrix
             endpoint += "/wait";
 
             //req content, headers, resp
-            rapidjson::StringBuffer req_content;
+            std::string req_content;
             kvs headers;
-            http_reply resp;
+            http_response resp;
+            int32_t ret = E_SUCCESS;
 
-            int32_t ret = m_http_client.post(endpoint, headers, req_content, resp);
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, req_content, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client create container error: " << e.what();
+                return E_DEFAULT;
+            }
+
             if (E_SUCCESS != ret)
             {
                 //parse resp
                 rapidjson::Document doc;
                 doc.Parse<0>(resp.body.c_str());
 
-                //id
-                rapidjson::Value &message = doc["message"];
-                LOG_DEBUG << "start container error message: " << message.GetString();
+                //message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "wait container error message: " << message.GetString();
+                }
                 return ret;
             }
             else
@@ -198,13 +232,17 @@ namespace matrix
                 rapidjson::Document doc;
                 doc.Parse<0>(resp.body.c_str());
 
-                //id
+                //StatusCode
+                if (! doc.HasMember("StatusCode"))
+                {
+                    return E_DEFAULT;
+                }
+
                 rapidjson::Value &status_code = doc["StatusCode"];
                 if (0 != status_code.GetInt())
                 {
                     return E_DEFAULT;
                 }
-
                 return E_SUCCESS;
             }
 
@@ -232,18 +270,31 @@ namespace matrix
 
             //req content, headers, resp
             kvs headers;
-            http_reply resp;
+            http_response resp;
+            int32_t ret = E_SUCCESS;
 
-            int32_t ret = m_http_client.del(endpoint, headers, resp);
+            try
+            {
+                ret = m_http_client.del(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client remove container error: " << e.what();
+                return E_DEFAULT;
+            }
+
             if (E_SUCCESS != ret)
             {
                 //parse resp
                 rapidjson::Document doc;
                 doc.Parse<0>(resp.body.c_str());
 
-                //id
-                rapidjson::Value &message = doc["message"];
-                LOG_DEBUG << "start container message: " << message.GetString();
+                //message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "remove container message: " << message.GetString();
+                }
                 return ret;
             }
 
@@ -263,18 +314,31 @@ namespace matrix
 
             //headers, resp
             kvs headers;
-            http_reply resp;
+            http_response resp;
+            int32_t ret = E_SUCCESS;
 
-            int32_t ret = m_http_client.del(endpoint, headers, resp);
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect container error: " << e.what();
+                return nullptr;
+            }
+
             if (E_SUCCESS != ret)
             {
                 //parse resp
                 rapidjson::Document doc;
                 doc.Parse<0>(resp.body.c_str());
 
-                //id
-                rapidjson::Value &message = doc["message"];
-                LOG_DEBUG << "start container message: " << message.GetString();
+                //message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "inspect container message: " << message.GetString();
+                }
                 return nullptr;
             }
             else
@@ -284,13 +348,18 @@ namespace matrix
 
                 std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
 
+                //message
+                if (!doc.HasMember("State"))
+                {
+                    return nullptr;
+                }
+
                 rapidjson::Value &state = doc["State"];
                 rapidjson::Value &running = state["Running"];
                 rapidjson::Value &exit_code = state["ExitCode"];
 
                 inspect_resp->state.running = running.GetBool();
                 inspect_resp->state.exit_code = exit_code.GetInt();
-
                 return inspect_resp;
             }
         }

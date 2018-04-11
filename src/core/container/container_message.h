@@ -28,9 +28,9 @@ namespace matrix
 
             virtual ~json_io_buf() = default;
 
-            virtual std::shared_ptr<rapidjson::StringBuffer> to_buf() { return nullptr; }
+            virtual std::string to_string() { return ""; }
 
-            virtual void from_buf(std::shared_ptr<rapidjson::StringBuffer> json_buf) { }
+            virtual void from_string(const std::string & buf) { }
 
         };
 
@@ -112,7 +112,7 @@ namespace matrix
 
             std::list<int32_t> on_build;
 
-            std::shared_ptr<rapidjson::StringBuffer> to_buf();
+            std::string to_string();
 
         };
 
@@ -123,6 +123,8 @@ namespace matrix
             std::string container_id;
 
             std::list<std::string> warnings;
+
+            void from_string(const std::string & buf);
 
         };
 
@@ -261,7 +263,7 @@ namespace matrix
 
             std::string mount_label;
 
-            void from_buf(std::shared_ptr<rapidjson::StringBuffer> json_buf);
+            void from_string(const std::string & buf);
 
         };
 
