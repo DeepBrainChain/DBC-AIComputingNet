@@ -53,7 +53,9 @@ namespace matrix
             core_opts.add_options()
                 ("host_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
                 ("main_net_listen_port", bpo::value<unsigned long>()->default_value(DEFAULT_MAIN_NET_LISTEN_PORT), "")
-                ("test_net_listen_port", bpo::value<unsigned long>()->default_value(DEFAULT_TEST_NET_LISTEN_PORT), "");
+                ("test_net_listen_port", bpo::value<unsigned long>()->default_value(DEFAULT_TEST_NET_LISTEN_PORT), "")
+                ("container_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
+                ("container_port", bpo::value<unsigned long>()->default_value(DEFAULT_CONTAINER_LISTEN_PORT), "");
 
             //peer opt description
             bpo::options_description peer_opts("peer options");

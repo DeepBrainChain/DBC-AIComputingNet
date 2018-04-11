@@ -20,7 +20,8 @@ using namespace boost::program_options;
 #define NODE_FILE_NAME                                                  "node.dat"
 #define DEFAULT_MAIN_NET_LISTEN_PORT                11107
 #define DEFAULT_TEST_NET_LISTEN_PORT                 21107
-#define DEFAULT_BIND_LOCAL_IP                                   "127.0.0.1"
+#define DEFAULT_CONTAINER_LISTEN_PORT              31107
+#define DEFAULT_LOCAL_IP                                               "127.0.0.1"
 
 
 extern const std::string conf_manager_name;

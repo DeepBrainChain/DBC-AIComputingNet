@@ -110,6 +110,10 @@ namespace ai
 
             std::shared_ptr<leveldb::DB> m_training_task_db;
 
+            std::string m_container_ip;
+
+            uint16_t m_container_port;
+
             std::shared_ptr<container_client> m_container_client;
 
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;             //ai power provider cached training task in memory
