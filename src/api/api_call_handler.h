@@ -25,9 +25,8 @@ using namespace matrix::core;
 
 
 #define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(30000)                    //unit: ms
-#define GET_TYPE_NAME(TYPE)                                                        #TYPE
 
-#define LIST_ALL_TASKS							                                            0
+#define LIST_ALL_TASKS                                                                        0
 #define LIST_SPECIFIC_TASKS                                                              1
 
 
@@ -122,20 +121,25 @@ namespace ai
         class cmd_list_training_req : public matrix::core::base
         {
         public:
+
             int8_t list_type;                                   //0: list all tasks; 1: list specific tasks
+
             std::list<std::string> task_list;
         };
 
         class cmd_task_status
         {
         public:
+
             std::string task_id;
+
             int8_t status;
         };
 
         class cmd_list_training_resp : public matrix::core::base, public outputter
         {
         public:
+
             int32_t result;
             std::string result_info;
 
@@ -157,16 +161,22 @@ namespace ai
         class cmd_network_address
         {
         public:
+
             std::string ip;
+
             int16_t port;
         };
 
         class cmd_peer_node_info
         {
         public:
+
             std::string peer_node_id;
+
             int32_t live_time_stamp;
+
             cmd_network_address addr;
+
             std::vector<std::string> service_list;
 
             cmd_peer_node_info& operator=(const matrix::service_core::peer_node_info &info)
@@ -226,7 +236,7 @@ namespace ai
             std::shared_ptr<resp_type> invoke(std::shared_ptr<req_type> req)
             {
                 //construct message
-                std::shared_ptr<message> msg(new message);
+                std::shared_ptr<message> msg = std::shared_ptr<message>();
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(std::dynamic_pointer_cast<base>(req));
 
@@ -234,6 +244,7 @@ namespace ai
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
                 cout << "waiting for resp............";
+                
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
                 if (true == m_wait->flag())
