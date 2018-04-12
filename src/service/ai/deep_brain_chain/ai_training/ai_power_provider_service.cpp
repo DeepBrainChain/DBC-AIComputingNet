@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºai_power_provider_service.cpp
-* description    £ºai_power_provider_service
+* file name        ï¿½ï¿½ai_power_provider_service.cpp
+* description    ï¿½ï¿½ai_power_provider_service
 * date                  : 2018.01.28
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include <cassert>
 #include <boost/exception/all.hpp>
@@ -278,17 +278,22 @@ namespace ai
         {
             LOG_DEBUG << "ai power provider service relay broadcast list_training req to neighbor peer nodes";
             std::shared_ptr<list_training_req> req = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
-            assert(nullptr != req);            
+            assert(nullptr != req);
+            bool is_list_all = false;
             if (req->body.task_list.size() == 0)
             {
-                LOG_DEBUG << "recv list_training_req, but no taskid in task_list.";
+                LOG_DEBUG << "recv req to list all tasks";
+                is_list_all = true;
                 return E_SUCCESS;
             }
-            //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
-            for (auto t : req->body.task_list)
+            else
             {
-                LOG_DEBUG << "list_task: task=" << t;
+                for (auto t : req->body.task_list)
+                {
+                    LOG_DEBUG << "list_task: task=" << t;
+                }
             }
+            //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
             CONNECTION_MANAGER->broadcast_message(msg);
 
             if (0 == m_queueing_tasks.size())
@@ -298,15 +303,28 @@ namespace ai
             }
 
             std::shared_ptr<matrix::service_core::list_training_resp> rsp_ctn = std::make_shared<matrix::service_core::list_training_resp>();
-            for (auto tid : req->body.task_list)
+            if (is_list_all)
             {
-                auto task = get_training_task(tid);
-                if (task)
+                for (auto task : m_queueing_tasks)
                 {
                     matrix::service_core::task_status ts;
                     ts.task_id = task->task_id;
                     ts.status = task->status;
                     rsp_ctn->body.task_status_list.push_back(ts);
+                }
+            }
+            else
+            {
+                for (auto tid : req->body.task_list)
+                {
+                    auto task = get_training_task(tid);
+                    if (task)
+                    {
+                        matrix::service_core::task_status ts;
+                        ts.task_id = task->task_id;
+                        ts.status = task->status;
+                        rsp_ctn->body.task_status_list.push_back(ts);
+                    }
                 }
             }
             if (!rsp_ctn->body.task_status_list.empty())
