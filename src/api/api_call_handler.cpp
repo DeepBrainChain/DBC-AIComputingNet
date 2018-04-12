@@ -48,6 +48,13 @@ namespace ai
             req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             req_msg->set_name(req_content->header.msg_name);
             CONNECTION_MANAGER->broadcast_message(req_msg);
+
+            //there's no reply, so public resp directly
+            std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
+
             return E_SUCCESS;
         }
 
