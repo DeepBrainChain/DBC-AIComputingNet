@@ -56,6 +56,8 @@ namespace matrix
 		{
 			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
 			TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
+            //list training resp
+            TOPIC_MANAGER->subscribe(LIST_TRAINING_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
 		}
 
 		void ai_power_requestor_service::init_invoker()
@@ -64,6 +66,10 @@ namespace matrix
 
 			invoker = std::bind(&ai_power_requestor_service::cmd_on_start_training_req, this, std::placeholders::_1);
 			m_invokers.insert({ CMD_AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
+
+            //list training resp
+            invoker = std::bind(&ai_power_requestor_service::on_list_training_resp, this, std::placeholders::_1);
+            m_invokers.insert({ LIST_TRAINING_RESP,{ invoker } });
 
 		}
 
@@ -124,6 +130,13 @@ namespace matrix
 
 			CONNECTION_MANAGER->broadcast_message(req_msg);
 
+            //peer won't reply, so public resp directly
+            std::shared_ptr<ai::dbc::cmd_start_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_training_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+            cmd_resp->task_id = resp_content->body.task_id;
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
 			return E_SUCCESS;
 		}
 
@@ -144,6 +157,37 @@ namespace matrix
 			}
 			return E_SUCCESS;
 		}
+
+        int32_t ai_power_requestor_service::on_list_training_resp(std::shared_ptr<message> &msg)
+        {
+            if (!msg)
+            {
+                LOG_ERROR << "recv list_training_resp but msg is nullptr";
+                return E_DEFAULT;
+            }
+            std::shared_ptr<matrix::service_core::list_training_resp> rsp_ctn = std::dynamic_pointer_cast<matrix::service_core::list_training_resp>(msg->content);
+            if (!rsp_ctn)
+            {
+                LOG_ERROR << "recv list_training_resp but ctn is nullptr";
+                return E_DEFAULT;
+            }
+            
+            //public cmd resp
+            std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+            for (auto ts : rsp_ctn->body.task_status_list)
+            {
+                LOG_DEBUG << "recv list_training_resp: " << ts.task_id << " : " << ts.status;
+                cmd_task_status cts;
+                cts.task_id = ts.task_id;
+                cts.status = ts.status;
+                cmd_resp->task_status_list.push_back(std::move(cts));
+            }
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+
+            return E_SUCCESS;
+        }
 
         void ai_power_requestor_service::add_task_config_opts(bpo::options_description &opts) const
 		{
