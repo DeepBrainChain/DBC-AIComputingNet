@@ -111,6 +111,9 @@ namespace ai
 
             int32_t load_task_from_db();
 
+        private:
+            std::shared_ptr<ai_training_task> get_training_task(const std::string &taskid);
+
         protected:
 
             std::shared_ptr<leveldb::DB> m_training_task_db;

@@ -17,6 +17,7 @@
 #include "peer_node.h"
 #include "service_message_id.h"
 #include "matrix_types.h"
+#include "matrix_coder.h"
 
 
 
@@ -86,8 +87,13 @@ namespace ai
         void ai_power_provider_service::init_subscription()
         {
             TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            
             //stop training
             TOPIC_MANAGER->subscribe(STOP_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+
+            //list training
+            TOPIC_MANAGER->subscribe(LIST_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+
         }
 
         void ai_power_provider_service::init_invoker()
@@ -100,6 +106,11 @@ namespace ai
             //stop training
             invoker = std::bind(&ai_power_provider_service::on_stop_training_req, this, std::placeholders::_1);
             m_invokers.insert({ STOP_TRAINING_REQ,{ invoker } });
+
+            //list training
+            invoker = std::bind(&ai_power_provider_service::on_list_training_req, this, std::placeholders::_1);
+            m_invokers.insert({ LIST_TRAINING_REQ,{ invoker } });
+
         }
 
         int32_t ai_power_provider_service::init_db()
@@ -258,6 +269,56 @@ namespace ai
                     //flush to db: update status
                     write_task_to_db(sp_task);
                 }
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::on_list_training_req(std::shared_ptr<message> &msg)
+        {
+            LOG_DEBUG << "ai power provider service relay broadcast list_training req to neighbor peer nodes";
+            std::shared_ptr<list_training_req> req = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
+            assert(nullptr != req);            
+            if (req->body.task_list.size() == 0)
+            {
+                LOG_DEBUG << "recv list_training_req, but no taskid in task_list.";
+                return E_SUCCESS;
+            }
+            //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
+            for (auto t : req->body.task_list)
+            {
+                LOG_DEBUG << "list_task: task=" << t;
+            }
+            CONNECTION_MANAGER->broadcast_message(msg);
+
+            if (0 == m_queueing_tasks.size())
+            {
+                LOG_DEBUG << "ai power provider service training queuing task is empty";
+                return E_SUCCESS;
+            }
+
+            std::shared_ptr<matrix::service_core::list_training_resp> rsp_ctn = std::make_shared<matrix::service_core::list_training_resp>();
+            for (auto tid : req->body.task_list)
+            {
+                auto task = get_training_task(tid);
+                if (task)
+                {
+                    matrix::service_core::task_status ts;
+                    ts.task_id = task->task_id;
+                    ts.status = task->status;
+                    rsp_ctn->body.task_status_list.push_back(ts);
+                }
+            }
+            if (!rsp_ctn->body.task_status_list.empty())
+            {
+                //content header
+                rsp_ctn->header.magic = TEST_NET;
+                rsp_ctn->header.msg_name = LIST_TRAINING_RESP;
+                //resp msg
+                std::shared_ptr<message> resp_msg = std::make_shared<message>();
+                resp_msg->set_name(LIST_TRAINING_RESP);                
+                resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_ctn));
+                CONNECTION_MANAGER->broadcast_message(resp_msg);
             }
 
             return E_SUCCESS;
@@ -472,5 +533,16 @@ namespace ai
             return E_SUCCESS;
         }
 
+        std::shared_ptr<ai_training_task> ai_power_provider_service::get_training_task(const std::string &taskid)
+        {
+            for (auto task : m_queueing_tasks)
+            {
+                if (task->task_id == taskid)
+                {
+                    return task;
+                }
+            }
+            return nullptr;
+        }
     }
 }
