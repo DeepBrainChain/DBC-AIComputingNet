@@ -5,7 +5,7 @@
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
-#include "console_printer.h"
+
 
 
 void cmd_line_task()
@@ -31,20 +31,25 @@ namespace ai
             memset(m_argv, 0x00, sizeof(m_argv));
             memset(m_cmd_line_buf, 0x00, sizeof(m_cmd_line_buf));
 
-            m_invokers["start"] = std::bind(&cmd_line_service::start_training, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["stop"] = std::bind(&cmd_line_service::stop_training, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["start_multi"] = std::bind(&cmd_line_service::start_multi_training, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["list"] = std::bind(&cmd_line_service::list_training, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["peers"] = std::bind(&cmd_line_service::get_peers, this, std::placeholders::_1, std::placeholders::_2);
+            init_cmd_invoker();
         }
 
-        int32_t cmd_line_service::init(bpo::variables_map &options) 
+        int32_t cmd_line_service::init(bpo::variables_map &options)
         { 
             g_server->bind_idle_task(&cmd_line_task);
 
             return E_SUCCESS;
         }
 
+        void cmd_line_service::init_cmd_invoker()
+        {
+            m_invokers["start"] = std::bind(&cmd_line_service::start_training, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["stop"] = std::bind(&cmd_line_service::stop_training, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["start_multi"] = std::bind(&cmd_line_service::start_multi_training, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["list"] = std::bind(&cmd_line_service::list_training, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["peers"] = std::bind(&cmd_line_service::get_peers, this, std::placeholders::_1, std::placeholders::_2);
+        }
+        
         void cmd_line_service::on_usr_cmd()
         {
             cout << "dbc>>>";
@@ -55,7 +60,14 @@ namespace ai
             cin.ignore((std::numeric_limits<int>::max)(), '\n');
 
             int m_argc = MAX_CMD_LINE_ARGS_COUNT;
+            memset(m_argv, 0x00, sizeof(m_argv));
+
+            //split parse
             string_util::split(m_cmd_line_buf, ' ', m_argc, m_argv);
+            if (0 == m_argc)
+            {
+                return;
+            }
 
             auto it = m_invokers.find(m_argv[0]);
             if (it == m_invokers.end())
@@ -86,7 +98,7 @@ namespace ai
 
                 if (vm.count("config") || vm.count("c"))
                 {
-                    std::shared_ptr<cmd_start_training_req> req(new cmd_start_training_req);
+                    std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
                     req->task_file_path = vm["config"].as<std::string>();
 
                     std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
@@ -133,7 +145,7 @@ namespace ai
 
                 if (vm.count("task") || vm.count("t"))
                 {
-                    std::shared_ptr<cmd_stop_training_req> req(new cmd_stop_training_req);
+                    std::shared_ptr<cmd_stop_training_req> req = std::make_shared<cmd_stop_training_req>();
                     req->task_id = vm["task"].as<std::string>();
 
                     std::shared_ptr<cmd_stop_training_resp> resp = m_handler.invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
@@ -180,7 +192,7 @@ namespace ai
 
                 if (vm.count("config") || vm.count("c"))
                 {
-                    std::shared_ptr<cmd_start_multi_training_req> req(new cmd_start_multi_training_req);
+                    std::shared_ptr<cmd_start_multi_training_req> req = std::make_shared<cmd_start_multi_training_req>();
                     req->mulit_task_file_path = vm["config"].as<std::string>();
 
                     std::shared_ptr<cmd_start_multi_training_resp> resp = m_handler.invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
@@ -228,7 +240,7 @@ namespace ai
 
                 if (vm.count("all") || vm.count("a"))
                 {
-                    std::shared_ptr<cmd_list_training_req> req(new cmd_list_training_req);
+                    std::shared_ptr<cmd_list_training_req> req= std::make_shared<cmd_list_training_req>();
                     req->list_type = LIST_ALL_TASKS;
 
                     std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
@@ -293,7 +305,7 @@ namespace ai
 
                 if (vm.count("all") || vm.count("a"))
                 {
-                    std::shared_ptr<cmd_get_peer_nodes_req> req(new cmd_get_peer_nodes_req);
+                    std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
 
                     std::shared_ptr<cmd_get_peer_nodes_resp> resp = m_handler.invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
                     if (nullptr == resp)
@@ -322,64 +334,16 @@ namespace ai
             }
         }
 
-        void cmd_line_service::format_output(std::shared_ptr<cmd_start_training_resp> resp)
+        template<typename resp_type>
+        void cmd_line_service::format_output(std::shared_ptr<resp_type> resp)
         {
-            if (E_SUCCESS != resp->result)
+            if (nullptr == resp)
             {
-                cout << resp->result_info << endl;
+                return;
             }
 
-            cout << resp->task_id << endl;
-        }
-
-        void cmd_line_service::format_output(std::shared_ptr<cmd_stop_training_resp> resp)
-        {
-            if (E_SUCCESS != resp->result)
-            {
-                cout << resp->result_info << endl;
-            }
-
-            cout << "stopping training task......" << endl;
-        }
-
-        void cmd_line_service::format_output(std::shared_ptr<cmd_list_training_resp> resp)
-        {
-            console_printer printer;            
-            printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 10);
-
-            printer << matrix::core::init << "task_id" << "task_status" << matrix::core::endl;
-
-            auto it = resp->task_status_list.begin();
-            for (; it != resp->task_status_list.end(); it++)
-            {
-                printer << matrix::core::init << it->task_id << it->status << matrix::core::endl;
-            }
-        }
-
-        void cmd_line_service::format_output(std::shared_ptr<cmd_start_multi_training_resp> resp)
-        {
-            cout << "task_id" << endl;
-
-            auto it = resp->task_list.begin();
-            for ( ; it != resp->task_list.end(); it++)
-            {
-                cout << *it << endl;
-            }
-        }
-
-        void cmd_line_service::format_output(std::shared_ptr<cmd_get_peer_nodes_resp> resp)
-        {
-            console_printer printer;
-            printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 64)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
-
-            printer << matrix::core::init << "peer_id" << "time_stamp" << "ip" << "port" << "service_list" << matrix::core::endl;
-
-            auto it = resp->peer_nodes_list.begin();
-            for (; it != resp->peer_nodes_list.end(); it++)
-            {
-                std::string service_list;  //left to later
-                printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << service_list << matrix::core::endl;
-            }
+            //format output
+            resp->format_output();
         }
 
     }
