@@ -261,7 +261,6 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            TOPIC_MANAGER->subscribe(LIST_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
 			TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 			TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
         }
@@ -285,10 +284,6 @@ namespace matrix
             //ver resp
             invoker = std::bind(&p2p_net_service::on_ver_resp, this, std::placeholders::_1);
             m_invokers.insert({ VER_RESP, { invoker } });
-
-            // temporary, move to training service in future
-            invoker = std::bind(&p2p_net_service::on_list_training_req, this, std::placeholders::_1);
-            m_invokers.insert({ LIST_TRAINING_REQ, { invoker } });
 
 			//get_peer_nodes_resp
 			invoker = std::bind(&p2p_net_service::on_get_peer_nodes_req, this, std::placeholders::_1);
@@ -426,22 +421,6 @@ namespace matrix
                 //cancel connect and connect next
                 return E_SUCCESS;
             } 
-        }
-
-        int32_t p2p_net_service::on_list_training_req(std::shared_ptr<message> &msg)
-        {
-            std::shared_ptr<message> resp_msg = std::make_shared<message>();
-            auto req = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
-            //4>todo: check req->body.task_list and send response if needed
-            auto count = req->body.task_list.size();
-            if (count > 0) {
-                cout << endl << "recv list training req: " << count << " tasks" <<endl;
-                LOG_DEBUG << "recv list training req: " << count << " tasks" <<endl;
-            } else {
-                cout << endl << "recv list training req: all tasks" <<endl;
-                LOG_DEBUG << "recv list training req: all tasks" <<endl;
-            }
-            return E_SUCCESS;
         }
 
 		int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<message> &msg)
