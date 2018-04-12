@@ -91,9 +91,8 @@ namespace ai
             //stop training
             TOPIC_MANAGER->subscribe(STOP_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 
-            //list training
+            //list training req
             TOPIC_MANAGER->subscribe(LIST_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
-
         }
 
         void ai_power_provider_service::init_invoker()
@@ -107,7 +106,7 @@ namespace ai
             invoker = std::bind(&ai_power_provider_service::on_stop_training_req, this, std::placeholders::_1);
             m_invokers.insert({ STOP_TRAINING_REQ,{ invoker } });
 
-            //list training
+            //list training req
             invoker = std::bind(&ai_power_provider_service::on_list_training_req, this, std::placeholders::_1);
             m_invokers.insert({ LIST_TRAINING_REQ,{ invoker } });
 
