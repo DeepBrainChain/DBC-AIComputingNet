@@ -51,7 +51,7 @@ namespace matrix
                 }
 
                 int i = 0;
-                char  *p = str;
+                char *p = str;
 
                 while (*p)
                 {

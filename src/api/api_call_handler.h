@@ -16,6 +16,7 @@
 #include "callback_wait.h"
 #include "server.h"
 #include "matrix_types.h"
+#include "console_printer.h"
 
 
 using namespace std;
@@ -26,8 +27,8 @@ using namespace matrix::core;
 #define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(30000)                    //unit: ms
 #define GET_TYPE_NAME(TYPE)                                                        #TYPE
 
-#define LIST_ALL_TASKS							                                   0
-#define LIST_SPECIFIC_TASKS                                                        1
+#define LIST_ALL_TASKS							                                            0
+#define LIST_SPECIFIC_TASKS                                                              1
 
 
 namespace ai
@@ -35,19 +36,37 @@ namespace ai
     namespace dbc
     {
 
+        class outputter
+        {
+        public:
+
+            void format_output() {}
+        };
+
         class cmd_start_training_req : public matrix::core::base
         {
         public:
             std::string task_file_path;
         };
 
-        class cmd_start_training_resp : public matrix::core::base
+        class cmd_start_training_resp : public matrix::core::base, public outputter
         {
         public:
             int32_t result;
             std::string result_info;
 
             std::string task_id;
+
+            void format_output()
+            {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+
+                cout << task_id << endl;
+            }
         };
 
         class cmd_stop_training_req : public matrix::core::base
@@ -56,11 +75,22 @@ namespace ai
             std::string task_id;
         };
 
-        class cmd_stop_training_resp : public matrix::core::base
+        class cmd_stop_training_resp : public matrix::core::base, public outputter
         {
         public:
             int32_t result;
             std::string result_info;
+
+            void format_output()
+            {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+
+                cout << "stopping training task......" << endl;
+            }
         };
 
         class cmd_start_multi_training_req : public matrix::core::base
@@ -69,13 +99,24 @@ namespace ai
             std::string mulit_task_file_path;
         };
 
-        class cmd_start_multi_training_resp : public matrix::core::base
+        class cmd_start_multi_training_resp : public matrix::core::base, public outputter
         {
         public:
             int32_t result;
             std::string result_info;
 
             std::list<std::string> task_list;
+
+            void format_output()
+            {
+                cout << "task_id:" << endl;
+
+                auto it = task_list.begin();
+                for (; it != task_list.end(); it++)
+                {
+                    cout << *it << endl;
+                }
+            }
         };
 
         class cmd_list_training_req : public matrix::core::base
@@ -92,13 +133,25 @@ namespace ai
             int8_t status;
         };
 
-        class cmd_list_training_resp : public matrix::core::base
+        class cmd_list_training_resp : public matrix::core::base, public outputter
         {
         public:
             int32_t result;
             std::string result_info;
 
             std::list<cmd_task_status> task_status_list;
+
+            void format_output()
+            {
+                console_printer printer;
+                printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 10);
+
+                printer << matrix::core::init << "task_id" << "task_status" << matrix::core::endl;
+                for (auto it = task_status_list.begin(); it != task_status_list.end(); it++)
+                {
+                    printer << matrix::core::init << it->task_id << it->status << matrix::core::endl;
+                }
+            }
         };
 
         class cmd_network_address
@@ -116,15 +169,15 @@ namespace ai
             cmd_network_address addr;
             std::vector<std::string> service_list;
 
-			cmd_peer_node_info& operator=(const matrix::service_core::peer_node_info &info)
-			{
-				peer_node_id = info.peer_node_id;
-				live_time_stamp = info.live_time_stamp;
-				addr.ip = info.addr.ip;
-				addr.port = info.addr.port;
-				service_list = info.service_list;
-				return *this;
-			}
+            cmd_peer_node_info& operator=(const matrix::service_core::peer_node_info &info)
+            {
+                peer_node_id = info.peer_node_id;
+                live_time_stamp = info.live_time_stamp;
+                addr.ip = info.addr.ip;
+                addr.port = info.addr.port;
+                service_list = info.service_list;
+                return *this;
+            }
         };
 
         class cmd_get_peer_nodes_req : public matrix::core::base
@@ -132,13 +185,28 @@ namespace ai
 
         };
 
-        class cmd_get_peer_nodes_resp : public matrix::core::base
+        class cmd_get_peer_nodes_resp : public matrix::core::base, public outputter
         {
         public:
             int32_t result;
             std::string result_info;
 
             std::vector<cmd_peer_node_info> peer_nodes_list;
+
+            void format_output()
+            {
+                console_printer printer;
+                printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 64)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
+
+                printer << matrix::core::init << "peer_id" << "time_stamp" << "ip" << "port" << "service_list" << matrix::core::endl;
+
+                auto it = peer_nodes_list.begin();
+                for (; it != peer_nodes_list.end(); it++)
+                {
+                    std::string service_list;  //left to later
+                    printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << service_list << matrix::core::endl;
+                }
+            }
         };
 
         class api_call_handler
@@ -165,7 +233,7 @@ namespace ai
                 //publish
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
-				cout << "waiting for resp............";
+                cout << "waiting for resp............";
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
                 if (true == m_wait->flag())
@@ -182,10 +250,12 @@ namespace ai
 
         protected:
             int32_t on_cmd_stop_training_req(const std::shared_ptr<message> &msg) const;
+
             int32_t on_cmd_list_training_req(const std::shared_ptr<message> &msg) const;
+
             int32_t on_cmd_start_multi_training_req(const std::shared_ptr<message> &msg) const;
 
-			int32_t on_cmd_get_peer_nodes_req(const std::shared_ptr<message> &msg);
+            int32_t on_cmd_get_peer_nodes_req(const std::shared_ptr<message> &msg);
 
         private:
 

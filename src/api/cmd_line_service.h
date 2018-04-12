@@ -32,7 +32,7 @@ namespace ai
             
             using invoker_type = typename std::function<void (int, char* [] )>;
 
-            typedef std::map<std::string, invoker_type> processor_invoker;
+            typedef std::map<std::string, invoker_type> cmd_invokers;
 
         public:
 
@@ -48,6 +48,8 @@ namespace ai
 
         protected:
 
+            void init_cmd_invoker();
+
             //interact with user command
 
             void start_training(int argc, char* argv[]);
@@ -62,21 +64,14 @@ namespace ai
 
         protected:
 
-            void format_output(std::shared_ptr<cmd_start_training_resp> resp);
-
-            void format_output(std::shared_ptr<cmd_stop_training_resp> resp);
-
-            void format_output(std::shared_ptr<cmd_list_training_resp> resp);
-
-            void format_output(std::shared_ptr<cmd_start_multi_training_resp> resp);
-
-            void format_output(std::shared_ptr<cmd_get_peer_nodes_resp> resp);
+            template<typename resp_type>
+            void format_output(std::shared_ptr<resp_type> resp);
 
         protected:
 
             api_call_handler m_handler;
 
-            processor_invoker m_invokers;
+            cmd_invokers m_invokers;
 
             int m_argc;
 
