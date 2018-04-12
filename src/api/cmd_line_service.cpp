@@ -1,4 +1,12 @@
-
+/*********************************************************************************
+*  Copyright (c) 2017-2018 DeepBrainChain core team
+*  Distributed under the MIT software license, see the accompanying
+*  file COPYING or http://www.opensource.org/licenses/mit-license.php
+* file name        £ºcmd_line_service.cpp
+* description    £ºcmd line api service
+* date                  : 2018.03.25
+* author            £º
+**********************************************************************************/
 #include <iostream>
 #include <limits>
 #include <cstdint>

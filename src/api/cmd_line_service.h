@@ -3,7 +3,7 @@
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        £ºcmd_line_service.h
-* description    £ºcmd line api processor
+* description    £ºcmd line api service
 * date                  : 2018.03.25
 * author            £º
 **********************************************************************************/
