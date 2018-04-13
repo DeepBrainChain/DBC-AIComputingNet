@@ -93,6 +93,9 @@ namespace matrix
 
             int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
 
+            //cmd get peer nodes
+            int32_t on_cmd_get_peer_nodes_req(const std::shared_ptr<message> &msg);
+
 			int32_t on_get_peer_nodes_req(std::shared_ptr<message> &msg);
 
 			int32_t on_get_peer_nodes_resp(std::shared_ptr<message> &msg);

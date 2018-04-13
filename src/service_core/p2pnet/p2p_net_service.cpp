@@ -261,6 +261,7 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
+            TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_req).name(), [this](const std::shared_ptr<message> &msg) {return on_cmd_get_peer_nodes_req(msg); });
 			TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 			TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
         }
@@ -421,6 +422,21 @@ namespace matrix
                 //cancel connect and connect next
                 return E_SUCCESS;
             } 
+        }
+
+        int32_t p2p_net_service::on_cmd_get_peer_nodes_req(const std::shared_ptr<message> &msg)
+        {
+            std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
+            req_content->header.magic = TEST_NET;
+            req_content->header.msg_name = P2P_GET_PEER_NODES_REQ;
+            req_content->header.check_sum = 0;//todo ...
+            req_content->header.session_id = 0;
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            req_msg->set_name(P2P_GET_PEER_NODES_REQ);
+            req_msg->set_content(std::dynamic_pointer_cast<base> (req_content));
+            CONNECTION_MANAGER->broadcast_message(req_msg);
+
+            return E_SUCCESS;
         }
 
 		int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<message> &msg)
