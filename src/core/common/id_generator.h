@@ -15,6 +15,12 @@ namespace matrix
 
 			std::string generate_id();
 
+            std::string generate_check_sum();
+
+            std::string generate_session_id();
+
+            uint64_t  generate_nounce();
+
 		private:
 
 		};
