@@ -236,7 +236,7 @@ namespace ai
             std::shared_ptr<resp_type> invoke(std::shared_ptr<req_type> req)
             {
                 //construct message
-                std::shared_ptr<message> msg = std::shared_ptr<message>();
+                std::shared_ptr<message> msg = std::make_shared<message>();
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(std::dynamic_pointer_cast<base>(req));
 
