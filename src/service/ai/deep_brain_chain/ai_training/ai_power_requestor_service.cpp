@@ -55,7 +55,7 @@ namespace matrix
 
 		void ai_power_requestor_service::init_subscription()
 		{
-			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
+			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_training_req(msg); });
 			
             //cmd start multi training
             TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
@@ -73,16 +73,13 @@ namespace matrix
 		{
 			invoker_type invoker;
 
-			invoker = std::bind(&ai_power_requestor_service::cmd_on_start_training_req, this, std::placeholders::_1);
-			m_invokers.insert({ CMD_AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
-
             //list training resp
             invoker = std::bind(&ai_power_requestor_service::on_list_training_resp, this, std::placeholders::_1);
             m_invokers.insert({ LIST_TRAINING_RESP,{ invoker } });
 
 		}
 
-		int32_t ai_power_requestor_service::cmd_on_start_training_req(std::shared_ptr<message> &msg)
+		int32_t ai_power_requestor_service::on_cmd_start_training_req(std::shared_ptr<message> &msg)
 		{
 			std::shared_ptr<base> content = msg->get_content();
 			std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
