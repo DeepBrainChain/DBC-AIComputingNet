@@ -48,6 +48,9 @@ namespace matrix
 			int32_t cmd_on_start_training_req(std::shared_ptr<message> &msg);
 			int32_t on_cmd_start_multi_training_req(std::shared_ptr<message> &msg);
 
+            int32_t on_cmd_stop_training_req(const std::shared_ptr<message> &msg);
+
+            int32_t on_cmd_list_training_req(const std::shared_ptr<message> &msg);
             int32_t on_list_training_resp(std::shared_ptr<message> &msg);
 
         protected:

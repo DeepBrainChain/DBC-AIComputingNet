@@ -55,7 +55,15 @@ namespace matrix
 		void ai_power_requestor_service::init_subscription()
 		{
 			TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return cmd_on_start_training_req(msg); });
-			TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
+			
+            //cmd start multi training
+            TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
+
+            //cmd stop training
+            TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_stop_training_req(msg); });
+
+            //cmd list training
+            TOPIC_MANAGER->subscribe(typeid(cmd_list_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_list_training_req(msg); });
             //list training resp
             TOPIC_MANAGER->subscribe(LIST_TRAINING_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
 		}
@@ -158,6 +166,54 @@ namespace matrix
 			return E_SUCCESS;
 		}
 
+        int32_t ai_power_requestor_service::on_cmd_stop_training_req(const std::shared_ptr<message> &msg)
+        {
+            const std::string &task_id = std::dynamic_pointer_cast<cmd_stop_training_req>(msg->get_content())->task_id;
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            std::shared_ptr<matrix::service_core::stop_training_req> req_content = std::make_shared<matrix::service_core::stop_training_req>();
+            //header
+            req_content->header.magic = TEST_NET;
+            req_content->header.msg_name = STOP_TRAINING_REQ;
+            req_content->header.check_sum = 0;
+            req_content->header.session_id = 0;
+            //body
+            req_content->body.task_id = task_id;
+
+            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_name(req_content->header.msg_name);
+            CONNECTION_MANAGER->broadcast_message(req_msg);
+
+            //there's no reply, so public resp directly
+            std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_requestor_service::on_cmd_list_training_req(const std::shared_ptr<message> &msg)
+        {
+            auto cmd_req = std::dynamic_pointer_cast<cmd_list_training_req>(msg->get_content());
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            auto req_content = std::make_shared<matrix::service_core::list_training_req>();
+            //header
+            req_content->header.magic = TEST_NET;
+            req_content->header.msg_name = LIST_TRAINING_REQ;
+            req_content->header.check_sum = 0;
+            req_content->header.session_id = 0;
+            //body
+            if (cmd_req->list_type == 1) {
+                req_content->body.task_list.assign(cmd_req->task_list.begin(), cmd_req->task_list.end());
+            }
+
+            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_name(req_content->header.msg_name);
+            CONNECTION_MANAGER->broadcast_message(req_msg);
+
+            return E_SUCCESS;
+        }
+
         int32_t ai_power_requestor_service::on_list_training_resp(std::shared_ptr<message> &msg)
         {
             if (!msg)
@@ -171,6 +227,8 @@ namespace matrix
                 LOG_ERROR << "recv list_training_resp but ctn is nullptr";
                 return E_DEFAULT;
             }
+            //broadcast resp
+            CONNECTION_MANAGER->broadcast_message(msg);
             
             //public cmd resp
             std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
