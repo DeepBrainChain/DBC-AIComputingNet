@@ -25,6 +25,7 @@
 #include <boost/exception/all.hpp>
 #include <iostream>
 #include "ai_power_requestor_service.h"
+#include "id_generator.h"
 
 
 
@@ -117,6 +118,7 @@ namespace matrix
 
 			resp_content->header.magic = TEST_NET;
 			resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
+
 			resp_content->header.check_sum = 0;
 			resp_content->header.session_id = 0;
 
@@ -200,8 +202,9 @@ namespace matrix
             //header
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = LIST_TRAINING_REQ;
-            req_content->header.check_sum = 0;
-            req_content->header.session_id = 0;
+            //matrix::core::id_generator  id_gen;
+            req_content->header.check_sum = 0;//id_gen.generate_check_sum();
+            req_content->header.session_id = 0;// id_gen.generate_session_id();
             //body
             if (cmd_req->list_type == 1) {
                 req_content->body.task_list.assign(cmd_req->task_list.begin(), cmd_req->task_list.end());

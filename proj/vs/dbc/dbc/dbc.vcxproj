@@ -80,7 +80,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST)\;$(DBC_CODE_HOME)\src\3rd\db\;$(DBC_CODE_HOME)\src\3rd\network\libevent\;$(DBC_CODE_HOME)\src\3rd\network\rapidjson\;$(DBC_CODE_HOME)\src\3rd\network\thrift\;$(DBC_CODE_HOME)\src\core\storage\;$(DBC_CODE_HOME)\src\core\timer_service\;$(DBC_CODE_HOME)\src\core\service_module\pc\;$(DBC_CODE_HOME)\src\core\service_module\;$(DBC_CODE_HOME)\src\core\common\;$(DBC_CODE_HOME)\src\core\log\;$(DBC_CODE_HOME)\src\core\container\;$(DBC_CODE_HOME)\src\core\conf\;$(DBC_CODE_HOME)\src\core\conf\validator\;$(DBC_CODE_HOME)\src\core\alarm\;$(DBC_CODE_HOME)\src\core\data_structure\;$(DBC_CODE_HOME)\src\core\env\;$(DBC_CODE_HOME)\src\core\module\;$(DBC_CODE_HOME)\src\core\monitor\;$(DBC_CODE_HOME)\src\core\memory\;$(DBC_CODE_HOME)\src\core\math\;$(DBC_CODE_HOME)\src\core\initiator\;$(DBC_CODE_HOME)\src\core\service_bus\;$(DBC_CODE_HOME)\src\core\sem\;$(DBC_CODE_HOME)\src\core\codec\;$(DBC_CODE_HOME)\src\core\network\;$(DBC_CODE_HOME)\src\core\mutex\;$(DBC_CODE_HOME)\src\service_core\p2pnet\;$(DBC_CODE_HOME)\src\service_core\network\;$(DBC_CODE_HOME)\src\service_core\codec\;$(DBC_CODE_HOME)\src\service_core\codec\thrift\;$(DBC_CODE_HOME)\src\service_core\common\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\conf\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\initiator\;$(DBC_CODE_HOME)\src\api\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\ai_training\</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(BOOST)\;$(DBC_CODE_HOME)\src\3rd\db\;$(DBC_CODE_HOME)\src\3rd\network\libevent\;$(DBC_CODE_HOME)\src\3rd\network\rapidjson\;$(DBC_CODE_HOME)\src\3rd\network\thrift\;$(DBC_CODE_HOME)\src\core\storage\;$(DBC_CODE_HOME)\src\core\timer_service\;$(DBC_CODE_HOME)\src\core\service_module\pc\;$(DBC_CODE_HOME)\src\core\service_module\;$(DBC_CODE_HOME)\src\core\common\;$(DBC_CODE_HOME)\src\core\log\;$(DBC_CODE_HOME)\src\core\container\;$(DBC_CODE_HOME)\src\core\conf\;$(DBC_CODE_HOME)\src\core\conf\validator\;$(DBC_CODE_HOME)\src\core\alarm\;$(DBC_CODE_HOME)\src\core\data_structure\;$(DBC_CODE_HOME)\src\core\env\;$(DBC_CODE_HOME)\src\core\module\;$(DBC_CODE_HOME)\src\core\monitor\;$(DBC_CODE_HOME)\src\core\memory\;$(DBC_CODE_HOME)\src\core\math\;$(DBC_CODE_HOME)\src\core\initiator\;$(DBC_CODE_HOME)\src\core\service_bus\;$(DBC_CODE_HOME)\src\core\sem\;$(DBC_CODE_HOME)\src\core\codec\;$(DBC_CODE_HOME)\src\core\network\;$(DBC_CODE_HOME)\src\core\mutex\;$(DBC_CODE_HOME)\src\core\crypto\;$(DBC_CODE_HOME)\src\service_core\p2pnet\;$(DBC_CODE_HOME)\src\service_core\network\;$(DBC_CODE_HOME)\src\service_core\codec\;$(DBC_CODE_HOME)\src\service_core\codec\thrift\;$(DBC_CODE_HOME)\src\service_core\common\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\conf\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\initiator\;$(DBC_CODE_HOME)\src\api\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\;$(DBC_CODE_HOME)\src\service\ai\deep_brain_chain\ai_training\</IncludePath>
     <LibraryPath>$(DBC_CODE_HOME)\lib\win\libevent\;$(DBC_CODE_HOME)\lib\win\leveldb\;$(BOOST)\vc141-x64\lib\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>..\..\..\..\output\</OutDir>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
@@ -172,6 +172,8 @@
     <ClCompile Include="..\..\..\..\src\core\conf\conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\container\container_client.cpp" />
     <ClCompile Include="..\..\..\..\src\core\container\container_message.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\crypto\sha256.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\crypto\sha512.cpp" />
     <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server_initiator_factory.cpp" />
@@ -317,6 +319,11 @@
     <ClInclude Include="..\..\..\..\src\core\conf\validator\port_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\container\container_client.h" />
     <ClInclude Include="..\..\..\..\src\core\container\container_message.h" />
+    <ClInclude Include="..\..\..\..\src\core\crypto\byteswap.h" />
+    <ClInclude Include="..\..\..\..\src\core\crypto\crypto_common.h" />
+    <ClInclude Include="..\..\..\..\src\core\crypto\endian.h" />
+    <ClInclude Include="..\..\..\..\src\core\crypto\sha256.h" />
+    <ClInclude Include="..\..\..\..\src\core\crypto\sha512.h" />
     <ClInclude Include="..\..\..\..\src\core\data_structure\cs_string.h" />
     <ClInclude Include="..\..\..\..\src\core\data_structure\list.h" />
     <ClInclude Include="..\..\..\..\src\core\data_structure\map.h" />

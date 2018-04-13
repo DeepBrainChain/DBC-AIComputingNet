@@ -313,6 +313,12 @@
     <ClCompile Include="..\..\..\..\src\service_core\common\common_service.cpp">
       <Filter>src\service_core\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\sha256.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\sha512.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -821,6 +827,21 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service_core\common\service_proto_filter.h">
       <Filter>src\service_core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\sha256.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\endian.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\crypto_common.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\byteswap.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\sha512.h">
+      <Filter>src\core\crypto</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
