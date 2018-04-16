@@ -319,6 +319,21 @@
     <ClCompile Include="..\..\..\..\src\core\crypto\sha512.cpp">
       <Filter>src\core\crypto</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\base58.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\uint256.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\hash.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\ripemd160.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\utilstrencodings.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -841,6 +856,24 @@
       <Filter>src\core\crypto</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\crypto\sha512.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\base58.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\uint256.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\hash.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\ripemd160.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\tinyformat.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\utilstrencodings.h">
       <Filter>src\core\crypto</Filter>
     </ClInclude>
   </ItemGroup>
