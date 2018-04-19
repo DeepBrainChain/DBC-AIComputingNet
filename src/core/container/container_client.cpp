@@ -65,6 +65,7 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
+                LOG_DEBUG << "create container failed: " << name;
                 return nullptr;
             }
 

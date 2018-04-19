@@ -81,7 +81,7 @@ namespace matrix
             http_response() : status(0), error(-1) {}
 
             int status;
-            int error;
+            int error;          //evhttp_request_error
             std::string body;
         };
 
