@@ -33,6 +33,17 @@ namespace ai
 {
     namespace dbc
     {
+        static void print_cmd_usage()
+        {
+            cout << "we support commands: " << endl;
+            cout << "help:          print out usage information" << endl;
+            cout << "start:         start training" << endl;
+            cout << "stop:          stop training" << endl;
+            cout << "start_mult:    start multi training tasks" << endl;
+            cout << "list:          list training tasks" << endl;
+            cout << "peers:         get information of peers" << endl;
+            cout << "-----------------------------------------" << endl;
+        }
 
         cmd_line_service::cmd_line_service() : m_argc(0)
         {
@@ -76,11 +87,16 @@ namespace ai
             {
                 return;
             }
+            if (std::string(m_argv[0]).compare("help") == 0)
+            {
+                print_cmd_usage();
+                return;
+            }
 
             auto it = m_invokers.find(m_argv[0]);
             if (it == m_invokers.end())
             {
-                cout << "unknown command " << endl;
+                cout << "unknown command, for prompt please input 'help'" << endl;
                 return;
             }
 
