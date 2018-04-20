@@ -19,6 +19,7 @@
 #include "ai_power_provider_service.h"
 #include "cmd_line_service.h"
 #include "common_service.h"
+#include "timer_matrix_manager.h"
 
 using namespace std::chrono;
 using namespace matrix::core;
@@ -48,7 +49,7 @@ namespace ai
                 //logging
                 return ret;
             }
-            LOG_DEBUG << "parse command line succefully";
+            LOG_DEBUG << "parse command line successfully";
 
             std::shared_ptr<matrix::core::module> mdl(nullptr);
 
@@ -63,7 +64,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init env manager succefully";
+            LOG_DEBUG << "init env manager successfully";
 
             //core conf_manager
             LOG_DEBUG << "begin to init conf manager";
@@ -76,7 +77,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init conf manager succefully";
+            LOG_DEBUG << "init conf manager successfully";
 
             //topic_manager
             LOG_DEBUG << "begin to init topic manager";
@@ -89,7 +90,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init topic manager succefully";
+            LOG_DEBUG << "init topic manager successfully";
 
             //connection_manager
             LOG_DEBUG << "begin to init connection manager";
@@ -102,7 +103,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init connection manager succefully";
+            LOG_DEBUG << "init connection manager successfully";
 
             //p2p net service
             LOG_DEBUG << "begin to init p2p net service";
@@ -115,7 +116,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init p2p net service succefully";
+            LOG_DEBUG << "init p2p net service successfully";
 
             LOG_DEBUG << "begin to init ai_power_requestor_service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::ai_power_requestor_service>());
@@ -127,7 +128,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init p2p ai_power_requestor_service succefully";
+            LOG_DEBUG << "init p2p ai_power_requestor_service successfully";
 
 
             LOG_DEBUG << "begin to init ai_power_provider_service";
@@ -140,10 +141,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init ai_power_provider_service succefully";
+            LOG_DEBUG << "init ai_power_provider_service successfully";
 
             //cmd line service
-            LOG_DEBUG << "begin to init comand line service";
+            LOG_DEBUG << "begin to init command line service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai::dbc::cmd_line_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -153,7 +154,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init comand line service succefully";
+            LOG_DEBUG << "init command line service successfully";
 
             //common service
             LOG_DEBUG << "begin to init common service";
@@ -166,8 +167,20 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init common service succefully";
+            LOG_DEBUG << "init common service successfully";
 
+            //timer matrix manager
+            LOG_DEBUG << "begin to init common service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::core::timer_matrix_manager>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                //logging
+                return ret;
+            }
+            mdl->start();
+            LOG_DEBUG << "init timer matrix manager successfully";
 
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
@@ -222,9 +235,7 @@ namespace ai
 
             return E_BAD_PARAM;
         }
-
     }
-
 }
 
 
