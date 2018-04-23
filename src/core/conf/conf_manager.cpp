@@ -135,6 +135,46 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t conf_manager::serialize_node_info(const node_info &info)
+        {
+            FILE *fp = nullptr;
+
+            //node.dat path
+            fs::path node_dat_path;
+            node_dat_path /= fs::current_path();
+            node_dat_path /= fs::path(DAT_DIR_NAME);
+            node_dat_path /= fs::path(NODE_FILE_NAME);
+
+            //open file w+
+#ifdef WIN32
+            errno_t err = fopen_s(&fp, node_dat_path.generic_string().c_str(), "w+");
+            if (0 != err)
+#else
+            fp = fopen(node_dat_path.generic_string().c_str(), "w+");
+            if (nullptr == fp)
+#endif
+            {
+                LOG_ERROR << "conf_manager open node.dat error: fp is nullptr";
+                return E_DEFAULT;
+            }
+
+            assert(nullptr != fp);
+
+            fprintf(fp, "node_id=");
+            fprintf(fp, info.node_id.c_str());
+            fprintf(fp, "\n");
+
+            fprintf(fp, "node_private_key=");
+            fprintf(fp, info.node_private_key.c_str());
+            fprintf(fp, "\n");
+
+            if (fp)
+            {
+                fclose(fp);
+            }
+            return E_SUCCESS;
+        }
+
     }
 
 }

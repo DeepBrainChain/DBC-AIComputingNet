@@ -23,16 +23,14 @@
 
 #ifdef __RTX
 #include "rtl.h"
+#include "cs_string.h"
 #endif
 
 #include "error.h"
 #include "std_types.h"
 #include "visibility.h"
-#include "cs_string.h"
 #include "common_def.h"
 #include "log.h"
-
-#pragma warning(disable : 4996)
 
 
 
