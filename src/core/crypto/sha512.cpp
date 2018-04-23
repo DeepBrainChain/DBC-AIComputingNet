@@ -3,19 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "sha512.h"
-
 #include "crypto_common.h"
-
 #include <string.h>
 
-using namespace matrix::core;
 
-// Internal implementation code.
-namespace
-{
-/// Internal SHA-512 implementation.
-namespace sha512
-{
 uint64_t inline Ch(uint64_t x, uint64_t y, uint64_t z) { return z ^ (x & (y ^ z)); }
 uint64_t inline Maj(uint64_t x, uint64_t y, uint64_t z) { return (x & y) | (z & (x | y)); }
 uint64_t inline Sigma0(uint64_t x) { return (x >> 28 | x << 36) ^ (x >> 34 | x << 30) ^ (x >> 39 | x << 25); }
@@ -146,16 +137,11 @@ void Transform(uint64_t* s, const unsigned char* chunk)
     s[7] += h;
 }
 
-} // namespace sha512
-
-} // namespace
-
-
 ////// SHA-512
 
 CSHA512::CSHA512() : bytes(0)
 {
-    sha512::Initialize(s);
+    Initialize(s);
 }
 
 CSHA512& CSHA512::Write(const unsigned char* data, size_t len)
@@ -167,12 +153,12 @@ CSHA512& CSHA512::Write(const unsigned char* data, size_t len)
         memcpy(buf + bufsize, data, 128 - bufsize);
         bytes += 128 - bufsize;
         data += 128 - bufsize;
-        sha512::Transform(s, buf);
+        Transform(s, buf);
         bufsize = 0;
     }
     while (end >= data + 128) {
         // Process full chunks directly from the source.
-        sha512::Transform(s, data);
+        Transform(s, data);
         data += 128;
         bytes += 128;
     }
@@ -204,6 +190,6 @@ void CSHA512::Finalize(unsigned char hash[OUTPUT_SIZE])
 CSHA512& CSHA512::Reset()
 {
     bytes = 0;
-    sha512::Initialize(s);
+    Initialize(s);
     return *this;
 }

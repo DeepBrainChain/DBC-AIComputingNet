@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include "common.h"
 #include "byteswap.h"
+
 
 #include <stdint.h>
 

@@ -4,7 +4,7 @@
 
 #include "ripemd160.h"
 
-#include "crypto_common.h""
+#include "crypto_common.h"
 
 #include <string.h>
 
