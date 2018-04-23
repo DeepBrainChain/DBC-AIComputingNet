@@ -34,6 +34,8 @@ namespace matrix
 
             uint64_t generate_nounce();
 
+            std::string generate_task_id();
+
         private:
 
         };

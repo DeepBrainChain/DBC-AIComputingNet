@@ -72,7 +72,38 @@ namespace matrix
             uint64_t nounce = 0;
             return nounce;
         }
+
+        std::string id_generator::generate_task_id()
+        {
+            CKey secret;
+
+            //private key
+            bool fCompressed = true;
+            secret.MakeNewKey(fCompressed);
+
+            //public key
+            CPubKey pubkey = secret.GetPubKey();
+
+            //create compressed public key
+            CKeyID keyID = pubkey.GetID();
+
+            //encode node id
+            CPrivKey private_key = secret.GetPrivKey();
+
+            std::vector<unsigned char> id_data;
+            std::vector<unsigned char> id_prefix = { 't', 'a', 's', 'k', '.', NODE_ID_VERSION, '.' };
+            id_data.reserve(id_prefix.size() + private_key.size());
+
+
+            id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
+            id_data.insert(id_data.end(), keyID.begin(), keyID.end());
+            std::string task_id = EncodeBase58Check(id_data);
+
+            return task_id;
+        }
+
     }
+
 }
 
 
