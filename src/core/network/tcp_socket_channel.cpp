@@ -11,7 +11,6 @@
 #include "service_message_id.h"
 #include <boost/exception/all.hpp>
 
-#pragma warning(disable : 4996)
 
 namespace matrix
 {

@@ -16,10 +16,6 @@
 #include <string>
 #include <vector>
 
-//namespace matrix
-//{
-//    namespace core
-//    {
         /**
          * Encode a byte sequence as a base58-encoded string.
          * pbegin and pend cannot be nullptr, unless both are.
@@ -61,7 +57,5 @@
          */
         bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRet);
 
-//    }
-//}
 
 

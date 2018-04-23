@@ -223,7 +223,11 @@ namespace matrix
                 char hex[3];
                 while (i < valid_read_len)
                 {
+#ifdef WIN32
+                    sprintf_s(hex, sizeof(hex), "%02X", (uint8_t)m_read_ptr[i]);
+#else
                     sprintf(hex, "%02X", (uint8_t)m_read_ptr[i]);
+#endif
 
                     hex_string.at(3 * i) = hex[0];
                     hex_string.at(3 * i + 1) = hex[1];

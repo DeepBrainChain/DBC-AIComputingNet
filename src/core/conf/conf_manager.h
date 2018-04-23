@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "module.h"
+#include "id_generator.h"
 
 
 using namespace boost::program_options;
@@ -30,6 +31,7 @@ namespace matrix
 {
     namespace core
     {
+
         class conf_manager : public module
         {
         public:
@@ -50,7 +52,9 @@ namespace matrix
 
             const std::string & get_node_id() const { return m_node_id; }
 
-            const std::string  & get_node_private_key() const {return m_node_private_key;}
+            const std::string & get_node_private_key() const {return m_node_private_key;}
+
+            static int32_t serialize_node_info(const node_info &info);
 
         protected:
 

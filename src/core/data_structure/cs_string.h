@@ -26,8 +26,6 @@
 
 #include "common.h"
 
-#pragma warning(disable : 4996)
-
 
 class string
 {
