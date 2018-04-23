@@ -26,8 +26,8 @@ namespace matrix
 
         timer_matrix_manager::timer_matrix_manager()
             : m_timer_group(new nio_loop_group())
-            , m_timer(*(m_timer_group->get_io_service()))
         {
+
         }
 
         int32_t  timer_matrix_manager::init(bpo::variables_map &options)
@@ -42,8 +42,10 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        int32_t  timer_matrix_manager::start() 
+        int32_t timer_matrix_manager::start() 
         { 
+            m_timer = std::make_shared<steady_timer>(*(m_timer_group->get_io_service()));
+
             auto self(shared_from_this());
             m_timer_handler = [this, self](const boost::system::error_code & error)
             {
@@ -92,8 +94,8 @@ namespace matrix
         void timer_matrix_manager::start_timer()
         {
             //start tick timer
-            m_timer.expires_from_now(std::chrono::milliseconds(DEFAULT_TIMER_INTERVAL));
-            m_timer.async_wait(m_timer_handler);
+            m_timer->expires_from_now(std::chrono::milliseconds(DEFAULT_TIMER_INTERVAL));
+            m_timer->async_wait(m_timer_handler);
 
             LOG_DEBUG << "timer matrix manager start timer: " << DEFAULT_TIMER_INTERVAL << "ms";
         }
@@ -103,7 +105,7 @@ namespace matrix
             boost::system::error_code error;
 
             //cancel tick timer
-            m_timer.cancel(error);
+            m_timer->cancel(error);
             if (error)
             {
                 LOG_ERROR << "timer matrix manager cancel timer error: " << error;
