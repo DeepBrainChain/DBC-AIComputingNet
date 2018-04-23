@@ -40,6 +40,8 @@
 #define P2P_GET_PEER_NODES_REQ								"get_peer_nodes_req"
 #define P2P_GET_PEER_NODES_RESP								"get_peer_nodes_resp"
 
+#define P2P_NEW_PEER_NODE                                   "p2p_new_peer_node"
+
 
 
 #endif

@@ -35,7 +35,6 @@ namespace matrix
 {
     namespace core
     {
-
         class tcp_socket_channel : public channel, public std::enable_shared_from_this<tcp_socket_channel>, public boost::noncopyable
         {
         public:

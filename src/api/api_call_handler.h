@@ -263,7 +263,7 @@ namespace ai
 
             //std::mutex m_mutex;           currently no need. 
 
-            std::shared_ptr<message> m_resp;
+            std::shared_ptr<matrix::core::base> m_resp;
 
             std::shared_ptr<callback_wait<>> m_wait;
 
