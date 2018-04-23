@@ -62,6 +62,7 @@ namespace matrix
 
             uint16_t get_test_net_listen_port() const { return m_test_net_listen_port; }
 
+
         protected:
 
             int32_t init_conf();
@@ -74,12 +75,14 @@ namespace matrix
 
             void init_invoker();
 
+            virtual void init_timer();
+
             //override by service layer
             virtual int32_t service_init(bpo::variables_map &options);
 
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
 
-			bool add_peer_node(const socket_id &sid);
+            bool add_peer_node(const socket_id &sid, const std::string &nid);
 
 			void remove_peer_node(const std::string &id);
 
@@ -96,9 +99,20 @@ namespace matrix
             //cmd get peer nodes
             int32_t on_cmd_get_peer_nodes_req(const std::shared_ptr<message> &msg);
 
-			int32_t on_get_peer_nodes_req(std::shared_ptr<message> &msg);
+			int32_t on_get_peer_nodes_req(const std::shared_ptr<message> &msg);
 
-			int32_t on_get_peer_nodes_resp(std::shared_ptr<message> &msg);
+			int32_t on_get_peer_nodes_resp(const std::shared_ptr<message> &msg);
+
+            int32_t on_p2p_new_peer_node(const std::shared_ptr<message> &msg);
+
+        protected:
+            //active pull
+            int32_t send_get_peer_nodes();
+
+            //active push
+            int32_t send_put_peer_nodes(std::shared_ptr<peer_node> node);
+
+            int32_t on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer);
 
         protected:
 
@@ -117,6 +131,8 @@ namespace matrix
             peer_map_type m_peer_nodes_map;
 
 			//std::string m_my_node_id;
+
+            uint32_t m_timer_id_peer_info_exchange;
 
         };
 

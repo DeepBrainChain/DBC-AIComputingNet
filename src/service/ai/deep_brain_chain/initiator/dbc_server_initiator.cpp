@@ -170,7 +170,7 @@ namespace ai
             LOG_DEBUG << "init common service successfully";
 
             //timer matrix manager
-            LOG_DEBUG << "begin to init common service";
+            LOG_DEBUG << "begin to init matrix manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::core::timer_matrix_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);

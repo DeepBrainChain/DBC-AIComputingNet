@@ -48,7 +48,7 @@ namespace matrix
 
         protected:
 
-            std::string m_id;
+            std::string m_id;                               //peer node_id
 
             socket_id m_sid;                                //if connected directly, it has socket id
 

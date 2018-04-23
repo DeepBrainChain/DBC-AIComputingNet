@@ -20,7 +20,6 @@ namespace matrix
 {
     namespace service_core
     {
-
         class matrix_client_socket_channel_handler : public matrix_socket_channel_handler
         {
 

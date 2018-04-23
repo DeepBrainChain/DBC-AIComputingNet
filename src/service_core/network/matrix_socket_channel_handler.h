@@ -29,6 +29,12 @@ namespace matrix
 {
     namespace service_core
     {
+        class msg_new_peer_node : public matrix::core::base
+        {
+        public:
+            socket_id       sid;
+            std::string     node_id;
+        };
 
         class matrix_socket_channel_handler : public socket_channel_handler
         {

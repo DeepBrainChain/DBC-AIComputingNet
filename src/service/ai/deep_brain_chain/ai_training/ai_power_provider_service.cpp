@@ -523,7 +523,7 @@ namespace ai
 
                     if (0 != m_training_tasks.count(task->task_id))
                     {
-                        LOG_ERROR << "ai power provider service trainning task duplicated: " << task->task_id;
+                        LOG_ERROR << "ai power provider service training task duplicated: " << task->task_id;
                         continue;
                     }
 

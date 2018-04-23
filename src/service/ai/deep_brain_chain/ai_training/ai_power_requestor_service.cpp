@@ -152,6 +152,13 @@ namespace matrix
 			std::shared_ptr<base> content = msg->get_content();
 			std::shared_ptr<cmd_start_multi_training_req> req = std::dynamic_pointer_cast<cmd_start_multi_training_req>(content);
 			assert(nullptr != req);
+            if (!req)
+            {
+                LOG_ERROR << "null msg";
+                return E_DEFAULT;
+            }
+            //cmd resp
+            std::shared_ptr<ai::dbc::cmd_start_multi_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_multi_training_resp>();
 
 			bpo::options_description opts("task config file options");
 			add_task_config_opts(opts);
@@ -161,7 +168,14 @@ namespace matrix
 			for (auto &file : files) {
 				auto req_msg = create_task_msg_from_file(file, opts);
 				CONNECTION_MANAGER->broadcast_message(req_msg);
+                cmd_resp->task_list.push_back(std::dynamic_pointer_cast<matrix::service_core::start_training_req>(req_msg->content)->body.task_id);
 			}
+
+            //public resp directly            
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
 			return E_SUCCESS;
 		}
 

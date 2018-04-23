@@ -118,10 +118,22 @@ namespace matrix
                 }
             }
 
-            //send shake hand resp in hanlder
+            //send shake hand resp in handler
             if (SHAKE_HAND_REQ == msg.get_name())
             {
                 send_shake_hand_resp();
+                
+                //public new peer node
+                using msg_new_node = matrix::service_core::msg_new_peer_node;
+                shared_ptr<msg_new_node> msg_node = std::make_shared<msg_new_node>();
+                msg_node->sid = m_channel->id();
+                msg_node->node_id = "node_id";//todo ...
+
+                std::shared_ptr<matrix::core::message> msg = std::make_shared<matrix::core::message>();
+                msg->set_name(P2P_NEW_PEER_NODE);
+                msg->set_content(msg_node);
+
+                TOPIC_MANAGER->publish<int32_t>(P2P_NEW_PEER_NODE, msg);
             }
 
             m_lost_shake_hand_count = 0;
