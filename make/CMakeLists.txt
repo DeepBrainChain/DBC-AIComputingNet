@@ -27,11 +27,12 @@ SET(DEBUG_MODE ON)
 SET(CMAKE_CXX_FLAGS "-std=c++11" )
 SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
-SET(MATRIX_FLAGS "-D__linux__")
+SET(MATRIX_FLAGS "-D__linux__ -D__x86_64__ ")
+#MAC -DHAVE_GETENTROPY_RAND
 
 #version setting
 SET(VERSION_MAJOR 0)
-SET(VERSION_MINOR 1)
+SET(VERSION_MINOR 2)
 SET(VERSION_PATCH 0)
 SET(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
@@ -71,6 +72,7 @@ ${SRC_PATH}/core/common
 ${SRC_PATH}/core/conf 
 ${SRC_PATH}/core/conf/validator
 ${SRC_PATH}/core/container
+${SRC_PATH}/core/crypto
 ${SRC_PATH}/core/data_structure
 ${SRC_PATH}/core/env 
 ${SRC_PATH}/core/initiator 
@@ -98,12 +100,17 @@ ${SRC_PATH}/service/ai/deep_brain_chain/conf
 ${SRC_PATH}/service/ai/deep_brain_chain/initiator
 ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
 
-${SRC_PATH}/3rd/db/leveldb
+${SRC_PATH}/3rd/crypto/secp256k1/include
+${SRC_PATH}/3rd/db/
+${SRC_PATH}/3rd/network/libevent
+${SRC_PATH}/3rd/network/libevent/event2
+${SRC_PATH}/3rd/network/openssl/internal
+${SRC_PATH}/3rd/network/openssl/openssl
 ${SRC_PATH}/3rd/network/rapidjson
 ${SRC_PATH}/3rd/network/rapidjson/internal
 ${SRC_PATH}/3rd/network/rapidjson/error
-${SRC_PATH}/3rd/network/libevent
-${SRC_PATH}/3rd/network/libevent/event2
+
+${SRC_PATH}/api
 )
 
 
@@ -122,11 +129,13 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIR})
 AUX_SOURCE_DIRECTORY(${SRC_PATH} DIR_SRCS)
 
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/api API_SRCS)
+
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/alarm CORE_ALARM_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/codec CORE_CODEC_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/common CORE_COMMON_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/conf CORE_CONF_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/conf/validator CORE_CONF_VALIDATOR_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/crypto CORE_CRYPTO)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/container CORE_CONTAINER)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/data_structure CORE_DATA_STRU_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/env CORE_ENV_SRCS)
@@ -183,6 +192,7 @@ ${CORE_COMMON_SRCS}
 ${CORE_CONF_SRCS} 
 ${CORE_CONF_VALIDATOR_SRCS}
 ${CORE_CONTAINER}
+${CORE_CRYPTO}
 ${CORE_DATA_STRU_SRCS}
 ${CORE_ENV_SRCS} 
 ${CORE_INITIATOR_SRCS} 
@@ -223,7 +233,7 @@ SET(LIBRARIES)
 #target link
 MESSAGE(STATUS "${Boost_LIBRARIES}")
 #libboost_thread.a -lboost_log_setup
-TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb libboost_thread.a)
+TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libboost_thread.a)
 
 ############################################################################
 

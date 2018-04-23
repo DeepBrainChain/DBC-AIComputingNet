@@ -149,6 +149,12 @@
     <Filter Include="src\service_core\common">
       <UniqueIdentifier>{e9055c14-cd6a-4a9c-a3ce-cbd724d94982}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\3rd\network\openssl">
+      <UniqueIdentifier>{465cc837-f7c7-4ca7-a366-76dcb8473e40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\crypto">
+      <UniqueIdentifier>{17ebcc4a-12a0-496c-90d8-91533689f84f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -332,6 +338,36 @@
       <Filter>src\core\crypto</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\crypto\utilstrencodings.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\random.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\chacha20.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\memory\cleanse.cpp">
+      <Filter>src\core\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\memory\lockedpool.cpp">
+      <Filter>src\core\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\arith_uint256.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\hmac_sha512.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\key.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\pubkey.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\crypto_service.cpp">
+      <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\crypto\sha256_sse4.cpp">
       <Filter>src\core\crypto</Filter>
     </ClCompile>
   </ItemGroup>
@@ -846,9 +882,6 @@
     <ClInclude Include="..\..\..\..\src\core\crypto\sha256.h">
       <Filter>src\core\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\core\crypto\endian.h">
-      <Filter>src\core\crypto</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\crypto\crypto_common.h">
       <Filter>src\core\crypto</Filter>
     </ClInclude>
@@ -876,5 +909,313 @@
     <ClInclude Include="..\..\..\..\src\core\crypto\utilstrencodings.h">
       <Filter>src\core\crypto</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\random.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\chacha20.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\memory\cleanse.h">
+      <Filter>src\core\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\asn1t.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\bio.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\comp.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\conf.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\constant_time_locl.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\dane.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\dso.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\err.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\numbers.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\o_dir.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\o_str.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\internal\thread_once.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\__DECC_INCLUDE_EPILOGUE.H">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\__DECC_INCLUDE_PROLOGUE.H">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\aes.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\asn1.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\asn1_mac.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\asn1t.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\async.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\bio.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\blowfish.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\bn.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\buffer.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\camellia.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\cast.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\cmac.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\cms.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\comp.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\conf.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\conf_api.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\crypto.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ct.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\des.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\dh.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\dsa.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\dtls1.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\e_os2.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ebcdic.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ec.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ecdh.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ecdsa.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\engine.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\err.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\evp.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\hmac.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\idea.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\kdf.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\lhash.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\md2.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\md4.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\md5.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\mdc2.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\modes.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\obj_mac.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\objects.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ocsp.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslconf.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslv.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ossl_typ.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\pem.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\pem2.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\pkcs7.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\pkcs12.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\rand.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\rc2.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\rc4.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\rc5.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ripemd.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\rsa.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\safestack.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\seed.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\sha.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\srp.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\srtp.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ssl.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ssl2.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ssl3.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\stack.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\symhacks.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\tls1.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ts.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\txt_db.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\ui.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\whrlpool.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\x509.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\x509_vfy.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\network\openssl\openssl\x509v3.h">
+      <Filter>src\3rd\network\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\crypto\secp256k1\include\secp256k1.h">
+      <Filter>src\3rd\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\crypto\secp256k1\include\secp256k1_ecdh.h">
+      <Filter>src\3rd\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\crypto\secp256k1\include\secp256k1_recovery.h">
+      <Filter>src\3rd\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\memory\lockedpool.h">
+      <Filter>src\core\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\arith_uint256.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\memory\secure.h">
+      <Filter>src\core\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\hmac_sha512.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\key.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\pubkey.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\crypto_service.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\crypto\crypto_endian.h">
+      <Filter>src\core\crypto</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslconf.h.in">
+      <Filter>src\3rd\network\openssl</Filter>
+    </None>
   </ItemGroup>
 </Project>
