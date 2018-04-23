@@ -71,7 +71,7 @@ namespace matrix
 
             std::function<timer_handler_type> m_timer_handler;
 
-            steady_timer m_timer;
+            std::shared_ptr<steady_timer> m_timer;
 
             static tick_type m_cur_tick;
 
