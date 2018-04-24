@@ -116,7 +116,7 @@ namespace ai
 
         protected:
 
-            std::shared_ptr<leveldb::DB> m_training_task_db;
+            std::shared_ptr<leveldb::DB> m_prov_training_task_db;
 
             std::string m_container_ip;
 

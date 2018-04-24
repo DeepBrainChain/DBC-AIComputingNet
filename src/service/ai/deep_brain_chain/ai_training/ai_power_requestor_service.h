@@ -12,7 +12,10 @@
 
 #include "service_module.h"
 #include <boost/asio.hpp>
+#include <leveldb/db.h>
+#include "db_types.h"
 #include <string>
+
 
 using namespace matrix::core;
 using namespace boost::asio::ip;
@@ -27,7 +30,7 @@ namespace matrix
 		{
 		public:
 
-			ai_power_requestor_service() = default;
+            ai_power_requestor_service();
 
 			virtual ~ai_power_requestor_service() = default;
 
@@ -40,6 +43,8 @@ namespace matrix
 			void init_subscription();
 
 			void init_invoker();
+
+            int32_t init_db();
 
 			virtual int32_t service_init(bpo::variables_map &options);
 
@@ -56,9 +61,13 @@ namespace matrix
         protected:
 			void add_task_config_opts(bpo::options_description &opts) const;
 			std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts);
+            bool write_task_info_to_db(std::string taskid);
+            bool read_task_info_from_db(std::vector<std::string> &vec);
 
 		protected:
 			bpo::variables_map vm;
+            std::shared_ptr<leveldb::DB> m_req_training_task_db;
+
 		};
 
 	}

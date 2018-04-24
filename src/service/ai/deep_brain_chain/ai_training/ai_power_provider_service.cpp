@@ -33,7 +33,7 @@ namespace ai
     {
 
         ai_power_provider_service::ai_power_provider_service()
-            : m_training_task_db()
+            : m_prov_training_task_db()
             , m_container_ip(DEFAULT_LOCAL_IP)
             , m_container_port(DEFAULT_CONTAINER_LISTEN_PORT)
             , m_container_client(std::make_shared<container_client>(m_container_ip, m_container_port))
@@ -120,7 +120,7 @@ namespace ai
 
             //get db path
             fs::path task_db_path = env_manager::get_db_path();
-            task_db_path /= fs::path("training_task.db");
+            task_db_path /= fs::path("prov_training_task.db");
             LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
 
             //open db
@@ -132,7 +132,7 @@ namespace ai
             }
 
             //smart point auto close db
-            m_training_task_db.reset(db);
+            m_prov_training_task_db.reset(db);
 
             //load task
             load_task_from_db();
@@ -174,7 +174,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (nullptr == m_training_task_db)
+            if (nullptr == m_prov_training_task_db)
             {
                 LOG_ERROR << "ai power provider service training task db is nullptr";
                 return E_DEFAULT;
@@ -182,7 +182,7 @@ namespace ai
 
             //check task id exists 
             std::string task_value;
-            leveldb::Status status = m_training_task_db->Get(leveldb::ReadOptions(), req->body.task_id, &task_value);
+            leveldb::Status status = m_prov_training_task_db->Get(leveldb::ReadOptions(), req->body.task_id, &task_value);
             if (status.ok())                //already exists and directly return
             {
                 LOG_DEBUG << "ai power provider service on start training already had task: " << req->body.task_id;
@@ -485,7 +485,7 @@ namespace ai
 
         int32_t ai_power_provider_service::write_task_to_db(std::shared_ptr<ai_training_task> task)
         {
-            assert(nullptr != m_training_task_db && nullptr != task);
+            assert(nullptr != m_prov_training_task_db && nullptr != task);
 
             //serialization
             std::shared_ptr<byte_buf> out_buf(new byte_buf);
@@ -497,7 +497,7 @@ namespace ai
             write_options.sync = true;
 
             leveldb::Slice slice(out_buf->get_read_ptr(), out_buf->get_valid_read_len());
-            m_training_task_db->Put(write_options, task->task_id, slice);
+            m_prov_training_task_db->Put(write_options, task->task_id, slice);
 
             return E_SUCCESS;
         }
@@ -510,7 +510,7 @@ namespace ai
 
                 //iterate task in db
                 std::unique_ptr<leveldb::Iterator> it;
-                it.reset(m_training_task_db->NewIterator(leveldb::ReadOptions()));
+                it.reset(m_prov_training_task_db->NewIterator(leveldb::ReadOptions()));
                 for (it->SeekToFirst(); it->Valid(); it->Next())
                 {
                     task = std::make_shared<ai_training_task>();

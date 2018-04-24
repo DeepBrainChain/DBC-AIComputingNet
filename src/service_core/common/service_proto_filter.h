@@ -5,10 +5,7 @@
 #include "service_message.h"
 #include "matrix_types.h"
 #include "timer_def.h"
-//todo: check c++17 instead?
-#if defined(__linux__)
 #include <boost/pointer_cast.hpp>
-#endif
 
 #define TIME_OUT_SEC    180
 
@@ -22,12 +19,7 @@ namespace matrix
 
             bool check_dup(const std::shared_ptr<matrix::core::message>& msg)
             {
-                //todo: check c++17 instead?
-                #if defined(__linux__)
-                    std::shared_ptr<matrix::service_core::msg_header> hdr = boost::reinterpret_pointer_cast<matrix::service_core::msg_header>(msg->content);
-                #else
-                    std::shared_ptr<matrix::service_core::msg_header> hdr = std::reinterpret_pointer_cast<matrix::service_core::msg_header>(msg->content);
-                #endif
+                std::shared_ptr<matrix::service_core::msg_header> hdr = boost::reinterpret_pointer_cast<matrix::service_core::msg_header>(msg->content);
                 if(hdr)
                 {
                     time_t cur = time(nullptr);

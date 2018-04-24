@@ -466,7 +466,12 @@ namespace matrix
                 for (auto itn = m_peer_nodes_map.begin(); itn != m_peer_nodes_map.end(); ++itn)
                 {
                     ai::dbc::cmd_peer_node_info node_info;
-                    node_info = *(std::reinterpret_pointer_cast<ai::dbc::cmd_peer_node_info>(itn->second));
+                    node_info.peer_node_id = itn->second->m_id;
+                    node_info.live_time_stamp = itn->second->m_live_time;
+                    node_info.addr.ip = itn->second->m_peer_addr.get_ip();
+                    node_info.addr.port = itn->second->m_peer_addr.get_port();
+                    node_info.service_list.clear();
+                    node_info.service_list.push_back(std::string("ai_training"));//todo ...
                     cmd_resp->peer_nodes_list.push_back(std::move(node_info));
                 }
             }
