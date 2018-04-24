@@ -70,7 +70,7 @@ namespace matrix
                 if (false == this->flag())
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
-                    bool ret = m_cv.wait_for(lock, time_ms, [this]()->bool { return m_flag.load(std::memory_order_acquire); });
+                    ret = m_cv.wait_for(lock, time_ms, [this]()->bool { return m_flag.load(std::memory_order_acquire); });
                 }
 
                 if (true == ret && nullptr != m_callback)
