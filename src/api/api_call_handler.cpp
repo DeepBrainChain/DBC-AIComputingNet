@@ -21,10 +21,7 @@ namespace ai
 
         void api_call_handler::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_training_resp).name(), [&](std::shared_ptr<cmd_start_training_resp> &rsp) {
-                m_resp = rsp; 
-                m_wait->set(); 
-                });
+            TOPIC_MANAGER->subscribe(typeid(cmd_start_training_resp).name(), [this](std::shared_ptr<cmd_start_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_resp).name(), [this](std::shared_ptr<cmd_stop_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_resp).name(), [this](std::shared_ptr<cmd_start_multi_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_list_training_resp).name(), [this](std::shared_ptr<cmd_list_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
