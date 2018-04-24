@@ -415,7 +415,7 @@ namespace matrix
 
         bool ai_power_requestor_service::write_task_info_to_db(std::string taskid)
         {
-            if (!m_req_training_task_db || taskid.empty());
+            if (!m_req_training_task_db || taskid.empty())
             {
                 LOG_ERROR << "null ptr or null taskid.";
                 return false;
