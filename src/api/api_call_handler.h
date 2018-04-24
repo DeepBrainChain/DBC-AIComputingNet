@@ -243,7 +243,7 @@ namespace ai
                 //publish
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
-                cout << "waiting for resp............";
+                //cout << "waiting for resp............";
                 
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);

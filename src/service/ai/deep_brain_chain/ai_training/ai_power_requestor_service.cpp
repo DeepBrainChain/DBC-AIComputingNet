@@ -103,36 +103,37 @@ namespace matrix
 			try
 			{
 				std::ifstream conf_task(req->task_file_path);
-				::store(bpo::parse_config_file(conf_task, task_config_opts), vm);
+				bpo::store(bpo::parse_config_file(conf_task, task_config_opts), vm);
 				bpo::notify(vm);
 			}
 			catch (const boost::exception & e)
 			{
 				LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
 			}
+
 			std::shared_ptr<message> req_msg = std::make_shared<message>();
-			std::shared_ptr<matrix::service_core::start_training_req> resp_content = std::make_shared<matrix::service_core::start_training_req>();
+			std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
 
-			resp_content->header.magic = TEST_NET;
-			resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
+			broadcast_req_content->header.magic = TEST_NET;
+			broadcast_req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
 
-			resp_content->header.check_sum = 0;
-			resp_content->header.session_id = 0;
+			broadcast_req_content->header.check_sum = 0;
+			broadcast_req_content->header.session_id = 0;
 
-			resp_content->body.task_id = vm["task_id"].as<std::string>();
-			resp_content->body.select_mode = vm["select_mode"].as<int8_t>();
-			resp_content->body.master = vm["master"].as<std::string>();
-			resp_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
-			resp_content->body.server_specification = vm["server_specification"].as<std::string>();
-			resp_content->body.server_count = vm["server_count"].as<int32_t>();
-			resp_content->body.training_engine = vm["training_engine"].as<int32_t>();
-			resp_content->body.code_dir = vm["code_dir"].as<std::string>();
-			resp_content->body.entry_file = vm["entry_file"].as<std::string>();
-			resp_content->body.data_dir = vm["data_dir"].as<std::string>();
-			resp_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
-			resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
+			broadcast_req_content->body.task_id = vm["task_id"].as<std::string>();
+			broadcast_req_content->body.select_mode = vm["select_mode"].as<int8_t>();
+			broadcast_req_content->body.master = vm["master"].as<std::string>();
+			broadcast_req_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
+			broadcast_req_content->body.server_specification = vm["server_specification"].as<std::string>();
+			broadcast_req_content->body.server_count = vm["server_count"].as<int32_t>();
+			broadcast_req_content->body.training_engine = vm["training_engine"].as<int32_t>();
+			broadcast_req_content->body.code_dir = vm["code_dir"].as<std::string>();
+			broadcast_req_content->body.entry_file = vm["entry_file"].as<std::string>();
+			broadcast_req_content->body.data_dir = vm["data_dir"].as<std::string>();
+			broadcast_req_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
+			broadcast_req_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
 
-			req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
+			req_msg->set_content(std::dynamic_pointer_cast<base>(broadcast_req_content));
 			req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
 			CONNECTION_MANAGER->broadcast_message(req_msg);
@@ -141,7 +142,7 @@ namespace matrix
             std::shared_ptr<ai::dbc::cmd_start_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_training_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-            cmd_resp->task_id = resp_content->body.task_id;
+            cmd_resp->task_id = broadcast_req_content->body.task_id;
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
 			return E_SUCCESS;
