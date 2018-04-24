@@ -126,7 +126,8 @@ namespace matrix
             cmd_resp->task_id = "";
 
             //check file exist
-            fs::path task_file_path = fs::system_complete(fs::path(req->task_file_path, fs::native));
+            fs::path task_file_path(fs::initial_path());
+            task_file_path = fs::system_complete(fs::path(req->task_file_path.c_str()));
             if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
             {
                 cmd_resp->result = E_DEFAULT;
