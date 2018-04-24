@@ -60,10 +60,15 @@ namespace matrix
             int32_t on_list_training_resp(std::shared_ptr<message> &msg);
 
             int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm);
+
         protected:
+
             void add_task_config_opts(bpo::options_description &opts) const;
+
             std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts);
+
             bool write_task_info_to_db(std::string taskid);
+
             bool read_task_info_from_db(std::vector<std::string> &vec);
 
         protected:

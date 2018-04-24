@@ -444,7 +444,8 @@ namespace matrix
             //read from db
             std::string taskid;
             vec.clear();//necessary ?
-                        //iterate task in db
+
+            //iterate task in db
             std::unique_ptr<leveldb::Iterator> it;
             it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
             for (it->SeekToFirst(); it->Valid(); it->Next())
