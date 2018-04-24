@@ -41,6 +41,11 @@ namespace matrix
 {
 	namespace service_core
 	{
+        ai_power_requestor_service::ai_power_requestor_service()
+            : m_req_training_task_db()
+        {
+
+        }
 
 		int32_t ai_power_requestor_service::init_conf()
 		{
@@ -49,7 +54,11 @@ namespace matrix
 
 		int32_t ai_power_requestor_service::service_init(bpo::variables_map &options)
 		{
-			return E_SUCCESS;
+            int32_t ret = E_SUCCESS;
+
+            ret = init_db();
+
+			return ret;
 		}
 
 
@@ -78,6 +87,31 @@ namespace matrix
             m_invokers.insert({ LIST_TRAINING_RESP,{ invoker } });
 
 		}
+
+        int32_t ai_power_requestor_service::init_db()
+        {
+            leveldb::DB *db = nullptr;
+            leveldb::Options  options;
+            options.create_if_missing = true;
+
+            //get db path
+            fs::path task_db_path = env_manager::get_db_path();
+            task_db_path /= fs::path("req_training_task.db");
+            LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
+
+            //open db
+            leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
+            if (false == status.ok())
+            {
+                LOG_ERROR << "ai_power_service init training task db error";
+                return E_DEFAULT;
+            }
+
+            //smart point auto close db
+            m_req_training_task_db.reset(db);
+
+            return E_SUCCESS;
+        }
 
 		int32_t ai_power_requestor_service::on_cmd_start_training_req(std::shared_ptr<message> &msg)
 		{
@@ -144,6 +178,9 @@ namespace matrix
             cmd_resp->result_info = "";
             cmd_resp->task_id = broadcast_req_content->body.task_id;
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+            //write task info to db
+            write_task_info_to_db(cmd_resp->task_id);
 
 			return E_SUCCESS;
 		}
@@ -218,8 +255,13 @@ namespace matrix
             req_content->header.check_sum = 0;//id_gen.generate_check_sum();
             req_content->header.session_id = 0;// id_gen.generate_session_id();
             //body
-            if (cmd_req->list_type == 1) {
+            if (cmd_req->list_type == 1) //0: list all tasks; 1: list specific tasks
+            {
                 req_content->body.task_list.assign(cmd_req->task_list.begin(), cmd_req->task_list.end());
+            }
+            else
+            {
+                read_task_info_from_db(req_content->body.task_list);
             }
 
             req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
@@ -316,6 +358,49 @@ namespace matrix
 			req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
             return req_msg;
 		}
-	}
 
+        bool ai_power_requestor_service::write_task_info_to_db(std::string taskid)
+        {
+            if(!m_req_training_task_db || taskid.empty());
+            {
+                LOG_ERROR << "null ptr or null taskid.";
+                return false;
+            }
+
+            //flush to db
+            leveldb::WriteOptions write_options;
+            write_options.sync = true;
+            leveldb::Status s = m_req_training_task_db->Put(write_options, taskid, taskid);
+            if (!s.ok())
+            {
+                LOG_ERROR << "write task(" << taskid << ") failed.";
+                return false;
+            }
+            return true;
+        }
+
+        bool ai_power_requestor_service::read_task_info_from_db(std::vector<std::string> &vec)
+        {
+            if (!m_req_training_task_db)
+            {
+                LOG_ERROR << "level db not initialized.";
+                return false;
+            }
+
+            //read from db
+            std::string taskid;
+            vec.clear();//necessary ?
+            //iterate task in db
+            std::unique_ptr<leveldb::Iterator> it;
+            it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
+            for (it->SeekToFirst(); it->Valid(); it->Next())
+            {
+                taskid = it->key().ToString();
+                vec.push_back(taskid);
+            }
+        
+            return true;
+        }
+
+	}//service_core
 }
