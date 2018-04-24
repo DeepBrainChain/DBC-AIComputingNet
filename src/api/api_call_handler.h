@@ -240,6 +240,8 @@ namespace ai
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(std::dynamic_pointer_cast<base>(req));
 
+                m_wait->reset();
+
                 //publish
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
