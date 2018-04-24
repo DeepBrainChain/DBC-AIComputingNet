@@ -37,7 +37,7 @@ namespace matrix
         {
         public:
 
-            callback_wait() : m_flag(false), m_callback(default_dummy) {}
+            callback_wait() : m_flag(false), m_callback(default_dummy) { m_test = 0; }
 
             callback_wait(function_type functor) : m_flag(false), m_callback(functor) {}
 
@@ -50,6 +50,8 @@ namespace matrix
 
             void set()
             {
+                m_test++;
+
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
                     m_flag.store(true, std::memory_order_release);
@@ -69,12 +71,16 @@ namespace matrix
 
                 std::unique_lock<std::mutex> lock(m_mutex);
                 bool ret = m_cv.wait_for(lock, time_ms, [this]()->bool { return m_flag.load(std::memory_order_acquire); });
+                //m_cv.wait(lock);
+
+                cout << m_test << endl;
 
                 if (true == ret && nullptr != m_callback)
                 {
                     m_callback();
                 }
                 return ret;
+                //return true;
             }
 
         protected:
@@ -86,6 +92,8 @@ namespace matrix
             std::atomic<bool> m_flag;
 
             std::function<function_type> m_callback;
+
+            int m_test;
 
         };
 
