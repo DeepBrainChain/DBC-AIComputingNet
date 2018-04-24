@@ -64,7 +64,7 @@ namespace ai
                     return;
                 }
 
-                cout << task_id << endl;
+                cout << "task id: " << task_id << endl;
             }
         };
 

@@ -20,57 +20,59 @@
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
+namespace fs = boost::filesystem;
 
 namespace matrix
 {
-	namespace service_core
-	{
+    namespace service_core
+    {
 
-		class ai_power_requestor_service : public service_module
-		{
-		public:
+        class ai_power_requestor_service : public service_module
+        {
+        public:
 
             ai_power_requestor_service();
 
-			virtual ~ai_power_requestor_service() = default;
+            virtual ~ai_power_requestor_service() = default;
 
-			virtual std::string module_name() const { return ai_power_requestor_service_name; }
+            virtual std::string module_name() const { return ai_power_requestor_service_name; }
 
-		protected:
+        protected:
 
-			int32_t init_conf();
+            int32_t init_conf();
 
-			void init_subscription();
+            void init_subscription();
 
-			void init_invoker();
+            void init_invoker();
 
             int32_t init_db();
 
-			virtual int32_t service_init(bpo::variables_map &options);
+            virtual int32_t service_init(bpo::variables_map &options);
 
-		protected:
+        protected:
 
-			int32_t on_cmd_start_training_req(std::shared_ptr<message> &msg);
-			int32_t on_cmd_start_multi_training_req(std::shared_ptr<message> &msg);
+            int32_t on_cmd_start_training_req(std::shared_ptr<message> &msg);
+            int32_t on_cmd_start_multi_training_req(std::shared_ptr<message> &msg);
 
             int32_t on_cmd_stop_training_req(const std::shared_ptr<message> &msg);
 
             int32_t on_cmd_list_training_req(const std::shared_ptr<message> &msg);
             int32_t on_list_training_resp(std::shared_ptr<message> &msg);
 
+            int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm);
         protected:
-			void add_task_config_opts(bpo::options_description &opts) const;
-			std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts);
+            void add_task_config_opts(bpo::options_description &opts) const;
+            std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts);
             bool write_task_info_to_db(std::string taskid);
             bool read_task_info_from_db(std::vector<std::string> &vec);
 
-		protected:
-			bpo::variables_map vm;
+        protected:
+
             std::shared_ptr<leveldb::DB> m_req_training_task_db;
 
-		};
+        };
 
-	}
+    }
 
 }
 
