@@ -49,7 +49,7 @@ namespace ai
                 m_container_ip = (*CONF_MANAGER)["container_ip"].as<std::string>();
             }
 
-            if (CONF_MANAGER->count("container_ip"))
+            if (CONF_MANAGER->count("container_port"))
             {
                 m_container_port = (*CONF_MANAGER)["container_port"].as<unsigned long>();
             }
@@ -120,6 +120,19 @@ namespace ai
 
             //get db path
             fs::path task_db_path = env_manager::get_db_path();
+            if (false == fs::exists(task_db_path))
+            {
+                LOG_DEBUG << "db directory path does not exist and create db directory";
+                fs::create_directory(task_db_path);
+            }
+
+            //check db directory
+            if (false == fs::is_directory(task_db_path))
+            {
+                LOG_ERROR << "db directory path does not exist and exit";
+                return E_DEFAULT;
+            }
+
             task_db_path /= fs::path("prov_training_task.db");
             LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
 
@@ -127,7 +140,7 @@ namespace ai
             leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
             if (false == status.ok())
             {
-                LOG_ERROR << "ai_power_service init training task db error";
+                LOG_ERROR << "ai power provider service init training task db error";
                 return E_DEFAULT;
             }
 

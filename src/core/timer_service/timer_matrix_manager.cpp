@@ -97,7 +97,7 @@ namespace matrix
             m_timer->expires_from_now(std::chrono::milliseconds(DEFAULT_TIMER_INTERVAL));
             m_timer->async_wait(m_timer_handler);
 
-            LOG_DEBUG << "timer matrix manager start timer: " << DEFAULT_TIMER_INTERVAL << "ms";
+            //LOG_DEBUG << "timer matrix manager start timer: " << DEFAULT_TIMER_INTERVAL << "ms";
         }
 
         void timer_matrix_manager::stop_timer()

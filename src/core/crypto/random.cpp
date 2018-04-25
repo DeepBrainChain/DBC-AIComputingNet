@@ -108,7 +108,7 @@ static void RDRandInit()
 {
     uint32_t eax, ebx, ecx, edx;
     if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_F1_ECX_RDRAND)) {
-        LOG_ERROR << "Using RdRand as an additional entropy source";
+        LOG_DEBUG << "Using RdRand as an additional entropy source";
         rdrand_supported = true;
     }
     hwrand_initialized.store(true);
