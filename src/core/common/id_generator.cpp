@@ -37,9 +37,7 @@ namespace matrix
 
             std::vector<unsigned char> id_data;
             std::vector<unsigned char> id_prefix = { 'n', 'o', 'd', 'e', '.', NODE_ID_VERSION, '.' };
-            id_data.reserve(id_prefix.size() + private_key.size());
-
-
+            id_data.reserve(id_prefix.size() + keyID.size());
             id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
             id_data.insert(id_data.end(), keyID.begin(), keyID.end());
             info.node_id = EncodeBase58Check(id_data);
@@ -92,9 +90,7 @@ namespace matrix
 
             std::vector<unsigned char> id_data;
             std::vector<unsigned char> id_prefix = { 't', 'a', 's', 'k', '.', NODE_ID_VERSION, '.' };
-            id_data.reserve(id_prefix.size() + private_key.size());
-
-
+            id_data.reserve(id_prefix.size() + keyID.size());
             id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
             id_data.insert(id_data.end(), keyID.begin(), keyID.end());
             std::string task_id = EncodeBase58Check(id_data);
