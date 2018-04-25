@@ -25,6 +25,7 @@ namespace matrix
             //private key
             bool fCompressed = true;
             secret.MakeNewKey(fCompressed);
+            assert(secret.size() > 0);
 
             //public key
             CPubKey pubkey = secret.GetPubKey();
@@ -61,41 +62,50 @@ namespace matrix
 
         std::string id_generator::generate_session_id()
         {
-            //same to check_sum
-            return std::string();
+            CKey secret;
+
+            //random number
+            bool fCompressed = true;
+            secret.MakeNewKey(fCompressed);
+            assert(secret.size() > 0);
+
+            std::string session_id_data;
+            session_id_data.reserve(secret.size());
+            session_id_data.insert(session_id_data.end(), secret.begin(), secret.end());
+
+            return session_id_data;
         }
 
-        uint64_t id_generator::generate_nounce()
+        std::string id_generator::generate_nonce()
         {
-            uint64_t nounce = 0;
-            return nounce;
+            CKey secret;
+
+            //random number
+            bool fCompressed = true;
+            secret.MakeNewKey(fCompressed);
+            assert(secret.size() > 0);
+            
+            std::string nonce_data;
+            nonce_data.reserve(secret.size());
+            nonce_data.insert(nonce_data.end(), secret.begin(), secret.end());
+
+            return nonce_data;
         }
 
         std::string id_generator::generate_task_id()
         {
             CKey secret;
 
-            //private key
+            //random number
             bool fCompressed = true;
             secret.MakeNewKey(fCompressed);
+            assert(secret.size() > 0);
 
-            //public key
-            CPubKey pubkey = secret.GetPubKey();
+            std::vector<unsigned char> task_id_data;
+            task_id_data.reserve(secret.size());
+            task_id_data.insert(task_id_data.end(), secret.begin(), secret.end());
 
-            //create compressed public key
-            CKeyID keyID = pubkey.GetID();
-
-            //encode node id
-            CPrivKey private_key = secret.GetPrivKey();
-
-            std::vector<unsigned char> id_data;
-            std::vector<unsigned char> id_prefix = { 't', 'a', 's', 'k', '.', NODE_ID_VERSION, '.' };
-            id_data.reserve(id_prefix.size() + keyID.size());
-            id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
-            id_data.insert(id_data.end(), keyID.begin(), keyID.end());
-            std::string task_id = EncodeBase58Check(id_data);
-
-            return task_id;
+            return EncodeBase58Check(task_id_data);
         }
 
     }

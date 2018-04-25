@@ -25,12 +25,14 @@ void msg_header::__set_msg_name(const std::string& val) {
   this->msg_name = val;
 }
 
-void msg_header::__set_check_sum(const int32_t val) {
-  this->check_sum = val;
+void msg_header::__set_nonce(const std::string& val) {
+  this->nonce = val;
+__isset.nonce = true;
 }
 
-void msg_header::__set_session_id(const int32_t val) {
+void msg_header::__set_session_id(const std::string& val) {
   this->session_id = val;
+__isset.session_id = true;
 }
 
 void msg_header::__set_exten_info(const std::map<std::string, std::string> & val) {
@@ -46,7 +48,7 @@ std::ostream& operator<<(std::ostream& out, const msg_header& obj)
 
 uint32_t msg_header::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -54,7 +56,7 @@ uint32_t msg_header::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -82,16 +84,16 @@ uint32_t msg_header::read(protocol* iprot) {
         }
         break;
       case 3:
-        if (ftype == T_I32) {
-          xfer += iprot->readI32(this->check_sum);
-          this->__isset.check_sum = true;
+        if (ftype == T_STRING) {
+          xfer += iprot->readString(this->nonce);
+          this->__isset.nonce = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 4:
-        if (ftype == T_I32) {
-          xfer += iprot->readI32(this->session_id);
+        if (ftype == T_STRING) {
+          xfer += iprot->readString(this->session_id);
           this->__isset.session_id = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -134,7 +136,7 @@ uint32_t msg_header::read(protocol* iprot) {
 
 uint32_t msg_header::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("msg_header");
 
   xfer += oprot->writeFieldBegin("magic", T_I32, 1);
@@ -145,14 +147,16 @@ uint32_t msg_header::write(protocol* oprot) const {
   xfer += oprot->writeString(this->msg_name);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("check_sum", T_I32, 3);
-  xfer += oprot->writeI32(this->check_sum);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("session_id", T_I32, 4);
-  xfer += oprot->writeI32(this->session_id);
-  xfer += oprot->writeFieldEnd();
-
+  if (this->__isset.nonce) {
+    xfer += oprot->writeFieldBegin("nonce", T_STRING, 3);
+    xfer += oprot->writeString(this->nonce);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.session_id) {
+    xfer += oprot->writeFieldBegin("session_id", T_STRING, 4);
+    xfer += oprot->writeString(this->session_id);
+    xfer += oprot->writeFieldEnd();
+  }
   if (this->__isset.exten_info) {
     xfer += oprot->writeFieldBegin("exten_info", T_MAP, 255);
     {
@@ -176,7 +180,7 @@ void swap(msg_header &a, msg_header &b) {
   using ::std::swap;
   swap(a.magic, b.magic);
   swap(a.msg_name, b.msg_name);
-  swap(a.check_sum, b.check_sum);
+  swap(a.nonce, b.nonce);
   swap(a.session_id, b.session_id);
   swap(a.exten_info, b.exten_info);
   swap(a.__isset, b.__isset);
@@ -185,7 +189,7 @@ void swap(msg_header &a, msg_header &b) {
 msg_header::msg_header(const msg_header& other8) {
   magic = other8.magic;
   msg_name = other8.msg_name;
-  check_sum = other8.check_sum;
+  nonce = other8.nonce;
   session_id = other8.session_id;
   exten_info = other8.exten_info;
   __isset = other8.__isset;
@@ -193,7 +197,7 @@ msg_header::msg_header(const msg_header& other8) {
 msg_header& msg_header::operator=(const msg_header& other9) {
   magic = other9.magic;
   msg_name = other9.msg_name;
-  check_sum = other9.check_sum;
+  nonce = other9.nonce;
   session_id = other9.session_id;
   exten_info = other9.exten_info;
   __isset = other9.__isset;
@@ -204,8 +208,8 @@ void msg_header::printTo(std::ostream& out) const {
   out << "msg_header(";
   out << "magic=" << to_string(magic);
   out << ", " << "msg_name=" << to_string(msg_name);
-  out << ", " << "check_sum=" << to_string(check_sum);
-  out << ", " << "session_id=" << to_string(session_id);
+  out << ", " << "nonce="; (__isset.nonce ? (out << to_string(nonce)) : (out << "<null>"));
+  out << ", " << "session_id="; (__isset.session_id ? (out << to_string(session_id)) : (out << "<null>"));
   out << ", " << "exten_info="; (__isset.exten_info ? (out << to_string(exten_info)) : (out << "<null>"));
   out << ")";
 }
@@ -223,7 +227,7 @@ std::ostream& operator<<(std::ostream& out, const empty& obj)
 
 uint32_t empty::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -231,7 +235,7 @@ uint32_t empty::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -251,7 +255,7 @@ uint32_t empty::read(protocol* iprot) {
 
 uint32_t empty::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("empty");
 
   xfer += oprot->writeFieldStop();
@@ -299,7 +303,7 @@ std::ostream& operator<<(std::ostream& out, const network_address& obj)
 
 uint32_t network_address::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -307,7 +311,7 @@ uint32_t network_address::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -348,7 +352,7 @@ uint32_t network_address::read(protocol* iprot) {
 
 uint32_t network_address::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("network_address");
 
   xfer += oprot->writeFieldBegin("ip", T_STRING, 1);
@@ -411,7 +415,7 @@ std::ostream& operator<<(std::ostream& out, const task_status& obj)
 
 uint32_t task_status::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -419,7 +423,7 @@ uint32_t task_status::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -460,7 +464,7 @@ uint32_t task_status::read(protocol* iprot) {
 
 uint32_t task_status::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("task_status");
 
   xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
@@ -531,7 +535,7 @@ std::ostream& operator<<(std::ostream& out, const peer_node_info& obj)
 
 uint32_t peer_node_info::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -539,7 +543,7 @@ uint32_t peer_node_info::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -608,7 +612,7 @@ uint32_t peer_node_info::read(protocol* iprot) {
 
 uint32_t peer_node_info::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("peer_node_info");
 
   xfer += oprot->writeFieldBegin("peer_node_id", T_STRING, 1);
@@ -679,6 +683,10 @@ ver_req_body::~ver_req_body() throw() {
 }
 
 
+void ver_req_body::__set_node_id(const std::string& val) {
+  this->node_id = val;
+}
+
 void ver_req_body::__set_version(const int32_t val) {
   this->version = val;
 }
@@ -695,11 +703,7 @@ void ver_req_body::__set_addr_you(const network_address& val) {
   this->addr_you = val;
 }
 
-void ver_req_body::__set_nonce(const int64_t val) {
-  this->nonce = val;
-}
-
-void ver_req_body::__set_start_height(const int32_t val) {
+void ver_req_body::__set_start_height(const int64_t val) {
   this->start_height = val;
 }
 std::ostream& operator<<(std::ostream& out, const ver_req_body& obj)
@@ -711,7 +715,7 @@ std::ostream& operator<<(std::ostream& out, const ver_req_body& obj)
 
 uint32_t ver_req_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -719,7 +723,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -731,6 +735,14 @@ uint32_t ver_req_body::read(protocol* iprot) {
     switch (fid)
     {
       case 1:
+        if (ftype == T_STRING) {
+          xfer += iprot->readString(this->node_id);
+          this->__isset.node_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
         if (ftype == T_I32) {
           xfer += iprot->readI32(this->version);
           this->__isset.version = true;
@@ -738,7 +750,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 2:
+      case 3:
         if (ftype == T_I64) {
           xfer += iprot->readI64(this->time_stamp);
           this->__isset.time_stamp = true;
@@ -746,7 +758,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 3:
+      case 4:
         if (ftype == T_STRUCT) {
           xfer += this->addr_me.read(iprot);
           this->__isset.addr_me = true;
@@ -754,7 +766,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 4:
+      case 5:
         if (ftype == T_STRUCT) {
           xfer += this->addr_you.read(iprot);
           this->__isset.addr_you = true;
@@ -762,17 +774,9 @@ uint32_t ver_req_body::read(protocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 5:
-        if (ftype == T_I64) {
-          xfer += iprot->readI64(this->nonce);
-          this->__isset.nonce = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
       case 6:
-        if (ftype == T_I32) {
-          xfer += iprot->readI32(this->start_height);
+        if (ftype == T_I64) {
+          xfer += iprot->readI64(this->start_height);
           this->__isset.start_height = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -792,31 +796,31 @@ uint32_t ver_req_body::read(protocol* iprot) {
 
 uint32_t ver_req_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("ver_req_body");
 
-  xfer += oprot->writeFieldBegin("version", T_I32, 1);
+  xfer += oprot->writeFieldBegin("node_id", T_STRING, 1);
+  xfer += oprot->writeString(this->node_id);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("version", T_I32, 2);
   xfer += oprot->writeI32(this->version);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("time_stamp", T_I64, 2);
+  xfer += oprot->writeFieldBegin("time_stamp", T_I64, 3);
   xfer += oprot->writeI64(this->time_stamp);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("addr_me", T_STRUCT, 3);
+  xfer += oprot->writeFieldBegin("addr_me", T_STRUCT, 4);
   xfer += this->addr_me.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("addr_you", T_STRUCT, 4);
+  xfer += oprot->writeFieldBegin("addr_you", T_STRUCT, 5);
   xfer += this->addr_you.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("nonce", T_I64, 5);
-  xfer += oprot->writeI64(this->nonce);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("start_height", T_I32, 6);
-  xfer += oprot->writeI32(this->start_height);
+  xfer += oprot->writeFieldBegin("start_height", T_I64, 6);
+  xfer += oprot->writeI64(this->start_height);
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
@@ -826,30 +830,30 @@ uint32_t ver_req_body::write(protocol* oprot) const {
 
 void swap(ver_req_body &a, ver_req_body &b) {
   using ::std::swap;
+  swap(a.node_id, b.node_id);
   swap(a.version, b.version);
   swap(a.time_stamp, b.time_stamp);
   swap(a.addr_me, b.addr_me);
   swap(a.addr_you, b.addr_you);
-  swap(a.nonce, b.nonce);
   swap(a.start_height, b.start_height);
   swap(a.__isset, b.__isset);
 }
 
 ver_req_body::ver_req_body(const ver_req_body& other24) {
+  node_id = other24.node_id;
   version = other24.version;
   time_stamp = other24.time_stamp;
   addr_me = other24.addr_me;
   addr_you = other24.addr_you;
-  nonce = other24.nonce;
   start_height = other24.start_height;
   __isset = other24.__isset;
 }
 ver_req_body& ver_req_body::operator=(const ver_req_body& other25) {
+  node_id = other25.node_id;
   version = other25.version;
   time_stamp = other25.time_stamp;
   addr_me = other25.addr_me;
   addr_you = other25.addr_you;
-  nonce = other25.nonce;
   start_height = other25.start_height;
   __isset = other25.__isset;
   return *this;
@@ -857,11 +861,11 @@ ver_req_body& ver_req_body::operator=(const ver_req_body& other25) {
 void ver_req_body::printTo(std::ostream& out) const {
   using ::apache::thrift::to_string;
   out << "ver_req_body(";
-  out << "version=" << to_string(version);
+  out << "node_id=" << to_string(node_id);
+  out << ", " << "version=" << to_string(version);
   out << ", " << "time_stamp=" << to_string(time_stamp);
   out << ", " << "addr_me=" << to_string(addr_me);
   out << ", " << "addr_you=" << to_string(addr_you);
-  out << ", " << "nonce=" << to_string(nonce);
   out << ", " << "start_height=" << to_string(start_height);
   out << ")";
 }
@@ -887,13 +891,15 @@ std::ostream& operator<<(std::ostream& out, const ver_req& obj)
 
 uint32_t ver_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
-  xfer += iprot->readStructBegin(fname);  
+  xfer += iprot->readStructBegin(fname);
+
+
 
 
   while (true)
@@ -934,7 +940,7 @@ uint32_t ver_req::read(protocol* iprot) {
 
 uint32_t ver_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("ver_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -993,7 +999,7 @@ std::ostream& operator<<(std::ostream& out, const ver_resp_body& obj)
 
 uint32_t ver_resp_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -1001,7 +1007,7 @@ uint32_t ver_resp_body::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -1034,7 +1040,7 @@ uint32_t ver_resp_body::read(protocol* iprot) {
 
 uint32_t ver_resp_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("ver_resp_body");
 
   xfer += oprot->writeFieldBegin("version", T_I32, 1);
@@ -1089,7 +1095,7 @@ std::ostream& operator<<(std::ostream& out, const ver_resp& obj)
 
 uint32_t ver_resp::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -1097,7 +1103,7 @@ uint32_t ver_resp::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -1138,7 +1144,7 @@ uint32_t ver_resp::read(protocol* iprot) {
 
 uint32_t ver_resp::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("ver_resp");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -1201,7 +1207,7 @@ std::ostream& operator<<(std::ostream& out, const shake_hand_req& obj)
 
 uint32_t shake_hand_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -1209,7 +1215,7 @@ uint32_t shake_hand_req::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -1250,7 +1256,7 @@ uint32_t shake_hand_req::read(protocol* iprot) {
 
 uint32_t shake_hand_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("shake_hand_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -1313,7 +1319,7 @@ std::ostream& operator<<(std::ostream& out, const shake_hand_resp& obj)
 
 uint32_t shake_hand_resp::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -1321,7 +1327,7 @@ uint32_t shake_hand_resp::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -1362,7 +1368,7 @@ uint32_t shake_hand_resp::read(protocol* iprot) {
 
 uint32_t shake_hand_resp::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("shake_hand_resp");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -1425,7 +1431,7 @@ std::ostream& operator<<(std::ostream& out, const get_peer_nodes_req& obj)
 
 uint32_t get_peer_nodes_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
@@ -1433,7 +1439,7 @@ uint32_t get_peer_nodes_req::read(protocol* iprot) {
 
   xfer += iprot->readStructBegin(fname);
 
-  
+
 
 
   while (true)
@@ -1474,7 +1480,7 @@ uint32_t get_peer_nodes_req::read(protocol* iprot) {
 
 uint32_t get_peer_nodes_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("get_peer_nodes_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -1533,13 +1539,16 @@ std::ostream& operator<<(std::ostream& out, const get_peer_nodes_resp_body& obj)
 
 uint32_t get_peer_nodes_resp_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -1583,7 +1592,7 @@ uint32_t get_peer_nodes_resp_body::read(protocol* iprot) {
 
 uint32_t get_peer_nodes_resp_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("get_peer_nodes_resp_body");
 
   xfer += oprot->writeFieldBegin("peer_nodes_list", T_LIST, 1);
@@ -1646,13 +1655,16 @@ std::ostream& operator<<(std::ostream& out, const get_peer_nodes_resp& obj)
 
 uint32_t get_peer_nodes_resp::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -1692,7 +1704,7 @@ uint32_t get_peer_nodes_resp::read(protocol* iprot) {
 
 uint32_t get_peer_nodes_resp::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("get_peer_nodes_resp");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -1751,13 +1763,16 @@ std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req_body&
 
 uint32_t peer_nodes_broadcast_req_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -1801,7 +1816,7 @@ uint32_t peer_nodes_broadcast_req_body::read(protocol* iprot) {
 
 uint32_t peer_nodes_broadcast_req_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("peer_nodes_broadcast_req_body");
 
   xfer += oprot->writeFieldBegin("peer_nodes_list", T_LIST, 1);
@@ -1864,13 +1879,16 @@ std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req& obj)
 
 uint32_t peer_nodes_broadcast_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -1910,7 +1928,7 @@ uint32_t peer_nodes_broadcast_req::read(protocol* iprot) {
 
 uint32_t peer_nodes_broadcast_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("peer_nodes_broadcast_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -2013,13 +2031,16 @@ std::ostream& operator<<(std::ostream& out, const start_training_req_body& obj)
 
 uint32_t start_training_req_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2151,7 +2172,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
 
 uint32_t start_training_req_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("start_training_req_body");
 
   xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
@@ -2302,13 +2323,16 @@ std::ostream& operator<<(std::ostream& out, const start_training_req& obj)
 
 uint32_t start_training_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2348,7 +2372,7 @@ uint32_t start_training_req::read(protocol* iprot) {
 
 uint32_t start_training_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("start_training_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -2407,13 +2431,16 @@ std::ostream& operator<<(std::ostream& out, const stop_training_req_body& obj)
 
 uint32_t stop_training_req_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2445,7 +2472,7 @@ uint32_t stop_training_req_body::read(protocol* iprot) {
 
 uint32_t stop_training_req_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("stop_training_req_body");
 
   xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
@@ -2500,13 +2527,16 @@ std::ostream& operator<<(std::ostream& out, const stop_training_req& obj)
 
 uint32_t stop_training_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2546,7 +2576,7 @@ uint32_t stop_training_req::read(protocol* iprot) {
 
 uint32_t stop_training_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("stop_training_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -2605,13 +2635,15 @@ std::ostream& operator<<(std::ostream& out, const list_training_req_body& obj)
 
 uint32_t list_training_req_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
 
 
   while (true)
@@ -2656,7 +2688,7 @@ uint32_t list_training_req_body::read(protocol* iprot) {
 
 uint32_t list_training_req_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("list_training_req_body");
 
   xfer += oprot->writeFieldBegin("task_list", T_LIST, 1);
@@ -2719,13 +2751,16 @@ std::ostream& operator<<(std::ostream& out, const list_training_req& obj)
 
 uint32_t list_training_req::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2765,7 +2800,7 @@ uint32_t list_training_req::read(protocol* iprot) {
 
 uint32_t list_training_req::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("list_training_req");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
@@ -2824,13 +2859,16 @@ std::ostream& operator<<(std::ostream& out, const list_training_resp_body& obj)
 
 uint32_t list_training_resp_body::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2874,7 +2912,7 @@ uint32_t list_training_resp_body::read(protocol* iprot) {
 
 uint32_t list_training_resp_body::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("list_training_resp_body");
 
   xfer += oprot->writeFieldBegin("task_status_list", T_LIST, 1);
@@ -2937,13 +2975,16 @@ std::ostream& operator<<(std::ostream& out, const list_training_resp& obj)
 
 uint32_t list_training_resp::read(protocol* iprot) {
 
-  
+
   uint32_t xfer = 0;
   std::string fname;
   TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
+
+
+
 
   while (true)
   {
@@ -2983,7 +3024,7 @@ uint32_t list_training_resp::read(protocol* iprot) {
 
 uint32_t list_training_resp::write(protocol* oprot) const {
   uint32_t xfer = 0;
-  
+
   xfer += oprot->writeStructBegin("list_training_resp");
 
   xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);

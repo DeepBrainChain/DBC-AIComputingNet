@@ -32,7 +32,7 @@ namespace matrix
 
             std::string generate_session_id();
 
-            uint64_t generate_nounce();
+            std::string generate_nonce();
 
             std::string generate_task_id();
 

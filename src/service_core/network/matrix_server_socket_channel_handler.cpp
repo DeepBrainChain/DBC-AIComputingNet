@@ -172,8 +172,6 @@ namespace matrix
             //req_content->header.length = 0;
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = SHAKE_HAND_RESP;
-            req_content->header.check_sum = 0;
-            req_content->header.session_id = 0;
 
             resp_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             resp_msg->set_name(SHAKE_HAND_RESP);

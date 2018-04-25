@@ -198,9 +198,8 @@ namespace matrix
 
             broadcast_req_content->header.magic = TEST_NET;
             broadcast_req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
+            broadcast_req_content->header.__set_nonce(id_generator().generate_nonce());
 
-            broadcast_req_content->header.check_sum = 0;
-            broadcast_req_content->header.session_id = 0;
 
             id_generator gen;
             broadcast_req_content->body.task_id = gen.generate_task_id();
@@ -291,8 +290,8 @@ namespace matrix
             //header
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = STOP_TRAINING_REQ;
-            req_content->header.check_sum = 0;
-            req_content->header.session_id = 0;
+            req_content->header.__set_nonce(id_generator().generate_nonce());
+
             //body
             req_content->body.task_id = task_id;
 
@@ -317,10 +316,10 @@ namespace matrix
             //header
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = LIST_TRAINING_REQ;
-            //matrix::core::id_generator  id_gen;
-            req_content->header.check_sum = 0;//id_gen.generate_check_sum();
-            req_content->header.session_id = 0;// id_gen.generate_session_id();
-                                               //body
+            req_content->header.__set_nonce(id_generator().generate_nonce());
+            req_content->header.__set_session_id(id_generator().generate_session_id());
+            
+            //body
             if (cmd_req->list_type == 1) //0: list all tasks; 1: list specific tasks
             {
                 req_content->body.task_list.assign(cmd_req->task_list.begin(), cmd_req->task_list.end());
@@ -405,8 +404,7 @@ namespace matrix
 
             resp_content->header.magic = TEST_NET;
             resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
-            resp_content->header.check_sum = 0;
-            resp_content->header.session_id = 0;
+            resp_content->header.__set_nonce(id_generator().generate_nonce());
 
             resp_content->body.task_id = vm["task_id"].as<std::string>();
             resp_content->body.select_mode = vm["select_mode"].as<int8_t>();

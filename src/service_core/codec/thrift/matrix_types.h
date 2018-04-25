@@ -4,8 +4,8 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-#ifndef MATRIX_TYPES_H
-#define MATRIX_TYPES_H
+#ifndef matrix_TYPES_H
+#define matrix_TYPES_H
 
 #include <iosfwd>
 
@@ -13,10 +13,7 @@
 #include "service_message.h"
 #include "TToString.h"
 
-
 using namespace matrix::core;
-
-
 
 namespace matrix { namespace service_core {
 
@@ -69,10 +66,10 @@ class list_training_resp_body;
 class list_training_resp;
 
 typedef struct _msg_header__isset {
-  _msg_header__isset() : magic(false), msg_name(false), check_sum(false), session_id(false), exten_info(false) {}
+  _msg_header__isset() : magic(false), msg_name(false), nonce(false), session_id(false), exten_info(false) {}
   bool magic :1;
   bool msg_name :1;
-  bool check_sum :1;
+  bool nonce :1;
   bool session_id :1;
   bool exten_info :1;
 } _msg_header__isset;
@@ -82,14 +79,14 @@ class msg_header : public virtual base {
 
   msg_header(const msg_header&);
   msg_header& operator=(const msg_header&);
-  msg_header() : magic(0), msg_name(), check_sum(0), session_id(0) {
+  msg_header() : magic(0), msg_name(), nonce(), session_id() {
   }
 
   virtual ~msg_header() throw();
   int32_t magic;
   std::string msg_name;
-  int32_t check_sum;
-  int32_t session_id;
+  std::string nonce;
+  std::string session_id;
   std::map<std::string, std::string>  exten_info;
 
   _msg_header__isset __isset;
@@ -98,9 +95,9 @@ class msg_header : public virtual base {
 
   void __set_msg_name(const std::string& val);
 
-  void __set_check_sum(const int32_t val);
+  void __set_nonce(const std::string& val);
 
-  void __set_session_id(const int32_t val);
+  void __set_session_id(const std::string& val);
 
   void __set_exten_info(const std::map<std::string, std::string> & val);
 
@@ -110,9 +107,13 @@ class msg_header : public virtual base {
       return false;
     if (!(msg_name == rhs.msg_name))
       return false;
-    if (!(check_sum == rhs.check_sum))
+    if (__isset.nonce != rhs.__isset.nonce)
       return false;
-    if (!(session_id == rhs.session_id))
+    else if (__isset.nonce && !(nonce == rhs.nonce))
+      return false;
+    if (__isset.session_id != rhs.__isset.session_id)
+      return false;
+    else if (__isset.session_id && !(session_id == rhs.session_id))
       return false;
     if (__isset.exten_info != rhs.__isset.exten_info)
       return false;
@@ -324,12 +325,12 @@ void swap(peer_node_info &a, peer_node_info &b);
 std::ostream& operator<<(std::ostream& out, const peer_node_info& obj);
 
 typedef struct _ver_req_body__isset {
-  _ver_req_body__isset() : version(false), time_stamp(false), addr_me(false), addr_you(false), nonce(false), start_height(false) {}
+  _ver_req_body__isset() : node_id(false), version(false), time_stamp(false), addr_me(false), addr_you(false), start_height(false) {}
+  bool node_id :1;
   bool version :1;
   bool time_stamp :1;
   bool addr_me :1;
   bool addr_you :1;
-  bool nonce :1;
   bool start_height :1;
 } _ver_req_body__isset;
 
@@ -338,18 +339,20 @@ class ver_req_body : public virtual base {
 
   ver_req_body(const ver_req_body&);
   ver_req_body& operator=(const ver_req_body&);
-  ver_req_body() : version(0), time_stamp(0), nonce(0), start_height(0) {
+  ver_req_body() : node_id(), version(0), time_stamp(0), start_height(0) {
   }
 
   virtual ~ver_req_body() throw();
+  std::string node_id;
   int32_t version;
   int64_t time_stamp;
   network_address addr_me;
   network_address addr_you;
-  int64_t nonce;
-  int32_t start_height;
+  int64_t start_height;
 
   _ver_req_body__isset __isset;
+
+  void __set_node_id(const std::string& val);
 
   void __set_version(const int32_t val);
 
@@ -359,12 +362,12 @@ class ver_req_body : public virtual base {
 
   void __set_addr_you(const network_address& val);
 
-  void __set_nonce(const int64_t val);
-
-  void __set_start_height(const int32_t val);
+  void __set_start_height(const int64_t val);
 
   bool operator == (const ver_req_body & rhs) const
   {
+    if (!(node_id == rhs.node_id))
+      return false;
     if (!(version == rhs.version))
       return false;
     if (!(time_stamp == rhs.time_stamp))
@@ -372,8 +375,6 @@ class ver_req_body : public virtual base {
     if (!(addr_me == rhs.addr_me))
       return false;
     if (!(addr_you == rhs.addr_you))
-      return false;
-    if (!(nonce == rhs.nonce))
       return false;
     if (!(start_height == rhs.start_height))
       return false;

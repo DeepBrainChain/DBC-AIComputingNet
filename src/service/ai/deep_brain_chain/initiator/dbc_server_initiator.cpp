@@ -133,19 +133,6 @@ namespace ai
             mdl->start();
             LOG_DEBUG << "init common service successfully";
 
-            //p2p net service
-            LOG_DEBUG << "begin to init p2p net service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::p2p_net_service>());
-            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
-            ret = mdl->init(vm);
-            if (E_SUCCESS != ret)
-            {
-                //logging
-                return ret;
-            }
-            mdl->start();
-            LOG_DEBUG << "init p2p net service successfully";
-
             //ai power requestor service
             LOG_DEBUG << "begin to init ai power requestor service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_requestor_service>());
@@ -184,6 +171,19 @@ namespace ai
             }
             mdl->start();
             LOG_DEBUG << "init connection manager successfully";
+
+            //p2p net service
+            LOG_DEBUG << "begin to init p2p net service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::p2p_net_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                //logging
+                return ret;
+            }
+            mdl->start();
+            LOG_DEBUG << "init p2p net service successfully";
 
             //cmd line service
             LOG_DEBUG << "begin to init command line service";
