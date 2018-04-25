@@ -24,10 +24,16 @@ namespace matrix
                 {
                     time_t cur = time(nullptr);
                     write_lock_guard<rw_lock> lock(m_locker);
-                    auto it = m_map_proto_tm.find(hdr->check_sum);
+
+                    if (false == hdr->__isset.nonce)
+                    {
+                        return false;
+                    }
+
+                    auto it = m_map_proto_tm.find(hdr->nonce);
                     if (it != m_map_proto_tm.end())
                     {
-                        if (it->second < cur - TIME_OUT_SEC)
+                        if (it->second < cur - TIME_OUT_SEC)        //TIME_OUT_SEC before
                         {
                             it->second = cur;
                             return false;
@@ -40,9 +46,10 @@ namespace matrix
                     }
                     else
                     {
-                        m_map_proto_tm[hdr->check_sum] = cur;
+                        m_map_proto_tm[hdr->nonce] = cur;
                     }
                 }
+                
                 return false;
             }
 
@@ -63,7 +70,7 @@ namespace matrix
             }
 
         private:
-            std::map<int32_t, time_t> m_map_proto_tm;
+            std::map<std::string, time_t> m_map_proto_tm;
             matrix::core::rw_lock m_locker;
         };
 

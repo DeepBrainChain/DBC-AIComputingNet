@@ -268,9 +268,6 @@
     <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.cpp">
       <Filter>src\service_core\codec\thrift</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_constants.cpp">
-      <Filter>src\service_core\codec\thrift</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.cpp">
       <Filter>src\service_core\network</Filter>
     </ClCompile>
@@ -583,9 +580,6 @@
       <Filter>src\service_core\codec</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.h">
-      <Filter>src\service_core\codec\thrift</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_constants.h">
       <Filter>src\service_core\codec\thrift</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h">
