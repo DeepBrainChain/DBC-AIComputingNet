@@ -96,6 +96,19 @@ namespace matrix
 
             //get db path
             fs::path task_db_path = env_manager::get_db_path();
+            if (false == fs::exists(task_db_path))
+            {
+                LOG_DEBUG << "db directory path does not exist and create db directory";
+                fs::create_directory(task_db_path);
+            }
+
+            //check db directory
+            if (false == fs::is_directory(task_db_path))
+            {
+                LOG_ERROR << "db directory path does not exist and exit";
+                return E_DEFAULT;
+            }
+
             task_db_path /= fs::path("req_training_task.db");
             LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
 
@@ -103,7 +116,7 @@ namespace matrix
             leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
             if (false == status.ok())
             {
-                LOG_ERROR << "ai_power_service init training task db error";
+                LOG_ERROR << "ai power requestor service init training task db error";
                 return E_DEFAULT;
             }
 
@@ -126,8 +139,7 @@ namespace matrix
             cmd_resp->task_id = "";
 
             //check file exist
-            fs::path task_file_path(fs::initial_path());
-            task_file_path = fs::system_complete(fs::path(req->task_file_path.c_str()));
+            fs::path task_file_path = fs::system_complete(fs::path(req->task_file_path.c_str()));
             if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
             {
                 cmd_resp->result = E_DEFAULT;
