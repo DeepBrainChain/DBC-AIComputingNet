@@ -88,6 +88,7 @@ namespace matrix
 
             virtual int32_t service_msg(std::shared_ptr<message> &msg);
 
+            //subclass should not override it
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
 
             uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times = ULLONG_MAX);                         //period, unit: ms

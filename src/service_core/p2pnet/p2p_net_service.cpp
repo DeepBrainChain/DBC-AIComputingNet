@@ -309,11 +309,6 @@ namespace matrix
 
         }
 
-        int32_t p2p_net_service::on_time_out(std::shared_ptr<core_timer> timer)
-        {
-            return E_SUCCESS;
-        }
-
         int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer)
         {
             assert(timer->get_timer_id() == m_timer_id_peer_info_exchange);

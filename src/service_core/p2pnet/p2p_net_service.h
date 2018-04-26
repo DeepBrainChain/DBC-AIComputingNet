@@ -80,8 +80,6 @@ namespace matrix
             //override by service layer
             virtual int32_t service_init(bpo::variables_map &options);
 
-            virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
-
             bool add_peer_node(const socket_id &sid, const std::string &nid);
 
 			void remove_peer_node(const std::string &id);
