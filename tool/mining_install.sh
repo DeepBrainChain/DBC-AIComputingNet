@@ -22,9 +22,54 @@ fi
 echo "***check kernel version success***"
 
 
-echo y | sudo apt-get install docker
-echo y | sudo apt-get install docker.io
-echo "***install docker success***"
+#echo y | sudo apt-get install docker
+#echo y | sudo apt-get install docker.io
+#echo "***install docker success***"
+
+
+echo y | sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
+if [ $? -eq 1 ]; then
+    echo "***install Dependent Libraries error***"
+    exit
+fi
+echo "***install apt-transport-https ca-certificates curl software-properties-common success***"
+
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+if [ $? -eq 1 ]; then
+    echo "***curl -fsSL https://download.docker.com/linux/ubuntu/gpg error***"
+    exit
+fi
+echo "***curl -fsSL https://download.docker.com/linux/ubuntu/gpg success***"
+
+sudo add-apt-repository \
+       "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+       $(lsb_release -cs) \
+       stable"
+sudo apt-get update
+echo y | sudo apt-get -y install docker-ce
+if [ $? -eq 1 ]; then
+    echo "install docker-ce failed"
+    exit
+fi
+echo "***install docker-ce success ***"
+
+
+wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
+if [ $? -eq 1 ]; then
+    echo "***wget nvidia-docker deb failed***"
+    exit
+fi
+echo "***wget nvidia-docker deb success ***"
+
+sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
+if [ $? -eq 1 ]; then
+    echo "***dpkg nvidia-docker deb failed***"
+    exit
+fi
+echo "***install nvidia-docker success ***"
+
+
 
 
 user_name=`whoami`
