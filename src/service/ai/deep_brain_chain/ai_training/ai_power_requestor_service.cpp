@@ -196,12 +196,11 @@ namespace matrix
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
 
+            id_generator gen;
             broadcast_req_content->header.magic = TEST_NET;
             broadcast_req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
-            broadcast_req_content->header.__set_nonce(id_generator().generate_nonce());
+            broadcast_req_content->header.__set_nonce(gen.generate_nonce());
 
-
-            id_generator gen;
             broadcast_req_content->body.task_id = gen.generate_task_id();
             broadcast_req_content->body.select_mode = vm["select_mode"].as<int8_t>();
             broadcast_req_content->body.master = vm["master"].as<std::string>();
