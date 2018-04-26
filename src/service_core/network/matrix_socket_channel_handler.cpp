@@ -142,6 +142,8 @@ namespace matrix
             {
                 LOG_ERROR << "matrix socket channel handler cancel timer error: " << error;
             }
+            m_shake_hand_timer_handler = nullptr;
+
         }
 
         void matrix_socket_channel_handler::set_has_message(message &msg)

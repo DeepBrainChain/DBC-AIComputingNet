@@ -244,6 +244,8 @@ namespace matrix
             {
                 LOG_DEBUG << "matrix server socket channel handler stop wait ver req timer, " << m_sid.to_string();
             }
+
+            m_wait_ver_req_timer_handler = nullptr;
         }
 
     }
