@@ -142,6 +142,8 @@ namespace matrix
             {
                 LOG_ERROR << "matrix socket channel handler cancel timer error: " << error;
             }
+
+            //modify by regulus:fix can't free resource when client disconnect 
             m_shake_hand_timer_handler = nullptr;
 
         }
