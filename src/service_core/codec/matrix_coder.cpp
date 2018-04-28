@@ -156,6 +156,11 @@ namespace matrix
             //body invoker
             auto invoker = it->second;
             invoker(msg, header, proto);
+
+            //pass context to caller
+            variable_value val;
+            val.value() = header.__isset.nonce ? header.nonce : DEFAULT_STRING;
+            ctx.get_args().insert(std::make_pair("nonce", val));
             
             return DECODE_SUCCESS;
         }

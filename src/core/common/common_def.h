@@ -12,9 +12,11 @@
 #define _COMMON_DEF_H_
 
 #include "common.h"
-
+#include <string>
 
 //#define DELETE(p)  if (NULL != p) {delete p; p = NULL;}
+
+extern std::string DEFAULT_STRING;
 
 
 #ifdef  USE_FULL_ASSERT

@@ -46,6 +46,7 @@ SET(EXECUTABLE_OUTPUT_PATH ${HOME_PATH}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${HOME_PATH}/bin)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${HOME_PATH}/output)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${HOME_PATH}/output)
+SET(LIB_HOME_PATH ${HOME_PATH}/lib)
 
 # Boost settings
 SET(Boost_INCLUDE_DIR　"/usr/local/include/boost")
@@ -229,6 +230,8 @@ ${THIRD_LIBEVENT_EVENT2_SRCS})
 #library 
 #SET(LIBRARIES libm.so)
 SET(LIBRARIES)
+
+link_directories(${LIB_HOME_PATH}/linux/leveldb ${LIB_HOME_PATH}/linux/libevent ${LIB_HOME_PATH}/linux/openssl ${LIB_HOME_PATH}/linux/secp256k1)
 
 #target link
 MESSAGE(STATUS "${Boost_LIBRARIES}")

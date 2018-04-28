@@ -53,7 +53,12 @@ namespace matrix
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
                     {
-                        if (!service_proto_filter::get_mutable_instance().check_dup(msg))
+                        variables_map & vm = ctx.get_args();
+                        assert(vm.count("nonce") > 0);
+                        const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : "";
+
+                        //check msg duplicated
+                        if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
                         {
                             msg->header.src_sid = m_channel->id();
                             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);

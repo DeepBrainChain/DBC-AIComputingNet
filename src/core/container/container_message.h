@@ -190,6 +190,8 @@ namespace matrix
         {
         public:
 
+            container_state() : running(false), pid(0), exit_code(999), ghost(false) {}
+
             bool running;
 
             int pid;
