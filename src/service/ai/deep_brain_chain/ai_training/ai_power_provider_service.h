@@ -23,11 +23,10 @@ using namespace boost::asio::ip;
 
 #define AI_TRAINING_TASK_TIMER                                      "training_task"
 #define AI_TRAINING_TASK_TIMER_INTERVAL                 (10 * 1000)                                                 //10s timer
-#define AI_TRAINING_MAX_RETRY_TIMES                                  3
+#define AI_TRAINING_MAX_RETRY_TIMES                                  4
 
-#define AI_TRAINING_PYTHON_SCRIPT                               " dbc_task.py "                                              //training python script name
-#define AI_TRAINING_PYTHON_SCRIPT_OPTION              "--task="                                                      //task script name
-#define AI_TRAINING_IMAGE_NAME                                      "dbc/tensorflow-cpu-0.1.0"
+#define AI_TRAINING_TASK_SCRIPT_HOME                         "/"
+#define AI_TRAINING_TASK_SCRIPT                                       "dbc_task.sh"                                            //training shell script name
 
 
 
@@ -87,8 +86,6 @@ namespace ai
 
             int32_t service_exit();
 
-
-
         protected:
 
             int32_t on_start_training_req(std::shared_ptr<message> &msg);
@@ -121,6 +118,8 @@ namespace ai
             std::string m_container_ip;
 
             uint16_t m_container_port;
+
+            std::string m_container_image;
 
             std::shared_ptr<container_client> m_container_client;
 

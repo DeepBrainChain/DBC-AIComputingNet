@@ -17,37 +17,34 @@ namespace matrix
         {
         public:
 
-            bool check_dup(const std::shared_ptr<matrix::core::message>& msg)
+            bool check_dup(const std::string & nonce)
             {
-                std::shared_ptr<matrix::service_core::msg_header> hdr = boost::reinterpret_pointer_cast<matrix::service_core::msg_header>(msg->content);
-                if(hdr)
+                //return directly
+                if (nonce.empty())
                 {
-                    time_t cur = time(nullptr);
-                    write_lock_guard<rw_lock> lock(m_locker);
+                    return false;
+                }
 
-                    if (false == hdr->__isset.nonce)
+                time_t cur = time(nullptr);
+                write_lock_guard<rw_lock> lock(m_locker);
+
+                auto it = m_map_proto_tm.find(nonce);
+                if (it != m_map_proto_tm.end())
+                {
+                    if (it->second < cur - TIME_OUT_SEC)        //TIME_OUT_SEC before
                     {
+                        it->second = cur;
                         return false;
-                    }
-
-                    auto it = m_map_proto_tm.find(hdr->nonce);
-                    if (it != m_map_proto_tm.end())
-                    {
-                        if (it->second < cur - TIME_OUT_SEC)        //TIME_OUT_SEC before
-                        {
-                            it->second = cur;
-                            return false;
-                        }
-                        else
-                        {
-                            it->second = cur;
-                            return true;
-                        }
                     }
                     else
                     {
-                        m_map_proto_tm[hdr->nonce] = cur;
+                        it->second = cur;
+                        return true;
                     }
+                }
+                else
+                {
+                    m_map_proto_tm[nonce] = cur;
                 }
                 
                 return false;

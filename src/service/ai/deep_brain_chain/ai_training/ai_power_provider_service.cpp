@@ -54,6 +54,11 @@ namespace ai
                 m_container_port = (*CONF_MANAGER)["container_port"].as<unsigned long>();
             }
 
+            if (CONF_MANAGER->count("container_image"))
+            {
+                m_container_image = (*CONF_MANAGER)["container_image"].as<std::string>();
+            }
+
             return E_SUCCESS;
         }
 
@@ -376,6 +381,9 @@ namespace ai
             }
             else
             {
+                //pop from task queue
+                m_queueing_tasks.pop_front();
+
                 LOG_ERROR << "ai power provider service training start exec ai training task: " << task->task_id << " invalid status: " << task->status;
                 return E_DEFAULT;
             }
@@ -383,6 +391,8 @@ namespace ai
 
         int32_t ai_power_provider_service::start_exec_training_task(std::shared_ptr<ai_training_task> task)
         {
+            assert(nullptr != task);
+
             //judge retry times
             if (task->retry_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
@@ -398,47 +408,76 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            //create container
-            std::shared_ptr<container_config> config = std::make_shared<container_config>();
-
-            //exec cmd: python training_task --task=ai_training_task.py
-            std::string exec_cmd = "python ";
-            exec_cmd += AI_TRAINING_PYTHON_SCRIPT;
-            exec_cmd += AI_TRAINING_PYTHON_SCRIPT_OPTION;
-            exec_cmd += task->entry_file;
-
-            config->cmd.push_back(exec_cmd);                                    //download file + exec training 
-            config->image = AI_TRAINING_IMAGE_NAME;
-
-            //create container
-            std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config);
-            if (nullptr == resp || resp->container_id.empty())
+            //first time or contain id empty -> create container
+            if (0 == task->retry_times || task->container_id.empty())
             {
+                //create container
+                std::shared_ptr<container_config> config = std::make_shared<container_config>();
+
+                //exec cmd: dbc_task.sh data_dir_hash code_dir_hash ai_training_python
+                ///dbc_task.sh Qme2UKa6yi9obw6MUcCRbpZBUmqMnGnznti4Rnzba5BQE3 QmbA8ThUawkUNtoV7yjso6V8B1TYeCgpXDhMAfYCekTNkr ai_training.py
+                std::string exec_cmd = AI_TRAINING_TASK_SCRIPT_HOME;
+                exec_cmd += AI_TRAINING_TASK_SCRIPT;
+                //exec_cmd += " ";
+                //exec_cmd += task->data_dir;
+                //exec_cmd += " ";
+                //exec_cmd += task->code_dir;
+                //exec_cmd += " ";
+                //exec_cmd += task->entry_file;
+
+                config->cmd.push_back(exec_cmd);                                    //download file + exec training 
+                config->cmd.push_back(task->data_dir);
+                config->cmd.push_back(task->code_dir);
+                config->cmd.push_back(task->entry_file);
+                config->image = m_container_image;
+
+                //create container
                 task->retry_times++;
-                LOG_ERROR << "ai power provider service create container error";
-                return E_DEFAULT;
+                std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config);
+                if (nullptr == resp || resp->container_id.empty())
+                {
+                    //flush to db: update container id, checki point 1
+                    write_task_to_db(task);
+
+                    LOG_ERROR << "ai power provider service create container error";
+                    return E_DEFAULT;
+                }
+                else
+                {
+                    task->retry_times = 0;
+
+                    //update container id
+                    task->container_id = resp->container_id;
+
+                    //flush to db: update container id, checki point 1
+                    write_task_to_db(task);
+
+                    LOG_DEBUG << "ai power provider service create container successfully, container id: " << task->container_id;
+                }
             }
 
-            task->container_id = resp->container_id;
-            LOG_DEBUG << "ai power provider service create container successfully, container id: " << task->container_id;
-
             //start container
+            task->retry_times++;
             int32_t ret = m_container_client->start_container(task->container_id);
             if (E_SUCCESS != ret)
             {
-                task->retry_times++;
-                LOG_ERROR << "ai power provider service start container error, container id: " << task->container_id;
+                //flush to db: update status, checki point 2
+                write_task_to_db(task);
+
+                LOG_ERROR << "ai power provider service start container error, task id: " << task->task_id << "  container id: " << task->container_id;
                 return E_DEFAULT;
             }
+            else
+            {
+                //update status
+                task->status = task_running;
 
-            //update status and container id
-            task->status = task_running;
+                //flush to db: update status, checki point 2
+                write_task_to_db(task);
 
-            //flush to db: update status
-            write_task_to_db(task);
-
-            LOG_DEBUG << "ai power provider service start container successfully and update task status runing, task id: " << task->task_id << "  container id: " << task->container_id;
-            return E_SUCCESS;
+                LOG_DEBUG << "ai power provider service start container successfully and update task status runing, task id: " << task->task_id << "  container id: " << task->container_id;
+                return E_SUCCESS;
+            }
         }
 
         int32_t ai_power_provider_service::check_training_task_status(std::shared_ptr<ai_training_task> task)
@@ -542,12 +581,14 @@ namespace ai
 
                     //insert training task
                     m_training_tasks.insert({ task->task_id, task });
+                    LOG_DEBUG << "ai power provider service insert ai training task to task map, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << task->status;
 
                     //go next
                     if (task_running == task->status || task_queueing == task->status)
                     {
                         //add to queue
                         m_queueing_tasks.push_back(task);
+                        LOG_DEBUG << "ai power provider service insert ai training task to task queue, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << task->status;
                     }
                 }
 

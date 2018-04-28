@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��http_client.cpp
-* description    ��http client for rpc
+* file name        http_client.cpp
+* description    http client for rpc
 * date                  : 2018.04.07
-* author            ��Bruce Feng
+* author            Bruce Feng
 **********************************************************************************/
 
 #include "http_client.h"
@@ -113,10 +113,10 @@ namespace matrix
             }
 
             // request data
-            std::string strRequest = req_content + std::string("\n");
+            //std::string strRequest = req_content;
             struct evbuffer* output_buffer = evhttp_request_get_output_buffer(req.get());
             assert(output_buffer);
-            evbuffer_add(output_buffer, strRequest.data(), strRequest.size());
+            evbuffer_add(output_buffer, req_content.data(), req_content.size());
 
             //make request
             int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
@@ -138,16 +138,16 @@ namespace matrix
                 LOG_ERROR << "http client authorization failed";
                 return E_DEFAULT;
             }
-            else if (resp.status >= 400 && resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
+            else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
                 return E_DEFAULT;
             }
-            else if (resp.body.empty())
+            /*else if (resp.body.empty())
             {
                 LOG_ERROR << "http client error: no resp from server";
                 return E_DEFAULT;
-            }            
+            }*/        
 
             return E_SUCCESS;
         }
@@ -199,16 +199,16 @@ namespace matrix
                 LOG_ERROR << "http client authorization failed";
                 return E_DEFAULT;
             }
-            else if (resp.status >= 400 && resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
+            else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
                 return E_DEFAULT;
             }
-            else if (resp.body.empty())
+            /*else if (resp.body.empty())
             {
                 LOG_ERROR << "http client error: no resp from server";
                 return E_DEFAULT;
-            }
+            }*/
 
             return E_SUCCESS;
         }
@@ -260,16 +260,16 @@ namespace matrix
                 LOG_ERROR << "http client authorization failed";
                 return E_DEFAULT;
             }
-            else if (resp.status >= 400 && resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
+            else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
                 return E_DEFAULT;
             }
-            else if (resp.body.empty())
+            /*else if (resp.body.empty())
             {
                 LOG_ERROR << "http client error: no resp from server";
                 return E_DEFAULT;
-            }
+            }*/
 
             return E_SUCCESS;
         }

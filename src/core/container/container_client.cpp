@@ -48,8 +48,10 @@ namespace matrix
 
             //req content, headers, resp
             std::string && req_content = config->to_string();
+            
             kvs headers;
             headers.push_back({"Content-Type", "application/json"});
+
             http_response resp;
             int32_t ret = E_SUCCESS;
             
@@ -87,6 +89,7 @@ namespace matrix
             std::string endpoint = "/containers/";
             if (container_id.empty())
             {
+                LOG_ERROR << "start container container id is empty";
                 return E_DEFAULT;
             }
 
@@ -94,9 +97,13 @@ namespace matrix
             endpoint += "/start";
 
             //req content, headers, resp
-            std::string req_content;
+            std::string req_content = "";
             kvs headers;
-            headers.push_back({ "Content-Type", "application/json" });
+            if (nullptr != config)
+            {
+                headers.push_back({ "Content-Type", "application/json" });
+            }
+
             http_response resp;
             int32_t ret = E_SUCCESS;
 
@@ -113,15 +120,15 @@ namespace matrix
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
 
-                //message
-                if (doc.HasMember("message"))
-                {
-                    rapidjson::Value &message = doc["message"];
-                    LOG_ERROR << "start container message: " << message.GetString();
-                }
+                ////message
+                //if (doc.HasMember("message"))
+                //{
+                //    rapidjson::Value &message = doc["message"];
+                //    LOG_ERROR << "start container message: " << message.GetString();
+                //}
                 return ret;
             }
 
@@ -170,15 +177,15 @@ namespace matrix
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
 
-                //message
-                if (doc.HasMember("message"))
-                {
-                    rapidjson::Value &message = doc["message"];
-                    LOG_ERROR << "stop container message: " << message.GetString();
-                }
+                ////message
+                //if (doc.HasMember("message"))
+                //{
+                //    rapidjson::Value &message = doc["message"];
+                //    LOG_ERROR << "stop container message: " << message.GetString();
+                //}
                 return ret;
             }
 
@@ -216,15 +223,15 @@ namespace matrix
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
 
-                //message
-                if (doc.HasMember("message"))
-                {
-                    rapidjson::Value &message = doc["message"];
-                    LOG_ERROR << "wait container error message: " << message.GetString();
-                }
+                ////message
+                //if (doc.HasMember("message"))
+                //{
+                //    rapidjson::Value &message = doc["message"];
+                //    LOG_ERROR << "wait container error message: " << message.GetString();
+                //}
                 return ret;
             }
             else
@@ -287,15 +294,15 @@ namespace matrix
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
 
-                //message
-                if (doc.HasMember("message"))
-                {
-                    rapidjson::Value &message = doc["message"];
-                    LOG_ERROR << "remove container message: " << message.GetString();
-                }
+                ////message
+                //if (doc.HasMember("message"))
+                //{
+                //    rapidjson::Value &message = doc["message"];
+                //    LOG_ERROR << "remove container message: " << message.GetString();
+                //}
                 return ret;
             }
 
@@ -312,6 +319,7 @@ namespace matrix
             }
 
             endpoint += container_id;
+            endpoint += "/json";
 
             //headers, resp
             kvs headers;
@@ -331,15 +339,15 @@ namespace matrix
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
 
-                //message
-                if (doc.HasMember("message"))
-                {
-                    rapidjson::Value &message = doc["message"];
-                    LOG_ERROR << "inspect container message: " << message.GetString();
-                }
+                ////message
+                //if (doc.HasMember("message"))
+                //{
+                //    rapidjson::Value &message = doc["message"];
+                //    LOG_ERROR << "inspect container message: " << message.GetString();
+                //}
                 return nullptr;
             }
             else

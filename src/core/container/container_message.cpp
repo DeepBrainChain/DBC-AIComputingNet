@@ -108,51 +108,78 @@ namespace matrix
 
         void container_create_resp::from_string(const std::string & buf)
         {
-            //parse resp
-            rapidjson::Document doc;
-            doc.Parse<0>(buf.c_str());
-
-            //id
-            if (false == doc.HasMember("id"))
+            try
             {
-                LOG_ERROR << "container client create container resp has no id field";
-            }
-            rapidjson::Value &id = doc["id"];
-            this->container_id = id.GetString();
+                //parse resp
+                rapidjson::Document doc;
+                doc.Parse<0>(buf.c_str());
 
-            //warinings
-            if (doc.HasMember("Warnings"))
-            {
-                rapidjson::Value &warnings = doc["Warnings"];
-                if (warnings.IsArray())
+                //id
+                if (false == doc.HasMember("Id"))
                 {
-                    for (rapidjson::SizeType i = 0; i < warnings.Size(); i++)
+                    LOG_ERROR << "container client create container resp has no id field";
+                    return;
+                }
+
+                rapidjson::Value &id = doc["Id"];
+                this->container_id = id.GetString();
+
+                //warinings
+                if (doc.HasMember("Warnings"))
+                {
+                    rapidjson::Value &warnings = doc["Warnings"];
+                    if (warnings.IsArray())
                     {
-                        const rapidjson::Value& object = warnings[i];
-                        this->warnings.push_back(object.GetString());
+                        for (rapidjson::SizeType i = 0; i < warnings.Size(); i++)
+                        {
+                            const rapidjson::Value& object = warnings[i];
+                            this->warnings.push_back(object.GetString());
+                        }
                     }
                 }
+            }
+            catch (...)
+            {
+                LOG_ERROR << "container client create container resp exception";
             }
 
         }
 
         void container_inspect_response::from_string(const std::string & buf)
         {
-            rapidjson::Document doc;
-            doc.Parse<0>(buf.c_str());              //left to later not all fields set
-
-            //message
-            if (!doc.HasMember("State"))
+            try
             {
-                return;
+                rapidjson::Document doc;
+                doc.Parse<0>(buf.c_str());              //left to later not all fields set
+
+                //message
+                if (!doc.HasMember("State"))
+                {
+                    LOG_ERROR << "container client inspect container resp has no id state";
+                    return;
+                }
+
+                rapidjson::Value &state = doc["State"];
+
+                //running state
+                if (state.HasMember("Running"))
+                {
+                    rapidjson::Value &running = state["Running"];
+                    this->state.running = running.GetBool();
+                }
+
+                //exit code
+                if (state.HasMember("ExitCode"))
+                {
+                    rapidjson::Value &exit_code = state["ExitCode"];
+                    this->state.exit_code = exit_code.GetInt();
+                }
+            }
+            catch (...)
+            {
+                LOG_ERROR << "container client inspect container resp exception";
             }
 
-            rapidjson::Value &state = doc["State"];
-            rapidjson::Value &running = state["Running"];
-            rapidjson::Value &exit_code = state["ExitCode"];
-
-            this->state.running = running.GetBool();
-            this->state.exit_code = exit_code.GetInt();
         }
 
     }

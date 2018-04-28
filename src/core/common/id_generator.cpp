@@ -69,11 +69,11 @@ namespace matrix
             secret.MakeNewKey(fCompressed);
             assert(secret.size() > 0);
 
-            std::string session_id_data;
+            std::vector<unsigned char> session_id_data;
             session_id_data.reserve(secret.size());
             session_id_data.insert(session_id_data.end(), secret.begin(), secret.end());
 
-            return session_id_data;
+            return EncodeBase58Check(session_id_data);
         }
 
         std::string id_generator::generate_nonce()
@@ -85,11 +85,11 @@ namespace matrix
             secret.MakeNewKey(fCompressed);
             assert(secret.size() > 0);
             
-            std::string nonce_data;
+            std::vector<unsigned char> nonce_data;
             nonce_data.reserve(secret.size());
             nonce_data.insert(nonce_data.end(), secret.begin(), secret.end());
 
-            return nonce_data;
+            return EncodeBase58Check(nonce_data);
         }
 
         std::string id_generator::generate_task_id()
