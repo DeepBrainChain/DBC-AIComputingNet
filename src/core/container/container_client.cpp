@@ -364,11 +364,21 @@ namespace matrix
                 }
 
                 rapidjson::Value &state = doc["State"];
-                rapidjson::Value &running = state["Running"];
-                rapidjson::Value &exit_code = state["ExitCode"];
 
-                inspect_resp->state.running = running.GetBool();
-                inspect_resp->state.exit_code = exit_code.GetInt();
+                //running state
+                if (state.HasMember("Running"))
+                {
+                    rapidjson::Value &running = state["Running"];
+                    inspect_resp->state.running = running.GetBool();
+                }
+
+                //exit code
+                if (state.HasMember("ExitCode"))
+                {
+                    rapidjson::Value &exit_code = state["ExitCode"];
+                    inspect_resp->state.exit_code = exit_code.GetInt();
+                }                
+                
                 return inspect_resp;
             }
         }
