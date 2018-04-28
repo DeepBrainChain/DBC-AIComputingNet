@@ -17,8 +17,8 @@
 using namespace boost::program_options;
 
 
-#define DEFAULT_MAIN_NET_LISTEN_PORT                11107
-#define DEFAULT_TEST_NET_LISTEN_PORT                 21107
+#define DEFAULT_MAIN_NET_LISTEN_PORT                "11107"
+#define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
 #define DEFAULT_BIND_LOCAL_IP                             "127.0.0.1"
 
 extern const std::string conf_manager_name;
