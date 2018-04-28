@@ -55,7 +55,7 @@ namespace matrix
                     {
                         variables_map & vm = ctx.get_args();
                         assert(vm.count("nonce") > 0);
-                        const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : "";
+                        const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
 
                         //check msg duplicated
                         if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
