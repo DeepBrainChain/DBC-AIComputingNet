@@ -60,6 +60,8 @@ namespace matrix
             virtual void on_connect(const boost::system::error_code& error);
 
             virtual void connect_notification(CLIENT_CONNECT_STATUS status);
+            //modify by regulus: fix connect crash
+            void reconnect(const std::string errorinfo);
 
         protected:
 
@@ -80,7 +82,6 @@ namespace matrix
             steady_timer m_reconnect_timer;
 
             std::function<timer_handler_type> m_reconnect_timer_handler;
-
         };
 
     }

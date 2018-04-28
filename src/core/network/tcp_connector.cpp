@@ -11,6 +11,7 @@
 #include "tcp_socket_channel.h"
 #include "server.h"
 #include "service_message_id.h"
+#include <boost/exception/all.hpp>
 
 
 #pragma warning(disable : 4996)
@@ -99,42 +100,48 @@ namespace matrix
                 std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_socket().async_connect(m_connect_addr, boost::bind(&tcp_connector::on_connect, shared_from_this(), boost::asio::placeholders::error));
             }
 
+            //add by regulus: fix connect crash
+            void tcp_connector::reconnect(const std::string errorinfo)
+            {
+                if (m_reconnect_times < MAX_RECONNECT_TIMES)
+                {
+                    //try again
+                    int32_t interval = RECONNECT_INTERVAL << m_reconnect_times;
+
+                    LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr
+                        << ", reconnect times: " << m_reconnect_times++
+                        << ", reconnect seconds: " << interval
+                        << errorinfo
+                        << m_sid.to_string();
+
+
+                    m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
+                    m_reconnect_timer.async_wait(m_reconnect_timer_handler);
+                }
+                else
+                {
+                    LOG_ERROR << "tcp connector on connect error and stop reconnect, addr: " << m_connect_addr
+                        << ", reconnect times: " << m_reconnect_times
+                        << errorinfo
+                        << m_sid.to_string();
+
+                    //not reconnect, just notification
+                    connect_notification(CLIENT_CONNECT_ERROR);
+                }
+            }
+
+
             void tcp_connector::on_connect(const boost::system::error_code& error)
             {
                 if (error)
                 {
-                    if (m_reconnect_times < MAX_RECONNECT_TIMES)
-                    {
-                        //try again
-                        int32_t interval = RECONNECT_INTERVAL << m_reconnect_times++;
-
-                        LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr
-                            << ", reconnect times: " << m_reconnect_times
-                            << ", reconnect seconds: " << interval
-                            << ", error: " << error.value() << " " << error.message()
-                            << m_sid.to_string();
-
-                        m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
-                        m_reconnect_timer.async_wait(m_reconnect_timer_handler);
-                    }
-                    else
-                    {
-                        LOG_ERROR << "tcp connector on connect error and stop reconnect, addr: " << m_connect_addr
-                            << ", reconnect times: " << m_reconnect_times
-                            << ", error: " << error.value() << " " << error.message()
-                            << m_sid.to_string();
-
-                        //not reconnect, just notification
-                        connect_notification(CLIENT_CONNECT_ERROR);
-                    }
+                    //modify by regulus: fix connect crash
+                    ostringstream errorinfo;
+                    errorinfo << ", error: " << error.value() << " " << error.message();
+                    reconnect(errorinfo.str());
 
                     return;
                 }
-
-                m_connected = true;
-
-                //reset
-                m_reconnect_times = 0;
 
                 //add to connection manager
                 int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
@@ -144,18 +151,33 @@ namespace matrix
                     return;
                 }
 
+                //modify by regulus:if error isn't report and the connection isn't valid, then the system will be crash in channel->start
+                try
+                {
+                    //start to work
+                    if (E_SUCCESS != m_client_channel->start())
+                    {
+                        LOG_ERROR << "tcp connector channel start work error " << m_connect_addr << m_sid.to_string();
+                    }
+                    else
+                    {
+                        LOG_DEBUG << "tcp connector channel start work successfully " << m_connect_addr << m_sid.to_string();
+                    }
+                }
+                catch (const boost::exception & e)
+                {
+                    std::string errorinfo = diagnostic_information(e);
+                    reconnect(errorinfo);
+                    return;
+                }
+                
+                //modify by regulus: fix "m_socket_handler =nullptr" when tcp_socket_channel::write.  m_client_channel->start() before connect_notification
                 //publish
                 connect_notification(CLIENT_CONNECT_SUCCESS);
 
-                //start to work
-                if (E_SUCCESS != m_client_channel->start())
-                {
-                    LOG_ERROR << "tcp connector channel start work error " << m_connect_addr << m_sid.to_string();
-                }
-                else
-                {
-                    LOG_DEBUG << "tcp connector channel start work successfully " << m_connect_addr << m_sid.to_string();
-                }
+                m_connected = true;
+                //reset
+                m_reconnect_times = 0;
             }
 
             void tcp_connector::connect_notification(CLIENT_CONNECT_STATUS status)
