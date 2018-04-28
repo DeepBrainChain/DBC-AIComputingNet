@@ -17,6 +17,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/utility/setup/console.hpp>  
 #include "common.h"
 
 
@@ -48,7 +49,10 @@ namespace matrix
             static int32_t init()
             {
                 boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
-
+#ifdef __DEBUG
+                logging::add_console_log(std::clog, keywords::format = "[%TimeStamp%][%Severity%]: %Message%");
+#endif
+                
                 auto sink = logging::add_file_log
                 (
                     //attribute
@@ -60,6 +64,7 @@ namespace matrix
 
                 logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
                 sink->locked_backend()->auto_flush(true);
+             
                 logging::add_common_attributes();
 
                 //BOOST_LOG_TRIVIAL(info) << "init core log success.";
