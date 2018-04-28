@@ -31,13 +31,15 @@ namespace matrix
         class ip_validator : public conf_validator
         {
         public:
-
+            //modify by regulus:fix can't validate ipaddr contain "-0", use boost::asio::ip::address to validate error.
             bool validate(const variable_value &val)
             {
                 try
-                {
+                {  
                     std::string ip = val.as<std::string>();
-                    return (is_ipv4(ip) || is_ipv6(ip));
+                    boost::asio::ip::address addr;
+                    addr.from_string(ip);
+                    return (addr.is_v4() || addr.is_v6());
                 }
                 catch (const boost::exception & e)
                 {
@@ -46,113 +48,113 @@ namespace matrix
                 }
             }
 
-            bool is_ipv4(const std::string& ip)
-            {
-                std::vector<std::string> vec;
-                string_util::split(ip, ".", vec);
+            //bool is_ipv4(const std::string& ip)
+            //{
+            //    std::vector<std::string> vec;
+            //    string_util::split(ip, ".", vec);
 
-                //not 4 fields
-                if (IP_V4_FIELDS_COUNT != vec.size())
-                {
-                    return false;
-                }
+            //    //not 4 fields
+            //    if (IP_V4_FIELDS_COUNT != vec.size())
+            //    {
+            //        return false;
+            //    }
 
-                int i = 0;
-                while (i < vec.size())
-                {
-                    std::string ip_field = vec[i++];
+            //    int i = 0;
+            //    while (i < vec.size())
+            //    {
+            //        std::string ip_field = vec[i++];
 
-                    try
-                    {
-                        unsigned long ul_ip_field = stoul(ip_field);
-                        if (ul_ip_field > 255)
-                        {
-                            return false;
-                        }
-                    }
-                    catch (const std::exception &e)
-                    {
-                        LOG_ERROR << "is_ipv4 caught exception: " << e.what();
-                        return false;
-                    }
-                }
+            //        try
+            //        {
+            //            unsigned long ul_ip_field = stoul(ip_field);
+            //            if (ul_ip_field > 255)
+            //            {
+            //                return false;
+            //            }
+            //        }
+            //        catch (const std::exception &e)
+            //        {
+            //            LOG_ERROR << "is_ipv4 caught exception: " << e.what();
+            //            return false;
+            //        }
+            //    }
 
-                return true;
-            }
+            //    return true;
+            //}
 
-            bool is_ipv6(const std::string& ip)
-            {
+            //bool is_ipv6(const std::string& ip)
+            //{
 
-                //FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF
-                //1050:0:0:0:5:600:300c:326b
-                //::
-                //ff06::c3
+            //    //FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF
+            //    //1050:0:0:0:5:600:300c:326b
+            //    //::
+            //    //ff06::c3
 
-                int double_colons_count = 0;                 //::
-                int single_colon_count = 0;                   //0:0
+            //    int double_colons_count = 0;                 //::
+            //    int single_colon_count = 0;                   //0:0
 
-                int i = 0;
-                size_t ip_len = ip.length();
+            //    int i = 0;
+            //    size_t ip_len = ip.length();
 
-                //FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF  or  ::
-                if (ip_len < MIN_IP_V6_LEN || ip_len > MAX_IP_V6_LEN)
-                {
-                    return false;
-                }
+            //    //FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF  or  ::
+            //    if (ip_len < MIN_IP_V6_LEN || ip_len > MAX_IP_V6_LEN)
+            //    {
+            //        return false;
+            //    }
 
-                if ((ip[0] == ':' && ip[1] != ':')
-                    || (ip[ip_len - 1] == ':' && ip[ip_len - 2] != ':'))
-                {
-                    return false;
-                }
+            //    if ((ip[0] == ':' && ip[1] != ':')
+            //        || (ip[ip_len - 1] == ':' && ip[ip_len - 2] != ':'))
+            //    {
+            //        return false;
+            //    }
 
-                int characters_in_field = 0;
-                for (size_t i = 0; i < ip_len; i++)
-                {
-                    //valid character
-                    if (!((ip[i] >= '0' && ip[i] <= '9') || (ip[i] >= 'a' && ip[i] <= 'f') || (ip[i] >= 'A' && ip[i] <= 'F') || (ip[i] == ':')))
-                    {
-                        return false;
-                    }
+            //    int characters_in_field = 0;
+            //    for (size_t i = 0; i < ip_len; i++)
+            //    {
+            //        //valid character
+            //        if (!((ip[i] >= '0' && ip[i] <= '9') || (ip[i] >= 'a' && ip[i] <= 'f') || (ip[i] >= 'A' && ip[i] <= 'F') || (ip[i] == ':')))
+            //        {
+            //            return false;
+            //        }
 
-                    //:: times
-                    if ((i < (ip_len - 1)) && ip[i] == ':' && ip[i + 1] == ':')
-                    {
-                        double_colons_count++;
+            //        //:: times
+            //        if ((i < (ip_len - 1)) && ip[i] == ':' && ip[i + 1] == ':')
+            //        {
+            //            double_colons_count++;
 
-                        //more than one time
-                        if (double_colons_count > 1)
-                        {
-                            return false;
-                        }
-                    }
+            //            //more than one time
+            //            if (double_colons_count > 1)
+            //            {
+            //                return false;
+            //            }
+            //        }
 
-                    if (ip[i] != ':')
-                    {
-                        characters_in_field++;
-                        if (characters_in_field > MAX_CHARACTERS_IN_FIELD)
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        characters_in_field = 0;
-                    }
+            //        if (ip[i] != ':')
+            //        {
+            //            characters_in_field++;
+            //            if (characters_in_field > MAX_CHARACTERS_IN_FIELD)
+            //            {
+            //                return false;
+            //            }
+            //        }
+            //        else
+            //        {
+            //            characters_in_field = 0;
+            //        }
 
-                    if ((i > 0) && (i < ip_len - 1) && (ip[i - 1] != ':') && (ip[i] == ':') && (ip[i + 1] != ':'))
-                    {
-                        single_colon_count++;
-                        if (single_colon_count > MAX_SINGLE_COLON_COUNT)
-                        {
-                            return false;
-                        }
-                    }
+            //        if ((i > 0) && (i < ip_len - 1) && (ip[i - 1] != ':') && (ip[i] == ':') && (ip[i + 1] != ':'))
+            //        {
+            //            single_colon_count++;
+            //            if (single_colon_count > MAX_SINGLE_COLON_COUNT)
+            //            {
+            //                return false;
+            //            }
+            //        }
 
-                }
+            //    }
 
-                return true;
-            }
+            //    return true;
+            //}
 
         };
 
