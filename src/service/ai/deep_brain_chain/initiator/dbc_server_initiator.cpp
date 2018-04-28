@@ -130,31 +130,40 @@ namespace ai
         {
             options_description opts("dbc options");
             opts.add_options()
-                ("help,h", bpo::value<std::string>(), "get dbc core help info")
-                ("version,v", bpo::value<std::string>(), "get core version info");
-
-            //parse
-            bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
-            bpo::notify(vm);
-
-            //help
-            if (vm.count("help") || vm.count("h"))
+                ("help,h",  "get dbc core help info")
+                ("version,v", "get core version info");
+            
+            try
             {
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                //help
+                if (vm.count("help") || vm.count("h"))
+
+                {
+                    cout << opts;
+                    return E_EXIT_PARSE_COMMAND_LINE;
+                }
+                //version
+                else if (vm.count("version") || vm.count("v"))
+                {
+                    cout << CORE_VERSION;
+                    return E_EXIT_PARSE_COMMAND_LINE;
+                }
+                //ignore
+                else
+                {
+                    return E_SUCCESS;
+                }
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid command option" << endl;
                 cout << opts;
-                return E_EXIT_PARSE_COMMAND_LINE;
             }
-            //version
-            else if (vm.count("version") || vm.count("v"))
-            {
-                cout << CORE_VERSION;
-                return E_EXIT_PARSE_COMMAND_LINE;
-            }
-            //ignore
-            else
-            {
-                return E_SUCCESS;
-            }
-
+            return E_BAD_PARAM;
         }
 
     }
