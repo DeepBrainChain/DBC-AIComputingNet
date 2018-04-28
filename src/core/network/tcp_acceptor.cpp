@@ -10,6 +10,7 @@
 #include "tcp_acceptor.h"
 #include "tcp_socket_channel.h"
 #include "server.h"
+#include <boost/exception/all.hpp>
 
 namespace matrix
 {
@@ -94,13 +95,23 @@ namespace matrix
                 create_channel();
                 return E_DEFAULT;
             }
+            try
+            {
+                //start run
+                ch->start();
+                tcp::endpoint ep = std::dynamic_pointer_cast<tcp_socket_channel>(ch)->get_remote_addr();
+                LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port();
 
-            //start run
-            ch->start();
-            tcp::endpoint ep = std::dynamic_pointer_cast<tcp_socket_channel>(ch)->get_remote_addr();
-            LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port();
-
-            LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
+                LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "tcp acceptor on accept call back error: " << diagnostic_information(e);
+                LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
+                //new channel
+                create_channel();
+                return E_DEFAULT;
+            }            
 
             //new channel
             return create_channel();
