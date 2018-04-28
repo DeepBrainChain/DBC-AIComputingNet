@@ -32,7 +32,6 @@ namespace matrix
 {
     namespace service_core
     {
-
         int32_t p2p_net_service::init_conf()
         {
             variable_value val;
@@ -45,6 +44,7 @@ namespace matrix
             //get listen ip and port conf
             std::string host_ip  = manager->count("host_ip") ? (*manager)["host_ip"].as<std::string>() : ip::address_v4::any().to_string();
             val.value() = host_ip;
+           
             
             if (!ip_vdr.validate(val))
             {
@@ -56,30 +56,52 @@ namespace matrix
                 m_host_ip = host_ip;
             }
 
-            unsigned long port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<unsigned long>() : DEFAULT_MAIN_NET_LISTEN_PORT;
-            val.value() = port;
+            std::string s_port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
+            val.value() = s_port;
             if (false == port_vdr.validate(val))
             {
-                LOG_ERROR << "p2p_net_service init_conf invalid main net port: " << port;
+                LOG_ERROR << "p2p_net_service init_conf invalid main net port: " << s_port;
                 return E_DEFAULT;
             }
             else
             {
-                m_main_net_listen_port = (uint16_t)port;
+                try
+                {
+                    m_main_net_listen_port = (uint16_t)std::stoi(s_port);
+                }
+                catch (const std::exception &e)
+                {
+                    LOG_ERROR << "p2p_net_service init_conf invalid main_port: " << s_port << ", " << e.what();
+                    return E_DEFAULT;
+                }
+
             }
 
-            port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<unsigned long>() : DEFAULT_TEST_NET_LISTEN_PORT;
-            val.value() = port;
+            s_port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
+            val.value() = s_port;
             if (false == port_vdr.validate(val))
             {
-                LOG_ERROR << "p2p_net_service init_conf invalid test net port: " << port;
+                LOG_ERROR << "p2p_net_service init_conf invalid test net port: " << s_port;
                 return E_DEFAULT;
             }
             else
             {
-                m_test_net_listen_port = (uint16_t)port;
+                try
+                {
+                    m_test_net_listen_port = (uint16_t)std::stoi(s_port);
+                }
+                catch (const std::exception &e)
+                {
+                    LOG_ERROR << "p2p_net_service init_conf invalid test_port: " << s_port << ", " << e.what();
+                    return E_DEFAULT;
+                }
             }
-
+            //modify by regulus:fix m_test_net_listen_port == m_main_net_listen_pore error.
+            if (m_test_net_listen_port == m_main_net_listen_port)
+            {
+                LOG_ERROR << "p2p_net_service init_conf port config error: main_net_listen_port=test_net_listen_port" << s_port ;
+                return E_DEFAULT;
+            }
             return E_SUCCESS;
         }
 
@@ -115,7 +137,7 @@ namespace matrix
                 LOG_ERROR << "p2p net service init test net error, ip: " << m_host_ip << " port: " << m_test_net_listen_port;
                 return ret;
             }
-
+           
             //ipv6 left to later
 
             return E_SUCCESS;
@@ -166,12 +188,19 @@ namespace matrix
                 {
                     LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
                     continue;
+                }                
+
+                val.value() = str_port;
+                if (false == port_vdr.validate(val))
+                {
+                    LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
+                    continue;
                 }
 
-                unsigned long port = 0;
+                uint16_t port = 0;
                 try
                 {
-                    port = std::stoul(str_port);
+                    port = (uint16_t)std::stoi(str_port);
                 }
                 catch (const std::exception &e)
                 {
@@ -179,22 +208,22 @@ namespace matrix
                     continue;
                 }
 
-                val.value() = port;
-                if (false == port_vdr.validate(val))
+                try
                 {
-                    LOG_ERROR << "p2p_net_service init_connect invalid port: " << port;
-                    continue;
+                    tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
+                    m_peer_addresses.push_back(ep);
+                    //start connect
+                    LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
+                    int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
+                    if (E_SUCCESS != ret)
+                    {
+                        LOG_ERROR << "matrix init connector invalid peer address, ip: " << addr << " port: " << str_port;
+                    }
                 }
-
-                tcp::endpoint ep(address_v4::from_string(ip),(uint16_t) port);
-                m_peer_addresses.push_back(ep);
-
-                //start connect
-                LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
-                int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
-                if (E_SUCCESS != ret)
+                catch (const std::exception &e)
                 {
-                    LOG_ERROR << "matrix init connector invalid peer address, ip: " << addr << " port: " << str_port;
+                    LOG_ERROR << "p2p_net_service init_connect abnormal. addr info: " << ip <<":"<<str_port << ", " << e.what();
+                    continue;
                 }
 
                 count++;
