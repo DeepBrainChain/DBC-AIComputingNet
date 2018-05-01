@@ -22,9 +22,9 @@ using namespace boost::asio::ip;
 
 namespace fs = boost::filesystem;
 
-namespace matrix
+namespace ai
 {
-    namespace service_core
+    namespace dbc
     {
 
         class ai_power_requestor_service : public service_module
