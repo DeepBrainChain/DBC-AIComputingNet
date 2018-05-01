@@ -145,7 +145,7 @@ namespace ai
             leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
             if (false == status.ok())
             {
-                LOG_ERROR << "ai power provider service init training task db error";
+                LOG_ERROR << "ai power provider service init training task db error: " << status.ToString();
                 return E_DEFAULT;
             }
 

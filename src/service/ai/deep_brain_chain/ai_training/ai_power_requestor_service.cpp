@@ -37,9 +37,9 @@ using namespace ai::dbc;
 
 
 
-namespace matrix
+namespace ai
 {
-    namespace service_core
+    namespace dbc
     {
         ai_power_requestor_service::ai_power_requestor_service()
             : m_req_training_task_db()
@@ -116,7 +116,7 @@ namespace matrix
             leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
             if (false == status.ok())
             {
-                LOG_ERROR << "ai power requestor service init training task db error";
+                LOG_ERROR << "ai power requestor service init training task db error: " << status.ToString();
                 return E_DEFAULT;
             }
 
