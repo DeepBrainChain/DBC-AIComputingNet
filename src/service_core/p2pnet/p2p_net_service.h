@@ -40,7 +40,7 @@ namespace matrix
 
         public:
 
-            p2p_net_service() = default;
+            p2p_net_service();
 
             virtual ~p2p_net_service() = default;
 
@@ -79,6 +79,8 @@ namespace matrix
 
             //override by service layer
             virtual int32_t service_init(bpo::variables_map &options);
+
+            int32_t service_exit();
 
             bool add_peer_node(const socket_id &sid, const std::string &nid);
 
