@@ -118,7 +118,13 @@ ${SRC_PATH}/api
 ############################################################################
 
 #link directory
-LINK_DIRECTORIES(${Boost_LIBRARY_DIR})
+LINK_DIRECTORIES(
+	"${Boost_LIBRARY_DIR}"
+	"${LIB_HOME_PATH}/linux/leveldb"
+	"${LIB_HOME_PATH}/linux/libevent"
+	"${LIB_HOME_PATH}/linux/openssl" 
+	"${LIB_HOME_PATH}/linux/secp256k1"
+	)
 
 ############################################################################
 
@@ -231,12 +237,12 @@ ${THIRD_LIBEVENT_EVENT2_SRCS})
 #SET(LIBRARIES libm.so)
 SET(LIBRARIES)
 
-link_directories(${LIB_HOME_PATH}/linux/leveldb ${LIB_HOME_PATH}/linux/libevent ${LIB_HOME_PATH}/linux/openssl ${LIB_HOME_PATH}/linux/secp256k1)
+#link_directories(${LIB_HOME_PATH}/linux/leveldb ${LIB_HOME_PATH}/linux/libevent ${LIB_HOME_PATH}/linux/openssl ${LIB_HOME_PATH}/linux/secp256k1)
 
 #target link
 MESSAGE(STATUS "${Boost_LIBRARIES}")
 #libboost_thread.a -lboost_log_setup
-TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libboost_thread.a)
+TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent libleveldb.a -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libboost_thread.a -lpthread -ldl)
 
 ############################################################################
 
