@@ -174,7 +174,7 @@ namespace matrix
             read_lock_guard<rw_lock> lock(m_lock_conn);
             for (auto it = m_connectors.begin(); it != m_connectors.end(); it++)
             {
-                LOG_DEBUG << "connection manager stop connect at addr: " << (*it)->get_connect_addr().address() << " port: " << (*it)->get_connect_addr().port();
+                LOG_DEBUG << "connection manager stop all connect at addr: " << (*it)->get_connect_addr().address() << " port: " << (*it)->get_connect_addr().port();
                 (*it)->stop();
             }
 
@@ -251,7 +251,7 @@ namespace matrix
 
         int32_t connection_manager::start_connect(tcp::endpoint connect_addr, handler_create_functor func)
         {
-            LOG_DEBUG << "connection manager stop connect at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
+            LOG_DEBUG << "connection manager start connect at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
 
             try
             {
