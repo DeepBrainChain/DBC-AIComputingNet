@@ -271,7 +271,13 @@ namespace ai
             }
 
             //serialization
-            conf_manager::serialize_node_info(info);
+            ret = conf_manager::serialize_node_info(info);
+            if (E_SUCCESS != ret)
+            {
+                cout << "dbc node info serialization failed." << endl;
+                LOG_ERROR << "dbc node info serialization failed: node_id=" << info.node_id;
+                return ret;
+            }
             cout << "node id: " << info.node_id << endl;
             LOG_DEBUG << "dbc_server_initiator init node info successfully, node_id: " << info.node_id;
 
