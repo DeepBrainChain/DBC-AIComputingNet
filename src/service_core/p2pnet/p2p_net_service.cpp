@@ -36,6 +36,12 @@ namespace matrix
 {
     namespace service_core
     {
+        p2p_net_service::p2p_net_service()
+            : m_timer_id_peer_info_exchange(INVALID_TIMER_ID)
+        {
+
+        }
+
         int32_t p2p_net_service::init(bpo::variables_map &options)
         {
             uint32_t ret = service_module::init(options);
@@ -307,6 +313,17 @@ namespace matrix
             m_timer_id_peer_info_exchange = add_timer(TIMER_NAME_P2P_PEER_INFO_EXCHANGE, TIMER_INTERV_P2P_PEER_INFO_EXCHANGE * 1000);
             assert(m_timer_id_peer_info_exchange != INVALID_TIMER_ID);
 
+        }
+
+        int32_t p2p_net_service::service_exit()
+        {
+            if (m_timer_id_peer_info_exchange != INVALID_TIMER_ID)
+            {
+                remove_timer(m_timer_id_peer_info_exchange);
+                m_timer_id_peer_info_exchange = INVALID_TIMER_ID;
+            }
+
+            return E_SUCCESS;
         }
 
         int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer)
