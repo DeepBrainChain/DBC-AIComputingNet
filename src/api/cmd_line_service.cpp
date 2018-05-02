@@ -42,6 +42,7 @@ namespace ai
             cout << "start_mult:    start multi training tasks" << endl;
             cout << "list:          list training tasks" << endl;
             cout << "peers:         get information of peers" << endl;
+            cout << "quit / exit:   exit program" << endl;
             cout << "-----------------------------------------" << endl;
         }
 
@@ -93,6 +94,11 @@ namespace ai
             if (std::string(m_argv[0]).compare("help") == 0)
             {
                 print_cmd_usage();
+                return;
+            }
+            else if (std::string(m_argv[0]).compare("quit") == 0 || std::string(m_argv[0]).compare("exit") == 0)
+            {
+                g_server->exit();
                 return;
             }
 
