@@ -309,7 +309,7 @@ namespace matrix
 
         void p2p_net_service::init_timer()
         {
-            m_timer_invokers[TIMER_NAME_FILTER_CLEAN] = std::bind(&p2p_net_service::on_timer_peer_info_exchange, this, std::placeholders::_1);
+            m_timer_invokers[TIMER_NAME_P2P_PEER_INFO_EXCHANGE] = std::bind(&p2p_net_service::on_timer_peer_info_exchange, this, std::placeholders::_1);
             m_timer_id_peer_info_exchange = add_timer(TIMER_NAME_P2P_PEER_INFO_EXCHANGE, TIMER_INTERV_P2P_PEER_INFO_EXCHANGE * 1000);
             assert(m_timer_id_peer_info_exchange != INVALID_TIMER_ID);
 
@@ -335,7 +335,7 @@ namespace matrix
             //pull
             send_get_peer_nodes();
 
-            if (++even_num % 2 == 0)
+            if (even_num % 2 == 0)
             {
                 even_num = 0;
                 //push
@@ -451,6 +451,8 @@ namespace matrix
                 req_content->body.addr_you.port = ep.port();
                 req_content->body.start_height = 0;              //later
 
+                LOG_INFO << "me(" << req_content->body.addr_me.ip << ":" << req_content->body.addr_me.port << ") connect to peer(" << req_content->body.addr_you.ip << ":" << req_content->body.addr_you.port << ")";
+                
                 req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
                 req_msg->set_name(VER_REQ);
                 req_msg->header.dst_sid = msg->header.src_sid;
