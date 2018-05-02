@@ -98,7 +98,7 @@ namespace ai
             }
             else if (std::string(m_argv[0]).compare("quit") == 0 || std::string(m_argv[0]).compare("exit") == 0)
             {
-                g_server->exit();
+                g_server->set_exited(true);
                 return;
             }
 
