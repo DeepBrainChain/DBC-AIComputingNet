@@ -527,7 +527,7 @@ namespace matrix
             }
             resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
 
-            CONNECTION_MANAGER->send_message(resp_msg->header.src_sid, resp_msg);
+            CONNECTION_MANAGER->send_message(msg->header.src_sid, resp_msg);
 
             return E_SUCCESS;
         }
@@ -545,17 +545,17 @@ namespace matrix
                     m_peer_addresses.push_back(std::move(ep));
                 }
             }
-            std::shared_ptr<ai::dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<ai::dbc::cmd_get_peer_nodes_resp>();
-            cmd_resp->result = E_SUCCESS;
-            cmd_resp->result_info = "";
-            for (auto itn = rsp->body.peer_nodes_list.begin(); itn != rsp->body.peer_nodes_list.end(); ++itn)
-            {
-                ai::dbc::cmd_peer_node_info node_info;
-                node_info = *itn;
-                cmd_resp->peer_nodes_list.push_back(std::move(node_info));
-            }
+            //std::shared_ptr<ai::dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<ai::dbc::cmd_get_peer_nodes_resp>();
+            //cmd_resp->result = E_SUCCESS;
+            //cmd_resp->result_info = "";
+            //for (auto itn = rsp->body.peer_nodes_list.begin(); itn != rsp->body.peer_nodes_list.end(); ++itn)
+            //{
+            //    ai::dbc::cmd_peer_node_info node_info;
+            //    node_info = *itn;
+            //    cmd_resp->peer_nodes_list.push_back(std::move(node_info));
+            //}
 
-            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
+            //TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
 
             return E_SUCCESS;
         }
@@ -634,9 +634,10 @@ namespace matrix
                     {
                         if (it->second->m_id == CONF_MANAGER->get_node_id())
                         {
-                            resp_msg->header.src_sid = it->second->m_sid;
+                            assert(0); //should never occur
+                            LOG_WARNING << "peer node(" << it->second->m_id << ") is myself.";
                             continue;
-                        }
+                        }                            
                         matrix::service_core::peer_node_info info;
                         info.peer_node_id = it->second->m_id;
                         info.live_time_stamp = (int32_t)it->second->m_live_time;

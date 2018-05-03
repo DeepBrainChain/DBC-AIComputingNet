@@ -19,7 +19,6 @@
 #include "timer_def.h"
 #include "service_proto_filter.h"
 
-
 namespace matrix
 {
     namespace core
@@ -74,8 +73,10 @@ namespace matrix
 
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
-                    m_cond.wait(lock, [this]()->bool {return !(this->is_empty());});
-
+                    std::chrono::milliseconds ms(500);
+                    m_cond.wait_for(lock, ms, [this]()->bool {return !(this->is_empty());});
+                    if (is_empty())
+                        continue;
 					m_msg_queue.swap(tmp_msg_queue);
                 }
 
@@ -100,7 +101,20 @@ namespace matrix
             //have a rest           
             if (m_thread != nullptr)
             {
-                m_thread->join();
+                try
+                {
+                    m_thread->join();
+                }
+                catch (const std::system_error &e)
+                {
+                    LOG_ERROR << "join thread(" << m_thread->get_id() << ")error: " << e.what();
+                    return E_DEFAULT;
+                }
+                catch (...)
+                {
+                    LOG_ERROR << "join thread(" << m_thread->get_id() << ")error: unknown";
+                    return E_DEFAULT;
+                }
             }
 
             return E_SUCCESS;
