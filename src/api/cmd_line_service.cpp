@@ -39,7 +39,7 @@ namespace ai
             cout << "help:          print out usage information" << endl;
             cout << "start:         start training" << endl;
             cout << "stop:          stop training" << endl;
-            cout << "start_mult:    start multi training tasks" << endl;
+            cout << "start_multi:   start multi training tasks" << endl;
             cout << "list:          list training tasks" << endl;
             cout << "peers:         get information of peers" << endl;
             cout << "quit / exit:   exit program" << endl;

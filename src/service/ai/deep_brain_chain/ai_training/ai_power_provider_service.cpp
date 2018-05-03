@@ -170,7 +170,7 @@ namespace ai
             assert(nullptr != req);
 
             //relay start training in network
-            LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbour peer nodes" << req->body.task_id;
+            LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes" << req->body.task_id;
             CONNECTION_MANAGER->broadcast_message(msg);
 
             //check node id

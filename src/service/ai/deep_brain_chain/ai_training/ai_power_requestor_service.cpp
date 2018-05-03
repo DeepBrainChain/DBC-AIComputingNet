@@ -276,7 +276,7 @@ namespace ai
             //public resp directly            
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
 
             return E_SUCCESS;
         }
@@ -371,7 +371,6 @@ namespace ai
         void ai_power_requestor_service::add_task_config_opts(bpo::options_description &opts) const
         {
             opts.add_options()
-                ("task_id", bpo::value<std::string>(), "")
                 ("select_mode", bpo::value<int8_t>()->default_value(0), "")
                 ("master", bpo::value<std::string>(), "")
                 ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
@@ -405,19 +404,26 @@ namespace ai
             resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
             resp_content->header.__set_nonce(id_generator().generate_nonce());
 
-            resp_content->body.task_id = vm["task_id"].as<std::string>();
-            resp_content->body.select_mode = vm["select_mode"].as<int8_t>();
-            resp_content->body.master = vm["master"].as<std::string>();
-            resp_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
-            resp_content->body.server_specification = vm["server_specification"].as<std::string>();
-            resp_content->body.server_count = vm["server_count"].as<int32_t>();
-            resp_content->body.training_engine = vm["training_engine"].as<int32_t>();
-            resp_content->body.code_dir = vm["code_dir"].as<std::string>();
-            resp_content->body.entry_file = vm["entry_file"].as<std::string>();
-            resp_content->body.data_dir = vm["data_dir"].as<std::string>();
-            resp_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
-            resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
-
+            try
+            {
+                resp_content->body.task_id = id_generator().generate_task_id();
+                resp_content->body.select_mode = vm["select_mode"].as<int8_t>();
+                resp_content->body.master = vm["master"].as<std::string>();
+                resp_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
+                resp_content->body.server_specification = vm["server_specification"].as<std::string>();
+                resp_content->body.server_count = vm["server_count"].as<int32_t>();
+                resp_content->body.training_engine = vm["training_engine"].as<int32_t>();
+                resp_content->body.code_dir = vm["code_dir"].as<std::string>();
+                resp_content->body.entry_file = vm["entry_file"].as<std::string>();
+                resp_content->body.data_dir = vm["data_dir"].as<std::string>();
+                resp_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
+                resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
+            }
+            catch (...)
+            {
+                LOG_ERROR << "maybe some keys not exist in " << task_file;
+            }
+ 
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
             req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
             return req_msg;
