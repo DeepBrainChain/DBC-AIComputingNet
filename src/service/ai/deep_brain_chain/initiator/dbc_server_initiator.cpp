@@ -110,7 +110,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init p2p net service succefully";
+            LOG_DEBUG << "init p2p net service complete";
 
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
