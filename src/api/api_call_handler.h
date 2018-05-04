@@ -164,7 +164,7 @@ namespace ai
 
             std::string ip;
 
-            int16_t port;
+            uint16_t port;
         };
 
         class cmd_peer_node_info

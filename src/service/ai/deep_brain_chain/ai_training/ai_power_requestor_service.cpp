@@ -217,6 +217,8 @@ namespace ai
             req_msg->set_content(std::dynamic_pointer_cast<base>(broadcast_req_content));
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
+            LOG_DEBUG << "ai power requestor service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
+
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
             //peer won't reply, so public resp directly
@@ -283,9 +285,14 @@ namespace ai
 
         int32_t ai_power_requestor_service::on_cmd_stop_training_req(const std::shared_ptr<message> &msg)
         {
-            const std::string &task_id = std::dynamic_pointer_cast<cmd_stop_training_req>(msg->get_content())->task_id;
+            std::shared_ptr<cmd_stop_training_req> cmd_req_content = std::dynamic_pointer_cast<cmd_stop_training_req>(msg->get_content());
+            assert(nullptr != cmd_req_content);
+
+            const std::string &task_id = cmd_req_content->task_id;
+
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::stop_training_req> req_content = std::make_shared<matrix::service_core::stop_training_req>();
+
             //header
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = STOP_TRAINING_REQ;

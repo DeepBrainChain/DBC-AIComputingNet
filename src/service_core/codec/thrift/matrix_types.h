@@ -15,6 +15,7 @@
 
 using namespace matrix::core;
 
+
 namespace matrix { namespace service_core {
 
 class msg_header;
@@ -265,8 +266,10 @@ void swap(task_status &a, task_status &b);
 std::ostream& operator<<(std::ostream& out, const task_status& obj);
 
 typedef struct _peer_node_info__isset {
-  _peer_node_info__isset() : peer_node_id(false), live_time_stamp(false), addr(false), service_list(false) {}
+  _peer_node_info__isset() : peer_node_id(false), core_version(false), protocol_version(false), live_time_stamp(false), addr(false), service_list(false) {}
   bool peer_node_id :1;
+  bool core_version :1;
+  bool protocol_version :1;
   bool live_time_stamp :1;
   bool addr :1;
   bool service_list :1;
@@ -277,11 +280,13 @@ class peer_node_info : public virtual base {
 
   peer_node_info(const peer_node_info&);
   peer_node_info& operator=(const peer_node_info&);
-  peer_node_info() : peer_node_id(), live_time_stamp(0) {
+  peer_node_info() : peer_node_id(), core_version(0), protocol_version(0), live_time_stamp(0) {
   }
 
   virtual ~peer_node_info() throw();
   std::string peer_node_id;
+  int32_t core_version;
+  int32_t protocol_version;
   int32_t live_time_stamp;
   network_address addr;
   std::vector<std::string>  service_list;
@@ -289,6 +294,10 @@ class peer_node_info : public virtual base {
   _peer_node_info__isset __isset;
 
   void __set_peer_node_id(const std::string& val);
+
+  void __set_core_version(const int32_t val);
+
+  void __set_protocol_version(const int32_t val);
 
   void __set_live_time_stamp(const int32_t val);
 
@@ -299,6 +308,10 @@ class peer_node_info : public virtual base {
   bool operator == (const peer_node_info & rhs) const
   {
     if (!(peer_node_id == rhs.peer_node_id))
+      return false;
+    if (!(core_version == rhs.core_version))
+      return false;
+    if (!(protocol_version == rhs.protocol_version))
       return false;
     if (!(live_time_stamp == rhs.live_time_stamp))
       return false;
@@ -325,9 +338,10 @@ void swap(peer_node_info &a, peer_node_info &b);
 std::ostream& operator<<(std::ostream& out, const peer_node_info& obj);
 
 typedef struct _ver_req_body__isset {
-  _ver_req_body__isset() : node_id(false), version(false), time_stamp(false), addr_me(false), addr_you(false), start_height(false) {}
+  _ver_req_body__isset() : node_id(false), core_version(false), protocol_version(false), time_stamp(false), addr_me(false), addr_you(false), start_height(false) {}
   bool node_id :1;
-  bool version :1;
+  bool core_version :1;
+  bool protocol_version :1;
   bool time_stamp :1;
   bool addr_me :1;
   bool addr_you :1;
@@ -339,12 +353,13 @@ class ver_req_body : public virtual base {
 
   ver_req_body(const ver_req_body&);
   ver_req_body& operator=(const ver_req_body&);
-  ver_req_body() : node_id(), version(0), time_stamp(0), start_height(0) {
+  ver_req_body() : node_id(), core_version(0), protocol_version(0), time_stamp(0), start_height(0) {
   }
 
   virtual ~ver_req_body() throw();
   std::string node_id;
-  int32_t version;
+  int32_t core_version;
+  int32_t protocol_version;
   int64_t time_stamp;
   network_address addr_me;
   network_address addr_you;
@@ -354,7 +369,9 @@ class ver_req_body : public virtual base {
 
   void __set_node_id(const std::string& val);
 
-  void __set_version(const int32_t val);
+  void __set_core_version(const int32_t val);
+
+  void __set_protocol_version(const int32_t val);
 
   void __set_time_stamp(const int64_t val);
 
@@ -368,7 +385,9 @@ class ver_req_body : public virtual base {
   {
     if (!(node_id == rhs.node_id))
       return false;
-    if (!(version == rhs.version))
+    if (!(core_version == rhs.core_version))
+      return false;
+    if (!(protocol_version == rhs.protocol_version))
       return false;
     if (!(time_stamp == rhs.time_stamp))
       return false;
@@ -445,8 +464,10 @@ void swap(ver_req &a, ver_req &b);
 std::ostream& operator<<(std::ostream& out, const ver_req& obj);
 
 typedef struct _ver_resp_body__isset {
-  _ver_resp_body__isset() : version(false) {}
-  bool version :1;
+  _ver_resp_body__isset() : node_id(false), core_version(false), protocol_version(false) {}
+  bool node_id :1;
+  bool core_version :1;
+  bool protocol_version :1;
 } _ver_resp_body__isset;
 
 class ver_resp_body : public virtual base {
@@ -454,19 +475,29 @@ class ver_resp_body : public virtual base {
 
   ver_resp_body(const ver_resp_body&);
   ver_resp_body& operator=(const ver_resp_body&);
-  ver_resp_body() : version(0) {
+  ver_resp_body() : node_id(), core_version(0), protocol_version(0) {
   }
 
   virtual ~ver_resp_body() throw();
-  int32_t version;
+  std::string node_id;
+  int32_t core_version;
+  int32_t protocol_version;
 
   _ver_resp_body__isset __isset;
 
-  void __set_version(const int32_t val);
+  void __set_node_id(const std::string& val);
+
+  void __set_core_version(const int32_t val);
+
+  void __set_protocol_version(const int32_t val);
 
   bool operator == (const ver_resp_body & rhs) const
   {
-    if (!(version == rhs.version))
+    if (!(node_id == rhs.node_id))
+      return false;
+    if (!(core_version == rhs.core_version))
+      return false;
+    if (!(protocol_version == rhs.protocol_version))
       return false;
     return true;
   }

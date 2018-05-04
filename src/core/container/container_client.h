@@ -19,7 +19,7 @@
 using namespace std;
 
 
-#define DEFAULT_STOP_CONTAINER_TIME                         10                              //stop time out
+#define DEFAULT_STOP_CONTAINER_TIME                         2                              //stop time out
 
 
 namespace matrix
