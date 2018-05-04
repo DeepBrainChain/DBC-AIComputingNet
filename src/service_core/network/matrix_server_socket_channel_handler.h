@@ -62,7 +62,7 @@ namespace matrix
 
             uint16_t m_lost_shake_hand_count_max;
 
-            bool m_login_success;
+            //bool m_login_success;
 
             steady_timer m_wait_ver_req_timer;
 

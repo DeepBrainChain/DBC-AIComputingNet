@@ -49,9 +49,9 @@ namespace matrix
             static int32_t init()
             {
                 boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
-#ifdef __DEBUG
-                logging::add_console_log(std::clog, keywords::format = "[%TimeStamp%][%Severity%]: %Message%");
-#endif
+//#ifdef __DEBUG
+//                logging::add_console_log(std::clog, keywords::format = "[%TimeStamp%][%Severity%]: %Message%");
+//#endif
                 
                 auto sink = logging::add_file_log
                 (

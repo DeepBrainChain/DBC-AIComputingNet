@@ -143,14 +143,6 @@ namespace matrix
                     return;
                 }
 
-                //add to connection manager
-                int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
-                if (E_SUCCESS != ret)
-                {
-                    LOG_ERROR << "tcp connector on connect error, add channel failed";
-                    return;
-                }
-
                 //modify by regulus:if error isn't report and the connection isn't valid, then the system will be crash in channel->start
                 try
                 {
@@ -168,6 +160,14 @@ namespace matrix
                 {
                     std::string errorinfo = diagnostic_information(e);
                     reconnect(errorinfo);
+                    return;
+                }
+
+                //add to connection manager
+                int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "tcp connector on connect error, add channel failed";
                     return;
                 }
                 
