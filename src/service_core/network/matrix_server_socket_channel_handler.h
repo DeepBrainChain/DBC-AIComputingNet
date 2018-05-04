@@ -62,6 +62,7 @@ namespace matrix
 
             uint16_t m_lost_shake_hand_count_max;
 
+            //modify by regulus:fix redefine cause ver_req duplication error
             //bool m_login_success;
 
             steady_timer m_wait_ver_req_timer;
