@@ -183,12 +183,32 @@ namespace matrix
 
         int32_t connection_manager::stop_all_channel()
         {
-            read_lock_guard<rw_lock> lock(m_lock_chnl);
-            for (auto it = m_channels.begin(); it != m_channels.end(); it++)
+            std::shared_ptr<matrix::core::channel> channel;
+            while(true)
             {
-                LOG_DEBUG << "connection manager stop tcp channel at  " << it->second->id().to_string();
-                it->second->stop();
+                {
+                    read_lock_guard<rw_lock> lock(m_lock_chnl);
+                    if (m_channels.begin() != m_channels.end())
+                    {
+                        channel = m_channels.begin()->second;
+                    }
+                }
+                if (channel)
+                {
+                    channel->stop();
+                    channel.reset();
+                }
+                else
+                {
+                    break;
+                }
             }
+
+            //while (m_channels.begin() == m_channels.end())
+            //{
+            //    LOG_DEBUG << "connection manager stop tcp channel at  " << m_channels.begin()->second->id().to_string();
+            //    m_channels.begin()->second->stop();
+            //}
 
             return E_SUCCESS;
         }
