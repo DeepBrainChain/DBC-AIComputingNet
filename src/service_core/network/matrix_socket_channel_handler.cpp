@@ -54,6 +54,11 @@ namespace matrix
                 {
 
                     LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
+                    
+                    //callback
+                    msg->header.src_sid = m_sid;
+                    on_after_msg_received(*msg);
+
 
                     //send to bus
                     if (msg->get_name() != SHAKE_HAND_REQ 
@@ -63,9 +68,9 @@ namespace matrix
                         TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
                     }
 
+                    
                     //callback
-                    on_after_msg_received(*msg);
-
+                    //on_after_msg_received(*msg);
                     //has message
                     set_has_message(*msg);
 

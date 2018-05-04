@@ -258,7 +258,7 @@ namespace matrix
                     return E_DEFAULT;
                 }
 
-                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " send buf: " << m_send_buf->to_string();
+                LOG_DEBUG << "tcp socket channel tcp_socket_channel write " << m_sid.to_string() << " send buf: " << m_send_buf->to_string();
 
                 //send directly
                 async_write(m_send_buf);
@@ -286,6 +286,7 @@ namespace matrix
 
         void tcp_socket_channel::async_write(std::shared_ptr<byte_buf> &msg_buf)
         {
+            //LOG_DEBUG << "tcp socket channel tcp_socket_channel::async_write " << m_sid.to_string() << " send buf: " << msg_buf->to_string();
             m_socket.async_write_some(boost::asio::buffer(msg_buf->get_read_ptr(), msg_buf->get_valid_read_len()),
                 boost::bind(&tcp_socket_channel::on_write, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
         }
@@ -339,13 +340,15 @@ namespace matrix
                     //callback
                     shared_ptr<message> msg = m_send_queue.front();
                     m_socket_handler->on_after_msg_sent(*msg);
-
+                    msg = nullptr;
                     //pop from queue
                     m_send_queue.pop_front();
 
                     //send new byte_buf
                     if (0 != m_send_queue.size())
                     {
+                        //send new msg
+                        msg = m_send_queue.front();
                         //encode
                         if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
                         {

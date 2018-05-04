@@ -9,7 +9,10 @@
 **********************************************************************************/
 #include "conf_manager.h"
 #include "env_manager.h"
+#include <iostream> 
+#include <fstream> 
 #include <boost/exception/all.hpp>
+#include <vector>
 
 namespace matrix
 {
@@ -39,13 +42,12 @@ namespace matrix
             //file path
             const fs::path &conf_path = env_manager::get_conf_path();
             const fs::path &peer_path = env_manager::get_peer_path();
-
             try
             {
                 //core.conf
                 std::ifstream conf_ifs(conf_path.generic_string());
                 bpo::store(bpo::parse_config_file(conf_ifs, core_opts), m_args);
-
+                
                 //peer.conf
                 std::ifstream peer_ifs(peer_path.generic_string());
                 bpo::store(bpo::parse_config_file(peer_ifs, peer_opts), m_args);
