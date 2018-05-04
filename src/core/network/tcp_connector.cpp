@@ -162,7 +162,7 @@ namespace matrix
                     reconnect(errorinfo);
                     return;
                 }
-
+                ////modify by regulus:add_channel after channer start
                 //add to connection manager
                 int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
                 if (E_SUCCESS != ret)
