@@ -223,7 +223,7 @@ namespace matrix
         template<typename msg_type>
         void matrix_coder::encode_invoke(message & msg, byte_buf &out, std::shared_ptr<protocol> &proto)
         {
-            std::shared_ptr<msg_type> content = std::dynamic_pointer_cast<msg_type>(msg.content);
+            std::shared_ptr<msg_type> content = std::dynamic_pointer_cast<msg_type>(msg.content);            
 
             content->header.write(proto.get());
             content->body.write(proto.get());

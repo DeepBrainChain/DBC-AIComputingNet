@@ -22,7 +22,7 @@ using namespace boost::asio::ip;
 
 
 #define AI_TRAINING_TASK_TIMER                                      "training_task"
-#define AI_TRAINING_TASK_TIMER_INTERVAL                 (10 * 1000)                                                 //10s timer
+#define AI_TRAINING_TASK_TIMER_INTERVAL                 (30 * 1000)                                                 //30s timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                  4
 
 #define AI_TRAINING_TASK_SCRIPT_HOME                         "/"

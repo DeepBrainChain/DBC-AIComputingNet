@@ -155,7 +155,7 @@ namespace matrix
             if (timeout > 0)
             {
                 endpoint += "?t=";
-                endpoint += timeout;
+                endpoint += std::to_string(timeout);
             }
 
             //req content, headers, resp

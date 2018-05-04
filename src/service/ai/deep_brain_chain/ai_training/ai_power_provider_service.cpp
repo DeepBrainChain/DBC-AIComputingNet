@@ -170,7 +170,7 @@ namespace ai
             assert(nullptr != req);
 
             //relay start training in network
-            LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes" << req->body.task_id;
+            LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
             CONNECTION_MANAGER->broadcast_message(msg);
 
             //check node id
@@ -245,8 +245,9 @@ namespace ai
         {
             std::shared_ptr<stop_training_req> req = std::dynamic_pointer_cast<stop_training_req>(msg->get_content());
             assert(nullptr != req);
+            
             //relay on stop_training to network(maybe task running on multiple nodes)
-            LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes" << req->body.task_id;
+            LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
             CONNECTION_MANAGER->broadcast_message(msg);
 
             //check task_id
@@ -254,38 +255,47 @@ namespace ai
             {
                 LOG_DEBUG << "ai power provider service training queuing task is empty";
                 return E_SUCCESS;
-            }   
+            }
+            
             std::shared_ptr<ai_training_task> sp_task;
             const std::string& task_id = std::dynamic_pointer_cast<stop_training_req>(msg->get_content())->body.task_id;
-            for (auto task : m_queueing_tasks)
+
+            //find from queue
+            auto it = m_queueing_tasks.begin();
+            for ( ; it != m_queueing_tasks.end(); it++)
             {
-                if (task->task_id == task_id)
+                if ((*it)->task_id == task_id)
                 {
-                    sp_task = task;
+                    sp_task = *it;
                     break;
                 }
             }
 
-            if (sp_task)//found
+            if (sp_task) //found
             {
-                LOG_DEBUG << "stop training, task_status=" << sp_task->status << endl;
+                LOG_DEBUG << "stop training, task_status: " << sp_task->status << endl;
 
-                if (sp_task->status == task_running)
+                if (task_running == sp_task->status)
                 {
                     //stop container
                     int32_t ret = m_container_client->stop_container(sp_task->container_id);
                     if (E_SUCCESS != ret)
                     {
                         LOG_ERROR << "ai power provider service stop container error, container id: " << sp_task->container_id;
-                        return E_DEFAULT;
                     }
                 }
-                else if (sp_task->status == task_queueing)
-                {
-                    sp_task->status = task_stopped;
-                    //flush to db: update status
-                    write_task_to_db(sp_task);
-                }
+
+                //remove from queue
+                m_queueing_tasks.erase(it);
+
+                //flush to db: update status
+                sp_task->status = task_stopped;
+                write_task_to_db(sp_task);
+
+            }
+            else
+            {
+                LOG_DEBUG << "stop training, not found task: " << task_id << endl;
             }
 
             return E_SUCCESS;
@@ -376,7 +386,7 @@ namespace ai
             }
             else if (task_running == task->status)
             {
-                LOG_DEBUG << "ai power provider service training start check ai training task status" << task->task_id;
+                LOG_DEBUG << "ai power provider service training start check ai training task: " << task->task_id;
                 return check_training_task_status(task);
             }
             else

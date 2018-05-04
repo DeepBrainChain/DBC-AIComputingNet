@@ -95,7 +95,7 @@ namespace matrix
 
             std::shared_ptr<socket_channel_handler> m_socket_handler;
 
-            channel_handler_context m_handler_context;
+            //channel_handler_context m_handler_context;
 
             tcp::socket m_socket;
 

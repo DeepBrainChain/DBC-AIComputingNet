@@ -160,7 +160,8 @@ namespace matrix
                 LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " rev buf: " << m_recv_buf.to_string();
 
                 //call back handler on_read
-                if (E_SUCCESS == m_socket_handler->on_read(m_handler_context, m_recv_buf))
+                channel_handler_context handler_context;
+                if (E_SUCCESS == m_socket_handler->on_read(handler_context, m_recv_buf))
                 {
                     //next read
                     async_read();
@@ -221,7 +222,8 @@ namespace matrix
                 m_send_buf->reset();                     //queue is empty means send buf has been sent completely
 
                 //encode
-                if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
+                channel_handler_context handler_context;
+                if (E_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                 {
                     LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                     on_error();
@@ -310,8 +312,12 @@ namespace matrix
                     //send new byte_buf
                     if (0 != m_send_queue.size())
                     {
+                        //get head msg
+                        msg = m_send_queue.front();
+
                         //encode
-                        if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
+                        channel_handler_context handler_context;
+                        if (E_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                         {
                             LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                             on_error();
