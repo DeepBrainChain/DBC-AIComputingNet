@@ -340,6 +340,7 @@ namespace matrix
                     //callback
                     shared_ptr<message> msg = m_send_queue.front();
                     m_socket_handler->on_after_msg_sent(*msg);
+                    //modify by regulus
                     msg = nullptr;
                     //pop from queue
                     m_send_queue.pop_front();
@@ -347,7 +348,7 @@ namespace matrix
                     //send new byte_buf
                     if (0 != m_send_queue.size())
                     {
-                        //send new msg
+                        //modify by regulus:send new msg
                         msg = m_send_queue.front();
                         //encode
                         if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
