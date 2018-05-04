@@ -55,6 +55,7 @@ namespace matrix
 
                     LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
                     
+                    //modify by regulus: fix ver_req duplication error. 
                     //callback
                     msg->header.src_sid = m_sid;
                     on_after_msg_received(*msg);
@@ -64,7 +65,7 @@ namespace matrix
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
                     {
-                        msg->header.src_sid = m_sid;
+                        //msg->header.src_sid = m_sid;
                         TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
                     }
 
