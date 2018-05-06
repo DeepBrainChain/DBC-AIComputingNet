@@ -17,6 +17,7 @@
 #include "server.h"
 #include "matrix_types.h"
 #include "console_printer.h"
+#include "ai_power_provider_service.h"
 
 
 using namespace std;
@@ -153,7 +154,7 @@ namespace ai
                 printer << matrix::core::init << "task_id" << "task_status" << matrix::core::endl;
                 for (auto it = task_status_list.begin(); it != task_status_list.end(); it++)
                 {
-                    printer << matrix::core::init << it->task_id << it->status << matrix::core::endl;
+                    printer << matrix::core::init << it->task_id << to_training_task_status_string(it->status) << matrix::core::endl;
                 }
             }
         };

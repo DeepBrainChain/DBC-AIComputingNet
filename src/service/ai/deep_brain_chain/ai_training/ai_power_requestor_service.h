@@ -22,6 +22,11 @@ using namespace boost::asio::ip;
 
 namespace fs = boost::filesystem;
 
+
+#define LIST_TRAINING_TIMER_INTERVAL                     (25 * 1000)                                         //25s
+#define LIST_TRAINING_TIMER                                         "list_training_timer"
+
+
 namespace ai
 {
     namespace dbc
@@ -47,6 +52,8 @@ namespace ai
 
             int32_t init_db();
 
+            void init_timer();
+
             virtual int32_t service_init(bpo::variables_map &options);
 
         protected:
@@ -60,6 +67,8 @@ namespace ai
             int32_t on_list_training_resp(std::shared_ptr<message> &msg);
 
             int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm);
+
+            int32_t on_list_training_timer(std::shared_ptr<core_timer> timer);
 
         protected:
 

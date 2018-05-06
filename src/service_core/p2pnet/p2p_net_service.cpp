@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºp2p_net_service.cpp
-* description    £ºp2p net service
+* file name          p2p_net_service.cpp
+* description        p2p net service
 * date                  : 2018.01.28
-* author            £ºBruce Feng
+* author              Bruce Feng
 **********************************************************************************/
 #include "p2p_net_service.h"
 #include <cassert>
@@ -345,13 +345,13 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid)
+        bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version)
         {
             std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
             node->m_id = nid;
             node->m_sid = sid;
-            node->m_core_version = CORE_VERSION;
-            node->m_protocol_version = PROTOCO_VERSION;
+            node->m_core_version = core_version;
+            node->m_protocol_version = protocol_version;
             node->m_connected_time = std::time(nullptr);
             node->m_live_time = 0;
             node->m_connection_status = connected;
@@ -367,6 +367,7 @@ namespace matrix
             {
                 LOG_ERROR << nid << "not find in connected channels.";
             }
+            
             write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
 
@@ -381,6 +382,9 @@ namespace matrix
 
         int32_t p2p_net_service::on_ver_req(std::shared_ptr<message> &msg)
         {
+            std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
+            assert(nullptr != req_content);
+
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
@@ -391,18 +395,37 @@ namespace matrix
             resp_content->header.__set_nonce(id_generator().generate_nonce());
 
             //body
-            resp_content->body.version = PROTOCO_VERSION;
+            resp_content->body.node_id = CONF_MANAGER->get_node_id();
+            resp_content->body.core_version = CORE_VERSION;
+            resp_content->body.protocol_version = PROTOCO_VERSION;
 
             resp_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
             resp_msg->set_name(VER_RESP);
             resp_msg->header.dst_sid = msg->header.src_sid;
 
             CONNECTION_MANAGER->send_message(resp_msg->header.dst_sid, resp_msg);
+
+            //add new peer node
+            if (!add_peer_node(msg->header.src_sid, req_content->body.node_id, req_content->body.core_version, req_content->body.protocol_version))
+            {
+                LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed.";
+                return E_DEFAULT;
+            }
+
             return E_SUCCESS;
         }
 
         int32_t p2p_net_service::on_ver_resp(std::shared_ptr<message> &msg)
         {
+            std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::dynamic_pointer_cast<matrix::service_core::ver_resp>(msg->content);
+
+            //add new peer node
+            if (!add_peer_node(msg->header.src_sid, resp_content->body.node_id, resp_content->body.core_version, resp_content->body.protocol_version))
+            {
+                LOG_ERROR << "add node( " << resp_content->body.node_id << " ) failed.";
+                return E_DEFAULT;
+            }
+
             return E_SUCCESS;
         }
 
@@ -441,7 +464,9 @@ namespace matrix
                 req_content->header.__set_nonce(id_generator().generate_nonce());
 
                 //body
-                req_content->body.version = PROTOCO_VERSION;
+                req_content->body.node_id = CONF_MANAGER->get_node_id();
+                req_content->body.core_version = CORE_VERSION;
+                req_content->body.protocol_version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
                 req_content->body.addr_me.ip = get_host_ip();
                 req_content->body.addr_me.port = get_main_net_listen_port();
@@ -562,9 +587,9 @@ namespace matrix
 
         int32_t p2p_net_service::on_p2p_new_peer_node(std::shared_ptr<message> &msg)
         {
-            if (!msg)
+            /*if (!msg)
             {
-                LOG_ERROR << "null msg";
+                LOG_ERROR << "p2p net service on p2p new peer node null msg";
                 return E_DEFAULT;
             }
 
@@ -572,7 +597,7 @@ namespace matrix
             std::shared_ptr<msg_new_node> msg_node = std::dynamic_pointer_cast<msg_new_node>(msg->get_content());
             if (!msg_node)
             {
-                LOG_ERROR << "null msg";
+                LOG_ERROR << "p2p net service on p2p new peer node null msg node";
                 return E_DEFAULT;
             }
 
@@ -580,7 +605,7 @@ namespace matrix
             {
                 LOG_ERROR << "add node(" << msg_node->node_id << ") failed.";
                 return E_DEFAULT;
-            }
+            }*/
 
             return E_SUCCESS;
         }

@@ -62,6 +62,12 @@ namespace matrix
                         {
                             msg->header.src_sid = m_channel->id();
                             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+
+                            LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce;
+                        }
+                        else
+                        {
+                            LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
                         }
                     }
 
@@ -93,6 +99,19 @@ namespace matrix
             encode_status status = m_coder->encode(ctx, msg, buf);
             if (ENCODE_SUCCESS == status)
             {
+                if (msg.get_name() != SHAKE_HAND_REQ
+                    && msg.get_name() != SHAKE_HAND_RESP)
+                {
+                    variables_map & vm = ctx.get_args();
+                    assert(vm.count("nonce") > 0);
+                    const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
+
+                    //insert nonce to avoid receive msg sent by itself
+                    service_proto_filter::get_mutable_instance().insert_nonce(nonce);
+
+                    LOG_DEBUG << "matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce;
+                }
+
                 //has message
                 set_has_message(msg);
 

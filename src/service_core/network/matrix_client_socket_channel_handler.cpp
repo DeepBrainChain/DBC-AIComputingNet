@@ -67,16 +67,19 @@ namespace matrix
                     start_shake_hand_timer();
                     LOG_DEBUG << "matrix client socket channel handler start shake hand timer, socket number: " << m_channel->id().get_id();
 
-                    using msg_new_node = matrix::service_core::msg_new_peer_node;
+                    //publish new node
+                    /*using msg_new_node = matrix::service_core::msg_new_peer_node;
                     shared_ptr<msg_new_node> msg_node = std::make_shared<msg_new_node>();
                     msg_node->sid = m_channel->id();
-                    msg_node->node_id = "node_id";//todo ...
+                    std::shared_ptr<ver_resp> resp_content = std::dynamic_pointer_cast<ver_resp>(msg.content);
+                    assert(nullptr != resp_content);
+                    msg_node->node_id = resp_content->body.node_id;
 
                     std::shared_ptr<matrix::core::message> msg = std::make_shared<matrix::core::message>();
                     msg->set_name(P2P_NEW_PEER_NODE);
                     msg->set_content(msg_node);
 
-                    TOPIC_MANAGER->publish<int32_t>(P2P_NEW_PEER_NODE, msg);
+                    TOPIC_MANAGER->publish<int32_t>(P2P_NEW_PEER_NODE, msg);*/
 
                     return E_SUCCESS;
                 }

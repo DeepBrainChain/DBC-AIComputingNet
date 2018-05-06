@@ -19,11 +19,12 @@ namespace matrix
     namespace core
     {
 
-        core_timer::core_timer(const std::string &name, uint32_t period, uint64_t repeat_times)
+        core_timer::core_timer(const std::string &name, uint32_t period, uint64_t repeat_times, const std::string & session_id)
             : m_name(name)
             , m_period(period)
             , m_repeat_times(repeat_times)
             , m_timer_id(0)
+            , m_session_id(session_id)
         {
             init();
         }

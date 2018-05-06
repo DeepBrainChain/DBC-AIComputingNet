@@ -1206,6 +1206,12 @@
     <ClInclude Include="..\..\..\..\src\core\crypto\crypto_endian.h">
       <Filter>src\core\crypto</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\session.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\service_module\service_context.h">
+      <Filter>src\core\service_module</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslconf.h.in">

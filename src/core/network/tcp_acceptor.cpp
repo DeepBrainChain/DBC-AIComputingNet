@@ -68,10 +68,6 @@ namespace matrix
             auto server_channel = std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), sid, m_handler_create_func, DEFAULT_BUF_LEN);
             assert(server_channel != nullptr);
 
-            //add to connection manager
-            int32_t ret = CONNECTION_MANAGER->add_channel(sid, std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()));
-            assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
-
             //async accept
             m_acceptor.async_accept(server_channel->get_socket(), boost::bind(&tcp_acceptor::on_accept, shared_from_this(), std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()), boost::asio::placeholders::error));
 
@@ -88,6 +84,10 @@ namespace matrix
                 create_channel();//?
                 return E_DEFAULT;
             }
+
+            //add to connection manager
+            int32_t ret = CONNECTION_MANAGER->add_channel(ch->id(), std::dynamic_pointer_cast<tcp_socket_channel>(ch)->shared_from_this());
+            assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
 
             //start run
             ch->start();

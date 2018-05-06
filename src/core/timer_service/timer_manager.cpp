@@ -31,7 +31,7 @@ namespace matrix
             remove_all_timers();
         }
 
-        uint32_t timer_manager::add_timer(const std::string &name, uint32_t period, uint64_t repeat_times)
+        uint32_t timer_manager::add_timer(const std::string &name, uint32_t period, uint64_t repeat_times, const std::string & session_id)
         {
             if (repeat_times < 1 || period < DEFAULT_TIMER_INTERVAL)
             {
@@ -39,7 +39,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            std::shared_ptr<core_timer> timer(new core_timer(name, period, repeat_times));
+            std::shared_ptr<core_timer> timer(new core_timer(name, period, repeat_times, session_id));
             timer->set_timer_id(++m_timer_alloc_id);                //timer id begins from 1, 0 is invalid timer id
             m_timer_queue.push_back(timer);
 
@@ -70,6 +70,7 @@ namespace matrix
         int32_t timer_manager::process(uint64_t time_tick)
         {
             std::shared_ptr<core_timer> timer;
+            std::list<uint32_t> remove_timers_list;
 
             for (auto it = m_timer_queue.begin(); it != m_timer_queue.end(); it++)
             {
@@ -86,7 +87,7 @@ namespace matrix
                     timer->desc_repeat_times();
                     if (0 == timer->get_repeat_times())
                     {
-                        remove_timer(timer->get_timer_id());                    //remove timer life period
+                        remove_timers_list.push_back(timer->get_timer_id());
                     }
                     else
                     {
@@ -94,6 +95,14 @@ namespace matrix
                     }
                 }
             }
+
+            //remove timers
+            for (auto it : remove_timers_list)
+            {
+                remove_timer(it);                    //remove timer life period
+            }
+
+            remove_timers_list.clear();
 
             return E_SUCCESS;
         }
