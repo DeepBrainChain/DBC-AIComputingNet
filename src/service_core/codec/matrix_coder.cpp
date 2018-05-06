@@ -47,7 +47,9 @@ namespace matrix
 
             BIND_DECODE_INVOKER(start_training_req);
             BIND_DECODE_INVOKER(stop_training_req);
+
             BIND_DECODE_INVOKER(list_training_req);
+            BIND_DECODE_INVOKER(list_training_resp);
         }
 
         void matrix_coder::init_encode_invoker()
@@ -67,7 +69,9 @@ namespace matrix
 
             BIND_ENCODE_INVOKER(start_training_req);
             BIND_ENCODE_INVOKER(stop_training_req);
+
             BIND_ENCODE_INVOKER(list_training_req);
+            BIND_ENCODE_INVOKER(list_training_resp);
 
         }
 
@@ -199,7 +203,7 @@ namespace matrix
 
                 //body invoker
                 auto invoker = it->second;
-                invoker(msg, out, proto);
+                invoker(ctx, proto, msg, out);
 
                 //get msg length and net endiuan and fill in
                 uint32_t msg_len = out.get_valid_read_len();
@@ -221,12 +225,17 @@ namespace matrix
         }
 
         template<typename msg_type>
-        void matrix_coder::encode_invoke(message & msg, byte_buf &out, std::shared_ptr<protocol> &proto)
+        void matrix_coder::encode_invoke(channel_handler_context &ctx, std::shared_ptr<protocol> &proto, message & msg, byte_buf &out)
         {
             std::shared_ptr<msg_type> content = std::dynamic_pointer_cast<msg_type>(msg.content);            
 
             content->header.write(proto.get());
             content->body.write(proto.get());
+
+            //pass context to caller
+            variable_value val;
+            val.value() = content->header.__isset.nonce ? content->header.nonce : DEFAULT_STRING;
+            ctx.get_args().insert(std::make_pair("nonce", val));
         }
 
     }

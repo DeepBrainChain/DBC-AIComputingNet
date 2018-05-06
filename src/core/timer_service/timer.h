@@ -14,6 +14,10 @@
 #include <chrono>
 #include "common.h"
 
+
+#define ONLY_ONE_TIME                                               1
+
+
 namespace matrix
 {
     namespace core
@@ -23,7 +27,7 @@ namespace matrix
         public:
 
             //unit: ms
-            core_timer(const std::string &name, uint32_t period, uint64_t repeat_times);
+            core_timer(const std::string &name, uint32_t period, uint64_t repeat_times, const std::string & session_id);
 
             void init();
 
@@ -46,6 +50,10 @@ namespace matrix
 
             uint64_t get_repeat_times() const { return m_repeat_times; }
 
+            std::string get_session_id() { return m_session_id; }
+
+            void set_session_id(std::string session_id) { m_session_id = session_id; }
+
         protected:
 
             std::string m_name;
@@ -63,6 +71,8 @@ namespace matrix
 #endif
 
             uint32_t m_period_as_tick;
+
+            std::string m_session_id;
 
         };
 

@@ -33,7 +33,7 @@ using namespace std::placeholders;
                                                                                                 m_binary_decode_invokers[#MSG_TYPE] = invoker;
 
 #define DECLARE_ENCODE_INVOKER                       encode_invoker_type invoker;
-#define BIND_ENCODE_INVOKER(MSG_TYPE)       invoker = std::bind(&matrix_coder::encode_invoke<MSG_TYPE>, this, _1, _2, _3); \
+#define BIND_ENCODE_INVOKER(MSG_TYPE)       invoker = std::bind(&matrix_coder::encode_invoke<MSG_TYPE>, this, _1, _2, _3, _4); \
                                                                                                 m_binary_encode_invokers[#MSG_TYPE] = invoker;
 
 #define THRIFT_BINARY_PROTO                                0
@@ -58,7 +58,7 @@ namespace matrix
 
             using decode_invoker_type = typename std::function<void(shared_ptr<message> &, msg_header &, shared_ptr<protocol> &)>;
 
-            using encode_invoker_type = typename std::function<void(message & , byte_buf &, shared_ptr<protocol> &)>;
+            using encode_invoker_type = typename std::function<void(channel_handler_context &, std::shared_ptr<protocol> &, message & , byte_buf &)>;
 
         public:
 
@@ -92,7 +92,7 @@ namespace matrix
             void decode_invoke(std::shared_ptr<message> &msg, msg_header &msg_header, std::shared_ptr<protocol> &proto);
 
             template<typename msg_type>
-            void encode_invoke(message & msg, byte_buf &out, std::shared_ptr<protocol> &proto);
+            void encode_invoke(channel_handler_context &ctx, std::shared_ptr<protocol> &proto, message & msg, byte_buf &out);
 
         protected:            
 

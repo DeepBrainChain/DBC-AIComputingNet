@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#set -x
+
+SYSTEM=`uname -s`
+USERID=`id -u`
+
+myecho()
+{
+    if [ "$SYSTEM" = "Linux" ]; then
+        echo -e $1
+        return
+    fi
+    
+    echo $1
+}
+
+echo "UID        PID     PPID C STIME TTY      TIME     CMD"
+
+ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "startapp") || ($8~/\/startapp$/))) print}'
+
+NAME_PROC="dbc"
+
+for PROC in ${NAME_PROC}
+do
+
+    ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC}'") || ($8~/\/'${PROC}'$/))) print}' 
+
+done
+
+myecho "\n"
+
+#set +x 
+

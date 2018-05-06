@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��ai_power_provider_service.cpp
-* description    ��ai_power_provider_service
+* file name        ai_power_provider_service.cpp
+* description    ai_power_provider_service
 * date                  : 2018.01.28
-* author            ��Bruce Feng
+* author            Bruce Feng
 **********************************************************************************/
 #include <cassert>
 #include <boost/exception/all.hpp>
@@ -31,6 +31,27 @@ namespace ai
 {
     namespace dbc
     {
+
+        std::string to_training_task_status_string(int8_t status)
+        {
+            switch (status)
+            {
+            case task_unknown:
+                return "task_unknown";
+            case task_queueing:
+                return "task_queueing";
+            case task_running:
+                return "task_running";
+            case task_stopped:
+                return "task_stopped";
+            case task_succefully_closed:
+                return "task_succefully_closed";
+            case task_abnormally_closed:
+                return "task_abnormally_closed";
+            default:
+                return DEFAULT_STRING;
+            }
+        }
 
         ai_power_provider_service::ai_power_provider_service()
             : m_prov_training_task_db()
@@ -92,7 +113,7 @@ namespace ai
         void ai_power_provider_service::init_subscription()
         {
             TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
-            
+
             //stop training
             TOPIC_MANAGER->subscribe(STOP_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
 
@@ -245,7 +266,7 @@ namespace ai
         {
             std::shared_ptr<stop_training_req> req = std::dynamic_pointer_cast<stop_training_req>(msg->get_content());
             assert(nullptr != req);
-            
+
             //relay on stop_training to network(maybe task running on multiple nodes)
             LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
             CONNECTION_MANAGER->broadcast_message(msg);
@@ -256,13 +277,13 @@ namespace ai
                 LOG_DEBUG << "ai power provider service training queuing task is empty";
                 return E_SUCCESS;
             }
-            
+
             std::shared_ptr<ai_training_task> sp_task;
             const std::string& task_id = std::dynamic_pointer_cast<stop_training_req>(msg->get_content())->body.task_id;
 
             //find from queue
             auto it = m_queueing_tasks.begin();
-            for ( ; it != m_queueing_tasks.end(); it++)
+            for (; it != m_queueing_tasks.end(); it++)
             {
                 if ((*it)->task_id == task_id)
                 {
@@ -304,65 +325,53 @@ namespace ai
         int32_t ai_power_provider_service::on_list_training_req(std::shared_ptr<message> &msg)
         {
             LOG_DEBUG << "ai power provider service relay broadcast list_training req to neighbor peer nodes";
-            std::shared_ptr<list_training_req> req = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
-            assert(nullptr != req);
-            bool is_list_all = false;
-            if (req->body.task_list.size() == 0)
+            std::shared_ptr<list_training_req> req_content = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
+            assert(nullptr != req_content);
+
+            if (req_content->body.task_list.size() == 0)
             {
-                LOG_DEBUG << "recv req to list all tasks";
-                is_list_all = true;
-                return E_SUCCESS;
+                LOG_DEBUG << "ai power provider service recv empty list training tasks";
+                return E_DEFAULT;
             }
-            else
-            {
-                for (auto t : req->body.task_list)
-                {
-                    LOG_DEBUG << "list_task: task=" << t;
-                }
-            }
+
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
             CONNECTION_MANAGER->broadcast_message(msg);
 
-            if (0 == m_queueing_tasks.size())
+            if (0 == m_training_tasks.size())
             {
                 LOG_DEBUG << "ai power provider service training queuing task is empty";
                 return E_SUCCESS;
             }
 
-            std::shared_ptr<matrix::service_core::list_training_resp> rsp_ctn = std::make_shared<matrix::service_core::list_training_resp>();
-            if (is_list_all)
+            std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::make_shared<matrix::service_core::list_training_resp>();
+
+            for (auto tid : req_content->body.task_list)
             {
-                for (auto task : m_queueing_tasks)
+                //find task
+                auto it = m_training_tasks.find(tid);
+                if (it == m_training_tasks.end())
                 {
-                    matrix::service_core::task_status ts;
-                    ts.task_id = task->task_id;
-                    ts.status = task->status;
-                    rsp_ctn->body.task_status_list.push_back(ts);
+                    continue;
                 }
+
+                matrix::service_core::task_status ts;
+                ts.task_id = it->second->task_id;
+                ts.status = it->second->status;
+                rsp_content->body.task_status_list.push_back(ts);
             }
-            else
-            {
-                for (auto tid : req->body.task_list)
-                {
-                    auto task = get_training_task(tid);
-                    if (task)
-                    {
-                        matrix::service_core::task_status ts;
-                        ts.task_id = task->task_id;
-                        ts.status = task->status;
-                        rsp_ctn->body.task_status_list.push_back(ts);
-                    }
-                }
-            }
-            if (!rsp_ctn->body.task_status_list.empty())
+
+            if (!rsp_content->body.task_status_list.empty())
             {
                 //content header
-                rsp_ctn->header.magic = TEST_NET;
-                rsp_ctn->header.msg_name = LIST_TRAINING_RESP;
+                rsp_content->header.magic = TEST_NET;
+                rsp_content->header.msg_name = LIST_TRAINING_RESP;
+                rsp_content->header.__set_nonce(id_generator().generate_nonce());
+                rsp_content->header.__set_session_id(req_content->header.session_id);
+
                 //resp msg
                 std::shared_ptr<message> resp_msg = std::make_shared<message>();
-                resp_msg->set_name(LIST_TRAINING_RESP);                
-                resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_ctn));
+                resp_msg->set_name(LIST_TRAINING_RESP);
+                resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_content));
                 CONNECTION_MANAGER->broadcast_message(resp_msg);
             }
 
@@ -614,16 +623,6 @@ namespace ai
             return E_SUCCESS;
         }
 
-        std::shared_ptr<ai_training_task> ai_power_provider_service::get_training_task(const std::string &taskid)
-        {
-            for (auto task : m_queueing_tasks)
-            {
-                if (task->task_id == taskid)
-                {
-                    return task;
-                }
-            }
-            return nullptr;
-        }
     }
+
 }

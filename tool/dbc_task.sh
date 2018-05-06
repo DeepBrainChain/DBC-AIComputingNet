@@ -18,6 +18,20 @@ code_dir_hash=$2
 task=$3
 
 
+myecho()
+{
+    if [ "$SYSTEM" = "Linux" ]; then
+        echo -e $1
+        return
+    fi
+    
+    echo $1
+}
+
+
+
+myecho "\n\n"
+
 echo "======================================================="
 echo "begin to exec dbc_task.sh"
 
@@ -39,6 +53,8 @@ sleep $sleep_time
 
 
 
+myecho "\n\n"
+
 #start ipfs
 echo "======================================================="
 echo "begin to start ipfs"
@@ -57,6 +73,9 @@ echo "end to start ipfs"
 sleep $sleep_time
 
 
+
+myecho "\n\n"
+
 #create dir
 echo "======================================================="
 if [ ! -d $home_dir ]; then
@@ -67,12 +86,12 @@ cd $home_dir
 
 #download data_dir
 echo "======================================================="
-echo -n "begin to download data dir:"
+echo -n "begin to download data dir: "
 echo $data_dir_hash
 ipfs get $data_dir_hash
 
 exit_code=$?
-#echo -n "download data dir exitcode:"
+#echo -n "download data dir exitcode: "
 #echo $exit_code
 
 if [ $? -ne 0 ]; then
@@ -80,20 +99,22 @@ if [ $? -ne 0 ]; then
 	exit
 fi
 
-echo -n "end to download data dir:"
+echo -n "end to download data dir: "
 echo $data_dir_hash
 sleep $sleep_time
 
 
 
+myecho "\n\n"
+
 #download code_dir
 echo "======================================================="
-echo -n "begin to download code dir"
+echo -n "begin to download code dir: "
 echo $code_dir_hash
 ipfs get $code_dir_hash
 
 exit_code=$?
-#echo -n "download data dir exitcode:"
+#echo -n "download data dir exitcode: "
 #echo $exit_code
 
 if [ $? -ne 0 ]; then
@@ -104,6 +125,9 @@ fi
 echo -n "end to download code dir"
 echo $code_dir_hash
 sleep $sleep_time
+
+
+myecho "\n\n"
 
 #start exec task
 echo "======================================================="
@@ -120,12 +144,20 @@ echo -n "end to exec task"
 echo $home_dir/$code_dir_hash/$task
 
 
+
+myecho "\n\n"
+
+
 #stop ipfs
+echo "======================================================="
 PROC_NAME='ipfs'
 PROC_ID=`ps -aef | grep ipfs | grep -v grep | awk ' {print $2}'`
-echo -n "ipfs daemon pid:"
+echo -n "ipfs daemon pid: "
 echo $PROC_ID
 kill -TERM $PROC_ID
+
+
+myecho "\n\n"
 
 echo "======================================================="
 echo "end to exec dbc_task.sh and ready to say goodbye!:-)"

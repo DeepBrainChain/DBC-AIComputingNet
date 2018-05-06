@@ -52,9 +52,9 @@ namespace matrix
 
             socket_id m_sid;                                //if connected directly, it has socket id
 
-            std::string m_core_version;
+            int32_t m_core_version;
 
-            std::string m_protocol_version;
+            int32_t m_protocol_version;
 
             int64_t m_connected_time;
 

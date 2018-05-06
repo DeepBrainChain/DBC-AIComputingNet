@@ -32,16 +32,16 @@ namespace matrix
             module->run();
         }
 
-        service_module::service_module() 
-            : m_exited(false), 
-              m_module_task(module_task), 
-              m_timer_manager(new timer_manager(this))
+        service_module::service_module()
+            : m_exited(false),
+            m_module_task(module_task),
+            m_timer_manager(new timer_manager(this))
         {
-            
+
         }
-        
+
         int32_t service_module::init(bpo::variables_map &options)
-        {            
+        {
             init_timer();
 
             init_invoker();
@@ -60,13 +60,13 @@ namespace matrix
 
         int32_t service_module::start()
         {
-            m_thread = std::make_shared<std::thread> (m_module_task, this);
+            m_thread = std::make_shared<std::thread>(m_module_task, this);
             return E_SUCCESS;
         }
 
         int32_t service_module::run()
         {
-			queue_type tmp_msg_queue;
+            queue_type tmp_msg_queue;
             while (!m_exited)
             {
                 //check memory leak
@@ -77,18 +77,18 @@ namespace matrix
                     m_cond.wait_for(lock, ms, [this]()->bool {return !(this->is_empty());});
                     if (is_empty())
                         continue;
-					m_msg_queue.swap(tmp_msg_queue);
+                    m_msg_queue.swap(tmp_msg_queue);
                 }
 
-				//invoke each
-				std::shared_ptr<message> msg;
-				while(!tmp_msg_queue.empty())
-				{
-					//pop msg
-					msg = tmp_msg_queue.front();
-					tmp_msg_queue.pop();
-					on_invoke(msg);
-				}
+                //invoke each
+                std::shared_ptr<message> msg;
+                while (!tmp_msg_queue.empty())
+                {
+                    //pop msg
+                    msg = tmp_msg_queue.front();
+                    tmp_msg_queue.pop();
+                    on_invoke(msg);
+                }
             }
 
             return E_SUCCESS;
@@ -191,16 +191,44 @@ namespace matrix
         }
 
 
-        uint32_t service_module::add_timer(std::string name, uint32_t period, uint64_t repeat_times)
+        uint32_t service_module::add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id)
         {
-            return m_timer_manager->add_timer(name, period, repeat_times);
+            return m_timer_manager->add_timer(name, period, repeat_times, session_id);
         }
 
         void service_module::remove_timer(uint32_t timer_id)
         {
             m_timer_manager->remove_timer(timer_id);
         }
-		
+
+        int32_t service_module::add_session(std::string session_id, std::shared_ptr<service_session> session)
+        {
+            auto it = m_sessions.find(session_id);
+            if (it != m_sessions.end())
+            {
+                return E_DEFAULT;
+            }
+
+            m_sessions.insert({ session_id, session });
+            return E_SUCCESS;
+        }
+
+        std::shared_ptr<service_session> service_module::get_session(std::string session_id)
+        {
+            auto it = m_sessions.find(session_id);
+            if (it == m_sessions.end())
+            {
+                return nullptr;
+            }
+
+            return it->second;
+        }
+
+        void service_module::remove_session(std::string session_id)
+        {
+            m_sessions.erase(session_id);
+        }
+
     }
 
 }

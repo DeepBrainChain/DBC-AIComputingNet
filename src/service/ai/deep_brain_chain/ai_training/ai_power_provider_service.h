@@ -45,6 +45,8 @@ namespace ai
             task_abnormally_closed
         };
 
+        std::string to_training_task_status_string(int8_t status);
+
         enum container_status
         {
             container_unknown = 0,
@@ -107,9 +109,6 @@ namespace ai
             int32_t write_task_to_db(std::shared_ptr<ai_training_task> task);
 
             int32_t load_task_from_db();
-
-        private:
-            std::shared_ptr<ai_training_task> get_training_task(const std::string &taskid);
 
         protected:
 

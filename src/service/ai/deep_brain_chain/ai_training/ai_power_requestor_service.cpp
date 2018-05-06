@@ -91,7 +91,7 @@ namespace ai
         int32_t ai_power_requestor_service::init_db()
         {
             leveldb::DB *db = nullptr;
-            leveldb::Options  options;
+            leveldb::Options options;
             options.create_if_missing = true;
 
             //get db path
@@ -124,6 +124,11 @@ namespace ai
             m_req_training_task_db.reset(db);
 
             return E_SUCCESS;
+        }
+
+        void ai_power_requestor_service::init_timer()
+        {
+            m_timer_invokers[LIST_TRAINING_TIMER] = std::bind(&ai_power_requestor_service::on_list_training_timer, this, std::placeholders::_1);
         }
 
         int32_t ai_power_requestor_service::on_cmd_start_training_req(std::shared_ptr<message> &msg)
@@ -226,6 +231,9 @@ namespace ai
             cmd_resp->task_id = broadcast_req_content->body.task_id;
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
+            //flush to db
+            write_task_info_to_db(broadcast_req_content->body.task_id);
+
             return E_SUCCESS;
         }
 
@@ -254,28 +262,87 @@ namespace ai
         int32_t ai_power_requestor_service::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<base> content = msg->get_content();
-            std::shared_ptr<cmd_start_multi_training_req> req = std::dynamic_pointer_cast<cmd_start_multi_training_req>(content);
-            assert(nullptr != req);
-            if (!req)
-            {
-                LOG_ERROR << "null msg";
-                return E_DEFAULT;
-            }
+            std::shared_ptr<cmd_start_multi_training_req> cmd_req_content = std::dynamic_pointer_cast<cmd_start_multi_training_req>(content);
+
             //cmd resp
             std::shared_ptr<ai::dbc::cmd_start_multi_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_multi_training_resp>();
 
+            if (!cmd_req_content)
+            {
+                LOG_ERROR << "ai power requestor service on cmd start multi training received null msg";
+
+                //error resp
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "start multi training error";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            bpo::variables_map multi_vm;
+            bpo::options_description multi_opts("multi task config file options");
+            multi_opts.add_options()
+                ("trainig_file", bpo::value<std::vector<std::string>>(), "");
+
+            try
+            {
+                //parse multi task config file
+                std::ifstream multi_task_conf(cmd_req_content->mulit_task_file_path);
+                bpo::store(bpo::parse_config_file(multi_task_conf, multi_opts), multi_vm);
+                bpo::notify(multi_vm);
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "multi task config file parse error: " << diagnostic_information(e);
+
+                //error resp
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "multi task config file parse error";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+            //parse task config empty
+            if (0 == multi_vm.count("trainig_file") || 0 == multi_vm["trainig_file"].as<std::vector<std::string>>().size())
+            {
+                //error resp
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "multi task config file parse error";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+            //parse each task config
+            bpo::variables_map vm;
             bpo::options_description opts("task config file options");
             add_task_config_opts(opts);
 
-            std::vector<std::string> files;
-            string_util::split(req->mulit_task_file_path, ",", files);
-            for (auto &file : files) {
+            const std::vector<std::string> & files = multi_vm["trainig_file"].as<std::vector<std::string>>();
+
+            for (auto &file : files) 
+            {
                 auto req_msg = create_task_msg_from_file(file, opts);
-                CONNECTION_MANAGER->broadcast_message(req_msg);
-                cmd_resp->task_list.push_back(std::dynamic_pointer_cast<matrix::service_core::start_training_req>(req_msg->content)->body.task_id);
+
+                if (nullptr == req_msg)
+                {
+                    LOG_ERROR << "ai power requestor service create task msg from file error: " << file;
+                    cmd_resp->task_list.push_back(file + ":  parse task config error");
+                }
+                else
+                {
+                    CONNECTION_MANAGER->broadcast_message(req_msg);
+
+                    std::shared_ptr<matrix::service_core::start_training_req> req_content = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(req_msg->content);
+                    assert(nullptr != req_content);
+
+                    cmd_resp->task_list.push_back(req_content->body.task_id);
+
+                    //flush to db
+                    write_task_info_to_db(req_content->body.task_id);
+                }
             }
 
-            //public resp directly            
+            //public resp directly
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
@@ -319,6 +386,7 @@ namespace ai
             auto cmd_req = std::dynamic_pointer_cast<cmd_list_training_req>(msg->get_content());
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             auto req_content = std::make_shared<matrix::service_core::list_training_req>();
+            
             //header
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = LIST_TRAINING_REQ;
@@ -326,7 +394,7 @@ namespace ai
             req_content->header.__set_session_id(id_generator().generate_session_id());
             
             //body
-            if (cmd_req->list_type == 1) //0: list all tasks; 1: list specific tasks
+            if (1 == cmd_req->list_type) //0: list all tasks; 1: list specific tasks
             {
                 req_content->body.task_list.assign(cmd_req->task_list.begin(), cmd_req->task_list.end());
             }
@@ -337,6 +405,34 @@ namespace ai
 
             req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             req_msg->set_name(req_content->header.msg_name);
+
+            //add to timer
+            uint32_t timer_id = add_timer(LIST_TRAINING_TIMER, LIST_TRAINING_TIMER_INTERVAL, ONLY_ONE_TIME, req_content->header.session_id);
+            assert(INVALID_TIMER_ID != timer_id);
+
+            //service session
+            std::shared_ptr<service_session> session = std::make_shared<service_session>(timer_id, req_content->header.session_id);
+
+            //session context
+            variable_value val;
+            val.value() = req_msg;
+            session->get_context().add("req_msg", val);
+
+            variable_value task_ids;
+            task_ids.value() = std::make_shared<std::unordered_map<std::string, int8_t>>();
+            session->get_context().add("task_ids", task_ids);
+
+            //add to session
+            int32_t ret = this->add_session(session->get_session_id(), session);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "ai power requestor service list training add session error: " << session->get_session_id();
+                return E_DEFAULT;
+            }
+            
+            LOG_DEBUG << "ai power requestor service list training add session: " << session->get_session_id();
+
+            //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
             return E_SUCCESS;
@@ -349,28 +445,106 @@ namespace ai
                 LOG_ERROR << "recv list_training_resp but msg is nullptr";
                 return E_DEFAULT;
             }
-            std::shared_ptr<matrix::service_core::list_training_resp> rsp_ctn = std::dynamic_pointer_cast<matrix::service_core::list_training_resp>(msg->content);
-            if (!rsp_ctn)
+
+            std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::dynamic_pointer_cast<matrix::service_core::list_training_resp>(msg->content);
+            if (!rsp_content)
             {
                 LOG_ERROR << "recv list_training_resp but ctn is nullptr";
                 return E_DEFAULT;
             }
+
             //broadcast resp
             CONNECTION_MANAGER->broadcast_message(msg);
 
-            //public cmd resp
+            //get session
+            std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
+            if (nullptr == session)
+            {
+                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
+                return E_DEFAULT;
+            }
+
+            variables_map & vm = session->get_context().get_args();
+            assert(vm.count("req_msg") > 0);
+            assert(vm.count("task_ids") > 0);
+            std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
+            std::shared_ptr<message> req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+
+            for (auto ts : rsp_content->body.task_status_list)
+            {
+                LOG_DEBUG << "recv list_training_resp: " << ts.task_id << " : " << ts.status;
+                task_ids->insert({ts.task_id, ts.status});
+            }
+
+            auto req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
+
+            if (task_ids->size() < req_content->body.task_list.size())
+            {
+                LOG_DEBUG << "ai power requestor service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
+                return E_SUCCESS;
+            }
+
+            //publish cmd resp
             std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-            for (auto ts : rsp_ctn->body.task_status_list)
+            for (auto it = task_ids->begin(); it != task_ids->end(); it++)
             {
-                LOG_DEBUG << "recv list_training_resp: " << ts.task_id << " : " << ts.status;
                 cmd_task_status cts;
-                cts.task_id = ts.task_id;
-                cts.status = ts.status;
+                cts.task_id = it->first;
+                cts.status = it->second;
                 cmd_resp->task_status_list.push_back(std::move(cts));
             }
+
+            //return cmd resp
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+
+            //remember: remove timer
+            this->remove_timer(session->get_timer_id());
+
+            //remember: remove session
+            session->clear();
+            this->remove_session(session->get_session_id());
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_requestor_service::on_list_training_timer(std::shared_ptr<core_timer> timer)
+        {
+            assert(nullptr != timer);
+
+            //get session
+            const string &session_id = timer->get_session_id();
+            std::shared_ptr<service_session> session = get_session(session_id);
+            if (nullptr == session)
+            {
+                LOG_ERROR << "ai power requestor service list training timer get session null: " << session_id;
+                return E_DEFAULT;
+            }
+
+            variables_map & vm = session->get_context().get_args();
+            assert(vm.count("task_ids") > 0);
+            std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
+
+            //publish cmd resp
+            std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+            for (auto it = task_ids->begin(); it != task_ids->end(); it++)
+            {
+                cmd_task_status cts;
+                cts.task_id = it->first;
+                cts.status = it->second;
+                cmd_resp->task_status_list.push_back(std::move(cts));
+            }
+
+            //return cmd resp
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+
+            //remember: remove session
+            LOG_DEBUG << "ai power requestor service list training timer time out remove session: " << session_id;
+            session->clear();
+            this->remove_session(session_id);
 
             return E_SUCCESS;
         }
@@ -394,6 +568,7 @@ namespace ai
         std::shared_ptr<message> ai_power_requestor_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts)
         {
             bpo::variables_map vm;
+            
             try
             {
                 std::ifstream conf_task(task_file);
@@ -403,36 +578,39 @@ namespace ai
             catch (const boost::exception & e)
             {
                 LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
+                return nullptr;
             }
-            std::shared_ptr<message> req_msg = std::make_shared<message>();
-            std::shared_ptr<matrix::service_core::start_training_req> resp_content = std::make_shared<matrix::service_core::start_training_req>();
 
-            resp_content->header.magic = TEST_NET;
-            resp_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
-            resp_content->header.__set_nonce(id_generator().generate_nonce());
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            std::shared_ptr<matrix::service_core::start_training_req> req_content = std::make_shared<matrix::service_core::start_training_req>();
+
+            req_content->header.magic = TEST_NET;
+            req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
+            req_content->header.__set_nonce(id_generator().generate_nonce());
 
             try
             {
-                resp_content->body.task_id = id_generator().generate_task_id();
-                resp_content->body.select_mode = vm["select_mode"].as<int8_t>();
-                resp_content->body.master = vm["master"].as<std::string>();
-                resp_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
-                resp_content->body.server_specification = vm["server_specification"].as<std::string>();
-                resp_content->body.server_count = vm["server_count"].as<int32_t>();
-                resp_content->body.training_engine = vm["training_engine"].as<int32_t>();
-                resp_content->body.code_dir = vm["code_dir"].as<std::string>();
-                resp_content->body.entry_file = vm["entry_file"].as<std::string>();
-                resp_content->body.data_dir = vm["data_dir"].as<std::string>();
-                resp_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
-                resp_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
+                req_content->body.task_id = id_generator().generate_task_id();
+                req_content->body.select_mode = vm["select_mode"].as<int8_t>();
+                req_content->body.master = vm["master"].as<std::string>();
+                req_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
+                req_content->body.server_specification = vm["server_specification"].as<std::string>();
+                req_content->body.server_count = vm["server_count"].as<int32_t>();
+                req_content->body.training_engine = vm["training_engine"].as<int32_t>();
+                req_content->body.code_dir = vm["code_dir"].as<std::string>();
+                req_content->body.entry_file = vm["entry_file"].as<std::string>();
+                req_content->body.data_dir = vm["data_dir"].as<std::string>();
+                req_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
+                req_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
             }
             catch (...)
             {
                 LOG_ERROR << "maybe some keys not exist in " << task_file;
+                return nullptr;
             }
  
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
-            req_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
+            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             return req_msg;
         }
 
@@ -440,7 +618,7 @@ namespace ai
         {
             if (!m_req_training_task_db || taskid.empty())
             {
-                LOG_ERROR << "null ptr or null taskid.";
+                LOG_ERROR << "null ptr or null task_id.";
                 return false;
             }
 
@@ -465,16 +643,18 @@ namespace ai
             }
 
             //read from db
-            std::string taskid;
-            vec.clear();//necessary ?
+            std::string task_id;
+            vec.clear();
 
             //iterate task in db
             std::unique_ptr<leveldb::Iterator> it;
             it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
             for (it->SeekToFirst(); it->Valid(); it->Next())
             {
-                taskid = it->key().ToString();
-                vec.push_back(taskid);
+                task_id = it->key().ToString();
+                vec.push_back(task_id);
+
+                LOG_DEBUG << "ai power requestor service read task: " << task_id;
             }
 
             return true;

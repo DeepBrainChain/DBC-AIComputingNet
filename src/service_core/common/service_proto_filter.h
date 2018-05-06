@@ -17,6 +17,21 @@ namespace matrix
         {
         public:
 
+            bool insert_nonce(const std::string & nonce)
+            {
+                //return directly
+                if (nonce.empty())
+                {
+                    return false;
+                }
+
+                time_t cur = time(nullptr);
+                write_lock_guard<rw_lock> lock(m_locker);
+
+                m_map_proto_tm[nonce] = cur;
+                return true;
+            }
+
             bool check_dup(const std::string & nonce)
             {
                 //return directly

@@ -19,6 +19,7 @@
 #include "timer_manager.h"
 #include "service_message.h"
 #include "rw_lock.h"
+#include "session.h"
 
 #if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
@@ -90,9 +91,15 @@ namespace matrix
 
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer) override final;
 
-            uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times = ULLONG_MAX);                         //period, unit: ms
+            uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times = ULLONG_MAX, const std::string & session_id = DEFAULT_STRING);                         //period, unit: ms
 
             void remove_timer(uint32_t timer_id);
+
+            int32_t add_session(std::string session_id, std::shared_ptr<service_session> session);
+
+            std::shared_ptr<service_session> get_session(std::string session_id);
+
+            void remove_session(std::string session_id);
 
         protected:
 
@@ -113,6 +120,8 @@ namespace matrix
             std::unordered_map<std::string, invoker_type> m_invokers;
 
             std::unordered_map<std::string, timer_invoker_type> m_timer_invokers;
+
+            std::unordered_map<std::string, std::shared_ptr<service_session>> m_sessions;
         };
 
     }

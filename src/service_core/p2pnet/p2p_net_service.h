@@ -82,9 +82,9 @@ namespace matrix
 
             int32_t service_exit();
 
-            bool add_peer_node(const socket_id &sid, const std::string &nid);
+            bool add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version);
 
-			void remove_peer_node(const std::string &id);
+            void remove_peer_node(const std::string &id);
 
         protected:
 

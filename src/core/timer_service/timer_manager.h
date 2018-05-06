@@ -34,7 +34,7 @@ namespace matrix
 
             virtual ~timer_manager();
 
-            uint32_t add_timer(const std::string &name, uint32_t period, uint64_t repeat_times);                //period, unit: ms
+            uint32_t add_timer(const std::string &name, uint32_t period, uint64_t repeat_times, const std::string & session_id);                //period, unit: ms
 
             void remove_timer(uint32_t timer_id);
 
