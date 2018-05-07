@@ -118,13 +118,13 @@ ${SRC_PATH}/api
 ############################################################################
 
 #link directory
-LINK_DIRECTORIES(
-	${Boost_LIBRARY_DIR}
-	${LIB_HOME_PATH}/linux/leveldb
-	${LIB_HOME_PATH}/linux/libevent
-	${LIB_HOME_PATH}/linux/openssl
-	${LIB_HOME_PATH}/linux/secp256k1
-	)
+#LINK_DIRECTORIES(
+#	${Boost_LIBRARY_DIR}
+#	${LIB_HOME_PATH}/linux/leveldb
+#	${LIB_HOME_PATH}/linux/libevent
+#	${LIB_HOME_PATH}/linux/openssl
+#	${LIB_HOME_PATH}/linux/secp256k1
+#	)
 
 ############################################################################
 

@@ -18,6 +18,7 @@
 #include "service_message_id.h"
 #include "matrix_types.h"
 #include "matrix_coder.h"
+#include "port_validator.h"
 
 
 
@@ -56,7 +57,7 @@ namespace ai
         ai_power_provider_service::ai_power_provider_service()
             : m_prov_training_task_db()
             , m_container_ip(DEFAULT_LOCAL_IP)
-            , m_container_port(DEFAULT_CONTAINER_LISTEN_PORT)
+            , m_container_port((uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT))
             , m_container_client(std::make_shared<container_client>(m_container_ip, m_container_port))
             , m_training_task_timer_id(INVALID_TIMER_ID)
         {
@@ -65,6 +66,8 @@ namespace ai
 
         int32_t ai_power_provider_service::init_conf()
         {
+            port_validator port_vdr;
+
             if (CONF_MANAGER->count("container_ip"))
             {
                 m_container_ip = (*CONF_MANAGER)["container_ip"].as<std::string>();
@@ -72,7 +75,29 @@ namespace ai
 
             if (CONF_MANAGER->count("container_port"))
             {
-                m_container_port = (*CONF_MANAGER)["container_port"].as<unsigned long>();
+                std::string s_port = (*CONF_MANAGER)["container_port"].as<std::string>();
+
+                variable_value val;
+                val.value() = s_port;
+
+                if (false == port_vdr.validate(val))
+                {
+                    LOG_ERROR << "p2p_net_service init_conf invalid main net port: " << s_port;
+                    return E_DEFAULT;
+                }
+                else
+                {
+                    try
+                    {
+                        m_container_port = (uint16_t)std::stoi(s_port);
+                    }
+                    catch (const std::exception &e)
+                    {
+                        LOG_ERROR << "p2p_net_service init_conf invalid main_port: " << s_port << ", " << e.what();
+                        return E_DEFAULT;
+                    }
+                }
+
             }
 
             if (CONF_MANAGER->count("container_image"))
