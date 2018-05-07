@@ -70,11 +70,6 @@ namespace matrix
             assert(server_channel != nullptr);
 
             LOG_DEBUG << "channel create_channel use count " << server_channel.use_count() << server_channel->id().to_string();
-
-            //add to connection manager
-            int32_t ret = CONNECTION_MANAGER->add_channel(sid, std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()));
-            assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
-
             LOG_DEBUG << "channel create_channel add_channel end use count " << server_channel.use_count() << server_channel->id().to_string();
 
             //async accept
@@ -92,16 +87,16 @@ namespace matrix
                 LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
 
                 //new channel
-                create_channel();
+                create_channel();//?
                 return E_DEFAULT;
             }
+			
             try
             {
                 //start run
                 ch->start();
                 tcp::endpoint ep = std::dynamic_pointer_cast<tcp_socket_channel>(ch)->get_remote_addr();
                 LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port();
-
                 LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
             }
             catch (const boost::exception & e)
@@ -111,7 +106,11 @@ namespace matrix
                 //new channel
                 create_channel();
                 return E_DEFAULT;
-            }            
+            }
+			
+            //add to connection manager
+            int32_t ret = CONNECTION_MANAGER->add_channel(ch->id(), std::dynamic_pointer_cast<tcp_socket_channel>(ch)->shared_from_this());
+            assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
 
             //new channel
             return create_channel();

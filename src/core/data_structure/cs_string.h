@@ -28,7 +28,6 @@
 
 //#pragma warning(disable : 4996)
 
-
 class string
 {
 public:

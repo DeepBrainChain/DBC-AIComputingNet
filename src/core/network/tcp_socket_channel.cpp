@@ -43,7 +43,9 @@ namespace matrix
             //get remote addr and begin to read
             m_remote_addr = m_socket.remote_endpoint();
 
+			m_local_addr = m_socket.local_endpoint();
             //delay inject
+
             m_socket_handler = m_handler_functor(shared_from_this());
 
             //start handler
@@ -182,7 +184,8 @@ namespace matrix
                 LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " recv buf: " << m_recv_buf.to_string();
 
                 //call back handler on_read
-                if (E_SUCCESS == m_socket_handler->on_read(m_handler_context, m_recv_buf))
+                channel_handler_context handler_context;
+                if (E_SUCCESS == m_socket_handler->on_read(handler_context, m_recv_buf))
                 {
                     //next read
                     async_read();
@@ -250,8 +253,9 @@ namespace matrix
                 m_send_buf->reset();                     //queue is empty means send buf has been sent completely
 
                 //encode
+                channel_handler_context handler_context;
                 assert(nullptr != m_socket_handler);
-                if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
+                if (E_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                 {
                     LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                     on_error();
@@ -351,7 +355,8 @@ namespace matrix
                         //modify by regulus:send new msg
                         msg = m_send_queue.front();
                         //encode
-                        if (E_SUCCESS != m_socket_handler->on_write(m_handler_context, *msg, *m_send_buf))
+                        channel_handler_context handler_context;
+                        if (E_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                         {
                             LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                             on_error();

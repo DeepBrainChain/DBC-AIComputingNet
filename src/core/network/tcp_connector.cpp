@@ -14,8 +14,6 @@
 #include <boost/exception/all.hpp>
 
 
-#pragma warning(disable : 4996)
-
 namespace matrix
 {
     namespace core

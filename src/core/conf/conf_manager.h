@@ -12,14 +12,19 @@
 
 #include "common.h"
 #include "module.h"
+#include "id_generator.h"
 
 
 using namespace boost::program_options;
 
 
-#define DEFAULT_MAIN_NET_LISTEN_PORT                "11107"
-#define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
-#define DEFAULT_BIND_LOCAL_IP                             "127.0.0.1"
+#define NODE_FILE_NAME                                                  "node.dat"
+#define DEFAULT_MAIN_NET_LISTEN_PORT                11107
+#define DEFAULT_TEST_NET_LISTEN_PORT                 21107
+#define DEFAULT_CONTAINER_LISTEN_PORT              31107
+#define DEFAULT_LOCAL_IP                                               "127.0.0.1"
+#define DEFAULT_CONTAINER_IMAGE_NAME             "dbctraining/tensorflow-cpu-0.1.0:v1"
+
 
 extern const std::string conf_manager_name;
 
@@ -27,6 +32,7 @@ namespace matrix
 {
     namespace core
     {
+
         class conf_manager : public module
         {
         public:
@@ -43,13 +49,29 @@ namespace matrix
 
             bool count(const std::string& name) const { return m_args.count(name);}
 
+        public:
+
+            const std::string & get_node_id() const { return m_node_id; }
+
+            const std::string & get_node_private_key() const {return m_node_private_key;}
+
+            static int32_t serialize_node_info(const node_info &info);
+
         protected:
 
             int32_t parse_local_conf();
 
+            int32_t parse_node_dat();
+
+            int32_t init_params();
+
         protected:
 
             variables_map m_args;
+
+            std::string m_node_id;
+
+            std::string m_node_private_key;
         };
 
     }

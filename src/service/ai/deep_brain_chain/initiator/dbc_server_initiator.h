@@ -31,6 +31,8 @@ namespace ai
             //parse command line
             virtual int32_t parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm);
 
+            virtual int32_t on_cmd_init();
+
         };
 
     }

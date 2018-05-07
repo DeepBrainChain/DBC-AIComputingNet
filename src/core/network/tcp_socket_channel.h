@@ -35,7 +35,6 @@ namespace matrix
 {
     namespace core
     {
-
         class tcp_socket_channel : public channel, public std::enable_shared_from_this<tcp_socket_channel>, public boost::noncopyable
         {
         public:
@@ -61,6 +60,8 @@ namespace matrix
             socket_id id() { return m_sid; }
 
             tcp::endpoint get_remote_addr() const { return m_remote_addr; }
+
+			tcp::endpoint get_local_addr() const { return m_local_addr; }
 
             io_service *get_io_service() { return m_ios.get(); }
 
@@ -96,12 +97,14 @@ namespace matrix
 
             std::shared_ptr<socket_channel_handler> m_socket_handler;
 
-            channel_handler_context m_handler_context;
+            //channel_handler_context m_handler_context;
 
             tcp::socket m_socket;
 
             tcp::endpoint m_remote_addr;
 
+			tcp::endpoint m_local_addr;
+			
             handler_create_functor m_handler_functor;
 
         };

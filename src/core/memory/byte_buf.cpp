@@ -41,38 +41,41 @@ namespace matrix
                 }
                 else
                 {
-                    uint32_t new_len = m_len << 1;
-                    while (new_len <= MAX_BYTE_BUF_LEN)
-                    {
-                        //enough to copy
-                        if ((new_len - get_valid_read_len()) > buf_len)
-                        {
-                            m_len = new_len;
-                            char_ptr new_buf(new char[m_len](), std::default_delete<char[]>());
-                            char *new_buf_ptr = new_buf.get();
+					if (m_auto_alloc)
+					{
+						uint32_t new_len = m_len << 1;
+						while (new_len <= MAX_BYTE_BUF_LEN)
+						{
+							//enough to copy
+							if ((new_len - get_valid_read_len()) > buf_len)
+							{
+								m_len = new_len;
+								char_ptr new_buf(new char[m_len](), std::default_delete<char[]>());
+								char *new_buf_ptr = new_buf.get();
 
-                            //move data to new buffer
-                            memcpy(new_buf_ptr, m_read_ptr, get_valid_read_len());
-                            m_write_ptr = new_buf_ptr + get_valid_read_len();
-                            m_write_bound = new_buf_ptr + m_len;
-                            m_read_bound = m_write_ptr;
-                            m_read_ptr = new_buf_ptr;
+								//move data to new buffer
+								memcpy(new_buf_ptr, m_read_ptr, get_valid_read_len());
+								m_write_ptr = new_buf_ptr + get_valid_read_len();
+								m_write_bound = new_buf_ptr + m_len;
+								m_read_bound = m_write_ptr;
+								m_read_ptr = new_buf_ptr;
 
-                            //take over raw ptr
-                            m_buf = new_buf;
+								//take over raw ptr
+								m_buf = new_buf;
 
-                            //copy
-                            std::memcpy(m_write_ptr, in_buf, buf_len);
+								//copy
+								std::memcpy(m_write_ptr, in_buf, buf_len);
 
-                            //move
-                            m_write_ptr += buf_len;
-                            m_read_bound = m_write_ptr;
+								//move
+								m_write_ptr += buf_len;
+								m_read_bound = m_write_ptr;
 
-                            return buf_len;
-                        }
+								return buf_len;
+							}
 
-                        new_len <<= 1;
-                    }
+							new_len <<= 1;
+						}
+					}
 
                     //error exception
                     LOG_ERROR << "byte buf is not enough to write, in_buf len: " << buf_len;
@@ -181,7 +184,7 @@ namespace matrix
                     else if (move_len < m_len)
                     {
                         //move bytes
-                        memcpy(m_buf.get(), m_read_ptr, move_len);
+                        memmove(m_buf.get(), m_read_ptr, move_len);
 
                         //move ptr
                         m_read_ptr = m_buf.get();
@@ -220,7 +223,11 @@ namespace matrix
                 char hex[3];
                 while (i < valid_read_len)
                 {
+#ifdef WIN32
+                    sprintf_s(hex, sizeof(hex), "%02X", (uint8_t)m_read_ptr[i]);
+#else
                     sprintf(hex, "%02X", (uint8_t)m_read_ptr[i]);
+#endif
 
                     hex_string.at(3 * i) = hex[0];
                     hex_string.at(3 * i + 1) = hex[1];

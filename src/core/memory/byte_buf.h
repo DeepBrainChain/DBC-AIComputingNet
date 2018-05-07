@@ -26,6 +26,9 @@
 
 
 #define MAX_BYTE_BUF_LEN                (16 * 1024 * 1024)                       //max 16M bytes
+#define DEFAULT_BUF_LEN     10240 
+
+
 
 namespace matrix
 {
@@ -37,7 +40,7 @@ namespace matrix
 
         public:
 
-            byte_buf(int32_t len, bool auto_alloc = true);
+            byte_buf(int32_t len = DEFAULT_BUF_LEN, bool auto_alloc = true);
 
             char * get_buf() { return m_buf.get(); }
 

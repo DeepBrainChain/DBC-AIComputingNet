@@ -11,6 +11,7 @@
 #include "p2p_net_service.h"
 #include "server.h"
 #include "tcp_socket_channel.h"
+#include "service_proto_filter.h"
 
 
 namespace matrix
@@ -65,8 +66,22 @@ namespace matrix
                     if (msg->get_name() != SHAKE_HAND_REQ 
                         && msg->get_name() != SHAKE_HAND_RESP)
                     {
-                        //msg->header.src_sid = m_sid;
-                        TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                        variables_map & vm = ctx.get_args();
+                        assert(vm.count("nonce") > 0);
+                        const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
+
+                        //check msg duplicated
+                        if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
+                        {
+                            msg->header.src_sid = m_channel->id();
+                            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+
+                            LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce;
+                        }
+                        else
+                        {
+                            LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
+                        }
                     }
 
                     
@@ -100,10 +115,18 @@ namespace matrix
             encode_status status = m_coder->encode(ctx, msg, buf);
             if (ENCODE_SUCCESS == status)
             {
-                //get msg length and net endiuan and fill in
-                uint32_t msg_len = buf.get_valid_read_len();
-                msg_len = byte_order::hton32(msg_len);
-                memcpy(buf.get_read_ptr() + 6, &msg_len, sizeof(msg_len));
+                if (msg.get_name() != SHAKE_HAND_REQ
+                    && msg.get_name() != SHAKE_HAND_RESP)
+                {
+                    variables_map & vm = ctx.get_args();
+                    assert(vm.count("nonce") > 0);
+                    const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
+
+                    //insert nonce to avoid receive msg sent by itself
+                    service_proto_filter::get_mutable_instance().insert_nonce(nonce);
+
+                    LOG_DEBUG << "matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce;
+                }
 
                 //has message
                 set_has_message(msg);
