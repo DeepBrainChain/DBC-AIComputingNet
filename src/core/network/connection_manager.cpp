@@ -102,10 +102,17 @@ namespace matrix
             m_worker_group->exit();
             m_connector_group->exit();
 
-            write_lock_guard<rw_lock> lock(m_lock);
-            m_acceptors.clear();
-            m_connectors.clear();
-            m_channels.clear();
+            {
+                write_lock_guard<rw_lock> lock(m_lock_accp);
+                m_acceptors.clear();
+            }
+
+            {
+                write_lock_guard<rw_lock> lock(m_lock_conn);
+                m_connectors.clear();
+            }
+
+            //m_channels.clear();    //release resource in stop_all_channels
             return E_SUCCESS;
         }
 
@@ -196,6 +203,7 @@ namespace matrix
                         channel = m_channels.begin()->second;
                     }
                 }
+
                 if (channel)
                 {
                     channel->stop();

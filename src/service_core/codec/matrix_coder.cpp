@@ -172,6 +172,7 @@ namespace matrix
         template<typename msg_type>
         void matrix_coder::decode_invoke(std::shared_ptr<message> &msg, msg_header &header, std::shared_ptr<protocol> &proto)
         {
+            uint32_t xfer = 0;
             std::shared_ptr<msg_type> content(new msg_type);
 
             content->header = header;

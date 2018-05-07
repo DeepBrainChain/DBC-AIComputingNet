@@ -59,8 +59,8 @@ namespace matrix
                     //modify by regulus: fix ver_req duplication error. 
                     //callback
                     msg->header.src_sid = m_sid;
-                    on_after_msg_received(*msg);
 
+                    on_after_msg_received(*msg);
 
                     //send to bus
                     if (msg->get_name() != SHAKE_HAND_REQ 
@@ -73,7 +73,6 @@ namespace matrix
                         //check msg duplicated
                         if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
                         {
-                            msg->header.src_sid = m_channel->id();
                             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
                             LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce;
@@ -83,7 +82,6 @@ namespace matrix
                             LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
                         }
                     }
-
                     
                     //callback
                     //on_after_msg_received(*msg);
