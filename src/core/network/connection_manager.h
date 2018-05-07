@@ -65,7 +65,11 @@ namespace matrix
 
             void remove_channel(socket_id sid);
 
+			shared_ptr<channel> get_channel(socket_id sid);
+
             int32_t send_message(socket_id sid, std::shared_ptr<message> msg);
+
+			void broadcast_message(std::shared_ptr<message> msg);
 
         protected:
 
@@ -82,8 +86,12 @@ namespace matrix
             virtual int32_t stop_all_channel();
 
         protected:
+			//mutex
+            rw_lock m_lock_conn;//connector
 
-            rw_lock m_lock;
+			rw_lock m_lock_accp;//acceptor
+
+			rw_lock m_lock_chnl;//channels
 
             //io service group
             nio_loop_ptr m_worker_group;

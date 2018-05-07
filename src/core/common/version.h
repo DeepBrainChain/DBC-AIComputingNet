@@ -11,4 +11,4 @@
 
 //major version . minor version. bug fix version
 //version should be revised when official release
-#define CORE_VERSION                        "0.1.0"
+#define CORE_VERSION                        0x00000200                              //0000.02.00

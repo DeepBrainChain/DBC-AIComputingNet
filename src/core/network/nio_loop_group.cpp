@@ -80,7 +80,20 @@ namespace matrix
                 //join thread
                 for (size_t i = 0; i < m_io_services.size(); i++)
                 {
-                    m_threads[i]->join();
+                    try
+                    {
+                        m_threads[i]->join();
+                    }
+                    catch (const std::system_error &e)
+                    {
+                        LOG_ERROR << "nio_loop_group join thread(" << m_threads[i]->get_id() << ")error: " << e.what();
+                        continue;
+                    }
+                    catch (...)
+                    {
+                        LOG_ERROR << "nio_loop_group join thread(" << m_threads[i]->get_id() << ")error: unknown";
+                        continue;
+                    }
                 }
 
                 return E_SUCCESS;

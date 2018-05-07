@@ -15,9 +15,7 @@ myecho()
     echo $1
 }
 
-#myecho "\n"
-
-echo "UID      PID     PPID C STIME TTY      TIME     CMD"
+echo "UID        PID     PPID C STIME TTY      TIME     CMD"
 
 ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "startapp") || ($8~/\/startapp$/))) print}'
 
@@ -25,12 +23,9 @@ NAME_PROC="dbc"
 
 for PROC in ${NAME_PROC}
 do
-    #ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC}'") || ($8~/\/'${PROC}'$/)) && ($0~/-t [0-9]+/) && ($0~/-n [0-9]+/)) print}' | sed 's/java.*-t/so -t/'
-    if [ "${PROC}" = "nginx" ]; then
-        ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC}:'") || ($8~/\/'${PROC}:'$/)) && ($9 == "master")) print}' | sed 's/nginx.*/nginx/'
-    else
-        ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC}'") || ($8~/\/'${PROC}'$/))) print}' | sed 's/java.*-t/so -t/' | sed 's/java.*DnodeType=90.*/coportal/' | sed 's/java.*DnodeType=801.*/bfmsso/' | sed 's/java.*DnodeType=80.*/bfm/'
-    fi
+
+    ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC}'") || ($8~/\/'${PROC}'$/))) print}' 
+
 done
 
 myecho "\n"

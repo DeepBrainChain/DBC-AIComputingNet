@@ -162,7 +162,7 @@ namespace matrix
 
          int32_t connection_manager::stop_all_listen()
         {
-            read_lock_guard<rw_lock> lock(m_lock);
+            read_lock_guard<rw_lock> lock(m_lock_accp);
             for (auto it = m_acceptors.begin(); it != m_acceptors.end(); it++)
             {
                 LOG_DEBUG << "connection manager stop listening at port: " << (*it)->get_endpoint().port();
@@ -174,10 +174,10 @@ namespace matrix
 
         int32_t connection_manager::stop_all_connect()
         {
-            read_lock_guard<rw_lock> lock(m_lock);
+            read_lock_guard<rw_lock> lock(m_lock_conn);
             for (auto it = m_connectors.begin(); it != m_connectors.end(); it++)
             {
-                LOG_DEBUG << "connection manager stop connect at addr: " << (*it)->get_connect_addr().address() << " port: " << (*it)->get_connect_addr().port();
+                LOG_DEBUG << "connection manager stop all connect at addr: " << (*it)->get_connect_addr().address() << " port: " << (*it)->get_connect_addr().port();
                 (*it)->stop();
             }
 
@@ -186,12 +186,32 @@ namespace matrix
 
         int32_t connection_manager::stop_all_channel()
         {
-            read_lock_guard<rw_lock> lock(m_lock);
-            for (auto it = m_channels.begin(); it != m_channels.end(); it++)
+            std::shared_ptr<matrix::core::channel> channel;
+            while(true)
             {
-                LOG_DEBUG << "connection manager stop tcp channel at  " << it->second->id().to_string();
-                it->second->stop();
+                {
+                    read_lock_guard<rw_lock> lock(m_lock_chnl);
+                    if (m_channels.begin() != m_channels.end())
+                    {
+                        channel = m_channels.begin()->second;
+                    }
+                }
+                if (channel)
+                {
+                    channel->stop();
+                    channel.reset();
+                }
+                else
+                {
+                    break;
+                }
             }
+
+            //while (m_channels.begin() == m_channels.end())
+            //{
+            //    LOG_DEBUG << "connection manager stop tcp channel at  " << m_channels.begin()->second->id().to_string();
+            //    m_channels.begin()->second->stop();
+            //}
 
             return E_SUCCESS;
         }
@@ -213,7 +233,7 @@ namespace matrix
                     return ret;
                 }
 
-                write_lock_guard<rw_lock> lock(m_lock);
+                write_lock_guard<rw_lock> lock(m_lock_accp);
                 m_acceptors.push_back(acceptor);
             }
             catch (const std::exception &e)
@@ -237,7 +257,7 @@ namespace matrix
 
         int32_t connection_manager::stop_listen(tcp::endpoint ep)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_accp);
             for (auto it = m_acceptors.begin(); it != m_acceptors.end(); it++)
             {
                 if (ep != (*it)->get_endpoint())
@@ -274,7 +294,7 @@ namespace matrix
                     return ret;
                 }
 
-                write_lock_guard<rw_lock> lock(m_lock);
+                write_lock_guard<rw_lock> lock(m_lock_conn);
                 m_connectors.push_back(connector);
             }
             catch (const std::exception &e)
@@ -298,7 +318,7 @@ namespace matrix
 
         int32_t connection_manager::stop_connect(tcp::endpoint connect_addr)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_conn);
             for (auto it = m_connectors.begin(); it != m_connectors.end(); it++)
             {
                 if (connect_addr != (*it)->get_connect_addr())
@@ -320,7 +340,7 @@ namespace matrix
 
         int32_t connection_manager::add_channel(socket_id sid, shared_ptr<channel> channel)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_chnl);
 
             LOG_DEBUG << "channel add channel begin use count " << channel.use_count() << channel->id().to_string();
 
@@ -341,7 +361,7 @@ namespace matrix
 
         void connection_manager::remove_channel(socket_id sid)
         {
-            write_lock_guard<rw_lock> lock(m_lock);
+            write_lock_guard<rw_lock> lock(m_lock_chnl);
 
             //log use count
             shared_ptr<channel> ch = m_channels.find(sid)->second;
@@ -353,10 +373,21 @@ namespace matrix
             LOG_DEBUG << "channel remove_channel end use count " << ch.use_count() << ch->id().to_string();
         }
 
+		std::shared_ptr<channel> connection_manager::get_channel(socket_id sid)
+		{
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
+			auto it = m_channels.find(sid);
+			if (it != m_channels.end())
+			{
+				return it->second;
+			}
+
+			return nullptr;
+		}
+
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)
         {
-            read_lock_guard<rw_lock> lock(m_lock);
-
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
             auto it = m_channels.find(sid);
             if (it == m_channels.end())
             {
@@ -367,6 +398,17 @@ namespace matrix
             LOG_DEBUG << "connection manager send message to socket, " << sid.to_string() << ", message name: " << msg->get_name();
             return it->second->write(msg);
         }
+
+		void connection_manager::broadcast_message(std::shared_ptr<message> msg)
+		{
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
+			auto it = m_channels.begin();
+			for (; it != m_channels.end(); ++it)
+			{
+				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
+				it->second->write(msg);
+			}			
+		}
 
     }
 

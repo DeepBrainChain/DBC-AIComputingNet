@@ -163,7 +163,7 @@ namespace matrix
                 }
             }
 
-            //send shake hand resp in hanlder
+            //send shake hand resp in handler
             if (SHAKE_HAND_REQ == msg.get_name())
             {
                 send_shake_hand_resp();
@@ -208,11 +208,9 @@ namespace matrix
             std::shared_ptr<matrix::service_core::shake_hand_resp> req_content = std::make_shared<matrix::service_core::shake_hand_resp>();
 
             //header
-            req_content->header.length = 0;
+            //req_content->header.length = 0;
             req_content->header.magic = TEST_NET;
             req_content->header.msg_name = SHAKE_HAND_RESP;
-            req_content->header.check_sum = 0;
-            req_content->header.session_id = 0;
 
             resp_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
             resp_msg->set_name(SHAKE_HAND_RESP);

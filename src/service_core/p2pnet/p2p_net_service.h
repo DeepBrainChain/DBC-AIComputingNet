@@ -2,19 +2,26 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºp2p_net_service.h
-* description    £ºp2p net service
+* file name      p2p_net_service.h
+* description    p2p net service
 * date                  : 2018.01.28
-* author            £ºBruce Feng
+* author            Bruce Feng
 **********************************************************************************/
 #pragma once
 
 
-#include "service_module.h"
 #include <boost/asio.hpp>
 #include <string>
+#include <unordered_map>
+#include "service_module.h"
 #include "handler_create_functor.h"
+#include "peer_node.h"
 
+
+using namespace std;
+#ifdef WIN32
+using namespace stdext;
+#endif
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
@@ -27,19 +34,34 @@ namespace matrix
 
         class p2p_net_service : public service_module
         {
+
+            using peer_list_type = typename std::list<std::shared_ptr<peer_node>>;
+            using peer_map_type = typename std::unordered_map<std::string, std::shared_ptr<peer_node>>;
+
         public:
 
-            p2p_net_service() = default;
+            p2p_net_service();
 
             virtual ~p2p_net_service() = default;
 
-            virtual std::string module_name() const { return p2p_manager_name; }
+            virtual std::string module_name() const { return p2p_service_name; }
 
+			virtual int32_t init(bpo::variables_map &options);
+
+        public:
+
+            //peer node
+            void get_all_peer_nodes(peer_list_type &nodes);
+
+            std::shared_ptr<peer_node> get_peer_node(const std::string &id);
+
+            //config param
             std::string get_host_ip() const { return m_host_ip; }
 
             uint16_t get_main_net_listen_port() const {return m_main_net_listen_port;}
 
             uint16_t get_test_net_listen_port() const { return m_test_net_listen_port; }
+
 
         protected:
 
@@ -53,10 +75,16 @@ namespace matrix
 
             void init_invoker();
 
+            virtual void init_timer();
+
             //override by service layer
             virtual int32_t service_init(bpo::variables_map &options);
 
-            virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
+            int32_t service_exit();
+
+            bool add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version);
+
+            void remove_peer_node(const std::string &id);
 
         protected:
 
@@ -68,6 +96,24 @@ namespace matrix
 
             int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
 
+            //cmd get peer nodes
+            int32_t on_cmd_get_peer_nodes_req(std::shared_ptr<message> &msg);
+
+			int32_t on_get_peer_nodes_req(std::shared_ptr<message> &msg);
+
+			int32_t on_get_peer_nodes_resp(std::shared_ptr<message> &msg);
+
+            int32_t on_p2p_new_peer_node(std::shared_ptr<message> &msg);
+
+        protected:
+            //active pull
+            int32_t send_get_peer_nodes();
+
+            //active push
+            int32_t send_put_peer_nodes(std::shared_ptr<peer_node> node);
+
+            int32_t on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer);
+
         protected:
 
             std::string m_host_ip;
@@ -78,9 +124,18 @@ namespace matrix
 
             std::list<tcp::endpoint> m_peer_addresses;
 
+            rw_lock m_nodes_lock;
+
+            //peer_list_type m_peer_nodes;
+
+            peer_map_type m_peer_nodes_map;
+
+			//std::string m_my_node_id;
+
+            uint32_t m_timer_id_peer_info_exchange;
+
         };
 
     }
 
 }
-
