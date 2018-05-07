@@ -23,13 +23,9 @@ namespace matrix
 
         class socket_channel_handler : public std::enable_shared_from_this<socket_channel_handler>, public boost::noncopyable
         {
-		public:
-
-			virtual ~socket_channel_handler() = default;
-
         public:
 
-            virtual ~socket_channel_handler() = default;
+            virtual ~socket_channel_handler();
 
             virtual int32_t start() = 0;
 

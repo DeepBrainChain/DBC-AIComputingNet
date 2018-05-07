@@ -94,7 +94,7 @@ namespace matrix
                 m_host_ip = host_ip;
             }
 
-            std::string s_port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
+            std::string s_port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<unsigned long>() : DEFAULT_MAIN_NET_LISTEN_PORT;
             val.value() = s_port;
             if (false == port_vdr.validate(val))
             {
@@ -115,7 +115,7 @@ namespace matrix
 
             }
 
-            s_port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
+            s_port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<unsigned long>() : DEFAULT_TEST_NET_LISTEN_PORT;
             val.value() = s_port;
             if (false == port_vdr.validate(val))
             {
@@ -257,7 +257,7 @@ namespace matrix
                     
 					if (E_SUCCESS != ret)
                     {
-                        LOG_ERROR << "p2p_net_service init_connect abnormal. addr info: " << ip <<":"<<str_port << ", " << e.what();
+                        LOG_ERROR << "matrix init connector invalid peer address, ip: " << addr << " port: " << str_port;
                         continue;
                     }
                 }
