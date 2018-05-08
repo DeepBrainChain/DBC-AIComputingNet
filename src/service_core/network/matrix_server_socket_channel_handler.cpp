@@ -18,6 +18,7 @@ namespace matrix
             : matrix_socket_channel_handler(ch)
             , m_lost_shake_hand_count(0)
             , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
+            , m_recv_ver_req(false)
             , m_wait_ver_req_timer(*(ch->get_io_service()))
         {
 
@@ -137,27 +138,31 @@ namespace matrix
                 if (VER_REQ != msg.get_name())
                 {
                     LOG_ERROR << "matrix server socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
-                    if (auto ch = m_channel.lock())
+                    /*if (auto ch = m_channel.lock())
                     {
                         ch->on_error();
                     }
-                    return E_SUCCESS;
+                    return E_SUCCESS;*/
+                    return E_DEFAULT;
                 }
             }
 
             if (VER_REQ == msg.get_name())
             {
-                if (true == m_login_success)
+                //if (true == m_login_success)
+                if (true == m_recv_ver_req)
                 {
                     LOG_ERROR << "matrix server socket channel received duplicated VER_REQ message" << msg.header.src_sid.to_string();
-                    if (auto ch = m_channel.lock())
+                    /*if (auto ch = m_channel.lock())
                     {
                         ch->on_error();
                     }
-                    return E_SUCCESS;
+                    return E_SUCCESS;*/
+                    return E_DEFAULT;
                 }
                 else
                 {
+                    m_recv_ver_req = true;
                     stop_wait_ver_req_timer();
                     return E_SUCCESS;
                 }
