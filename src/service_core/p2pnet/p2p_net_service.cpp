@@ -540,7 +540,7 @@ namespace matrix
                     node_info.addr.ip = itn->second->m_peer_addr.get_ip();
                     node_info.addr.port = itn->second->m_peer_addr.get_port();
                     node_info.service_list.clear();
-                    node_info.service_list.push_back(std::string("ai_training"));//todo ...
+                    node_info.service_list.push_back(std::string("ai_training"));
                     cmd_resp->peer_nodes_list.push_back(std::move(node_info));
                 }
             }
@@ -579,7 +579,7 @@ namespace matrix
                     info.live_time_stamp = (int32_t)it->second->m_live_time;
                     info.addr.ip = it->second->m_peer_addr.get_ip();
                     info.addr.port = it->second->m_peer_addr.get_port();
-                    info.service_list.push_back(std::string("ai_training"));//todo ...
+                    info.service_list.push_back(std::string("ai_training"));
                     resp_content->body.peer_nodes_list.push_back(std::move(info));
                 }
             }
@@ -678,7 +678,7 @@ namespace matrix
                 info.live_time_stamp = (int32_t)node->m_live_time;
                 info.addr.ip = node->m_peer_addr.get_ip();
                 info.addr.port = node->m_peer_addr.get_port();
-                info.service_list.push_back(std::string("ai_training"));//todo ...
+                info.service_list.push_back(std::string("ai_training"));
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
                 resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
 
@@ -701,12 +701,20 @@ namespace matrix
                         info.live_time_stamp = (int32_t)it->second->m_live_time;
                         info.addr.ip = it->second->m_peer_addr.get_ip();
                         info.addr.port = it->second->m_peer_addr.get_port();
-                        info.service_list.push_back(std::string("ai_training"));//todo ...
+                        info.service_list.push_back(std::string("ai_training"));
                         resp_content->body.peer_nodes_list.push_back(std::move(info));
                     }
                 }
 
-                CONNECTION_MANAGER->broadcast_message(resp_msg);
+                if (resp_content->body.peer_nodes_list.size() > 0)
+                {
+                    resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+                    CONNECTION_MANAGER->broadcast_message(resp_msg);
+                }
+                else
+                {
+                    return E_DEFAULT;
+                }
             }
 
             return E_SUCCESS;
