@@ -68,8 +68,11 @@ namespace matrix
 
             boost::system::error_code error;
 
-            //stop handler
-            m_socket_handler->stop();
+            if (m_socket_handler != nullptr)
+            {
+                //stop handler
+                m_socket_handler->stop();
+            }
 
             //cancel
             LOG_DEBUG << "tcp socket channel cancel socket: " << m_sid.to_string();
@@ -248,9 +251,12 @@ namespace matrix
                     //queue is empty, push into queue
                     m_send_queue.push_back(msg);
                 }
-
-                //reset
-                m_send_buf->reset();                     //queue is empty means send buf has been sent completely
+                if (m_send_buf->get_valid_read_len() > 0)
+                {
+                    LOG_DEBUG << "error occur:m_send_buf should be empty when m_send_queue.size==0." << m_sid.to_string();
+                    //reset
+                    m_send_buf->reset();                     //queue is empty means send buf has been sent completely
+                }
 
                 //encode
                 channel_handler_context handler_context;
@@ -290,6 +296,11 @@ namespace matrix
 
         void tcp_socket_channel::async_write(std::shared_ptr<byte_buf> &msg_buf)
         {
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "tcp socket channel has been stopped and async_write exit directly: " << m_sid.to_string();
+                return;
+            }
             //LOG_DEBUG << "tcp socket channel tcp_socket_channel::async_write " << m_sid.to_string() << " send buf: " << msg_buf->to_string();
             m_socket.async_write_some(boost::asio::buffer(msg_buf->get_read_ptr(), msg_buf->get_valid_read_len()),
                 boost::bind(&tcp_socket_channel::on_write, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
