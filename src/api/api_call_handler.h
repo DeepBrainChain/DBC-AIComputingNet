@@ -17,7 +17,7 @@
 #include "server.h"
 #include "matrix_types.h"
 #include "console_printer.h"
-#include "ai_power_provider_service.h"
+#include "task_common_def.h"
 
 
 using namespace std;
