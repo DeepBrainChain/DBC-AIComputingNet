@@ -73,11 +73,12 @@ namespace matrix
             if (false == m_login_success && VER_RESP != msg.get_name())
             {
                 LOG_ERROR << "matrix client socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
-                if (auto ch = m_channel.lock())
+                /*if (auto ch = m_channel.lock())
                 {
                     ch->on_error();
                 }
-                return E_SUCCESS;
+                return E_SUCCESS;*/
+                return E_DEFAULT;
             }
 
             if (VER_RESP == msg.get_name())
@@ -93,10 +94,10 @@ namespace matrix
                 else
                 {
                     LOG_ERROR << "matrix client socket channel handler received duplicated VER_RESP" << m_sid.to_string();
-                    if (auto ch = m_channel.lock())
+                    /*if (auto ch = m_channel.lock())
                     {
                         ch->on_error();
-                    }
+                    }*/
                     return E_DEFAULT;
                 }
             }

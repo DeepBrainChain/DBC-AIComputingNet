@@ -68,6 +68,8 @@ namespace matrix
             steady_timer m_wait_ver_req_timer;
 
             std::function<timer_handler_type> m_wait_ver_req_timer_handler;
+        private:
+            bool m_recv_ver_req;
 
         };
 
