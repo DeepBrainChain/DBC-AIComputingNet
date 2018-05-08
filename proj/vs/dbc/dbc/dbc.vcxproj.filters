@@ -143,9 +143,6 @@
     <Filter Include="src\core\crypto">
       <UniqueIdentifier>{5c5cb578-a3d3-4aa0-a69e-5ed4b09aadfc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\service\deep_brain_chain\ai_training\conf">
-      <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\service_core\common">
       <UniqueIdentifier>{e9055c14-cd6a-4a9c-a3ce-cbd724d94982}</UniqueIdentifier>
     </Filter>
@@ -154,6 +151,9 @@
     </Filter>
     <Filter Include="src\3rd\crypto">
       <UniqueIdentifier>{17ebcc4a-12a0-496c-90d8-91533689f84f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service\deep_brain_chain\conf">
+      <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -215,7 +215,7 @@
       <Filter>src\service\deep_brain_chain\initiator</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp">
-      <Filter>src\service\deep_brain_chain\ai_training\conf</Filter>
+      <Filter>src\service\deep_brain_chain\conf</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\service_module\pc\pc_service_module.cpp">
       <Filter>src\core\service_module\pc</Filter>
@@ -366,6 +366,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\crypto\sha256_sse4.cpp">
       <Filter>src\core\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -556,7 +559,7 @@
       <Filter>src\core\service_module</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h">
-      <Filter>src\service\deep_brain_chain\ai_training\conf</Filter>
+      <Filter>src\service\deep_brain_chain\conf</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h">
       <Filter>src\service\deep_brain_chain\initiator</Filter>
@@ -1211,6 +1214,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\service_module\service_context.h">
       <Filter>src\core\service_module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

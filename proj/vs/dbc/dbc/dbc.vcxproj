@@ -224,6 +224,7 @@
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_requestor_service.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\codec\matrix_coder.cpp" />
@@ -507,6 +508,7 @@
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_requestor_service.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.h" />
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h" />
     <ClInclude Include="..\..\..\..\src\service_core\codec\matrix_coder.h" />
