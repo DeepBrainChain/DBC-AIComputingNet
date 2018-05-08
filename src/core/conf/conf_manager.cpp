@@ -147,6 +147,21 @@ namespace matrix
             fs::path node_dat_path;
             node_dat_path /= fs::current_path();
             node_dat_path /= fs::path(DAT_DIR_NAME);
+
+            //check dat directory
+            if (false == fs::exists(node_dat_path))
+            {
+                LOG_DEBUG << "dat directory path does not exist and create dat directory";
+                fs::create_directory(node_dat_path);
+            }
+
+            //check dat directory
+            if (false == fs::is_directory(node_dat_path))
+            {
+                LOG_ERROR << "dat directory path does not exist and exit";
+                return E_DEFAULT;
+            }
+
             node_dat_path /= fs::path(NODE_FILE_NAME);
 
             //open file w+

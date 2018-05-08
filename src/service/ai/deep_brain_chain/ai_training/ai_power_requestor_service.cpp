@@ -396,11 +396,37 @@ namespace ai
             //body
             if (1 == cmd_req->list_type) //0: list all tasks; 1: list specific tasks
             {
-                req_content->body.task_list.assign(cmd_req->task_list.begin(), cmd_req->task_list.end());
+                //check task id exists 
+                for (auto task_id : cmd_req->task_list)
+                {
+                    std::string task_value;
+                    leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+                    if (!status.ok())
+                    {
+                        LOG_ERROR << "ai power requestor service cmd list task check task iderror: " << task_id;
+                        continue;
+                    }
+
+                    //add to list task
+                    req_content->body.task_list.push_back(task_id);
+                    LOG_DEBUG << "ai power requestor service cmd list task: " << task_id;
+                }
             }
             else
             {
                 read_task_info_from_db(req_content->body.task_list);
+            }
+
+            //task list is empty
+            if (req_content->body.task_list.empty())
+            {
+                std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "task list is empty";
+
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+                return E_SUCCESS;
             }
 
             req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));

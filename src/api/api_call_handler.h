@@ -148,6 +148,12 @@ namespace ai
 
             void format_output()
             {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+            
                 console_printer printer;
                 printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 10);
 
