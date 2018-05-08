@@ -90,10 +90,11 @@ namespace matrix
         {
             try
             {
+                uint32_t before_decode_len = in.get_valid_read_len();
+
                 //packet header
                 matrix_packet_header packet_header;
                 decode_packet_header(in, packet_header);
-
                 //get decode protocol
                 std::shared_ptr<protocol> proto = get_protocol(packet_header.packet_type);
                 if (nullptr == proto)
@@ -104,8 +105,18 @@ namespace matrix
                 {
                     proto->init_buf(&in);
                 }
-
-                return decode_service_frame(ctx, in, msg, proto);
+                decode_status decodeRet = decode_service_frame(ctx, in, msg, proto);
+                if (E_SUCCESS == decodeRet)
+                {
+                    uint32_t framelen = before_decode_len - in.get_valid_read_len();
+                    if (packet_header.packet_len != framelen)
+                    {
+                        LOG_ERROR << "matrix msg_len error. msg_len in code frame is: " << packet_header.packet_len << "frame len is:" << framelen;
+                        return DECODE_ERROR;
+                    }
+                }
+          
+                return decodeRet;
             }
             catch (std::exception &e)
             {
@@ -172,7 +183,6 @@ namespace matrix
         template<typename msg_type>
         void matrix_coder::decode_invoke(std::shared_ptr<message> &msg, msg_header &header, std::shared_ptr<protocol> &proto)
         {
-            uint32_t xfer = 0;
             std::shared_ptr<msg_type> content(new msg_type);
 
             content->header = header;
@@ -181,7 +191,7 @@ namespace matrix
             msg->set_content(content);
             msg->set_name(content->header.msg_name);
 
-            LOG_DEBUG << "matrix coder decode message: " << content->header.msg_name << ", message length: " << xfer;
+            //LOG_DEBUG << "matrix coder decode message: " << content->header.msg_name << ", message length: ";
         }
 
         encode_status matrix_coder::encode(channel_handler_context &ctx, message & msg, byte_buf &out)
