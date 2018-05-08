@@ -70,7 +70,7 @@ namespace matrix
             assert(server_channel != nullptr);
 
             LOG_DEBUG << "channel create_channel use count " << server_channel.use_count() << server_channel->id().to_string();
-            LOG_DEBUG << "channel create_channel add_channel end use count " << server_channel.use_count() << server_channel->id().to_string();
+            //LOG_DEBUG << "channel create_channel add_channel end use count " << server_channel.use_count() << server_channel->id().to_string();
 
             //async accept
             m_acceptor.async_accept(server_channel->get_socket(), boost::bind(&tcp_acceptor::on_accept, shared_from_this(), std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()), boost::asio::placeholders::error));
@@ -85,7 +85,7 @@ namespace matrix
             {
                 LOG_ERROR << "tcp acceptor on accept call back error: " << error.value() << " " << error.message();
                 LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
-
+                ch->on_error();
                 //new channel
                 create_channel();//?
                 return E_DEFAULT;
@@ -96,13 +96,14 @@ namespace matrix
                 //start run
                 ch->start();
                 tcp::endpoint ep = std::dynamic_pointer_cast<tcp_socket_channel>(ch)->get_remote_addr();
-                LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port();
+                LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port() << ch->id().to_string();
                 LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
             }
             catch (const boost::exception & e)
             {
                 LOG_ERROR << "tcp acceptor on accept call back error: " << diagnostic_information(e);
                 LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
+                ch->on_error();
                 //new channel
                 create_channel();
                 return E_DEFAULT;

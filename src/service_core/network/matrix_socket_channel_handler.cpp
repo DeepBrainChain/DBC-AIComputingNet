@@ -60,7 +60,11 @@ namespace matrix
                     //callback
                     msg->header.src_sid = m_sid;
 
-                    on_after_msg_received(*msg);
+                    int32_t iprocRet = on_after_msg_received(*msg);
+                    if (iprocRet != E_SUCCESS)
+                    {
+                        return iprocRet;
+                    }
 
                     //send to bus
                     if (msg->get_name() != SHAKE_HAND_REQ 

@@ -371,8 +371,14 @@ namespace matrix
         {
             write_lock_guard<rw_lock> lock(m_lock_chnl);
 
+            auto it = m_channels.find(sid);
+            if (it == m_channels.end())
+            {
+                LOG_ERROR << "connection manager remove_channel failed for not found channel." << sid.to_string();
+                return;
+            }
             //log use count
-            shared_ptr<channel> ch = m_channels.find(sid)->second;
+            shared_ptr<channel> ch = it->second;
             LOG_DEBUG << "channel remove_channel begin use count " << ch.use_count() << ch->id().to_string();
 
             m_channels.erase(sid);
