@@ -33,27 +33,6 @@ namespace ai
     namespace dbc
     {
 
-        std::string to_training_task_status_string(int8_t status)
-        {
-            switch (status)
-            {
-            case task_unknown:
-                return "task_unknown";
-            case task_queueing:
-                return "task_queueing";
-            case task_running:
-                return "task_running";
-            case task_stopped:
-                return "task_stopped";
-            case task_succefully_closed:
-                return "task_succefully_closed";
-            case task_abnormally_closed:
-                return "task_abnormally_closed";
-            default:
-                return DEFAULT_STRING;
-            }
-        }
-
         ai_power_provider_service::ai_power_provider_service()
             : m_prov_training_task_db()
             , m_container_ip(DEFAULT_LOCAL_IP)
@@ -415,12 +394,12 @@ namespace ai
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
             if (task_queueing == task->status)
             {
-                LOG_DEBUG << "ai power provider service training start exec ai training task: " << task->task_id;
+                LOG_DEBUG << "ai power provider service training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
                 return start_exec_training_task(task);
             }
             else if (task_running == task->status)
             {
-                LOG_DEBUG << "ai power provider service training start check ai training task: " << task->task_id;
+                LOG_DEBUG << "ai power provider service training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
                 return check_training_task_status(task);
             }
             else
@@ -428,7 +407,7 @@ namespace ai
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
-                LOG_ERROR << "ai power provider service training start exec ai training task: " << task->task_id << " invalid status: " << task->status;
+                LOG_ERROR << "ai power provider service training start exec ai training task: " << task->task_id << " invalid status: " << to_training_task_status_string(task->status);
                 return E_DEFAULT;
             }
         }
