@@ -15,6 +15,7 @@
 #include "service_module.h"
 #include "db_types.h"
 #include "container_client.h"
+#include "task_common_def.h"
 
 
 using namespace matrix::core;
@@ -34,18 +35,6 @@ namespace ai
 {
 	namespace dbc
 	{
-
-        enum training_task_status
-        {
-            task_unknown = 0,
-            task_queueing,
-            task_running, 
-            task_stopped,
-            task_succefully_closed,
-            task_abnormally_closed
-        };
-
-        std::string to_training_task_status_string(int8_t status);
 
         enum container_status
         {

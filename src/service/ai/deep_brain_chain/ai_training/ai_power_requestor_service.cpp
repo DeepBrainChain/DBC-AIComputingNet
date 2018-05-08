@@ -472,7 +472,7 @@ namespace ai
 
             for (auto ts : rsp_content->body.task_status_list)
             {
-                LOG_DEBUG << "recv list_training_resp: " << ts.task_id << " : " << ts.status;
+                LOG_DEBUG << "recv list_training_resp: " << ts.task_id << " status: " << to_training_task_status_string(ts.status);
                 task_ids->insert({ts.task_id, ts.status});
             }
 
