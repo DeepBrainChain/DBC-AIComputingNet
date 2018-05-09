@@ -242,7 +242,9 @@ SET(LIBRARIES)
 #target link
 MESSAGE(STATUS "${Boost_LIBRARIES}")
 #libboost_thread.a -lboost_log_setup
-TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -lpthread -ldl)
+#TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -lpthread -ldl)
+TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} libevent.a libleveldb.a libevent_core.a libevent_openssl.a libevent_pthreads.a libcrypto.a libssl.a libsecp256k1.a libboost_thread.a -pthread libpthread.a -ldl)
+
 
 ############################################################################
 

@@ -26,7 +26,7 @@
 #include <iostream>
 #include "ai_power_requestor_service.h"
 #include "id_generator.h"
-
+#include "task_common_def.h"
 
 
 
@@ -673,6 +673,7 @@ namespace ai
             vec.clear();
 
             //iterate task in db
+            int32_t count = 0;
             std::unique_ptr<leveldb::Iterator> it;
             it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
             for (it->SeekToFirst(); it->Valid(); it->Next())
@@ -681,6 +682,12 @@ namespace ai
                 vec.push_back(task_id);
 
                 LOG_DEBUG << "ai power requestor service read task: " << task_id;
+
+                //should restrict max count
+                if (++count > MAX_LIST_TASK_COUNT)
+                {
+                    break;
+                }
             }
 
             return true;
