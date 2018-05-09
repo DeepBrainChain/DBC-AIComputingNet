@@ -417,6 +417,7 @@ namespace matrix
 
             error_msg->header.src_sid = this->m_sid;
             error_msg->set_name(TCP_CHANNEL_ERROR);
+            error_msg->ep = m_remote_addr;
 
             std::shared_ptr<message> msg = std::dynamic_pointer_cast<message>(error_msg);
 

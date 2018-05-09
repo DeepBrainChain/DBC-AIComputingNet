@@ -16,6 +16,7 @@
 #include "service_module.h"
 #include "handler_create_functor.h"
 #include "peer_node.h"
+#include "peer_candidate.h"
 
 
 using namespace std;
@@ -24,8 +25,6 @@ using namespace stdext;
 #endif
 using namespace matrix::core;
 using namespace boost::asio::ip;
-
-#define DEFAULT_CONNECT_PEER_NODE      102400                            //default connect peer nodes
 
 namespace matrix
 {
@@ -112,7 +111,11 @@ namespace matrix
             //active push
             int32_t send_put_peer_nodes(std::shared_ptr<peer_node> node);
 
-            int32_t on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer);
+            int32_t on_timer_one_minute(std::shared_ptr<matrix::core::core_timer> timer);
+
+            int32_t on_timer_peer_info_exchange();
+
+            int32_t on_timer_check_peer_candidate();
 
         protected:
 
@@ -122,17 +125,15 @@ namespace matrix
 
             uint16_t m_test_net_listen_port;
 
-            std::list<tcp::endpoint> m_peer_addresses;
+            std::list<peer_candidate> m_peer_candidates;
+
+            //rw_lock m_peer_candi_lock;//if get candidates from other service module, enable it
 
             rw_lock m_nodes_lock;
 
-            //peer_list_type m_peer_nodes;
-
             peer_map_type m_peer_nodes_map;
 
-			//std::string m_my_node_id;
-
-            uint32_t m_timer_id_peer_info_exchange;
+            uint32_t m_timer_id_one_minute;
 
         };
 

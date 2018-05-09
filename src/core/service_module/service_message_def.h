@@ -29,6 +29,8 @@ namespace matrix
 
         class tcp_socket_channel_error_msg : public message
         {
+        public:
+            tcp::endpoint ep;
         };
 
         enum CLIENT_CONNECT_STATUS
