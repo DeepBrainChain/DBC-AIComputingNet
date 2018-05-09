@@ -31,13 +31,15 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace matrix::core;
 
+const uint32_t max_reconnect_cnt = 100;
+const uint32_t max_connected_cnt = 100;
 
 namespace matrix
 {
     namespace service_core
     {
         p2p_net_service::p2p_net_service()
-            : m_timer_id_peer_info_exchange(INVALID_TIMER_ID)
+            : m_timer_id_one_minute(INVALID_TIMER_ID)
         {
 
         }
@@ -250,7 +252,8 @@ namespace matrix
                 try
                 {
                     tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
-                    m_peer_addresses.push_back(ep);
+                    peer_candidate pc = { ep, ns_in_use, 0, time(nullptr), 0 };
+                    m_peer_candidates.push_back(std::move(pc));              
 					
                     //start connect
                     LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
@@ -341,28 +344,43 @@ namespace matrix
         }
 
         void p2p_net_service::init_timer()
-        {
-            m_timer_invokers[TIMER_NAME_P2P_PEER_INFO_EXCHANGE] = std::bind(&p2p_net_service::on_timer_peer_info_exchange, this, std::placeholders::_1);
-            m_timer_id_peer_info_exchange = add_timer(TIMER_NAME_P2P_PEER_INFO_EXCHANGE, TIMER_INTERV_P2P_PEER_INFO_EXCHANGE * 1000);
-            assert(m_timer_id_peer_info_exchange != INVALID_TIMER_ID);
-
+        {          
+            m_timer_invokers[TIMER_NAME_P2P_ONE_MINUTE] = std::bind(&p2p_net_service::on_timer_one_minute, this, std::placeholders::_1);
+            m_timer_id_one_minute = add_timer(TIMER_NAME_P2P_ONE_MINUTE, TIMER_INTERV_MIN_P2P_ONE_MINUTE *60 * 1000);//60s*1000
+            assert(m_timer_id_one_minute != INVALID_TIMER_ID);
         }
 
         int32_t p2p_net_service::service_exit()
         {
-            if (m_timer_id_peer_info_exchange != INVALID_TIMER_ID)
+            if (m_timer_id_one_minute != INVALID_TIMER_ID)
             {
-                remove_timer(m_timer_id_peer_info_exchange);
-                m_timer_id_peer_info_exchange = INVALID_TIMER_ID;
+                remove_timer(m_timer_id_one_minute);
+                m_timer_id_one_minute = INVALID_TIMER_ID;
             }
 
             return E_SUCCESS;
         }
 
-        int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer)
+        int32_t p2p_net_service::on_timer_one_minute(std::shared_ptr<matrix::core::core_timer> timer)
         {
-            assert(timer->get_timer_id() == m_timer_id_peer_info_exchange);
+            assert(timer->get_timer_id() == m_timer_id_one_minute);
 
+            static uint32_t tick_count = 0;
+            ++tick_count;//one min
+            
+            on_timer_check_peer_candidate();
+
+            if (tick_count % TIMER_INTERV_MIN_P2P_PEER_INFO_EXCHANGE == 0)
+            {
+                tick_count = 0;
+                on_timer_peer_info_exchange();
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t p2p_net_service::on_timer_peer_info_exchange()
+        {
             static uint32_t even_num = 0;
             ++even_num;
             //pull
@@ -373,6 +391,66 @@ namespace matrix
                 even_num = 0;
                 //push
                 send_put_peer_nodes(nullptr);
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t p2p_net_service::on_timer_check_peer_candidate()
+        {
+            //check up-bound
+            uint32_t in_use_ip_cnt = 0;
+            for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+            {
+                if (ns_in_use == it->net_st)
+                {
+                    in_use_ip_cnt++;
+                }
+            }
+            if (in_use_ip_cnt >= max_connected_cnt)
+            {
+                return E_SUCCESS;
+            }
+
+            //increase connections
+            uint32_t new_conn_cnt = 0;
+            for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+            {
+                if ((ns_idle == it->net_st) 
+                    || ((ns_failed == it->net_st) 
+                        && (time(nullptr) > TIMER_INTERV_MIN_P2P_CONNECT_NEW_PEER * it->reconn_cnt + it->last_conn_tm)
+                        && it->reconn_cnt <= max_reconnect_cnt)
+                    )
+                {
+                    //connect
+                    it->last_conn_tm = time(nullptr);
+                    it->net_st = ns_in_use;
+                    it->reconn_cnt++;
+                    try
+                    {
+                        LOG_DEBUG << "matrix connect peer address, ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
+                        int32_t ret = CONNECTION_MANAGER->start_connect(it->tcp_ep, &matrix_client_socket_channel_handler::create);
+                        new_conn_cnt++;
+
+                        if (E_SUCCESS != ret)
+                        {
+                            LOG_ERROR << "matrix init connector invalid peer address, ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
+                            it->net_st = ns_failed;
+                            continue;
+                        }
+                    }
+                    catch (const std::exception &e)
+                    {
+                        it->net_st = ns_failed;
+                        LOG_ERROR << "timer connect ip catch exception. addr info: " << it->tcp_ep.address() << ":" << it->tcp_ep.port() << ", " << e.what();
+                        continue;
+                    }
+
+                    if (new_conn_cnt > max_connected_cnt / 3)
+                    {
+                        break;//not too many conn at a time
+                    }
+                }
             }
 
             return E_SUCCESS;
@@ -470,6 +548,23 @@ namespace matrix
             //if client, connect next
             if (CLIENT_SOCKET == sid.get_type())
             {
+                //find peer candidate
+                std::shared_ptr<tcp_socket_channel_error_msg> err_msg = std::dynamic_pointer_cast<tcp_socket_channel_error_msg>(msg);
+                if (err_msg)
+                {
+                    std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                        , [=](peer_candidate& pc) -> bool { return err_msg->ep == pc.tcp_ep; });
+                    if (it != m_peer_candidates.end())
+                    {
+                        it->last_conn_tm = time(nullptr);
+                        it->net_st = ns_failed;
+                    }
+                    else
+                    {
+                        assert(0);
+                        LOG_ERROR << "a peer_node network error occurs, but not in ip candidates: " << err_msg->ep.address() << ":" << err_msg->ep.port();
+                    }
+                }
 
             }
             else
@@ -483,9 +578,29 @@ namespace matrix
         int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<message> &msg)
         {
             auto notification_content = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg);
+            if (!notification_content)
+            {
+                return E_DEFAULT;
+            }
+            
+            //find peer candidate
+            std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                , [=](peer_candidate& pc) -> bool { return notification_content->ep == pc.tcp_ep; });
 
             if (CLIENT_CONNECT_SUCCESS == notification_content->status)
             {
+                //update peer candidate info
+                if (it != m_peer_candidates.end())
+                {
+                    it->last_conn_tm = time(nullptr);
+                    it->net_st = ns_in_use;
+                    it->reconn_cnt = 0;
+                }
+                else
+                {
+                    LOG_WARNING << "a client tcp connection established, but not in peer candidate: " << notification_content->ep.address() << ":" << notification_content->ep.port();
+                }
+
                 //create ver_req message
                 std::shared_ptr<message> req_msg = std::make_shared<message>();
                 std::shared_ptr<matrix::service_core::ver_req> req_content = std::make_shared<matrix::service_core::ver_req>();
@@ -516,11 +631,24 @@ namespace matrix
                 req_msg->header.dst_sid = msg->header.src_sid;
 
                 CONNECTION_MANAGER->send_message(req_msg->header.dst_sid, req_msg);
+
                 return E_SUCCESS;
             }
             else
             {
-                //cancel connect and connect next
+                //update peer candidate info
+                if (it != m_peer_candidates.end())
+                {
+                    it->last_conn_tm = time(nullptr);
+                    it->net_st = ns_failed;
+                }
+                else
+                {
+                    LOG_WARNING << "a client tcp connection failed, but not in peer candidate: " << notification_content->ep.address() << ":" << notification_content->ep.port();
+                }
+
+                //cancel connect and connect next        
+
                 return E_SUCCESS;
             }
         }
@@ -552,23 +680,32 @@ namespace matrix
 
         int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<message> &msg)
         {
-            //common header
-            std::shared_ptr<message> resp_msg = std::make_shared<message>();
-            resp_msg->header.msg_name = P2P_GET_PEER_NODES_RESP;
-            resp_msg->header.msg_priority = 0;
-            resp_msg->header.dst_sid = msg->header.src_sid;
-
-            std::shared_ptr<matrix::service_core::get_peer_nodes_resp> resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
-            //header
-            resp_content->header.magic = TEST_NET;
-            resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
-            resp_content->header.__set_nonce(id_generator().generate_nonce());
-
-            //body
+            if (m_peer_nodes_map.size() == 0)
             {
-                read_lock_guard<rw_lock> lock(m_nodes_lock);
-                for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
+                //ignore request
+                return E_SUCCESS;
+            }
+
+            const uint32_t max_peer_cnt_per_pack = 50;
+            const uint32_t max_pack_cnt = 10;            
+            read_lock_guard<rw_lock> lock(m_nodes_lock);
+            auto it = m_peer_nodes_map.begin();
+            for (uint32_t i = 0; (i <= m_peer_nodes_map.size() / max_peer_cnt_per_pack) && (i < max_pack_cnt); i++)
+            {
+                //common header
+                std::shared_ptr<message> resp_msg = std::make_shared<message>();
+                resp_msg->header.msg_name = P2P_GET_PEER_NODES_RESP;
+                resp_msg->header.msg_priority = 0;
+                resp_msg->header.dst_sid = msg->header.src_sid;
+                auto resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
+                //header
+                resp_content->header.magic = TEST_NET;
+                resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
+                resp_content->header.__set_nonce(id_generator().generate_nonce());
+
+                for (uint32_t peer_cnt = 0; (it != m_peer_nodes_map.end()) && (peer_cnt < max_peer_cnt_per_pack); ++it)
                 {
+                    //body
                     if (it->second->m_id == CONF_MANAGER->get_node_id())
                     {
                         resp_msg->header.src_sid = it->second->m_sid;
@@ -581,11 +718,13 @@ namespace matrix
                     info.addr.port = it->second->m_peer_addr.get_port();
                     info.service_list.push_back(std::string("ai_training"));
                     resp_content->body.peer_nodes_list.push_back(std::move(info));
+                    ++peer_cnt;
                 }
-            }
-            resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
 
-            CONNECTION_MANAGER->send_message(msg->header.src_sid, resp_msg);
+                resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+
+                CONNECTION_MANAGER->send_message(msg->header.src_sid, resp_msg);
+            }
 
             return E_SUCCESS;
         }
@@ -597,23 +736,14 @@ namespace matrix
             {
                 tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
                 //is in list
-                std::list<tcp::endpoint>::iterator it_ep = std::find(m_peer_addresses.begin(), m_peer_addresses.end(), ep);
-                if (it_ep == m_peer_addresses.end())
+                std::list<peer_candidate>::iterator it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                    , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
+                if (it_pc == m_peer_candidates.end())
                 {
-                    m_peer_addresses.push_back(std::move(ep));
+                    peer_candidate pc = { ep, ns_idle, 0, time(nullptr), 0 };
+                    m_peer_candidates.push_back(std::move(pc));
                 }
             }
-            //std::shared_ptr<ai::dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<ai::dbc::cmd_get_peer_nodes_resp>();
-            //cmd_resp->result = E_SUCCESS;
-            //cmd_resp->result_info = "";
-            //for (auto itn = rsp->body.peer_nodes_list.begin(); itn != rsp->body.peer_nodes_list.end(); ++itn)
-            //{
-            //    ai::dbc::cmd_peer_node_info node_info;
-            //    node_info = *itn;
-            //    cmd_resp->peer_nodes_list.push_back(std::move(node_info));
-            //}
-
-            //TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
 
             return E_SUCCESS;
         }

@@ -1218,6 +1218,9 @@
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.h">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_candidate.h">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslconf.h.in">

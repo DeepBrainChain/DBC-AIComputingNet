@@ -519,6 +519,7 @@
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_candidate.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_node.h" />
   </ItemGroup>
   <ItemGroup>
