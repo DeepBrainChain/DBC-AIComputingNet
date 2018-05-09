@@ -32,11 +32,11 @@ namespace ai
             task_abnormally_closed
         };
 
-        __BEGIN_DECLS
+        //__BEGIN_DECLS
 
-        extern __EXPORT  std::string to_training_task_status_string(int8_t status);
+        extern std::string to_training_task_status_string(int8_t status);
 
-        __END_DECLS;
+        //__END_DECLS;
 
     }
 
