@@ -15,7 +15,7 @@
 #include "service_message.h"
 #include "decoder.h"
 
-#define MIN_MATRIX_MSG_CODE_LEN                         54                                //MIN MSG_LEN in code frame
+#define MIN_MATRIX_MSG_CODE_LEN                         30                                //MIN MSG_LEN in code frame
 #define MAX_MATRIX_MSG_CODE_LEN                            512                              //MAX MSG_LEN in code frame
 namespace matrix
 {
