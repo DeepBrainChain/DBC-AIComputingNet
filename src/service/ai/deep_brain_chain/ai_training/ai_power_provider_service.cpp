@@ -19,7 +19,7 @@
 #include "matrix_types.h"
 #include "matrix_coder.h"
 #include "port_validator.h"
-
+#include "task_common_def.h"
 
 
 using namespace std;
@@ -349,6 +349,7 @@ namespace ai
 
             std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::make_shared<matrix::service_core::list_training_resp>();
 
+            int32_t count = 0;
             for (auto tid : req_content->body.task_list)
             {
                 //find task
@@ -362,6 +363,12 @@ namespace ai
                 ts.task_id = it->second->task_id;
                 ts.status = it->second->status;
                 rsp_content->body.task_status_list.push_back(ts);
+
+                //should restrict max count
+                if (++count > MAX_LIST_TASK_COUNT)
+                {
+                    break;
+                }
             }
 
             if (!rsp_content->body.task_status_list.empty())
