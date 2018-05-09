@@ -56,7 +56,20 @@ else
 fi
 echo "***add user to docker group success***"
 
-sudo echo 'DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://127.0.0.1:31107"' >> /etc/default/docker
+#sudo echo 'DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://127.0.0.1:31107"' >> /etc/default/docker
+sudo sed -i '13c ExecStart=/usr/bin/dockerd -H fd:// -Htcp://0.0.0.0:31107 -Hunix:///var/run/docker.sock' /lib/systemd/system/docker.service
+sudo systemctl stop docker
+if [ $? -eq 1 ]; then
+    exit
+fi
+sudo systemctl daemon-reload
+if [ $? -eq 1 ]; then
+    exit
+fi
+sudo systemctl start docker
+if [ $? -eq 1 ]; then
+    exit
+fi
 
 gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
