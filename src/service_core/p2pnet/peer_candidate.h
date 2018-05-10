@@ -30,7 +30,9 @@ namespace matrix
         {
             ns_idle = 0,   //can use whenever needed
             ns_in_use,     //connecting or connected
-            ns_failed      //not use within a long time
+            ns_failed,     //not use within a long time
+            //ns_discard,    //i.e: itself
+            ns_zombie
         };
         enum node_net_type
         {
