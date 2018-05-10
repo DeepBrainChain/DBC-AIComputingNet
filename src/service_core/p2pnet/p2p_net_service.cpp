@@ -31,8 +31,8 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace matrix::core;
 
-const uint32_t max_reconnect_cnt = 100;
-const uint32_t max_connected_cnt = 100;
+const uint32_t max_reconnect_times = 100;
+const uint32_t max_connected_cnt = 200;
 
 namespace matrix
 {
@@ -399,15 +399,15 @@ namespace matrix
         int32_t p2p_net_service::on_timer_check_peer_candidate()
         {
             //check up-bound
-            uint32_t in_use_ip_cnt = 0;
+            uint32_t in_use_peer_cnt = 0;
             for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
             {
                 if (ns_in_use == it->net_st)
                 {
-                    in_use_ip_cnt++;
+                    in_use_peer_cnt++;
                 }
             }
-            if (in_use_ip_cnt >= max_connected_cnt)
+            if (in_use_peer_cnt >= max_connected_cnt)
             {
                 return E_SUCCESS;
             }
@@ -419,7 +419,7 @@ namespace matrix
                 if ((ns_idle == it->net_st) 
                     || ((ns_failed == it->net_st) 
                         && (time(nullptr) > TIMER_INTERV_MIN_P2P_CONNECT_NEW_PEER * it->reconn_cnt + it->last_conn_tm)
-                        && it->reconn_cnt <= max_reconnect_cnt)
+                        && it->reconn_cnt <= max_reconnect_times)
                     )
                 {
                     //connect
@@ -446,7 +446,7 @@ namespace matrix
                         continue;
                     }
 
-                    if (new_conn_cnt > max_connected_cnt / 3)
+                    if (new_conn_cnt > max_connected_cnt / 4)
                     {
                         break;//not too many conn at a time
                     }
@@ -495,6 +495,30 @@ namespace matrix
         {
             std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
             assert(nullptr != req_content);
+            if (req_content->body.__isset.node_id)
+            {
+                if (req_content->body.node_id == CONF_MANAGER->get_node_id())
+                {
+                    auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
+                    if (ch)
+                    {
+                        auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
+                        if (tcp_ch)
+                        {
+                             std::list<peer_candidate>::iterator it = std::find_if( m_peer_candidates.begin(), m_peer_candidates.end()
+                                , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; } );
+                            if (it != m_peer_candidates.end())
+                            {
+                                it->last_conn_tm = time(nullptr);
+                                it->net_st = ns_zombie;
+                            }                           
+                        }
+                        //close channel
+                        ch->stop();
+                        return E_SUCCESS;
+                    }
+                }
+            }
 
             LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
 
@@ -502,7 +526,6 @@ namespace matrix
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
             //header
-            //resp_content->header.length = 0;
             resp_content->header.magic = TEST_NET;
             resp_content->header.msg_name = VER_RESP;
             resp_content->header.__set_nonce(id_generator().generate_nonce());
@@ -569,11 +592,20 @@ namespace matrix
                         LOG_ERROR << "a peer_node network error occurs, but not in ip candidates: " << err_msg->ep.address() << ":" << err_msg->ep.port();
                     }
                 }
-
             }
             else
             {
                 //
+            }
+
+            //rm peer_mode
+            for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
+            {
+                if (it->second->m_sid == sid)
+                {
+                    m_peer_nodes_map.erase(it);
+                    break;
+                }
             }
 
             return E_SUCCESS;
@@ -738,6 +770,11 @@ namespace matrix
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> rsp = std::dynamic_pointer_cast<matrix::service_core::get_peer_nodes_resp>(msg->content);
             for (auto it = rsp->body.peer_nodes_list.begin(); it != rsp->body.peer_nodes_list.end(); ++it)
             {
+                if (it->addr.ip.empty() || it->addr.port <= 0)
+                {
+                    LOG_DEBUG << "recv a peer with empty addr: " << it->peer_node_id;
+                    continue;
+                }
                 tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
                 //is in list
                 std::list<peer_candidate>::iterator it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
