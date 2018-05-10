@@ -18,6 +18,7 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/utility/setup/console.hpp>  
+#include <boost/log/utility/exception_handler.hpp>
 #include "common.h"
 
 
@@ -41,7 +42,19 @@ namespace matrix
 {
     namespace core
     {
-        
+        struct log_exception_handler
+        {
+            void operator() (std::runtime_error const& e) const
+            {
+                std::cout << "std::runtime_error: " << e.what() << std::endl;
+            }
+            void operator() (std::logic_error const& e) const
+            {
+                std::cout << "std::logic_error: " << e.what() << std::endl;
+                throw;
+            }
+        };
+
         class log
         {
         public:
@@ -66,7 +79,13 @@ namespace matrix
                 sink->locked_backend()->auto_flush(true);
              
                 logging::add_common_attributes();
-
+                //fix by regulus:fix boost::log throw exception cause coredump where open files is not enough. can use the 2 method as below.
+                // suppress log
+                //logging::core::get()->set_exception_handler(logging::make_exception_suppressor());
+                //use log_handler
+                logging::core::get()->set_exception_handler(
+                    logging::make_exception_handler<std::runtime_error, std::logic_error>(log_exception_handler())
+                );
                 //BOOST_LOG_TRIVIAL(info) << "init core log success.";
 
                 return E_SUCCESS;
