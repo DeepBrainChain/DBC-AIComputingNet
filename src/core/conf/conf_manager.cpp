@@ -14,6 +14,7 @@
 #include <boost/exception/all.hpp>
 #include <vector>
 
+
 namespace matrix
 {
     namespace core
@@ -112,6 +113,7 @@ namespace matrix
             }
             catch (const boost::exception & e)
             {
+                std::cout << "Parse node.dat error. Please try  ./dbc --init  command to init node id if node id not inited." << std::endl;
                 LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
                 return E_DEFAULT;
             }
