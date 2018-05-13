@@ -496,6 +496,8 @@ namespace matrix
             std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
             assert(nullptr != req_content);
 
+            LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
+
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
@@ -529,6 +531,8 @@ namespace matrix
         int32_t p2p_net_service::on_ver_resp(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::dynamic_pointer_cast<matrix::service_core::ver_resp>(msg->content);
+
+            LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id;
 
             //add new peer node
             if (!add_peer_node(msg->header.src_sid, resp_content->body.node_id, resp_content->body.core_version, resp_content->body.protocol_version))
