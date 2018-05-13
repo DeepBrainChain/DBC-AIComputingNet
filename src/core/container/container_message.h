@@ -96,7 +96,7 @@ namespace matrix
 
             bound_host_volumes volumes;
 
-            std::string volumes_from;
+            std::list<std::string> volumes_from;
 
             std::list<std::string> entry_point;
 

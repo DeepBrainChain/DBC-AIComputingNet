@@ -51,6 +51,7 @@ namespace matrix
             
             kvs headers;
             headers.push_back({"Content-Type", "application/json"});
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
             http_response resp;
             int32_t ret = E_SUCCESS;
@@ -103,6 +104,7 @@ namespace matrix
             {
                 headers.push_back({ "Content-Type", "application/json" });
             }
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
             http_response resp;
             int32_t ret = E_SUCCESS;
@@ -161,6 +163,8 @@ namespace matrix
             //req content, headers, resp
             std::string req_content;
             kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+
             http_response resp;
             int32_t ret = E_SUCCESS;
 
@@ -207,6 +211,7 @@ namespace matrix
             //req content, headers, resp
             std::string req_content;
             kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
             http_response resp;
             int32_t ret = E_SUCCESS;
 
@@ -278,6 +283,7 @@ namespace matrix
 
             //req content, headers, resp
             kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
             http_response resp;
             int32_t ret = E_SUCCESS;
 
@@ -323,6 +329,7 @@ namespace matrix
 
             //headers, resp
             kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
             http_response resp;
             int32_t ret = E_SUCCESS;
 

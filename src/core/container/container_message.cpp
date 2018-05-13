@@ -37,7 +37,7 @@ namespace matrix
             root.AddMember("AttachStdout", attach_stdout, allocator);
             root.AddMember("AttachStderr", attach_stderr, allocator);
             root.AddMember("Image", STRING_REF(image), allocator);
-            root.AddMember("VolumesFrom", STRING_REF(volumes_from), allocator);
+            //root.AddMember("VolumesFrom", STRING_REF(volumes_from), allocator);
             root.AddMember("NetworkDisabled", network_disabled, allocator);
             root.AddMember("Privileged", privileged, allocator);
             root.AddMember("WorkingDir", STRING_REF(working_dir), allocator);
@@ -74,6 +74,14 @@ namespace matrix
                 json_dns.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
             }
             root.AddMember("Dns", json_dns, allocator);
+
+            //volumes_from
+            rapidjson::Value json_volumes_from(rapidjson::kArrayType);
+            for (auto it = this->volumes_from.begin(); it != this->volumes_from.end(); it++)
+            {
+                json_volumes_from.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
+            }
+            root.AddMember("VolumesFrom", json_volumes_from, allocator);
 
             //entrypoint
             rapidjson::Value json_entry_point(rapidjson::kArrayType);
