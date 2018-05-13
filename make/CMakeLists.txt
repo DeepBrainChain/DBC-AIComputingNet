@@ -27,7 +27,8 @@ SET(DEBUG_MODE ON)
 SET(CMAKE_CXX_FLAGS "-std=c++11" )
 SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
-SET(MATRIX_FLAGS "-D__linux__ -D__x86_64__ ")
+SET(MATRIX_FLAGS "-D__linux__ -D__x86_64__ -pthread ")
+#SET(MATRIX_FLAGS "-D__linux__ -D__x86_64__ -pthread -D_REENTRANT ")
 #MAC -DHAVE_GETENTROPY_RAND
 
 #version setting
@@ -182,7 +183,7 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent/event2 THIRD_LIBEVENT_EVEN
 
 #cmake -D DEBUG_MODE=ON for release or debug
 IF(DEBUG_MODE)
-	ADD_DEFINITIONS("${CMAKE_CXX_FLAGS} ${MATRIX_FLAGS} -O0 -Wall -g -ggdb -DDEBUG -pthread -D_REENTRANT ")	
+	ADD_DEFINITIONS("${CMAKE_CXX_FLAGS} ${MATRIX_FLAGS} -O0 -Wall -g -ggdb -DDEBUG")	
 else()
 	ADD_DEFINITIONS("${CMAKE_CXX_FLAGS} ${MATRIX_FLAGS} -O3 -Wall –DNDEBUG")
 ENDIF()
@@ -243,7 +244,7 @@ SET(LIBRARIES)
 MESSAGE(STATUS "${Boost_LIBRARIES}")
 #libboost_thread.a -lboost_log_setup
 #TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -lpthread -ldl)
-TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} libevent.a libleveldb.a libevent_core.a libevent_openssl.a libevent_pthreads.a libcrypto.a libssl.a libsecp256k1.a libboost_thread.a -pthread libpthread.a -ldl)
+TARGET_LINK_LIBRARIES(${OUTPUT_NAME} ${LIBRARIES} ${Boost_LIBRARIES} libevent.a libleveldb.a libevent_core.a libevent_openssl.a libevent_pthreads.a libcrypto.a libssl.a libsecp256k1.a libboost_thread.a -pthread -ldl)
 
 
 ############################################################################
