@@ -9,6 +9,9 @@ if [ $# -ne 3 ]; then
 	exit
 fi
 
+
+SYSTEM=`uname -s`
+
 #define variable
 exit_code=0
 sleep_time=5s
@@ -82,7 +85,12 @@ if [ ! -d $home_dir ]; then
 	mkdir $home_dir
 fi
 
+echo -n "cd "
+echo $home_dir
 cd $home_dir
+
+
+myecho "\n\n"
 
 #download data_dir
 echo "======================================================="
@@ -122,7 +130,7 @@ if [ $? -ne 0 ]; then
 	exit
 fi
 
-echo -n "end to download code dir"
+echo -n "end to download code dir: "
 echo $code_dir_hash
 sleep $sleep_time
 
@@ -131,7 +139,7 @@ myecho "\n\n"
 
 #start exec task
 echo "======================================================="
-echo -n "begin to exec task"
+echo -n "begin to exec task: "
 echo $home_dir/$code_dir_hash/$task
 python $home_dir/$code_dir_hash/$task
 
@@ -140,7 +148,7 @@ if [ $? -ne 0 ]; then
 	exit
 fi
 
-echo -n "end to exec task"
+echo -n "end to exec task: "
 echo $home_dir/$code_dir_hash/$task
 
 
@@ -160,7 +168,7 @@ kill -TERM $PROC_ID
 myecho "\n\n"
 
 echo "======================================================="
-echo "end to exec dbc_task.sh and ready to say goodbye!:-)"
+echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
 
 
 
