@@ -16,7 +16,7 @@
 #include "decoder.h"
 
 #define MIN_MATRIX_MSG_CODE_LEN                         30                                //MIN MSG_LEN in code frame
-#define MAX_MATRIX_MSG_CODE_LEN                            512                              //MAX MSG_LEN in code frame
+//#define MAX_MATRIX_MSG_CODE_LEN                            10240                              //MAX MSG_LEN in code frame
 namespace matrix
 {
     namespace core
@@ -60,11 +60,11 @@ namespace matrix
                     return DECODE_ERROR;
                 }
 
-                if (frame_len > MAX_MATRIX_MSG_CODE_LEN)
-                {
-                    LOG_ERROR << "matrix decode msg_len too long: " << frame_len;
-                    return DECODE_ERROR;
-                }
+                //if (frame_len > MAX_MATRIX_MSG_CODE_LEN)
+                //{
+                //    LOG_ERROR << "matrix decode msg_len too long: " << frame_len;
+                //    return DECODE_ERROR;
+                //}
 
                 //decode frame
                 return decode_frame(ctx, in, message);
