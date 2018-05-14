@@ -72,6 +72,12 @@ if [ $exit_code -ne 0 ]; then
 	exit
 fi
 
+#add ipfs bootstrap node
+ipfs bootstrap add /ip4/115.126.104.135/tcp/4001/ipfs/QmbyDN6ZhHz9Q9rTjtSDAm2BJxNmrJXoV65ptVtFUUbHvy
+ipfs bootstrap add /ip4/118.184.48.235/tcp/4001/ipfs/QmXJ2YUg7xRo4CsK9GHdVGaQU7HnzQ8Hnsaw3cTskHHeJT
+ipfs bootstrap add /ip4/118.99.59.110/tcp/4001/ipfs/Qmcznrive6P5gkjNCc9ZwFmiRkExWw4kcShAdJrjhiDzEs
+
+
 echo "end to start ipfs"
 sleep $sleep_time
 
