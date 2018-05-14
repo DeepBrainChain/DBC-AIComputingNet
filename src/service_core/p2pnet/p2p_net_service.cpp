@@ -466,8 +466,13 @@ namespace matrix
             node->m_connected_time = std::time(nullptr);
             node->m_live_time = 0;
             node->m_connection_status = connected;
-            std::shared_ptr<matrix::core::channel> ptr_ch = CONNECTION_MANAGER->get_channel(sid);
-            std::shared_ptr<matrix::core::tcp_socket_channel> ptr_tcp_ch = std::dynamic_pointer_cast<matrix::core::tcp_socket_channel>(ptr_ch);
+            auto ptr_ch = CONNECTION_MANAGER->get_channel(sid);
+            if (!ptr_ch)
+            {
+                LOG_ERROR << "not find in connected channels: " << sid.to_string();
+                return false;
+            }
+            auto ptr_tcp_ch = std::dynamic_pointer_cast<matrix::core::tcp_socket_channel>(ptr_ch);
             if (ptr_tcp_ch)
             {
                 //prerequisite: channel has started
@@ -495,6 +500,7 @@ namespace matrix
         {
             std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
             assert(nullptr != req_content);
+            //filter node which connects to itself
             if (req_content->body.__isset.node_id)
             {
                 if (req_content->body.node_id == CONF_MANAGER->get_node_id())
