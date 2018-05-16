@@ -466,7 +466,7 @@ namespace ai
                 std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config);
                 if (nullptr == resp || resp->container_id.empty())
                 {
-                    //flush to db: update container id, checki point 1
+                    //flush to db: update container id, check point 1
                     write_task_to_db(task);
 
                     LOG_ERROR << "ai power provider service create container error";
@@ -479,7 +479,7 @@ namespace ai
                     //update container id
                     task->container_id = resp->container_id;
 
-                    //flush to db: update container id, checki point 1
+                    //flush to db: update container id, check point 1
                     write_task_to_db(task);
 
                     LOG_DEBUG << "ai power provider service create container successfully, container id: " << task->container_id;
@@ -491,7 +491,7 @@ namespace ai
             int32_t ret = m_container_client->start_container(task->container_id);
             if (E_SUCCESS != ret)
             {
-                //flush to db: update status, checki point 2
+                //flush to db: update status, check point 2
                 write_task_to_db(task);
 
                 LOG_ERROR << "ai power provider service start container error, task id: " << task->task_id << "  container id: " << task->container_id;
@@ -502,10 +502,10 @@ namespace ai
                 //update status
                 task->status = task_running;
 
-                //flush to db: update status, checki point 2
+                //flush to db: update status, check point 2
                 write_task_to_db(task);
 
-                LOG_DEBUG << "ai power provider service start container successfully and update task status runing, task id: " << task->task_id << "  container id: " << task->container_id;
+                LOG_DEBUG << "ai power provider service start container successfully and update task status running, task id: " << task->task_id << "  container id: " << task->container_id;
                 return E_SUCCESS;
             }
         }
