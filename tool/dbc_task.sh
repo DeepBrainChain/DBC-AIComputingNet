@@ -74,6 +74,7 @@ fi
 
 #add ipfs bootstrap node
 ipfs bootstrap rm --all
+
 ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
 
 
