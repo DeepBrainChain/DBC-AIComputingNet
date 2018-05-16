@@ -20,12 +20,13 @@ namespace fs = boost::filesystem;
 extern void signal_usr1_handler(int);
 
 
-#define CONF_DIR_NAME                         "conf"
+#define CONF_DIR_NAME                           "conf"
 #define DAT_DIR_NAME                            "dat"
-#define DB_DIR_NAME                              "db"
-#define CONF_FILE_NAME                        "core.conf"
-#define PEER_FILE_NAME                        "peer.conf"
-#define DEFAULT_PATH_BUF_LEN         512
+#define DB_DIR_NAME                             "db"
+#define CONF_FILE_NAME                          "core.conf"
+#define PEER_FILE_NAME                          "peer.conf"
+#define DAT_PEERS_FILE_NAME                     "peer_cand.dat"
+#define DEFAULT_PATH_BUF_LEN                    512
 
 
 namespace matrix

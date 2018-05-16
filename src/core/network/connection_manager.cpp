@@ -295,7 +295,7 @@ namespace matrix
                 assert(connector != nullptr);
 
                 //start
-                int32_t ret = connector->start();
+                int32_t ret = connector->start(2);//retry twice
                 if (E_SUCCESS != ret)
                 {
                     LOG_ERROR << "connection manager start connect failed at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();

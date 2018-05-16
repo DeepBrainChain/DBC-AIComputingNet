@@ -253,7 +253,12 @@ namespace matrix
                 {
                     tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
                     peer_candidate pc = { ep, ns_in_use, 0, time(nullptr), 0 };
-                    m_peer_candidates.push_back(std::move(pc));              
+                    std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                        , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
+                    if (it == m_peer_candidates.end())
+                    {
+                        m_peer_candidates.push_back(std::move(pc));
+                    }            
 					
                     //start connect
                     LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
@@ -398,14 +403,20 @@ namespace matrix
 
         int32_t p2p_net_service::on_timer_check_peer_candidate()
         {
-            //check up-bound
+            //check up-bound & remove candidate that try too much
             uint32_t in_use_peer_cnt = 0;
-            for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+            for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); )
             {
                 if (ns_in_use == it->net_st)
                 {
                     in_use_peer_cnt++;
                 }
+                else if ((ns_failed == it->net_st) && (it->reconn_cnt > max_reconnect_times))
+                {
+                    m_peer_candidates.erase(it++);
+                    continue;
+                }
+                ++it;
             }
             if (in_use_peer_cnt >= max_connected_cnt)
             {
@@ -511,7 +522,7 @@ namespace matrix
                         auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
                         if (tcp_ch)
                         {
-                             std::list<peer_candidate>::iterator it = std::find_if( m_peer_candidates.begin(), m_peer_candidates.end()
+                            std::list<peer_candidate>::iterator it = std::find_if( m_peer_candidates.begin(), m_peer_candidates.end()
                                 , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; } );
                             if (it != m_peer_candidates.end())
                             {
@@ -591,6 +602,10 @@ namespace matrix
                     {
                         it->last_conn_tm = time(nullptr);
                         it->net_st = ns_failed;
+                        //move it to end
+                        auto pc = *it;
+                        m_peer_candidates.erase(it);
+                        m_peer_candidates.push_back(pc);
                     }
                     else
                     {
@@ -674,6 +689,9 @@ namespace matrix
 
                 CONNECTION_MANAGER->send_message(req_msg->header.dst_sid, req_msg);
 
+                //last sentence before return
+                CONNECTION_MANAGER->stop_connect(notification_content->ep);
+
                 return E_SUCCESS;
             }
             else
@@ -689,7 +707,9 @@ namespace matrix
                     LOG_WARNING << "a client tcp connection failed, but not in peer candidate: " << notification_content->ep.address() << ":" << notification_content->ep.port();
                 }
 
-                //cancel connect and connect next        
+                //cancel connect and connect next    
+                //last sentence before return
+                CONNECTION_MANAGER->stop_connect(notification_content->ep);
 
                 return E_SUCCESS;
             }
@@ -776,19 +796,28 @@ namespace matrix
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> rsp = std::dynamic_pointer_cast<matrix::service_core::get_peer_nodes_resp>(msg->content);
             for (auto it = rsp->body.peer_nodes_list.begin(); it != rsp->body.peer_nodes_list.end(); ++it)
             {
-                if (it->addr.ip.empty() || it->addr.port <= 0)
+                try
                 {
-                    LOG_DEBUG << "recv a peer with empty addr: " << it->peer_node_id;
+                    tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
+                    LOG_DEBUG << "recv a peer(" << it->addr.ip << ":" << it->addr.port << "), node_id: " << it->peer_node_id;
+                    //is in list
+                    std::list<peer_candidate>::iterator it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                        , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
+                    if (it_pc == m_peer_candidates.end())
+                    {
+                        peer_candidate pc = { ep, ns_idle, 0, time(nullptr), 0 };
+                        m_peer_candidates.push_back(std::move(pc));
+                    }
+                }
+                catch (boost::system::system_error e)
+                {
+                    LOG_ERROR << "recv a peer but error: " << e.what();
                     continue;
                 }
-                tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
-                //is in list
-                std::list<peer_candidate>::iterator it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                    , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
-                if (it_pc == m_peer_candidates.end())
+                catch (...)
                 {
-                    peer_candidate pc = { ep, ns_idle, 0, time(nullptr), 0 };
-                    m_peer_candidates.push_back(std::move(pc));
+                    LOG_DEBUG << "recv a peer(" << it->addr.ip << ":" << it->addr.port << ")" << ", but failed to parse.";
+                    continue;
                 }
             }
 
