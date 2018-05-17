@@ -103,6 +103,11 @@ namespace matrix
             //node.dat path
             fs::path node_dat_path = env_manager::get_dat_path();
             node_dat_path /= fs::path(NODE_FILE_NAME);
+            if (!fs::exists(node_dat_path) || fs::is_empty(node_dat_path))
+            {
+                std::cout << "Parse node.dat error. Please try  ./dbc --init  command to init node id if node id not inited." << std::endl;
+                return E_DEFAULT;
+            }
 
             try
             {
