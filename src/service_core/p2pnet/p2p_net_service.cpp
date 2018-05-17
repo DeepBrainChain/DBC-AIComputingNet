@@ -187,6 +187,7 @@ namespace matrix
         int32_t p2p_net_service::init_connector()
         {
             conf_manager *manager = (conf_manager *)g_server->get_module_manager()->get(conf_manager_name).get();
+            assert(nullptr != manager);
 
             if (!manager->count("peer"))
             {
@@ -510,7 +511,11 @@ namespace matrix
         int32_t p2p_net_service::on_ver_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
-            assert(nullptr != req_content);
+            if (!req_content)
+            {
+                LOG_ERROR << "recv ver_req, but req_content is null.";
+                return E_DEFAULT;
+            }
             //filter node which connects to itself
             if (req_content->body.__isset.node_id)
             {
@@ -609,7 +614,6 @@ namespace matrix
                     }
                     else
                     {
-                        assert(0);
                         LOG_ERROR << "a peer_node network error occurs, but not in ip candidates: " << err_msg->ep.address() << ":" << err_msg->ep.port();
                     }
                 }
@@ -898,8 +902,8 @@ namespace matrix
                     {
                         if (it->second->m_id == CONF_MANAGER->get_node_id())
                         {
-                            assert(0); //should never occur
-                            LOG_WARNING << "peer node(" << it->second->m_id << ") is myself.";
+                            //assert(0); //should never occur
+                            LOG_ERROR << "peer node(" << it->second->m_id << ") is myself.";
                             continue;
                         }                            
                         matrix::service_core::peer_node_info info;
