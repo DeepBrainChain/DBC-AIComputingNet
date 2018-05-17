@@ -357,6 +357,20 @@ namespace ai
 
             const std::string &task_id = cmd_req_content->task_id;
 
+            //check valid
+            std::string task_value;
+            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+            if (!status.ok())
+            {
+                LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
+                //public resp directly
+                std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "node id not exists";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::stop_training_req> req_content = std::make_shared<matrix::service_core::stop_training_req>();
 
@@ -403,13 +417,13 @@ namespace ai
                     leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
                     if (!status.ok())
                     {
-                        LOG_ERROR << "ai power requestor service cmd list task check task iderror: " << task_id;
+                        LOG_ERROR << "ai power requester service cmd list task check task id error: " << task_id;
                         continue;
                     }
 
                     //add to list task
                     req_content->body.task_list.push_back(task_id);
-                    LOG_DEBUG << "ai power requestor service cmd list task: " << task_id;
+                    LOG_DEBUG << "ai power requester service cmd list task: " << task_id;
                 }
             }
             else
@@ -452,11 +466,17 @@ namespace ai
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "ai power requestor service list training add session error: " << session->get_session_id();
+                LOG_ERROR << "ai power requester service list training add session error: " << session->get_session_id();
+                
+                std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "internal error while processing this cmd";
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
             
-            LOG_DEBUG << "ai power requestor service list training add session: " << session->get_session_id();
+            LOG_DEBUG << "ai power requester service list training add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
