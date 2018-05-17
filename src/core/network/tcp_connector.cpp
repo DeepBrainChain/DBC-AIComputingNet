@@ -70,18 +70,20 @@ namespace matrix
         {
             if (true == m_connected)
             {
+                m_reconnect_timer_handler = nullptr;
                 LOG_DEBUG << "tcp connector stop: has connected to remote server and return";
                 return E_SUCCESS;
             }
 
             //not connected, means is reconnecting......
+            //stop and release timer
             boost::system::error_code error;
-
             m_reconnect_timer.cancel(error);
             if (error)
             {
                 LOG_ERROR << "tcp connector connect timer cancel error: " << error;
             }
+            m_reconnect_timer_handler = nullptr;
 
             //cancel
             std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_socket().cancel(error);
