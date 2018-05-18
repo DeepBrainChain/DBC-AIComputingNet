@@ -155,14 +155,22 @@ namespace matrix
 
         int32_t connection_manager::stop_io_services()
         {
-            LOG_DEBUG << "connection manager stop acceptor group";
-            m_acceptor_group->stop();
+            try
+            {
+                LOG_DEBUG << "connection manager stop acceptor group";
+                m_acceptor_group->stop();
 
-            LOG_DEBUG << "connection manager stop worker group";
-            m_worker_group->stop();
+                LOG_DEBUG << "connection manager stop worker group";
+                m_worker_group->stop();
 
-            LOG_DEBUG << "connection manager stop connector group";
-            m_connector_group->stop();
+                LOG_DEBUG << "connection manager stop connector group";
+                m_connector_group->stop();
+
+            }
+            catch(const boost::exception & e)
+            {
+                LOG_ERROR << "connection_manager stop_io_services error:" << diagnostic_information(e);
+            }
 
             return E_SUCCESS;
         }
@@ -230,7 +238,7 @@ namespace matrix
 
             try
             {
-                std::shared_ptr<io_service> ios(m_acceptor_group->get_io_service());
+                std::weak_ptr<io_service> ios(m_acceptor_group->get_io_service());
                 std::shared_ptr<tcp_acceptor> acceptor(new tcp_acceptor(ios, m_worker_group, ep, func));
                 assert(acceptor != nullptr);
 
