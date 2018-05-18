@@ -17,13 +17,14 @@ namespace matrix
     namespace core
     {
 
-        tcp_acceptor::tcp_acceptor(ios_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func)
+        tcp_acceptor::tcp_acceptor(ios_weak_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func)
             : m_endpoint(endpoint)
             , m_io_service(io_service)
             , m_worker_group(worker_group)
-            , m_acceptor(*m_io_service, endpoint, true)
+            , m_acceptor(*io_service.lock(), endpoint, true)
             , m_handler_create_func(func)
         {
+
         }
 
         int32_t tcp_acceptor::start()

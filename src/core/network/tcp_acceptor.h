@@ -34,14 +34,14 @@ namespace matrix
         class tcp_acceptor : public std::enable_shared_from_this<tcp_acceptor>, boost::noncopyable
         {
 
-            using ios_ptr = typename std::shared_ptr<io_service>;
+            //using ios_ptr = typename std::shared_ptr<io_service>;
+            using ios_weak_ptr = typename std::weak_ptr<io_service>;
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
 
         public:
 
-            tcp_acceptor(ios_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
-
-            virtual ~tcp_acceptor() = default;
+            //tcp_acceptor(ios_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
+            tcp_acceptor(ios_weak_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
 
             virtual int32_t start();
 
@@ -59,7 +59,8 @@ namespace matrix
 
             tcp::endpoint m_endpoint;
 
-            ios_ptr m_io_service;
+            //ios_ptr m_io_service;
+            ios_weak_ptr m_io_service;
 
             nio_loop_ptr m_worker_group;
 
