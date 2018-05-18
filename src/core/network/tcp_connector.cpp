@@ -158,14 +158,15 @@ namespace matrix
             //modify by regulus:if error isn't report and the connection isn't valid, then the system will be crash in channel->start
             try
             {
+                std::shared_ptr<tcp_socket_channel> channel = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel);
                 //start to work
                 if (E_SUCCESS != m_client_channel->start())
                 {
-                    LOG_ERROR << "tcp connector channel start work error " << m_connect_addr << m_sid.to_string();
+                    LOG_ERROR << "tcp connector channel start work error. remote addr:" << m_connect_addr << " host addr:" << channel->get_local_addr() << m_sid.to_string();
                 }
                 else
                 {
-                    LOG_DEBUG << "tcp connector channel start work successfully " << m_connect_addr << m_sid.to_string();
+                    LOG_DEBUG << "tcp connector channel start work successfully. remote addr:" << m_connect_addr << " host addr:" << channel->get_local_addr() << m_sid.to_string();;
                 }
             }
             catch (const boost::exception & e)
