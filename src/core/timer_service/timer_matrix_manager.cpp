@@ -81,7 +81,7 @@ namespace matrix
         {
             stop_timer();
             m_timer_group->stop();
-
+            m_timer_handler = nullptr;
             LOG_DEBUG << "timer matrix manager has stopped";
             return E_SUCCESS;
         }
