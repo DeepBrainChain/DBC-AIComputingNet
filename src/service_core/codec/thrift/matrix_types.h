@@ -15,7 +15,6 @@
 
 using namespace matrix::core;
 
-
 namespace matrix { namespace service_core {
 
 class msg_header;
@@ -65,6 +64,16 @@ class list_training_req;
 class list_training_resp_body;
 
 class list_training_resp;
+
+class logs_req_body;
+
+class logs_req;
+
+class peer_node_log;
+
+class logs_resp_body;
+
+class logs_resp;
 
 typedef struct _msg_header__isset {
   _msg_header__isset() : magic(false), msg_name(false), nonce(false), session_id(false), exten_info(false) {}
@@ -1314,6 +1323,252 @@ class list_training_resp : public virtual base {
 void swap(list_training_resp &a, list_training_resp &b);
 
 std::ostream& operator<<(std::ostream& out, const list_training_resp& obj);
+
+typedef struct _logs_req_body__isset {
+  _logs_req_body__isset() : task_id(false), peer_nodes_list(false), head_or_tail(false), number_of_lines(false) {}
+  bool task_id :1;
+  bool peer_nodes_list :1;
+  bool head_or_tail :1;
+  bool number_of_lines :1;
+} _logs_req_body__isset;
+
+class logs_req_body : public virtual base {
+ public:
+
+  logs_req_body(const logs_req_body&);
+  logs_req_body& operator=(const logs_req_body&);
+  logs_req_body() : task_id(), head_or_tail(0), number_of_lines(0) {
+  }
+
+  virtual ~logs_req_body() throw();
+  std::string task_id;
+  std::vector<std::string>  peer_nodes_list;
+  int8_t head_or_tail;
+  int16_t number_of_lines;
+
+  _logs_req_body__isset __isset;
+
+  void __set_task_id(const std::string& val);
+
+  void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+  void __set_head_or_tail(const int8_t val);
+
+  void __set_number_of_lines(const int16_t val);
+
+  bool operator == (const logs_req_body & rhs) const
+  {
+    if (!(task_id == rhs.task_id))
+      return false;
+    if (!(peer_nodes_list == rhs.peer_nodes_list))
+      return false;
+    if (!(head_or_tail == rhs.head_or_tail))
+      return false;
+    if (!(number_of_lines == rhs.number_of_lines))
+      return false;
+    return true;
+  }
+  bool operator != (const logs_req_body &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const logs_req_body & ) const;
+
+  uint32_t read(protocol* iprot);
+  uint32_t write(protocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(logs_req_body &a, logs_req_body &b);
+
+std::ostream& operator<<(std::ostream& out, const logs_req_body& obj);
+
+typedef struct _logs_req__isset {
+  _logs_req__isset() : header(false), body(false) {}
+  bool header :1;
+  bool body :1;
+} _logs_req__isset;
+
+class logs_req : public virtual base {
+ public:
+
+  logs_req(const logs_req&);
+  logs_req& operator=(const logs_req&);
+  logs_req() {
+  }
+
+  virtual ~logs_req() throw();
+  msg_header header;
+  logs_req_body body;
+
+  _logs_req__isset __isset;
+
+  void __set_header(const msg_header& val);
+
+  void __set_body(const logs_req_body& val);
+
+  bool operator == (const logs_req & rhs) const
+  {
+    if (!(header == rhs.header))
+      return false;
+    if (!(body == rhs.body))
+      return false;
+    return true;
+  }
+  bool operator != (const logs_req &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const logs_req & ) const;
+
+  uint32_t read(protocol* iprot);
+  uint32_t write(protocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(logs_req &a, logs_req &b);
+
+std::ostream& operator<<(std::ostream& out, const logs_req& obj);
+
+typedef struct _peer_node_log__isset {
+  _peer_node_log__isset() : peer_node_id(false), log_content(false) {}
+  bool peer_node_id :1;
+  bool log_content :1;
+} _peer_node_log__isset;
+
+class peer_node_log : public virtual base {
+ public:
+
+  peer_node_log(const peer_node_log&);
+  peer_node_log& operator=(const peer_node_log&);
+  peer_node_log() : peer_node_id(), log_content() {
+  }
+
+  virtual ~peer_node_log() throw();
+  std::string peer_node_id;
+  std::string log_content;
+
+  _peer_node_log__isset __isset;
+
+  void __set_peer_node_id(const std::string& val);
+
+  void __set_log_content(const std::string& val);
+
+  bool operator == (const peer_node_log & rhs) const
+  {
+    if (!(peer_node_id == rhs.peer_node_id))
+      return false;
+    if (!(log_content == rhs.log_content))
+      return false;
+    return true;
+  }
+  bool operator != (const peer_node_log &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const peer_node_log & ) const;
+
+  uint32_t read(protocol* iprot);
+  uint32_t write(protocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(peer_node_log &a, peer_node_log &b);
+
+std::ostream& operator<<(std::ostream& out, const peer_node_log& obj);
+
+typedef struct _logs_resp_body__isset {
+  _logs_resp_body__isset() : log(false) {}
+  bool log :1;
+} _logs_resp_body__isset;
+
+class logs_resp_body : public virtual base {
+ public:
+
+  logs_resp_body(const logs_resp_body&);
+  logs_resp_body& operator=(const logs_resp_body&);
+  logs_resp_body() {
+  }
+
+  virtual ~logs_resp_body() throw();
+  peer_node_log log;
+
+  _logs_resp_body__isset __isset;
+
+  void __set_log(const peer_node_log& val);
+
+  bool operator == (const logs_resp_body & rhs) const
+  {
+    if (!(log == rhs.log))
+      return false;
+    return true;
+  }
+  bool operator != (const logs_resp_body &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const logs_resp_body & ) const;
+
+  uint32_t read(protocol* iprot);
+  uint32_t write(protocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(logs_resp_body &a, logs_resp_body &b);
+
+std::ostream& operator<<(std::ostream& out, const logs_resp_body& obj);
+
+typedef struct _logs_resp__isset {
+  _logs_resp__isset() : header(false), body(false) {}
+  bool header :1;
+  bool body :1;
+} _logs_resp__isset;
+
+class logs_resp : public virtual base {
+ public:
+
+  logs_resp(const logs_resp&);
+  logs_resp& operator=(const logs_resp&);
+  logs_resp() {
+  }
+
+  virtual ~logs_resp() throw();
+  msg_header header;
+  logs_resp_body body;
+
+  _logs_resp__isset __isset;
+
+  void __set_header(const msg_header& val);
+
+  void __set_body(const logs_resp_body& val);
+
+  bool operator == (const logs_resp & rhs) const
+  {
+    if (!(header == rhs.header))
+      return false;
+    if (!(body == rhs.body))
+      return false;
+    return true;
+  }
+  bool operator != (const logs_resp &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const logs_resp & ) const;
+
+  uint32_t read(protocol* iprot);
+  uint32_t write(protocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(logs_resp &a, logs_resp &b);
+
+std::ostream& operator<<(std::ostream& out, const logs_resp& obj);
 
 }} // namespace
 

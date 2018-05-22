@@ -226,6 +226,56 @@ namespace ai
             }
         };
 
+        class cmd_logs_req : public matrix::core::base
+        {
+        public:
+
+            std::string task_id;
+
+            std::vector<std::string> peer_nodes_list;
+
+            uint8_t head_or_tail;
+
+            uint16_t number_of_lines;
+        };
+
+        class cmd_peer_node_log
+        {
+        public:
+
+            std::string peer_node_id;
+
+            std::string log_content;
+
+        };
+
+        class cmd_logs_resp : public matrix::core::base, public outputter
+        {
+        public:
+
+            int32_t result;
+            std::string result_info;
+
+            std::vector<cmd_peer_node_log> peer_node_logs;
+
+            void format_output()
+            {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+
+                auto it = peer_node_logs.begin();
+                for (; it != peer_node_logs.end(); it++)
+                {
+                    cout << "****************************************************************************************************" << endl;
+                    cout << "node id: " << it->peer_node_id << endl;
+                    cout << it->log_content << endl << endl << endl;
+                }
+            }
+        };
+
         class api_call_handler
         {
         public:
@@ -251,8 +301,6 @@ namespace ai
 
                 //publish
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-
-                //cout << "waiting for resp............";
                 
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);

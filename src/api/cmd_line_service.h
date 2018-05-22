@@ -13,6 +13,7 @@
 
 #include "api_call_handler.h"
 #include "module.h"
+#include "task_common_def.h"
 
 
 using namespace matrix::core;
@@ -20,6 +21,7 @@ using namespace matrix::core;
 #define MAX_CMD_LINE_BUF_LEN                            1024
 #define MAX_CMD_LINE_ARGS_COUNT                    32
 #define CMD_LINE_API_MODULE                               "cmd_line_api_module"
+
 
 
 namespace ai
@@ -61,6 +63,8 @@ namespace ai
             void list_training(int argc, char* argv[]);
 
             void get_peers(int argc, char* argv[]);
+
+            void logs(int argc, char* argv[]);
 
         protected:
 

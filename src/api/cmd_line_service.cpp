@@ -40,8 +40,9 @@ namespace ai
             cout << "start:         start training" << endl;
             cout << "stop:          stop training" << endl;
             cout << "start_multi:   start multi training tasks" << endl;
-            cout << "list:          list training tasks" << endl;
-            cout << "peers:         get information of peers" << endl;
+            cout << "list:             list training tasks" << endl;
+            cout << "peers:        get information of peers" << endl;
+            cout << "logs:           get logs of task" << endl;
             cout << "quit / exit:   exit program" << endl;
             cout << "-----------------------------------------" << endl;
         }
@@ -71,6 +72,7 @@ namespace ai
             m_invokers["start_multi"] = std::bind(&cmd_line_service::start_multi_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["list"] = std::bind(&cmd_line_service::list_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["peers"] = std::bind(&cmd_line_service::get_peers, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["logs"] = std::bind(&cmd_line_service::logs, this, std::placeholders::_1, std::placeholders::_2);
         }
         
         void cmd_line_service::on_usr_cmd()
@@ -359,6 +361,89 @@ namespace ai
                     cout << argv[0] << " invalid option" << endl;
                     cout << opts;
                 }
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
+        }
+
+        void cmd_line_service::logs(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("task logs options");
+
+            try
+            {
+                opts.add_options()
+                    ("help,h", "get task running logs")
+                    ("tail", bpo::value<std::string>(), "get log from tail")
+                    ("head", bpo::value<std::string>(), "get log from head")
+                    ("task,t", bpo::value<std::string>(), "task id");
+
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                if (vm.count("task") || vm.count("t"))
+                {
+                    std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
+                    req->task_id = vm["task"].as<std::string>();
+
+                    std::string number_of_lines;
+
+                    //tail or head
+                    if (vm.count("tail"))
+                    {
+                        req->head_or_tail = GET_LOG_TAIL;          //get log from tail
+                        number_of_lines = vm["tail"].as<std::string>();
+                    }
+                    else if (vm.count("head"))
+                    {
+                        req->head_or_tail = GET_LOG_HEAD;          //get log from head
+                        number_of_lines = vm["head"].as<std::string>();
+                    }
+                    else
+                    {
+                        req->head_or_tail = GET_LOG_TAIL;          //get log from tail
+                    }
+
+                    //number of lines
+                    if (number_of_lines == "all")
+                    {
+                        req->number_of_lines = 0;
+                    }
+                    else if (number_of_lines == DEFAULT_STRING)
+                    {
+                        req->number_of_lines = DEFAULT_NUMBER_OF_LINES;
+                    }
+                    else
+                    {
+                        uint16_t lines = std::stoul(number_of_lines);
+                        req->number_of_lines = lines > MAX_NUMBER_OF_LINES ? MAX_NUMBER_OF_LINES : lines;
+                    }
+
+                    std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << endl << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
+                }
+                else if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                }
+                else
+                {
+                    cout << argv[0] << " invalid option" << endl;
+                    cout << opts;
+                }
+
             }
             catch (...)
             {

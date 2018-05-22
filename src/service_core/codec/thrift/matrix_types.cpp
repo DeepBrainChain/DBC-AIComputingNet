@@ -3166,4 +3166,604 @@ void list_training_resp::printTo(std::ostream& out) const {
   out << ")";
 }
 
+
+logs_req_body::~logs_req_body() throw() {
+}
+
+
+void logs_req_body::__set_task_id(const std::string& val) {
+  this->task_id = val;
+}
+
+void logs_req_body::__set_peer_nodes_list(const std::vector<std::string> & val) {
+  this->peer_nodes_list = val;
+}
+
+void logs_req_body::__set_head_or_tail(const int8_t val) {
+  this->head_or_tail = val;
+}
+
+void logs_req_body::__set_number_of_lines(const int16_t val) {
+  this->number_of_lines = val;
+}
+std::ostream& operator<<(std::ostream& out, const logs_req_body& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t logs_req_body::read(protocol* iprot) {
+
+  
+  uint32_t xfer = 0;
+  std::string fname;
+  TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == T_STRING) {
+          xfer += iprot->readString(this->task_id);
+          this->__isset.task_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == T_LIST) {
+          {
+            this->peer_nodes_list.clear();
+            uint32_t _size92;
+            TType _etype95;
+            xfer += iprot->readListBegin(_etype95, _size92);
+            this->peer_nodes_list.resize(_size92);
+            uint32_t _i96;
+            for (_i96 = 0; _i96 < _size92; ++_i96)
+            {
+              xfer += iprot->readString(this->peer_nodes_list[_i96]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.peer_nodes_list = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
+        if (ftype == T_BYTE) {
+          xfer += iprot->readByte(this->head_or_tail);
+          this->__isset.head_or_tail = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 4:
+        if (ftype == T_I16) {
+          xfer += iprot->readI16(this->number_of_lines);
+          this->__isset.number_of_lines = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t logs_req_body::write(protocol* oprot) const {
+  uint32_t xfer = 0;
+  
+  xfer += oprot->writeStructBegin("logs_req_body");
+
+  xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
+  xfer += oprot->writeString(this->task_id);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("peer_nodes_list", T_LIST, 2);
+  {
+    xfer += oprot->writeListBegin(T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    std::vector<std::string> ::const_iterator _iter97;
+    for (_iter97 = this->peer_nodes_list.begin(); _iter97 != this->peer_nodes_list.end(); ++_iter97)
+    {
+      xfer += oprot->writeString((*_iter97));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("head_or_tail", T_BYTE, 3);
+  xfer += oprot->writeByte(this->head_or_tail);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("number_of_lines", T_I16, 4);
+  xfer += oprot->writeI16(this->number_of_lines);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(logs_req_body &a, logs_req_body &b) {
+  using ::std::swap;
+  swap(a.task_id, b.task_id);
+  swap(a.peer_nodes_list, b.peer_nodes_list);
+  swap(a.head_or_tail, b.head_or_tail);
+  swap(a.number_of_lines, b.number_of_lines);
+  swap(a.__isset, b.__isset);
+}
+
+logs_req_body::logs_req_body(const logs_req_body& other98) {
+  task_id = other98.task_id;
+  peer_nodes_list = other98.peer_nodes_list;
+  head_or_tail = other98.head_or_tail;
+  number_of_lines = other98.number_of_lines;
+  __isset = other98.__isset;
+}
+logs_req_body& logs_req_body::operator=(const logs_req_body& other99) {
+  task_id = other99.task_id;
+  peer_nodes_list = other99.peer_nodes_list;
+  head_or_tail = other99.head_or_tail;
+  number_of_lines = other99.number_of_lines;
+  __isset = other99.__isset;
+  return *this;
+}
+void logs_req_body::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "logs_req_body(";
+  out << "task_id=" << to_string(task_id);
+  out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+  out << ", " << "head_or_tail=" << to_string(head_or_tail);
+  out << ", " << "number_of_lines=" << to_string(number_of_lines);
+  out << ")";
+}
+
+
+logs_req::~logs_req() throw() {
+}
+
+
+void logs_req::__set_header(const msg_header& val) {
+  this->header = val;
+}
+
+void logs_req::__set_body(const logs_req_body& val) {
+  this->body = val;
+}
+std::ostream& operator<<(std::ostream& out, const logs_req& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t logs_req::read(protocol* iprot) {
+
+  
+  uint32_t xfer = 0;
+  std::string fname;
+  TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == T_STRUCT) {
+          xfer += this->header.read(iprot);
+          this->__isset.header = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == T_STRUCT) {
+          xfer += this->body.read(iprot);
+          this->__isset.body = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t logs_req::write(protocol* oprot) const {
+  uint32_t xfer = 0;
+  
+  xfer += oprot->writeStructBegin("logs_req");
+
+  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += this->header.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += this->body.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(logs_req &a, logs_req &b) {
+  using ::std::swap;
+  swap(a.header, b.header);
+  swap(a.body, b.body);
+  swap(a.__isset, b.__isset);
+}
+
+logs_req::logs_req(const logs_req& other100) {
+  header = other100.header;
+  body = other100.body;
+  __isset = other100.__isset;
+}
+logs_req& logs_req::operator=(const logs_req& other101) {
+  header = other101.header;
+  body = other101.body;
+  __isset = other101.__isset;
+  return *this;
+}
+void logs_req::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "logs_req(";
+  out << "header=" << to_string(header);
+  out << ", " << "body=" << to_string(body);
+  out << ")";
+}
+
+
+peer_node_log::~peer_node_log() throw() {
+}
+
+
+void peer_node_log::__set_peer_node_id(const std::string& val) {
+  this->peer_node_id = val;
+}
+
+void peer_node_log::__set_log_content(const std::string& val) {
+  this->log_content = val;
+}
+std::ostream& operator<<(std::ostream& out, const peer_node_log& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t peer_node_log::read(protocol* iprot) {
+
+  
+  uint32_t xfer = 0;
+  std::string fname;
+  TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == T_STRING) {
+          xfer += iprot->readString(this->peer_node_id);
+          this->__isset.peer_node_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == T_STRING) {
+          xfer += iprot->readString(this->log_content);
+          this->__isset.log_content = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t peer_node_log::write(protocol* oprot) const {
+  uint32_t xfer = 0;
+  
+  xfer += oprot->writeStructBegin("peer_node_log");
+
+  xfer += oprot->writeFieldBegin("peer_node_id", T_STRING, 1);
+  xfer += oprot->writeString(this->peer_node_id);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("log_content", T_STRING, 2);
+  xfer += oprot->writeString(this->log_content);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(peer_node_log &a, peer_node_log &b) {
+  using ::std::swap;
+  swap(a.peer_node_id, b.peer_node_id);
+  swap(a.log_content, b.log_content);
+  swap(a.__isset, b.__isset);
+}
+
+peer_node_log::peer_node_log(const peer_node_log& other102) {
+  peer_node_id = other102.peer_node_id;
+  log_content = other102.log_content;
+  __isset = other102.__isset;
+}
+peer_node_log& peer_node_log::operator=(const peer_node_log& other103) {
+  peer_node_id = other103.peer_node_id;
+  log_content = other103.log_content;
+  __isset = other103.__isset;
+  return *this;
+}
+void peer_node_log::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "peer_node_log(";
+  out << "peer_node_id=" << to_string(peer_node_id);
+  out << ", " << "log_content=" << to_string(log_content);
+  out << ")";
+}
+
+
+logs_resp_body::~logs_resp_body() throw() {
+}
+
+
+void logs_resp_body::__set_log(const peer_node_log& val) {
+  this->log = val;
+}
+std::ostream& operator<<(std::ostream& out, const logs_resp_body& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t logs_resp_body::read(protocol* iprot) {
+
+  
+  uint32_t xfer = 0;
+  std::string fname;
+  TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == T_STRUCT) {
+          xfer += this->log.read(iprot);
+          this->__isset.log = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t logs_resp_body::write(protocol* oprot) const {
+  uint32_t xfer = 0;
+  
+  xfer += oprot->writeStructBegin("logs_resp_body");
+
+  xfer += oprot->writeFieldBegin("log", T_STRUCT, 1);
+  xfer += this->log.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(logs_resp_body &a, logs_resp_body &b) {
+  using ::std::swap;
+  swap(a.log, b.log);
+  swap(a.__isset, b.__isset);
+}
+
+logs_resp_body::logs_resp_body(const logs_resp_body& other104) {
+  log = other104.log;
+  __isset = other104.__isset;
+}
+logs_resp_body& logs_resp_body::operator=(const logs_resp_body& other105) {
+  log = other105.log;
+  __isset = other105.__isset;
+  return *this;
+}
+void logs_resp_body::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "logs_resp_body(";
+  out << "log=" << to_string(log);
+  out << ")";
+}
+
+
+logs_resp::~logs_resp() throw() {
+}
+
+
+void logs_resp::__set_header(const msg_header& val) {
+  this->header = val;
+}
+
+void logs_resp::__set_body(const logs_resp_body& val) {
+  this->body = val;
+}
+std::ostream& operator<<(std::ostream& out, const logs_resp& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t logs_resp::read(protocol* iprot) {
+
+  
+  uint32_t xfer = 0;
+  std::string fname;
+  TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == T_STRUCT) {
+          xfer += this->header.read(iprot);
+          this->__isset.header = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == T_STRUCT) {
+          xfer += this->body.read(iprot);
+          this->__isset.body = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t logs_resp::write(protocol* oprot) const {
+  uint32_t xfer = 0;
+  
+  xfer += oprot->writeStructBegin("logs_resp");
+
+  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += this->header.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += this->body.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(logs_resp &a, logs_resp &b) {
+  using ::std::swap;
+  swap(a.header, b.header);
+  swap(a.body, b.body);
+  swap(a.__isset, b.__isset);
+}
+
+logs_resp::logs_resp(const logs_resp& other106) {
+  header = other106.header;
+  body = other106.body;
+  __isset = other106.__isset;
+}
+logs_resp& logs_resp::operator=(const logs_resp& other107) {
+  header = other107.header;
+  body = other107.body;
+  __isset = other107.__isset;
+  return *this;
+}
+void logs_resp::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "logs_resp(";
+  out << "header=" << to_string(header);
+  out << ", " << "body=" << to_string(body);
+  out << ")";
+}
+
 }} // namespace

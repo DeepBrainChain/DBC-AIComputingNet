@@ -269,6 +269,26 @@ namespace matrix
 
         };
 
+        class container_logs_req
+        {
+        public:
+
+            std::string container_id;
+
+            int8_t head_or_tail;
+
+            int16_t number_of_lines;
+
+            bool timestamps;
+        };
+
+        class container_logs_resp
+        {
+        public:
+
+            std::string log_content;
+        };
+
     }
 
 }
