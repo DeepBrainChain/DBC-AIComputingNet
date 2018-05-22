@@ -235,7 +235,8 @@ namespace ai
                 //version
                 else if (vm.count("version") || vm.count("v"))
                 {
-                    cout << CORE_VERSION << endl;
+                    std::string ver = STR_VER(CORE_VERSION);
+                    cout << ver.substr(2, 4) << "." << ver.substr(6, 2) << "." << ver.substr(8, 2);
                     return E_EXIT_PARSE_COMMAND_LINE;
                 }
                 else if (vm.count("init"))
