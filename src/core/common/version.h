@@ -12,3 +12,6 @@
 //major version . minor version. bug fix version
 //version should be revised when official release
 #define CORE_VERSION                        0x00000200                              //0000.02.00
+#define STR_CONV(v)  #v 
+//STR_VER(CORE_VERSION)
+#define STR_VER(v)  STR_CONV(v)
