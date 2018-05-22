@@ -61,6 +61,8 @@ namespace matrix
             //inspect
             std::shared_ptr<container_inspect_response> inspect_container(std::string container_id);
 
+            //logs
+            std::shared_ptr<container_logs_resp> get_container_log(std::shared_ptr<container_logs_req> req);
 
         protected:
 

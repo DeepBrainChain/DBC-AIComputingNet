@@ -390,6 +390,67 @@ namespace matrix
             }
         }
 
+        std::shared_ptr<container_logs_resp> container_client::get_container_log(std::shared_ptr<container_logs_req> req)
+        {
+            if (nullptr == req)
+            {
+                LOG_ERROR << "get container log nullptr";
+                return nullptr;
+            }
+
+            //endpoint
+            std::string endpoint = "/containers/";
+            if (req->container_id.empty())
+            {
+                LOG_ERROR << "get container log container id empty";
+                return nullptr;
+            }
+
+            endpoint += req->container_id;
+            endpoint += "/logs?stderr=1&stdout=1";
+
+            //timestamp
+            if (true == req->timestamps)
+            {
+                endpoint += "&timestamps=true";
+            }
+
+            //get log from tail
+            if (1 == req->head_or_tail)
+            {
+                endpoint += (0 == req->number_of_lines) ? "&tail=all" : "&tail=" + std::to_string(req->number_of_lines);
+            }
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            //headers.push_back({"Accept-Charset", "utf-8"});
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client get container logs error: " << e.what();
+                return nullptr;
+            }
+
+            if (E_SUCCESS != ret)
+            {
+                return nullptr;
+            }
+            else
+            {
+                std::shared_ptr<container_logs_resp> logs_resp = std::make_shared<container_logs_resp>();
+                logs_resp->log_content = resp.body;
+
+                return logs_resp;
+            }
+        }
+
     }
 
 }

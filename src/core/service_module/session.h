@@ -31,7 +31,7 @@ namespace matrix
 
             service_session(uint32_t timer_id, std::string session_id) : m_timer_id(timer_id), m_session_id(session_id) {}
 
-            virtual ~service_session() = default;
+            virtual ~service_session() { clear(); }
 
             uint32_t get_timer_id() { return m_timer_id; }
 

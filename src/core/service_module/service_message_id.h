@@ -30,6 +30,8 @@
 #define LIST_TRAINING_REQ                                       "list_training_req"
 #define LIST_TRAINING_RESP                                      "list_training_resp"
 
+#define LOGS_REQ                                                 "logs_req"
+#define LOGS_RESP                                            "logs_resp"
 
 #define CMD_AI_TRAINING_NOTIFICATION_REQ                            "cmd_start_training_req"
 #define AI_TRAINING_NOTIFICATION_REQ                                "start_training_req"

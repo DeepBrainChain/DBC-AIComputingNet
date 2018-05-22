@@ -85,6 +85,8 @@ namespace ai
 
             int32_t on_list_training_req(std::shared_ptr<message> &msg);
 
+            int32_t on_logs_req(const std::shared_ptr<message> &msg);
+
         protected:
 
             //ai power provider service

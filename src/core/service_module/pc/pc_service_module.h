@@ -29,6 +29,9 @@ using namespace std;
 
 #define DEFAULT_MESSAGE_COUNT               102400                     //default message count
 
+#define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)               invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
+#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                                    TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<message> &msg) {return send(msg);});
+
 
 namespace matrix
 {

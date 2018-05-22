@@ -50,6 +50,9 @@ namespace matrix
 
             BIND_DECODE_INVOKER(list_training_req);
             BIND_DECODE_INVOKER(list_training_resp);
+
+            BIND_DECODE_INVOKER(logs_req);
+            BIND_DECODE_INVOKER(logs_resp);
         }
 
         void matrix_coder::init_encode_invoker()
@@ -72,6 +75,9 @@ namespace matrix
 
             BIND_ENCODE_INVOKER(list_training_req);
             BIND_ENCODE_INVOKER(list_training_resp);
+
+            BIND_ENCODE_INVOKER(logs_req);
+            BIND_ENCODE_INVOKER(logs_resp);
 
         }
 

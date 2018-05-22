@@ -64,27 +64,40 @@ namespace ai
 
         void ai_power_requestor_service::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_training_req(msg); });
+            //cmd start training
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_start_training_req).name());
 
             //cmd start multi training
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_start_multi_training_req(msg);});
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_start_multi_training_req).name());
 
             //cmd stop training
-            TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_stop_training_req(msg); });
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_stop_training_req).name());
 
             //cmd list training
-            TOPIC_MANAGER->subscribe(typeid(cmd_list_training_req).name(), [this](std::shared_ptr<message> &msg) { return on_cmd_list_training_req(msg); });
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_list_training_req).name());
+
+            //cmd logs req
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_logs_req).name());
+
             //list training resp
-            TOPIC_MANAGER->subscribe(LIST_TRAINING_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_RESP);
+
+            //logs resp
+            SUBSCRIBE_BUS_MESSAGE(LOGS_RESP);
         }
 
         void ai_power_requestor_service::init_invoker()
         {
             invoker_type invoker;
 
-            //list training resp
-            invoker = std::bind(&ai_power_requestor_service::on_list_training_resp, this, std::placeholders::_1);
-            m_invokers.insert({ LIST_TRAINING_RESP,{ invoker } });
+            BIND_MESSAGE_INVOKER(typeid(cmd_start_training_req).name(), &ai_power_requestor_service::on_cmd_start_training_req);
+            BIND_MESSAGE_INVOKER(typeid(cmd_start_multi_training_req).name(), &ai_power_requestor_service::on_cmd_start_multi_training_req);
+            BIND_MESSAGE_INVOKER(typeid(cmd_stop_training_req).name(), &ai_power_requestor_service::on_cmd_stop_training_req);
+            BIND_MESSAGE_INVOKER(typeid(cmd_list_training_req).name(), &ai_power_requestor_service::on_cmd_list_training_req);
+            BIND_MESSAGE_INVOKER(typeid(cmd_logs_req).name(), &ai_power_requestor_service::on_cmd_logs_req);
+
+            BIND_MESSAGE_INVOKER(LIST_TRAINING_RESP, &ai_power_requestor_service::on_list_training_resp);
+            BIND_MESSAGE_INVOKER(LOGS_RESP, &ai_power_requestor_service::on_logs_resp);
 
         }
 
@@ -129,6 +142,7 @@ namespace ai
         void ai_power_requestor_service::init_timer()
         {
             m_timer_invokers[LIST_TRAINING_TIMER] = std::bind(&ai_power_requestor_service::on_list_training_timer, this, std::placeholders::_1);
+            m_timer_invokers[TASK_LOGS_TIMER] = std::bind(&ai_power_requestor_service::on_logs_timer, this, std::placeholders::_1);
         }
 
         int32_t ai_power_requestor_service::on_cmd_start_training_req(std::shared_ptr<message> &msg)
@@ -447,7 +461,7 @@ namespace ai
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer
-            uint32_t timer_id = add_timer(LIST_TRAINING_TIMER, LIST_TRAINING_TIMER_INTERVAL, ONLY_ONE_TIME, req_content->header.session_id);
+            uint32_t timer_id = add_timer(LIST_TRAINING_TIMER, DEFAULT_SERVICE_TIMER_INTERVAL, ONLY_ONE_TIME, req_content->header.session_id);
             assert(INVALID_TIMER_ID != timer_id);
 
             //service session
@@ -467,10 +481,14 @@ namespace ai
             if (E_SUCCESS != ret)
             {
                 LOG_ERROR << "ai power requester service list training add session error: " << session->get_session_id();
+
+                //remove timer
+                remove_timer(timer_id);
                 
                 std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "internal error while processing this cmd";
+
                 //return cmd resp
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
@@ -711,6 +729,193 @@ namespace ai
             }
 
             return true;
+        }
+
+        int32_t ai_power_requestor_service::on_cmd_logs_req(const std::shared_ptr<message> &msg)
+        {
+            auto cmd_req = std::dynamic_pointer_cast<cmd_logs_req>(msg->get_content());
+            if (nullptr == cmd_req)
+            {
+                LOG_ERROR << "ai power requester service cmd logs msg content nullptr";
+                return E_DEFAULT;
+            }
+
+            //cmd resp
+            std::shared_ptr<ai::dbc::cmd_logs_resp> cmd_resp = std::make_shared<ai::dbc::cmd_logs_resp>();
+
+            //check task id
+            std::string task_value;
+            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), cmd_req->task_id, &task_value);
+            if (!status.ok())
+            {
+                LOG_ERROR << "ai power requester service cmd logs check task id error: " << cmd_req->task_id;                
+
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "task id not found error";
+
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+                return E_SUCCESS;
+            }
+
+            //check head or tail
+            if (GET_LOG_HEAD != cmd_req->head_or_tail && GET_LOG_TAIL != cmd_req->head_or_tail)
+            {
+                LOG_ERROR << "ai power requester service cmd logs check log direction error: " << std::to_string(cmd_req->head_or_tail);
+
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "log direction error";
+
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+                return E_SUCCESS;
+            }
+
+            //check number of lines
+            if (cmd_req->number_of_lines > MAX_NUMBER_OF_LINES)
+            {
+                LOG_ERROR << "ai power requester service cmd logs check number of lines error: " << std::to_string(cmd_req->number_of_lines);
+
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "number of lines error: should less than " + std::to_string(cmd_req->number_of_lines);
+
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+                return E_SUCCESS;
+            }
+
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            auto req_content = std::make_shared<matrix::service_core::logs_req>();
+
+            //header
+            req_content->header.magic = TEST_NET;
+            req_content->header.msg_name = LOGS_REQ;
+            req_content->header.__set_nonce(id_generator().generate_nonce());
+            req_content->header.__set_session_id(id_generator().generate_session_id());
+
+            req_content->body.task_id = cmd_req->task_id;
+            //req_content->body.peer_nodes_list
+            req_content->body.head_or_tail = cmd_req->head_or_tail;
+            req_content->body.number_of_lines = cmd_req->number_of_lines;
+
+            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_name(req_content->header.msg_name);
+
+            //add to timer
+            uint32_t timer_id = add_timer(TASK_LOGS_TIMER, DEFAULT_SERVICE_TIMER_INTERVAL, ONLY_ONE_TIME, req_content->header.session_id);
+            assert(INVALID_TIMER_ID != timer_id);
+
+            //service session
+            std::shared_ptr<service_session> session = std::make_shared<service_session>(timer_id, req_content->header.session_id);
+
+            //session context
+            variable_value val;
+            val.value() = req_msg;
+            session->get_context().add("req_msg", val);
+
+            //add to session
+            int32_t ret = this->add_session(session->get_session_id(), session);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "ai power requester service logs add session error: " << session->get_session_id();
+
+                //remove timer
+                remove_timer(timer_id);
+
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "internal error while processing this cmd";
+
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+            LOG_DEBUG << "ai power requester servicelogs add session: " << session->get_session_id();
+
+            //ok, broadcast
+            CONNECTION_MANAGER->broadcast_message(req_msg);
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_requestor_service::on_logs_resp(std::shared_ptr<message> &msg)
+        {
+            if (!msg)
+            {
+                LOG_ERROR << "recv logs_resp but msg is nullptr";
+                return E_DEFAULT;
+            }
+
+            std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::dynamic_pointer_cast<matrix::service_core::logs_resp>(msg->content);
+            if (!rsp_content)
+            {
+                LOG_ERROR << "recv logs_resp but ctn is nullptr";
+                return E_DEFAULT;
+            }
+
+            //get session
+            std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
+            if (nullptr == session)         //not self or time out, try broadcast
+            {
+                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
+
+                //broadcast resp
+                CONNECTION_MANAGER->broadcast_message(msg);
+
+                return E_SUCCESS;
+            }
+
+            std::shared_ptr<ai::dbc::cmd_logs_resp> cmd_resp = std::make_shared<ai::dbc::cmd_logs_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+
+            //just support single machine + multi GPU now
+            cmd_peer_node_log log;
+            log.peer_node_id = rsp_content->body.log.peer_node_id;
+            log.log_content = rsp_content->body.log.log_content;
+
+            cmd_resp->peer_node_logs.push_back(std::move(log));
+
+            //return cmd resp
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+
+            //remember: remove timer
+            this->remove_timer(session->get_timer_id());
+
+            //remember: remove session
+            session->clear();
+            this->remove_session(session->get_session_id());
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_requestor_service::on_logs_timer(std::shared_ptr<core_timer> timer)
+        {
+            assert(nullptr != timer);
+
+            //get session
+            const string &session_id = timer->get_session_id();
+            std::shared_ptr<service_session> session = get_session(session_id);
+            if (nullptr == session)
+            {
+                LOG_ERROR << "ai power requestor service logs timer get session null: " << session_id;
+                return E_DEFAULT;
+            }
+
+            //publish cmd resp
+            std::shared_ptr<ai::dbc::cmd_logs_resp> cmd_resp = std::make_shared<ai::dbc::cmd_logs_resp>();
+            cmd_resp->result = E_DEFAULT;
+            cmd_resp->result_info = "get log time out";
+
+            //return cmd resp
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+
+            //remember: remove session
+            LOG_DEBUG << "ai power requestor service get logs timer time out remove session: " << session_id;
+            session->clear();
+            this->remove_session(session_id);
+
+            return E_SUCCESS;
         }
 
     }//service_core

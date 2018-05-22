@@ -116,30 +116,34 @@ namespace ai
 
         void ai_power_provider_service::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(AI_TRAINING_NOTIFICATION_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            //ai training
+            SUBSCRIBE_BUS_MESSAGE(AI_TRAINING_NOTIFICATION_REQ);
 
             //stop training
-            TOPIC_MANAGER->subscribe(STOP_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            SUBSCRIBE_BUS_MESSAGE(STOP_TRAINING_REQ);
 
             //list training req
-            TOPIC_MANAGER->subscribe(LIST_TRAINING_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_REQ);
+
+            //task logs req
+            SUBSCRIBE_BUS_MESSAGE(LOGS_REQ);
         }
 
         void ai_power_provider_service::init_invoker()
         {
             invoker_type invoker;
 
-            invoker = std::bind(&ai_power_provider_service::on_start_training_req, this, std::placeholders::_1);
-            m_invokers.insert({ AI_TRAINING_NOTIFICATION_REQ,{ invoker } });
+            //ai training
+            BIND_MESSAGE_INVOKER(AI_TRAINING_NOTIFICATION_REQ, &ai_power_provider_service::on_start_training_req);
 
             //stop training
-            invoker = std::bind(&ai_power_provider_service::on_stop_training_req, this, std::placeholders::_1);
-            m_invokers.insert({ STOP_TRAINING_REQ,{ invoker } });
+            BIND_MESSAGE_INVOKER(STOP_TRAINING_REQ, &ai_power_provider_service::on_stop_training_req);
 
             //list training req
-            invoker = std::bind(&ai_power_provider_service::on_list_training_req, this, std::placeholders::_1);
-            m_invokers.insert({ LIST_TRAINING_REQ,{ invoker } });
+            BIND_MESSAGE_INVOKER(LIST_TRAINING_REQ, &ai_power_provider_service::on_list_training_req);
 
+            //task logs req
+            BIND_MESSAGE_INVOKER(LOGS_REQ, &ai_power_provider_service::on_logs_req);
         }
 
         int32_t ai_power_provider_service::init_db()
@@ -385,6 +389,88 @@ namespace ai
                 resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_content));
                 CONNECTION_MANAGER->broadcast_message(resp_msg);
             }
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::on_logs_req(const std::shared_ptr<message> &msg)
+        {
+            std::shared_ptr<logs_req> req_content = std::dynamic_pointer_cast<logs_req>(msg->get_content());
+            assert(nullptr != req_content);
+
+            const std::string &task_id = req_content->body.task_id;
+
+            //check log direction
+            if (GET_LOG_HEAD != req_content->body.head_or_tail && GET_LOG_TAIL != req_content->body.head_or_tail)
+            {
+                LOG_DEBUG << "ai power provider service on logs req log direction error: " << task_id;
+                return E_DEFAULT;
+            }
+
+            //check number of lines
+            if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES)
+            {
+                LOG_DEBUG << "ai power provider service on logs req number of lines error: " << req_content->body.number_of_lines;
+                return E_DEFAULT;
+            }
+
+            //check task id
+            /*std::string task_value;
+            leveldb::Status status = m_prov_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+            if (!status.ok())
+            {
+                //relay msg to network
+                LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
+                CONNECTION_MANAGER->broadcast_message(msg);
+                return E_SUCCESS;
+            }*/
+
+            //check task id and get container
+            auto it = m_training_tasks.find(task_id);
+            if (it == m_training_tasks.end())
+            {
+                //relay msg to network
+                LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
+                CONNECTION_MANAGER->broadcast_message(msg);
+                
+                return E_SUCCESS;
+            }
+
+            //get container logs
+            const std::string &container_id = it->second->container_id;
+
+            std::shared_ptr<container_logs_req> container_req = std::make_shared<container_logs_req>();
+            container_req->container_id = container_id;
+            container_req->head_or_tail = req_content->body.head_or_tail;
+            container_req->number_of_lines = req_content->body.number_of_lines;
+            container_req->timestamps = true;
+
+            std::string log_content;
+            std::shared_ptr<container_logs_resp> container_resp = m_container_client->get_container_log(container_req);
+            if (nullptr == container_resp)
+            {
+                LOG_ERROR << "ai power provider service get container logs error: " << task_id;
+            }
+
+            //response content
+            std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
+
+            //content header
+            rsp_content->header.magic = TEST_NET;
+            rsp_content->header.msg_name = LOGS_RESP;
+            rsp_content->header.__set_nonce(id_generator().generate_nonce());
+            rsp_content->header.__set_session_id(req_content->header.session_id);
+
+            //content body
+            rsp_content->body.log.peer_node_id = CONF_MANAGER->get_node_id();
+            rsp_content->body.log.log_content = (nullptr == container_resp) ? "get log content error" : container_resp->log_content;
+            rsp_content->body.log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+
+            //resp msg
+            std::shared_ptr<message> resp_msg = std::make_shared<message>();
+            resp_msg->set_name(LOGS_RESP);
+            resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_content));
+            CONNECTION_MANAGER->broadcast_message(resp_msg);
 
             return E_SUCCESS;
         }
