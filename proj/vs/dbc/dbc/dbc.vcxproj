@@ -126,6 +126,8 @@
       <AdditionalDependencies>libcrypto.lib;libssl.lib;secp256k1.lib;leveldb.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>dbc.map</MapFileName>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -518,6 +520,7 @@
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\api_call.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_candidate.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_node.h" />
