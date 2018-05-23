@@ -87,6 +87,8 @@ namespace ai
 
             int32_t on_logs_req(const std::shared_ptr<message> &msg);
 
+            std::string format_logs(const std::string  &raw_logs);
+
         protected:
 
             //ai power provider service

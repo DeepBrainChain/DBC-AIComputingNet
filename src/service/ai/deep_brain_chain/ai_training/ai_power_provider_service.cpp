@@ -463,7 +463,7 @@ namespace ai
 
             //content body
             rsp_content->body.log.peer_node_id = CONF_MANAGER->get_node_id();
-            rsp_content->body.log.log_content = (nullptr == container_resp) ? "get log content error" : container_resp->log_content;
+            rsp_content->body.log.log_content = (nullptr == container_resp) ? "get log content error" : std::move(format_logs(container_resp->log_content));
             rsp_content->body.log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
 
             //resp msg
@@ -473,6 +473,62 @@ namespace ai
             CONNECTION_MANAGER->broadcast_message(resp_msg);
 
             return E_SUCCESS;
+        }
+
+        std::string ai_power_provider_service::format_logs(const std::string  &raw_logs)
+        {
+            //docker logs has special format with each line of log:
+            // 0x01 0x00  0x00 0x00 0x00 0x00 0x00 0x38
+            //we should remove it
+            //and ends with 0x30 0x0d 0x0a 
+            size_t size = raw_logs.size();
+            vector<unsigned char> log_vector(size);
+
+            int push_char_count = 0;
+            const char *p = raw_logs.c_str();
+
+            for (size_t i = 0; i < size; )
+            {
+                //0x30 0x0d 0x0a 
+                if ((i + 2 < size)
+                    && (0x30 == *p)
+                    && (0x0d == *(p + 1))
+                    && (0x0a == *(p + 2)))
+                {
+                    break;
+                }
+
+                //skip: 0x01 0x00  0x00 0x00 0x00 0x00 0x00 0x38
+                if ((i + 7 < size)
+                    && ((0x01 == *p) || (0x02 == *p))
+                    && (0x00 == *(p + 1))
+                    && (0x00 == *(p + 2))
+                    && (0x00 == *(p + 3))
+                    && (0x00 == *(p + 4))
+                    && (0x00 == *(p + 5))
+                    && (0x00 == *(p + 6)))
+                {
+                    i += 8;
+                    p += 8;
+                    continue;
+                }
+
+                log_vector[push_char_count++] = *p++;
+                //p++;
+                //push_char_count++;
+                i++;
+            }
+
+            std::string formatted_str;
+            formatted_str.reserve(push_char_count);
+
+            int i = 0;
+            while (i < push_char_count)
+            {
+                formatted_str += log_vector[i++];
+            }
+
+            return formatted_str;
         }
 
         int32_t ai_power_provider_service::on_training_task_timer(std::shared_ptr<core_timer> timer)

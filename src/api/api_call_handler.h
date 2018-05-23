@@ -271,7 +271,7 @@ namespace ai
                 {
                     cout << "****************************************************************************************************" << endl;
                     cout << "node id: " << it->peer_node_id << endl;
-                    cout << it->log_content << endl << endl << endl;
+                    cout << it->log_content << endl;
                 }
             }
         };
