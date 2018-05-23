@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºmatrix_client_socket_channel_handler.cpp
-* description    £ºdbc socket channel handler for dbc network protocol layer
+* file name        ï¿½ï¿½matrix_client_socket_channel_handler.cpp
+* description    ï¿½ï¿½dbc socket channel handler for dbc network protocol layer
 * date                  : 2018.02.27
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include "matrix_server_socket_channel_handler.h"
 
@@ -18,8 +18,8 @@ namespace matrix
             : matrix_socket_channel_handler(ch)
             , m_lost_shake_hand_count(0)
             , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
-            , m_recv_ver_req(false)
             , m_wait_ver_req_timer(*(ch->get_io_service()))
+            , m_recv_ver_req(false)
         {
 
         }

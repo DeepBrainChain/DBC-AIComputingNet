@@ -55,9 +55,15 @@ namespace matrix
             return it->second;
         }
 
-        void module_manager::add_module(std::string name, std::shared_ptr<module > mdl) 
-        { 
-            m_modules.insert(std::make_pair(name, mdl)); 
+        bool module_manager::add_module(std::string name, std::shared_ptr<module > mdl)
+        {
+            if (nullptr != get(name))
+            {
+                return false;
+            }
+
+            auto p = m_modules.insert(std::make_pair(name, mdl));
+            return p.second;
         }
 
     }

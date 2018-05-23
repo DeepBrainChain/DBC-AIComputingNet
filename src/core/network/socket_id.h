@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºsocket_id.hpp
-* description    £ºsocket id for each socket channel
+* file name        ï¿½ï¿½socket_id.hpp
+* description    ï¿½ï¿½socket id for each socket channel
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -59,9 +59,9 @@ namespace matrix
 
         protected:
 
-            uint64_t m_id;
-
             socket_type m_type;
+
+            uint64_t m_id;
         };
 
         inline bool operator==(const socket_id &s1, const socket_id &s2)

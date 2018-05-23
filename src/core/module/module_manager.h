@@ -43,7 +43,7 @@ namespace matrix
 
             virtual std::shared_ptr<module> get(const std::string &module_name);
 
-            virtual void add_module(std::string name, std::shared_ptr<module > mdl);
+            virtual bool add_module(std::string name, std::shared_ptr<module > mdl);
 
         protected:
 

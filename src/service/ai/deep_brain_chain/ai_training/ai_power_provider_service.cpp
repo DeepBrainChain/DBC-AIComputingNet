@@ -25,6 +25,7 @@
 using namespace std;
 using namespace boost::asio::ip;
 using namespace matrix::core;
+using namespace matrix::service_core;
 using namespace ai::dbc;
 
 
@@ -195,7 +196,7 @@ namespace ai
 
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
         {
-            std::shared_ptr<start_training_req> req = std::dynamic_pointer_cast<start_training_req>(msg->get_content());
+            std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
             assert(nullptr != req);
 
             //relay start training in network
@@ -272,7 +273,7 @@ namespace ai
 
         int32_t ai_power_provider_service::on_stop_training_req(std::shared_ptr<message> &msg)
         {
-            std::shared_ptr<stop_training_req> req = std::dynamic_pointer_cast<stop_training_req>(msg->get_content());
+            std::shared_ptr<matrix::service_core::stop_training_req> req = std::dynamic_pointer_cast<matrix::service_core::stop_training_req>(msg->get_content());
             assert(nullptr != req);
 
             //relay on stop_training to network(maybe task running on multiple nodes)

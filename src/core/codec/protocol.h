@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºporotocol.h
-* description    £ºdbc thrift style protocol codec
+* file name        ï¿½ï¿½porotocol.h
+* description    ï¿½ï¿½dbc thrift style protocol codec
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -31,32 +31,59 @@ using namespace std;
 #define MAX_CONTAINER_LIMIT         10240
 
 
+namespace apache {
+
+    namespace thrift {
+
+        namespace protocol {
+
+            enum TType {
+                T_STOP = 0x7F,
+                T_VOID = 1,
+                T_BOOL = 2,
+                T_BYTE = 3,
+                T_I08 = 3,
+                T_I16 = 6,
+                T_I32 = 8,
+                T_U64 = 9,
+                T_I64 = 10,
+                T_DOUBLE = 4,
+                T_STRING = 11,
+                T_UTF7 = 11,
+                T_STRUCT = 12,
+                T_MAP = 13,
+                T_SET = 14,
+                T_LIST = 15,
+                T_UTF8 = 16,
+                T_UTF16 = 17
+            };
+        }
+    }
+}
+
 namespace matrix
 {
     namespace core
     {
-
-        enum TType 
-        {
-            T_STOP = 0x7F,
-            T_VOID = 1,
-            T_BOOL = 2,
-            T_BYTE = 3,
-            T_I08 = 3,
-            T_I16 = 6,
-            T_I32 = 8,
-            T_U64 = 9,
-            T_I64 = 10,
-            T_DOUBLE = 4,
-            T_STRING = 11,
-            T_UTF7 = 11,
-            T_STRUCT = 12,
-            T_MAP = 13,
-            T_SET = 14,
-            T_LIST = 15,
-            T_UTF8 = 16,
-            T_UTF16 = 17
-        };
+        using ::apache::thrift::protocol::TType;
+        using ::apache::thrift::protocol::T_STOP;
+        using ::apache::thrift::protocol::T_VOID;
+        using ::apache::thrift::protocol::T_BOOL;
+        using ::apache::thrift::protocol::T_BYTE;
+        using ::apache::thrift::protocol::T_I08;
+        using ::apache::thrift::protocol::T_I16;
+        using ::apache::thrift::protocol::T_I32;
+        using ::apache::thrift::protocol::T_U64;
+        using ::apache::thrift::protocol::T_I64;
+        using ::apache::thrift::protocol::T_DOUBLE;
+        using ::apache::thrift::protocol::T_STRING;
+        using ::apache::thrift::protocol::T_UTF7;
+        using ::apache::thrift::protocol::T_STRUCT;
+        using ::apache::thrift::protocol::T_MAP;
+        using ::apache::thrift::protocol::T_SET;
+        using ::apache::thrift::protocol::T_LIST;
+        using ::apache::thrift::protocol::T_UTF8;
+        using ::apache::thrift::protocol::T_UTF16;
 
         enum TMessageType 
         {
@@ -66,6 +93,7 @@ namespace matrix
             T_ONEWAY = 4
         };
 
+#if !defined(_DARWIN_C_SOURCE)
         //htonll
         inline uint64_t htonll(uint64_t val)
         {
@@ -99,7 +127,7 @@ namespace matrix
                 throw invalid_argument("endian type error");
             }
         }
-
+#endif
         class byte_order
         {
         public:
@@ -464,7 +492,7 @@ namespace matrix
             virtual uint32_t writeString(const std::string& str)
             {
                 if (str.size() > static_cast<size_t>((std::numeric_limits<int32_t>::max)()))
-                    throw std::length_error("write string len error: " + str.size());
+                    throw std::length_error("write string len error: " + std::to_string(str.size()));
 
                 uint32_t size = static_cast<uint32_t>(str.size());
                 uint32_t result = writeI32((int32_t)size);
@@ -526,11 +554,11 @@ namespace matrix
 
                 if (sizei < 0) 
                 {
-                    throw std::length_error("read map negative size: " + sizei);
+                    throw std::length_error("read map negative size: " + std::to_string(sizei));
                 }
                 else if (this->m_container_limit && sizei > this->m_container_limit) 
                 {
-                    throw std::length_error("read map beyond limit size" + sizei);
+                    throw std::length_error("read map beyond limit size" + std::to_string(sizei));
                 }
                 size = (uint32_t)sizei;
                 return result;
@@ -551,11 +579,11 @@ namespace matrix
 
                 if (sizei < 0) 
                 {
-                    throw std::length_error("read list negative size: " + sizei);
+                    throw std::length_error("read list negative size: " + std::to_string(sizei));
                 }
                 else if (this->m_container_limit && sizei > this->m_container_limit)
                 {
-                    throw std::length_error("read list beyond limit size" + sizei);
+                    throw std::length_error("read list beyond limit size" + std::to_string(sizei));
                 }
                 size = (uint32_t)sizei;
                 return result;
@@ -575,11 +603,11 @@ namespace matrix
                 result += readI32(sizei);
 
                 if (sizei < 0) {
-                    throw std::length_error("read set negative size: " + sizei);
+                    throw std::length_error("read set negative size: " + std::to_string(sizei));
                 }
                 else if (this->m_container_limit && sizei > this->m_container_limit)
                 {
-                    throw std::length_error("read set beyond limit size" + sizei);
+                    throw std::length_error("read set beyond limit size" + std::to_string(sizei));
                 }
                 size = (uint32_t)sizei;
                 return result;
@@ -671,11 +699,12 @@ namespace matrix
 
                 // Catch error cases
                 if (size < 0) {
-                    throw std::length_error("read set negative size: " + size);
+                    throw std::length_error("read set negative size: " + std::to_string(size));
                 }
                 if (this->m_string_limit > 0 && size > this->m_string_limit) 
                 {
-                    throw std::length_error("read string beyond limit size" + size);
+//                    throw std::length_error("read string beyond limit size" + std::to_string(size));
+                    throw std::length_error("read string beyond limit size");
                 }
 
                 // Catch empty string case
@@ -713,9 +742,119 @@ namespace matrix
 
             virtual uint32_t validate() const { return E_SUCCESS; }
             virtual uint32_t read(protocol * iprot) { return E_SUCCESS; }
-            virtual uint32_t write(protocol * oprot) { return E_SUCCESS; }
+            virtual uint32_t write(protocol * oprot) const { return E_SUCCESS; }
         };
 
     }
 
+}
+
+
+namespace apache {
+
+    namespace thrift {
+
+        typedef matrix::core::base TBase;
+
+        namespace protocol {
+
+
+            typedef matrix::core::protocol TProtocol;
+
+            class TInputRecursionTracker {
+            public:
+                TInputRecursionTracker(::apache::thrift::protocol::TProtocol&) {}  //dummy imp for thrift auto generation code.
+            };
+
+            class TOutputRecursionTracker {
+            public:
+                TOutputRecursionTracker(::apache::thrift::protocol::TProtocol&) {}  //dummy imp for thrift auto generation code.
+            };
+
+            class TException : public std::exception {
+            public:
+                TException() : message_() {}
+
+                TException(const std::string& message) : message_(message) {}
+
+                virtual ~TException() throw() {}
+
+                virtual const char* what() const throw() {
+                    if (message_.empty()) {
+                        return "Default TException.";
+                    } else {
+                        return message_.c_str();
+                    }
+                }
+
+            protected:
+                std::string message_;
+            };
+
+            class TProtocolException : public TException {
+            public:
+                /**
+                 * Error codes for the various types of exceptions.
+                 */
+                enum TProtocolExceptionType {
+                    UNKNOWN = 0,
+                    INVALID_DATA = 1,
+                    NEGATIVE_SIZE = 2,
+                    SIZE_LIMIT = 3,
+                    BAD_VERSION = 4,
+                    NOT_IMPLEMENTED = 5,
+                    DEPTH_LIMIT = 6
+                };
+
+                TProtocolException() : TException(), type_(UNKNOWN) {}
+
+                TProtocolException(TProtocolExceptionType type) : TException(), type_(type) {}
+
+                TProtocolException(const std::string& message)
+                        : TException(message), type_(UNKNOWN) {}
+
+                TProtocolException(TProtocolExceptionType type, const std::string& message)
+                        : TException(message), type_(type) {}
+
+                virtual ~TProtocolException() throw() {}
+
+                /**
+                 * Returns an error code that provides information about the type of error
+                 * that has occurred.
+                 *
+                 * @return Error code
+                 */
+                TProtocolExceptionType getType() const { return type_; }
+
+                virtual const char* what() const throw() {
+                    if (message_.empty()) {
+                        switch (type_) {
+                            case UNKNOWN:
+                                return "TProtocolException: Unknown protocol exception";
+                            case INVALID_DATA:
+                                return "TProtocolException: Invalid data";
+                            case NEGATIVE_SIZE:
+                                return "TProtocolException: Negative size";
+                            case SIZE_LIMIT:
+                                return "TProtocolException: Exceeded size limit";
+                            case BAD_VERSION:
+                                return "TProtocolException: Invalid version";
+                            case NOT_IMPLEMENTED:
+                                return "TProtocolException: Not implemented";
+                            default:
+                                return "TProtocolException: (Invalid exception type)";
+                        }
+                    } else {
+                        return message_.c_str();
+                    }
+                }
+
+            protected:
+                /**
+                 * Error code
+                 */
+                TProtocolExceptionType type_;
+            };
+        }
+    }
 }
