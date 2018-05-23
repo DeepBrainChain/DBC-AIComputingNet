@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <ostream>
 
-#include <thrift/TToString.h>
+#include "TToString.h"
 
 namespace matrix { namespace service_core {
 

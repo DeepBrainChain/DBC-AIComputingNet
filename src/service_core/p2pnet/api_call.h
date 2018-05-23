@@ -10,6 +10,8 @@
 **********************************************************************************/
 #pragma once
 
+#include "matrix_types.h"
+
 
 namespace dbc {
 
@@ -49,6 +51,7 @@ namespace dbc {
     class cmd_get_peer_nodes_resp : public matrix::core::base {
     public:
         int32_t result;
+
         std::string result_info;
 
         std::vector<cmd_peer_node_info> peer_nodes_list;

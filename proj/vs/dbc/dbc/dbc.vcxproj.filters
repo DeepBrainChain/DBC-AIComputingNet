@@ -1221,6 +1221,9 @@
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_candidate.h">
       <Filter>src\service_core\p2pnet</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\api_call.h">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslconf.h.in">
