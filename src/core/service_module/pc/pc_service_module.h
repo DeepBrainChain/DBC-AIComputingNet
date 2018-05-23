@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºpc_service_module.h
-* description    £ºservice module on PC platform
+* file name        ï¿½ï¿½pc_service_module.h
+* description    ï¿½ï¿½service module on PC platform
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #pragma once
 

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºcmd_line_service.cpp
-* description    £ºcmd line api service
+* file name        ï¿½ï¿½cmd_line_service.cpp
+* description    ï¿½ï¿½cmd line api service
 * date                  : 2018.03.25
-* author            £º
+* author            ï¿½ï¿½
 **********************************************************************************/
 #include <iostream>
 #include <limits>
@@ -349,7 +349,9 @@ namespace ai
                     }
                     else
                     {
-                        format_output(resp);
+//                        format_output(resp);
+                        cmd_get_peer_nodes_resp_formater formater(resp);
+                        formater.format_output();
                     }
                 }
                 else if (vm.count("help") || vm.count("h"))

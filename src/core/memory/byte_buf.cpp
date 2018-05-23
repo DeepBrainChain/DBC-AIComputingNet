@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºbyte_buf.cpp
-* description    £ºbyte_buf for network transport
+* file name        ï¿½ï¿½byte_buf.cpp
+* description    ï¿½ï¿½byte_buf for network transport
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include "byte_buf.h"
 
@@ -17,10 +17,10 @@ namespace matrix
 
         byte_buf::byte_buf(int32_t len, bool auto_alloc)
                 : m_len(len)
-                , m_auto_alloc(auto_alloc)
                 , m_buf(new char[len](), std::default_delete<char[]>())
                 , m_write_ptr(m_buf.get())
                 , m_write_bound(m_write_ptr + m_len)
+                , m_auto_alloc(auto_alloc)
                 , m_read_ptr(m_buf.get())
                 , m_read_bound(m_read_ptr) {}
 

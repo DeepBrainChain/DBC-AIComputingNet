@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºpc_service_module.cpp
-* description    £ºservice module on PC platform
+* file name        ï¿½ï¿½pc_service_module.cpp
+* description    ï¿½ï¿½service module on PC platform
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
@@ -17,7 +17,7 @@
 #include "server.h"
 #include "time_tick_notification.h"
 #include "timer_def.h"
-#include "service_proto_filter.h"
+//#include "service_proto_filter.h"
 
 namespace matrix
 {

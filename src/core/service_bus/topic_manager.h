@@ -122,7 +122,7 @@ namespace matrix
             template<typename function_type>
             void publish(const std::string &topic)
             {
-                using std_function_type = std::function<function_type()>;
+//                using std_function_type = std::function<function_type()>;
                 std::string msg_type = topic + typeid(function_type).name();
 
                 read_lock_guard<rw_lock> lock_guard(m_lock);
