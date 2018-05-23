@@ -192,11 +192,11 @@ bool CPubKey::RecoverCompact(const uint256 &hash, const std::vector<unsigned cha
     if (vchSig.size() != 65)
         return false;
     
-    int recid = (vchSig[0] - 27) & 3;
-    bool fComp = ((vchSig[0] - 27) & 4) != 0;
-    
-    secp256k1_pubkey pubkey;
-    secp256k1_ecdsa_recoverable_signature sig;
+//    int recid = (vchSig[0] - 27) & 3;
+//    bool fComp = ((vchSig[0] - 27) & 4) != 0;
+//
+//    secp256k1_pubkey pubkey;
+//    secp256k1_ecdsa_recoverable_signature sig;
     
     //left to later!!! 2018.04.20
     //if (!secp256k1_ecdsa_recoverable_signature_parse_compact(secp256k1_context_verify, &sig, &vchSig[1], recid)) {

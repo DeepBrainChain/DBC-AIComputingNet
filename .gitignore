@@ -6,7 +6,7 @@ output/
 *.idb
 *.pdb
 
-*.cmake
+//*.cmake
 CMakeFiles/
 CMakeCache.txt
 Makefile
@@ -14,3 +14,7 @@ Makefile
 build/*
 build-debug/*
 cmake-build-debug/*
+make/cmake-build-debug
+
+src/core/lib/*.a
+src/service_core/lib/*.a

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtcp_acceptor.cpp
-* description    £ºtcp acceptor for nio server listening
+* file name        ï¿½ï¿½tcp_acceptor.cpp
+* description    ï¿½ï¿½tcp acceptor for nio server listening
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include "tcp_acceptor.h"
 #include "tcp_socket_channel.h"

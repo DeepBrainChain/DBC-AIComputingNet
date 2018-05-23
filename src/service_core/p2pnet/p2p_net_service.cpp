@@ -21,7 +21,8 @@
 #include "channel.h"
 #include "ip_validator.h"
 #include "port_validator.h"
-#include "api_call_handler.h"
+//#include "api_call_handler.h"
+#include "api_call.h"
 #include "id_generator.h"
 #include "version.h"
 #include "tcp_socket_channel.h"
@@ -310,7 +311,7 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) {return on_cmd_get_peer_nodes_req(msg); });
+            TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) {return on_cmd_get_peer_nodes_req(msg); });
             TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
             TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
             TOPIC_MANAGER->subscribe(P2P_NEW_PEER_NODE, [this](std::shared_ptr<message> &msg) { return send(msg); });
@@ -517,7 +518,7 @@ namespace matrix
                 return E_DEFAULT;
             }
             //filter node which connects to itself
-            if (req_content->body.__isset.node_id)
+//            if (req_content->body.__isset.node_id)
             {
                 if (req_content->body.node_id == CONF_MANAGER->get_node_id())
                 {
@@ -721,14 +722,14 @@ namespace matrix
 
         int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<message> &msg)
         {
-            std::shared_ptr<ai::dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<ai::dbc::cmd_get_peer_nodes_resp>();
+            std::shared_ptr<dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<dbc::cmd_get_peer_nodes_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
             {
                 read_lock_guard<rw_lock> lock(m_nodes_lock);
                 for (auto itn = m_peer_nodes_map.begin(); itn != m_peer_nodes_map.end(); ++itn)
                 {
-                    ai::dbc::cmd_peer_node_info node_info;
+                    dbc::cmd_peer_node_info node_info;
                     node_info.peer_node_id = itn->second->m_id;
                     node_info.live_time_stamp = itn->second->m_live_time;
                     node_info.addr.ip = itn->second->m_peer_addr.get_ip();
@@ -739,7 +740,7 @@ namespace matrix
                 }
             }
 
-            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
 
             return E_SUCCESS;
         }

@@ -76,15 +76,13 @@ class logs_resp_body;
 class logs_resp;
 
 typedef struct _msg_header__isset {
-  _msg_header__isset() : magic(false), msg_name(false), nonce(false), session_id(false), exten_info(false) {}
-  bool magic :1;
-  bool msg_name :1;
+  _msg_header__isset() :  nonce(false), session_id(false), exten_info(false) {}
   bool nonce :1;
   bool session_id :1;
   bool exten_info :1;
 } _msg_header__isset;
 
-class msg_header : public virtual base {
+class msg_header : public virtual ::apache::thrift::TBase {
  public:
 
   msg_header(const msg_header&);
@@ -137,8 +135,8 @@ class msg_header : public virtual base {
 
   bool operator < (const msg_header & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -148,7 +146,7 @@ void swap(msg_header &a, msg_header &b);
 std::ostream& operator<<(std::ostream& out, const msg_header& obj);
 
 
-class empty : public virtual base {
+class empty : public virtual ::apache::thrift::TBase {
  public:
 
   empty(const empty&);
@@ -168,8 +166,8 @@ class empty : public virtual base {
 
   bool operator < (const empty & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -178,13 +176,8 @@ void swap(empty &a, empty &b);
 
 std::ostream& operator<<(std::ostream& out, const empty& obj);
 
-typedef struct _network_address__isset {
-  _network_address__isset() : ip(false), port(false) {}
-  bool ip :1;
-  bool port :1;
-} _network_address__isset;
 
-class network_address : public virtual base {
+class network_address : public virtual ::apache::thrift::TBase {
  public:
 
   network_address(const network_address&);
@@ -195,8 +188,6 @@ class network_address : public virtual base {
   virtual ~network_address() throw();
   std::string ip;
   int16_t port;
-
-  _network_address__isset __isset;
 
   void __set_ip(const std::string& val);
 
@@ -216,8 +207,8 @@ class network_address : public virtual base {
 
   bool operator < (const network_address & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -232,7 +223,7 @@ typedef struct _task_status__isset {
   bool status :1;
 } _task_status__isset;
 
-class task_status : public virtual base {
+class task_status : public virtual ::apache::thrift::TBase {
  public:
 
   task_status(const task_status&);
@@ -264,8 +255,8 @@ class task_status : public virtual base {
 
   bool operator < (const task_status & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -284,7 +275,7 @@ typedef struct _peer_node_info__isset {
   bool service_list :1;
 } _peer_node_info__isset;
 
-class peer_node_info : public virtual base {
+class peer_node_info : public virtual ::apache::thrift::TBase {
  public:
 
   peer_node_info(const peer_node_info&);
@@ -336,8 +327,8 @@ class peer_node_info : public virtual base {
 
   bool operator < (const peer_node_info & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -347,8 +338,7 @@ void swap(peer_node_info &a, peer_node_info &b);
 std::ostream& operator<<(std::ostream& out, const peer_node_info& obj);
 
 typedef struct _ver_req_body__isset {
-  _ver_req_body__isset() : node_id(false), core_version(false), protocol_version(false), time_stamp(false), addr_me(false), addr_you(false), start_height(false) {}
-  bool node_id :1;
+  _ver_req_body__isset() : core_version(false), protocol_version(false), time_stamp(false), addr_me(false), addr_you(false), start_height(false) {}
   bool core_version :1;
   bool protocol_version :1;
   bool time_stamp :1;
@@ -357,7 +347,7 @@ typedef struct _ver_req_body__isset {
   bool start_height :1;
 } _ver_req_body__isset;
 
-class ver_req_body : public virtual base {
+class ver_req_body : public virtual ::apache::thrift::TBase {
  public:
 
   ver_req_body(const ver_req_body&);
@@ -414,8 +404,8 @@ class ver_req_body : public virtual base {
 
   bool operator < (const ver_req_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -430,7 +420,7 @@ typedef struct _ver_req__isset {
   bool body :1;
 } _ver_req__isset;
 
-class ver_req : public virtual base {
+class ver_req : public virtual ::apache::thrift::TBase {
  public:
 
   ver_req(const ver_req&);
@@ -462,8 +452,8 @@ class ver_req : public virtual base {
 
   bool operator < (const ver_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -472,14 +462,8 @@ void swap(ver_req &a, ver_req &b);
 
 std::ostream& operator<<(std::ostream& out, const ver_req& obj);
 
-typedef struct _ver_resp_body__isset {
-  _ver_resp_body__isset() : node_id(false), core_version(false), protocol_version(false) {}
-  bool node_id :1;
-  bool core_version :1;
-  bool protocol_version :1;
-} _ver_resp_body__isset;
 
-class ver_resp_body : public virtual base {
+class ver_resp_body : public virtual ::apache::thrift::TBase {
  public:
 
   ver_resp_body(const ver_resp_body&);
@@ -491,8 +475,6 @@ class ver_resp_body : public virtual base {
   std::string node_id;
   int32_t core_version;
   int32_t protocol_version;
-
-  _ver_resp_body__isset __isset;
 
   void __set_node_id(const std::string& val);
 
@@ -516,8 +498,8 @@ class ver_resp_body : public virtual base {
 
   bool operator < (const ver_resp_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -532,7 +514,7 @@ typedef struct _ver_resp__isset {
   bool body :1;
 } _ver_resp__isset;
 
-class ver_resp : public virtual base {
+class ver_resp : public virtual ::apache::thrift::TBase {
  public:
 
   ver_resp(const ver_resp&);
@@ -564,8 +546,8 @@ class ver_resp : public virtual base {
 
   bool operator < (const ver_resp & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -580,7 +562,7 @@ typedef struct _shake_hand_req__isset {
   bool body :1;
 } _shake_hand_req__isset;
 
-class shake_hand_req : public virtual base {
+class shake_hand_req : public virtual ::apache::thrift::TBase {
  public:
 
   shake_hand_req(const shake_hand_req&);
@@ -612,8 +594,8 @@ class shake_hand_req : public virtual base {
 
   bool operator < (const shake_hand_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -628,7 +610,7 @@ typedef struct _shake_hand_resp__isset {
   bool body :1;
 } _shake_hand_resp__isset;
 
-class shake_hand_resp : public virtual base {
+class shake_hand_resp : public virtual ::apache::thrift::TBase {
  public:
 
   shake_hand_resp(const shake_hand_resp&);
@@ -660,8 +642,8 @@ class shake_hand_resp : public virtual base {
 
   bool operator < (const shake_hand_resp & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -676,7 +658,7 @@ typedef struct _get_peer_nodes_req__isset {
   bool body :1;
 } _get_peer_nodes_req__isset;
 
-class get_peer_nodes_req : public virtual base {
+class get_peer_nodes_req : public virtual ::apache::thrift::TBase {
  public:
 
   get_peer_nodes_req(const get_peer_nodes_req&);
@@ -708,8 +690,8 @@ class get_peer_nodes_req : public virtual base {
 
   bool operator < (const get_peer_nodes_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -723,7 +705,7 @@ typedef struct _get_peer_nodes_resp_body__isset {
   bool peer_nodes_list :1;
 } _get_peer_nodes_resp_body__isset;
 
-class get_peer_nodes_resp_body : public virtual base {
+class get_peer_nodes_resp_body : public virtual ::apache::thrift::TBase {
  public:
 
   get_peer_nodes_resp_body(const get_peer_nodes_resp_body&);
@@ -750,8 +732,8 @@ class get_peer_nodes_resp_body : public virtual base {
 
   bool operator < (const get_peer_nodes_resp_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -766,7 +748,7 @@ typedef struct _get_peer_nodes_resp__isset {
   bool body :1;
 } _get_peer_nodes_resp__isset;
 
-class get_peer_nodes_resp : public virtual base {
+class get_peer_nodes_resp : public virtual ::apache::thrift::TBase {
  public:
 
   get_peer_nodes_resp(const get_peer_nodes_resp&);
@@ -798,8 +780,8 @@ class get_peer_nodes_resp : public virtual base {
 
   bool operator < (const get_peer_nodes_resp & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -813,7 +795,7 @@ typedef struct _peer_nodes_broadcast_req_body__isset {
   bool peer_nodes_list :1;
 } _peer_nodes_broadcast_req_body__isset;
 
-class peer_nodes_broadcast_req_body : public virtual base {
+class peer_nodes_broadcast_req_body : public virtual ::apache::thrift::TBase {
  public:
 
   peer_nodes_broadcast_req_body(const peer_nodes_broadcast_req_body&);
@@ -840,8 +822,8 @@ class peer_nodes_broadcast_req_body : public virtual base {
 
   bool operator < (const peer_nodes_broadcast_req_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -856,7 +838,7 @@ typedef struct _peer_nodes_broadcast_req__isset {
   bool body :1;
 } _peer_nodes_broadcast_req__isset;
 
-class peer_nodes_broadcast_req : public virtual base {
+class peer_nodes_broadcast_req : public virtual ::apache::thrift::TBase {
  public:
 
   peer_nodes_broadcast_req(const peer_nodes_broadcast_req&);
@@ -888,8 +870,8 @@ class peer_nodes_broadcast_req : public virtual base {
 
   bool operator < (const peer_nodes_broadcast_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -914,7 +896,7 @@ typedef struct _start_training_req_body__isset {
   bool hyper_parameters :1;
 } _start_training_req_body__isset;
 
-class start_training_req_body : public virtual base {
+class start_training_req_body : public virtual ::apache::thrift::TBase {
  public:
 
   start_training_req_body(const start_training_req_body&);
@@ -996,8 +978,8 @@ class start_training_req_body : public virtual base {
 
   bool operator < (const start_training_req_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1012,7 +994,7 @@ typedef struct _start_training_req__isset {
   bool body :1;
 } _start_training_req__isset;
 
-class start_training_req : public virtual base {
+class start_training_req : public virtual ::apache::thrift::TBase {
  public:
 
   start_training_req(const start_training_req&);
@@ -1044,8 +1026,8 @@ class start_training_req : public virtual base {
 
   bool operator < (const start_training_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1059,7 +1041,7 @@ typedef struct _stop_training_req_body__isset {
   bool task_id :1;
 } _stop_training_req_body__isset;
 
-class stop_training_req_body : public virtual base {
+class stop_training_req_body : public virtual ::apache::thrift::TBase {
  public:
 
   stop_training_req_body(const stop_training_req_body&);
@@ -1086,8 +1068,8 @@ class stop_training_req_body : public virtual base {
 
   bool operator < (const stop_training_req_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1102,7 +1084,7 @@ typedef struct _stop_training_req__isset {
   bool body :1;
 } _stop_training_req__isset;
 
-class stop_training_req : public virtual base {
+class stop_training_req : public virtual ::apache::thrift::TBase {
  public:
 
   stop_training_req(const stop_training_req&);
@@ -1134,8 +1116,8 @@ class stop_training_req : public virtual base {
 
   bool operator < (const stop_training_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1149,7 +1131,7 @@ typedef struct _list_training_req_body__isset {
   bool task_list :1;
 } _list_training_req_body__isset;
 
-class list_training_req_body : public virtual base {
+class list_training_req_body : public virtual ::apache::thrift::TBase {
  public:
 
   list_training_req_body(const list_training_req_body&);
@@ -1176,8 +1158,8 @@ class list_training_req_body : public virtual base {
 
   bool operator < (const list_training_req_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1192,7 +1174,7 @@ typedef struct _list_training_req__isset {
   bool body :1;
 } _list_training_req__isset;
 
-class list_training_req : public virtual base {
+class list_training_req : public virtual ::apache::thrift::TBase {
  public:
 
   list_training_req(const list_training_req&);
@@ -1224,8 +1206,8 @@ class list_training_req : public virtual base {
 
   bool operator < (const list_training_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1239,7 +1221,7 @@ typedef struct _list_training_resp_body__isset {
   bool task_status_list :1;
 } _list_training_resp_body__isset;
 
-class list_training_resp_body : public virtual base {
+class list_training_resp_body : public virtual ::apache::thrift::TBase {
  public:
 
   list_training_resp_body(const list_training_resp_body&);
@@ -1266,8 +1248,8 @@ class list_training_resp_body : public virtual base {
 
   bool operator < (const list_training_resp_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1282,7 +1264,7 @@ typedef struct _list_training_resp__isset {
   bool body :1;
 } _list_training_resp__isset;
 
-class list_training_resp : public virtual base {
+class list_training_resp : public virtual ::apache::thrift::TBase {
  public:
 
   list_training_resp(const list_training_resp&);
@@ -1314,8 +1296,8 @@ class list_training_resp : public virtual base {
 
   bool operator < (const list_training_resp & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };

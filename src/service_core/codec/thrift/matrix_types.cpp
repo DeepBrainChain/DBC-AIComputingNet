@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <ostream>
 
+#include <thrift/TToString.h>
 
 namespace matrix { namespace service_core {
 
@@ -46,45 +47,47 @@ std::ostream& operator<<(std::ostream& out, const msg_header& obj)
 }
 
 
-uint32_t msg_header::read(protocol* iprot) {
+uint32_t msg_header::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
+  bool isset_magic = false;
+  bool isset_msg_name = false;
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->magic);
-          this->__isset.magic = true;
+          isset_magic = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 2:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->msg_name);
-          this->__isset.msg_name = true;
+          isset_msg_name = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 3:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->nonce);
           this->__isset.nonce = true;
         } else {
@@ -92,7 +95,7 @@ uint32_t msg_header::read(protocol* iprot) {
         }
         break;
       case 4:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->session_id);
           this->__isset.session_id = true;
         } else {
@@ -100,12 +103,12 @@ uint32_t msg_header::read(protocol* iprot) {
         }
         break;
       case 255:
-        if (ftype == T_MAP) {
+        if (ftype == ::apache::thrift::protocol::T_MAP) {
           {
             this->exten_info.clear();
             uint32_t _size0;
-            TType _ktype1;
-            TType _vtype2;
+            ::apache::thrift::protocol::TType _ktype1;
+            ::apache::thrift::protocol::TType _vtype2;
             xfer += iprot->readMapBegin(_ktype1, _vtype2, _size0);
             uint32_t _i4;
             for (_i4 = 0; _i4 < _size0; ++_i4)
@@ -131,36 +134,40 @@ uint32_t msg_header::read(protocol* iprot) {
 
   xfer += iprot->readStructEnd();
 
+  if (!isset_magic)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_msg_name)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
 
-uint32_t msg_header::write(protocol* oprot) const {
+uint32_t msg_header::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("msg_header");
 
-  xfer += oprot->writeFieldBegin("magic", T_I32, 1);
+  xfer += oprot->writeFieldBegin("magic", ::apache::thrift::protocol::T_I32, 1);
   xfer += oprot->writeI32(this->magic);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("msg_name", T_STRING, 2);
+  xfer += oprot->writeFieldBegin("msg_name", ::apache::thrift::protocol::T_STRING, 2);
   xfer += oprot->writeString(this->msg_name);
   xfer += oprot->writeFieldEnd();
 
   if (this->__isset.nonce) {
-    xfer += oprot->writeFieldBegin("nonce", T_STRING, 3);
+    xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 3);
     xfer += oprot->writeString(this->nonce);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.session_id) {
-    xfer += oprot->writeFieldBegin("session_id", T_STRING, 4);
+    xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 4);
     xfer += oprot->writeString(this->session_id);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.exten_info) {
-    xfer += oprot->writeFieldBegin("exten_info", T_MAP, 255);
+    xfer += oprot->writeFieldBegin("exten_info", ::apache::thrift::protocol::T_MAP, 255);
     {
-      xfer += oprot->writeMapBegin(T_STRING, T_STRING, static_cast<uint32_t>(this->exten_info.size()));
+      xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->exten_info.size()));
       std::map<std::string, std::string> ::const_iterator _iter7;
       for (_iter7 = this->exten_info.begin(); _iter7 != this->exten_info.end(); ++_iter7)
       {
@@ -225,23 +232,23 @@ std::ostream& operator<<(std::ostream& out, const empty& obj)
 }
 
 
-uint32_t empty::read(protocol* iprot) {
+uint32_t empty::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     xfer += iprot->skip(ftype);
@@ -253,9 +260,9 @@ uint32_t empty::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t empty::write(protocol* oprot) const {
+uint32_t empty::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("empty");
 
   xfer += oprot->writeFieldStop();
@@ -301,39 +308,41 @@ std::ostream& operator<<(std::ostream& out, const network_address& obj)
 }
 
 
-uint32_t network_address::read(protocol* iprot) {
+uint32_t network_address::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
+  bool isset_ip = false;
+  bool isset_port = false;
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->ip);
-          this->__isset.ip = true;
+          isset_ip = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 2:
-        if (ftype == T_I16) {
+        if (ftype == ::apache::thrift::protocol::T_I16) {
           xfer += iprot->readI16(this->port);
-          this->__isset.port = true;
+          isset_port = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -347,19 +356,23 @@ uint32_t network_address::read(protocol* iprot) {
 
   xfer += iprot->readStructEnd();
 
+  if (!isset_ip)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_port)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
 
-uint32_t network_address::write(protocol* oprot) const {
+uint32_t network_address::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("network_address");
 
-  xfer += oprot->writeFieldBegin("ip", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("ip", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->ip);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("port", T_I16, 2);
+  xfer += oprot->writeFieldBegin("port", ::apache::thrift::protocol::T_I16, 2);
   xfer += oprot->writeI16(this->port);
   xfer += oprot->writeFieldEnd();
 
@@ -372,18 +385,15 @@ void swap(network_address &a, network_address &b) {
   using ::std::swap;
   swap(a.ip, b.ip);
   swap(a.port, b.port);
-  swap(a.__isset, b.__isset);
 }
 
 network_address::network_address(const network_address& other12) {
   ip = other12.ip;
   port = other12.port;
-  __isset = other12.__isset;
 }
 network_address& network_address::operator=(const network_address& other13) {
   ip = other13.ip;
   port = other13.port;
-  __isset = other13.__isset;
   return *this;
 }
 void network_address::printTo(std::ostream& out) const {
@@ -413,29 +423,29 @@ std::ostream& operator<<(std::ostream& out, const task_status& obj)
 }
 
 
-uint32_t task_status::read(protocol* iprot) {
+uint32_t task_status::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->task_id);
           this->__isset.task_id = true;
         } else {
@@ -443,7 +453,7 @@ uint32_t task_status::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_BYTE) {
+        if (ftype == ::apache::thrift::protocol::T_BYTE) {
           xfer += iprot->readByte(this->status);
           this->__isset.status = true;
         } else {
@@ -462,16 +472,16 @@ uint32_t task_status::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t task_status::write(protocol* oprot) const {
+uint32_t task_status::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("task_status");
 
-  xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->task_id);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("status", T_BYTE, 2);
+  xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_BYTE, 2);
   xfer += oprot->writeByte(this->status);
   xfer += oprot->writeFieldEnd();
 
@@ -541,29 +551,29 @@ std::ostream& operator<<(std::ostream& out, const peer_node_info& obj)
 }
 
 
-uint32_t peer_node_info::read(protocol* iprot) {
+uint32_t peer_node_info::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->peer_node_id);
           this->__isset.peer_node_id = true;
         } else {
@@ -571,7 +581,7 @@ uint32_t peer_node_info::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->core_version);
           this->__isset.core_version = true;
         } else {
@@ -579,7 +589,7 @@ uint32_t peer_node_info::read(protocol* iprot) {
         }
         break;
       case 3:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->protocol_version);
           this->__isset.protocol_version = true;
         } else {
@@ -587,7 +597,7 @@ uint32_t peer_node_info::read(protocol* iprot) {
         }
         break;
       case 4:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->live_time_stamp);
           this->__isset.live_time_stamp = true;
         } else {
@@ -595,7 +605,7 @@ uint32_t peer_node_info::read(protocol* iprot) {
         }
         break;
       case 5:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->addr.read(iprot);
           this->__isset.addr = true;
         } else {
@@ -603,11 +613,11 @@ uint32_t peer_node_info::read(protocol* iprot) {
         }
         break;
       case 6:
-        if (ftype == T_LIST) {
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->service_list.clear();
             uint32_t _size16;
-            TType _etype19;
+            ::apache::thrift::protocol::TType _etype19;
             xfer += iprot->readListBegin(_etype19, _size16);
             this->service_list.resize(_size16);
             uint32_t _i20;
@@ -634,34 +644,34 @@ uint32_t peer_node_info::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t peer_node_info::write(protocol* oprot) const {
+uint32_t peer_node_info::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("peer_node_info");
 
-  xfer += oprot->writeFieldBegin("peer_node_id", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("peer_node_id", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->peer_node_id);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("core_version", T_I32, 2);
+  xfer += oprot->writeFieldBegin("core_version", ::apache::thrift::protocol::T_I32, 2);
   xfer += oprot->writeI32(this->core_version);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("protocol_version", T_I32, 3);
+  xfer += oprot->writeFieldBegin("protocol_version", ::apache::thrift::protocol::T_I32, 3);
   xfer += oprot->writeI32(this->protocol_version);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("live_time_stamp", T_I32, 4);
+  xfer += oprot->writeFieldBegin("live_time_stamp", ::apache::thrift::protocol::T_I32, 4);
   xfer += oprot->writeI32(this->live_time_stamp);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("addr", T_STRUCT, 5);
+  xfer += oprot->writeFieldBegin("addr", ::apache::thrift::protocol::T_STRUCT, 5);
   xfer += this->addr.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("service_list", T_LIST, 6);
+  xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 6);
   {
-    xfer += oprot->writeListBegin(T_STRING, static_cast<uint32_t>(this->service_list.size()));
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
     std::vector<std::string> ::const_iterator _iter21;
     for (_iter21 = this->service_list.begin(); _iter21 != this->service_list.end(); ++_iter21)
     {
@@ -757,37 +767,38 @@ std::ostream& operator<<(std::ostream& out, const ver_req_body& obj)
 }
 
 
-uint32_t ver_req_body::read(protocol* iprot) {
+uint32_t ver_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
+  bool isset_node_id = false;
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->node_id);
-          this->__isset.node_id = true;
+          isset_node_id = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 2:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->core_version);
           this->__isset.core_version = true;
         } else {
@@ -795,7 +806,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
         }
         break;
       case 3:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->protocol_version);
           this->__isset.protocol_version = true;
         } else {
@@ -803,7 +814,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
         }
         break;
       case 4:
-        if (ftype == T_I64) {
+        if (ftype == ::apache::thrift::protocol::T_I64) {
           xfer += iprot->readI64(this->time_stamp);
           this->__isset.time_stamp = true;
         } else {
@@ -811,7 +822,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
         }
         break;
       case 5:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->addr_me.read(iprot);
           this->__isset.addr_me = true;
         } else {
@@ -819,7 +830,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
         }
         break;
       case 6:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->addr_you.read(iprot);
           this->__isset.addr_you = true;
         } else {
@@ -827,7 +838,7 @@ uint32_t ver_req_body::read(protocol* iprot) {
         }
         break;
       case 7:
-        if (ftype == T_I64) {
+        if (ftype == ::apache::thrift::protocol::T_I64) {
           xfer += iprot->readI64(this->start_height);
           this->__isset.start_height = true;
         } else {
@@ -843,39 +854,41 @@ uint32_t ver_req_body::read(protocol* iprot) {
 
   xfer += iprot->readStructEnd();
 
+  if (!isset_node_id)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
 
-uint32_t ver_req_body::write(protocol* oprot) const {
+uint32_t ver_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("ver_req_body");
 
-  xfer += oprot->writeFieldBegin("node_id", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("node_id", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->node_id);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("core_version", T_I32, 2);
+  xfer += oprot->writeFieldBegin("core_version", ::apache::thrift::protocol::T_I32, 2);
   xfer += oprot->writeI32(this->core_version);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("protocol_version", T_I32, 3);
+  xfer += oprot->writeFieldBegin("protocol_version", ::apache::thrift::protocol::T_I32, 3);
   xfer += oprot->writeI32(this->protocol_version);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("time_stamp", T_I64, 4);
+  xfer += oprot->writeFieldBegin("time_stamp", ::apache::thrift::protocol::T_I64, 4);
   xfer += oprot->writeI64(this->time_stamp);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("addr_me", T_STRUCT, 5);
+  xfer += oprot->writeFieldBegin("addr_me", ::apache::thrift::protocol::T_STRUCT, 5);
   xfer += this->addr_me.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("addr_you", T_STRUCT, 6);
+  xfer += oprot->writeFieldBegin("addr_you", ::apache::thrift::protocol::T_STRUCT, 6);
   xfer += this->addr_you.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("start_height", T_I64, 7);
+  xfer += oprot->writeFieldBegin("start_height", ::apache::thrift::protocol::T_I64, 7);
   xfer += oprot->writeI64(this->start_height);
   xfer += oprot->writeFieldEnd();
 
@@ -949,29 +962,29 @@ std::ostream& operator<<(std::ostream& out, const ver_req& obj)
 }
 
 
-uint32_t ver_req::read(protocol* iprot) {
+uint32_t ver_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -979,7 +992,7 @@ uint32_t ver_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -998,16 +1011,16 @@ uint32_t ver_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t ver_req::write(protocol* oprot) const {
+uint32_t ver_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("ver_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -1065,47 +1078,50 @@ std::ostream& operator<<(std::ostream& out, const ver_resp_body& obj)
 }
 
 
-uint32_t ver_resp_body::read(protocol* iprot) {
+uint32_t ver_resp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
+  bool isset_node_id = false;
+  bool isset_core_version = false;
+  bool isset_protocol_version = false;
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->node_id);
-          this->__isset.node_id = true;
+          isset_node_id = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 2:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->core_version);
-          this->__isset.core_version = true;
+          isset_core_version = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 3:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->protocol_version);
-          this->__isset.protocol_version = true;
+          isset_protocol_version = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -1119,23 +1135,29 @@ uint32_t ver_resp_body::read(protocol* iprot) {
 
   xfer += iprot->readStructEnd();
 
+  if (!isset_node_id)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_core_version)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_protocol_version)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
 
-uint32_t ver_resp_body::write(protocol* oprot) const {
+uint32_t ver_resp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("ver_resp_body");
 
-  xfer += oprot->writeFieldBegin("node_id", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("node_id", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->node_id);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("core_version", T_I32, 2);
+  xfer += oprot->writeFieldBegin("core_version", ::apache::thrift::protocol::T_I32, 2);
   xfer += oprot->writeI32(this->core_version);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("protocol_version", T_I32, 3);
+  xfer += oprot->writeFieldBegin("protocol_version", ::apache::thrift::protocol::T_I32, 3);
   xfer += oprot->writeI32(this->protocol_version);
   xfer += oprot->writeFieldEnd();
 
@@ -1149,20 +1171,17 @@ void swap(ver_resp_body &a, ver_resp_body &b) {
   swap(a.node_id, b.node_id);
   swap(a.core_version, b.core_version);
   swap(a.protocol_version, b.protocol_version);
-  swap(a.__isset, b.__isset);
 }
 
 ver_resp_body::ver_resp_body(const ver_resp_body& other28) {
   node_id = other28.node_id;
   core_version = other28.core_version;
   protocol_version = other28.protocol_version;
-  __isset = other28.__isset;
 }
 ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other29) {
   node_id = other29.node_id;
   core_version = other29.core_version;
   protocol_version = other29.protocol_version;
-  __isset = other29.__isset;
   return *this;
 }
 void ver_resp_body::printTo(std::ostream& out) const {
@@ -1193,29 +1212,29 @@ std::ostream& operator<<(std::ostream& out, const ver_resp& obj)
 }
 
 
-uint32_t ver_resp::read(protocol* iprot) {
+uint32_t ver_resp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -1223,7 +1242,7 @@ uint32_t ver_resp::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -1242,16 +1261,16 @@ uint32_t ver_resp::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t ver_resp::write(protocol* oprot) const {
+uint32_t ver_resp::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("ver_resp");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -1305,29 +1324,29 @@ std::ostream& operator<<(std::ostream& out, const shake_hand_req& obj)
 }
 
 
-uint32_t shake_hand_req::read(protocol* iprot) {
+uint32_t shake_hand_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -1335,7 +1354,7 @@ uint32_t shake_hand_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -1354,16 +1373,16 @@ uint32_t shake_hand_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t shake_hand_req::write(protocol* oprot) const {
+uint32_t shake_hand_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("shake_hand_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -1417,29 +1436,29 @@ std::ostream& operator<<(std::ostream& out, const shake_hand_resp& obj)
 }
 
 
-uint32_t shake_hand_resp::read(protocol* iprot) {
+uint32_t shake_hand_resp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -1447,7 +1466,7 @@ uint32_t shake_hand_resp::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -1466,16 +1485,16 @@ uint32_t shake_hand_resp::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t shake_hand_resp::write(protocol* oprot) const {
+uint32_t shake_hand_resp::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("shake_hand_resp");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -1529,29 +1548,29 @@ std::ostream& operator<<(std::ostream& out, const get_peer_nodes_req& obj)
 }
 
 
-uint32_t get_peer_nodes_req::read(protocol* iprot) {
+uint32_t get_peer_nodes_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -1559,7 +1578,7 @@ uint32_t get_peer_nodes_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -1578,16 +1597,16 @@ uint32_t get_peer_nodes_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t get_peer_nodes_req::write(protocol* oprot) const {
+uint32_t get_peer_nodes_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("get_peer_nodes_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -1637,33 +1656,33 @@ std::ostream& operator<<(std::ostream& out, const get_peer_nodes_resp_body& obj)
 }
 
 
-uint32_t get_peer_nodes_resp_body::read(protocol* iprot) {
+uint32_t get_peer_nodes_resp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_LIST) {
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->peer_nodes_list.clear();
             uint32_t _size38;
-            TType _etype41;
+            ::apache::thrift::protocol::TType _etype41;
             xfer += iprot->readListBegin(_etype41, _size38);
             this->peer_nodes_list.resize(_size38);
             uint32_t _i42;
@@ -1690,14 +1709,14 @@ uint32_t get_peer_nodes_resp_body::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t get_peer_nodes_resp_body::write(protocol* oprot) const {
+uint32_t get_peer_nodes_resp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("get_peer_nodes_resp_body");
 
-  xfer += oprot->writeFieldBegin("peer_nodes_list", T_LIST, 1);
+  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
   {
-    xfer += oprot->writeListBegin(T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
     std::vector<peer_node_info> ::const_iterator _iter43;
     for (_iter43 = this->peer_nodes_list.begin(); _iter43 != this->peer_nodes_list.end(); ++_iter43)
     {
@@ -1753,29 +1772,29 @@ std::ostream& operator<<(std::ostream& out, const get_peer_nodes_resp& obj)
 }
 
 
-uint32_t get_peer_nodes_resp::read(protocol* iprot) {
+uint32_t get_peer_nodes_resp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -1783,7 +1802,7 @@ uint32_t get_peer_nodes_resp::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -1802,16 +1821,16 @@ uint32_t get_peer_nodes_resp::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t get_peer_nodes_resp::write(protocol* oprot) const {
+uint32_t get_peer_nodes_resp::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("get_peer_nodes_resp");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -1861,33 +1880,33 @@ std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req_body&
 }
 
 
-uint32_t peer_nodes_broadcast_req_body::read(protocol* iprot) {
+uint32_t peer_nodes_broadcast_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_LIST) {
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->peer_nodes_list.clear();
             uint32_t _size48;
-            TType _etype51;
+            ::apache::thrift::protocol::TType _etype51;
             xfer += iprot->readListBegin(_etype51, _size48);
             this->peer_nodes_list.resize(_size48);
             uint32_t _i52;
@@ -1914,14 +1933,14 @@ uint32_t peer_nodes_broadcast_req_body::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t peer_nodes_broadcast_req_body::write(protocol* oprot) const {
+uint32_t peer_nodes_broadcast_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("peer_nodes_broadcast_req_body");
 
-  xfer += oprot->writeFieldBegin("peer_nodes_list", T_LIST, 1);
+  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
   {
-    xfer += oprot->writeListBegin(T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
     std::vector<peer_node_info> ::const_iterator _iter53;
     for (_iter53 = this->peer_nodes_list.begin(); _iter53 != this->peer_nodes_list.end(); ++_iter53)
     {
@@ -1977,29 +1996,29 @@ std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req& obj)
 }
 
 
-uint32_t peer_nodes_broadcast_req::read(protocol* iprot) {
+uint32_t peer_nodes_broadcast_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -2007,7 +2026,7 @@ uint32_t peer_nodes_broadcast_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -2026,16 +2045,16 @@ uint32_t peer_nodes_broadcast_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t peer_nodes_broadcast_req::write(protocol* oprot) const {
+uint32_t peer_nodes_broadcast_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("peer_nodes_broadcast_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -2129,29 +2148,29 @@ std::ostream& operator<<(std::ostream& out, const start_training_req_body& obj)
 }
 
 
-uint32_t start_training_req_body::read(protocol* iprot) {
+uint32_t start_training_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->task_id);
           this->__isset.task_id = true;
         } else {
@@ -2159,7 +2178,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_BYTE) {
+        if (ftype == ::apache::thrift::protocol::T_BYTE) {
           xfer += iprot->readByte(this->select_mode);
           this->__isset.select_mode = true;
         } else {
@@ -2167,7 +2186,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 3:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->master);
           this->__isset.master = true;
         } else {
@@ -2175,11 +2194,11 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 4:
-        if (ftype == T_LIST) {
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->peer_nodes_list.clear();
             uint32_t _size58;
-            TType _etype61;
+            ::apache::thrift::protocol::TType _etype61;
             xfer += iprot->readListBegin(_etype61, _size58);
             this->peer_nodes_list.resize(_size58);
             uint32_t _i62;
@@ -2195,7 +2214,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 5:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->server_specification);
           this->__isset.server_specification = true;
         } else {
@@ -2203,7 +2222,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 6:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->server_count);
           this->__isset.server_count = true;
         } else {
@@ -2211,7 +2230,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 7:
-        if (ftype == T_I32) {
+        if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->training_engine);
           this->__isset.training_engine = true;
         } else {
@@ -2219,7 +2238,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 8:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->code_dir);
           this->__isset.code_dir = true;
         } else {
@@ -2227,7 +2246,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 9:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->entry_file);
           this->__isset.entry_file = true;
         } else {
@@ -2235,7 +2254,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 10:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->data_dir);
           this->__isset.data_dir = true;
         } else {
@@ -2243,7 +2262,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 11:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->checkpoint_dir);
           this->__isset.checkpoint_dir = true;
         } else {
@@ -2251,7 +2270,7 @@ uint32_t start_training_req_body::read(protocol* iprot) {
         }
         break;
       case 12:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->hyper_parameters);
           this->__isset.hyper_parameters = true;
         } else {
@@ -2270,26 +2289,26 @@ uint32_t start_training_req_body::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t start_training_req_body::write(protocol* oprot) const {
+uint32_t start_training_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("start_training_req_body");
 
-  xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->task_id);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("select_mode", T_BYTE, 2);
+  xfer += oprot->writeFieldBegin("select_mode", ::apache::thrift::protocol::T_BYTE, 2);
   xfer += oprot->writeByte(this->select_mode);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("master", T_STRING, 3);
+  xfer += oprot->writeFieldBegin("master", ::apache::thrift::protocol::T_STRING, 3);
   xfer += oprot->writeString(this->master);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("peer_nodes_list", T_LIST, 4);
+  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 4);
   {
-    xfer += oprot->writeListBegin(T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
     std::vector<std::string> ::const_iterator _iter63;
     for (_iter63 = this->peer_nodes_list.begin(); _iter63 != this->peer_nodes_list.end(); ++_iter63)
     {
@@ -2299,35 +2318,35 @@ uint32_t start_training_req_body::write(protocol* oprot) const {
   }
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("server_specification", T_STRING, 5);
+  xfer += oprot->writeFieldBegin("server_specification", ::apache::thrift::protocol::T_STRING, 5);
   xfer += oprot->writeString(this->server_specification);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("server_count", T_I32, 6);
+  xfer += oprot->writeFieldBegin("server_count", ::apache::thrift::protocol::T_I32, 6);
   xfer += oprot->writeI32(this->server_count);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("training_engine", T_I32, 7);
+  xfer += oprot->writeFieldBegin("training_engine", ::apache::thrift::protocol::T_I32, 7);
   xfer += oprot->writeI32(this->training_engine);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("code_dir", T_STRING, 8);
+  xfer += oprot->writeFieldBegin("code_dir", ::apache::thrift::protocol::T_STRING, 8);
   xfer += oprot->writeString(this->code_dir);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("entry_file", T_STRING, 9);
+  xfer += oprot->writeFieldBegin("entry_file", ::apache::thrift::protocol::T_STRING, 9);
   xfer += oprot->writeString(this->entry_file);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("data_dir", T_STRING, 10);
+  xfer += oprot->writeFieldBegin("data_dir", ::apache::thrift::protocol::T_STRING, 10);
   xfer += oprot->writeString(this->data_dir);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("checkpoint_dir", T_STRING, 11);
+  xfer += oprot->writeFieldBegin("checkpoint_dir", ::apache::thrift::protocol::T_STRING, 11);
   xfer += oprot->writeString(this->checkpoint_dir);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("hyper_parameters", T_STRING, 12);
+  xfer += oprot->writeFieldBegin("hyper_parameters", ::apache::thrift::protocol::T_STRING, 12);
   xfer += oprot->writeString(this->hyper_parameters);
   xfer += oprot->writeFieldEnd();
 
@@ -2421,29 +2440,29 @@ std::ostream& operator<<(std::ostream& out, const start_training_req& obj)
 }
 
 
-uint32_t start_training_req::read(protocol* iprot) {
+uint32_t start_training_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -2451,7 +2470,7 @@ uint32_t start_training_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -2470,16 +2489,16 @@ uint32_t start_training_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t start_training_req::write(protocol* oprot) const {
+uint32_t start_training_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("start_training_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -2529,29 +2548,29 @@ std::ostream& operator<<(std::ostream& out, const stop_training_req_body& obj)
 }
 
 
-uint32_t stop_training_req_body::read(protocol* iprot) {
+uint32_t stop_training_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRING) {
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->task_id);
           this->__isset.task_id = true;
         } else {
@@ -2570,12 +2589,12 @@ uint32_t stop_training_req_body::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t stop_training_req_body::write(protocol* oprot) const {
+uint32_t stop_training_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("stop_training_req_body");
 
-  xfer += oprot->writeFieldBegin("task_id", T_STRING, 1);
+  xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
   xfer += oprot->writeString(this->task_id);
   xfer += oprot->writeFieldEnd();
 
@@ -2625,29 +2644,29 @@ std::ostream& operator<<(std::ostream& out, const stop_training_req& obj)
 }
 
 
-uint32_t stop_training_req::read(protocol* iprot) {
+uint32_t stop_training_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -2655,7 +2674,7 @@ uint32_t stop_training_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -2674,16 +2693,16 @@ uint32_t stop_training_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t stop_training_req::write(protocol* oprot) const {
+uint32_t stop_training_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("stop_training_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -2733,33 +2752,33 @@ std::ostream& operator<<(std::ostream& out, const list_training_req_body& obj)
 }
 
 
-uint32_t list_training_req_body::read(protocol* iprot) {
+uint32_t list_training_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_LIST) {
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->task_list.clear();
             uint32_t _size72;
-            TType _etype75;
+            ::apache::thrift::protocol::TType _etype75;
             xfer += iprot->readListBegin(_etype75, _size72);
             this->task_list.resize(_size72);
             uint32_t _i76;
@@ -2786,14 +2805,14 @@ uint32_t list_training_req_body::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t list_training_req_body::write(protocol* oprot) const {
+uint32_t list_training_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("list_training_req_body");
 
-  xfer += oprot->writeFieldBegin("task_list", T_LIST, 1);
+  xfer += oprot->writeFieldBegin("task_list", ::apache::thrift::protocol::T_LIST, 1);
   {
-    xfer += oprot->writeListBegin(T_STRING, static_cast<uint32_t>(this->task_list.size()));
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->task_list.size()));
     std::vector<std::string> ::const_iterator _iter77;
     for (_iter77 = this->task_list.begin(); _iter77 != this->task_list.end(); ++_iter77)
     {
@@ -2849,29 +2868,29 @@ std::ostream& operator<<(std::ostream& out, const list_training_req& obj)
 }
 
 
-uint32_t list_training_req::read(protocol* iprot) {
+uint32_t list_training_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -2879,7 +2898,7 @@ uint32_t list_training_req::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -2898,16 +2917,16 @@ uint32_t list_training_req::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t list_training_req::write(protocol* oprot) const {
+uint32_t list_training_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("list_training_req");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 
@@ -2957,33 +2976,33 @@ std::ostream& operator<<(std::ostream& out, const list_training_resp_body& obj)
 }
 
 
-uint32_t list_training_resp_body::read(protocol* iprot) {
+uint32_t list_training_resp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_LIST) {
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->task_status_list.clear();
             uint32_t _size82;
-            TType _etype85;
+            ::apache::thrift::protocol::TType _etype85;
             xfer += iprot->readListBegin(_etype85, _size82);
             this->task_status_list.resize(_size82);
             uint32_t _i86;
@@ -3010,14 +3029,14 @@ uint32_t list_training_resp_body::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t list_training_resp_body::write(protocol* oprot) const {
+uint32_t list_training_resp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("list_training_resp_body");
 
-  xfer += oprot->writeFieldBegin("task_status_list", T_LIST, 1);
+  xfer += oprot->writeFieldBegin("task_status_list", ::apache::thrift::protocol::T_LIST, 1);
   {
-    xfer += oprot->writeListBegin(T_STRUCT, static_cast<uint32_t>(this->task_status_list.size()));
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->task_status_list.size()));
     std::vector<task_status> ::const_iterator _iter87;
     for (_iter87 = this->task_status_list.begin(); _iter87 != this->task_status_list.end(); ++_iter87)
     {
@@ -3073,29 +3092,29 @@ std::ostream& operator<<(std::ostream& out, const list_training_resp& obj)
 }
 
 
-uint32_t list_training_resp::read(protocol* iprot) {
+uint32_t list_training_resp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
-  
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
   uint32_t xfer = 0;
   std::string fname;
-  TType ftype;
+  ::apache::thrift::protocol::TType ftype;
   int16_t fid;
 
   xfer += iprot->readStructBegin(fname);
 
-  
+  using ::apache::thrift::protocol::TProtocolException;
 
 
   while (true)
   {
     xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == T_STOP) {
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
     switch (fid)
     {
       case 1:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->header.read(iprot);
           this->__isset.header = true;
         } else {
@@ -3103,7 +3122,7 @@ uint32_t list_training_resp::read(protocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == T_STRUCT) {
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->body.read(iprot);
           this->__isset.body = true;
         } else {
@@ -3122,16 +3141,16 @@ uint32_t list_training_resp::read(protocol* iprot) {
   return xfer;
 }
 
-uint32_t list_training_resp::write(protocol* oprot) const {
+uint32_t list_training_resp::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("list_training_resp");
 
-  xfer += oprot->writeFieldBegin("header", T_STRUCT, 1);
+  xfer += oprot->writeFieldBegin("header", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->header.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("body", T_STRUCT, 2);
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->body.write(oprot);
   xfer += oprot->writeFieldEnd();
 

@@ -16,15 +16,10 @@
 #include "conf_manager.h"
 #include "topic_manager.h"
 #include "connection_manager.h"
-#include "p2p_net_service.h"
-#include "ai_power_requestor_service.h"
-#include "ai_power_provider_service.h"
 #include "module_manager.h"
 #include "server_initiator_factory.h"
 
 using namespace std;
-using namespace matrix::service_core;
-using namespace ai::dbc;
 
 
 #define TOPIC_MANAGER                               (g_server->get_topic_manager())
@@ -83,12 +78,6 @@ namespace matrix
 
 			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
-			p2p_net_service * get_p2p_net_service() { return (p2p_net_service *)(m_module_manager->get(p2p_service_name).get()); }
-
-			ai_power_provider_service * get_ai_power_provider_service() { return (ai_power_provider_service *)(m_module_manager->get(ai_power_provider_service_name).get()); }
-
-			ai_power_requestor_service * get_ai_power_requestor_service() { return (ai_power_requestor_service *)(m_module_manager->get(ai_power_requestor_service_name).get()); }
-
 
 		protected:
 
@@ -96,9 +85,9 @@ namespace matrix
 
 		protected:
 
-			bool m_exited;
-
 			int32_t m_init_result;
+
+			bool m_exited;
 
 			shared_ptr<server_initiator> m_initiator;
 
