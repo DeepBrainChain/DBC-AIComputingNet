@@ -19,6 +19,7 @@
 #include "console_printer.h"
 #include "task_common_def.h"
 
+#include "service_core/p2pnet/api_call.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -35,6 +36,9 @@ namespace ai
 {
     namespace dbc
     {
+
+        using ::dbc::cmd_get_peer_nodes_req;
+        using ::dbc::cmd_get_peer_nodes_resp;
 
         class outputter
         {
@@ -165,50 +169,14 @@ namespace ai
             }
         };
 
-        class cmd_network_address
+
+  class cmd_get_peer_nodes_resp_formater : public outputter
         {
+
         public:
-
-            std::string ip;
-
-            uint16_t port;
-        };
-
-        class cmd_peer_node_info
-        {
-        public:
-
-            std::string peer_node_id;
-
-            int32_t live_time_stamp;
-
-            cmd_network_address addr;
-
-            std::vector<std::string> service_list;
-
-            cmd_peer_node_info& operator=(const matrix::service_core::peer_node_info &info)
-            {
-                peer_node_id = info.peer_node_id;
-                live_time_stamp = info.live_time_stamp;
-                addr.ip = info.addr.ip;
-                addr.port = info.addr.port;
-                service_list = info.service_list;
-                return *this;
-            }
-        };
-
-        class cmd_get_peer_nodes_req : public matrix::core::base
-        {
-
-        };
-
-        class cmd_get_peer_nodes_resp : public matrix::core::base, public outputter
-        {
-        public:
-            int32_t result;
-            std::string result_info;
-
-            std::vector<cmd_peer_node_info> peer_nodes_list;
+            cmd_get_peer_nodes_resp_formater(std::shared_ptr<cmd_get_peer_nodes_resp> data){
+                m_data = data;
+            };
 
             void format_output()
             {
@@ -217,14 +185,85 @@ namespace ai
 
                 printer << matrix::core::init << "peer_id" << "time_stamp" << "ip" << "port" << "service_list" << matrix::core::endl;
 
-                auto it = peer_nodes_list.begin();
-                for (; it != peer_nodes_list.end(); it++)
+                auto v = m_data.get();
+                if (v == nullptr)
+                {
+                    return;
+                }
+
+                auto it = v->peer_nodes_list.begin();
+                for (; it != v->peer_nodes_list.end(); it++)
                 {
                     std::string service_list;  //left to later
                     printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << service_list << matrix::core::endl;
                 }
             }
+        private:
+            std::shared_ptr<cmd_get_peer_nodes_resp> m_data;
+
         };
+
+//  move to p2p_net/api_call.h
+//        class cmd_network_address
+//        {
+//        public:
+//
+//            std::string ip;
+//
+//            uint16_t port;
+//        };
+//
+//        class cmd_peer_node_info
+//        {
+//        public:
+//
+//            std::string peer_node_id;
+//
+//            int32_t live_time_stamp;
+//
+//            cmd_network_address addr;
+//
+//            std::vector<std::string> service_list;
+//
+//            cmd_peer_node_info& operator=(const matrix::service_core::peer_node_info &info)
+//            {
+//                peer_node_id = info.peer_node_id;
+//                live_time_stamp = info.live_time_stamp;
+//                addr.ip = info.addr.ip;
+//                addr.port = info.addr.port;
+//                service_list = info.service_list;
+//                return *this;
+//            }
+//        };
+
+//        class cmd_get_peer_nodes_req : public matrix::core::base
+//        {
+//
+//        };
+//
+//        class cmd_get_peer_nodes_resp : public matrix::core::base, public outputter
+//        {
+//        public:
+//            int32_t result;
+//            std::string result_info;
+//
+//            std::vector<cmd_peer_node_info> peer_nodes_list;
+//
+//            void format_output()
+//            {
+//                console_printer printer;
+//                printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 64)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
+//
+//                printer << matrix::core::init << "peer_id" << "time_stamp" << "ip" << "port" << "service_list" << matrix::core::endl;
+//
+//                auto it = peer_nodes_list.begin();
+//                for (; it != peer_nodes_list.end(); it++)
+//                {
+//                    std::string service_list;  //left to later
+//                    printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << service_list << matrix::core::endl;
+//                }
+//            }
+//        };
 
         class cmd_logs_req : public matrix::core::base
         {

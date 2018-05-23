@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºconf_manager.cpp
-* description    £ºconf manager for core
+* file name        ï¿½ï¿½conf_manager.cpp
+* description    ï¿½ï¿½conf manager for core
 * date                  : 2017.08.16
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include "conf_manager.h"
 #include "env_manager.h"
@@ -187,11 +187,11 @@ namespace matrix
             assert(nullptr != fp);
 
             fprintf(fp, "node_id=");
-            fprintf(fp, info.node_id.c_str());
+            fprintf(fp, "%s",info.node_id.c_str());
             fprintf(fp, "\n");
 
             fprintf(fp, "node_private_key=");
-            fprintf(fp, info.node_private_key.c_str());
+            fprintf(fp, "%s",info.node_private_key.c_str());
             fprintf(fp, "\n");
 
             if (fp)

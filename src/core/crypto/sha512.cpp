@@ -23,19 +23,6 @@ void inline Round(uint64_t a, uint64_t b, uint64_t c, uint64_t& d, uint64_t e, u
     h = t1 + t2;
 }
 
-/** Initialize SHA-256 state. */
-void inline Initialize(uint64_t* s)
-{
-    s[0] = 0x6a09e667f3bcc908ull;
-    s[1] = 0xbb67ae8584caa73bull;
-    s[2] = 0x3c6ef372fe94f82bull;
-    s[3] = 0xa54ff53a5f1d36f1ull;
-    s[4] = 0x510e527fade682d1ull;
-    s[5] = 0x9b05688c2b3e6c1full;
-    s[6] = 0x1f83d9abfb41bd6bull;
-    s[7] = 0x5be0cd19137e2179ull;
-}
-
 /** Perform one SHA-512 transformation, processing a 128-byte chunk. */
 void Transform(uint64_t* s, const unsigned char* chunk)
 {
@@ -135,6 +122,19 @@ void Transform(uint64_t* s, const unsigned char* chunk)
     s[5] += f;
     s[6] += g;
     s[7] += h;
+}
+
+/** Initialize SHA-256 state. */
+void inline Initialize(uint64_t* s)
+{
+    s[0] = 0x6a09e667f3bcc908ull;
+    s[1] = 0xbb67ae8584caa73bull;
+    s[2] = 0x3c6ef372fe94f82bull;
+    s[3] = 0xa54ff53a5f1d36f1ull;
+    s[4] = 0x510e527fade682d1ull;
+    s[5] = 0x9b05688c2b3e6c1full;
+    s[6] = 0x1f83d9abfb41bd6bull;
+    s[7] = 0x5be0cd19137e2179ull;
 }
 
 ////// SHA-512

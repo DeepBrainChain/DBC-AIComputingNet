@@ -362,6 +362,7 @@ void GetStrongRandBytes(unsigned char* out, int num)
     GetRandBytes(buf, 32);
     hasher.Write(buf, 32);
 
+
     // Second source: OS RNG
     GetOSRand(buf);
     hasher.Write(buf, 32);
@@ -370,6 +371,7 @@ void GetStrongRandBytes(unsigned char* out, int num)
     if (GetHWRand(buf)) {
         hasher.Write(buf, 32);
     }
+
 
     // Combine with and update state
     {

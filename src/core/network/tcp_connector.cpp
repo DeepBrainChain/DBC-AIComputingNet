@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtcp_connector.cpp
-* description    £ºtcp connector for nio client socket
+* file name        ï¿½ï¿½tcp_connector.cpp
+* description    ï¿½ï¿½tcp connector for nio client socket
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include "tcp_connector.h"
 #include "tcp_socket_channel.h"
@@ -20,12 +20,12 @@ namespace matrix
     {
 
         tcp_connector::tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func)
-                : m_connected(false)
+                : m_sid(socket_id_allocator::get_mutable_instance().alloc_client_socket_id())
+                , m_connected(false)
                 , m_reconnect_times(0)
                 , m_req_reconnect_times(0)
-                , m_connect_addr(connect_addr)
                 , m_worker_group(worker_group)
-                , m_sid(socket_id_allocator::get_mutable_instance().alloc_client_socket_id())
+                , m_connect_addr(connect_addr)
                 , m_handler_create_func(func)
                 , m_reconnect_timer(*(connector_group->get_io_service()))
         {
@@ -111,7 +111,7 @@ namespace matrix
         void tcp_connector::reconnect(const std::string errorinfo)
         {
             if (m_reconnect_times < m_req_reconnect_times)
-            {   
+            {
                 if (!m_reconnect_timer_handler)
                 {
                     LOG_ERROR << "no timer handler for reconnect.";
@@ -142,7 +142,7 @@ namespace matrix
                 connect_notification(CLIENT_CONNECT_ERROR);
             }
         }
-            
+
         void tcp_connector::on_connect(const boost::system::error_code& error)
         {
             if (error)
@@ -185,9 +185,9 @@ namespace matrix
             }
                 
             //modify by regulus: fix "m_socket_handler =nullptr" when tcp_socket_channel::write.  m_client_channel->start() before connect_notification
-            m_connected = true;//mark it before publish                       
+            m_connected = true;//mark it before publish
             m_reconnect_times = 0;//reset
-            connect_notification(CLIENT_CONNECT_SUCCESS);//last sentence            
+            connect_notification(CLIENT_CONNECT_SUCCESS);//last sentence
         }
 
         void tcp_connector::connect_notification(CLIENT_CONNECT_STATUS status)

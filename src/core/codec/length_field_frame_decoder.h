@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºlength_field_frame_decoder.h
-* description    £ºlength field frame decoder
+* file name        ï¿½ï¿½length_field_frame_decoder.h
+* description    ï¿½ï¿½length field frame decoder
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -137,9 +137,9 @@ namespace matrix
 
         protected:
 
-            uint32_t m_max_frame_len;
-
             uint32_t m_min_read_length;
+
+            uint32_t m_max_frame_len;
 
         };
 

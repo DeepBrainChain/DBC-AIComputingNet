@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºdbc_decoder.cpp
-* description    £ºdbc decoder for network transport
+* file name        ï¿½ï¿½dbc_decoder.cpp
+* description    ï¿½ï¿½dbc decoder for network transport
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #include "matrix_coder.h"
 #include "service_message_id.h"

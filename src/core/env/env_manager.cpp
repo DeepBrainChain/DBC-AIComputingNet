@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºenv_manager.cpp
-* description    £ºenv manager for dbc core
+* file name        ï¿½ï¿½env_manager.cpp
+* description    ï¿½ï¿½env manager for dbc core
 * date                  : 2018.01.20
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 
 #include "env_manager.h"
@@ -137,8 +137,8 @@ namespace matrix
             SetConsoleCtrlHandler(ConsoleHandler, TRUE);
 #elif defined(__linux__) || defined(MAC_OSX)
             signal(SIGPIPE, SIG_IGN);
-            signal(SIGTERM, SIG_IGN);
-            signal(SIGINT, SIG_IGN);
+//            signal(SIGTERM, SIG_IGN);
+//            signal(SIGINT, SIG_IGN);
             signal(SIGHUP, SIG_IGN);
             register_signal_function(SIGUSR1, signal_usr1_handler);
 #endif
