@@ -872,7 +872,7 @@ namespace ai
             //just support single machine + multi GPU now
             cmd_peer_node_log log;
             log.peer_node_id = rsp_content->body.log.peer_node_id;
-            log.log_content = rsp_content->body.log.log_content;
+            log.log_content = std::move(rsp_content->body.log.log_content);
 
             cmd_resp->peer_node_logs.push_back(std::move(log));
 
