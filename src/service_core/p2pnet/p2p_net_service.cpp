@@ -34,6 +34,7 @@ using namespace matrix::core;
 
 const uint32_t max_reconnect_times = 100;
 const uint32_t max_connected_cnt = 200;
+const uint32_t max_connect_per_check = 10;
 
 namespace matrix
 {
@@ -288,6 +289,13 @@ namespace matrix
         {
             int32_t ret = E_SUCCESS;
 
+            //load peer candidates
+            ret = load_peer_candidates(m_peer_candidates);
+            if (E_SUCCESS != ret)
+            {
+                LOG_WARNING << "load candidate peers failed.";
+            }
+
             //init listen
             ret = init_acceptor();
             if (E_SUCCESS != ret)
@@ -372,15 +380,19 @@ namespace matrix
         {
             assert(timer->get_timer_id() == m_timer_id_one_minute);
 
-            static uint32_t tick_count = 0;
-            ++tick_count;//one min
+            static uint32_t minutes = 0;
+            ++minutes;
             
             on_timer_check_peer_candidate();
 
-            if (tick_count % TIMER_INTERV_MIN_P2P_PEER_INFO_EXCHANGE == 0)
+            if (minutes % TIMER_INTERV_MIN_P2P_PEER_INFO_EXCHANGE == 0)
             {
-                tick_count = 0;
                 on_timer_peer_info_exchange();
+            }
+
+            if (minutes % TIMER_INTERV_MIN_P2P_PEER_CANDIDATE_DUMP == 0)
+            {
+                on_timer_peer_candidate_dump();
             }
 
             return E_SUCCESS;
@@ -458,15 +470,30 @@ namespace matrix
                         LOG_ERROR << "timer connect ip catch exception. addr info: " << it->tcp_ep.address() << ":" << it->tcp_ep.port() << ", " << e.what();
                         continue;
                     }
+                }     
 
-                    if (new_conn_cnt > max_connected_cnt / 4)
-                    {
-                        break;//not too many conn at a time
-                    }
+                if (new_conn_cnt > max_connect_per_check)
+                {
+                    break;//not too many conn at a time
+                }
+                if (new_conn_cnt + in_use_peer_cnt >= max_connected_cnt)
+                {
+                    break;//up to high bound 
                 }
             }
 
             return E_SUCCESS;
+        }
+
+        int32_t p2p_net_service::on_timer_peer_candidate_dump()
+        {
+            int32_t ret = save_peer_candidates(m_peer_candidates);
+            if (E_SUCCESS != ret)
+            {
+                LOG_WARNING << "save peer candidates failed.";
+            }
+
+            return ret;
         }
 
         bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version)
@@ -595,36 +622,29 @@ namespace matrix
             socket_id  sid = msg->header.src_sid;
             LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string();
 
-            //if client, connect next
-            if (CLIENT_SOCKET == sid.get_type())
+            //find and update peer candidate
+            std::shared_ptr<tcp_socket_channel_error_msg> err_msg = std::dynamic_pointer_cast<tcp_socket_channel_error_msg>(msg);
+            if (err_msg)
             {
-                //find peer candidate
-                std::shared_ptr<tcp_socket_channel_error_msg> err_msg = std::dynamic_pointer_cast<tcp_socket_channel_error_msg>(msg);
-                if (err_msg)
+                std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                    , [=](peer_candidate& pc) -> bool { return err_msg->ep == pc.tcp_ep; });
+                if (it != m_peer_candidates.end())
                 {
-                    std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                        , [=](peer_candidate& pc) -> bool { return err_msg->ep == pc.tcp_ep; });
-                    if (it != m_peer_candidates.end())
-                    {
-                        it->last_conn_tm = time(nullptr);
-                        it->net_st = ns_failed;
-                        //move it to end
-                        auto pc = *it;
-                        m_peer_candidates.erase(it);
-                        m_peer_candidates.push_back(pc);
-                    }
-                    else
-                    {
-                        LOG_ERROR << "a peer_node network error occurs, but not in ip candidates: " << err_msg->ep.address() << ":" << err_msg->ep.port();
-                    }
+                    it->last_conn_tm = time(nullptr);
+                    it->net_st = ns_failed;
+                    //move it to the tail
+                    auto pc = *it;
+                    LOG_DEBUG << "move peer(" << pc.tcp_ep << ") to the tail of candidate list";
+                    m_peer_candidates.erase(it);
+                    m_peer_candidates.push_back(std::move(pc));
+                }
+                else
+                {
+                    LOG_ERROR << "a peer_node network error occurs, but not in ip candidates: " << err_msg->ep.address() << ":" << err_msg->ep.port();
                 }
             }
-            else
-            {
-                //
-            }
 
-            //rm peer_mode
+            //rm peer_node
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
             {
                 if (it->second->m_sid == sid)

@@ -117,6 +117,8 @@ namespace matrix
 
             int32_t on_timer_check_peer_candidate();
 
+            int32_t on_timer_peer_candidate_dump();
+
         protected:
 
             std::string m_host_ip;
