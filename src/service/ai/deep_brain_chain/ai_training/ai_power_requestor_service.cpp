@@ -283,7 +283,7 @@ namespace ai
 
             if (!cmd_req_content)
             {
-                LOG_ERROR << "ai power requestor service on cmd start multi training received null msg";
+                LOG_ERROR << "ai power requester service on cmd start multi training received null msg";
 
                 //error resp
                 cmd_resp->result = E_DEFAULT;
@@ -339,7 +339,7 @@ namespace ai
 
                 if (nullptr == req_msg)
                 {
-                    LOG_ERROR << "ai power requestor service create task msg from file error: " << file;
+                    LOG_ERROR << "ai power requester service create task msg from file error: " << file;
                     cmd_resp->task_list.push_back(file + ":  parse task config error");
                 }
                 else
@@ -719,7 +719,7 @@ namespace ai
                 task_id = it->key().ToString();
                 vec.push_back(task_id);
 
-                LOG_DEBUG << "ai power requestor service read task: " << task_id;
+                LOG_DEBUG << "ai power requester service read task: " << task_id;
 
                 //should restrict max count
                 if (++count > MAX_LIST_TASK_COUNT)

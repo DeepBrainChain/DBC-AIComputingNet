@@ -422,7 +422,7 @@ namespace ai
                     }
                     else
                     {
-                        uint16_t lines = std::stoul(number_of_lines);
+                        uint16_t lines = (uint16_t) std::stoul(number_of_lines);
                         req->number_of_lines = lines > MAX_NUMBER_OF_LINES ? MAX_NUMBER_OF_LINES : lines;
                     }
 

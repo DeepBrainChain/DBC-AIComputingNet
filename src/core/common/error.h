@@ -11,13 +11,14 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
-#define E_SUCCESS                                                0                       //success
-#define E_EXIT_FAILURE                                      -1                       //exit because of failure
-#define E_EXIT_PARSE_COMMAND_LINE           -2                       //exit because of failure
-#define E_DEFAULT                                               -3                      //default error, common use
-#define E_BAD_PARAM                                         -4                     //bad param
-#define E_NULL_POINTER                                    -5                      //null pointer
-#define E_MSG_QUEUE_FULL                               -6                       //message queue full
+#define E_SUCCESS                                           0                   //success
+#define E_EXIT_FAILURE                                      -1                  //exit because of failure
+#define E_EXIT_PARSE_COMMAND_LINE                           -2                  //exit because of failure
+#define E_DEFAULT                                           -3                  //default error, common use
+#define E_BAD_PARAM                                         -4                  //bad param
+#define E_NULL_POINTER                                      -5                  //null pointer
+#define E_MSG_QUEUE_FULL                                    -6                  //message queue full
+#define E_FILE_FAILURE                                      -7                  //file op failure
 
 
 #endif
