@@ -12,7 +12,7 @@ using namespace matrix::core;
 
 namespace utf = boost::unit_test;
 
-BOOST_AUTO_TEST_SUITE(suite_byte_buf, * utf::enabled())
+//BOOST_AUTO_TEST_SUITE(suite_byte_buf, * utf::enabled())
 
 
     BOOST_AUTO_TEST_CASE(test_write) {
@@ -21,6 +21,23 @@ BOOST_AUTO_TEST_SUITE(suite_byte_buf, * utf::enabled())
        char s[]="123456";
        b.write_to_byte_buf(s, sizeof(s));
        BOOST_TEST(b.get_valid_read_len(), sizeof(s));
+    }
+
+    BOOST_AUTO_TEST_CASE(test_move) {
+
+        byte_buf b(1024);
+
+        char s[]="123456";
+        b.write_to_byte_buf(s, sizeof(s));
+
+        BOOST_TEST(b.get_valid_read_len(), sizeof(s));
+
+        uint8_t out[1024];
+        memset(out, 0xff, 1024);
+        b.read_from_byte_buf((char*)out,2);
+
+        b.move_buf();
+
     }
 
     BOOST_AUTO_TEST_CASE(test_write_over_capacity_wo_auto_alloc) {
@@ -95,4 +112,4 @@ BOOST_AUTO_TEST_SUITE(suite_byte_buf, * utf::enabled())
     }
 
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
