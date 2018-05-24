@@ -22,6 +22,7 @@ namespace matrix
         {
             DECODE_SUCCESS = 0,
             DECODE_LENGTH_IS_NOT_ENOUGH,
+            DECODE_UNKNOWN_MSG,
             DECODE_ERROR
         };
 

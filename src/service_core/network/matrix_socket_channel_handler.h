@@ -18,6 +18,7 @@
 #include "matrix_types.h"
 #include "server.h"
 #include "service_message_id.h"
+#include "net_message.h"
 
 
 using namespace std;
@@ -76,12 +77,15 @@ namespace matrix
             void set_has_message(message &msg);
 
             void reset_has_message() { m_has_message = false; }
+            int32_t recvmsg(byte_buf &in);
 
         protected:
 
             bool m_stopped;
 
             std::shared_ptr<matrix_coder> m_coder;
+            //fix coding and decoding conflict when p2p communication
+            std::shared_ptr<matrix_coder> m_decoder;
 
             std::weak_ptr<channel> m_channel;
 
@@ -94,6 +98,7 @@ namespace matrix
             bool m_login_success;
 
             socket_id m_sid;
+            std::list<net_message> vRecvMsgs;
         };
 
     }

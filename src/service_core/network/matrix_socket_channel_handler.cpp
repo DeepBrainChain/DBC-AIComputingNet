@@ -22,6 +22,7 @@ namespace matrix
         matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<channel> ch)
             : m_stopped(false)
             , m_coder(new matrix_coder())
+            , m_decoder(new matrix_coder())
             , m_channel(ch)
             , m_shake_hand_timer(*(ch->get_io_service()))
             , m_has_message(false)
@@ -44,11 +45,32 @@ namespace matrix
 
         int32_t matrix_socket_channel_handler::on_read(channel_handler_context &ctx, byte_buf &in)
         {
-            //decode until buffer is not enough to do
-            while (true)
+            LOG_DEBUG << m_sid.to_string() << "before recvmsg socket channel handler recv msg: matrix_socket_channel_handler::on_read:" << in.to_string() << " read_ptr:" << (void*)in.get_read_ptr();
+            int32_t recvret = recvmsg(in);
+            if (recvret != E_SUCCESS)
             {
+                return recvret;
+            }
+
+            std::size_t msgsize = vRecvMsgs.size();
+            if (msgsize < 1)
+            {
+                return E_SUCCESS;
+            }
+
+            while (msgsize-- > 0)
+            {
+                net_message &netmsg = vRecvMsgs.front();
+
+                if (!netmsg.complete())
+                {
+                    vRecvMsgs.push_back(std::move(netmsg));
+                    vRecvMsgs.pop_front();
+                    continue;
+                }
+                LOG_DEBUG << m_sid.to_string() << "socket channel handler recv msg: matrix_socket_channel_handler::on_read.msgstream:" << netmsg.msgstream.to_string() << " read_ptr:" << (void*)netmsg.msgstream.get_read_ptr();
                 shared_ptr<message> msg = std::make_shared<message>();
-                decode_status status = m_coder->decode(ctx, in, msg);
+                decode_status status = m_decoder->decode(ctx, netmsg.msgstream, msg);
 
                 //decode success
                 if (DECODE_SUCCESS == status)
@@ -86,27 +108,26 @@ namespace matrix
                             LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
                         }
                     }
-                    
-                    //callback
-                    //on_after_msg_received(*msg);
                     //has message
                     set_has_message(*msg);
-
-                    continue;
                 }
                 //not enough, return and next time
-                else if (DECODE_LENGTH_IS_NOT_ENOUGH == status)
+                else if (DECODE_UNKNOWN_MSG == status)
                 {
-                    return E_SUCCESS;
+                    vRecvMsgs.pop_front();
+                    LOG_DEBUG << "unknow message: " << msg->get_name();
+                    continue;
                 }
                 //decode error
                 else
                 {
+                    vRecvMsgs.pop_front();
                     LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_sid.to_string();
-                    //on_error();
-                    return E_DEFAULT;
+                    return status;
                 }
+                vRecvMsgs.pop_front();
             }
+            return E_SUCCESS;
         }
 
         int32_t matrix_socket_channel_handler::on_write(channel_handler_context &ctx, message &msg, byte_buf &buf)
@@ -127,7 +148,7 @@ namespace matrix
                     //insert nonce to avoid receive msg sent by itself
                     service_proto_filter::get_mutable_instance().insert_nonce(nonce);
 
-                    LOG_DEBUG << "matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce;
+                    LOG_DEBUG << m_sid.to_string() <<  " matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce << " buf message:" << buf.to_string();
                 }
 
                 //has message
@@ -190,6 +211,42 @@ namespace matrix
             }
 
             m_has_message = true;
+        }
+
+        //fix big data package problem
+        int32_t matrix_socket_channel_handler::recvmsg(byte_buf &in)
+        {
+            while (in.get_valid_read_len() > 0)
+            {
+                if (vRecvMsgs.empty() || vRecvMsgs.back().complete())
+                {
+                    vRecvMsgs.push_back(std::move(net_message(DEFAULT_BUF_LEN)));
+                }
+
+                net_message & msg = vRecvMsgs.back();
+
+                uint32_t handled = 0;
+                if (!msg.in_data)
+                {
+                    handled = msg.read_packet_len(in);
+                }
+                else
+                {
+                    handled = msg.read_packet_body(in);
+                }
+
+                if (handled < 0)
+                {
+                    return E_DEFAULT;
+                }
+
+                if (msg.in_data && (msg.packet_len > MAX_MATRIX_MSG_LEN || msg.packet_len < MIN_MATRIX_MSG_CODE_LEN))
+                {
+                    LOG_ERROR << "Oversized message";
+                    return E_DEFAULT;
+                }
+            }
+            return E_SUCCESS;
         }
 
     }
