@@ -453,7 +453,7 @@ namespace matrix
                     it->reconn_cnt++;
                     try
                     {
-                        LOG_DEBUG << "matrix connect peer address, ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
+                        LOG_DEBUG << "matrix connect peer address; ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
                         int32_t ret = CONNECTION_MANAGER->start_connect(it->tcp_ep, &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
 
@@ -630,13 +630,16 @@ namespace matrix
                     , [=](peer_candidate& pc) -> bool { return err_msg->ep == pc.tcp_ep; });
                 if (it != m_peer_candidates.end())
                 {
-                    it->last_conn_tm = time(nullptr);
-                    it->net_st = ns_failed;
-                    //move it to the tail
-                    auto pc = *it;
-                    LOG_DEBUG << "move peer(" << pc.tcp_ep << ") to the tail of candidate list";
-                    m_peer_candidates.erase(it);
-                    m_peer_candidates.push_back(std::move(pc));
+                    if (it->net_st != ns_zombie)
+                    {
+                        it->last_conn_tm = time(nullptr);
+                        it->net_st = ns_failed;
+                        //move it to the tail
+                        auto pc = *it;
+                        LOG_DEBUG << "move peer(" << pc.tcp_ep << ") to the tail of candidate list";
+                        m_peer_candidates.erase(it);
+                        m_peer_candidates.push_back(std::move(pc));
+                    }
                 }
                 else
                 {
@@ -699,8 +702,11 @@ namespace matrix
                 req_content->body.protocol_version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
                 req_content->body.addr_me.ip = get_host_ip();
+#ifdef TEST_NET
+                req_content->body.addr_me.port = get_test_net_listen_port();
+#else
                 req_content->body.addr_me.port = get_main_net_listen_port();
-
+#endif
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
                 req_content->body.addr_you.ip = ep.address().to_string();
                 req_content->body.addr_you.port = ep.port();

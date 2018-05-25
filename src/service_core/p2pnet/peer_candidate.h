@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name     peer_candidate.h
-* description   peer candidates
-* date          2018.05.09
-* author        Allan
+* file name     : peer_candidate.h
+* description   : peer candidates
+* date          : 2018.05.09
+* author        : Allan
 **********************************************************************************/
 #pragma once
 
