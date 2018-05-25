@@ -319,9 +319,9 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) {return on_cmd_get_peer_nodes_req(msg); });
-            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
-            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) { return send(msg); });
+            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) { return send(msg); });
+            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) { return send(msg); });
         }
 
         void p2p_net_service::init_invoker()
@@ -351,6 +351,10 @@ namespace matrix
             //get_peer_nodes_resp
             invoker = std::bind(&p2p_net_service::on_get_peer_nodes_resp, this, std::placeholders::_1);
             m_invokers.insert({ P2P_GET_PEER_NODES_RESP,{ invoker } });
+
+            //cmd_get_peer_nodes_req
+            invoker = std::bind(&p2p_net_service::on_cmd_get_peer_nodes_req, this, std::placeholders::_1);
+            m_invokers.insert({ typeid(dbc::cmd_get_peer_nodes_req).name(),{ invoker } });
         }
 
         void p2p_net_service::init_timer()
