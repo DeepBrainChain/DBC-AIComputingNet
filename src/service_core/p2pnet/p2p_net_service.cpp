@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name          p2p_net_service.cpp
-* description        p2p net service
-* date                  : 2018.01.28
-* author              Bruce Feng
+* file name         : p2p_net_service.cpp
+* description       : p2p net service
+* date              : 2018.01.28
+* author            : Bruce Feng
 **********************************************************************************/
 #include "p2p_net_service.h"
 #include <cassert>
@@ -322,7 +322,6 @@ namespace matrix
             TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) {return on_cmd_get_peer_nodes_req(msg); });
             TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
             TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
-            TOPIC_MANAGER->subscribe(P2P_NEW_PEER_NODE, [this](std::shared_ptr<message> &msg) { return send(msg); });
         }
 
         void p2p_net_service::init_invoker()
@@ -352,10 +351,6 @@ namespace matrix
             //get_peer_nodes_resp
             invoker = std::bind(&p2p_net_service::on_get_peer_nodes_resp, this, std::placeholders::_1);
             m_invokers.insert({ P2P_GET_PEER_NODES_RESP,{ invoker } });
-
-            //handshake_resp
-            invoker = std::bind(&p2p_net_service::on_p2p_new_peer_node, this, std::placeholders::_1);
-            m_invokers.insert({ P2P_NEW_PEER_NODE,{ invoker } });
         }
 
         void p2p_net_service::init_timer()
@@ -851,31 +846,6 @@ namespace matrix
                     continue;
                 }
             }
-
-            return E_SUCCESS;
-        }
-
-        int32_t p2p_net_service::on_p2p_new_peer_node(std::shared_ptr<message> &msg)
-        {
-            /*if (!msg)
-            {
-                LOG_ERROR << "p2p net service on p2p new peer node null msg";
-                return E_DEFAULT;
-            }
-
-            using msg_new_node = matrix::service_core::msg_new_peer_node;
-            std::shared_ptr<msg_new_node> msg_node = std::dynamic_pointer_cast<msg_new_node>(msg->get_content());
-            if (!msg_node)
-            {
-                LOG_ERROR << "p2p net service on p2p new peer node null msg node";
-                return E_DEFAULT;
-            }
-
-            if (!add_peer_node(msg_node->sid, msg_node->node_id))
-            {
-                LOG_ERROR << "add node(" << msg_node->node_id << ") failed.";
-                return E_DEFAULT;
-            }*/
 
             return E_SUCCESS;
         }
