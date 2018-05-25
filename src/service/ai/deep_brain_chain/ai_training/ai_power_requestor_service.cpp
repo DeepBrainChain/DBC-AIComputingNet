@@ -518,13 +518,13 @@ namespace ai
             }
 
             //broadcast resp
-            CONNECTION_MANAGER->broadcast_message(msg);
+            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             //get session
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
             if (nullptr == session)
             {
-                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
+                LOG_DEBUG << "ai power requester service get session null: " << rsp_content->header.session_id;
                 return E_DEFAULT;
             }
 
@@ -582,7 +582,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(session_id);
             if (nullptr == session)
             {
-                LOG_ERROR << "ai power requestor service list training timer get session null: " << session_id;
+                LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
                 return E_DEFAULT;
             }
 
@@ -830,7 +830,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            LOG_DEBUG << "ai power requester servicelogs add session: " << session->get_session_id();
+            LOG_DEBUG << "ai power requester service logs add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
@@ -857,7 +857,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
             if (nullptr == session)         //not self or time out, try broadcast
             {
-                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
+                LOG_DEBUG << "ai power requester service get session null: " << rsp_content->header.session_id;
 
                 //broadcast resp
                 CONNECTION_MANAGER->broadcast_message(msg);
@@ -898,7 +898,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(session_id);
             if (nullptr == session)
             {
-                LOG_ERROR << "ai power requestor service logs timer get session null: " << session_id;
+                LOG_ERROR << "ai power requester service logs timer get session null: " << session_id;
                 return E_DEFAULT;
             }
 
