@@ -1,3 +1,13 @@
+/*********************************************************************************
+*  Copyright (c) 2017-2018 DeepBrainChain core team
+*  Distributed under the MIT software license, see the accompanying
+*  file COPYING or http://www.opensource.org/licenses/mit-license.php
+* file name     : timer_def.h
+* description   : define timer ids and timer intervals
+* date          : 2018.04.09
+* author        : Allan
+**********************************************************************************/
+
 #pragma once
 
 /*--------------------timer name------------------------*/

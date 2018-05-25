@@ -919,7 +919,7 @@ namespace matrix
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
                 resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
 
-                CONNECTION_MANAGER->broadcast_message(resp_msg);
+                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
             }
             else// broadcast all nodes
             {
@@ -942,11 +942,11 @@ namespace matrix
                         resp_content->body.peer_nodes_list.push_back(std::move(info));
                     }
                 }
-
+                //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
                 if (resp_content->body.peer_nodes_list.size() > 0)
                 {
                     resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
-                    CONNECTION_MANAGER->broadcast_message(resp_msg);
+                    CONNECTION_MANAGER->broadcast_message(resp_msg);//filer ??
                 }
                 else
                 {

@@ -349,7 +349,6 @@ namespace ai
                     }
                     else
                     {
-//                        format_output(resp);
                         cmd_get_peer_nodes_resp_formater formater(resp);
                         formater.format_output();
                     }

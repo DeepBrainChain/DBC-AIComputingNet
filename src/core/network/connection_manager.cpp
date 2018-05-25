@@ -295,7 +295,7 @@ namespace matrix
 
         int32_t connection_manager::start_connect(tcp::endpoint connect_addr, handler_create_functor func)
         {
-            LOG_DEBUG << "connection manager start connect at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
+            LOG_DEBUG << "connection manager start connect to addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
 
             try
             {
@@ -421,12 +421,17 @@ namespace matrix
             return it->second->write(msg);
         }
 
-		void connection_manager::broadcast_message(std::shared_ptr<message> msg)
+		void connection_manager::broadcast_message(std::shared_ptr<message> msg, socket_id id /*= socket_id()*/)
 		{
 			read_lock_guard<rw_lock> lock(m_lock_chnl);
 			auto it = m_channels.begin();
 			for (; it != m_channels.end(); ++it)
 			{
+                if (id.get_id() != 0)
+                {
+                    if (it->first == id)
+                        continue;
+                }
 				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
 				it->second->write(msg);
 			}			

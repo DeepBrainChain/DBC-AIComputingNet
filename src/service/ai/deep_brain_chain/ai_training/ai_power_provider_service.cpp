@@ -201,7 +201,7 @@ namespace ai
 
             //relay start training in network
             LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
-            CONNECTION_MANAGER->broadcast_message(msg);
+            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             //check node id
             const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
@@ -278,7 +278,7 @@ namespace ai
 
             //relay on stop_training to network(maybe task running on multiple nodes)
             LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
-            CONNECTION_MANAGER->broadcast_message(msg);
+            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             //check task_id
             if (0 == m_queueing_tasks.size())
@@ -344,7 +344,7 @@ namespace ai
             }
 
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
-            CONNECTION_MANAGER->broadcast_message(msg);
+            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             if (0 == m_training_tasks.size())
             {
@@ -432,7 +432,7 @@ namespace ai
             {
                 //relay msg to network
                 LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
-                CONNECTION_MANAGER->broadcast_message(msg);
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                 
                 return E_SUCCESS;
             }
