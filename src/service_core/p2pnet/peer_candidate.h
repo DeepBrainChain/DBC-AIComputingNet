@@ -70,8 +70,9 @@ namespace matrix
             { 
                 //serialize
                 rj::Document document;
+                document.SetObject();
                 rj::Document::AllocatorType& allocator = document.GetAllocator();
-                rj::Value root(rj::kObjectType);
+                //rj::Value root(rj::kObjectType);
                 rj::Value peer_cands(rj::kArrayType);
                 for (auto it = cands.begin(); it != cands.end(); ++it)
                 {
@@ -87,11 +88,11 @@ namespace matrix
 
                     peer_cands.PushBack(peer_cand, allocator);
                 }
-                root.AddMember("peer_cands", peer_cands, allocator);
+                document.AddMember("peer_cands", peer_cands, allocator);
 
                 std::shared_ptr<rj::StringBuffer> buffer = std::make_shared<rj::StringBuffer>();
                 rj::PrettyWriter<rj::StringBuffer> writer(*buffer);
-                root.Accept(writer);
+                document.Accept(writer);
 
                 //open file; if not exist, create it
                 bf::path peers_file = bf::current_path();
@@ -110,6 +111,8 @@ namespace matrix
 
         static int32_t load_peer_candidates(std::list<peer_candidate> &cands)
         {
+            return E_FILE_FAILURE;
+
             cands.clear();
 
             std::string json_str;
@@ -128,9 +131,12 @@ namespace matrix
             try
             {
                 rj::Document doc;
-                //doc.Parse(json_str.c_str());
+                LOG_DEBUG << json_str;
+
                 doc.Parse<0>(json_str.c_str());
-                //transfer to cands
+                assert(doc.IsObject());
+                //doc.ParseInsitu<0>(json_str.c_str());
+                //transform to cands
                 if (!doc.HasMember("peer_cands"))
                     return E_DEFAULT;
                 rj::Value &val_arr = doc["peer_cands"];
