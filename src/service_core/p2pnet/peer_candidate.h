@@ -128,8 +128,7 @@ namespace matrix
             try
             {
                 rj::Document doc;
-                //doc.Parse(json_str.c_str());
-                doc.Parse<0>(json_str.c_str());
+                doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str());
                 //transfer to cands
                 if (!doc.HasMember("peer_cands"))
                     return E_DEFAULT;
@@ -147,7 +146,7 @@ namespace matrix
                         tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
                         peer_cand.tcp_ep = ep;
                         peer_cand.net_st = (net_state) obj["net_state"].GetUint();
-                        peer_cand.reconn_cnt = obj["reconn_net"].GetUint();
+                        peer_cand.reconn_cnt = obj["reconn_cnt"].GetUint();
                         peer_cand.score = obj["score"].GetUint();
 
                         cands.push_back(peer_cand);

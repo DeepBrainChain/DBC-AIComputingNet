@@ -370,6 +370,9 @@
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\codec\net_message.cpp">
+      <Filter>src\service_core\codec</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1223,6 +1226,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\api_call.h">
       <Filter>src\service_core\p2pnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\codec\net_message.h">
+      <Filter>src\service_core\codec</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
