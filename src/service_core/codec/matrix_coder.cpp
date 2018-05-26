@@ -96,7 +96,7 @@ namespace matrix
         {
             try
             {
-                uint32_t before_decode_len = in.get_valid_read_len();
+                int32_t before_decode_len = in.get_valid_read_len();
 
                 //packet header
                 matrix_packet_header packet_header;
@@ -114,7 +114,7 @@ namespace matrix
                 decode_status decodeRet = decode_service_frame(ctx, in, msg, proto);
                 if (E_SUCCESS == decodeRet)
                 {
-                    uint32_t framelen = before_decode_len - in.get_valid_read_len();
+                    int32_t framelen = before_decode_len - in.get_valid_read_len();
                     if (packet_header.packet_len != framelen)
                     {
                         LOG_ERROR << "matrix msg_len error. msg_len in code frame is: " << packet_header.packet_len << "frame len is:" << framelen;
@@ -171,7 +171,8 @@ namespace matrix
             if (it == m_binary_decode_invokers.end())
             {
                 LOG_ERROR << "matrix decoder received unknown message: " << header.msg_name;
-                return DECODE_ERROR;
+                //return DECODE_ERROR;
+                return DECODE_UNKNOWN_MSG;
             }
 
             //body invoker

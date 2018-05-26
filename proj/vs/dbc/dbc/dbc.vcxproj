@@ -230,6 +230,7 @@
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\codec\matrix_coder.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\codec\net_message.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\common\common_service.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.cpp" />
@@ -514,6 +515,7 @@
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h" />
     <ClInclude Include="..\..\..\..\src\service_core\codec\matrix_coder.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\codec\net_message.h" />
     <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\common_service.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\service_proto_filter.h" />

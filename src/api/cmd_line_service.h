@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºcmd_line_service.h
-* description    £ºcmd line api service
-* date                  : 2018.03.25
-* author            £º
+* file name         : cmd_line_service.h
+* description       : cmd line api service
+* date              : 2018.03.25
+* author            : Bruce Feng
 **********************************************************************************/
 
 #pragma once
@@ -19,8 +19,8 @@
 using namespace matrix::core;
 
 #define MAX_CMD_LINE_BUF_LEN                            1024
-#define MAX_CMD_LINE_ARGS_COUNT                    32
-#define CMD_LINE_API_MODULE                               "cmd_line_api_module"
+#define MAX_CMD_LINE_ARGS_COUNT                         32
+#define CMD_LINE_API_MODULE                             "cmd_line_api_module"
 
 
 
