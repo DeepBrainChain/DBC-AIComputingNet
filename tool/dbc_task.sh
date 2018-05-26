@@ -15,6 +15,7 @@ SYSTEM=`uname -s`
 #define variable
 exit_code=0
 sleep_time=5s
+wait_ipfs_init_time=10s
 wait_ipfs_daemon_time=30s
 home_dir=/dbc
 data_dir_hash=$1
@@ -42,6 +43,7 @@ echo "begin to exec dbc_task.sh"
 #init ipfs
 echo "begin to init ipfs"
 ipfs init &
+sleep $wait_ipfs_init_time
 
 exit_code=$?
 #echo -n "init ipfs exitcode:"

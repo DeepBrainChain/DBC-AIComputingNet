@@ -102,8 +102,6 @@ namespace matrix
 
 			int32_t on_get_peer_nodes_resp(std::shared_ptr<message> &msg);
 
-            int32_t on_p2p_new_peer_node(std::shared_ptr<message> &msg);
-
         protected:
             //active pull
             int32_t send_get_peer_nodes();

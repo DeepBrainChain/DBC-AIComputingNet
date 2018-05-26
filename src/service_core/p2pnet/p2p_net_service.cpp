@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name          p2p_net_service.cpp
-* description        p2p net service
-* date                  : 2018.01.28
-* author              Bruce Feng
+* file name         : p2p_net_service.cpp
+* description       : p2p net service
+* date              : 2018.01.28
+* author            : Bruce Feng
 **********************************************************************************/
 #include "p2p_net_service.h"
 #include <cassert>
@@ -319,10 +319,9 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) {return on_cmd_get_peer_nodes_req(msg); });
-            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) {return send(msg); });
-            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) {return send(msg); });
-            TOPIC_MANAGER->subscribe(P2P_NEW_PEER_NODE, [this](std::shared_ptr<message> &msg) { return send(msg); });
+            TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) { return send(msg); });
+            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) { return send(msg); });
+            TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) { return send(msg); });
         }
 
         void p2p_net_service::init_invoker()
@@ -353,9 +352,9 @@ namespace matrix
             invoker = std::bind(&p2p_net_service::on_get_peer_nodes_resp, this, std::placeholders::_1);
             m_invokers.insert({ P2P_GET_PEER_NODES_RESP,{ invoker } });
 
-            //handshake_resp
-            invoker = std::bind(&p2p_net_service::on_p2p_new_peer_node, this, std::placeholders::_1);
-            m_invokers.insert({ P2P_NEW_PEER_NODE,{ invoker } });
+            //cmd_get_peer_nodes_req
+            invoker = std::bind(&p2p_net_service::on_cmd_get_peer_nodes_req, this, std::placeholders::_1);
+            m_invokers.insert({ typeid(dbc::cmd_get_peer_nodes_req).name(),{ invoker } });
         }
 
         void p2p_net_service::init_timer()
@@ -453,7 +452,7 @@ namespace matrix
                     it->reconn_cnt++;
                     try
                     {
-                        LOG_DEBUG << "matrix connect peer address, ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
+                        LOG_DEBUG << "matrix connect peer address; ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
                         int32_t ret = CONNECTION_MANAGER->start_connect(it->tcp_ep, &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
 
@@ -630,13 +629,16 @@ namespace matrix
                     , [=](peer_candidate& pc) -> bool { return err_msg->ep == pc.tcp_ep; });
                 if (it != m_peer_candidates.end())
                 {
-                    it->last_conn_tm = time(nullptr);
-                    it->net_st = ns_failed;
-                    //move it to the tail
-                    auto pc = *it;
-                    LOG_DEBUG << "move peer(" << pc.tcp_ep << ") to the tail of candidate list";
-                    m_peer_candidates.erase(it);
-                    m_peer_candidates.push_back(std::move(pc));
+                    if (it->net_st != ns_zombie)
+                    {
+                        it->last_conn_tm = time(nullptr);
+                        it->net_st = ns_failed;
+                        //move it to the tail
+                        auto pc = *it;
+                        LOG_DEBUG << "move peer(" << pc.tcp_ep << ") to the tail of candidate list";
+                        m_peer_candidates.erase(it);
+                        m_peer_candidates.push_back(std::move(pc));
+                    }
                 }
                 else
                 {
@@ -699,8 +701,11 @@ namespace matrix
                 req_content->body.protocol_version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
                 req_content->body.addr_me.ip = get_host_ip();
+#ifdef TEST_NET
+                req_content->body.addr_me.port = get_test_net_listen_port();
+#else
                 req_content->body.addr_me.port = get_main_net_listen_port();
-
+#endif
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
                 req_content->body.addr_you.ip = ep.address().to_string();
                 req_content->body.addr_you.port = ep.port();
@@ -849,31 +854,6 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        int32_t p2p_net_service::on_p2p_new_peer_node(std::shared_ptr<message> &msg)
-        {
-            /*if (!msg)
-            {
-                LOG_ERROR << "p2p net service on p2p new peer node null msg";
-                return E_DEFAULT;
-            }
-
-            using msg_new_node = matrix::service_core::msg_new_peer_node;
-            std::shared_ptr<msg_new_node> msg_node = std::dynamic_pointer_cast<msg_new_node>(msg->get_content());
-            if (!msg_node)
-            {
-                LOG_ERROR << "p2p net service on p2p new peer node null msg node";
-                return E_DEFAULT;
-            }
-
-            if (!add_peer_node(msg_node->sid, msg_node->node_id))
-            {
-                LOG_ERROR << "add node(" << msg_node->node_id << ") failed.";
-                return E_DEFAULT;
-            }*/
-
-            return E_SUCCESS;
-        }
-
         int32_t p2p_net_service::send_get_peer_nodes()
         {
             std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
@@ -913,7 +893,7 @@ namespace matrix
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
                 resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
 
-                CONNECTION_MANAGER->broadcast_message(resp_msg);
+                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
             }
             else// broadcast all nodes
             {
@@ -936,11 +916,11 @@ namespace matrix
                         resp_content->body.peer_nodes_list.push_back(std::move(info));
                     }
                 }
-
+                //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
                 if (resp_content->body.peer_nodes_list.size() > 0)
                 {
                     resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
-                    CONNECTION_MANAGER->broadcast_message(resp_msg);
+                    CONNECTION_MANAGER->broadcast_message(resp_msg);//filer ??
                 }
                 else
                 {
