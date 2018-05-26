@@ -18,6 +18,24 @@ namespace matrix
     namespace core
     {
 
+        container_config::container_config()
+        {
+            tty = false;
+            stdin_open = false;
+            stdin_once = false;
+
+            memory_limit = 0;
+            memory_swap = 0;
+            cup_shares = 0;
+
+            attach_stdin = false;
+            attach_stdout = false;
+            attach_stderr = false;
+            network_disabled = false;
+            host_config.privileged = false;
+            host_config.publish_all_ports = false;
+        }
+
         std::string container_config::to_string()
         {
             rapidjson::Document document;
@@ -37,9 +55,8 @@ namespace matrix
             root.AddMember("AttachStdout", attach_stdout, allocator);
             root.AddMember("AttachStderr", attach_stderr, allocator);
             root.AddMember("Image", STRING_REF(image), allocator);
-            //root.AddMember("VolumesFrom", STRING_REF(volumes_from), allocator);
             root.AddMember("NetworkDisabled", network_disabled, allocator);
-            root.AddMember("Privileged", privileged, allocator);
+            //root.AddMember("Privileged", privileged, allocator);
             root.AddMember("WorkingDir", STRING_REF(working_dir), allocator);
             root.AddMember("Domainname", STRING_REF(domain_name), allocator);
             
@@ -76,12 +93,12 @@ namespace matrix
             root.AddMember("Dns", json_dns, allocator);
 
             //volumes_from
-            rapidjson::Value json_volumes_from(rapidjson::kArrayType);
+            /*rapidjson::Value json_volumes_from(rapidjson::kArrayType);
             for (auto it = this->volumes_from.begin(); it != this->volumes_from.end(); it++)
             {
                 json_volumes_from.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
             }
-            root.AddMember("VolumesFrom", json_volumes_from, allocator);
+            root.AddMember("VolumesFrom", json_volumes_from, allocator);*/
 
             //entrypoint
             rapidjson::Value json_entry_point(rapidjson::kArrayType);
@@ -106,6 +123,77 @@ namespace matrix
                 json_volumes.AddMember(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), rapidjson::Value().SetString("{}"), allocator);
             }
             root.AddMember("Volumes", json_volumes, allocator);
+
+            //container_host_config
+            rapidjson::Value json_host_config(rapidjson::kObjectType);
+
+            //json_host_config: binds
+            rapidjson::Value json_binds(rapidjson::kArrayType);
+            for (auto it = host_config.binds.begin(); it != host_config.binds.end(); it++)
+            {
+                json_binds.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
+            }
+            json_host_config.AddMember("Binds", json_binds, allocator);
+
+            //json_host_config: devices
+            rapidjson::Value json_devices(rapidjson::kArrayType);
+            for (auto it = host_config.devices.begin(); it != host_config.devices.end(); it++)
+            {
+                rapidjson::Value json_device(rapidjson::kObjectType);
+
+                json_device.AddMember("PathOnHost", STRING_REF(it->path_on_host), allocator);
+                json_device.AddMember("PathInContainer", STRING_REF(it->path_in_container), allocator);
+                json_device.AddMember("CgroupPermissions", STRING_REF(it->cgroup_permissions), allocator);
+
+                json_devices.PushBack(json_device.Move(), allocator);
+            }
+            json_host_config.AddMember("Devices", json_devices, allocator);
+
+            //json_host_config: volume_driver
+            json_host_config.AddMember("VolumeDriver", STRING_REF(host_config.volume_driver), allocator);
+
+            //json_host_config: mounts
+            rapidjson::Value json_mounts(rapidjson::kArrayType);
+            for (auto it = host_config.mounts.begin(); it != host_config.mounts.end(); it++)
+            {
+                rapidjson::Value json_mount(rapidjson::kObjectType);
+
+                json_mount.AddMember("Type", STRING_REF(it->type), allocator);
+                json_mount.AddMember("Name", STRING_REF(it->name), allocator);
+                json_mount.AddMember("Source", STRING_REF(it->source), allocator);
+                json_mount.AddMember("Destination", STRING_REF(it->destination), allocator);
+                json_mount.AddMember("Driver", STRING_REF(it->driver), allocator);
+                json_mount.AddMember("Mode", STRING_REF(it->mode), allocator);
+                json_mount.AddMember("RW", it->rw, allocator);
+                json_mount.AddMember("Propagation", STRING_REF(it->propagation), allocator);
+
+                json_mounts.PushBack(json_mount.Move(), allocator);
+            }
+            json_host_config.AddMember("Mounts", json_mounts, allocator);
+
+            //json_host_config: links
+            rapidjson::Value json_links(rapidjson::kArrayType);
+            for (auto it = host_config.links.begin(); it != host_config.links.end(); it++)
+            {
+                json_links.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
+            }
+            json_host_config.AddMember("Links", json_links, allocator);
+
+            //json_host_config: port_bindings
+
+            //json_host_config: privileged
+            json_host_config.AddMember("Privileged", host_config.privileged, allocator);
+
+            //json_host_config: publish_all_ports
+            json_host_config.AddMember("PublishAllPorts", host_config.publish_all_ports, allocator);
+
+            //json_host_config: dns
+
+            //json_host_config: dns_search
+
+            //json_host_config: volumes_from
+
+            root.AddMember("HostConfig", json_host_config, allocator);
 
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
