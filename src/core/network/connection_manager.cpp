@@ -255,17 +255,17 @@ namespace matrix
             catch (const std::exception &e)
             {
                 LOG_ERROR << "connection_manager start listen exception error: " << e.what();
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
             catch (const boost::exception & e)
             {
                 LOG_ERROR << "connection_manager start listen exception error: " << diagnostic_information(e);
-                return E_SUCCESS;               //if formal release version, here should be return ERROR!!!
+                return E_DEFAULT;
             }
             catch (...)
             {
                 LOG_ERROR << "connection_manager start listen exception error!";
-                return E_SUCCESS;               //if formal release version, here should be return ERROR!!!
+                return E_DEFAULT;
             }
 
             return E_SUCCESS;
