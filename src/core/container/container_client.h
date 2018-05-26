@@ -64,6 +64,9 @@ namespace matrix
             //logs
             std::shared_ptr<container_logs_resp> get_container_log(std::shared_ptr<container_logs_req> req);
 
+            //nvidia docker plugin
+            std::shared_ptr<nvidia_config_resp> get_nividia_config();
+
         protected:
 
             http_client m_http_client;

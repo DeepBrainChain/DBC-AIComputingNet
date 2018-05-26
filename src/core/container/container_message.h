@@ -58,76 +58,6 @@ namespace matrix
 
         };
 
-        class container_config : public json_io_buf
-        {
-        public:
-
-            std::string host_name;
-
-            std::list<std::string> port_specs;
-
-            std::string user;
-
-            bool tty;
-
-            bool stdin_open;
-
-            bool stdin_once;
-
-            int64_t memory_limit;
-
-            int64_t memory_swap;
-
-            int32_t cup_shares;
-
-            bool attach_stdin;
-
-            bool attach_stdout;
-
-            bool attach_stderr;
-
-            std::list<std::string> env;
-
-            std::list<std::string> cmd;
-
-            std::list<std::string> dns;
-
-            std::string image;
-
-            bound_host_volumes volumes;
-
-            std::list<std::string> volumes_from;
-
-            std::list<std::string> entry_point;
-
-            bool network_disabled;
-
-            bool privileged;
-
-            std::string working_dir;
-
-            std::string domain_name;
-
-            std::map<std::string, std::string> exposed_ports;
-
-            std::list<int32_t> on_build;
-
-            std::string to_string();
-
-        };
-
-        class container_create_resp : public json_io_buf
-        {
-        public:
-
-            std::string container_id;
-
-            std::list<std::string> warnings;
-
-            void from_string(const std::string & buf);
-
-        };
-
         class lxc_conf
         {
         public:
@@ -160,15 +90,59 @@ namespace matrix
 
         };
 
+        class container_mount
+        {
+        public:
+
+            std::string type;
+
+            std::string name;
+
+            std::string source;
+
+            std::string destination;
+
+            std::string driver;
+
+            std::string mode;
+
+            bool rw;
+
+            std::string propagation;
+
+        };
+
+        class container_device
+        {
+        public:
+
+            std::string path_on_host;
+
+            std::string path_in_container;
+
+            std::string cgroup_permissions;
+
+        };
+
         class container_host_config
         {
         public:
 
+            //GPU needed
             std::list<std::string> binds;
 
-            std::string container_id_file;
+            //GPU needed
+            std::list<container_device> devices;
 
-            std::list<lxc_conf> lxc_confs;
+            //GPU needed
+            std::string volume_driver;
+
+            //GPU needed
+            std::list<container_mount> mounts;
+
+            std::string container_id_file;  //not in create container config
+
+            std::list<lxc_conf> lxc_confs;  //not in create container config
 
             std::list<std::string> links;
 
@@ -182,11 +156,87 @@ namespace matrix
 
             std::string dns_search;
 
-            std::string volumes_from;
+            std::list<std::string> volumes_from;
 
         };
 
-        class container_state
+        class container_config : public json_io_buf
+        {
+        public:
+
+            container_config();
+
+            std::string host_name;
+
+            std::list<std::string> port_specs;
+
+            std::string user;
+
+            bool tty;
+
+            bool stdin_open;
+
+            bool stdin_once;
+
+            int64_t memory_limit;
+
+            int64_t memory_swap;
+
+            int32_t cup_shares;
+
+            bool attach_stdin;
+
+            bool attach_stdout;
+
+            bool attach_stderr;
+
+            //GPU needed
+            std::list<std::string> env;
+
+            std::list<std::string> cmd;
+
+            std::list<std::string> dns;
+
+            //GPU needed
+            std::string image;
+
+            bound_host_volumes volumes;
+
+            //std::list<std::string> volumes_from;
+
+            std::list<std::string> entry_point;
+
+            bool network_disabled;
+
+            //bool privileged;
+
+            std::string working_dir;
+
+            std::string domain_name;
+
+            std::map<std::string, std::string> exposed_ports;
+
+            std::list<int32_t> on_build;
+
+            container_host_config host_config;
+
+            std::string to_string();
+
+        };
+
+        class container_create_resp : public json_io_buf
+        {
+        public:
+
+            std::string container_id;
+
+            std::list<std::string> warnings;
+
+            void from_string(const std::string & buf);
+
+        };
+
+         class container_state
         {
         public:
 
@@ -287,6 +337,14 @@ namespace matrix
         public:
 
             std::string log_content;
+        };
+
+        class nvidia_config_resp
+        {
+        public:
+
+            //--volume-driver=nvidia-docker --volume=nvidia_driver_384.111:/usr/local/nvidia:ro --device=/dev/nvidiactl --device=/dev/nvidia-uvm --device=/dev/nvidia-uvm-tools --device=/dev/nvidia0
+            std::string content;
         };
 
     }
