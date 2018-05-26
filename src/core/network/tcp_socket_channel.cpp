@@ -251,9 +251,10 @@ namespace matrix
                     //queue is empty, push into queue
                     m_send_queue.push_back(msg);
                 }
+            
                 if (m_send_buf->get_valid_read_len() > 0)
                 {
-                    LOG_DEBUG << "error occur:m_send_buf should be empty when m_send_queue.size==0." << m_sid.to_string();
+                    LOG_ERROR << "error occur:m_send_buf should be empty when m_send_queue.size==0." << m_sid.to_string();
                     //reset
                     m_send_buf->reset();                     //queue is empty means send buf has been sent completely
                 }
