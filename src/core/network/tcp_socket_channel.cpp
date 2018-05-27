@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtcp_socket_channel.cpp
-* description    £ºtcp socket channel for nio socket transport
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   tcp_socket_channel.cpp
+* description    :   tcp socket channel for nio socket transport
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #include "tcp_socket_channel.h"
 #include "service_message_id.h"

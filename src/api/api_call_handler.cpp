@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        api_call_handler.cpp
-* description    api call handler for command line, json rpc
+* file name        : api_call_handler.cpp
+* description    : api call handler for command line, json rpc
 * date                  : 2018.03.27
-* author            Bruce Feng
+* author             :  Bruce Feng
 **********************************************************************************/
 
 #include "matrix_coder.h"

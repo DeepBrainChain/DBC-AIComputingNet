@@ -4,7 +4,7 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name         : console_printer.h
 * description       : console printer for command line
-* date              : 2018.04.01
+* date                    :  2018.04.01
 * author            : Bruce Feng
 **********************************************************************************/
 

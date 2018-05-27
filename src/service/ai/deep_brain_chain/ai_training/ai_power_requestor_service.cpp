@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºai_power_requestor_service.cpp
-* description    £ºai_power_requestor_service
-* date                  : 2018.01.28
-* author            £ºBruce Feng
+* file name        :   ai_power_requestor_service.cpp
+* description    :   ai_power_requestor_service
+* date                  :   2018.01.28
+* author            :   Bruce Feng
 **********************************************************************************/
 #include <cassert>
 #include "server.h"
@@ -216,7 +216,7 @@ namespace ai
             std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
 
             id_generator gen;
-            broadcast_req_content->header.magic = TEST_NET;
+            broadcast_req_content->header.magic = CONF_MANAGER->get_net_flag();
             broadcast_req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
             broadcast_req_content->header.__set_nonce(gen.generate_nonce());
 
@@ -389,7 +389,7 @@ namespace ai
             std::shared_ptr<matrix::service_core::stop_training_req> req_content = std::make_shared<matrix::service_core::stop_training_req>();
 
             //header
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = STOP_TRAINING_REQ;
             req_content->header.__set_nonce(id_generator().generate_nonce());
 
@@ -416,7 +416,7 @@ namespace ai
             auto req_content = std::make_shared<matrix::service_core::list_training_req>();
             
             //header
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = LIST_TRAINING_REQ;
             req_content->header.__set_nonce(id_generator().generate_nonce());
             req_content->header.__set_session_id(id_generator().generate_session_id());
@@ -648,7 +648,7 @@ namespace ai
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::start_training_req> req_content = std::make_shared<matrix::service_core::start_training_req>();
 
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
             req_content->header.__set_nonce(id_generator().generate_nonce());
 
@@ -788,7 +788,7 @@ namespace ai
             auto req_content = std::make_shared<matrix::service_core::logs_req>();
 
             //header
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = LOGS_REQ;
             req_content->header.__set_nonce(id_generator().generate_nonce());
             req_content->header.__set_session_id(id_generator().generate_session_id());

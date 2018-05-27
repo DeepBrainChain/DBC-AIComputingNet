@@ -15,9 +15,8 @@
 
 using namespace matrix::core;
 
-namespace matrix { namespace service_core {
 
-class msg_header;
+namespace matrix { namespace service_core {
 
 class empty;
 
@@ -74,76 +73,6 @@ class peer_node_log;
 class logs_resp_body;
 
 class logs_resp;
-
-typedef struct _msg_header__isset {
-  _msg_header__isset() :  nonce(false), session_id(false), exten_info(false) {}
-  bool nonce :1;
-  bool session_id :1;
-  bool exten_info :1;
-} _msg_header__isset;
-
-class msg_header : public virtual ::apache::thrift::TBase {
- public:
-
-  msg_header(const msg_header&);
-  msg_header& operator=(const msg_header&);
-  msg_header() : magic(0), msg_name(), nonce(), session_id() {
-  }
-
-  virtual ~msg_header() throw();
-  int32_t magic;
-  std::string msg_name;
-  std::string nonce;
-  std::string session_id;
-  std::map<std::string, std::string>  exten_info;
-
-  _msg_header__isset __isset;
-
-  void __set_magic(const int32_t val);
-
-  void __set_msg_name(const std::string& val);
-
-  void __set_nonce(const std::string& val);
-
-  void __set_session_id(const std::string& val);
-
-  void __set_exten_info(const std::map<std::string, std::string> & val);
-
-  bool operator == (const msg_header & rhs) const
-  {
-    if (!(magic == rhs.magic))
-      return false;
-    if (!(msg_name == rhs.msg_name))
-      return false;
-    if (__isset.nonce != rhs.__isset.nonce)
-      return false;
-    else if (__isset.nonce && !(nonce == rhs.nonce))
-      return false;
-    if (__isset.session_id != rhs.__isset.session_id)
-      return false;
-    else if (__isset.session_id && !(session_id == rhs.session_id))
-      return false;
-    if (__isset.exten_info != rhs.__isset.exten_info)
-      return false;
-    else if (__isset.exten_info && !(exten_info == rhs.exten_info))
-      return false;
-    return true;
-  }
-  bool operator != (const msg_header &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const msg_header & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-  virtual void printTo(std::ostream& out) const;
-};
-
-void swap(msg_header &a, msg_header &b);
-
-std::ostream& operator<<(std::ostream& out, const msg_header& obj);
 
 
 class empty : public virtual ::apache::thrift::TBase {
@@ -217,11 +146,6 @@ void swap(network_address &a, network_address &b);
 
 std::ostream& operator<<(std::ostream& out, const network_address& obj);
 
-typedef struct _task_status__isset {
-  _task_status__isset() : task_id(false), status(false) {}
-  bool task_id :1;
-  bool status :1;
-} _task_status__isset;
 
 class task_status : public virtual ::apache::thrift::TBase {
  public:
@@ -234,8 +158,6 @@ class task_status : public virtual ::apache::thrift::TBase {
   virtual ~task_status() throw();
   std::string task_id;
   int8_t status;
-
-  _task_status__isset __isset;
 
   void __set_task_id(const std::string& val);
 
@@ -266,12 +188,7 @@ void swap(task_status &a, task_status &b);
 std::ostream& operator<<(std::ostream& out, const task_status& obj);
 
 typedef struct _peer_node_info__isset {
-  _peer_node_info__isset() : peer_node_id(false), core_version(false), protocol_version(false), live_time_stamp(false), addr(false), service_list(false) {}
-  bool peer_node_id :1;
-  bool core_version :1;
-  bool protocol_version :1;
-  bool live_time_stamp :1;
-  bool addr :1;
+  _peer_node_info__isset() : service_list(false) {}
   bool service_list :1;
 } _peer_node_info__isset;
 
@@ -317,7 +234,9 @@ class peer_node_info : public virtual ::apache::thrift::TBase {
       return false;
     if (!(addr == rhs.addr))
       return false;
-    if (!(service_list == rhs.service_list))
+    if (__isset.service_list != rhs.__isset.service_list)
+      return false;
+    else if (__isset.service_list && !(service_list == rhs.service_list))
       return false;
     return true;
   }
@@ -337,15 +256,6 @@ void swap(peer_node_info &a, peer_node_info &b);
 
 std::ostream& operator<<(std::ostream& out, const peer_node_info& obj);
 
-typedef struct _ver_req_body__isset {
-  _ver_req_body__isset() : core_version(false), protocol_version(false), time_stamp(false), addr_me(false), addr_you(false), start_height(false) {}
-  bool core_version :1;
-  bool protocol_version :1;
-  bool time_stamp :1;
-  bool addr_me :1;
-  bool addr_you :1;
-  bool start_height :1;
-} _ver_req_body__isset;
 
 class ver_req_body : public virtual ::apache::thrift::TBase {
  public:
@@ -363,8 +273,6 @@ class ver_req_body : public virtual ::apache::thrift::TBase {
   network_address addr_me;
   network_address addr_you;
   int64_t start_height;
-
-  _ver_req_body__isset __isset;
 
   void __set_node_id(const std::string& val);
 
@@ -415,8 +323,7 @@ void swap(ver_req_body &a, ver_req_body &b);
 std::ostream& operator<<(std::ostream& out, const ver_req_body& obj);
 
 typedef struct _ver_req__isset {
-  _ver_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _ver_req__isset() : body(false) {}
   bool body :1;
 } _ver_req__isset;
 
@@ -429,19 +336,14 @@ class ver_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~ver_req() throw();
-  msg_header header;
   ver_req_body body;
 
   _ver_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const ver_req_body& val);
 
   bool operator == (const ver_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -509,8 +411,7 @@ void swap(ver_resp_body &a, ver_resp_body &b);
 std::ostream& operator<<(std::ostream& out, const ver_resp_body& obj);
 
 typedef struct _ver_resp__isset {
-  _ver_resp__isset() : header(false), body(false) {}
-  bool header :1;
+  _ver_resp__isset() : body(false) {}
   bool body :1;
 } _ver_resp__isset;
 
@@ -523,19 +424,14 @@ class ver_resp : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~ver_resp() throw();
-  msg_header header;
   ver_resp_body body;
 
   _ver_resp__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const ver_resp_body& val);
 
   bool operator == (const ver_resp & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -557,8 +453,7 @@ void swap(ver_resp &a, ver_resp &b);
 std::ostream& operator<<(std::ostream& out, const ver_resp& obj);
 
 typedef struct _shake_hand_req__isset {
-  _shake_hand_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _shake_hand_req__isset() : body(false) {}
   bool body :1;
 } _shake_hand_req__isset;
 
@@ -571,19 +466,14 @@ class shake_hand_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~shake_hand_req() throw();
-  msg_header header;
   empty body;
 
   _shake_hand_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const empty& val);
 
   bool operator == (const shake_hand_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -605,8 +495,7 @@ void swap(shake_hand_req &a, shake_hand_req &b);
 std::ostream& operator<<(std::ostream& out, const shake_hand_req& obj);
 
 typedef struct _shake_hand_resp__isset {
-  _shake_hand_resp__isset() : header(false), body(false) {}
-  bool header :1;
+  _shake_hand_resp__isset() : body(false) {}
   bool body :1;
 } _shake_hand_resp__isset;
 
@@ -619,19 +508,14 @@ class shake_hand_resp : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~shake_hand_resp() throw();
-  msg_header header;
   empty body;
 
   _shake_hand_resp__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const empty& val);
 
   bool operator == (const shake_hand_resp & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -653,8 +537,7 @@ void swap(shake_hand_resp &a, shake_hand_resp &b);
 std::ostream& operator<<(std::ostream& out, const shake_hand_resp& obj);
 
 typedef struct _get_peer_nodes_req__isset {
-  _get_peer_nodes_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _get_peer_nodes_req__isset() : body(false) {}
   bool body :1;
 } _get_peer_nodes_req__isset;
 
@@ -667,19 +550,14 @@ class get_peer_nodes_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~get_peer_nodes_req() throw();
-  msg_header header;
   empty body;
 
   _get_peer_nodes_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const empty& val);
 
   bool operator == (const get_peer_nodes_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -700,10 +578,6 @@ void swap(get_peer_nodes_req &a, get_peer_nodes_req &b);
 
 std::ostream& operator<<(std::ostream& out, const get_peer_nodes_req& obj);
 
-typedef struct _get_peer_nodes_resp_body__isset {
-  _get_peer_nodes_resp_body__isset() : peer_nodes_list(false) {}
-  bool peer_nodes_list :1;
-} _get_peer_nodes_resp_body__isset;
 
 class get_peer_nodes_resp_body : public virtual ::apache::thrift::TBase {
  public:
@@ -715,8 +589,6 @@ class get_peer_nodes_resp_body : public virtual ::apache::thrift::TBase {
 
   virtual ~get_peer_nodes_resp_body() throw();
   std::vector<peer_node_info>  peer_nodes_list;
-
-  _get_peer_nodes_resp_body__isset __isset;
 
   void __set_peer_nodes_list(const std::vector<peer_node_info> & val);
 
@@ -743,8 +615,7 @@ void swap(get_peer_nodes_resp_body &a, get_peer_nodes_resp_body &b);
 std::ostream& operator<<(std::ostream& out, const get_peer_nodes_resp_body& obj);
 
 typedef struct _get_peer_nodes_resp__isset {
-  _get_peer_nodes_resp__isset() : header(false), body(false) {}
-  bool header :1;
+  _get_peer_nodes_resp__isset() : body(false) {}
   bool body :1;
 } _get_peer_nodes_resp__isset;
 
@@ -757,19 +628,14 @@ class get_peer_nodes_resp : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~get_peer_nodes_resp() throw();
-  msg_header header;
   get_peer_nodes_resp_body body;
 
   _get_peer_nodes_resp__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const get_peer_nodes_resp_body& val);
 
   bool operator == (const get_peer_nodes_resp & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -790,10 +656,6 @@ void swap(get_peer_nodes_resp &a, get_peer_nodes_resp &b);
 
 std::ostream& operator<<(std::ostream& out, const get_peer_nodes_resp& obj);
 
-typedef struct _peer_nodes_broadcast_req_body__isset {
-  _peer_nodes_broadcast_req_body__isset() : peer_nodes_list(false) {}
-  bool peer_nodes_list :1;
-} _peer_nodes_broadcast_req_body__isset;
 
 class peer_nodes_broadcast_req_body : public virtual ::apache::thrift::TBase {
  public:
@@ -805,8 +667,6 @@ class peer_nodes_broadcast_req_body : public virtual ::apache::thrift::TBase {
 
   virtual ~peer_nodes_broadcast_req_body() throw();
   std::vector<peer_node_info>  peer_nodes_list;
-
-  _peer_nodes_broadcast_req_body__isset __isset;
 
   void __set_peer_nodes_list(const std::vector<peer_node_info> & val);
 
@@ -833,8 +693,7 @@ void swap(peer_nodes_broadcast_req_body &a, peer_nodes_broadcast_req_body &b);
 std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req_body& obj);
 
 typedef struct _peer_nodes_broadcast_req__isset {
-  _peer_nodes_broadcast_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _peer_nodes_broadcast_req__isset() : body(false) {}
   bool body :1;
 } _peer_nodes_broadcast_req__isset;
 
@@ -847,19 +706,14 @@ class peer_nodes_broadcast_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~peer_nodes_broadcast_req() throw();
-  msg_header header;
   peer_nodes_broadcast_req_body body;
 
   _peer_nodes_broadcast_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const peer_nodes_broadcast_req_body& val);
 
   bool operator == (const peer_nodes_broadcast_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -881,18 +735,11 @@ void swap(peer_nodes_broadcast_req &a, peer_nodes_broadcast_req &b);
 std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req& obj);
 
 typedef struct _start_training_req_body__isset {
-  _start_training_req_body__isset() : task_id(false), select_mode(false), master(false), peer_nodes_list(false), server_specification(false), server_count(false), training_engine(false), code_dir(false), entry_file(false), data_dir(false), checkpoint_dir(false), hyper_parameters(false) {}
-  bool task_id :1;
-  bool select_mode :1;
+  _start_training_req_body__isset() : master(false), peer_nodes_list(false), server_specification(false), server_count(false), hyper_parameters(false) {}
   bool master :1;
   bool peer_nodes_list :1;
   bool server_specification :1;
   bool server_count :1;
-  bool training_engine :1;
-  bool code_dir :1;
-  bool entry_file :1;
-  bool data_dir :1;
-  bool checkpoint_dir :1;
   bool hyper_parameters :1;
 } _start_training_req_body__isset;
 
@@ -950,13 +797,21 @@ class start_training_req_body : public virtual ::apache::thrift::TBase {
       return false;
     if (!(select_mode == rhs.select_mode))
       return false;
-    if (!(master == rhs.master))
+    if (__isset.master != rhs.__isset.master)
       return false;
-    if (!(peer_nodes_list == rhs.peer_nodes_list))
+    else if (__isset.master && !(master == rhs.master))
       return false;
-    if (!(server_specification == rhs.server_specification))
+    if (__isset.peer_nodes_list != rhs.__isset.peer_nodes_list)
       return false;
-    if (!(server_count == rhs.server_count))
+    else if (__isset.peer_nodes_list && !(peer_nodes_list == rhs.peer_nodes_list))
+      return false;
+    if (__isset.server_specification != rhs.__isset.server_specification)
+      return false;
+    else if (__isset.server_specification && !(server_specification == rhs.server_specification))
+      return false;
+    if (__isset.server_count != rhs.__isset.server_count)
+      return false;
+    else if (__isset.server_count && !(server_count == rhs.server_count))
       return false;
     if (!(training_engine == rhs.training_engine))
       return false;
@@ -968,7 +823,9 @@ class start_training_req_body : public virtual ::apache::thrift::TBase {
       return false;
     if (!(checkpoint_dir == rhs.checkpoint_dir))
       return false;
-    if (!(hyper_parameters == rhs.hyper_parameters))
+    if (__isset.hyper_parameters != rhs.__isset.hyper_parameters)
+      return false;
+    else if (__isset.hyper_parameters && !(hyper_parameters == rhs.hyper_parameters))
       return false;
     return true;
   }
@@ -989,8 +846,7 @@ void swap(start_training_req_body &a, start_training_req_body &b);
 std::ostream& operator<<(std::ostream& out, const start_training_req_body& obj);
 
 typedef struct _start_training_req__isset {
-  _start_training_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _start_training_req__isset() : body(false) {}
   bool body :1;
 } _start_training_req__isset;
 
@@ -1003,19 +859,14 @@ class start_training_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~start_training_req() throw();
-  msg_header header;
   start_training_req_body body;
 
   _start_training_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const start_training_req_body& val);
 
   bool operator == (const start_training_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -1036,10 +887,6 @@ void swap(start_training_req &a, start_training_req &b);
 
 std::ostream& operator<<(std::ostream& out, const start_training_req& obj);
 
-typedef struct _stop_training_req_body__isset {
-  _stop_training_req_body__isset() : task_id(false) {}
-  bool task_id :1;
-} _stop_training_req_body__isset;
 
 class stop_training_req_body : public virtual ::apache::thrift::TBase {
  public:
@@ -1051,8 +898,6 @@ class stop_training_req_body : public virtual ::apache::thrift::TBase {
 
   virtual ~stop_training_req_body() throw();
   std::string task_id;
-
-  _stop_training_req_body__isset __isset;
 
   void __set_task_id(const std::string& val);
 
@@ -1079,8 +924,7 @@ void swap(stop_training_req_body &a, stop_training_req_body &b);
 std::ostream& operator<<(std::ostream& out, const stop_training_req_body& obj);
 
 typedef struct _stop_training_req__isset {
-  _stop_training_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _stop_training_req__isset() : body(false) {}
   bool body :1;
 } _stop_training_req__isset;
 
@@ -1093,19 +937,14 @@ class stop_training_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~stop_training_req() throw();
-  msg_header header;
   stop_training_req_body body;
 
   _stop_training_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const stop_training_req_body& val);
 
   bool operator == (const stop_training_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -1126,10 +965,6 @@ void swap(stop_training_req &a, stop_training_req &b);
 
 std::ostream& operator<<(std::ostream& out, const stop_training_req& obj);
 
-typedef struct _list_training_req_body__isset {
-  _list_training_req_body__isset() : task_list(false) {}
-  bool task_list :1;
-} _list_training_req_body__isset;
 
 class list_training_req_body : public virtual ::apache::thrift::TBase {
  public:
@@ -1141,8 +976,6 @@ class list_training_req_body : public virtual ::apache::thrift::TBase {
 
   virtual ~list_training_req_body() throw();
   std::vector<std::string>  task_list;
-
-  _list_training_req_body__isset __isset;
 
   void __set_task_list(const std::vector<std::string> & val);
 
@@ -1169,8 +1002,7 @@ void swap(list_training_req_body &a, list_training_req_body &b);
 std::ostream& operator<<(std::ostream& out, const list_training_req_body& obj);
 
 typedef struct _list_training_req__isset {
-  _list_training_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _list_training_req__isset() : body(false) {}
   bool body :1;
 } _list_training_req__isset;
 
@@ -1183,19 +1015,14 @@ class list_training_req : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~list_training_req() throw();
-  msg_header header;
   list_training_req_body body;
 
   _list_training_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const list_training_req_body& val);
 
   bool operator == (const list_training_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -1216,10 +1043,6 @@ void swap(list_training_req &a, list_training_req &b);
 
 std::ostream& operator<<(std::ostream& out, const list_training_req& obj);
 
-typedef struct _list_training_resp_body__isset {
-  _list_training_resp_body__isset() : task_status_list(false) {}
-  bool task_status_list :1;
-} _list_training_resp_body__isset;
 
 class list_training_resp_body : public virtual ::apache::thrift::TBase {
  public:
@@ -1231,8 +1054,6 @@ class list_training_resp_body : public virtual ::apache::thrift::TBase {
 
   virtual ~list_training_resp_body() throw();
   std::vector<task_status>  task_status_list;
-
-  _list_training_resp_body__isset __isset;
 
   void __set_task_status_list(const std::vector<task_status> & val);
 
@@ -1259,8 +1080,7 @@ void swap(list_training_resp_body &a, list_training_resp_body &b);
 std::ostream& operator<<(std::ostream& out, const list_training_resp_body& obj);
 
 typedef struct _list_training_resp__isset {
-  _list_training_resp__isset() : header(false), body(false) {}
-  bool header :1;
+  _list_training_resp__isset() : body(false) {}
   bool body :1;
 } _list_training_resp__isset;
 
@@ -1273,19 +1093,14 @@ class list_training_resp : public virtual ::apache::thrift::TBase {
   }
 
   virtual ~list_training_resp() throw();
-  msg_header header;
   list_training_resp_body body;
 
   _list_training_resp__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const list_training_resp_body& val);
 
   bool operator == (const list_training_resp & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -1306,15 +1121,8 @@ void swap(list_training_resp &a, list_training_resp &b);
 
 std::ostream& operator<<(std::ostream& out, const list_training_resp& obj);
 
-typedef struct _logs_req_body__isset {
-  _logs_req_body__isset() : task_id(false), peer_nodes_list(false), head_or_tail(false), number_of_lines(false) {}
-  bool task_id :1;
-  bool peer_nodes_list :1;
-  bool head_or_tail :1;
-  bool number_of_lines :1;
-} _logs_req_body__isset;
 
-class logs_req_body : public virtual base {
+class logs_req_body : public virtual ::apache::thrift::TBase {
  public:
 
   logs_req_body(const logs_req_body&);
@@ -1327,8 +1135,6 @@ class logs_req_body : public virtual base {
   std::vector<std::string>  peer_nodes_list;
   int8_t head_or_tail;
   int16_t number_of_lines;
-
-  _logs_req_body__isset __isset;
 
   void __set_task_id(const std::string& val);
 
@@ -1356,8 +1162,8 @@ class logs_req_body : public virtual base {
 
   bool operator < (const logs_req_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1367,12 +1173,11 @@ void swap(logs_req_body &a, logs_req_body &b);
 std::ostream& operator<<(std::ostream& out, const logs_req_body& obj);
 
 typedef struct _logs_req__isset {
-  _logs_req__isset() : header(false), body(false) {}
-  bool header :1;
+  _logs_req__isset() : body(false) {}
   bool body :1;
 } _logs_req__isset;
 
-class logs_req : public virtual base {
+class logs_req : public virtual ::apache::thrift::TBase {
  public:
 
   logs_req(const logs_req&);
@@ -1381,19 +1186,14 @@ class logs_req : public virtual base {
   }
 
   virtual ~logs_req() throw();
-  msg_header header;
   logs_req_body body;
 
   _logs_req__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const logs_req_body& val);
 
   bool operator == (const logs_req & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -1404,8 +1204,8 @@ class logs_req : public virtual base {
 
   bool operator < (const logs_req & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1414,13 +1214,8 @@ void swap(logs_req &a, logs_req &b);
 
 std::ostream& operator<<(std::ostream& out, const logs_req& obj);
 
-typedef struct _peer_node_log__isset {
-  _peer_node_log__isset() : peer_node_id(false), log_content(false) {}
-  bool peer_node_id :1;
-  bool log_content :1;
-} _peer_node_log__isset;
 
-class peer_node_log : public virtual base {
+class peer_node_log : public virtual ::apache::thrift::TBase {
  public:
 
   peer_node_log(const peer_node_log&);
@@ -1431,8 +1226,6 @@ class peer_node_log : public virtual base {
   virtual ~peer_node_log() throw();
   std::string peer_node_id;
   std::string log_content;
-
-  _peer_node_log__isset __isset;
 
   void __set_peer_node_id(const std::string& val);
 
@@ -1452,8 +1245,8 @@ class peer_node_log : public virtual base {
 
   bool operator < (const peer_node_log & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1462,12 +1255,8 @@ void swap(peer_node_log &a, peer_node_log &b);
 
 std::ostream& operator<<(std::ostream& out, const peer_node_log& obj);
 
-typedef struct _logs_resp_body__isset {
-  _logs_resp_body__isset() : log(false) {}
-  bool log :1;
-} _logs_resp_body__isset;
 
-class logs_resp_body : public virtual base {
+class logs_resp_body : public virtual ::apache::thrift::TBase {
  public:
 
   logs_resp_body(const logs_resp_body&);
@@ -1477,8 +1266,6 @@ class logs_resp_body : public virtual base {
 
   virtual ~logs_resp_body() throw();
   peer_node_log log;
-
-  _logs_resp_body__isset __isset;
 
   void __set_log(const peer_node_log& val);
 
@@ -1494,8 +1281,8 @@ class logs_resp_body : public virtual base {
 
   bool operator < (const logs_resp_body & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };
@@ -1505,12 +1292,11 @@ void swap(logs_resp_body &a, logs_resp_body &b);
 std::ostream& operator<<(std::ostream& out, const logs_resp_body& obj);
 
 typedef struct _logs_resp__isset {
-  _logs_resp__isset() : header(false), body(false) {}
-  bool header :1;
+  _logs_resp__isset() : body(false) {}
   bool body :1;
 } _logs_resp__isset;
 
-class logs_resp : public virtual base {
+class logs_resp : public virtual ::apache::thrift::TBase {
  public:
 
   logs_resp(const logs_resp&);
@@ -1519,19 +1305,14 @@ class logs_resp : public virtual base {
   }
 
   virtual ~logs_resp() throw();
-  msg_header header;
   logs_resp_body body;
 
   _logs_resp__isset __isset;
-
-  void __set_header(const msg_header& val);
 
   void __set_body(const logs_resp_body& val);
 
   bool operator == (const logs_resp & rhs) const
   {
-    if (!(header == rhs.header))
-      return false;
     if (!(body == rhs.body))
       return false;
     return true;
@@ -1542,8 +1323,8 @@ class logs_resp : public virtual base {
 
   bool operator < (const logs_resp & ) const;
 
-  uint32_t read(protocol* iprot);
-  uint32_t write(protocol* oprot) const;
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
   virtual void printTo(std::ostream& out) const;
 };

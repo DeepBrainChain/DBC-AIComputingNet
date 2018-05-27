@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��dbc_decoder.cpp
-* description    ��dbc decoder for network transport
-* date                  : 2018.01.20
-* author            ��Bruce Feng
+* file name        dbc_decoder.cpp
+* description    dbc decoder for network transport
+* date                  2018.01.20
+* author            Bruce Feng
 **********************************************************************************/
 #include "matrix_coder.h"
 #include "service_message_id.h"
@@ -163,7 +163,7 @@ namespace matrix
         decode_status matrix_coder::decode_service_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg, std::shared_ptr<protocol> proto)
         {
             //service header
-            msg_header header;
+            base_header header;
             header.read(proto.get());
 
             //find decoder
@@ -188,7 +188,7 @@ namespace matrix
         }
 
         template<typename msg_type>
-        void matrix_coder::decode_invoke(std::shared_ptr<message> &msg, msg_header &header, std::shared_ptr<protocol> &proto)
+        void matrix_coder::decode_invoke(std::shared_ptr<message> &msg, base_header &header, std::shared_ptr<protocol> &proto)
         {
             std::shared_ptr<msg_type> content(new msg_type);
 

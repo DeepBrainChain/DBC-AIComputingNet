@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºmatrix_server_socket_channel_handler.cpp
-* description    £ºdbc socket channel handler for dbc network protocol layer
-* date                  : 2018.02.27
-* author            £ºBruce Feng
+* file name        :   matrix_server_socket_channel_handler.cpp
+* description    :   dbc socket channel handler for dbc network protocol layer
+* date                  :   2018.02.27
+* author            :   Bruce Feng
 **********************************************************************************/
 #include "matrix_client_socket_channel_handler.h"
 #include "topic_manager.h"
@@ -118,7 +118,7 @@ namespace matrix
             std::shared_ptr<matrix::service_core::shake_hand_req> req_content = std::make_shared<matrix::service_core::shake_hand_req>();
 
             //header
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = SHAKE_HAND_REQ;
 
             req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));

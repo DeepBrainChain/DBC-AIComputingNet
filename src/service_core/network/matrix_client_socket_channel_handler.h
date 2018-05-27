@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºmatrix_client_socket_channel_handler.h
-* description    £ºdbc client socket channel handler for dbc network protocol layer
-* date                  : 2018.02.27
-* author            £ºBruce Feng
+* file name        :   matrix_client_socket_channel_handler.h
+* description    :   dbc client socket channel handler for dbc network protocol layer
+* date                  :   2018.02.27
+* author            :   Bruce Feng
 **********************************************************************************/
 #pragma once
 

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºdbc_decoder.h
-* description    £ºdbc decoder for network transport
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   dbc_decoder.h
+* description    :   dbc decoder for network transport
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -21,12 +21,7 @@ using namespace std::placeholders;
 
 
 #define DEFAULT_DECODE_HEADER_LEN               24
-
-#define MAIN_NET                                                           0xF1E1B0A7
-#define TEST_NET                                                            0XE1D1A097
-#define PROTOCO_VERSION                                          0x00000001
-
-#define MATRIX_MSG_MIN_READ_LENGTH             8
+#define MATRIX_MSG_MIN_READ_LENGTH              8
 #define MAX_MATRIX_MSG_LEN                                 (4 * 1024 * 1024)                    //max 4M bytes
 #define DECLARE_DECODE_INVOKER                       decode_invoker_type invoker;
 #define BIND_DECODE_INVOKER(MSG_TYPE)       invoker = std::bind(&matrix_coder::decode_invoke<MSG_TYPE>, this, _1, _2, _3); \
@@ -56,7 +51,7 @@ namespace matrix
         class matrix_coder : public message_to_byte_encoder, public length_field_frame_decoder
         {
 
-            using decode_invoker_type = typename std::function<void(shared_ptr<message> &, msg_header &, shared_ptr<protocol> &)>;
+            using decode_invoker_type = typename std::function<void(shared_ptr<message> &, base_header &, shared_ptr<protocol> &)>;
 
             using encode_invoker_type = typename std::function<void(channel_handler_context &, std::shared_ptr<protocol> &, message & , byte_buf &)>;
 
@@ -89,7 +84,7 @@ namespace matrix
             decode_status decode_service_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg, std::shared_ptr<protocol> proto);
 
             template<typename msg_type>
-            void decode_invoke(std::shared_ptr<message> &msg, msg_header &msg_header, std::shared_ptr<protocol> &proto);
+            void decode_invoke(std::shared_ptr<message> &msg, base_header &msg_header, std::shared_ptr<protocol> &proto);
 
             template<typename msg_type>
             void encode_invoke(channel_handler_context &ctx, std::shared_ptr<protocol> &proto, message & msg, byte_buf &out);

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��matrix_client_socket_channel_handler.cpp
-* description    ��dbc socket channel handler for dbc network protocol layer
-* date                  : 2018.02.27
-* author            ��Bruce Feng
+* file name         :   matrix_client_socket_channel_handler.cpp
+* description     :   dbc socket channel handler for dbc network protocol layer
+* date                  :   2018.02.27
+* author             :   Bruce Feng
 **********************************************************************************/
 #include "matrix_server_socket_channel_handler.h"
 
@@ -133,39 +133,39 @@ namespace matrix
 
         int32_t matrix_server_socket_channel_handler::on_after_msg_received(message &msg)
         {
+            if (nullptr == msg.content)
+            {
+                LOG_ERROR << "matrix server socket channel msg content nullptr ";
+                return E_DEFAULT;
+            }
+
+            //check magic
+            if (CONF_MANAGER->get_net_flag() != msg.content->header.magic)
+            {
+                LOG_ERROR << "matrix server socket channel received error magic: " << msg.content->header.magic;
+                return E_DEFAULT;
+            }
+
             if (false == m_login_success)
             {
                 if (VER_REQ != msg.get_name())
                 {
                     LOG_ERROR << "matrix server socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
-                    /*if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return E_SUCCESS;*/
                     return E_DEFAULT;
                 }
             }
 
             if (VER_REQ == msg.get_name())
             {
-                //if (true == m_login_success)
                 if (true == m_recv_ver_req)
                 {
                     LOG_ERROR << "matrix server socket channel received duplicated VER_REQ message" << msg.header.src_sid.to_string();
-                    /*if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return E_SUCCESS;*/
                     return E_DEFAULT;
                 }
-                else
-                {
-                    m_recv_ver_req = true;
-                    stop_wait_ver_req_timer();
-                    return E_SUCCESS;
-                }
+
+                m_recv_ver_req = true;
+                stop_wait_ver_req_timer();
+                return E_SUCCESS;
             }
 
             //send shake hand resp in handler
@@ -214,7 +214,7 @@ namespace matrix
 
             //header
             //req_content->header.length = 0;
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = SHAKE_HAND_RESP;
 
             resp_msg->set_content(std::dynamic_pointer_cast<base>(req_content));

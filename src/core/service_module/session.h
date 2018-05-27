@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºservice_session.h
-* description    £ºservice_session for service module
-* date                  : 2018.05.06
-* author            £ºBruce Feng
+* file name        :   service_session.h
+* description    :   service_session for service module
+* date                  :   2018.05.06
+* author            :   Bruce Feng
 **********************************************************************************/
 
 #pragma once

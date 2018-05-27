@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��conf_manager.cpp
-* description    ��conf manager for core
+* file name        conf_manager.cpp
+* description    conf manager for core
 * date                  : 2017.08.16
-* author            ��Bruce Feng
+* author            Bruce Feng
 **********************************************************************************/
 #include "conf_manager.h"
 #include "env_manager.h"
@@ -15,10 +15,19 @@
 #include <vector>
 
 
+std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
+std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
+
 namespace matrix
 {
     namespace core
     {
+
+        conf_manager::conf_manager() : m_net_params(std::make_shared<net_type_params>())
+        {
+
+        }
+
         int32_t conf_manager::init(bpo::variables_map &options)
         {
             int32_t ret = E_SUCCESS;
@@ -56,6 +65,7 @@ namespace matrix
             //core opt description
             bpo::options_description core_opts("config file options");
             core_opts.add_options()
+                ("net_type", bpo::value<std::string>()->default_value(DEFAULT_NET_TYPE), "")
                 ("host_ip", bpo::value<std::string>()->default_value(DEFAULT_LOCAL_IP), "")
                 ("main_net_listen_port", bpo::value<std::string>()->default_value(DEFAULT_MAIN_NET_LISTEN_PORT), "")
                 ("test_net_listen_port", bpo::value<std::string>()->default_value(DEFAULT_TEST_NET_LISTEN_PORT), "")
@@ -105,7 +115,7 @@ namespace matrix
             node_dat_path /= fs::path(NODE_FILE_NAME);
             if (!fs::exists(node_dat_path) || fs::is_empty(node_dat_path))
             {
-                std::cout << "Parse node.dat error. Please try  ./dbc --init  command to init node id if node id not inited." << std::endl;
+                std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
                 return E_DEFAULT;
             }
 
@@ -118,7 +128,7 @@ namespace matrix
             }
             catch (const boost::exception & e)
             {
-                std::cout << "Parse node.dat error. Please try  ./dbc --init  command to init node id if node id not inited." << std::endl;
+                std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
                 LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
                 return E_DEFAULT;
             }
@@ -128,6 +138,7 @@ namespace matrix
 
         int32_t conf_manager::init_params()
         {
+            //node id
             if (0 == m_args.count("node_id"))
             {
                 LOG_ERROR << "conf_manager has no node id error";
@@ -135,7 +146,7 @@ namespace matrix
             }
             m_node_id = m_args["node_id"].as<std::string>();
 
-
+            //node private key
             if (0 == m_args.count("node_private_key"))
             {
                 LOG_ERROR << "conf_manager has no node private key error";
@@ -143,7 +154,53 @@ namespace matrix
             }
             m_node_private_key = m_args["node_private_key"].as<std::string>();
 
+            //net type
+            if (0 == m_args.count("net_type"))
+            {
+                LOG_ERROR << "conf_manager has no node type error";
+                return E_DEFAULT;
+            }
+            m_net_type = m_args["net_type"].as<std::string>();
+
+            assert(nullptr != m_net_params);
+
+            //net port
+            if (m_net_type == "main")
+            {
+                const std::string & net_listen_port = (0 != m_args.count("main_net_listen_port")) ? m_args["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
+                m_net_params->set_net_listen_port(net_listen_port);
+            }
+            else if (m_net_type == "test")
+            {
+                const std::string & net_listen_port = (0 != m_args.count("test_net_listen_port")) ? m_args["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
+                m_net_params->set_net_listen_port(net_listen_port);
+            }
+            else
+            {
+                LOG_ERROR << "net type not support yet";
+                return E_DEFAULT;
+            }
+
+            //net flag
+            init_net_flag();
+
             return E_SUCCESS;
+        }
+
+        void conf_manager::init_net_flag()
+        {
+            if (m_net_type == "main")
+            {
+                m_net_flag = MAIN_NET;
+            }
+            else if (m_net_type == "test")
+            {
+                m_net_flag = TEST_NET;
+            }
+            else
+            {
+                m_net_flag = MAIN_NET;
+            }
         }
 
         int32_t conf_manager::serialize_node_info(const node_info &info)

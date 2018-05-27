@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：module_manager.cpp
-* description    ：module manager for all the modules
-* date                  : 2018.01.20
-* author            ：Bruce Feng
+* file name        :   module_manager.cpp
+* description    :   module manager for all the modules
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #include "module_manager.h"
 #include <thread>

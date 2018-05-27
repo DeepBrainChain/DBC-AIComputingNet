@@ -3,9 +3,9 @@
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name         : callback_wait.h
-* description       : wait for a condition and execute call back function
-* date              : 2018.03.31
-* author            : Bruce Feng
+* description    :  wait for a condition and execute call back function
+* date                 :  2018.03.31
+* author            :  Bruce Feng
 **********************************************************************************/
 
 #include "callback_wait.h"

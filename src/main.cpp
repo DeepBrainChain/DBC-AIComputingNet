@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
- * file name        ：main.cpp
- * description    ：main function
+ * file name        :   main.cpp
+ * description    :   main function
  * date                  : 2017.01.23
- * author            ：Bruce Feng
+ * author            :   Bruce Feng
 **********************************************************************************/
 
 #include <functional>

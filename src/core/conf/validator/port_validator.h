@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºip_validator.h
-* description    £ºip validator for config parameter
-* date                  : 2018.03.21
-* author            £ºBruce Feng
+* file name        :   ip_validator.h
+* description    :   ip validator for config parameter
+* date                  :   2018.03.21
+* author            :   Bruce Feng
 **********************************************************************************/
 
 #pragma once

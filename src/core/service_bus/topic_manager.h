@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：topic_manager.h
-* description    ：topic manager 
-* date                  : 2018.01.20
-* author            ：Bruce Feng
+* file name        :   topic_manager.h
+* description    :   topic manager 
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #ifndef _TOPIC_MANAGER_H_
 #define _TOPIC_MANAGER_H_

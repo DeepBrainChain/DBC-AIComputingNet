@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºai_power_requestor_service.h
-* description    £ºai_power_requestor_service
-* date                  : 2018.01.28
-* author            £ºBruce Feng
+* file name        :   ai_power_requestor_service.h
+* description    :   ai_power_requestor_service
+* date                  :   2018.01.28
+* author            :   Bruce Feng
 **********************************************************************************/
 #pragma once
 

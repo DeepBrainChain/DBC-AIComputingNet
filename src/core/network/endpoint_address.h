@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºendpoint_address.h
-* description    £ºp2p network endpoint address
-* date                  : 2018.03.29
-* author            £ºBruce Feng
+* file name        :   endpoint_address.h
+* description      :   p2p network endpoint address
+* date             :   2018.03.29
+* author           :   Bruce Feng
 **********************************************************************************/
 
 #pragma once

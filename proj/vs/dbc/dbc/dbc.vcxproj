@@ -171,6 +171,7 @@
     <ClCompile Include="..\..\..\..\src\api\cmd_line_service.cpp" />
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp" />
     <ClCompile Include="..\..\..\..\src\core\alarm\alarm.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\codec\protocol.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\callback_wait.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\common_def.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp" />
@@ -426,6 +427,7 @@
     <ClInclude Include="..\..\..\..\src\core\common\visibility.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\conf_validator.h" />
+    <ClInclude Include="..\..\..\..\src\core\conf\net_type_params.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\validator\ip_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\validator\port_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\container\container_client.h" />

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºconnection_manager.h
-* description    £ºconnection manager as controller class for dbc core connection
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   connection_manager.h
+* description      :   connection manager as controller class for dbc core connection
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 

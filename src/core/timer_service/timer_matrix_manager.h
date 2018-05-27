@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtime_tick_notification.h
-* description    £ºtime_tick_notification for all service module
-* date                  : 2018.04.04
-* author            £ºBruce Feng
+* file name        :   time_tick_notification.h
+* description    :   time_tick_notification for all service module
+* date                  :   2018.04.04
+* author            :   Bruce Feng
 **********************************************************************************/
 
 #pragma once

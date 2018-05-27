@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºdbc_server_initiator.cpp
-* description    £ºdbc server initiator for dbc core
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   dbc_server_initiator.cpp
+* description    :   dbc server initiator for dbc core
+* date                  :   2018.01.20
+* author             :   Bruce Feng
 **********************************************************************************/
 #include "dbc_server_initiator.h"
 #include "server.h"
@@ -218,7 +218,8 @@ namespace ai
             opts.add_options()
                 ("help,h", "get dbc core help info")
                 ("version,v", "get core version info")
-                ("init,i", "init node id");
+                ("init,i", "init node id")
+                ("peer", bpo::value<std::vector<std::string>>(), "");
 
             try
             {

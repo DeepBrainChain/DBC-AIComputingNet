@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��matrix_socket_channel_handler.cpp
-* description    ��matrix socket channel handler
-* date                  : 2018.01.28
-* author            ��Bruce Feng
+* file name         :   matrix_socket_channel_handler.cpp
+* description     :   matrix socket channel handler
+* date                  :   2018.01.28
+* author             :   Bruce Feng
 **********************************************************************************/
 #include "matrix_socket_channel_handler.h"
 #include "p2p_net_service.h"
@@ -108,6 +108,7 @@ namespace matrix
                             LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
                         }
                     }
+                        
                     //has message
                     set_has_message(*msg);
                 }

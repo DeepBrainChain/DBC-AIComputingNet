@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��porotocol.h
-* description    ��dbc thrift style protocol codec
-* date                  : 2018.01.20
-* author            ��Bruce Feng
+* file name        porotocol.h
+* description    dbc thrift style protocol codec
+* date                  2018.01.20
+* author            Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -735,29 +735,15 @@ namespace matrix
                 int32_t m_container_limit;
         };
 
-        class base
-        {
-        public:
-            virtual ~base() = default;
-
-            virtual uint32_t validate() const { return E_SUCCESS; }
-            virtual uint32_t read(protocol * iprot) { return E_SUCCESS; }
-            virtual uint32_t write(protocol * oprot) const { return E_SUCCESS; }
-        };
-
     }
 
 }
-
 
 namespace apache {
 
     namespace thrift {
 
-        typedef matrix::core::base TBase;
-
         namespace protocol {
-
 
             typedef matrix::core::protocol TProtocol;
 
@@ -858,3 +844,109 @@ namespace apache {
         }
     }
 }
+
+
+namespace matrix
+{
+
+    namespace core
+    {
+
+        typedef struct _base_header__isset {
+            _base_header__isset() : nonce(false), session_id(false), exten_info(false) {}
+            bool nonce : 1;
+            bool session_id : 1;
+            bool exten_info : 1;
+        } _base_header__isset;
+
+        class base_header {
+        public:
+
+            base_header(const base_header&);
+            base_header& operator=(const base_header&);
+            base_header() : magic(0), msg_name(), nonce(), session_id() {
+            }
+
+            virtual ~base_header() throw();
+            int32_t magic;
+            std::string msg_name;
+            std::string nonce;
+            std::string session_id;
+            std::map<std::string, std::string>  exten_info;
+
+            _base_header__isset __isset;
+
+            void __set_magic(const int32_t val);
+
+            void __set_msg_name(const std::string& val);
+
+            void __set_nonce(const std::string& val);
+
+            void __set_session_id(const std::string& val);
+
+            void __set_exten_info(const std::map<std::string, std::string> & val);
+
+            bool operator == (const base_header & rhs) const
+            {
+                if (!(magic == rhs.magic))
+                    return false;
+                if (!(msg_name == rhs.msg_name))
+                    return false;
+                if (__isset.nonce != rhs.__isset.nonce)
+                    return false;
+                else if (__isset.nonce && !(nonce == rhs.nonce))
+                    return false;
+                if (__isset.session_id != rhs.__isset.session_id)
+                    return false;
+                else if (__isset.session_id && !(session_id == rhs.session_id))
+                    return false;
+                if (__isset.exten_info != rhs.__isset.exten_info)
+                    return false;
+                else if (__isset.exten_info && !(exten_info == rhs.exten_info))
+                    return false;
+                return true;
+            }
+            bool operator != (const base_header &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const base_header &) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(base_header &a, base_header &b);
+
+        std::ostream& operator<<(std::ostream& out, const base_header& obj);
+        
+        class base
+        {
+        public:
+            virtual ~base() = default;
+
+            virtual uint32_t validate() const { return E_SUCCESS; }
+            virtual uint32_t read(protocol * iprot) { return E_SUCCESS; }
+            virtual uint32_t write(protocol * oprot) const { return E_SUCCESS; }
+
+            base_header header;
+        };
+
+    }
+
+}
+
+
+namespace apache {
+
+    namespace thrift {
+
+        typedef matrix::core::base TBase;
+
+    }
+
+}
+
+

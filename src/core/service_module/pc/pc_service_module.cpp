@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��pc_service_module.cpp
-* description    ��service module on PC platform
-* date                  : 2018.01.20
-* author            ��Bruce Feng
+* file name        :   pc_service_module.cpp
+* description    :   service module on PC platform
+* date                  :   2018.01.20
+* author             :   Bruce Feng
 **********************************************************************************/
 #if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ��length_field_frame_decoder.h
-* description    ��length field frame decoder
+* file name        : length_field_frame_decoder.h
+* description    : length field frame decoder
 * date                  : 2018.01.20
-* author            ��Bruce Feng
+* author            : Bruce Feng
 **********************************************************************************/
 #pragma once
 
