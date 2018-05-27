@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name      crypto_service.h
-* description    crypto service for initialization
-* date                  : 2018.04.22
-* author            Bruce Feng
+* file name         :   crypto_service.h
+* description    :   crypto service for initialization
+* date                  :   2018.04.22
+* author             :   Bruce Feng
 **********************************************************************************/
 
 #include "crypto_service.h"

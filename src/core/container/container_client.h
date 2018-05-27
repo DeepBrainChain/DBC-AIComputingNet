@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºcontainer_client.h
-* description    £ºcontainer client for definition
-* date                  : 2018.04.04
-* author            £ºBruce Feng
+* file name        :   container_client.h
+* description    :   container client for definition
+* date                  :   2018.04.04
+* author            :   Bruce Feng
 **********************************************************************************/
 
 #pragma once

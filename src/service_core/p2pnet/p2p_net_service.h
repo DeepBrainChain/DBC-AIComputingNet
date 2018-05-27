@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name      p2p_net_service.h
-* description    p2p net service
-* date                  : 2018.01.28
-* author            Bruce Feng
+* file name            :    p2p_net_service.h
+* description        :    p2p net service
+* date                      :    2018.01.28
+* author                 :    Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -57,9 +57,7 @@ namespace matrix
             //config param
             std::string get_host_ip() const { return m_host_ip; }
 
-            uint16_t get_main_net_listen_port() const {return m_main_net_listen_port;}
-
-            uint16_t get_test_net_listen_port() const { return m_test_net_listen_port; }
+            uint16_t get_net_listen_port() const {return m_net_listen_port;}
 
 
         protected:
@@ -121,9 +119,9 @@ namespace matrix
 
             std::string m_host_ip;
 
-            uint16_t m_main_net_listen_port;
+            uint16_t m_net_listen_port;
 
-            uint16_t m_test_net_listen_port;
+            //uint16_t m_test_net_listen_port;
 
             std::list<peer_candidate> m_peer_candidates;
 

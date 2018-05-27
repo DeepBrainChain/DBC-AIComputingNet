@@ -3,10 +3,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：server.cpp
-* description    ：core is abstracted into server, server is responsible for init and exit
+* file name        :   server.cpp
+* description    :   core is abstracted into server, server is responsible for init and exit
 * date                  : 2017.01.23
-* author            ：Bruce Feng
+* author            :   Bruce Feng
 **********************************************************************************/
 #include <memory>
 #include <cassert>

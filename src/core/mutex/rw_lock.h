@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºrw_lock.h
-* description    £ºread write lock
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   rw_lock.h
+* description      :   read write lock
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 

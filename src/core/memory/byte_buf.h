@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºbyte_buf.h
-* description    £ºbyte_buf for network transport
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   byte_buf.h
+* description    :   byte_buf for network transport
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #pragma once
 

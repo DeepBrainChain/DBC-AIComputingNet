@@ -3,9 +3,9 @@
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name         : cmd_line_service.cpp
-* description       : cmd line api service
-* date              : 2018.03.25
-* author            : Bruce Feng
+* description     : cmd line api service
+* date                   : 2018.03.25
+* author              : Bruce Feng
 **********************************************************************************/
 #include <iostream>
 #include <limits>

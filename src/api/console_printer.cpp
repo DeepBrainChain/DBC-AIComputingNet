@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºconsole_printer.h
-* description    £ºconsole printer for command line
-* date                  : 2018.04.01
-* author            £ºBruce Feng
+* file name        console_printer.h
+* description    console printer for command line
+* date                  :   2018.04.01
+* author            Bruce Feng
 **********************************************************************************/
 
 #include "console_printer.h"

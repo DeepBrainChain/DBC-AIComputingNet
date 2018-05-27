@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         : p2p_net_service.cpp
-* description       : p2p net service
-* date              : 2018.01.28
-* author            : Bruce Feng
+* file name           :    p2p_net_service.cpp
+* description       :     p2p net service
+* date                    :    2018.01.28
+* author               :    Bruce Feng
 **********************************************************************************/
 #include "p2p_net_service.h"
 #include <cassert>
@@ -81,11 +81,8 @@ namespace matrix
             ip_validator ip_vdr;
             port_validator port_vdr;
 
-            conf_manager *manager = (conf_manager *)g_server->get_module_manager()->get(conf_manager_name).get();
-            assert(manager != nullptr);
-
             //get listen ip and port conf
-            std::string host_ip = manager->count("host_ip") ? (*manager)["host_ip"].as<std::string>() : ip::address_v4::any().to_string();
+            const std::string & host_ip = CONF_MANAGER->get_host_ip();
             val.value() = host_ip;
 
             if (!ip_vdr.validate(val))
@@ -98,18 +95,18 @@ namespace matrix
                 m_host_ip = host_ip;
             }
 
-            std::string s_port = manager->count("main_net_listen_port") ? (*manager)["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
+            std::string s_port = CONF_MANAGER->get_net_listen_port();
             val.value() = s_port;
             if (false == port_vdr.validate(val))
             {
-                LOG_ERROR << "p2p_net_service init_conf invalid main net port: " << s_port;
+                LOG_ERROR << "p2p_net_service init_conf invalid net port: " << s_port;
                 return E_DEFAULT;
             }
             else
             {
                 try
                 {
-                    m_main_net_listen_port = (uint16_t)std::stoi(s_port);
+                    m_net_listen_port = (uint16_t)std::stoi(s_port);
                 }
                 catch (const std::exception &e)
                 {
@@ -119,32 +116,6 @@ namespace matrix
 
             }
 
-            s_port = manager->count("test_net_listen_port") ? (*manager)["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
-            val.value() = s_port;
-            if (false == port_vdr.validate(val))
-            {
-                LOG_ERROR << "p2p_net_service init_conf invalid test net port: " << s_port;
-                return E_DEFAULT;
-            }
-            else
-            {
-                try
-                {
-                    m_test_net_listen_port = (uint16_t)std::stoi(s_port);
-                }
-                catch (const std::exception &e)
-                {
-                    LOG_ERROR << "p2p_net_service init_conf invalid test_port: " << s_port << ", " << e.what();
-                    return E_DEFAULT;
-                }
-            }
-
-            //modify by regulus:fix m_test_net_listen_port == m_main_net_listen_pore error.
-            if (m_test_net_listen_port == m_main_net_listen_port)
-            {
-                LOG_ERROR << "p2p_net_service init_conf port config error: main_net_listen_port=test_net_listen_port" << s_port ;
-                return E_DEFAULT;
-            }
             return E_SUCCESS;
         }
 
@@ -157,57 +128,36 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            //ipv4 default
-            tcp::endpoint ep(ip::address::from_string(m_host_ip), m_main_net_listen_port);
+            //ipv4 or ipv6
+            tcp::endpoint ep(ip::address::from_string(m_host_ip), m_net_listen_port);
 
             int32_t ret = E_SUCCESS;
 
-            //main net
-            LOG_DEBUG << "p2p net service init main net, ip: " << m_host_ip << " port: " << m_main_net_listen_port;
+            //net
+            LOG_DEBUG << "p2p net service init net, ip: " << m_host_ip << " port: " << m_net_listen_port;
             ret = CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "p2p net service init main net error, ip: " << m_host_ip << " port: " << m_main_net_listen_port;
+                LOG_ERROR << "p2p net service init net error, ip: " << m_host_ip << " port: " << m_net_listen_port;
                 return ret;
             }
-
-            //test net
-            ep.port(m_test_net_listen_port);
-            LOG_DEBUG << "p2p net service init test net, ip: " << m_host_ip << " port: " << m_test_net_listen_port;
-            ret = CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
-            if (E_SUCCESS != ret)
-            {
-                LOG_ERROR << "p2p net service init test net error, ip: " << m_host_ip << " port: " << m_test_net_listen_port;
-                return ret;
-            }
-           
-            //ipv6 left to later
 
             return E_SUCCESS;
         }
 
         int32_t p2p_net_service::init_connector()
         {
-            conf_manager *manager = (conf_manager *)g_server->get_module_manager()->get(conf_manager_name).get();
-            assert(nullptr != manager);
-
-            if (!manager->count("peer"))
-            {
-                LOG_DEBUG << "local peer address is empty and will not connect peer nodes by conf";
-                return E_DEFAULT;
-            }
-
             //config format: peer address=117.30.51.196:11107
-            std::vector<std::string> str_address = (*manager)["peer"].as<std::vector<std::string> >();
+            const std::vector<std::string> & str_address = CONF_MANAGER->get_peers();
 
             int count = 0;
             ip_validator ip_vdr;
             port_validator port_vdr;
             for (auto it = str_address.begin(); it != str_address.end() && count <DEFAULT_CONNECT_PEER_NODE; it++)
             {
-                std::string &addr = *it;
+                std::string addr = *it;
                 string_util::trim(addr);
-                size_t pos = addr.find(':');
+                size_t pos = addr.find_last_of(':');
                 if (pos == std::string::npos)
                 {
                     LOG_ERROR << "p2p net conf file invalid format: " << addr;
@@ -254,7 +204,8 @@ namespace matrix
 
                 try
                 {
-                    tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
+                    tcp::endpoint ep(ip::address::from_string(ip), (uint16_t)port);
+
                     peer_candidate pc = { ep, ns_in_use, 0, time(nullptr), 0 };
                     std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
                         , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
@@ -262,14 +213,14 @@ namespace matrix
                     {
                         m_peer_candidates.push_back(std::move(pc));
                     }            
-					
+
                     //start connect
-                    LOG_DEBUG << "matrix connect peer address, ip: " << addr << " port: " << str_port;
+                    LOG_DEBUG << "matrix connect peer address, ip: " << ip << " port: " << str_port;
                     int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
                     
-					if (E_SUCCESS != ret)
+                    if (E_SUCCESS != ret)
                     {
-                        LOG_ERROR << "matrix init connector invalid peer address, ip: " << addr << " port: " << str_port;
+                        LOG_ERROR << "matrix init connector invalid peer address, ip: " << ip << " port: " << str_port;
                         continue;
                     }
                 }
@@ -575,7 +526,7 @@ namespace matrix
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
             //header
-            resp_content->header.magic = TEST_NET;
+            resp_content->header.magic = CONF_MANAGER->get_net_flag();
             resp_content->header.msg_name = VER_RESP;
             resp_content->header.__set_nonce(id_generator().generate_nonce());
 
@@ -691,7 +642,7 @@ namespace matrix
 
                 //header
                 //req_content->header.length = 0;
-                req_content->header.magic = TEST_NET;
+                req_content->header.magic = CONF_MANAGER->get_net_flag();
                 req_content->header.msg_name = VER_REQ;
                 req_content->header.__set_nonce(id_generator().generate_nonce());
 
@@ -701,11 +652,9 @@ namespace matrix
                 req_content->body.protocol_version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
                 req_content->body.addr_me.ip = get_host_ip();
-#ifdef TEST_NET
-                req_content->body.addr_me.port = get_test_net_listen_port();
-#else
-                req_content->body.addr_me.port = get_main_net_listen_port();
-#endif
+
+                req_content->body.addr_me.port = get_net_listen_port();
+
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
                 req_content->body.addr_you.ip = ep.address().to_string();
                 req_content->body.addr_you.port = ep.port();
@@ -791,7 +740,7 @@ namespace matrix
                 resp_msg->header.dst_sid = msg->header.src_sid;
                 auto resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
                 //header
-                resp_content->header.magic = TEST_NET;
+                resp_content->header.magic = CONF_MANAGER->get_net_flag();
                 resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
                 resp_content->header.__set_nonce(id_generator().generate_nonce());
 
@@ -857,7 +806,7 @@ namespace matrix
         int32_t p2p_net_service::send_get_peer_nodes()
         {
             std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
-            req_content->header.magic = TEST_NET;
+            req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = P2P_GET_PEER_NODES_REQ;
             req_content->header.__set_nonce(id_generator().generate_nonce());
 
@@ -877,7 +826,7 @@ namespace matrix
             resp_msg->header.msg_priority = 0;
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
             //header
-            resp_content->header.magic = TEST_NET;
+            resp_content->header.magic = CONF_MANAGER->get_net_flag();
             resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
             resp_content->header.__set_nonce(id_generator().generate_nonce());
 

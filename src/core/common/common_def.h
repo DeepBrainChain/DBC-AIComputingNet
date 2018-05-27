@@ -2,21 +2,30 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：common_def.h
-* description    ：common definition
-* date                  : 2018.01.20
-* author            ：Bruce Feng
+* file name        :   common_def.h
+* description    :   common definition
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 
 #ifndef _COMMON_DEF_H_
 #define _COMMON_DEF_H_
 
+
 #include "common.h"
 #include <string>
+#include <vector>
 
-//#define DELETE(p)  if (NULL != p) {delete p; p = NULL;}
+
+#define MAIN_NET                                                           0xF1E1B0A7
+#define TEST_NET                                                            0XE1D1A097
+
 
 extern std::string DEFAULT_STRING;
+extern std::string DEFAULT_IP_V4;
+extern std::string DEFAULT_IP_V6;
+extern std::string DEFAULT_LOCAL_IP;
+extern std::vector<std::string> DEFAULT_VECTOR;
 
 
 #ifdef  USE_FULL_ASSERT

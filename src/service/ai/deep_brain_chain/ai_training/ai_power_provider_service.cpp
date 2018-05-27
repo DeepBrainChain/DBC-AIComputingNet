@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ai_power_provider_service.cpp
-* description    ai_power_provider_service
-* date                  : 2018.01.28
-* author            Bruce Feng
+* file name         :   ai_power_provider_service.cpp
+* description     :   ai_power_provider_service
+* date                  :   2018.01.28
+* author             :   Bruce Feng
 **********************************************************************************/
 #include <cassert>
 #include <boost/exception/all.hpp>
@@ -18,6 +18,7 @@
 #include "service_message_id.h"
 #include "matrix_types.h"
 #include "matrix_coder.h"
+#include "ip_validator.h"
 #include "port_validator.h"
 #include "task_common_def.h"
 #include "util.h"
@@ -49,44 +50,45 @@ namespace ai
 
         int32_t ai_power_provider_service::init_conf()
         {
+            ip_validator ip_vdr;
             port_validator port_vdr;
 
-            if (CONF_MANAGER->count("container_ip"))
+            //container ip
+            const std::string & container_ip = CONF_MANAGER->get_container_ip();
+
+            variable_value val;
+            val.value() = container_ip;
+
+            if (false == ip_vdr.validate(val))
             {
-                m_container_ip = (*CONF_MANAGER)["container_ip"].as<std::string>();
+                LOG_ERROR << "ai power provider init conf invalid container ip: " << container_ip;
+                return E_DEFAULT;
             }
+            m_container_ip = container_ip;
 
-            if (CONF_MANAGER->count("container_port"))
+            //container port
+            std::string s_port = CONF_MANAGER->get_container_port();
+            val.value() = s_port;
+
+            if (false == port_vdr.validate(val))
             {
-                std::string s_port = (*CONF_MANAGER)["container_port"].as<std::string>();
-
-                variable_value val;
-                val.value() = s_port;
-
-                if (false == port_vdr.validate(val))
+                LOG_ERROR << "ai power provider init conf invalid container port: " << s_port;
+                return E_DEFAULT;
+            }
+            else
+            {
+                try
                 {
-                    LOG_ERROR << "p2p_net_service init_conf invalid main net port: " << s_port;
+                    m_container_port = (uint16_t)std::stoi(s_port);
+                }
+                catch (const std::exception &e)
+                {
+                    LOG_ERROR << "ai power provider service init conf container port: " << s_port << ", " << e.what();
                     return E_DEFAULT;
                 }
-                else
-                {
-                    try
-                    {
-                        m_container_port = (uint16_t)std::stoi(s_port);
-                    }
-                    catch (const std::exception &e)
-                    {
-                        LOG_ERROR << "p2p_net_service init_conf invalid main_port: " << s_port << ", " << e.what();
-                        return E_DEFAULT;
-                    }
-                }
-
             }
 
-            if (CONF_MANAGER->count("container_image"))
-            {
-                m_container_image = (*CONF_MANAGER)["container_image"].as<std::string>();
-            }
+            m_container_image = CONF_MANAGER->get_container_image();
 
             return E_SUCCESS;
         }
@@ -382,7 +384,7 @@ namespace ai
             if (!rsp_content->body.task_status_list.empty())
             {
                 //content header
-                rsp_content->header.magic = TEST_NET;
+                rsp_content->header.magic = CONF_MANAGER->get_net_flag();
                 rsp_content->header.msg_name = LIST_TRAINING_RESP;
                 rsp_content->header.__set_nonce(id_generator().generate_nonce());
                 rsp_content->header.__set_session_id(req_content->header.session_id);
@@ -460,7 +462,7 @@ namespace ai
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
 
             //content header
-            rsp_content->header.magic = TEST_NET;
+            rsp_content->header.magic = CONF_MANAGER->get_net_flag();
             rsp_content->header.msg_name = LOGS_RESP;
             rsp_content->header.__set_nonce(id_generator().generate_nonce());
             rsp_content->header.__set_session_id(req_content->header.session_id);
