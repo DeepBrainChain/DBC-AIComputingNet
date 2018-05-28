@@ -511,8 +511,7 @@ namespace ai
                     && (0x00 == *(p + 2))
                     && (0x00 == *(p + 3))
                     && (0x00 == *(p + 4))
-                    && (0x00 == *(p + 5))
-                    && (0x00 == *(p + 6)))
+                    && (0x00 == *(p + 5)))
                 {
                     i += 8;
                     p += 8;
@@ -520,8 +519,6 @@ namespace ai
                 }
 
                 log_vector[push_char_count++] = *p++;
-                //p++;
-                //push_char_count++;
                 i++;
             }
 
