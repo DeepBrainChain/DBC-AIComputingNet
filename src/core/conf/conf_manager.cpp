@@ -165,7 +165,7 @@ namespace matrix
             assert(nullptr != m_net_params);
 
             //net port
-            if (m_net_type == "main")
+            if (m_net_type == MAIN_NET_TYPE)
             {
                 const std::string & net_listen_port = (0 != m_args.count("main_net_listen_port")) ? m_args["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
                 m_net_params->set_net_listen_port(net_listen_port);
@@ -189,11 +189,11 @@ namespace matrix
 
         void conf_manager::init_net_flag()
         {
-            if (m_net_type == "main")
+            if (m_net_type == MAIN_NET_TYPE)
             {
                 m_net_flag = MAIN_NET;
             }
-            else if (m_net_type == "test")
+            else if (m_net_type == TEST_NET_TYPE)
             {
                 m_net_flag = TEST_NET;
             }

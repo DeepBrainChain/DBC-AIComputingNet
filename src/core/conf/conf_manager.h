@@ -23,7 +23,9 @@ using namespace boost::program_options;
 #define NODE_FILE_NAME                                                   "node.dat"
 #define DEFAULT_MAIN_NET_LISTEN_PORT                 "11107"
 #define DEFAULT_TEST_NET_LISTEN_PORT                  "21107"
-#define DEFAULT_NET_TYPE                                                "main"
+#define MAIN_NET_TYPE                                                      "main"
+#define TEST_NET_TYPE                                                       "test"
+#define DEFAULT_NET_TYPE                                                MAIN_NET_TYPE
 
 extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
 extern std::string DEFAULT_CONTAINER_IMAGE_NAME;      
