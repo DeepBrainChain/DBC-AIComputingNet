@@ -62,7 +62,7 @@ namespace matrix
             virtual ~matrix_coder() = default;
 
             encode_status encode(channel_handler_context &ctx, message & msg, byte_buf &out);
-
+            decode_status recv_message(byte_buf &in);
         protected:
 
             void init_decode_proto();

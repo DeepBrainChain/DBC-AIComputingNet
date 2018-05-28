@@ -258,6 +258,43 @@ namespace matrix
             ctx.get_args().insert(std::make_pair("nonce", val));
         }
 
+        decode_status matrix_coder::recv_message(byte_buf &in)
+        {
+            LOG_ERROR << "buffer recvmessage:" << in.to_string();
+            while (in.get_valid_read_len() > 0)
+            {
+                if (m_recv_messages.empty() || m_recv_messages.back().complete())
+                {
+                    m_recv_messages.push_back(std::move(net_message(DEFAULT_BUF_LEN)));
+                }
+
+                net_message & msg = m_recv_messages.back();
+
+                uint32_t handled = 0;
+                if (!msg.has_data())
+                {
+                    handled = msg.read_packet_len(in);
+                }
+                else
+                {
+                    handled = msg.read_packet_body(in);
+                }
+
+                if (handled < 0)
+                {
+                    return DECODE_ERROR;
+                }
+
+                if (msg.has_data() && (msg.get_packetlen() > MAX_MATRIX_MSG_LEN || msg.get_packetlen() < MIN_MATRIX_MSG_CODE_LEN))
+                {
+                    LOG_ERROR << "Oversized message";
+                    return DECODE_ERROR;
+                }
+            }
+            return DECODE_SUCCESS;
+        }
+
+
     }
 
 }
