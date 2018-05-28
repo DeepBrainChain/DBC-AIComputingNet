@@ -45,88 +45,71 @@ namespace matrix
 
         int32_t matrix_socket_channel_handler::on_read(channel_handler_context &ctx, byte_buf &in)
         {
-            LOG_DEBUG << m_sid.to_string() << "before recvmsg socket channel handler recv msg: matrix_socket_channel_handler::on_read:" << in.to_string() << " read_ptr:" << (void*)in.get_read_ptr();
-            int32_t recvret = recvmsg(in);
-            if (recvret != E_SUCCESS)
+            if (in.get_valid_read_len() > 0)
             {
-                return recvret;
-            }
-
-            std::size_t msgsize = vRecvMsgs.size();
-            if (msgsize < 1)
-            {
-                return E_SUCCESS;
-            }
-
-            while (msgsize-- > 0)
-            {
-                net_message &netmsg = vRecvMsgs.front();
-
-                if (!netmsg.complete())
+                m_decoder->recv_message(in);
+                while (m_decoder->has_complete_message())
                 {
-                    vRecvMsgs.push_back(std::move(netmsg));
-                    vRecvMsgs.pop_front();
-                    continue;
-                }
-                LOG_DEBUG << m_sid.to_string() << "socket channel handler recv msg: matrix_socket_channel_handler::on_read.msgstream:" << netmsg.msgstream.to_string() << " read_ptr:" << (void*)netmsg.msgstream.get_read_ptr();
-                shared_ptr<message> msg = std::make_shared<message>();
-                decode_status status = m_decoder->decode(ctx, netmsg.msgstream, msg);
+                    shared_ptr<message> msg = std::make_shared<message>();
+                    decode_status status = m_decoder->decode(ctx, msg);
 
-                //decode success
-                if (DECODE_SUCCESS == status)
-                {
-
-                    LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
-                    
-                    //modify by regulus: fix ver_req duplication error. 
-                    //callback
-                    msg->header.src_sid = m_sid;
-
-                    int32_t iprocRet = on_after_msg_received(*msg);
-                    if (iprocRet != E_SUCCESS)
+                    //decode success
+                    if (DECODE_SUCCESS == status)
                     {
-                        return iprocRet;
-                    }
 
-                    //send to bus
-                    if (msg->get_name() != SHAKE_HAND_REQ 
-                        && msg->get_name() != SHAKE_HAND_RESP)
+                        LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
+
+                        //modify by regulus: fix ver_req duplication error. 
+                        //callback
+                        msg->header.src_sid = m_sid;
+
+                        int32_t iprocRet = on_after_msg_received(*msg);
+                        if (iprocRet != E_SUCCESS)
+                        {
+                            return iprocRet;
+                        }
+
+                        //send to bus
+                        if (msg->get_name() != SHAKE_HAND_REQ
+                            && msg->get_name() != SHAKE_HAND_RESP)
+                        {
+                            variables_map & vm = ctx.get_args();
+                            assert(vm.count("nonce") > 0);
+                            const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
+
+                            //check msg duplicated
+                            if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
+                            {
+                                TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+
+                                LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce;
+                            }
+                            else
+                            {
+                                LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
+                            }
+                        }
+
+                        //has message
+                        set_has_message(*msg);
+                    }
+                    //not enough, return and next time
+                    else if (DECODE_UNKNOWN_MSG == status)
                     {
-                        variables_map & vm = ctx.get_args();
-                        assert(vm.count("nonce") > 0);
-                        const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
-
-                        //check msg duplicated
-                        if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
-                        {
-                            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-
-                            LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce;
-                        }
-                        else
-                        {
-                            LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce;
-                        }
+                        LOG_DEBUG << "unknow message: " << msg->get_name();
                     }
-                        
-                    //has message
-                    set_has_message(*msg);
+                    else if (DECODE_LENGTH_IS_NOT_ENOUGH == status)
+                    {
+                        LOG_DEBUG << "package contiue to receive";
+                    }
+                    //decode error
+                    else
+                    {
+                        LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_sid.to_string();
+                        return status;
+                    }
                 }
-                //not enough, return and next time
-                else if (DECODE_UNKNOWN_MSG == status)
-                {
-                    vRecvMsgs.pop_front();
-                    LOG_DEBUG << "unknow message: " << msg->get_name();
-                    continue;
-                }
-                //decode error
-                else
-                {
-                    vRecvMsgs.pop_front();
-                    LOG_ERROR << "matrix socket channel handler on read error and call socket channel on_error, " << m_sid.to_string();
-                    return status;
-                }
-                vRecvMsgs.pop_front();
+                
             }
             return E_SUCCESS;
         }
@@ -213,43 +196,6 @@ namespace matrix
 
             m_has_message = true;
         }
-
-        //fix big data package problem
-        int32_t matrix_socket_channel_handler::recvmsg(byte_buf &in)
-        {
-            while (in.get_valid_read_len() > 0)
-            {
-                if (vRecvMsgs.empty() || vRecvMsgs.back().complete())
-                {
-                    vRecvMsgs.push_back(std::move(net_message(DEFAULT_BUF_LEN)));
-                }
-
-                net_message & msg = vRecvMsgs.back();
-
-                uint32_t handled = 0;
-                if (!msg.in_data)
-                {
-                    handled = msg.read_packet_len(in);
-                }
-                else
-                {
-                    handled = msg.read_packet_body(in);
-                }
-
-                if (handled < 0)
-                {
-                    return E_DEFAULT;
-                }
-
-                if (msg.in_data && (msg.packet_len > MAX_MATRIX_MSG_LEN || msg.packet_len < MIN_MATRIX_MSG_CODE_LEN))
-                {
-                    LOG_ERROR << "Oversized message";
-                    return E_DEFAULT;
-                }
-            }
-            return E_SUCCESS;
-        }
-
     }
 
 }

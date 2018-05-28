@@ -18,7 +18,6 @@
 #include "matrix_types.h"
 #include "server.h"
 #include "service_message_id.h"
-#include "net_message.h"
 
 
 using namespace std;
@@ -77,7 +76,6 @@ namespace matrix
             void set_has_message(message &msg);
 
             void reset_has_message() { m_has_message = false; }
-            int32_t recvmsg(byte_buf &in);
 
         protected:
 
@@ -98,7 +96,6 @@ namespace matrix
             bool m_login_success;
 
             socket_id m_sid;
-            std::list<net_message> vRecvMsgs;
         };
 
     }

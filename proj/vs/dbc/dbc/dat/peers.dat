@@ -55,6 +55,14 @@
             "reconn_cnt": 0,
             "last_conn_tm": -3689348814741910324,
             "score": 0
+        },
+        {
+            "ip": "192.168.43.181",
+            "port": 11107,
+            "net_state": 1,
+            "reconn_cnt": 1,
+            "last_conn_tm": 1527504037,
+            "score": 0
         }
     ]
 }

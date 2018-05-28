@@ -30,7 +30,8 @@ namespace matrix
         {
         public:
 
-            virtual decode_status decode(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &message) = 0;
+            //virtual decode_status decode(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &message) = 0;
+            virtual decode_status decode(channel_handler_context &ctx, std::shared_ptr<message> &message) = 0;
         };
 
     }
