@@ -729,9 +729,7 @@ namespace matrix
                 req_content->body.protocol_version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
                 req_content->body.addr_me.ip = get_host_ip();
-
                 req_content->body.addr_me.port = get_net_listen_port();
-
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
                 req_content->body.addr_you.ip = ep.address().to_string();
                 req_content->body.addr_you.port = ep.port();
@@ -745,8 +743,7 @@ namespace matrix
 
                 CONNECTION_MANAGER->send_message(req_msg->header.dst_sid, req_msg);
 
-                //last sentence before return
-                CONNECTION_MANAGER->stop_connect(notification_content->ep);
+                CONNECTION_MANAGER->release_connector(msg->header.src_sid);
 
                 return E_SUCCESS;
             }
@@ -764,8 +761,7 @@ namespace matrix
                 }
 
                 //cancel connect and connect next    
-                //last sentence before return
-                CONNECTION_MANAGER->stop_connect(notification_content->ep);
+                CONNECTION_MANAGER->release_connector(msg->header.src_sid);
 
                 return E_SUCCESS;
             }

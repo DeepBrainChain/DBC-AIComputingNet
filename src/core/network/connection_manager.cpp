@@ -354,6 +354,28 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t connection_manager::release_connector(socket_id sid)
+        {
+            write_lock_guard<rw_lock> lock(m_lock_conn);
+            for (auto it = m_connectors.begin(); it != m_connectors.end(); it++)
+            {
+                if (sid != (*it)->get_socket_id())
+                {
+                    continue;
+                }
+
+                //stop
+                LOG_DEBUG << "connection manager release connect at sid: " << sid.to_string();
+                (*it)->stop();
+
+                //erase
+                m_connectors.erase(it);
+                return E_SUCCESS;
+            }
+
+            return E_NOT_FOUND;
+        }
+
         int32_t connection_manager::add_channel(socket_id sid, shared_ptr<channel> channel)
         {
             write_lock_guard<rw_lock> lock(m_lock_chnl);
