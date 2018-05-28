@@ -82,7 +82,7 @@ namespace matrix
                     peer_cand.AddMember("port", it->tcp_ep.port(), allocator);
                     peer_cand.AddMember("net_state", it->net_st, allocator);
                     peer_cand.AddMember("reconn_cnt", it->reconn_cnt, allocator);
-                    peer_cand.AddMember("last_conn_tm", it->last_conn_tm, allocator);
+                    peer_cand.AddMember("last_conn_tm", (uint64_t)it->last_conn_tm, allocator);
                     peer_cand.AddMember("score", it->score, allocator);
 
                     peer_cands.PushBack(peer_cand, allocator);
