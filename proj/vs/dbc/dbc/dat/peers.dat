@@ -1,0 +1,60 @@
+{
+    "peer_cands": [
+        {
+            "ip": "192.168.100.133",
+            "port": 21108,
+            "net_state": 1,
+            "reconn_cnt": 0,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        },
+        {
+            "ip": "192.168.100.173",
+            "port": 12508,
+            "net_state": 1,
+            "reconn_cnt": 1,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        },
+        {
+            "ip": "192.168.100.173",
+            "port": 15599,
+            "net_state": 1,
+            "reconn_cnt": 1,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        },
+        {
+            "ip": "192.168.100.173",
+            "port": 16282,
+            "net_state": 1,
+            "reconn_cnt": 1,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        },
+        {
+            "ip": "192.168.100.168",
+            "port": 21107,
+            "net_state": 1,
+            "reconn_cnt": 0,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        },
+        {
+            "ip": "192.168.100.133",
+            "port": 21107,
+            "net_state": 1,
+            "reconn_cnt": 1,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        },
+        {
+            "ip": "192.168.43.181",
+            "port": 21107,
+            "net_state": 1,
+            "reconn_cnt": 0,
+            "last_conn_tm": -3689348814741910324,
+            "score": 0
+        }
+    ]
+}
