@@ -27,6 +27,7 @@
 #include "version.h"
 #include "tcp_socket_channel.h"
 #include "timer_def.h"
+#include "peer_seeds.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -381,6 +382,23 @@ namespace matrix
 
         int32_t p2p_net_service::on_timer_check_peer_candidate()
         {
+            //use hard code peer seeds 
+            //if no neighbor peer nodes and peer candidates
+            if (0 == m_peer_nodes_map.size() && 0 == m_peer_candidates.size())
+            {
+                //get hard code seeds
+                peer_seeds * hard_code_seeds = (CONF_MANAGER->get_net_type() == MAIN_NET_TYPE) ? g_main_peer_seeds : g_test_peer_seeds;
+                assert(nullptr != hard_code_seeds);
+
+                //get hard code seeds count
+                int hard_code_seeds_count = (CONF_MANAGER->get_net_type() == MAIN_NET_TYPE) ? (sizeof(g_main_peer_seeds) / sizeof(peer_seeds)) : (sizeof(g_test_peer_seeds) / sizeof(peer_seeds));
+                for (int i = 0; i < hard_code_seeds_count; i++)
+                {
+                    peer_candidate candidate = { tcp::endpoint(ip::address::from_string(hard_code_seeds[i].seed), hard_code_seeds[i].port), ns_idle, 0, 0,  0};
+                    m_peer_candidates.push_back(candidate);
+                }
+            }
+
             //check up-bound & remove candidate that try too much
             uint32_t in_use_peer_cnt = 0;
             for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); )
@@ -396,6 +414,7 @@ namespace matrix
                 }
                 ++it;
             }
+
             if (in_use_peer_cnt >= max_connected_cnt)
             {
                 return E_SUCCESS;

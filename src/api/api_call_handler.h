@@ -114,6 +114,12 @@ namespace ai
 
             void format_output()
             {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+
                 cout << "task_id:" << endl;
 
                 auto it = task_list.begin();
