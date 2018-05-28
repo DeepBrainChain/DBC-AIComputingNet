@@ -66,7 +66,7 @@ namespace matrix
 
             int32_t init_acceptor();
 
-            int32_t init_connector();
+            int32_t init_connector(bpo::variables_map &options);
 
             void init_subscription();
 
