@@ -11,6 +11,7 @@ namespace utf = boost::unit_test;
 #include <boost/asio/ip/tcp.hpp>
 #include <iostream>
 #include <boost/asio/connect.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 using namespace boost::asio;
 
