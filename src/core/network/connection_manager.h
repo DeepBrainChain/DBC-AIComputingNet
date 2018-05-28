@@ -61,6 +61,8 @@ namespace matrix
 
             int32_t stop_connect(tcp::endpoint connect_addr);
 
+            int32_t release_connector(socket_id sid);
+
             int32_t add_channel(socket_id sid, shared_ptr<channel> channel);
 
             void remove_channel(socket_id sid);

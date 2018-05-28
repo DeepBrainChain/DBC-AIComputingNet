@@ -50,6 +50,10 @@ namespace matrix
 
             socket_id & operator=(const socket_id &sid) { this->m_id = sid.m_id; this->m_type = sid.m_type; return *this; }
 
+            bool operator==(const socket_id &sid) { return m_id == sid.get_id() || m_type == sid.get_type(); }
+
+            bool operator!=(const socket_id &sid) { return !(*this == sid); }
+
             std::string to_string() const 
             { 
                 std::stringstream str_stream;

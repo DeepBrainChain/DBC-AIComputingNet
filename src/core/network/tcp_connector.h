@@ -53,6 +53,10 @@ namespace matrix
 
             const tcp::endpoint &get_connect_addr() const { return m_connect_addr; }
 
+            const socket_id &get_socket_id() const { return m_sid; }
+
+            bool is_connected() { return m_connected; }
+
         protected:
 
             void async_connect();                           //reconnect is decided by service layer
