@@ -145,15 +145,29 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        int32_t p2p_net_service::init_connector()
+        int32_t p2p_net_service::init_connector(bpo::variables_map &options)
         {
-            //config format: peer address=117.30.51.196:11107
-            const std::vector<std::string> & str_address = CONF_MANAGER->get_peers();
+            //peer address from command line input
+            //--peer 117.30.51.196:11107 --peer 1050:0:0:0:5:600:300c:326b:11107
+            const std::vector<std::string> & cmd_addresses = options.count("peer") ? options["peer"].as<std::vector<std::string>>() : DEFAULT_VECTOR;
+
+            //peer address from peer.conf
+            //peer address=117.30.51.196:11107
+            //peer address=1050:0:0:0:5:600:300c:326b:11107
+            const std::vector<std::string> & peer_conf_addresses = CONF_MANAGER->get_peers();
+
+            //merge peer addresses
+            std::vector<std::string> peer_addresses(cmd_addresses.size() + peer_conf_addresses.size());
+
+            peer_addresses.insert(peer_addresses.begin(), peer_conf_addresses.begin(), peer_conf_addresses.end());
+            peer_addresses.insert(peer_addresses.begin(), cmd_addresses.begin(), cmd_addresses.end());
 
             int count = 0;
             ip_validator ip_vdr;
             port_validator port_vdr;
-            for (auto it = str_address.begin(); it != str_address.end() && count <DEFAULT_CONNECT_PEER_NODE; it++)
+
+            //set up connection
+            for (auto it = peer_addresses.begin(); it != peer_addresses.end() && count <DEFAULT_CONNECT_PEER_NODE; it++)
             {
                 std::string addr = *it;
                 string_util::trim(addr);
@@ -255,7 +269,7 @@ namespace matrix
             }
 
             //init connect
-            init_connector();
+            init_connector(options);
             if (E_SUCCESS != ret)
             {
                 return ret;
