@@ -458,7 +458,6 @@ namespace matrix
 				it->second->write(msg);
 			}			
 		}
-
     }
 
 }
