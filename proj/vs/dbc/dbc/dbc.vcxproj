@@ -119,6 +119,7 @@
       <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -176,6 +177,7 @@
     <ClCompile Include="..\..\..\..\src\core\common\common_def.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\id_generator.cpp" />
     <ClCompile Include="..\..\..\..\src\core\conf\conf_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\conf\net_type_params.cpp" />
     <ClCompile Include="..\..\..\..\src\core\container\container_client.cpp" />
     <ClCompile Include="..\..\..\..\src\core\container\container_message.cpp" />
     <ClCompile Include="..\..\..\..\src\core\crypto\arith_uint256.cpp" />
@@ -428,6 +430,7 @@
     <ClInclude Include="..\..\..\..\src\core\conf\conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\conf_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\net_type_params.h" />
+    <ClInclude Include="..\..\..\..\src\core\conf\peer_seeds.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\validator\ip_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\conf\validator\port_validator.h" />
     <ClInclude Include="..\..\..\..\src\core\container\container_client.h" />

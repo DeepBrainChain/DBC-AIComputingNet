@@ -376,6 +376,9 @@
     <ClCompile Include="..\..\..\..\src\core\codec\protocol.cpp">
       <Filter>src\core\codec</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\conf\net_type_params.cpp">
+      <Filter>src\core\conf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1234,6 +1237,9 @@
       <Filter>src\service_core\codec</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\conf\net_type_params.h">
+      <Filter>src\core\conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\conf\peer_seeds.h">
       <Filter>src\core\conf</Filter>
     </ClInclude>
   </ItemGroup>
