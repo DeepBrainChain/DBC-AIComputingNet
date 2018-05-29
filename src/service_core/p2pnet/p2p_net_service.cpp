@@ -114,8 +114,13 @@ namespace matrix
                     LOG_ERROR << "p2p_net_service init_conf invalid main_port: " << s_port << ", " << e.what();
                     return E_DEFAULT;
                 }
-
             }
+
+            //dns seeds
+            m_dns_seeds.insert(m_dns_seeds.begin(), CONF_MANAGER->get_dns_seeds().begin(), CONF_MANAGER->get_dns_seeds().end());
+
+            //hard_code_seeds
+            m_hard_code_seeds.insert(m_hard_code_seeds.begin(), CONF_MANAGER->get_hard_code_seeds().begin(), CONF_MANAGER->get_hard_code_seeds().end());
 
             return E_SUCCESS;
         }
@@ -386,16 +391,53 @@ namespace matrix
             //if no neighbor peer nodes and peer candidates
             if (0 == m_peer_nodes_map.size() && 0 == m_peer_candidates.size())
             {
-                //get hard code seeds
-                peer_seeds * hard_code_seeds = (CONF_MANAGER->get_net_type() == MAIN_NET_TYPE) ? g_main_peer_seeds : g_test_peer_seeds;
-                assert(nullptr != hard_code_seeds);
-
-                //get hard code seeds count
-                int hard_code_seeds_count = (CONF_MANAGER->get_net_type() == MAIN_NET_TYPE) ? (sizeof(g_main_peer_seeds) / sizeof(peer_seeds)) : (sizeof(g_test_peer_seeds) / sizeof(peer_seeds));
-                for (int i = 0; i < hard_code_seeds_count; i++)
+                try
                 {
-                    peer_candidate candidate = { tcp::endpoint(ip::address::from_string(hard_code_seeds[i].seed), hard_code_seeds[i].port), ns_idle, 0, 0,  0};
-                    m_peer_candidates.push_back(candidate);
+                    //get dns seeds
+                    const char *dns_seed = m_dns_seeds.front();
+                    m_dns_seeds.pop_front();
+
+                    if (nullptr == dns_seed)
+                    {
+                        LOG_ERROR << "p2p net service resolve dns nullptr";
+                        return E_DEFAULT;
+                    }
+
+                    io_service ios;
+                    ip::tcp::resolver rslv(ios);
+                    ip::tcp::resolver::query qry(dns_seed, boost::lexical_cast<string>(80));
+                    ip::tcp::resolver::iterator it = rslv.resolve(qry);
+                    ip::tcp::resolver::iterator end;
+
+                    vector<string> seeds;
+                    for ( ; it != end; it++)
+                    {
+                        LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << it->endpoint().address().to_string();
+
+                        tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());                        
+                        peer_candidate candidate = {ep, ns_idle, 0, time(nullptr), 0 };
+                        m_peer_candidates.push_back(candidate);
+                    }
+                }
+                catch (const boost::exception & e)
+                {
+                    LOG_ERROR << "p2p net service resolve dns error" << diagnostic_information(e);
+                }
+
+                //dns seeds empty
+                if (0 == m_dns_seeds.size())
+                {
+                    //get hard code seeds
+                    for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++)
+                    {
+                        LOG_DEBUG << "p2p net service add candidate, ip: " << it->seed << ", port: " << it->port;
+
+                        tcp::endpoint ep(ip::address::from_string(it->seed), it->port);
+                        peer_candidate candidate = { ep, ns_idle, 0, time(nullptr), 0 };
+                        m_peer_candidates.push_back(candidate);
+                    }
+
+                    return E_SUCCESS;
                 }
             }
 
@@ -434,6 +476,7 @@ namespace matrix
                     it->last_conn_tm = time(nullptr);
                     it->net_st = ns_in_use;
                     it->reconn_cnt++;
+
                     try
                     {
                         LOG_DEBUG << "matrix connect peer address; ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
@@ -459,6 +502,7 @@ namespace matrix
                 {
                     break;//not too many conn at a time
                 }
+
                 if (new_conn_cnt + in_use_peer_cnt >= max_connected_cnt)
                 {
                     break;//up to high bound 

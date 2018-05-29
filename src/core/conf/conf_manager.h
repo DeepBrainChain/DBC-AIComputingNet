@@ -23,9 +23,7 @@ using namespace boost::program_options;
 #define NODE_FILE_NAME                                                   "node.dat"
 #define DEFAULT_MAIN_NET_LISTEN_PORT                 "11107"
 #define DEFAULT_TEST_NET_LISTEN_PORT                  "21107"
-#define MAIN_NET_TYPE                                                      "main"
-#define TEST_NET_TYPE                                                       "test"
-#define DEFAULT_NET_TYPE                                                MAIN_NET_TYPE
+
 
 extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
 extern std::string DEFAULT_CONTAINER_IMAGE_NAME;      
@@ -41,6 +39,7 @@ namespace matrix
 
         class conf_manager : public module
         {
+
         public:
 
             conf_manager();
@@ -59,11 +58,17 @@ namespace matrix
 
             const std::string & get_net_type() { return m_net_type; }
 
+            uint16_t get_net_default_port();
+
             const std::string & get_net_listen_port() { return m_net_params->get_net_listen_port(); }
 
             const std::string & get_host_ip() {return m_args.count("host_ip") ? m_args["host_ip"].as<std::string>() : DEFAULT_IP_V4;}
 
             const std::vector<std::string> & get_peers() { return m_args.count("peer") ? m_args["peer"].as<std::vector<std::string>>() : DEFAULT_VECTOR; }
+
+            const std::vector<const char *> &get_dns_seeds() { return m_net_params->get_dns_seeds(); }
+
+            const std::vector<peer_seeds> &get_hard_code_seeds() { return m_net_params->get_hard_code_seeds(); }
 
             const std::string & get_container_ip() { return m_args.count("container_ip") ? m_args["container_ip"].as<std::string>() : DEFAULT_LOCAL_IP; }
 

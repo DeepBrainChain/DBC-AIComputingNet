@@ -162,18 +162,21 @@ namespace matrix
             }
             m_net_type = m_args["net_type"].as<std::string>();
 
+            //net flag
+            init_net_flag();
+
             assert(nullptr != m_net_params);
 
             //net port
             if (m_net_type == MAIN_NET_TYPE)
             {
-                const std::string & net_listen_port = (0 != m_args.count("main_net_listen_port")) ? m_args["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
-                m_net_params->set_net_listen_port(net_listen_port);
+                const std::string & net_listen_port = m_args.count("main_net_listen_port") ? m_args["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
+                m_net_params->init_net_listen_port(net_listen_port);
             }
             else if (m_net_type == "test")
             {
-                const std::string & net_listen_port = (0 != m_args.count("test_net_listen_port")) ? m_args["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
-                m_net_params->set_net_listen_port(net_listen_port);
+                const std::string & net_listen_port = m_args.count("test_net_listen_port") ? m_args["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
+                m_net_params->init_net_listen_port(net_listen_port);
             }
             else
             {
@@ -181,8 +184,8 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            //net flag
-            init_net_flag();
+            //init seeds
+            m_net_params->init_seeds();
 
             return E_SUCCESS;
         }
@@ -256,6 +259,22 @@ namespace matrix
                 fclose(fp);
             }
             return E_SUCCESS;
+        }
+
+        uint16_t conf_manager::get_net_default_port()
+        {
+            if (m_net_type == MAIN_NET_TYPE)
+            {
+                return (uint16_t)std::stoi(DEFAULT_MAIN_NET_LISTEN_PORT);
+            }
+            else if (m_net_type == TEST_NET_TYPE)
+            {
+                return (uint16_t)std::stoi(DEFAULT_TEST_NET_LISTEN_PORT);
+            }
+            else
+            {
+                return (uint16_t)std::stoi(DEFAULT_MAIN_NET_LISTEN_PORT);
+            }
         }
 
     }

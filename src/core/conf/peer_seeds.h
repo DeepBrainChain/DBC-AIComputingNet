@@ -16,7 +16,7 @@
 
 namespace matrix
 {
-    namespace service_core
+    namespace core
     {
 
         struct peer_seeds
@@ -41,6 +41,15 @@ namespace matrix
             { "fe80::f816:3eff:fe33:d8db", 21107 }
         };
 
+        static const char* g_main_dns_seeds[] = 
+        {
+            "seed.deepbrainchain.org"
+        };
+
+        static const char* g_test_dns_seeds[] =
+        {
+            "testnet-seed.deepbrainchain.org"
+        };
     }
 
 }

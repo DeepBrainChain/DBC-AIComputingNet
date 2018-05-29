@@ -17,6 +17,7 @@
 #include "handler_create_functor.h"
 #include "peer_node.h"
 #include "peer_candidate.h"
+#include "peer_seeds.h"
 
 
 using namespace std;
@@ -121,17 +122,17 @@ namespace matrix
 
             uint16_t m_net_listen_port;
 
-            //uint16_t m_test_net_listen_port;
-
             std::list<peer_candidate> m_peer_candidates;
-
-            //rw_lock m_peer_candi_lock;//if get candidates from other service module, enable it
 
             rw_lock m_nodes_lock;
 
             peer_map_type m_peer_nodes_map;
 
             uint32_t m_timer_id_one_minute;
+
+            std::list<const char *> m_dns_seeds;
+
+            std::list<peer_seeds> m_hard_code_seeds;
 
         };
 
