@@ -14,6 +14,7 @@
 #include <string>
 #include "endpoint_address.h"
 #include "socket_id.h"
+#include "matrix_types.h"
 
 
 using namespace std;
@@ -36,6 +37,8 @@ namespace matrix
         {
 			friend class p2p_net_service;
 
+            friend void assign_peer_info(peer_node_info& info, const std::shared_ptr<peer_node> node);
+
         public:
 
             peer_node() = default;
@@ -44,7 +47,7 @@ namespace matrix
 
             peer_node(const peer_node &src);
 
-            peer_node operator=(const peer_node &src);
+            peer_node& operator=(const peer_node &src);
 
         protected:
 
@@ -58,7 +61,7 @@ namespace matrix
 
             int64_t m_connected_time;
 
-            int64_t m_live_time;
+            int64_t m_live_time;                            //node cumulate live time individually
 
             connection_status m_connection_status;
 
@@ -67,6 +70,8 @@ namespace matrix
             endpoint_address m_local_addr;                   //local addr
 
         };
+
+        extern void assign_peer_info(peer_node_info& info, const std::shared_ptr<peer_node> node);
 
     }
 
