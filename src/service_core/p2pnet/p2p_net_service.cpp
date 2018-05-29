@@ -387,6 +387,27 @@ namespace matrix
 
         int32_t p2p_net_service::on_timer_check_peer_candidate()
         {
+            //check up-bound & remove candidate that try too much
+            uint32_t in_use_peer_cnt = 0;
+            for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); )
+            {
+                if (ns_in_use == it->net_st)
+                {
+                    in_use_peer_cnt++;
+                }
+                else if ((ns_failed == it->net_st) && (it->reconn_cnt > max_reconnect_times))
+                {
+                    m_peer_candidates.erase(it++);
+                    continue;
+                }
+                ++it;
+            }
+
+            if (in_use_peer_cnt >= max_connected_cnt)
+            {
+                return E_SUCCESS;
+            }
+
             //use hard code peer seeds 
             //if no neighbor peer nodes and peer candidates
             if (0 == m_peer_nodes_map.size() && 0 == m_peer_candidates.size())
@@ -441,26 +462,7 @@ namespace matrix
                 }
             }
 
-            //check up-bound & remove candidate that try too much
-            uint32_t in_use_peer_cnt = 0;
-            for (std::list<peer_candidate>::iterator it = m_peer_candidates.begin(); it != m_peer_candidates.end(); )
-            {
-                if (ns_in_use == it->net_st)
-                {
-                    in_use_peer_cnt++;
-                }
-                else if ((ns_failed == it->net_st) && (it->reconn_cnt > max_reconnect_times))
-                {
-                    m_peer_candidates.erase(it++);
-                    continue;
-                }
-                ++it;
-            }
 
-            if (in_use_peer_cnt >= max_connected_cnt)
-            {
-                return E_SUCCESS;
-            }
 
             //increase connections
             uint32_t new_conn_cnt = 0;
@@ -525,6 +527,12 @@ namespace matrix
 
         bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version)
         {
+            if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
+            {
+                LOG_WARNING << "duplicated node id: " << nid;
+                return false;
+            }
+
             std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
             node->m_id = nid;
             node->m_sid = sid;
@@ -571,29 +579,26 @@ namespace matrix
                 LOG_ERROR << "recv ver_req, but req_content is null.";
                 return E_DEFAULT;
             }
-            //filter node which connects to itself
-//            if (req_content->body.__isset.node_id)
+            //filter node which connects to the same node(maybe another process with same nodeid)
+            if (req_content->body.node_id == CONF_MANAGER->get_node_id())
             {
-                if (req_content->body.node_id == CONF_MANAGER->get_node_id())
+                auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
+                if (ch)
                 {
-                    auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
-                    if (ch)
+                    auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
+                    if (tcp_ch)
                     {
-                        auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
-                        if (tcp_ch)
+                        std::list<peer_candidate>::iterator it = std::find_if( m_peer_candidates.begin(), m_peer_candidates.end()
+                            , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; } );
+                        if (it != m_peer_candidates.end())
                         {
-                            std::list<peer_candidate>::iterator it = std::find_if( m_peer_candidates.begin(), m_peer_candidates.end()
-                                , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; } );
-                            if (it != m_peer_candidates.end())
-                            {
-                                it->last_conn_tm = time(nullptr);
-                                it->net_st = ns_zombie;
-                            }                           
-                        }
-                        //close channel
-                        ch->stop();
-                        return E_SUCCESS;
+                            it->last_conn_tm = time(nullptr);
+                            it->net_st = ns_zombie;
+                        }                           
                     }
+                    //close channel
+                    ch->stop();
+                    return E_SUCCESS;
                 }
             }
 
@@ -675,6 +680,7 @@ namespace matrix
             }
 
             //rm peer_node
+            write_lock_guard<rw_lock> lock(m_nodes_lock);
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
             {
                 if (it->second->m_sid == sid)
@@ -704,8 +710,6 @@ namespace matrix
                 //update peer candidate info
                 if (it != m_peer_candidates.end())
                 {
-                    it->last_conn_tm = time(nullptr);
-                    it->net_st = ns_in_use;
                     it->reconn_cnt = 0;
                 }
                 else
@@ -729,9 +733,7 @@ namespace matrix
                 req_content->body.protocol_version = PROTOCO_VERSION;
                 req_content->body.time_stamp = std::time(nullptr);
                 req_content->body.addr_me.ip = get_host_ip();
-
                 req_content->body.addr_me.port = get_net_listen_port();
-
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
                 req_content->body.addr_you.ip = ep.address().to_string();
                 req_content->body.addr_you.port = ep.port();
@@ -745,8 +747,7 @@ namespace matrix
 
                 CONNECTION_MANAGER->send_message(req_msg->header.dst_sid, req_msg);
 
-                //last sentence before return
-                CONNECTION_MANAGER->stop_connect(notification_content->ep);
+                CONNECTION_MANAGER->release_connector(msg->header.src_sid);
 
                 return E_SUCCESS;
             }
@@ -755,7 +756,7 @@ namespace matrix
                 //update peer candidate info
                 if (it != m_peer_candidates.end())
                 {
-                    it->last_conn_tm = time(nullptr);
+                    it->last_conn_tm = time(nullptr);//time resume after connection finished.
                     it->net_st = ns_failed;
                 }
                 else
@@ -764,8 +765,7 @@ namespace matrix
                 }
 
                 //cancel connect and connect next    
-                //last sentence before return
-                CONNECTION_MANAGER->stop_connect(notification_content->ep);
+                CONNECTION_MANAGER->release_connector(msg->header.src_sid);
 
                 return E_SUCCESS;
             }
@@ -830,10 +830,7 @@ namespace matrix
                         continue;
                     }
                     matrix::service_core::peer_node_info info;
-                    info.peer_node_id = it->second->m_id;
-                    info.live_time_stamp = (int32_t)it->second->m_live_time;
-                    info.addr.ip = it->second->m_peer_addr.get_ip();
-                    info.addr.port = it->second->m_peer_addr.get_port();
+                    assign_peer_info(info, it->second);
                     info.service_list.push_back(std::string("ai_training"));
                     resp_content->body.peer_nodes_list.push_back(std::move(info));
                     ++peer_cnt;
@@ -911,10 +908,7 @@ namespace matrix
             {
                 //body
                 matrix::service_core::peer_node_info info;
-                info.peer_node_id = node->m_id;
-                info.live_time_stamp = (int32_t)node->m_live_time;
-                info.addr.ip = node->m_peer_addr.get_ip();
-                info.addr.port = node->m_peer_addr.get_port();
+                assign_peer_info(info, node);
                 info.service_list.push_back(std::string("ai_training"));
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
                 resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
@@ -934,10 +928,7 @@ namespace matrix
                             continue;
                         }                            
                         matrix::service_core::peer_node_info info;
-                        info.peer_node_id = it->second->m_id;
-                        info.live_time_stamp = (int32_t)it->second->m_live_time;
-                        info.addr.ip = it->second->m_peer_addr.get_ip();
-                        info.addr.port = it->second->m_peer_addr.get_port();
+                        assign_peer_info(info, it->second);
                         info.service_list.push_back(std::string("ai_training"));
                         resp_content->body.peer_nodes_list.push_back(std::move(info));
                     }

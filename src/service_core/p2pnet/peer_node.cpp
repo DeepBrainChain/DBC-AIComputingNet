@@ -22,7 +22,7 @@ namespace matrix
             *this = src;
         }
 
-        peer_node peer_node::operator=(const peer_node &src)
+        peer_node& peer_node::operator=(const peer_node &src)
         {
             if (this == &src)
             {
@@ -42,6 +42,13 @@ namespace matrix
             return *this;
         }
 
+        void assign_peer_info(peer_node_info& info, const std::shared_ptr<peer_node> node)
+        {
+            info.peer_node_id = node->m_id;
+            info.live_time_stamp = (int32_t)node->m_live_time;
+            info.addr.ip = node->m_peer_addr.get_ip();
+            info.addr.port = node->m_peer_addr.get_port();
+        }
     }
 
 }

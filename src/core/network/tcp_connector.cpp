@@ -117,16 +117,17 @@ namespace matrix
                     LOG_ERROR << "no timer handler for reconnect.";
                     return;
                 }
-
+                
+                m_reconnect_times++;
                 //try again
                 int32_t interval = RECONNECT_INTERVAL << m_reconnect_times;
 
-                LOG_ERROR << "tcp connector on connect error, addr: " << m_connect_addr
-                    << ", reconnect times: " << m_reconnect_times
+                LOG_ERROR << "tcp connector on connect failed, addr: " << m_connect_addr
+                    << ", start " << m_reconnect_times << " times to reconnect" 
                     << ", reconnect seconds: " << interval
                     << errorinfo
                     << m_sid.to_string();
-                m_reconnect_times++;
+                
 
                 m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
                 m_reconnect_timer.async_wait(m_reconnect_timer_handler);
@@ -134,7 +135,7 @@ namespace matrix
             else
             {
                 LOG_ERROR << "tcp connector on connect error and stop reconnect, addr: " << m_connect_addr
-                    << ", reconnect times: " << m_reconnect_times
+                    << ", " << m_reconnect_times << " times has tried to reconnect, "
                     << errorinfo
                     << m_sid.to_string();
 
