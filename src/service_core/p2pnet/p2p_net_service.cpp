@@ -236,8 +236,12 @@ namespace matrix
 
                     //start connect
                     LOG_DEBUG << "matrix connect peer address, ip: " << ip << " port: " << str_port;
-                    int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
-                    
+                    if (exist_peer_node(ep))
+                    {
+                        LOG_DEBUG << "tcp channel exist to: " << ep.address().to_string();
+                        continue;
+                    }
+                    int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);                   
                     if (E_SUCCESS != ret)
                     {
                         LOG_ERROR << "matrix init connector invalid peer address, ip: " << ip << " port: " << str_port;
@@ -482,6 +486,11 @@ namespace matrix
                     try
                     {
                         LOG_DEBUG << "matrix connect peer address; ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
+                        if (exist_peer_node(it->tcp_ep))
+                        {
+                            LOG_DEBUG << "tcp channel exist to: " << it->tcp_ep.address().to_string();
+                            continue;
+                        }
                         int32_t ret = CONNECTION_MANAGER->start_connect(it->tcp_ep, &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
 
@@ -533,14 +542,6 @@ namespace matrix
                 return false;
             }
 
-            std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
-            node->m_id = nid;
-            node->m_sid = sid;
-            node->m_core_version = core_version;
-            node->m_protocol_version = protocol_version;
-            node->m_connected_time = std::time(nullptr);
-            node->m_live_time = 0;
-            node->m_connection_status = connected;
             auto ptr_ch = CONNECTION_MANAGER->get_channel(sid);
             if (!ptr_ch)
             {
@@ -551,13 +552,27 @@ namespace matrix
             if (ptr_tcp_ch)
             {
                 //prerequisite: channel has started
-                node->m_peer_addr = ptr_tcp_ch->get_remote_addr();
-                node->m_local_addr = ptr_tcp_ch->get_local_addr();
+                if (exist_peer_node(ptr_tcp_ch->get_remote_addr()))
+                {
+                    return false;//exist a p2p channel
+                }
             }
             else
             {
-                LOG_ERROR << nid << "not find in connected channels.";
+                LOG_ERROR << nid << "not find in connected channels."; 
+                return false;
             }
+
+            std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
+            node->m_id = nid;
+            node->m_sid = sid;
+            node->m_core_version = core_version;
+            node->m_protocol_version = protocol_version;
+            node->m_connected_time = std::time(nullptr);
+            node->m_live_time = 0;
+            node->m_connection_status = connected;
+            node->m_peer_addr = ptr_tcp_ch->get_remote_addr();
+            node->m_local_addr = ptr_tcp_ch->get_local_addr();
             
             write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
@@ -571,6 +586,20 @@ namespace matrix
             m_peer_nodes_map.erase(id);
         }
 
+        bool p2p_net_service::exist_peer_node(tcp::endpoint ep)
+        {
+            endpoint_address addr(ep);
+
+            read_lock_guard<rw_lock> lock(m_nodes_lock);
+            for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
+            {
+                if (it->second->m_peer_addr == addr)
+                    return true;
+            }
+
+            return false;
+        }
+
         int32_t p2p_net_service::on_ver_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
@@ -579,10 +608,10 @@ namespace matrix
                 LOG_ERROR << "recv ver_req, but req_content is null.";
                 return E_DEFAULT;
             }
-            //filter node which connects to the same node(maybe another process with same nodeid)
+            //filter node which connects to the same node(maybe another process with same nodeid)                
+            auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
             if (req_content->body.node_id == CONF_MANAGER->get_node_id())
             {
-                auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
                 if (ch)
                 {
                     auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
@@ -603,6 +632,16 @@ namespace matrix
             }
 
             LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
+            //add new peer node
+            if (!add_peer_node(msg->header.src_sid, req_content->body.node_id, req_content->body.core_version, req_content->body.protocol_version))
+            {
+                LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed.";
+                if (ch)
+                {                    
+                    ch->stop();//close channel
+                }
+                return E_DEFAULT;
+            }
 
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
@@ -622,13 +661,6 @@ namespace matrix
             resp_msg->header.dst_sid = msg->header.src_sid;
 
             CONNECTION_MANAGER->send_message(resp_msg->header.dst_sid, resp_msg);
-
-            //add new peer node
-            if (!add_peer_node(msg->header.src_sid, req_content->body.node_id, req_content->body.core_version, req_content->body.protocol_version))
-            {
-                LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed.";
-                return E_DEFAULT;
-            }
 
             return E_SUCCESS;
         }

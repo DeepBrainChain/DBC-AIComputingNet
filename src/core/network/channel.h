@@ -23,6 +23,12 @@ namespace matrix
 {
     namespace core
     {
+        enum channel_type
+        {
+            tcp_channel = 0,
+            upd_channel,
+            http_channel
+        };
 
         class channel
         {
@@ -44,7 +50,8 @@ namespace matrix
 
             virtual io_service *get_io_service() = 0;
 
+            virtual channel_type get_type() = 0;
+
         };
     }
-
 }
