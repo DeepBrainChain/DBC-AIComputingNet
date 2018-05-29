@@ -61,7 +61,7 @@ namespace matrix
 
             int64_t m_connected_time;
 
-            int64_t m_live_time;                            //node cumulate live time individually
+            int64_t m_live_time;                            //active time, it doesn't work right now
 
             connection_status m_connection_status;
 
