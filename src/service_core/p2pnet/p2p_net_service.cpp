@@ -680,6 +680,7 @@ namespace matrix
             }
 
             //rm peer_node
+            write_lock_guard<rw_lock> lock(m_nodes_lock);
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
             {
                 if (it->second->m_sid == sid)
