@@ -409,10 +409,9 @@ namespace matrix
                     ip::tcp::resolver::iterator it = rslv.resolve(qry);
                     ip::tcp::resolver::iterator end;
 
-                    vector<string> seeds;
                     for ( ; it != end; it++)
                     {
-                        LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << it->endpoint().address().to_string();
+                        LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << ", ip: "<< it->endpoint().address().to_string();
 
                         tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());                        
                         peer_candidate candidate = {ep, ns_idle, 0, time(nullptr), 0 };
@@ -421,11 +420,11 @@ namespace matrix
                 }
                 catch (const boost::exception & e)
                 {
-                    LOG_ERROR << "p2p net service resolve dns error" << diagnostic_information(e);
+                    LOG_ERROR << "p2p net service resolve dns error: " << diagnostic_information(e);
                 }
 
                 //dns seeds empty
-                if (0 == m_dns_seeds.size())
+                if (0 == m_dns_seeds.size() && 0 == m_peer_candidates.size())
                 {
                     //get hard code seeds
                     for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++)
@@ -436,8 +435,6 @@ namespace matrix
                         peer_candidate candidate = { ep, ns_idle, 0, time(nullptr), 0 };
                         m_peer_candidates.push_back(candidate);
                     }
-
-                    return E_SUCCESS;
                 }
             }
 
