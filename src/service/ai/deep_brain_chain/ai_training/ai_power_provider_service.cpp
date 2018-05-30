@@ -662,9 +662,9 @@ namespace ai
             return m_nv_config;
         }
 
-        std::shared_ptr<container_config> ai_power_provider_service::get_container_config(std::shared_ptr<ai_training_task> task, std::shared_ptr<nvidia_config> nv_config)
+        std::shared_ptr<container_config> ai_power_provider_service::get_container_config(std::shared_ptr<ai_training_task> task)
         {
-            if (nullptr == task || nullptr == nv_config)
+            if (nullptr == task)
             {
                 LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
                 return nullptr;
@@ -674,7 +674,7 @@ namespace ai
             std::shared_ptr<container_config> config = std::make_shared<container_config>();
 
             //exec cmd: dbc_task.sh data_dir_hash code_dir_hash ai_training_python
-            //dbc_task.sh Qme2UKa6yi9obw6MUcCRbpZBUmqMnGnznti4Rnzba5BQE3 QmbA8ThUawkUNtoV7yjso6V8B1TYeCgpXDhMAfYCekTNkr ai_training.py
+            //dbc_task.sh Qme2UKa6yi9obw6MUcCRbpZBUmqMnGnznti4Rnzba5BQE3 QmbA8ThUawkUNtoV7yjso6V8B1TYeCgpXDhMAfYCekTNkr ai_training.py hyperparameters
             //download file + exec training 
             std::string exec_cmd = AI_TRAINING_TASK_SCRIPT_HOME;
             exec_cmd += AI_TRAINING_TASK_SCRIPT;
@@ -682,8 +682,7 @@ namespace ai
             std::string py_cmd = task->entry_file + " " + task->hyper_parameters;
 
             //tensorflow-cpu
-            pos = m_container_image.find("tensorflow-cpu");
-            if (std::string::npos != pos)
+            if (std::string::npos != m_container_image.find("tensorflow-cpu"))
             {
                 config->cmd.push_back(exec_cmd);
                 config->cmd.push_back(task->data_dir);
@@ -693,12 +692,18 @@ namespace ai
                 config->image = m_container_image;
 
                 return config;
-            }
-           
+            }           
             //tensorflow-gpu
-            pos = m_container_image.find("tensorflow-gpu");
-            if (std::string::npos != pos)
+            else if (std::string::npos != m_container_image.find("tensorflow-gpu"))
             {
+                //nv config
+                std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
+                if (nullptr == nv_config)
+                {
+                    LOG_ERROR << "ai power provider service get nv config error";
+                    return nullptr;
+                }
+
                 config->cmd.push_back(exec_cmd);
                 config->cmd.push_back(task->data_dir);
                 config->cmd.push_back(task->code_dir);
@@ -784,19 +789,12 @@ namespace ai
             //first time or contain id empty -> create container
             if (0 == task->retry_times || task->container_id.empty())
             {
-                //nv config
-                std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
-                if (nullptr == nv_config)
-                {
-                    LOG_ERROR << "ai power provider service get nv config error";
-                    return E_DEFAULT;
-                }
-
                 //container config
-                std::shared_ptr<container_config> config = get_container_config(task, nv_config);
-                if (nullptr == nv_config)
+                std::shared_ptr<container_config> config = get_container_config(task);
+                if (nullptr == config)
                 {
                     LOG_ERROR << "ai power provider service get container config error";
+                    task->retry_times++;
                     return E_DEFAULT;
                 }
 
