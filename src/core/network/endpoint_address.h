@@ -38,6 +38,11 @@ namespace matrix
 				return *this;
 			}
 
+            bool operator==(const endpoint_address &addr)
+            {
+                return ((m_ip == addr.get_ip()) && (m_port == addr.get_port()));
+            }
+
             uint16_t get_port() const { return m_port; }
 
         protected:

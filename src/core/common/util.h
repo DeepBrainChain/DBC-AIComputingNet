@@ -205,7 +205,7 @@ namespace matrix
                             str.reserve(filesize);
                             while (!ifs.eof())
                             {
-                                str += ifs.get();//todo ...
+                                str += ifs.get();//TODO ...
                             }
                         }
                     }

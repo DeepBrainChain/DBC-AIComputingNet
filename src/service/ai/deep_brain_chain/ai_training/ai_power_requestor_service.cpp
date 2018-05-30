@@ -29,12 +29,10 @@
 #include "task_common_def.h"
 
 
-
 using namespace std;
 using namespace boost::asio::ip;
 using namespace matrix::core;
 using namespace ai::dbc;
-
 
 
 namespace ai
@@ -129,7 +127,7 @@ namespace ai
             leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
             if (false == status.ok())
             {
-                LOG_ERROR << "ai power requestor service init training task db error: " << status.ToString();
+                LOG_ERROR << "ai power requester service init training task db error: " << status.ToString();
                 return E_DEFAULT;
             }
 
@@ -236,7 +234,7 @@ namespace ai
             req_msg->set_content(std::dynamic_pointer_cast<base>(broadcast_req_content));
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
-            LOG_DEBUG << "ai power requestor service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
+            LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
 
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
@@ -296,7 +294,7 @@ namespace ai
             bpo::variables_map multi_vm;
             bpo::options_description multi_opts("multi task config file options");
             multi_opts.add_options()
-                ("trainig_file", bpo::value<std::vector<std::string>>(), "");
+                ("training_file", bpo::value<std::vector<std::string>>(), "");
 
             try
             {
@@ -317,11 +315,11 @@ namespace ai
             }
 
             //parse task config empty
-            if (0 == multi_vm.count("trainig_file") || 0 == multi_vm["trainig_file"].as<std::vector<std::string>>().size())
+            if (0 == multi_vm.count("training_file") || 0 == multi_vm["training_file"].as<std::vector<std::string>>().size())
             {
                 //error resp
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "multi task config file parse error";
+                cmd_resp->result_info = "multi task config file parse error, maybe there's no training file";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
@@ -331,8 +329,17 @@ namespace ai
             bpo::options_description opts("task config file options");
             add_task_config_opts(opts);
 
-            const std::vector<std::string> & files = multi_vm["trainig_file"].as<std::vector<std::string>>();
+            const std::vector<std::string> & files = multi_vm["training_file"].as<std::vector<std::string>>();
 
+            //check threshold of tasks
+            if (files.size() > MAX_TASK_COUNT_PER_REQ)
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "too many tasks, please provide less than 10 tasks each time.";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+            //send to net
             for (auto &file : files) 
             {
                 auto req_msg = create_task_msg_from_file(file, opts);
@@ -544,7 +551,7 @@ namespace ai
 
             if (task_ids->size() < req_content->body.task_list.size())
             {
-                LOG_DEBUG << "ai power requestor service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
+                LOG_DEBUG << "ai power requester service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
                 return E_SUCCESS;
             }
 
@@ -588,6 +595,7 @@ namespace ai
 
             variables_map & vm = session->get_context().get_args();
             assert(vm.count("task_ids") > 0);
+            assert(vm.count("req_msg") > 0);
             std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
 
             //publish cmd resp
@@ -601,12 +609,33 @@ namespace ai
                 cts.status = it->second;
                 cmd_resp->task_status_list.push_back(std::move(cts));
             }
-
+            auto req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+            auto req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
+            if (!req_content)
+            {
+                LOG_ERROR << "null ptr of req_content.";
+                return E_DEFAULT;
+            }
+            if (task_ids->size() < req_content->body.task_list.size())
+            {
+                for (auto tid : req_content->body.task_list)
+                {
+                    auto it_task = task_ids->find(tid);
+                    if (it_task == task_ids->end())
+                    {
+                        cmd_task_status cts;
+                        cts.task_id = tid;
+                        cts.status = task_unknown;
+                        cmd_resp->task_status_list.push_back(std::move(cts));
+                    }
+                }
+            }
+            
             //return cmd resp
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
 
             //remember: remove session
-            LOG_DEBUG << "ai power requestor service list training timer time out remove session: " << session_id;
+            LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
             session->clear();
             this->remove_session(session_id);
 

@@ -14,7 +14,8 @@
 #include "common.h"
 #include "conf_validator.h"
 #include <boost/exception/all.hpp>
-
+#include <boost/asio/ip/network_v4.hpp>
+#include <algorithm>
 
 #define IP_V4_FIELDS_COUNT                           4
 #define MAX_IP_V6_LEN                                    39                 //FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF
@@ -35,11 +36,15 @@ namespace matrix
             bool validate(const variable_value &val)
             {
                 try
-                {  
+                {   
                     std::string ip = val.as<std::string>();
-                    boost::asio::ip::address addr;
-                    addr.from_string(ip);
-                    return (addr.is_v4() || addr.is_v6());
+                    boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
+                    std::string ip_addr = addr.to_string();
+                    
+                    transform(ip.begin(), ip.end(), ip.begin(), tolower);
+                    transform(ip_addr.begin(), ip_addr.end(), ip_addr.begin(), tolower);
+
+                    return ((addr.is_v4() || addr.is_v6()) && (ip_addr == ip));
                 }
                 catch (const boost::exception & e)
                 {
