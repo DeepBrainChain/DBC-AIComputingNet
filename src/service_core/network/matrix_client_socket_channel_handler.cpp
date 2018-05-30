@@ -118,8 +118,8 @@ namespace matrix
             std::shared_ptr<matrix::service_core::shake_hand_req> req_content = std::make_shared<matrix::service_core::shake_hand_req>();
 
             //header
-            req_content->header.magic = CONF_MANAGER->get_net_flag();
-            req_content->header.msg_name = SHAKE_HAND_REQ;
+            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            req_content->header.__set_msg_name(SHAKE_HAND_REQ);
 
             req_msg->set_content(req_content);
             req_msg->set_name(SHAKE_HAND_REQ);
