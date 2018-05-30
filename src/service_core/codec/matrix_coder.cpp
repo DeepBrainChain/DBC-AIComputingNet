@@ -270,7 +270,7 @@ namespace matrix
 
                 net_message & msg = m_recv_messages.back();
 
-                uint32_t handled = 0;
+                int32_t handled = 0;
                 if (!msg.has_data())
                 {
                     handled = msg.read_packet_len(in);
