@@ -25,8 +25,8 @@ using namespace matrix::service_core;
         msg.header.msg_priority = 0;
 
         auto resp_content = std::make_shared<get_peer_nodes_resp>();
-        resp_content->header.magic = TEST_NET;
-        resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
+        resp_content->header.__set_magic(TEST_NET);
+        resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
         resp_content->header.__set_nonce("12345");
 
         matrix::service_core::peer_node_info info;
@@ -35,7 +35,10 @@ using namespace matrix::service_core;
         info.addr.ip = "192.168.0.2";
         info.addr.port = 10001;
         info.service_list.push_back(std::string("ai_training"));
-        resp_content->body.peer_nodes_list.push_back(std::move(info));
+
+        std::vector<peer_node_info>  peer_nodes_list;
+        peer_nodes_list.push_back(info);
+        resp_content->body.__set_peer_nodes_list(peer_nodes_list);
 
         msg.set_content(resp_content);
 
@@ -68,7 +71,10 @@ using namespace matrix::service_core;
         info.addr.ip = "192.168.0.2";
         info.addr.port = 10001;
         info.service_list.push_back(std::string("ai_training"));
-        resp_content->body.peer_nodes_list.push_back(std::move(info));
+
+        std::vector<peer_node_info>  peer_nodes_list;
+        peer_nodes_list.push_back(info);
+        resp_content->body.__set_peer_nodes_list(peer_nodes_list);
 
         msg.set_content(resp_content);
 
