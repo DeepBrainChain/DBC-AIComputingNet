@@ -57,5 +57,5 @@ add_executable(dbc_service_core_test
 if(APPLE)
     TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_core.a libdbc_service_core.a ${Boost_LIBRARIES})
 elseif(LINUX)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_core.a libdbc_service_core.a  ${Boost_LIBRARIES} -lboost_thread -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_service_core.a libdbc_core.a ${Boost_LIBRARIES} -lboost_thread -pthread -ldl)
 endif()
