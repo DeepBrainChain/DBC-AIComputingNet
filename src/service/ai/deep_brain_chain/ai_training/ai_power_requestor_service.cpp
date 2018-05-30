@@ -216,22 +216,22 @@ namespace ai
             std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
 
             id_generator gen;
-            broadcast_req_content->header.magic = CONF_MANAGER->get_net_flag();
-            broadcast_req_content->header.msg_name = AI_TRAINING_NOTIFICATION_REQ;
+            broadcast_req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            broadcast_req_content->header.__set_msg_name(AI_TRAINING_NOTIFICATION_REQ);
             broadcast_req_content->header.__set_nonce(gen.generate_nonce());
 
-            broadcast_req_content->body.task_id = gen.generate_task_id();
-            broadcast_req_content->body.select_mode = vm["select_mode"].as<int8_t>();
-            broadcast_req_content->body.master = vm["master"].as<std::string>();
-            broadcast_req_content->body.peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
-            broadcast_req_content->body.server_specification = vm["server_specification"].as<std::string>();
-            broadcast_req_content->body.server_count = vm["server_count"].as<int32_t>();
-            broadcast_req_content->body.training_engine = vm["training_engine"].as<int32_t>();
-            broadcast_req_content->body.code_dir = vm["code_dir"].as<std::string>();
-            broadcast_req_content->body.entry_file = vm["entry_file"].as<std::string>();
-            broadcast_req_content->body.data_dir = vm["data_dir"].as<std::string>();
-            broadcast_req_content->body.checkpoint_dir = vm["checkpoint_dir"].as<std::string>();
-            broadcast_req_content->body.hyper_parameters = vm["hyper_parameters"].as<std::string>();
+            broadcast_req_content->body.__set_task_id(gen.generate_task_id());
+            broadcast_req_content->body.__set_select_mode(vm["select_mode"].as<int8_t>());
+            broadcast_req_content->body.__set_master(vm["master"].as<std::string>());
+            broadcast_req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
+            broadcast_req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
+            broadcast_req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
+            broadcast_req_content->body.__set_training_engine(vm["training_engine"].as<int32_t>());
+            broadcast_req_content->body.__set_code_dir(vm["code_dir"].as<std::string>());
+            broadcast_req_content->body.__set_entry_file(vm["entry_file"].as<std::string>());
+            broadcast_req_content->body.__set_data_dir(vm["data_dir"].as<std::string>());
+            broadcast_req_content->body.__set_checkpoint_dir(vm["checkpoint_dir"].as<std::string>());
+            broadcast_req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
 
             req_msg->set_content(std::dynamic_pointer_cast<base>(broadcast_req_content));
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
