@@ -44,11 +44,11 @@ namespace dbc {
         }
     };
 
-    class cmd_get_peer_nodes_req : public matrix::core::base {
+    class cmd_get_peer_nodes_req : public matrix::core::msg_base {
 
     };
 
-    class cmd_get_peer_nodes_resp : public matrix::core::base {
+    class cmd_get_peer_nodes_resp : public matrix::core::msg_base {
     public:
         int32_t result;
 

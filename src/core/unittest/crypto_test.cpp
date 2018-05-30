@@ -39,19 +39,22 @@ BOOST_AUTO_TEST_CASE(make_seceret_test) {
     bpo::variables_map c;
     s.init(c);
 
-    std::ofstream myfile ("key.txt");
-    if (myfile.is_open()) {
-
-
+//    std::ofstream myfile ("key.txt");
+//    if (myfile.is_open()) {
+//
+//
         CKey k;
-        for (int i = 0; i < 1; i++) {
+//        for (int i = 0; i < 1; i++) {
             k.MakeNewKey(false);
 
+//
+//            fprint(myfile, k);
+//        }
+//        myfile.close();
+//    }
 
-            fprint(myfile, k);
-        }
-        myfile.close();
-    }
+
+    print(k);
 }
 
 #include "core/crypto/base58.h"
@@ -61,4 +64,23 @@ BOOST_AUTO_TEST_CASE(base58_encode_test) {
 
     std::cout<<s<<std::endl;
 
+}
+
+#include <cstdio>
+void print_array(unsigned char a[], int len) {
+    for (int i=0; i<len; i++){
+        printf(" 0x%02hhX",a[i]);
+    }
+    std::cout<<std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(sha512_test) {
+    CSHA512 h;
+    const unsigned char buf[] = "";
+    unsigned char out[64] = {0};
+    h.Write((const unsigned char*)buf, 0).Finalize((unsigned char*)out);
+//    print_array(out, 64);
+
+    BOOST_TEST(0xcf == out[0]);
+    BOOST_TEST(0x3e == out[63]);
 }
