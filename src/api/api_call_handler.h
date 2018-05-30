@@ -48,13 +48,13 @@ namespace ai
             void format_output() {}
         };
 
-        class cmd_start_training_req : public matrix::core::base
+        class cmd_start_training_req : public matrix::core::msg_base
         {
         public:
             std::string task_file_path;
         };
 
-        class cmd_start_training_resp : public matrix::core::base, public outputter
+        class cmd_start_training_resp : public matrix::core::msg_base, public outputter
         {
         public:
             int32_t result;
@@ -74,13 +74,13 @@ namespace ai
             }
         };
 
-        class cmd_stop_training_req : public matrix::core::base
+        class cmd_stop_training_req : public matrix::core::msg_base
         {
         public:
             std::string task_id;
         };
 
-        class cmd_stop_training_resp : public matrix::core::base, public outputter
+        class cmd_stop_training_resp : public matrix::core::msg_base, public outputter
         {
         public:
             int32_t result;
@@ -98,13 +98,13 @@ namespace ai
             }
         };
 
-        class cmd_start_multi_training_req : public matrix::core::base
+        class cmd_start_multi_training_req : public matrix::core::msg_base
         {
         public:
             std::string mulit_task_file_path;
         };
 
-        class cmd_start_multi_training_resp : public matrix::core::base, public outputter
+        class cmd_start_multi_training_resp : public matrix::core::msg_base, public outputter
         {
         public:
             int32_t result;
@@ -130,7 +130,7 @@ namespace ai
             }
         };
 
-        class cmd_list_training_req : public matrix::core::base
+        class cmd_list_training_req : public matrix::core::msg_base
         {
         public:
 
@@ -148,7 +148,7 @@ namespace ai
             int8_t status;
         };
 
-        class cmd_list_training_resp : public matrix::core::base, public outputter
+        class cmd_list_training_resp : public matrix::core::msg_base, public outputter
         {
         public:
 
@@ -272,7 +272,7 @@ namespace ai
 //            }
 //        };
 
-        class cmd_logs_req : public matrix::core::base
+        class cmd_logs_req : public matrix::core::msg_base
         {
         public:
 
@@ -295,7 +295,7 @@ namespace ai
 
         };
 
-        class cmd_logs_resp : public matrix::core::base, public outputter
+        class cmd_logs_resp : public matrix::core::msg_base, public outputter
         {
         public:
 
@@ -359,7 +359,7 @@ namespace ai
                 //construct message
                 std::shared_ptr<message> msg = std::make_shared<message>();
                 msg->set_name(typeid(req_type).name());
-                msg->set_content(std::dynamic_pointer_cast<base>(req));
+                msg->set_content(req);
 
                 m_wait->reset();
 

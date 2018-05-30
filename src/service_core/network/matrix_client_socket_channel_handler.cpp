@@ -121,7 +121,7 @@ namespace matrix
             req_content->header.magic = CONF_MANAGER->get_net_flag();
             req_content->header.msg_name = SHAKE_HAND_REQ;
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(SHAKE_HAND_REQ);
 
             if (auto ch = m_channel.lock())

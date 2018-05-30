@@ -931,6 +931,14 @@ namespace matrix
             virtual uint32_t read(protocol * iprot) { return E_SUCCESS; }
             virtual uint32_t write(protocol * oprot) const { return E_SUCCESS; }
 
+//            base_header header;
+        };
+
+        class msg_base: public virtual base
+        {
+        public:
+            ~msg_base() {}
+        public:
             base_header header;
         };
 
@@ -944,6 +952,7 @@ namespace apache {
     namespace thrift {
 
         typedef matrix::core::base TBase;
+        typedef matrix::core::msg_base TMsgBase;
 
     }
 

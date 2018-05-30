@@ -63,6 +63,10 @@ namespace matrix
 
             encode_status encode(channel_handler_context &ctx, message & msg, byte_buf &out);
             decode_status recv_message(byte_buf &in);
+
+            //decode
+            decode_status decode_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg);
+
         protected:
 
             void init_decode_proto();
@@ -72,9 +76,6 @@ namespace matrix
             void init_encode_invoker();
 
             std::shared_ptr<protocol> get_protocol(int32_t type);
-
-            //decode
-            decode_status decode_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg);
 
             //decode packet header
             void decode_packet_header(byte_buf &in, matrix_packet_header &packet_header);

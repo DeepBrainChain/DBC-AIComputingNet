@@ -78,14 +78,15 @@ namespace matrix
             virtual void set_priority(uint32_t msg_priority) { header.msg_priority = msg_priority; }
 
             virtual std::shared_ptr<base> get_content() { return content; }
-            virtual void set_content(std::shared_ptr<base> content) { this->content = content; }
+            virtual void set_content(std::shared_ptr<msg_base> content) { this->content = content; }
 
             virtual uint32_t validate() const { return content->validate(); }
             virtual uint32_t read(protocol * iprot) { return content->read(iprot); }
             virtual uint32_t write(protocol * oprot) const { return content->write(oprot); }
 
             inner_header header;
-            std::shared_ptr<base> content;
+//            std::shared_ptr<base> content;
+            std::shared_ptr<msg_base> content;
         };
 
     }

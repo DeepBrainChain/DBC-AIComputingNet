@@ -37,7 +37,7 @@ using namespace matrix::service_core;
         info.service_list.push_back(std::string("ai_training"));
         resp_content->body.peer_nodes_list.push_back(std::move(info));
 
-        msg.set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+        msg.set_content(resp_content);
 
         auto r = coder.encode(ctx, msg, buf);
 
@@ -70,7 +70,7 @@ using namespace matrix::service_core;
         info.service_list.push_back(std::string("ai_training"));
         resp_content->body.peer_nodes_list.push_back(std::move(info));
 
-        msg.set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+        msg.set_content(resp_content);
 
         auto r = coder.encode(ctx, msg, buf);
 
@@ -102,7 +102,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(msg->header.msg_name == "shake_hand_resp");
         BOOST_TEST(r==DECODE_SUCCESS);
@@ -123,7 +123,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(r==DECODE_ERROR);
     }
@@ -143,7 +143,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(msg->header.msg_name == "unknown message");
         BOOST_TEST(r==DECODE_ERROR);
@@ -163,7 +163,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(r==DECODE_LENGTH_IS_NOT_ENOUGH);
     }
@@ -189,7 +189,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
 
         BOOST_TEST(r!=DECODE_SUCCESS);
@@ -208,7 +208,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(r!=DECODE_SUCCESS);
     }
@@ -231,7 +231,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(r!=DECODE_SUCCESS);
     }
@@ -270,7 +270,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(r!=DECODE_SUCCESS);
     }
@@ -291,7 +291,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
         BOOST_TEST(r!=DECODE_SUCCESS);
     }
@@ -323,7 +323,7 @@ using namespace matrix::service_core;
 
         shared_ptr<message> msg = std::make_shared<message>();
 
-        decode_status r = coder.decode(ctx, buf, msg);
+        decode_status r = coder.decode_frame(ctx, buf, msg);
 
 
 
@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_CASE(test_decode_msg1_file){
 
     shared_ptr<message> msg = std::make_shared<message>();
 
-    decode_status r = coder.decode(ctx, buf, msg);
+    decode_status r = coder.decode_frame(ctx, buf, msg);
 
 
 

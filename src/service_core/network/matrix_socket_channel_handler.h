@@ -30,7 +30,7 @@ namespace matrix
 {
     namespace service_core
     {
-        class msg_new_peer_node : public matrix::core::base
+        class msg_new_peer_node : public matrix::core::msg_base
         {
         public:
             socket_id       sid;

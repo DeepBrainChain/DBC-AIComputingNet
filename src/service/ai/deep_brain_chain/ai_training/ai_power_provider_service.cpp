@@ -202,7 +202,7 @@ namespace ai
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
-            assert(nullptr != req);            
+            assert(nullptr != req);
 
             //check node id
             const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
@@ -222,8 +222,8 @@ namespace ai
                 LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
                 //relay start training in network
                 LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
-                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);                
-            }            
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+            }
             if(it == peer_nodes.end())
             {
                 return E_SUCCESS;//not find self, return
@@ -391,7 +391,7 @@ namespace ai
                         //resp msg
                         std::shared_ptr<message> resp_msg = std::make_shared<message>();
                         resp_msg->set_name(LIST_TRAINING_RESP);
-                        resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_content));
+                        resp_msg->set_content(rsp_content);
                         CONNECTION_MANAGER->broadcast_message(resp_msg);
                     }
 
@@ -481,7 +481,7 @@ namespace ai
             //resp msg
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             resp_msg->set_name(LOGS_RESP);
-            resp_msg->set_content(std::dynamic_pointer_cast<base>(rsp_content));
+            resp_msg->set_content(rsp_content);
             CONNECTION_MANAGER->broadcast_message(resp_msg);
 
             return E_SUCCESS;
@@ -678,7 +678,7 @@ namespace ai
 
             std::string py_cmd = task->entry_file + " " + task->hyper_parameters;
 
-            //tensorflow-cpu           
+            //tensorflow-cpu
             pos = m_container_image.find("tensorflow-cpu");
             if (std::string::npos != pos)
             {
