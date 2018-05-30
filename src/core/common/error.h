@@ -19,6 +19,8 @@
 #define E_NULL_POINTER                                      -5                  //null pointer
 #define E_MSG_QUEUE_FULL                                    -6                  //message queue full
 #define E_FILE_FAILURE                                      -7                  //file op failure
+#define E_NOT_FOUND                                         -8                  //not found specified object
+#define E_EXISTED                                           -9                  //dest already exist
 
 
 #endif

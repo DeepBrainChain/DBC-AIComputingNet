@@ -57,6 +57,8 @@ namespace matrix
 
             virtual void on_error();
 
+            virtual channel_type get_type() { return tcp_channel; }
+
             socket_id id() { return m_sid; }
 
             tcp::endpoint get_remote_addr() const { return m_remote_addr; }

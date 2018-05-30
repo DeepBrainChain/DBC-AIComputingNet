@@ -84,6 +84,8 @@ namespace matrix
 
             void remove_peer_node(const std::string &id);
 
+            bool exist_peer_node(tcp::endpoint ep);
+
         protected:
 
             int32_t on_ver_req(std::shared_ptr<message> &msg);
