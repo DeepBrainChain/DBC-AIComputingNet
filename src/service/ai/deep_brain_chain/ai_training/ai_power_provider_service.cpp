@@ -383,8 +383,8 @@ namespace ai
                     if (!rsp_content->body.task_status_list.empty())
                     {
                         //content header
-                        rsp_content->header.magic = CONF_MANAGER->get_net_flag();
-                        rsp_content->header.msg_name = LIST_TRAINING_RESP;
+                        rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+                        rsp_content->header.__set_msg_name(LIST_TRAINING_RESP);
                         rsp_content->header.__set_nonce(id_generator().generate_nonce());
                         rsp_content->header.__set_session_id(req_content->header.session_id);
 
@@ -468,15 +468,18 @@ namespace ai
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
 
             //content header
-            rsp_content->header.magic = CONF_MANAGER->get_net_flag();
-            rsp_content->header.msg_name = LOGS_RESP;
+            rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            rsp_content->header.__set_msg_name(LOGS_RESP);
             rsp_content->header.__set_nonce(id_generator().generate_nonce());
             rsp_content->header.__set_session_id(req_content->header.session_id);
 
             //content body
-            rsp_content->body.log.peer_node_id = CONF_MANAGER->get_node_id();
-            rsp_content->body.log.log_content = (nullptr == container_resp) ? "get log content error" : std::move(format_logs(container_resp->log_content));
-            rsp_content->body.log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+            peer_node_log log;
+            log.__set_peer_node_id(CONF_MANAGER->get_node_id());
+            log.__set_log_content((nullptr == container_resp) ? "get log content error" : std::move(format_logs(container_resp->log_content)));
+            log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+
+            rsp_content->body.__set_log(log);
 
             //resp msg
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
