@@ -118,7 +118,7 @@ namespace ai
 
             std::shared_ptr<nvidia_config> get_nividia_config_from_cli();
 
-            std::shared_ptr<container_config> get_container_config(std::shared_ptr<ai_training_task> task, std::shared_ptr<nvidia_config> nv_config);
+            std::shared_ptr<container_config> get_container_config(std::shared_ptr<ai_training_task> task);
 
             int32_t on_training_task_timer(std::shared_ptr<core_timer> timer);
 

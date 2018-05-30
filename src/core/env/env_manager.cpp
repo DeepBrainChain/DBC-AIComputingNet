@@ -137,8 +137,8 @@ namespace matrix
             SetConsoleCtrlHandler(ConsoleHandler, TRUE);
 #elif defined(__linux__) || defined(MAC_OSX)
             signal(SIGPIPE, SIG_IGN);
-//            signal(SIGTERM, SIG_IGN);
-//            signal(SIGINT, SIG_IGN);
+            signal(SIGTERM, SIG_IGN);
+            signal(SIGINT, SIG_IGN);
             signal(SIGHUP, SIG_IGN);
             register_signal_function(SIGUSR1, signal_usr1_handler);
 #endif
