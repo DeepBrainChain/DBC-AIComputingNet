@@ -670,6 +670,8 @@ namespace ai
             std::string exec_cmd = AI_TRAINING_TASK_SCRIPT_HOME;
             exec_cmd += AI_TRAINING_TASK_SCRIPT;
 
+            std::string py_cmd = task->entry_file + " " + task->hyper_parameters;
+
             //tensorflow-cpu           
             pos = m_container_image.find("tensorflow-cpu");
             if (std::string::npos != pos)
@@ -677,7 +679,7 @@ namespace ai
                 config->cmd.push_back(exec_cmd);
                 config->cmd.push_back(task->data_dir);
                 config->cmd.push_back(task->code_dir);
-                config->cmd.push_back(task->entry_file);
+                config->cmd.push_back(py_cmd);
 
                 config->image = m_container_image;
 
@@ -691,7 +693,7 @@ namespace ai
                 config->cmd.push_back(exec_cmd);
                 config->cmd.push_back(task->data_dir);
                 config->cmd.push_back(task->code_dir);
-                config->cmd.push_back(task->entry_file);
+                config->cmd.push_back(py_cmd);
 
                 config->image = m_container_image;
 
