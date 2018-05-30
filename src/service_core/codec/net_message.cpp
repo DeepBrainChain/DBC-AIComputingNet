@@ -10,10 +10,11 @@ namespace matrix
             , m_msg_stream(len)
             , m_in_data(false)
         {}
-        uint32_t net_message::read_packet_len(byte_buf &in)
+        
+        int32_t net_message::read_packet_len(byte_buf &in)
         {
-            unsigned int nRemaining = 4 - m_pos;
-            unsigned int nCopy = (std::min)(nRemaining, in.get_valid_read_len());
+            int32_t nRemaining = 4 - m_pos;
+            int32_t nCopy = (std::min)(nRemaining, (int32_t)in.get_valid_read_len());
             m_msg_stream.write_to_byte_buf(in.get_read_ptr(), nCopy);
             in.read_from_byte_buf(theBytes.b + m_pos, nCopy);
             m_pos += nCopy;
@@ -28,10 +29,10 @@ namespace matrix
             return nCopy;
         }
 
-        uint32_t net_message::read_packet_body(byte_buf &in)
+        int32_t net_message::read_packet_body(byte_buf &in)
         {
-            unsigned int nRemaining = m_packet_len - m_pos;
-            unsigned int nCopy = (std::min)(nRemaining, in.get_valid_read_len());
+            int32_t nRemaining = m_packet_len - m_pos;
+            int32_t nCopy = (std::min)(nRemaining, (int32_t)in.get_valid_read_len());
             m_msg_stream.write_to_byte_buf(in.get_read_ptr(), nCopy);
             m_pos += nCopy;
             in.move_read_ptr(nCopy);
