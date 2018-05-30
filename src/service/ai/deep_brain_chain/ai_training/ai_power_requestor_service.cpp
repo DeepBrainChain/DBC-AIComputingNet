@@ -27,6 +27,9 @@
 #include "ai_power_requestor_service.h"
 #include "id_generator.h"
 #include "task_common_def.h"
+#include <boost/xpressive/xpressive_dynamic.hpp>
+#include "base58.h"
+
 
 
 using namespace std;
@@ -199,6 +202,75 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if (0 == vm.count("master"))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "ai training task config file's option master node is empty";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if (0 == vm.count("entry_file"))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "ai training task config file's option entry_file is empty";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if (0 == vm.count("data_dir"))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "ai training task config file's option data_dir is empty";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if (0 == vm.count("code_dir"))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "ai training task config file's option code_dir is empty";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if (E_SUCCESS != validate_ipfs_path(vm["code_dir"].as<std::string>())
+                || E_SUCCESS != validate_ipfs_path(vm["data_dir"].as<std::string>()))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "code_dir or data_dir path is not validate";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if (0 == vm.count("peer_nodes_list"))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "ai training task config file's option peer_nodes_list is empty";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            const std::vector<std::string> & peer_nodes_lists = vm["peer_nodes_list"].as<std::vector<std::string>>();
+            std::vector<unsigned char> vch;
+            for (auto &node_list : peer_nodes_lists)
+            {
+                if (false == DecodeBase58(node_list.c_str(), vch))
+                {
+                    cmd_resp->result = E_DEFAULT;
+                    cmd_resp->result_info = "node_list does not match the Base58 code format";
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                    return E_DEFAULT;
+                }
+            }
+
             //validate parameters
             if (E_DEFAULT == validate_cmd_training_task_conf(vm))
             {
@@ -231,7 +303,7 @@ namespace ai
             broadcast_req_content->body.__set_checkpoint_dir(vm["checkpoint_dir"].as<std::string>());
             broadcast_req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(broadcast_req_content));
+            req_msg->set_content(broadcast_req_content);
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
             LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
@@ -268,6 +340,16 @@ namespace ai
             }
 
             return E_SUCCESS;
+        }
+
+        int32_t ai_power_requestor_service::validate_ipfs_path(const std::string &path_arg)
+        {
+            cregex reg = cregex::compile("(^[a-zA-Z0-9]{46}$)");
+            if (regex_match(path_arg.c_str(), reg))
+            {
+                return E_SUCCESS;
+            }
+            return E_DEFAULT;
         }
 
 
@@ -342,6 +424,16 @@ namespace ai
             //send to net
             for (auto &file : files) 
             {
+                fs::path task_file_path = fs::system_complete(fs::path(file.c_str()));
+                if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
+                {
+                    cmd_resp->result = E_DEFAULT;
+                    cmd_resp->result_info = "training task file does not exist";
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                    return E_DEFAULT;
+                }
+
                 auto req_msg = create_task_msg_from_file(file, opts);
 
                 if (nullptr == req_msg)
@@ -403,7 +495,7 @@ namespace ai
             //body
             req_content->body.task_id = task_id;
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
@@ -464,7 +556,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer
@@ -703,7 +795,7 @@ namespace ai
             }
  
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             return req_msg;
         }
 
@@ -827,7 +919,7 @@ namespace ai
             req_content->body.head_or_tail = cmd_req->head_or_tail;
             req_content->body.number_of_lines = cmd_req->number_of_lines;
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer

@@ -54,4 +54,8 @@ add_executable(dbc_service_core_test
         matrix_codec_test.cpp
         )
 
-TARGET_LINK_LIBRARIES(dbc_service_core_test ${Boost_LIBRARIES} libdbc_core.a libdbc_service_core.a)
+if(APPLE)
+    TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_core.a libdbc_service_core.a ${Boost_LIBRARIES})
+elseif(LINUX)
+    TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_core.a libdbc_service_core.a  ${Boost_LIBRARIES} -lboost_thread -pthread -ldl)
+endif()

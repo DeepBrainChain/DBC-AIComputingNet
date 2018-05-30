@@ -653,7 +653,7 @@ namespace matrix
             resp_content->body.core_version = CORE_VERSION;
             resp_content->body.protocol_version = PROTOCO_VERSION;
 
-            resp_msg->set_content(std::dynamic_pointer_cast<base>(resp_content));
+            resp_msg->set_content(resp_content);
             resp_msg->set_name(VER_RESP);
             resp_msg->header.dst_sid = msg->header.src_sid;
 
@@ -770,7 +770,7 @@ namespace matrix
 
                 LOG_INFO << "me(" << req_content->body.addr_me.ip << ":" << req_content->body.addr_me.port << ") connect to peer(" << req_content->body.addr_you.ip << ":" << req_content->body.addr_you.port << ")";
                 
-                req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+                req_msg->set_content(req_content);
                 req_msg->set_name(VER_REQ);
                 req_msg->header.dst_sid = msg->header.src_sid;
 
@@ -865,7 +865,7 @@ namespace matrix
                     ++peer_cnt;
                 }
 
-                resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+                resp_msg->set_content(resp_content);
 
                 CONNECTION_MANAGER->send_message(msg->header.src_sid, resp_msg);
             }
@@ -915,7 +915,7 @@ namespace matrix
 
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             req_msg->set_name(P2P_GET_PEER_NODES_REQ);
-            req_msg->set_content(std::dynamic_pointer_cast<base> (req_content));
+            req_msg->set_content(req_content);
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
             return E_SUCCESS;
@@ -940,7 +940,7 @@ namespace matrix
                 assign_peer_info(info, node);
                 info.service_list.push_back(std::string("ai_training"));
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
-                resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+                resp_msg->set_content(resp_content);
 
                 CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
             }
@@ -965,7 +965,7 @@ namespace matrix
                 //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
                 if (resp_content->body.peer_nodes_list.size() > 0)
                 {
-                    resp_msg->set_content(std::dynamic_pointer_cast<matrix::core::base>(resp_content));
+                    resp_msg->set_content(resp_content);
                     CONNECTION_MANAGER->broadcast_message(resp_msg);//filer ??
                 }
                 else

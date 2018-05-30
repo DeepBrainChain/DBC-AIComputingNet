@@ -5,7 +5,7 @@ output/
 *.tlog
 *.idb
 *.pdb
-
+.idea
 //*.cmake
 CMakeFiles/
 CMakeCache.txt
