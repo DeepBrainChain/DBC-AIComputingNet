@@ -41,8 +41,8 @@ namespace matrix
                     boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
                     std::string ip_addr = addr.to_string();
                     
-                    transform(ip.begin(), ip.end(), ip.begin(), tolower);
-                    transform(ip_addr.begin(), ip_addr.end(), ip_addr.begin(), tolower);
+                    transform(ip.begin(), ip.end(), ip.begin(), static_cast<int(*)(int)>(tolower));
+                    transform(ip_addr.begin(), ip_addr.end(), ip_addr.begin(), static_cast<int(*)(int)>(tolower));
 
                     return ((addr.is_v4() || addr.is_v6()) && (ip_addr == ip));
                 }

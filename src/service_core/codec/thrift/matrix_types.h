@@ -327,7 +327,8 @@ typedef struct _ver_req__isset {
   bool body :1;
 } _ver_req__isset;
 
-class ver_req : public virtual ::apache::thrift::TBase {
+//class ver_req : public virtual ::apache::thrift::TBase {
+class ver_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   ver_req(const ver_req&);
@@ -415,7 +416,7 @@ typedef struct _ver_resp__isset {
   bool body :1;
 } _ver_resp__isset;
 
-class ver_resp : public virtual ::apache::thrift::TBase {
+class ver_resp : public virtual ::apache::thrift::TMsgBase {
  public:
 
   ver_resp(const ver_resp&);
@@ -457,7 +458,7 @@ typedef struct _shake_hand_req__isset {
   bool body :1;
 } _shake_hand_req__isset;
 
-class shake_hand_req : public virtual ::apache::thrift::TBase {
+class shake_hand_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   shake_hand_req(const shake_hand_req&);
@@ -499,7 +500,7 @@ typedef struct _shake_hand_resp__isset {
   bool body :1;
 } _shake_hand_resp__isset;
 
-class shake_hand_resp : public virtual ::apache::thrift::TBase {
+class shake_hand_resp : public virtual ::apache::thrift::TMsgBase {
  public:
 
   shake_hand_resp(const shake_hand_resp&);
@@ -541,7 +542,7 @@ typedef struct _get_peer_nodes_req__isset {
   bool body :1;
 } _get_peer_nodes_req__isset;
 
-class get_peer_nodes_req : public virtual ::apache::thrift::TBase {
+class get_peer_nodes_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   get_peer_nodes_req(const get_peer_nodes_req&);
@@ -619,7 +620,7 @@ typedef struct _get_peer_nodes_resp__isset {
   bool body :1;
 } _get_peer_nodes_resp__isset;
 
-class get_peer_nodes_resp : public virtual ::apache::thrift::TBase {
+class get_peer_nodes_resp : public virtual ::apache::thrift::TMsgBase {
  public:
 
   get_peer_nodes_resp(const get_peer_nodes_resp&);
@@ -697,7 +698,7 @@ typedef struct _peer_nodes_broadcast_req__isset {
   bool body :1;
 } _peer_nodes_broadcast_req__isset;
 
-class peer_nodes_broadcast_req : public virtual ::apache::thrift::TBase {
+class peer_nodes_broadcast_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   peer_nodes_broadcast_req(const peer_nodes_broadcast_req&);
@@ -850,7 +851,7 @@ typedef struct _start_training_req__isset {
   bool body :1;
 } _start_training_req__isset;
 
-class start_training_req : public virtual ::apache::thrift::TBase {
+class start_training_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   start_training_req(const start_training_req&);
@@ -928,7 +929,7 @@ typedef struct _stop_training_req__isset {
   bool body :1;
 } _stop_training_req__isset;
 
-class stop_training_req : public virtual ::apache::thrift::TBase {
+class stop_training_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   stop_training_req(const stop_training_req&);
@@ -1006,7 +1007,7 @@ typedef struct _list_training_req__isset {
   bool body :1;
 } _list_training_req__isset;
 
-class list_training_req : public virtual ::apache::thrift::TBase {
+class list_training_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   list_training_req(const list_training_req&);
@@ -1084,7 +1085,7 @@ typedef struct _list_training_resp__isset {
   bool body :1;
 } _list_training_resp__isset;
 
-class list_training_resp : public virtual ::apache::thrift::TBase {
+class list_training_resp : public virtual ::apache::thrift::TMsgBase {
  public:
 
   list_training_resp(const list_training_resp&);
@@ -1177,7 +1178,7 @@ typedef struct _logs_req__isset {
   bool body :1;
 } _logs_req__isset;
 
-class logs_req : public virtual ::apache::thrift::TBase {
+class logs_req : public virtual ::apache::thrift::TMsgBase {
  public:
 
   logs_req(const logs_req&);
@@ -1296,7 +1297,7 @@ typedef struct _logs_resp__isset {
   bool body :1;
 } _logs_resp__isset;
 
-class logs_resp : public virtual ::apache::thrift::TBase {
+class logs_resp : public virtual ::apache::thrift::TMsgBase {
  public:
 
   logs_resp(const logs_resp&);

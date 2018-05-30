@@ -124,7 +124,7 @@ namespace matrix
 
             //message
             std::shared_ptr<message> msg = std::make_shared<message>();
-            msg->set_content(std::dynamic_pointer_cast<base>(content));
+            msg->set_content(content);
             msg->set_name(TIMER_TICK_NOTIFICATION);
 
             return msg;

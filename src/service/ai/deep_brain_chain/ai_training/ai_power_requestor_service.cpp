@@ -303,7 +303,7 @@ namespace ai
             broadcast_req_content->body.__set_checkpoint_dir(vm["checkpoint_dir"].as<std::string>());
             broadcast_req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(broadcast_req_content));
+            req_msg->set_content(broadcast_req_content);
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
             LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
@@ -495,7 +495,7 @@ namespace ai
             //body
             req_content->body.task_id = task_id;
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
@@ -556,7 +556,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer
@@ -795,7 +795,7 @@ namespace ai
             }
  
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             return req_msg;
         }
 
@@ -919,7 +919,7 @@ namespace ai
             req_content->body.head_or_tail = cmd_req->head_or_tail;
             req_content->body.number_of_lines = cmd_req->number_of_lines;
 
-            req_msg->set_content(std::dynamic_pointer_cast<base>(req_content));
+            req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer
