@@ -145,7 +145,8 @@ namespace matrix
                         uint16_t port = obj["port"].GetUint();
                         tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
                         peer_cand.tcp_ep = ep;
-                        peer_cand.net_st = (net_state) obj["net_state"].GetUint();
+                        net_state ns = (net_state)obj["net_state"].GetUint();
+                        peer_cand.net_st = (ns == ns_in_use ? ns_idle : ns);
                         peer_cand.reconn_cnt = obj["reconn_cnt"].GetUint();
                         peer_cand.score = obj["score"].GetUint();
 
