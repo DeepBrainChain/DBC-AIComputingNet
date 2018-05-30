@@ -22,7 +22,7 @@ fi
 
 echo "make dbc ut "
 SECONDS=0
-make -j 4 dbc_core_test VERBOSE=1 > ../build_dbc_ut.log 2>&1
+make -j 4 dbc_core_test VERBOSE=1 2>&1 | tee  ../build_dbc_ut1.log 
 if [ $? -ne 0 ]
 then
     echo "fail: see build_dbc_ut.log for more details"
@@ -30,7 +30,7 @@ then
 fi
 
 SECONDS=0
-make -j 4 dbc_service_core_test VERBOSE=1 >> ../build_dbc_ut.log 2>&1
+make -j 4 dbc_service_core_test VERBOSE=1 2>&1 | tee ../build_dbc_ut2.log 
 if [ $? -ne 0 ]
 then
     echo "fail: see build_dbc_ut.log for more details"
