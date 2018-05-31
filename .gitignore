@@ -18,3 +18,4 @@ make/cmake-build-debug
 
 src/core/lib/*.a
 src/service_core/lib/*.a
+*.pyc
