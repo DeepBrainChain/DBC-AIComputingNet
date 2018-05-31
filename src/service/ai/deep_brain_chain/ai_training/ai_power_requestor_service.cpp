@@ -220,6 +220,15 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "entry_file name is not validate or entry_file is not .py file type ";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
             if (0 == vm.count("data_dir"))
             {
                 cmd_resp->result = E_DEFAULT;
@@ -352,6 +361,15 @@ namespace ai
             return E_DEFAULT;
         }
 
+        int32_t ai_power_requestor_service::validate_entry_file_name(const std::string &entry_file_name)
+        {
+            cregex reg = cregex::compile("(^[0-9a-zA-Z]{1,}[-_]{0,}[0-9a-zA-Z]{0,}.py$)");
+            if (regex_match(entry_file_name.c_str(), reg))
+            {
+                return E_SUCCESS;
+            }
+            return E_DEFAULT;
+        }
 
         int32_t ai_power_requestor_service::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
         {

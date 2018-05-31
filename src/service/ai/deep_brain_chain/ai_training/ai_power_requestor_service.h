@@ -73,6 +73,7 @@ namespace ai
 
             int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm);
             int32_t validate_ipfs_path(const std::string &path_arg);
+            int32_t validate_entry_file_name(const std::string &entry_file_name);
 
             int32_t on_list_training_timer(std::shared_ptr<core_timer> timer);
             int32_t on_logs_timer(std::shared_ptr<core_timer> timer);
