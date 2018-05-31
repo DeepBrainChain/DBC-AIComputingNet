@@ -337,6 +337,7 @@ namespace ai
                         p++;
                     }
                 }
+                cout << "\n";
             }
         };
 
