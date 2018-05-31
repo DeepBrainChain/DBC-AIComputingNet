@@ -644,14 +644,14 @@ namespace matrix
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
             //header
-            resp_content->header.magic = CONF_MANAGER->get_net_flag();
-            resp_content->header.msg_name = VER_RESP;
+            resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            resp_content->header.__set_msg_name(VER_RESP);
             resp_content->header.__set_nonce(id_generator().generate_nonce());
 
             //body
-            resp_content->body.node_id = CONF_MANAGER->get_node_id();
-            resp_content->body.core_version = CORE_VERSION;
-            resp_content->body.protocol_version = PROTOCO_VERSION;
+            resp_content->body.__set_node_id(CONF_MANAGER->get_node_id());
+            resp_content->body.__set_core_version(CORE_VERSION);
+            resp_content->body.__set_protocol_version(PROTOCO_VERSION);
 
             resp_msg->set_content(resp_content);
             resp_msg->set_name(VER_RESP);
@@ -752,23 +752,27 @@ namespace matrix
 
                 //header
                 //req_content->header.length = 0;
-                req_content->header.magic = CONF_MANAGER->get_net_flag();
-                req_content->header.msg_name = VER_REQ;
+                req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+                req_content->header.__set_msg_name(VER_REQ);
                 req_content->header.__set_nonce(id_generator().generate_nonce());
 
                 //body
-                req_content->body.node_id = CONF_MANAGER->get_node_id();
-                req_content->body.core_version = CORE_VERSION;
-                req_content->body.protocol_version = PROTOCO_VERSION;
-                req_content->body.time_stamp = std::time(nullptr);
-                req_content->body.addr_me.ip = get_host_ip();
-                req_content->body.addr_me.port = get_net_listen_port();
+                req_content->body.__set_node_id(CONF_MANAGER->get_node_id());
+                req_content->body.__set_core_version(CORE_VERSION);
+                req_content->body.__set_protocol_version(PROTOCO_VERSION);
+                req_content->body.__set_time_stamp(std::time(nullptr));
+                network_address addr_me;
+                addr_me.__set_ip(get_host_ip());
+                addr_me.__set_port(get_net_listen_port());
+                req_content->body.__set_addr_me(addr_me);
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
-                req_content->body.addr_you.ip = ep.address().to_string();
-                req_content->body.addr_you.port = ep.port();
-                req_content->body.start_height = 0;              //later
+                network_address addr_you;
+                addr_you.__set_ip(ep.address().to_string());
+                addr_you.__set_port(ep.port());
+                req_content->body.__set_addr_you(addr_you);
+                req_content->body.__set_start_height(0);              //later
 
-                LOG_INFO << "me(" << req_content->body.addr_me.ip << ":" << req_content->body.addr_me.port << ") connect to peer(" << req_content->body.addr_you.ip << ":" << req_content->body.addr_you.port << ")";
+                LOG_INFO << "me(" << addr_me.ip << ":" << addr_me.port << ") connect to peer(" << addr_you.ip << ":" << addr_you.port << ")";
                 
                 req_msg->set_content(req_content);
                 req_msg->set_name(VER_REQ);
@@ -841,13 +845,13 @@ namespace matrix
             {
                 //common header
                 std::shared_ptr<message> resp_msg = std::make_shared<message>();
-                resp_msg->header.msg_name = P2P_GET_PEER_NODES_RESP;
+                resp_msg->header.msg_name  = P2P_GET_PEER_NODES_RESP;
                 resp_msg->header.msg_priority = 0;
                 resp_msg->header.dst_sid = msg->header.src_sid;
                 auto resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
                 //header
-                resp_content->header.magic = CONF_MANAGER->get_net_flag();
-                resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
+                resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+                resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
                 resp_content->header.__set_nonce(id_generator().generate_nonce());
 
                 for (uint32_t peer_cnt = 0; (it != m_peer_nodes_map.end()) && (peer_cnt < max_peer_cnt_per_pack); ++it)
@@ -909,8 +913,8 @@ namespace matrix
         int32_t p2p_net_service::send_get_peer_nodes()
         {
             std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
-            req_content->header.magic = CONF_MANAGER->get_net_flag();
-            req_content->header.msg_name = P2P_GET_PEER_NODES_REQ;
+            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            req_content->header.__set_msg_name(P2P_GET_PEER_NODES_REQ);
             req_content->header.__set_nonce(id_generator().generate_nonce());
 
             std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -929,8 +933,8 @@ namespace matrix
             resp_msg->header.msg_priority = 0;
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
             //header
-            resp_content->header.magic = CONF_MANAGER->get_net_flag();
-            resp_content->header.msg_name = P2P_GET_PEER_NODES_RESP;
+            resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
             resp_content->header.__set_nonce(id_generator().generate_nonce());
 
             if (node)//broadcast one node

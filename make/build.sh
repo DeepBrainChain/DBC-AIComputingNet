@@ -20,7 +20,7 @@ fi
 
 echo "make dbc"
 SECONDS=0
-make -j 4 dbc VERBOSE=1 > ../build_dbc.log 2>&1
+make -j 4 dbc VERBOSE=1 2>&1 |tee ../build_dbc.log
 if [ $? -ne 0 ]
 then
     echo "fail: see build_dbc.log for more details"
