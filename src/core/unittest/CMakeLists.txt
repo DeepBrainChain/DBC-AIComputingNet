@@ -38,5 +38,5 @@ add_executable(dbc_core_test
 if (APPLE)
     TARGET_LINK_LIBRARIES(dbc_core_test libdbc_core.a ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1)
 elseif (LINUX)
-    TARGET_LINK_LIBRARIES(dbc_core_test libdbc_core.a ${Boost_LIBRARIES} -lboost_thread.a -lcrypto -lssl -lsecp256k1 -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_core_test libdbc_core.a ${Boost_LIBRARIES} -lboost_thread -lcrypto -lssl -lsecp256k1 -pthread -ldl)
 endif()

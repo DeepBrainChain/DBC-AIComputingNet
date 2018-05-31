@@ -66,7 +66,7 @@ namespace ai
                 //logging
                 return ret;
             }
-            LOG_DEBUG << "parse command line succefully";
+            LOG_DEBUG << "parse command line successfully";
 
             //env_manager
             LOG_DEBUG << "begin to init env manager";
