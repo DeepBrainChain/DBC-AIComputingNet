@@ -420,7 +420,7 @@ namespace ai
             }
 
             //check number of lines
-            if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES)
+            if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES || req_content->body.number_of_lines < 1)
             {
                 LOG_DEBUG << "ai power provider service on logs req number of lines error: " << req_content->body.number_of_lines;
                 return E_DEFAULT;
