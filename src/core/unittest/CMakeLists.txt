@@ -32,6 +32,7 @@ add_executable(dbc_core_test
         tcp_socket_test.cpp
         byte_buf_test.cpp
         crypto_test.cpp
+        log_test.cpp
         )
 
 
