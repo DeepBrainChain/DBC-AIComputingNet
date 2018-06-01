@@ -19,6 +19,7 @@
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/utility/setup/console.hpp>  
 #include <boost/log/utility/exception_handler.hpp>
+#include <boost/log/support/date_time.hpp>
 #include "common.h"
 
 
@@ -72,7 +73,14 @@ namespace matrix
                     keywords::file_name = "matrix_core_%N.log",
                     keywords::rotation_size = 100 * 1024 * 1024,
                     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-                    keywords::format = "[%TimeStamp%][%Severity%]: %Message%"
+//                    keywords::format = "[%TimeStamp%][%Severity%]: %Message%"
+                    keywords::format = (
+                            expr::stream
+                                    << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
+                                    << " | " << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
+                                    << " | " << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
+                                    << " | " << expr::smessage
+                    )
                 );
 
                 logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
