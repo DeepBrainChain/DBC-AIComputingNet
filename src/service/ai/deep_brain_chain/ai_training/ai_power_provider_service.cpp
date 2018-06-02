@@ -224,7 +224,7 @@ namespace ai
                 LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
-            if(it == peer_nodes.end())
+            if (it == peer_nodes.end())
             {
                 return E_SUCCESS;//not find self, return
             }
@@ -262,7 +262,7 @@ namespace ai
             task->checkpoint_dir = req->body.checkpoint_dir;
             task->hyper_parameters = req->body.hyper_parameters;
 
-            task->retry_times = 0;
+            task->error_times = 0;
             task->container_id = "";
             task->received_time_stamp = std::time(nullptr);
             task->status = task_queueing;
@@ -363,7 +363,7 @@ namespace ai
             std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::make_shared<matrix::service_core::list_training_resp>();
 
             int32_t count = 0;
-            for(auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
+            for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
             {
                 //find task
                 auto it_task = m_training_tasks.find(*it);
@@ -431,10 +431,10 @@ namespace ai
             leveldb::Status status = m_prov_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
             if (!status.ok())
             {
-                //relay msg to network
-                LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
-                CONNECTION_MANAGER->broadcast_message(msg);
-                return E_SUCCESS;
+            //relay msg to network
+            LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
+            CONNECTION_MANAGER->broadcast_message(msg);
+            return E_SUCCESS;
             }*/
 
             //check task id and get container
@@ -444,7 +444,7 @@ namespace ai
                 //relay msg to network
                 LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-                
+
                 return E_SUCCESS;
             }
 
@@ -692,7 +692,7 @@ namespace ai
                 config->image = m_container_image;
 
                 return config;
-            }           
+            }
             //tensorflow-gpu
             else if (std::string::npos != m_container_image.find("tensorflow-gpu"))
             {
@@ -739,17 +739,17 @@ namespace ai
                 //Mounts
                 /*container_mount nv_mount;
                 nv_mount.type = "volume";
-                
+
                 std::vector<std::string> vec;
                 string_util::split(nv_config->driver_name, ":", vec);
                 if (vec.size() > 0)
                 {
-                    nv_mount.name = vec[0];
+                nv_mount.name = vec[0];
                 }
                 else
                 {
-                    LOG_ERROR << "container config get mounts name from nv_config error";
-                    return nullptr;
+                LOG_ERROR << "container config get mounts name from nv_config error";
+                return nullptr;
                 }
 
                 nv_mount.source = AI_TRAINING_MOUNTS_SOURCE;
@@ -772,7 +772,7 @@ namespace ai
             assert(nullptr != task);
 
             //judge retry times
-            if (task->retry_times > AI_TRAINING_MAX_RETRY_TIMES)
+            if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
                 task->status = task_abnormally_closed;
 
@@ -787,22 +787,25 @@ namespace ai
             }
 
             //first time or contain id empty -> create container
-            if (0 == task->retry_times || task->container_id.empty())
+            if (0 == task->error_times || task->container_id.empty())
             {
                 //container config
                 std::shared_ptr<container_config> config = get_container_config(task);
                 if (nullptr == config)
                 {
                     LOG_ERROR << "ai power provider service get container config error";
-                    task->retry_times++;
+
+                    task->error_times++;
+                    write_task_to_db(task);
                     return E_DEFAULT;
                 }
 
-                //create container
-                task->retry_times++;
+                //create container                
                 std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config);
                 if (nullptr == resp || resp->container_id.empty())
                 {
+                    task->error_times++;
+
                     //flush to db: update container id, check point 1
                     write_task_to_db(task);
 
@@ -811,7 +814,7 @@ namespace ai
                 }
                 else
                 {
-                    task->retry_times = 0;
+                    task->error_times = 0;
 
                     //update container id
                     task->container_id = resp->container_id;
@@ -823,11 +826,12 @@ namespace ai
                 }
             }
 
-            //start container
-            task->retry_times++;
+            //start container            
             int32_t ret = m_container_client->start_container(task->container_id);
             if (E_SUCCESS != ret)
             {
+                task->error_times++;
+
                 //flush to db: update status, check point 2
                 write_task_to_db(task);
 
@@ -850,7 +854,7 @@ namespace ai
         int32_t ai_power_provider_service::check_training_task_status(std::shared_ptr<ai_training_task> task)
         {
             //judge retry times
-            if (task->retry_times > AI_TRAINING_MAX_RETRY_TIMES)
+            if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
                 task->status = task_abnormally_closed;
 
@@ -868,8 +872,12 @@ namespace ai
             std::shared_ptr<container_inspect_response> resp = m_container_client->inspect_container(task->container_id);
             if (nullptr == resp)
             {
-                task->retry_times++;
                 LOG_ERROR << "ai power provider service check container error, container id: " << task->container_id;
+
+                task->error_times++;
+
+                //flush to db
+                write_task_to_db(task);
                 return E_DEFAULT;
             }
 
@@ -882,8 +890,10 @@ namespace ai
             {
                 LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
+                task->error_times++;
+                write_task_to_db(task);
+
                 //restart container
-                task->retry_times++;
                 start_exec_training_task(task);
                 return E_SUCCESS;
             }
