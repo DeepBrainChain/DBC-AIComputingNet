@@ -269,7 +269,7 @@ namespace matrix
                     return E_DEFAULT;
                 }
 
-                LOG_DEBUG << "tcp socket channel tcp_socket_channel write " << m_sid.to_string() << " send buf: " << m_send_buf->to_string();
+//                LOG_DEBUG << "tcp socket channel tcp_socket_channel write " << m_sid.to_string() << " send buf: " << m_send_buf->to_string();
 
                 //send directly
                 async_write(m_send_buf);
