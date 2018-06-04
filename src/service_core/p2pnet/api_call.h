@@ -15,6 +15,12 @@
 
 namespace dbc {
 
+    enum get_peers_flag
+    {
+        flag_active,
+        flag_global
+    };
+
     class cmd_network_address {
     public:
 
@@ -45,6 +51,9 @@ namespace dbc {
     };
 
     class cmd_get_peer_nodes_req : public matrix::core::msg_base {
+    public:
+
+        get_peers_flag flag;
 
     };
 
