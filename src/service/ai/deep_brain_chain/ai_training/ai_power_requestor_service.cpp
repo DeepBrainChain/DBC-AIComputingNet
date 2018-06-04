@@ -149,14 +149,22 @@ namespace ai
         int32_t ai_power_requestor_service::on_cmd_start_training_req(std::shared_ptr<message> &msg)
         {
             bpo::variables_map vm;
+            std::shared_ptr<ai::dbc::cmd_start_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_training_resp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->task_id = "";
 
             std::shared_ptr<base> content = msg->get_content();
             std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
             assert(nullptr != req && nullptr != content);
+            if (!req || !content)
+            {
+                LOG_ERROR << "null ptr of req";
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "internal error";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
-            std::shared_ptr<ai::dbc::cmd_start_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_training_resp>();
-            cmd_resp->result = E_SUCCESS;
-            cmd_resp->task_id = "";
+                return E_DEFAULT;
+            }            
 
             //check file exist
             fs::path task_file_path = fs::system_complete(fs::path(req->task_file_path.c_str()));
