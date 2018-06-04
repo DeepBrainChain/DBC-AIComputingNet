@@ -332,15 +332,24 @@ namespace ai
             {
                 opts.add_options()
                     ("help,h", "list peers")
-                    ("all,a", "list all peers");
+                    ("active,a", "list active peers")
+                    ("global,g", "list global peers");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
 
-                if (vm.count("all") || vm.count("a"))
+                if (vm.count("active") || vm.count("a") || vm.count("global") || vm.count("g"))
                 {
                     std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
+                    if (vm.count("active") || vm.count("a"))
+                    {
+                        req->flag = ::dbc::flag_active;
+                    }
+                    else if (vm.count("global") || vm.count("g"))
+                    {
+                        req->flag = ::dbc::flag_global;
+                    }
 
                     std::shared_ptr<cmd_get_peer_nodes_resp> resp = m_handler.invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
                     if (nullptr == resp)

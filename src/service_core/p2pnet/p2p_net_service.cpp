@@ -226,7 +226,7 @@ namespace matrix
                 {
                     tcp::endpoint ep(ip::address::from_string(ip), (uint16_t)port);
 
-                    peer_candidate pc = { ep, ns_in_use, 0, time(nullptr), 0 };
+                    peer_candidate pc(ep, ns_in_use);
                     std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
                         , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
                     if (it == m_peer_candidates.end())
@@ -414,7 +414,7 @@ namespace matrix
 
             //use hard code peer seeds 
             //if no neighbor peer nodes and peer candidates
-            if (0 == m_peer_nodes_map.size() && 0 == m_peer_candidates.size())
+            if (0 == m_peer_nodes_map.size() && 0 == m_peer_candidates.size())//TODO ...: maybe include zombie peers
             {
                 try
                 {
@@ -439,7 +439,7 @@ namespace matrix
                         LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << ", ip: "<< it->endpoint().address().to_string();
 
                         tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());                        
-                        peer_candidate candidate = {ep, ns_idle, 0, time(nullptr), 0 };
+                        peer_candidate candidate(ep, ns_idle);
                         m_peer_candidates.push_back(candidate);
                     }
                 }
@@ -449,7 +449,7 @@ namespace matrix
                 }
 
                 //dns seeds empty
-                if (0 == m_dns_seeds.size() && 0 == m_peer_candidates.size())
+                if (0 == m_dns_seeds.size() && 0 == m_peer_candidates.size())//TODO ...
                 {
                     //get hard code seeds
                     for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++)
@@ -457,13 +457,11 @@ namespace matrix
                         LOG_DEBUG << "p2p net service add candidate, ip: " << it->seed << ", port: " << it->port;
 
                         tcp::endpoint ep(ip::address::from_string(it->seed), it->port);
-                        peer_candidate candidate = { ep, ns_idle, 0, time(nullptr), 0 };
+                        peer_candidate candidate(ep, ns_idle);
                         m_peer_candidates.push_back(candidate);
                     }
                 }
             }
-
-
 
             //increase connections
             uint32_t new_conn_cnt = 0;
@@ -587,6 +585,10 @@ namespace matrix
         {
             endpoint_address addr(ep);
 
+            //check if dest is itself
+            if (addr.get_ip() == m_host_ip && addr.get_port() == m_net_listen_port)
+                return true;
+
             read_lock_guard<rw_lock> lock(m_nodes_lock);
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
             {
@@ -607,25 +609,33 @@ namespace matrix
             }
             //filter node which connects to the same node(maybe another process with same nodeid)                
             auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
-            if (req_content->body.node_id == CONF_MANAGER->get_node_id())
+            if (ch)
             {
-                if (ch)
+                auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
+                if (tcp_ch)
                 {
-                    auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
-                    if (tcp_ch)
-                    {
-                        std::list<peer_candidate>::iterator it = std::find_if( m_peer_candidates.begin(), m_peer_candidates.end()
-                            , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; } );
-                        if (it != m_peer_candidates.end())
+                    std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                        , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; });
+                    if (it != m_peer_candidates.end())
+                    {    
+                        if (req_content->body.node_id == CONF_MANAGER->get_node_id())
                         {
                             it->last_conn_tm = time(nullptr);
                             it->net_st = ns_zombie;
-                        }                           
+                            //close channel
+                            ch->stop();
+                            return E_SUCCESS;
+                        }
+                        else
+                        {
+                            it->node_id = req_content->body.node_id;
+                        }
                     }
-                    //close channel
-                    ch->stop();
-                    return E_SUCCESS;
-                }
+                    else
+                    {
+                        LOG_ERROR << "recv ver_req but not in peer_candidates";
+                    }
+                }                
             }
 
             LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
@@ -809,6 +819,21 @@ namespace matrix
             std::shared_ptr<dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<dbc::cmd_get_peer_nodes_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
+
+            std::shared_ptr<base> content = msg->get_content();
+            std::shared_ptr<dbc::cmd_get_peer_nodes_req> req = std::dynamic_pointer_cast<dbc::cmd_get_peer_nodes_req>(content);
+            assert(nullptr != req && nullptr != content);
+            if (!req || !content)
+            {
+                LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "internal error";
+                TOPIC_MANAGER->publish<void>(typeid(dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if(req->flag == dbc::flag_active)
             {
                 read_lock_guard<rw_lock> lock(m_nodes_lock);
                 for (auto itn = m_peer_nodes_map.begin(); itn != m_peer_nodes_map.end(); ++itn)
@@ -821,6 +846,26 @@ namespace matrix
                     node_info.service_list.clear();
                     node_info.service_list.push_back(std::string("ai_training"));
                     cmd_resp->peer_nodes_list.push_back(std::move(node_info));
+                }
+            }
+            else if(req->flag == dbc::flag_global)
+            {
+                //case: not too many peers
+                for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+                {
+                    if ((ns_idle == it->net_st)
+                        || (ns_in_use == it->net_st)
+                        )
+                    {
+                        dbc::cmd_peer_node_info node_info;
+                        node_info.peer_node_id = it->node_id;
+                        node_info.live_time_stamp = 0;
+                        node_info.addr.ip = it->tcp_ep.address().to_string();
+                        node_info.addr.port = it->tcp_ep.port();
+                        node_info.service_list.clear();
+                        node_info.service_list.push_back(std::string("ai_training"));
+                        cmd_resp->peer_nodes_list.push_back(std::move(node_info));
+                    }
                 }
             }
 
@@ -891,7 +936,7 @@ namespace matrix
                         , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
                     if (it_pc == m_peer_candidates.end())
                     {
-                        peer_candidate pc = { ep, ns_idle, 0, time(nullptr), 0 };
+                        peer_candidate pc(ep, ns_idle);
                         m_peer_candidates.push_back(std::move(pc));
                     }
                 }

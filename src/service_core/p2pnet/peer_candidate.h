@@ -56,7 +56,27 @@ namespace matrix
             time_t          last_conn_tm;
             uint32_t        score;//indicate level of Qos, update when disconnect
             //node_net_type   node_type;
+            std::string     node_id;
 
+            peer_candidate()
+                : net_st(ns_idle)
+                , reconn_cnt(0)
+                , last_conn_tm(time(nullptr))
+                , score(0)
+                , node_id("")
+            {
+            }
+
+            peer_candidate(tcp::endpoint ep, net_state ns = ns_idle, uint32_t rc_cnt = 0
+                , time_t t = time(nullptr), uint32_t sc = 0, std::string nid = "")
+                : tcp_ep(ep)
+                , net_st(ns)
+                , reconn_cnt(rc_cnt)
+                , last_conn_tm(t)
+                , score(sc)
+                , node_id(nid)
+            {
+            }
         };
 
         static int32_t save_peer_candidates(std::list<peer_candidate> &cands)
@@ -84,6 +104,8 @@ namespace matrix
                     peer_cand.AddMember("reconn_cnt", it->reconn_cnt, allocator);
                     peer_cand.AddMember("last_conn_tm", (uint64_t)it->last_conn_tm, allocator);
                     peer_cand.AddMember("score", it->score, allocator);
+                    rj::Value str_nid(it->node_id.c_str(), (rj::SizeType) it->node_id.length(), allocator);
+                    peer_cand.AddMember("node_id", str_nid, allocator);
 
                     peer_cands.PushBack(peer_cand, allocator);
                 }
@@ -149,6 +171,7 @@ namespace matrix
                         peer_cand.net_st = (ns == ns_in_use ? ns_idle : ns);
                         peer_cand.reconn_cnt = obj["reconn_cnt"].GetUint();
                         peer_cand.score = obj["score"].GetUint();
+                        peer_cand.node_id = obj["node_id"].GetString();
 
                         cands.push_back(peer_cand);
                     }
