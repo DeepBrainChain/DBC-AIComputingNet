@@ -163,7 +163,7 @@ namespace matrix
             const std::vector<std::string> & peer_conf_addresses = CONF_MANAGER->get_peers();
 
             //merge peer addresses
-            std::vector<std::string> peer_addresses(cmd_addresses.size() + peer_conf_addresses.size());
+            std::vector<std::string> peer_addresses; //(cmd_addresses.size() + peer_conf_addresses.size());
 
             peer_addresses.insert(peer_addresses.begin(), peer_conf_addresses.begin(), peer_conf_addresses.end());
             peer_addresses.insert(peer_addresses.begin(), cmd_addresses.begin(), cmd_addresses.end());
