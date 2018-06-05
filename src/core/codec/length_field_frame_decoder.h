@@ -62,7 +62,7 @@ namespace matrix
             //    //less than complete msg frame len
             //    if (in.get_valid_read_len() < frame_len)
             //    {
-            //        return DECODE_LENGTH_IS_NOT_ENOUGH;
+            //        return DECODE_NEED_MORE_DATA;
             //    }
 
             //    if (frame_len < MIN_MATRIX_MSG_CODE_LEN)
@@ -91,7 +91,7 @@ namespace matrix
                 {
                     m_recv_messages.push_back(std::move(net_msg));
                     m_recv_messages.pop_front();
-                    return DECODE_LENGTH_IS_NOT_ENOUGH;
+                    return DECODE_NEED_MORE_DATA;
                 }
 
 //                LOG_DEBUG << "decode net message buf:" << net_msg.get_message_stream().to_string();
@@ -112,7 +112,7 @@ namespace matrix
                 //less than complete msg frame len
                 if (net_msg.get_message_stream().get_valid_read_len() < frame_len)
                 {
-                    return DECODE_LENGTH_IS_NOT_ENOUGH;
+                    return DECODE_NEED_MORE_DATA;
                 }
 
                 if (frame_len < MIN_MATRIX_MSG_CODE_LEN)
