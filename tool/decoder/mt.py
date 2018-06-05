@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 import sys
 import unittest
 
@@ -16,13 +16,11 @@ def load_msg():
     t = [x.strip() for x in sys.stdin.readlines()]
     t = [x for x in t if len(x)>0] # remove empty line
     s = ' '.join(t)
-
-    print
-    print "msg: "+ s
     return s
 
 
 def s_to_b(s):
+    s = s.strip()
     s = s.split(' ')
     s = [a for a in s if a]  # remove all space symbols
 
@@ -30,8 +28,16 @@ def s_to_b(s):
 
     s = ''.join(s)
     bs = []
-    for i in range(0, len(s), 2):
-        bs.append(chr(int(s[i:i+2], 16)))
+
+    try:
+        n = ''
+        for i in range(0, len(s), 2):
+            n = s[i:i+2]
+            bs.append(chr(int(n, 16)))
+
+    except ValueError as e:
+        print e,n
+        exit(1)
 
     return len_, ''.join(bs)
 
@@ -137,5 +143,12 @@ class TestDecode(unittest.TestCase):
 
 if __name__=="__main__":
     msg = load_msg()
+
+    if len(msg.strip()) == 0:
+        exit(1)
+
+    print
+    print "msg: "+ msg
+
     # msg = '08 00 01 E1 D1 A0 97 0B 00 02 00 00 00 0F 73 68 61 6B 65 5F 68 61 6E 64 5F 72 65 73 70 7F 7F'
     decode(msg)

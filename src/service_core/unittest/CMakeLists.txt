@@ -1,8 +1,7 @@
 
 message(STATUS "service code unit test")
 
-
-SET(SRC_PATH ../../../src)
+SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
 include_directories(
         ${SRC_PATH}/core/alarm
@@ -46,7 +45,6 @@ include_directories(
 
 )
 
-link_directories(../lib)
 link_directories(${SRC_PATH}/core/lib)
 
 add_executable(dbc_service_core_test
@@ -54,8 +52,10 @@ add_executable(dbc_service_core_test
         matrix_codec_test.cpp
         )
 
+set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
+
 if(APPLE)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_core.a libdbc_service_core.a ${Boost_LIBRARIES})
+    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES})
 elseif(LINUX)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test libdbc_service_core.a libdbc_core.a ${Boost_LIBRARIES} -lboost_thread -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lboost_thread -pthread -ldl)
 endif()
