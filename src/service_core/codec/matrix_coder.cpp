@@ -260,7 +260,7 @@ namespace matrix
 
         decode_status matrix_coder::recv_message(byte_buf &in)
         {
-            LOG_DEBUG << "buffer recvmessage:" << in.to_string();
+//            LOG_DEBUG << "buffer recvmessage:" << in.to_string();
             while (in.get_valid_read_len() > 0)
             {
                 if (m_recv_messages.empty() || m_recv_messages.back().complete())

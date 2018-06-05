@@ -94,7 +94,7 @@ namespace matrix
                     return DECODE_LENGTH_IS_NOT_ENOUGH;
                 }
 
-                LOG_DEBUG << "decode net message buf:" << net_msg.get_message_stream().to_string();
+//                LOG_DEBUG << "decode net message buf:" << net_msg.get_message_stream().to_string();
                 //less than complete length field len
                 if (net_msg.get_message_stream().get_valid_read_len() < m_min_read_length)
                 {

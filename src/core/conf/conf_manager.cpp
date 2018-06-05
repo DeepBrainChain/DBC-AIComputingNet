@@ -173,7 +173,7 @@ namespace matrix
                 const std::string & net_listen_port = m_args.count("main_net_listen_port") ? m_args["main_net_listen_port"].as<std::string>() : DEFAULT_MAIN_NET_LISTEN_PORT;
                 m_net_params->init_net_listen_port(net_listen_port);
             }
-            else if (m_net_type == "test")
+            else if (m_net_type == TEST_NET_TYPE)
             {
                 const std::string & net_listen_port = m_args.count("test_net_listen_port") ? m_args["test_net_listen_port"].as<std::string>() : DEFAULT_TEST_NET_LISTEN_PORT;
                 m_net_params->init_net_listen_port(net_listen_port);

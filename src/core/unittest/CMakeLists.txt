@@ -2,7 +2,7 @@
 message(STATUS "module test")
 
 
-SET(SRC_PATH ../../../src)
+SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
 include_directories(
         ${SRC_PATH}/core/common
@@ -32,11 +32,13 @@ add_executable(dbc_core_test
         tcp_socket_test.cpp
         byte_buf_test.cpp
         crypto_test.cpp
+        log_test.cpp
         )
 
+set(dbclib  ${SRC_PATH}/core/lib/libdbc_core.a)
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc_core_test libdbc_core.a ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1)
+    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1)
 elseif (LINUX)
-    TARGET_LINK_LIBRARIES(dbc_core_test libdbc_core.a ${Boost_LIBRARIES} -lboost_thread -lcrypto -lssl -lsecp256k1 -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lboost_thread -lcrypto -lssl -lsecp256k1 -pthread -ldl)
 endif()

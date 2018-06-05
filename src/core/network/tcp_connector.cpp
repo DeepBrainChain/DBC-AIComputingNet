@@ -124,8 +124,8 @@ namespace matrix
 
                 LOG_ERROR << "tcp connector on connect failed, addr: " << m_connect_addr
                     << ", start " << m_reconnect_times << " times to reconnect" 
-                    << ", reconnect seconds: " << interval
-                    << errorinfo
+                    << ", reconnect seconds: " << interval << ", "
+                    << errorinfo << ", "
                     << m_sid.to_string();
                 
 
@@ -134,10 +134,11 @@ namespace matrix
             }
             else
             {
-                LOG_ERROR << "tcp connector on connect error and stop reconnect, addr: " << m_connect_addr
-                    << ", " << m_reconnect_times << " times has tried to reconnect, "
-                    << errorinfo
-                    << m_sid.to_string();
+                LOG_ERROR << "Reach reconnect threashold. " <<
+                             " address: " << m_connect_addr <<
+                             " , reconnect times: " << m_reconnect_times <<
+                             errorinfo <<
+                             " , " << m_sid.to_string() ;
 
                 //not reconnect, just notification
                 connect_notification(CLIENT_CONNECT_ERROR);
@@ -196,7 +197,8 @@ namespace matrix
             auto msg = std::make_shared<client_tcp_connect_notification>();
 
             msg->header.src_sid = this->m_sid;
-            msg->ep = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_remote_addr();
+//            msg->ep = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_remote_addr();
+            msg->ep = m_connect_addr;
             msg->status = status;
 
             msg->set_name(CLIENT_CONNECT_NOTIFICATION);

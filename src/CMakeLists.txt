@@ -97,8 +97,8 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent/event2 THIRD_LIBEVENT_EVEN
 
 
 
-link_directories(${SRC_PATH}/core/lib)
-link_directories(${SRC_PATH}/service_core/lib)
+#link_directories(${SRC_PATH}/core/lib)
+#link_directories(${SRC_PATH}/service_core/lib)
 # note: cmake link directories must be set before add_executable()!
 
 
@@ -128,7 +128,11 @@ ${THIRD_LIBEVENT_EVENT2_SRCS})
 #library 
 set(LIBRARIES)
 
-TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} libdbc_core.a libdbc_service_core.a -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -pthread -ldl)
+#set(dbclib ${SRC_PATH}/core/lib/libdbc_core.a ${SRC_PATH}/service_core/lib/libdbc_service_core.a)
+
+set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
+
+TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -pthread -ldl)
 
 if (APPLE)
     TARGET_LINK_LIBRARIES(dbc -lsnappy)

@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 3.2)
 
 #debug setting
 set(DEBUG_MODE ON)
-set(CMAKE_VERBOSE_MAKEFILE on)
+#set(CMAKE_VERBOSE_MAKEFILE on)
 
 project("dbc")
 
@@ -30,7 +30,9 @@ add_subdirectory("src/service_core")
 add_subdirectory("src/core/unittest")
 add_subdirectory("src/service_core/unittest")
 
-# will generate all dependency before genereate the target
+# dependency: ensure libraries build before dbc does
 add_dependencies(dbc dbc_core dbc_service_core)
+
+add_dependencies(dbc_service_core dbc_core)
 add_dependencies(dbc_core_test dbc_core)
 add_dependencies(dbc_service_core_test dbc_core dbc_service_core)
