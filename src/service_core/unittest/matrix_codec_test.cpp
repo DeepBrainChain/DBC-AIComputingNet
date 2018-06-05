@@ -171,7 +171,7 @@ using namespace matrix::service_core;
 
         decode_status r = coder.decode_frame(ctx, buf, msg);
 
-        BOOST_TEST(r==DECODE_LENGTH_IS_NOT_ENOUGH);
+        BOOST_TEST(r==DECODE_NEED_MORE_DATA);
     }
 
     BOOST_AUTO_TEST_CASE(test_decode_extremely_long_packet){

@@ -98,7 +98,7 @@ namespace matrix
                     {
                         LOG_DEBUG << "unknow message: " << msg->get_name();
                     }
-                    else if (DECODE_LENGTH_IS_NOT_ENOUGH == status)
+                    else if (DECODE_NEED_MORE_DATA == status)
                     {
                         LOG_DEBUG << "package contiue to receive";
                     }
