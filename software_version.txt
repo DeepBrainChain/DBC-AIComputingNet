@@ -1,5 +1,7 @@
 boost: boost_1_66_0
 gmp: gmp-6.1.2
+secp256k1: same with BTC
 leveldb: same with BTC
 libevent: libevent-2.1.8-stable
 openssl: openssl-1.1.0h
+rapidjson: latest version within our code
