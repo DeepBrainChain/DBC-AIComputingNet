@@ -87,6 +87,9 @@ namespace ai
                     return E_DEFAULT;
                 }
             }
+            
+            m_container_client->set_address(m_container_ip, m_container_port);
+            m_nvidia_client->set_address(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT);
 
             m_container_image = CONF_MANAGER->get_container_image();
 
@@ -245,6 +248,12 @@ namespace ai
             }
 
             assert(0 == m_training_tasks.count(req->body.task_id));
+
+            if (m_training_tasks.count(req->body.task_id) != 0)
+            {
+                LOG_DEBUG << "ai power provider service on start training already had task: " << req->body.task_id;
+                return E_SUCCESS;
+            }
 
             std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
             assert(nullptr != task);
@@ -420,7 +429,7 @@ namespace ai
             }
 
             //check number of lines
-            if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES || req_content->body.number_of_lines < 1)
+            if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES || req_content->body.number_of_lines < 0)
             {
                 LOG_DEBUG << "ai power provider service on logs req number of lines error: " << req_content->body.number_of_lines;
                 return E_DEFAULT;
