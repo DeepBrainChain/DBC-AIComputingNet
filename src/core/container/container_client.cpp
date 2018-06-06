@@ -485,6 +485,12 @@ namespace matrix
             }
         }
 
+        void container_client::set_address(std::string remote_ip, uint16_t remote_port)
+        {
+            m_remote_ip = remote_ip;
+            m_remote_port = remote_port;
+        }
+
     }
 
 }

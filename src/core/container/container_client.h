@@ -67,6 +67,8 @@ namespace matrix
             //nvidia docker plugin
             std::shared_ptr<nvidia_config_resp> get_nividia_config();
 
+            void set_address(std::string remote_ip, uint16_t remote_port);
+
         protected:
 
             http_client m_http_client;
