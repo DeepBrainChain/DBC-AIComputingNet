@@ -151,7 +151,8 @@ myecho "\n\n"
 echo "======================================================="
 echo -n "begin to exec task: "
 echo $home_dir/$code_dir_hash/$task
-python $home_dir/$code_dir_hash/$task
+cd $home_dir/$code_dir_hash/
+python ./$task
 
 if [ $? -ne 0 ]; then
 	echo "exec task failed and dbc_task.sh exit"
