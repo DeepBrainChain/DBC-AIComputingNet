@@ -278,7 +278,7 @@ namespace ai
             std::vector<unsigned char> vch;
             for (auto &node_list : peer_nodes_lists)
             {
-                if (false == DecodeBase58(node_list.c_str(), vch))
+                if (false == DecodeBase58Check(node_list.c_str(), vch))
                 {
                     cmd_resp->result = E_DEFAULT;
                     cmd_resp->result_info = "node_list does not match the Base58 code format";
