@@ -20,6 +20,7 @@ if version_lt $kernel_version $minimum_version; then
 fi
 echo "***check kernel version success***"
 
+echo y | sudo apt-get update
 echo y | sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
 if [ $? -ne 0 ]; then
     echo "***install Dependent Libraries error***"
