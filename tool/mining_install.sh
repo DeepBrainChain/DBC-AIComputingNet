@@ -100,9 +100,12 @@ if [ $? -eq 0 ]; then
 	sudo apt-key add /var/cuda-repo-8-0-local-ga2/7fa2af80.pub	
     sudo apt-get update 
     echo y | sudo apt-get install cuda 
+    
+    sudo chmod 777 /etc/profile
     sudo echo "export PATH=/usr/local/cuda-8.0/bin:$PATH" >> /etc/profile
     sudo echo "export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64$LD_LIBRARY_PATH" >> /etc/profile
     source /etc/profile
+    sudo chmod 644 /etc/profile
 	
     echo "***start to verify if nvidia cuda8.0 installation success***"
     echo y | sudo apt-get install nvidia-cuda-toolkit
