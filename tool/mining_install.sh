@@ -103,16 +103,16 @@ if [ $? -eq 0 ]; then
     sudo echo "export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64$LD_LIBRARY_PATH" >> /etc/profile
     source /etc/profile
 	
-	echo "***start to verify if nvidia cuda8.0 installation success***"
-	echo y | sudo apt-get install nvidia-cuda-toolkit
-	nvcc -V
-	if [ $? -ne 0 ]; then
-	    echo "***install nvidia cuda8.0 failed and exit ***" 
+    echo "***start to verify if nvidia cuda8.0 installation success***"
+    echo y | sudo apt-get install nvidia-cuda-toolkit
+    nvcc -V
+    if [ $? -ne 0 ]; then
+	echo "***install nvidia cuda8.0 failed and exit ***" 
         exit
     fi
-	nvidia-smi
-	if [ $? -ne 0 ]; then
-	    echo "***install nvidia cuda8.0 failed and exit ***" 
+    nvidia-smi
+    if [ $? -ne 0 ]; then
+	echo "***install nvidia cuda8.0 failed and exit ***" 
         exit
     fi
     echo "***install nvidia cuda8.0 success ***"
