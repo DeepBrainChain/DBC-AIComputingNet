@@ -19,6 +19,7 @@
 //TODO ...
 #define MAX_TASK_COUNT_ON_PROVIDER                              10000
 #define MAX_TASK_COUNT_IN_TRAINING_QUEUE                        1000
+//#define MAX_TASK_COUNT_IN_LVLDB                               1000000
 
 #define GET_LOG_HEAD                                            0
 #define GET_LOG_TAIL                                            1

@@ -126,15 +126,14 @@ namespace matrix
                     << ", start " << m_reconnect_times << " times to reconnect" 
                     << ", reconnect seconds: " << interval << ", "
                     << errorinfo << ", "
-                    << m_sid.to_string();
-                
+                    << m_sid.to_string();                
 
                 m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
                 m_reconnect_timer.async_wait(m_reconnect_timer_handler);
             }
             else
             {
-                LOG_ERROR << "Reach reconnect threashold. " <<
+                LOG_ERROR << "Reach reconnect threshold. " <<
                              " address: " << m_connect_addr <<
                              " , reconnect times: " << m_reconnect_times <<
                              errorinfo <<
