@@ -82,11 +82,19 @@ namespace ai
 
             void add_task_config_opts(bpo::options_description &opts) const;
 
+            //op on level db
             std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts);
 
-            bool write_task_info_to_db(std::string taskid);
+            bool write_task_info_to_db(ai::dbc::cmd_task_info &task_info);
 
-            bool read_task_info_from_db(std::vector<std::string> &vec);
+            bool read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> task_infos);
+
+            bool read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> task_infos);
+
+            bool read_task_info_from_db(std::string task_id, ai::dbc::cmd_task_info &task_info);
+
+            bool is_task_exist_in_db(std::string task_id);
+
 
         protected:
 

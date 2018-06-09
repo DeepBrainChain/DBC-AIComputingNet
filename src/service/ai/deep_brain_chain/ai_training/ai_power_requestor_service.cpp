@@ -43,7 +43,6 @@ namespace ai
     namespace dbc
     {
         ai_power_requestor_service::ai_power_requestor_service()
-            : m_req_training_task_db()
         {
 
         }
@@ -151,7 +150,8 @@ namespace ai
             bpo::variables_map vm;
             std::shared_ptr<ai::dbc::cmd_start_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_start_training_resp>();
             cmd_resp->result = E_SUCCESS;
-            cmd_resp->task_id = "";
+            cmd_resp->task_info.task_id = "";
+            cmd_resp->task_info.create_time = time(nullptr);
 
             std::shared_ptr<base> content = msg->get_content();
             std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
@@ -329,11 +329,11 @@ namespace ai
 
             //peer won't reply, so public resp directly
             cmd_resp->result = E_SUCCESS;
-            cmd_resp->task_id = broadcast_req_content->body.task_id;
+            cmd_resp->task_info.task_id = broadcast_req_content->body.task_id;
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
             //flush to db
-            write_task_info_to_db(broadcast_req_content->body.task_id);
+            write_task_info_to_db(cmd_resp->task_info);
 
             return E_SUCCESS;
         }
@@ -465,7 +465,10 @@ namespace ai
                 if (nullptr == req_msg)
                 {
                     LOG_ERROR << "ai power requester service create task msg from file error: " << file;
-                    cmd_resp->task_list.push_back(file + ":  parse task config error");
+                    ai::dbc::cmd_task_info task_info;
+                    task_info.create_time = time(nullptr);
+                    task_info.result = file + ":  parse task config error";
+                    cmd_resp->task_info_list.push_back(task_info);
                 }
                 else
                 {
@@ -473,11 +476,13 @@ namespace ai
 
                     std::shared_ptr<matrix::service_core::start_training_req> req_content = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(req_msg->content);
                     assert(nullptr != req_content);
-
-                    cmd_resp->task_list.push_back(req_content->body.task_id);
+                    ai::dbc::cmd_task_info task_info;
+                    task_info.create_time = time(nullptr);
+                    task_info.task_id = req_content->body.task_id;
+                    cmd_resp->task_info_list.push_back(task_info);
 
                     //flush to db
-                    write_task_info_to_db(req_content->body.task_id);
+                    write_task_info_to_db(task_info);
                 }
             }
 
@@ -493,13 +498,16 @@ namespace ai
         {
             std::shared_ptr<cmd_stop_training_req> cmd_req_content = std::dynamic_pointer_cast<cmd_stop_training_req>(msg->get_content());
             assert(nullptr != cmd_req_content);
+            if (!cmd_req_content)
+            {
+                LOG_ERROR << "cmd_req_content is null";
+                return E_NULL_POINTER;
+            }
 
             const std::string &task_id = cmd_req_content->task_id;
 
             //check valid
-            std::string task_value;
-            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
-            if (!status.ok())
+            if (!is_task_exist_in_db(task_id))
             {
                 LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
                 //public resp directly
@@ -547,31 +555,25 @@ namespace ai
             req_content->header.__set_session_id(id_generator().generate_session_id());
             
             //body
+            std::vector<ai::dbc::cmd_task_info> vec_task_infos;
             if (1 == cmd_req->list_type) //0: list all tasks; 1: list specific tasks
             {
                 //check task id exists 
-                for (auto task_id : cmd_req->task_list)
+                if (!read_task_info_from_db(cmd_req->task_list, vec_task_infos))
                 {
-                    std::string task_value;
-                    leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
-                    if (!status.ok())
-                    {
-                        LOG_ERROR << "ai power requester service cmd list task check task id error: " << task_id;
-                        continue;
-                    }
-
-                    //add to list task
-                    req_content->body.task_list.push_back(task_id);
-                    LOG_DEBUG << "ai power requester service cmd list task: " << task_id;
+                    LOG_ERROR << "load task info failed.";
                 }
             }
             else
             {
-                read_task_info_from_db(req_content->body.task_list);
+                if (!read_task_info_from_db(vec_task_infos))//TODO ...: filter out completed tasks;
+                {
+                    LOG_ERROR << "failed to load all task info from db.";
+                }
             }
 
             //task list is empty
-            if (req_content->body.task_list.empty())
+            if (vec_task_infos.empty())
             {
                 std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
                 cmd_resp->result = E_DEFAULT;
@@ -580,6 +582,12 @@ namespace ai
                 //return cmd resp
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
                 return E_SUCCESS;
+            }
+
+            for (auto info : vec_task_infos)
+            {
+                //TODO ...: filter out completed task
+                req_content->body.task_list.push_back(info.task_id);
             }
 
             req_msg->set_content(req_content);
@@ -682,6 +690,12 @@ namespace ai
                 cmd_task_status cts;
                 cts.task_id = it->first;
                 cts.status = it->second;
+                ai::dbc::cmd_task_info info;
+                if (read_task_info_from_db(cts.task_id, info))
+                {
+                    cts.create_time = info.create_time;
+                }
+
                 cmd_resp->task_status_list.push_back(std::move(cts));
             }
 
@@ -701,6 +715,17 @@ namespace ai
         int32_t ai_power_requestor_service::on_list_training_timer(std::shared_ptr<core_timer> timer)
         {
             assert(nullptr != timer);
+            if (nullptr == timer)
+            {
+                return E_DEFAULT;
+            }
+
+            int32_t ret_code = E_SUCCESS;
+            variables_map vm;
+            std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp;
+            std::shared_ptr<message> req_msg;
+            std::shared_ptr<matrix::service_core::list_training_req> req_content;
+            std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids;
 
             //get session
             const string &session_id = timer->get_session_id();
@@ -708,16 +733,17 @@ namespace ai
             if (nullptr == session)
             {
                 LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
-                return E_DEFAULT;
+                ret_code =  E_DEFAULT;
+                goto FINAL_PROC;
             }
 
-            variables_map & vm = session->get_context().get_args();
+            vm = session->get_context().get_args();
             assert(vm.count("task_ids") > 0);
             assert(vm.count("req_msg") > 0);
-            std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
+            task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
 
             //publish cmd resp
-            std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+            cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
             for (auto it = task_ids->begin(); it != task_ids->end(); it++)
@@ -725,14 +751,20 @@ namespace ai
                 cmd_task_status cts;
                 cts.task_id = it->first;
                 cts.status = it->second;
+                ai::dbc::cmd_task_info info;
+                if (read_task_info_from_db(cts.task_id, info))
+                {
+                    cts.create_time = info.create_time;
+                }
                 cmd_resp->task_status_list.push_back(std::move(cts));
             }
-            auto req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
-            auto req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
+            req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+            req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
             if (!req_content)
             {
                 LOG_ERROR << "null ptr of req_content.";
-                return E_DEFAULT;
+                ret_code = E_DEFAULT;
+                goto FINAL_PROC;
             }
             if (task_ids->size() < req_content->body.task_list.size())
             {
@@ -748,16 +780,18 @@ namespace ai
                     }
                 }
             }
-            
+
+        FINAL_PROC:
             //return cmd resp
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
-
-            //remember: remove session
             LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
-            session->clear();
-            this->remove_session(session_id);
+            if (session)
+            {
+                session->clear();
+                this->remove_session(session_id);
+            }
 
-            return E_SUCCESS;
+            return ret_code;
         }
 
         void ai_power_requestor_service::add_task_config_opts(bpo::options_description &opts) const
@@ -825,54 +859,145 @@ namespace ai
             return req_msg;
         }
 
-        bool ai_power_requestor_service::write_task_info_to_db(std::string taskid)
+        bool ai_power_requestor_service::write_task_info_to_db(ai::dbc::cmd_task_info &task_info)
         {
-            if (!m_req_training_task_db || taskid.empty())
+            if (!m_req_training_task_db || task_info.task_id.empty())
             {
                 LOG_ERROR << "null ptr or null task_id.";
                 return false;
             }
 
+            //serialization
+            std::shared_ptr<byte_buf> out_buf(new byte_buf);
+            binary_protocol proto(out_buf.get());
+            task_info.write(&proto);
+
             //flush to db
             leveldb::WriteOptions write_options;
             write_options.sync = true;
-            leveldb::Status s = m_req_training_task_db->Put(write_options, taskid, taskid);
+
+            leveldb::Slice slice(out_buf->get_read_ptr(), out_buf->get_valid_read_len());
+            leveldb::Status s = m_req_training_task_db->Put(write_options, task_info.task_id, slice);
             if (!s.ok())
             {
-                LOG_ERROR << "write task(" << taskid << ") failed.";
+                LOG_ERROR << "write task(" << task_info.task_id << ") failed: " << s.ToString();
                 return false;
             }
+
             return true;
         }
 
-        bool ai_power_requestor_service::read_task_info_from_db(std::vector<std::string> &vec)
+        bool ai_power_requestor_service::read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> task_infos)
         {
             if (!m_req_training_task_db)
             {
                 LOG_ERROR << "level db not initialized.";
                 return false;
             }
+            task_infos.clear();
 
-            //read from db
-            std::string task_id;
-            vec.clear();
-
-            //iterate task in db
-            int32_t count = 0;
+            //read from db           
             std::unique_ptr<leveldb::Iterator> it;
             it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
             for (it->SeekToFirst(); it->Valid(); it->Next())
             {
-                task_id = it->key().ToString();
-                vec.push_back(task_id);
+                //deserialization
+                std::shared_ptr<byte_buf> buf(new byte_buf);
+                buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
+                binary_protocol proto(buf.get());
+                ai::dbc::cmd_task_info t_info;
+                t_info.read(&proto);
 
-                LOG_DEBUG << "ai power requester service read task: " << task_id;
+                task_infos.push_back(std::move(t_info));
 
-                //should restrict max count
-                if (++count > MAX_LIST_TASK_COUNT)
+                LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+            }
+
+            return !task_infos.empty();
+        }
+
+        bool ai_power_requestor_service::read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> task_infos)
+        {
+            if (!m_req_training_task_db)
+            {
+                LOG_ERROR << "level db not initialized.";
+                return false;
+            }
+            task_infos.clear();
+            if (task_ids.empty())
+            {
+                LOG_WARNING << "not specify task id.";
+                return false;
+            }
+
+            //read from db
+            for (auto task_id : task_ids)
+            {
+                std::string task_value;
+                leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+                if (!status.ok())
                 {
-                    break;
+                    LOG_ERROR << "read task(" << task_id << ") failed: " << status.ToString();
+                    continue;
                 }
+
+                //deserialization
+                std::shared_ptr<byte_buf> buf(new byte_buf);
+                buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
+                binary_protocol proto(buf.get());
+                ai::dbc::cmd_task_info t_info;
+                t_info.read(&proto);
+                task_infos.push_back(std::move(t_info));
+
+                LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+            }
+
+            return !task_infos.empty();
+        }
+
+        bool ai_power_requestor_service::read_task_info_from_db(std::string task_id, ai::dbc::cmd_task_info &task_info)
+        {
+            if (task_id.empty() || !m_req_training_task_db)
+            {
+                return false;
+            }
+
+            try
+            {
+                std::string task_value;
+                leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+                if (!status.ok() || status.IsNotFound())
+                {
+                    return false;
+                }
+
+                //deserialization
+                std::shared_ptr<byte_buf> buf(new byte_buf);
+                buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
+                binary_protocol proto(buf.get());
+                task_info.read(&proto);
+            }
+            catch (...)
+            {
+                LOG_ERROR << "failed to read task info from db";
+                return false;
+            }
+
+            return true;
+        }
+        
+        bool ai_power_requestor_service::is_task_exist_in_db(std::string task_id)
+        {
+            if (task_id.empty() || !m_req_training_task_db)
+            {
+                return false;
+            }
+            
+            std::string task_value;
+            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+            if (!status.ok() || status.IsNotFound())
+            {
+                return false;
             }
 
             return true;

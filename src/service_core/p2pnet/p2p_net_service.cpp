@@ -531,6 +531,7 @@ namespace matrix
 
         bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version)
         {
+            tcp::endpoint ep;
             if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
             {
                 LOG_WARNING << "duplicated node id: " << nid;
@@ -547,8 +548,10 @@ namespace matrix
             if (ptr_tcp_ch)
             {
                 //prerequisite: channel has started
-                if (exist_peer_node(ptr_tcp_ch->get_remote_addr()))
+                ep = ptr_tcp_ch->get_remote_addr();
+                if (exist_peer_node(ep))
                 {
+                    LOG_WARNING << "a new channel established, but remote addr exist in peer_node_list: " << ep.address().to_string() << ":" << ep.port();
                     return false;//exist a p2p channel
                 }
             }
@@ -571,6 +574,7 @@ namespace matrix
             
             write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
+            LOG_DEBUG << "add a new peer_node, remote addr: " << ep.address().to_string() << ":" << ep.port();
 
             return true;
         }

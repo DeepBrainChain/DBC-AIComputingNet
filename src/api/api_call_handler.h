@@ -21,6 +21,8 @@
 
 #include "api_call.h"
 #include <set>
+#include "time_util.h"
+#include "db_types.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -60,7 +62,7 @@ namespace ai
             int32_t result;
             std::string result_info;
 
-            std::string task_id;
+            cmd_task_info  task_info;
 
             void format_output()
             {
@@ -70,7 +72,7 @@ namespace ai
                     return;
                 }
 
-                cout << "task id: " << task_id << endl;
+                cout << "task id: " << task_info.task_id << "       create_time: " << task_info.create_time << endl;
             }
         };
 
@@ -110,7 +112,7 @@ namespace ai
             int32_t result;
             std::string result_info;
 
-            std::list<std::string> task_list;
+            std::list<cmd_task_info> task_info_list;
 
             void format_output()
             {
@@ -120,12 +122,18 @@ namespace ai
                     return;
                 }
 
-                cout << "task_id:" << endl;
-
-                auto it = task_list.begin();
-                for (; it != task_list.end(); it++)
+                auto it = task_info_list.begin();
+                for (; it != task_info_list.end(); it++)
                 {
-                    cout << *it << endl;
+                    if (!it->task_id.empty())
+                    {
+                        cout << "task id: " << it->task_id << "     create_time: " << it->create_time << endl;
+                    }
+                    else
+                    {
+                        cout << "task id: " << it->task_id << "     create_time: " << it->create_time 
+                            << "result: " << it->result << endl;
+                    }                    
                 }
             }
         };
@@ -144,6 +152,8 @@ namespace ai
         public:
 
             std::string task_id;
+
+            time_t  create_time;
 
             int8_t status;
         };
@@ -166,17 +176,17 @@ namespace ai
                 }
             
                 console_printer printer;
-                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 64)(LEFT_ALIGN, 10);
+                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 64)(LEFT_ALIGN, 20)(LEFT_ALIGN, 10);
 
-                printer << matrix::core::init << "num" << "task_id" << "task_status" << matrix::core::endl;
+                printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << matrix::core::endl;
                 int i = 0;
                 for (auto it = task_status_list.begin(); it != task_status_list.end(); ++it, ++i)
                 {
-                    printer << matrix::core::init << i << it->task_id << to_training_task_status_string(it->status) << matrix::core::endl;
+                    printer << matrix::core::init << i << it->task_id << time_util::time_2_str(it->create_time) 
+                        << to_training_task_status_string(it->status) << matrix::core::endl;
                 }
             }
         };
-
 
         class cmd_get_peer_nodes_resp_formater : public outputter
         {
