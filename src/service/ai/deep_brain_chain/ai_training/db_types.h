@@ -154,6 +154,67 @@ namespace ai {
 
         std::ostream& operator<<(std::ostream& out, const ai_training_task& obj);
 
+
+        typedef struct _cmd_task_info__isset {
+            _cmd_task_info__isset() : task_id(false), create_time(false), result(false), status(false) {}
+            bool task_id : 1;
+            bool create_time : 1;
+            bool result : 1;
+            bool status : 1;
+        } _cmd_task_info__isset;
+
+        class cmd_task_info : public virtual ::apache::thrift::TBase {
+        public:
+
+            cmd_task_info(const cmd_task_info&);
+            cmd_task_info& operator=(const cmd_task_info&);
+            cmd_task_info() : task_id(), create_time(0), result(), status(0) {
+            }
+
+            virtual ~cmd_task_info() throw();
+            std::string task_id;
+            int64_t create_time;
+            std::string result;
+            int8_t status;
+
+            _cmd_task_info__isset __isset;
+
+            void __set_task_id(const std::string& val);
+
+            void __set_create_time(const int64_t val);
+
+            void __set_result(const std::string& val);
+
+            void __set_status(const int8_t val);
+
+            bool operator == (const cmd_task_info & rhs) const
+            {
+                if (!(task_id == rhs.task_id))
+                    return false;
+                if (!(create_time == rhs.create_time))
+                    return false;
+                if (!(result == rhs.result))
+                    return false;
+                if (!(status == rhs.status))
+                    return false;
+                return true;
+            }
+            bool operator != (const cmd_task_info &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const cmd_task_info &) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(cmd_task_info &a, cmd_task_info &b);
+
+        std::ostream& operator<<(std::ostream& out, const cmd_task_info& obj);
+
     }
 } // namespace
 
