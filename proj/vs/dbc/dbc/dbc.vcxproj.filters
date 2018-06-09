@@ -1242,6 +1242,9 @@
     <ClInclude Include="..\..\..\..\src\core\conf\peer_seeds.h">
       <Filter>src\core\conf</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\time_util.h">
+      <Filter>src\core\common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\3rd\network\openssl\openssl\opensslconf.h.in">
