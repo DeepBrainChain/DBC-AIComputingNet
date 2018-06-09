@@ -442,5 +442,160 @@ namespace ai {
             out << ")";
         }
 
+
+        cmd_task_info::~cmd_task_info() throw() {
+        }
+
+
+        void cmd_task_info::__set_task_id(const std::string& val) {
+            this->task_id = val;
+        }
+
+        void cmd_task_info::__set_create_time(const int64_t val) {
+            this->create_time = val;
+        }
+
+        void cmd_task_info::__set_result(const std::string& val) {
+            this->result = val;
+        }
+
+        void cmd_task_info::__set_status(const int8_t val) {
+            this->status = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const cmd_task_info& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->task_id);
+                        this->__isset.task_id = true;
+                    }
+                    else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_I64) {
+                        xfer += iprot->readI64(this->create_time);
+                        this->__isset.create_time = true;
+                    }
+                    else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->result);
+                        this->__isset.result = true;
+                    }
+                    else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_BYTE) {
+                        xfer += iprot->readByte(this->status);
+                        this->__isset.status = true;
+                    }
+                    else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            return xfer;
+        }
+
+        uint32_t cmd_task_info::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("cmd_task_info");
+
+            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
+            xfer += oprot->writeString(this->task_id);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("create_time", ::apache::thrift::protocol::T_I64, 2);
+            xfer += oprot->writeI64(this->create_time);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("result", ::apache::thrift::protocol::T_STRING, 3);
+            xfer += oprot->writeString(this->result);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_BYTE, 4);
+            xfer += oprot->writeByte(this->status);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(cmd_task_info &a, cmd_task_info &b) {
+            using ::std::swap;
+            swap(a.task_id, b.task_id);
+            swap(a.create_time, b.create_time);
+            swap(a.result, b.result);
+            swap(a.status, b.status);
+            swap(a.__isset, b.__isset);
+        }
+
+        cmd_task_info::cmd_task_info(const cmd_task_info& other8) {
+            task_id = other8.task_id;
+            create_time = other8.create_time;
+            result = other8.result;
+            status = other8.status;
+            __isset = other8.__isset;
+        }
+        cmd_task_info& cmd_task_info::operator=(const cmd_task_info& other9) {
+            task_id = other9.task_id;
+            create_time = other9.create_time;
+            result = other9.result;
+            status = other9.status;
+            __isset = other9.__isset;
+            return *this;
+        }
+        void cmd_task_info::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "cmd_task_info(";
+            out << "task_id=" << to_string(task_id);
+            out << ", " << "create_time=" << to_string(create_time);
+            out << ", " << "result=" << to_string(result);
+            out << ", " << "status=" << to_string(status);
+            out << ")";
+        }
     }
 } // namespace
