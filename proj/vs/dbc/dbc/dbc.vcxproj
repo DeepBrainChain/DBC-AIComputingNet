@@ -424,6 +424,7 @@
     <ClInclude Include="..\..\..\..\src\core\common\function_traits.h" />
     <ClInclude Include="..\..\..\..\src\core\common\id_generator.h" />
     <ClInclude Include="..\..\..\..\src\core\common\std_types.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\time_util.h" />
     <ClInclude Include="..\..\..\..\src\core\common\util.h" />
     <ClInclude Include="..\..\..\..\src\core\common\version.h" />
     <ClInclude Include="..\..\..\..\src\core\common\visibility.h" />
