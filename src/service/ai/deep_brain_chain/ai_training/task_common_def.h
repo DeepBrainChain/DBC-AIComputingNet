@@ -37,12 +37,12 @@ namespace ai
 
         enum training_task_status
         {
-            task_unknown = 0,
-            task_queueing,
-            task_running,
-            task_stopped,
-            task_succefully_closed,
-            task_abnormally_closed
+            task_unknown = 1,
+            task_queueing = 2,
+            task_running = 4,
+            task_stopped = 8,
+            task_succefully_closed = 16,
+            task_abnormally_closed = 32
         };
 
         //__BEGIN_DECLS

@@ -889,7 +889,7 @@ namespace ai
             return true;
         }
 
-        bool ai_power_requestor_service::read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> task_infos)
+        bool ai_power_requestor_service::read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> &task_infos, uint32_t filter_status/* = 0*/)
         {
             if (!m_req_training_task_db)
             {
@@ -910,15 +910,17 @@ namespace ai
                 ai::dbc::cmd_task_info t_info;
                 t_info.read(&proto);
 
-                task_infos.push_back(std::move(t_info));
-
-                LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                if (0 == (filter_status & t_info.status))
+                {
+                    task_infos.push_back(std::move(t_info));
+                    LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                }                
             }
 
             return !task_infos.empty();
         }
 
-        bool ai_power_requestor_service::read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> task_infos)
+        bool ai_power_requestor_service::read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> &task_infos, uint32_t filter_status/* = 0*/)
         {
             if (!m_req_training_task_db)
             {
@@ -949,9 +951,11 @@ namespace ai
                 binary_protocol proto(buf.get());
                 ai::dbc::cmd_task_info t_info;
                 t_info.read(&proto);
-                task_infos.push_back(std::move(t_info));
-
-                LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                if (0 == (filter_status & t_info.status))
+                {
+                    task_infos.push_back(std::move(t_info));
+                    LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                }
             }
 
             return !task_infos.empty();
