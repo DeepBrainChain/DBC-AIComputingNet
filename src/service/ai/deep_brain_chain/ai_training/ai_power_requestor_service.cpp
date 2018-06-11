@@ -714,69 +714,71 @@ namespace ai
 
         int32_t ai_power_requestor_service::on_list_training_timer(std::shared_ptr<core_timer> timer)
         {
+            //case: beware of initialization for 'goto'
+            int32_t ret_code = E_SUCCESS;
+            string session_id;
+            std::shared_ptr<service_session> session;     
+            std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp;
+
             assert(nullptr != timer);
             if (nullptr == timer)
             {
-                return E_DEFAULT;
-            }
-
-            int32_t ret_code = E_SUCCESS;
-            variables_map vm;
-            std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp;
-            std::shared_ptr<message> req_msg;
-            std::shared_ptr<matrix::service_core::list_training_req> req_content;
-            std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids;
-
-            //get session
-            const string &session_id = timer->get_session_id();
-            std::shared_ptr<service_session> session = get_session(session_id);
-            if (nullptr == session)
-            {
-                LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
-                ret_code =  E_DEFAULT;
+                LOG_ERROR << "null ptr of timer.";
+                ret_code = E_NULL_POINTER;
                 goto FINAL_PROC;
             }
-
-            vm = session->get_context().get_args();
-            assert(vm.count("task_ids") > 0);
-            assert(vm.count("req_msg") > 0);
-            task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
-
-            //publish cmd resp
-            cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
-            cmd_resp->result = E_SUCCESS;
-            cmd_resp->result_info = "";
-            for (auto it = task_ids->begin(); it != task_ids->end(); it++)
             {
-                cmd_task_status cts;
-                cts.task_id = it->first;
-                cts.status = it->second;
-                ai::dbc::cmd_task_info info;
-                if (read_task_info_from_db(cts.task_id, info))
+                 //get session
+                session_id = timer->get_session_id();
+                session = get_session(session_id);
+                if (nullptr == session)
                 {
-                    cts.create_time = info.create_time;
+                    LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
+                    ret_code =  E_DEFAULT;
+                    goto FINAL_PROC;
                 }
-                cmd_resp->task_status_list.push_back(std::move(cts));
-            }
-            req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
-            req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
-            if (!req_content)
-            {
-                LOG_ERROR << "null ptr of req_content.";
-                ret_code = E_DEFAULT;
-                goto FINAL_PROC;
-            }
-            if (task_ids->size() < req_content->body.task_list.size())
-            {
-                for (auto tid : req_content->body.task_list)
+
+                variables_map &vm = session->get_context().get_args();
+                assert(vm.count("task_ids") > 0);
+                assert(vm.count("req_msg") > 0);
+                auto task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
+
+                //publish cmd resp
+                cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+                cmd_resp->result = E_SUCCESS;
+                cmd_resp->result_info = "";
+                for (auto it = task_ids->begin(); it != task_ids->end(); it++)
                 {
-                    auto it_task = task_ids->find(tid);
-                    if (it_task == task_ids->end())
+                    cmd_task_status cts;
+                    cts.task_id = it->first;
+                    cts.status = it->second;
+                    ai::dbc::cmd_task_info info;
+                    if (read_task_info_from_db(cts.task_id, info))
                     {
-                        cmd_task_status cts;
-                        cts.task_id = tid;
-                        cts.status = task_unknown;
-                        cmd_resp->task_status_list.push_back(std::move(cts));
+                        cts.create_time = info.create_time;
+                    }
+                    cmd_resp->task_status_list.push_back(std::move(cts));
+                }
+                auto req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+                auto req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
+                if (!req_content)
+                {
+                    LOG_ERROR << "null ptr of req_content.";
+                    ret_code = E_DEFAULT;
+                    goto FINAL_PROC;
+                }
+                if (task_ids->size() < req_content->body.task_list.size())
+                {
+                    for (auto tid : req_content->body.task_list)
+                    {
+                        auto it_task = task_ids->find(tid);
+                        if (it_task == task_ids->end())
+                        {
+                            cmd_task_status cts;
+                            cts.task_id = tid;
+                            cts.status = task_unknown;
+                            cmd_resp->task_status_list.push_back(std::move(cts));
+                        }
                     }
                 }
             }
@@ -784,10 +786,10 @@ namespace ai
         FINAL_PROC:
             //return cmd resp
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
-            LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
             if (session)
             {
-                session->clear();
+                LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
+                session->clear(); 
                 this->remove_session(session_id);
             }
 
