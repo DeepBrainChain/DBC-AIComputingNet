@@ -87,9 +87,9 @@ namespace ai
 
             bool write_task_info_to_db(ai::dbc::cmd_task_info &task_info);
 
-            bool read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> task_infos);
+            bool read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> &task_infos, uint32_t filter_status = 0);
 
-            bool read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> task_infos);
+            bool read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> &task_infos, uint32_t filter_status = 0);
 
             bool read_task_info_from_db(std::string task_id, ai::dbc::cmd_task_info &task_info);
 
