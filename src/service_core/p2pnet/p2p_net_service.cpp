@@ -531,6 +531,8 @@ namespace matrix
 
         bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version)
         {
+            LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
+
             tcp::endpoint ep;
             if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
             {
@@ -579,6 +581,102 @@ namespace matrix
             return true;
         }
 
+        bool p2p_net_service::add_peer_node(std::shared_ptr<message> &msg)
+        { 
+            if (!msg)
+            {
+                LOG_ERROR << "null ptr of msg";
+                return false;
+            }
+
+            string nid;
+            socket_id sid = msg->header.src_sid;
+            int32_t core_version, protocol_version;
+            network_address peer_addr;
+
+            if (msg->get_name() == VER_REQ)
+            {
+                auto req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
+                if (!req_content)
+                {
+                    LOG_ERROR << "ver_req, req_content is null.";
+                    return false;
+                }
+
+                nid = req_content->body.node_id;
+                core_version = req_content->body.core_version;
+                protocol_version = req_content->body.protocol_version;
+                peer_addr = req_content->body.addr_me;
+            }
+            else
+            {
+                auto rsp_content = std::dynamic_pointer_cast<matrix::service_core::ver_resp>(msg->content);
+                if (!rsp_content)
+                {
+                    LOG_ERROR << "ver_resp, rsp_content is null.";
+                    return false;
+                }
+                nid = rsp_content->body.node_id;
+                core_version = rsp_content->body.core_version;
+                protocol_version = rsp_content->body.protocol_version;
+            }
+            
+            LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
+            if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
+            {
+                LOG_WARNING << "duplicated node id: " << nid;
+                return false;
+            }
+          
+            tcp::endpoint ep;
+            auto ptr_ch = CONNECTION_MANAGER->get_channel(sid);
+            if (!ptr_ch)
+            {
+                LOG_ERROR << "not find in connected channels: " << sid.to_string();
+                return false;
+            }     
+            auto ptr_tcp_ch = std::dynamic_pointer_cast<matrix::core::tcp_socket_channel>(ptr_ch);
+            if (ptr_tcp_ch)
+            {
+                //prerequisite: channel has started
+                ep = ptr_tcp_ch->get_remote_addr();
+                if (exist_peer_node(ep))
+                {
+                    LOG_WARNING << "a new channel established, but remote addr exist in peer_node_list: " << ep.address().to_string() << ":" << ep.port();
+                    return false;//exist a p2p channel
+                }
+            }
+            else
+            {
+                LOG_ERROR << nid << "not find in connected channels.";
+                return false;
+            }
+
+            std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
+            node->m_id = nid;
+            node->m_sid = sid;
+            node->m_core_version = core_version;
+            node->m_protocol_version = protocol_version;
+            node->m_connected_time = std::time(nullptr);
+            node->m_live_time = 0;
+            node->m_connection_status = connected;
+            if (msg->get_name() == VER_RESP)
+            {
+                node->m_peer_addr = ep;
+            }
+            else
+            {
+                node->m_peer_addr = endpoint_address(peer_addr.ip, peer_addr.port);
+            }
+            node->m_local_addr = ptr_tcp_ch->get_local_addr();
+
+            write_lock_guard<rw_lock> lock(m_nodes_lock);
+            m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
+            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port();
+
+            return true;
+        }
+        
         void p2p_net_service::remove_peer_node(const std::string &id)
         {
             write_lock_guard<rw_lock> lock(m_nodes_lock);
@@ -606,12 +704,13 @@ namespace matrix
 
         int32_t p2p_net_service::on_ver_req(std::shared_ptr<message> &msg)
         {
-            std::shared_ptr<matrix::service_core::ver_req> req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
+            auto req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg->content);
             if (!req_content)
             {
                 LOG_ERROR << "recv ver_req, but req_content is null.";
                 return E_DEFAULT;
             }
+
             //filter node which connects to the same node(maybe another process with same nodeid)   
             auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
             if (ch)
@@ -645,7 +744,7 @@ namespace matrix
 
             LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
             //add new peer node
-            if (!add_peer_node(msg->header.src_sid, req_content->body.node_id, req_content->body.core_version, req_content->body.protocol_version))
+            if(!add_peer_node(msg))
             {
                 LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed.";
                 if (ch)
@@ -704,7 +803,7 @@ namespace matrix
             }
 
             //add new peer node
-            if (!add_peer_node(msg->header.src_sid, resp_content->body.node_id, resp_content->body.core_version, resp_content->body.protocol_version))
+            if(!add_peer_node(msg))
             {
                 LOG_ERROR << "add node( " << resp_content->body.node_id << " ) failed.";
                 return E_DEFAULT;
