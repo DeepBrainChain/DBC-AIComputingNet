@@ -52,6 +52,8 @@ namespace matrix
 
             virtual channel_type get_type() = 0;
 
+            virtual bool is_logined() = 0;
+
         };
     }
 }

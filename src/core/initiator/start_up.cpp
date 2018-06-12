@@ -38,6 +38,7 @@ int main_task(int argc, char* argv[])
     }
 
     g_server->idle();
+    LOG_INFO << "dbc start to exit...";
     g_server->exit();
 
     LOG_DEBUG << "------dbc shut down------";

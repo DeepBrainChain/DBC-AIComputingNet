@@ -49,6 +49,8 @@ namespace matrix
 
             virtual int32_t on_after_msg_received(message &msg) = 0;
 
+            virtual bool is_logined() = 0;
+
         };
 
     }

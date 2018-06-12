@@ -67,6 +67,8 @@ namespace matrix
 
             virtual int32_t on_before_msg_receive() { return E_SUCCESS; }
 
+            virtual bool is_logined() { return m_login_success; }
+
         protected:
 
             virtual void start_shake_hand_timer();

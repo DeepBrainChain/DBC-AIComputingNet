@@ -78,6 +78,7 @@ namespace matrix
                             expr::stream
                                     << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
                                     << " | " << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
+                                    << "|" << __FILE__ << "|" << __LINE__ 
                                     << " | " << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
                                     << " | " << expr::smessage
                     )
