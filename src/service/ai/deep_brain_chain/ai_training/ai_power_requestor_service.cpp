@@ -586,9 +586,13 @@ namespace ai
             //cache task infos to show on cmd console
             auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
 
-            //TODO ...: sort by create_time
-
-
+            //sort by create_time
+            std::sort(vec_task_infos_to_show->begin(), vec_task_infos_to_show->end(), [](auto task1, auto task2) -> bool { return task1.create_time >= task2.create_time; });
+            //debug
+            for (auto t : *vec_task_infos_to_show)
+            {
+                cout << t.task_id << "-----" << t.create_time << endl;
+            }
 
             //prepare for resp
             std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -618,7 +622,7 @@ namespace ai
                 {
                     if (vec_task_infos_to_show->size() >= MAX_TASK_SHOWN_ON_LIST)
                         break;
-                    if (0 != info.status | (task_succefully_closed | task_abnormally_closed))
+                    if (0 != (info.status | (task_succefully_closed | task_abnormally_closed)))
                     {
                         vec_task_infos_to_show->push_back(info);
                     }
