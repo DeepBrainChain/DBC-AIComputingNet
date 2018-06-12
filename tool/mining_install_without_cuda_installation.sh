@@ -3,7 +3,7 @@
 cpu_tensorflow_path="dbctraining/tensorflow-cpu-0.1.0:v1"
 gpu_tensorflow_path="dbctraining/tensorflow-gpu-0.1.0:v1"
 cuda8_cudnn6="dbctraining/cuda8.0-cudnn6-tensorflow1.3-ubuntu16.04:v1"
-# add more images
+# add more images...
 
 ubuntu_version=`lsb_release -r --short`
 if [ $ubuntu_version != "16.04" ]; then
