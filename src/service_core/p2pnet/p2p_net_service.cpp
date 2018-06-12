@@ -1110,17 +1110,14 @@ namespace matrix
 
             if (node)//broadcast one node
             {
-                if (node->m_sid.get_type() == CLIENT_SOCKET)
-                {
-                    //body
-                    matrix::service_core::peer_node_info info;
-                    assign_peer_info(info, node);
-                    info.service_list.push_back(std::string("ai_training"));
-                    resp_content->body.peer_nodes_list.push_back(std::move(info));
-                    resp_msg->set_content(resp_content);
+                //body
+                matrix::service_core::peer_node_info info;
+                assign_peer_info(info, node);
+                info.service_list.push_back(std::string("ai_training"));
+                resp_content->body.peer_nodes_list.push_back(std::move(info));
+                resp_msg->set_content(resp_content);
 
-                    CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
-                }
+                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
             }
             else// broadcast all nodes
             {
@@ -1134,13 +1131,10 @@ namespace matrix
                             LOG_ERROR << "peer node(" << it->second->m_id << ") is myself.";
                             continue;
                         }     
-                        if (it->second->m_sid.get_type() == CLIENT_SOCKET)
-                        {
-                            matrix::service_core::peer_node_info info;
-                            assign_peer_info(info, it->second);
-                            info.service_list.push_back(std::string("ai_training"));
-                            resp_content->body.peer_nodes_list.push_back(std::move(info));
-                        }
+                        matrix::service_core::peer_node_info info;
+                        assign_peer_info(info, it->second);
+                        info.service_list.push_back(std::string("ai_training"));
+                        resp_content->body.peer_nodes_list.push_back(std::move(info));
                     }
                 }
                 //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
