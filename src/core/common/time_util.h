@@ -25,7 +25,7 @@ namespace matrix
             static std::string time_2_str(time_t t)
             {
                 struct tm _tm;
-                errno_t err = 0;
+                int err = 0;
 #ifdef WIN32
                 err = localtime_s(&_tm, &t);
                 if (err != 0)
@@ -37,8 +37,8 @@ namespace matrix
                 localtime_r(&t, &_tm);
 #endif
                 char buf[256];
-                memset(buf, 0, __crt_countof(buf));
-                strftime(buf, __crt_countof(buf), "%Y-%M-%D %H%M%S", &_tm);
+                memset(buf, 0, sizeof(buf));
+                strftime(buf, sizeof(buf), "%Y-%M-%D %H%M%S", &_tm);
 
                 return buf;
             }
