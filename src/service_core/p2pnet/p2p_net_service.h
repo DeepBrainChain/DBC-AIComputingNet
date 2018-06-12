@@ -82,6 +82,8 @@ namespace matrix
 
             bool add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version);
 
+            bool add_peer_node(std::shared_ptr<message> &msg);
+
             void remove_peer_node(const std::string &id);
 
             bool exist_peer_node(tcp::endpoint ep);
