@@ -20,7 +20,9 @@
 #include <boost/log/utility/setup/console.hpp>  
 #include <boost/log/utility/exception_handler.hpp>
 #include <boost/log/support/date_time.hpp>
+#include <boost/log/attributes/mutable_constant.hpp>
 #include "common.h"
+#include <string>
 
 
 namespace logging = boost::log;
@@ -38,11 +40,33 @@ namespace keywords = boost::log::keywords;
 #define LOG_ERROR              BOOST_LOG_TRIVIAL(error)
 #define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal)
 
+//#define LOG_DEBUG \
+//   BOOST_LOG_STREAM_WITH_PARAMS( \
+//      (::boost::log::trivial::logger::get()), \
+//         (matrix::core::set_get_attrib("File", matrix::core::path_to_filename(__FILE__))) \
+//         (matrix::core::set_get_attrib("Line", __LINE__)) \
+//         (::boost::log::keywords::severity = (boost::log::trivial::debug)) \
+//   )
+
+
 
 namespace matrix
 {
     namespace core
     {
+        // Set attribute and return the new value
+        template<typename ValueType>
+        static ValueType set_get_attrib(const char* name, ValueType value) {
+            auto attr = logging::attribute_cast<attrs::mutable_constant<ValueType>>(logging::core::get()->get_global_attributes()[name]);
+            attr.set(value);
+            return attr.get();
+        }
+
+        // Convert file path to only the filename
+        static std::string path_to_filename(std::string path) {
+            return path.substr(path.find_last_of("/\\") + 1);
+        }
+
         struct log_exception_handler
         {
             void operator() (std::runtime_error const& e) const
@@ -66,7 +90,7 @@ namespace matrix
 //#ifdef __DEBUG
 //                logging::add_console_log(std::clog, keywords::format = "[%TimeStamp%][%Severity%]: %Message%");
 //#endif
-                
+
                 auto sink = logging::add_file_log
                 (
                     //attribute
@@ -78,8 +102,9 @@ namespace matrix
                             expr::stream
                                     << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
                                     << " | " << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
-                                    << "|" << __FILE__ << "|" << __LINE__ 
                                     << " | " << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
+                                    << "[" << expr::attr<std::string>("File")
+                                    << ":" << expr::attr<int>("Line") << "] "
                                     << " | " << expr::smessage
                     )
                 );
