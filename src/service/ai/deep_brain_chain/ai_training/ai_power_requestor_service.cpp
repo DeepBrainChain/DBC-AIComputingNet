@@ -265,7 +265,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::string>().empty())
+            if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::vector<std::string>>().empty())
             {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "ai training task config file's option peer_nodes_list is empty";
