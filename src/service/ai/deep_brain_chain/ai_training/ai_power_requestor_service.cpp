@@ -231,7 +231,7 @@ namespace ai
             if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
             {
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "entry_file name is not validate or entry_file is not .py file type ";
+                cmd_resp->result_info = "entry_file name is not valid or entry_file is not .py file type ";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
@@ -259,7 +259,7 @@ namespace ai
                 || E_SUCCESS != validate_ipfs_path(vm["data_dir"].as<std::string>()))
             {
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "code_dir or data_dir path is not validate";
+                cmd_resp->result_info = "code_dir or data_dir path is not valid";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
