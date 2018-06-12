@@ -587,7 +587,8 @@ namespace ai
             auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
 
             //sort by create_time
-            std::sort(vec_task_infos_to_show->begin(), vec_task_infos_to_show->end(), [](auto task1, auto task2) -> bool { return task1.create_time >= task2.create_time; });
+            std::sort(vec_task_infos_to_show->begin(), vec_task_infos_to_show->end()
+                , [](ai::dbc::cmd_task_info &task1, ai::dbc::cmd_task_info &task2) -> bool { return task1.create_time >= task2.create_time; });
             //debug
             for (auto t : *vec_task_infos_to_show)
             {
