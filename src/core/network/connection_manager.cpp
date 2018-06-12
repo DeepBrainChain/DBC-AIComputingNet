@@ -365,7 +365,7 @@ namespace matrix
                 }
 
                 //stop
-                LOG_DEBUG << "connection manager release connect at sid: " << sid.to_string();
+                LOG_DEBUG << "connection manager release connector of sid: " << sid.to_string();
                 (*it)->stop();
 
                 //erase
@@ -453,6 +453,11 @@ namespace matrix
                 {
                     if (it->first == id)
                         continue;
+                }
+                if (!it->second->is_logined())
+                {
+                    LOG_DEBUG << "peer socket " << it->first.get_id() << "not logined.";
+                    continue;
                 }
 				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
 				it->second->write(msg);

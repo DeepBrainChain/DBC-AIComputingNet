@@ -68,6 +68,15 @@ namespace matrix
 
             io_service *get_io_service() { return m_ios.get(); }
 
+            bool is_logined() 
+            {
+                if (m_socket_handler)
+                {
+                    return m_socket_handler->is_logined();
+                }
+                return false;
+            }
+
         protected:
 
             void init_option();

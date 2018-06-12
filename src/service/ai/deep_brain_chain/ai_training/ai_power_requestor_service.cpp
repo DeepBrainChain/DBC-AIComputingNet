@@ -513,7 +513,7 @@ namespace ai
                 //public resp directly
                 std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "node id not exists";
+                cmd_resp->result_info = "task id not exists";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
@@ -544,17 +544,9 @@ namespace ai
 
         int32_t ai_power_requestor_service::on_cmd_list_training_req(const std::shared_ptr<message> &msg)
         {
-            auto cmd_req = std::dynamic_pointer_cast<cmd_list_training_req>(msg->get_content());
-            std::shared_ptr<message> req_msg = std::make_shared<message>();
-            auto req_content = std::make_shared<matrix::service_core::list_training_req>();
-            
-            //header
-            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-            req_content->header.__set_msg_name(LIST_TRAINING_REQ);
-            req_content->header.__set_nonce(id_generator().generate_nonce());
-            req_content->header.__set_session_id(id_generator().generate_session_id());
-            
-            //body
+            auto cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
+
+            auto cmd_req = std::dynamic_pointer_cast<cmd_list_training_req>(msg->get_content());            
             std::vector<ai::dbc::cmd_task_info> vec_task_infos;
             if (1 == cmd_req->list_type) //0: list all tasks; 1: list specific tasks
             {
@@ -566,7 +558,7 @@ namespace ai
             }
             else
             {
-                if (!read_task_info_from_db(vec_task_infos))//TODO ...: filter out completed tasks;
+                if (!read_task_info_from_db(vec_task_infos))
                 {
                     LOG_ERROR << "failed to load all task info from db.";
                 }
@@ -577,17 +569,78 @@ namespace ai
             {
                 std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "task list is empty";
+                if (1 == cmd_req->list_type)
+                {
+                    cmd_resp->result_info = "specified task not exist";
+                }
+                else
+                {
+                    cmd_resp->result_info = "task list is empty";
+                }
 
                 //return cmd resp
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
                 return E_SUCCESS;
             }
+            
+            //cache task infos to show on cmd console
+            auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
 
+            //TODO ...: sort by create_time
+
+
+
+            //prepare for resp
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            auto req_content = std::make_shared<matrix::service_core::list_training_req>();
+
+            //header
+            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            req_content->header.__set_msg_name(LIST_TRAINING_REQ);
+            req_content->header.__set_nonce(id_generator().generate_nonce());
+            req_content->header.__set_session_id(id_generator().generate_session_id());
+
+            //body
             for (auto info : vec_task_infos)
             {
-                //TODO ...: filter out completed task
-                req_content->body.task_list.push_back(info.task_id);
+                //filter out closed task
+                if (0 != (info.status & (task_succefully_closed | task_abnormally_closed)))
+                {
+                    req_content->body.task_list.push_back(info.task_id);
+                    vec_task_infos_to_show->push_back(info);
+                }
+            }
+
+            //prepare infos to show on cmd console
+            if (0 == cmd_req->list_type)
+            {
+                for (auto info : vec_task_infos)
+                {
+                    if (vec_task_infos_to_show->size() >= MAX_TASK_SHOWN_ON_LIST)
+                        break;
+                    if (0 != info.status | (task_succefully_closed | task_abnormally_closed))
+                    {
+                        vec_task_infos_to_show->push_back(info);
+                    }
+                }
+            }
+            //check if no need network req
+            if (req_content->body.task_list.empty())
+            {
+                //return cmd resp
+                int cnt = 0;
+                cmd_resp->result = E_DEFAULT;
+                for (auto info : *vec_task_infos_to_show)
+                {
+                    cmd_task_status cts;
+                    cts.task_id = info.task_id;
+                    cts.status = info.status;
+                    cts.create_time = info.create_time;
+                    cmd_resp->task_status_list.push_back(std::move(cts));
+                }
+                
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+                return E_SUCCESS;
             }
 
             req_msg->set_content(req_content);
@@ -604,7 +657,10 @@ namespace ai
             variable_value val;
             val.value() = req_msg;
             session->get_context().add("req_msg", val);
-
+            //cache task infos to show on cmd console
+            variable_value show_tasks;
+            show_tasks.value() = vec_task_infos_to_show;
+            session->get_context().add("show_tasks", show_tasks);
             variable_value task_ids;
             task_ids.value() = std::make_shared<std::unordered_map<std::string, int8_t>>();
             session->get_context().add("task_ids", task_ids);
@@ -664,7 +720,7 @@ namespace ai
             variables_map & vm = session->get_context().get_args();
             assert(vm.count("req_msg") > 0);
             assert(vm.count("task_ids") > 0);
-            std::shared_ptr<std::unordered_map<std::string, int8_t>> task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
+            auto task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
             std::shared_ptr<message> req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
 
             for (auto ts : rsp_content->body.task_status_list)
@@ -681,21 +737,24 @@ namespace ai
                 return E_SUCCESS;
             }
 
+            auto vec_task_infos_to_show = vm["show_tasks"].as<std::shared_ptr<std::vector<ai::dbc::cmd_task_info>>>();
             //publish cmd resp
             std::shared_ptr<ai::dbc::cmd_list_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-            for (auto it = task_ids->begin(); it != task_ids->end(); it++)
+            for (auto info : *vec_task_infos_to_show)
             {
-                cmd_task_status cts;
-                cts.task_id = it->first;
-                cts.status = it->second;
-                ai::dbc::cmd_task_info info;
-                if (read_task_info_from_db(cts.task_id, info))
+                auto it = task_ids->find(info.task_id);
+                if (it != task_ids->end())
                 {
-                    cts.create_time = info.create_time;
+                    info.status = it->second;
+                    write_task_info_to_db(info);
                 }
 
+                cmd_task_status cts;
+                cts.task_id = info.task_id;
+                cts.status = info.status;
+                cts.create_time = info.create_time;
                 cmd_resp->task_status_list.push_back(std::move(cts));
             }
 

@@ -71,7 +71,7 @@ namespace matrix
             if (true == m_connected)
             {
                 m_reconnect_timer_handler = nullptr;
-                LOG_DEBUG << "tcp connector stop: has connected to remote server and return";
+                LOG_DEBUG << "tcp connector stop: has connected to remote server; no need to stop more.";
                 return E_SUCCESS;
             }
 

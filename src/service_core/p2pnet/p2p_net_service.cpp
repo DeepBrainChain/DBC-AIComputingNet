@@ -33,7 +33,7 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace matrix::core;
 
-const uint32_t max_reconnect_times = 100;
+const uint32_t max_reconnect_times = 2;
 const uint32_t max_connected_cnt = 200;
 const uint32_t max_connect_per_check = 10;
 
@@ -574,7 +574,7 @@ namespace matrix
             
             write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
-            LOG_DEBUG << "add a new peer_node, remote addr: " << ep.address().to_string() << ":" << ep.port();
+            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port();
 
             return true;
         }
@@ -583,6 +583,7 @@ namespace matrix
         {
             write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.erase(id);
+            LOG_INFO << "remove node(" << id << ")";
         }
 
         bool p2p_net_service::exist_peer_node(tcp::endpoint ep)
@@ -611,7 +612,7 @@ namespace matrix
                 LOG_ERROR << "recv ver_req, but req_content is null.";
                 return E_DEFAULT;
             }
-            //filter node which connects to the same node(maybe another process with same nodeid)                
+            //filter node which connects to the same node(maybe another process with same nodeid)   
             auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
             if (ch)
             {
@@ -637,7 +638,7 @@ namespace matrix
                     }
                     else
                     {
-                        LOG_ERROR << "recv ver_req but not in peer_candidates";
+                        LOG_INFO << "recv a new peer(" << req_content->body.node_id << ")";
                     }
                 }                
             }
@@ -681,6 +682,26 @@ namespace matrix
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::dynamic_pointer_cast<matrix::service_core::ver_resp>(msg->content);
 
             LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id;
+
+            auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
+            if (ch)
+            {
+                auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
+                if (tcp_ch)
+                {
+                    auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                        , [=](peer_candidate& pc) -> bool { return tcp_ch->get_remote_addr() == pc.tcp_ep; });
+                    if (it != m_peer_candidates.end())
+                    {
+                        it->node_id = resp_content->body.node_id;
+                    }
+                    else
+                    {
+                        LOG_INFO << "recv a ver resp, but it's a new peer(" << resp_content->body.node_id << ")" 
+                            << "sid: " << msg->header.src_sid.to_string();
+                    }
+                }
+            }
 
             //add new peer node
             if (!add_peer_node(msg->header.src_sid, resp_content->body.node_id, resp_content->body.core_version, resp_content->body.protocol_version))
@@ -729,6 +750,7 @@ namespace matrix
                 if (it->second->m_sid == sid)
                 {
                     m_peer_nodes_map.erase(it);
+                    LOG_INFO << "remove node(" << it->first << "), sid: " << sid.to_string();
                     break;
                 }
             }
@@ -941,6 +963,7 @@ namespace matrix
                     if (it_pc == m_peer_candidates.end())
                     {
                         peer_candidate pc(ep, ns_idle);
+                        pc.node_id = it->peer_node_id;
                         m_peer_candidates.push_back(std::move(pc));
                     }
                 }
@@ -988,14 +1011,17 @@ namespace matrix
 
             if (node)//broadcast one node
             {
-                //body
-                matrix::service_core::peer_node_info info;
-                assign_peer_info(info, node);
-                info.service_list.push_back(std::string("ai_training"));
-                resp_content->body.peer_nodes_list.push_back(std::move(info));
-                resp_msg->set_content(resp_content);
+                if (node->m_sid.get_type() == CLIENT_SOCKET)
+                {
+                    //body
+                    matrix::service_core::peer_node_info info;
+                    assign_peer_info(info, node);
+                    info.service_list.push_back(std::string("ai_training"));
+                    resp_content->body.peer_nodes_list.push_back(std::move(info));
+                    resp_msg->set_content(resp_content);
 
-                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
+                    CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
+                }
             }
             else// broadcast all nodes
             {
@@ -1008,11 +1034,14 @@ namespace matrix
                             //assert(0); //should never occur
                             LOG_ERROR << "peer node(" << it->second->m_id << ") is myself.";
                             continue;
-                        }                            
-                        matrix::service_core::peer_node_info info;
-                        assign_peer_info(info, it->second);
-                        info.service_list.push_back(std::string("ai_training"));
-                        resp_content->body.peer_nodes_list.push_back(std::move(info));
+                        }     
+                        if (it->second->m_sid.get_type() == CLIENT_SOCKET)
+                        {
+                            matrix::service_core::peer_node_info info;
+                            assign_peer_info(info, it->second);
+                            info.service_list.push_back(std::string("ai_training"));
+                            resp_content->body.peer_nodes_list.push_back(std::move(info));
+                        }
                     }
                 }
                 //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
