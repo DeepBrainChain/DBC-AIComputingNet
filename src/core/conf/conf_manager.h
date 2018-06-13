@@ -96,6 +96,8 @@ namespace matrix
 
             bool count(const std::string& name) const { return m_args.count(name);}
 
+            int32_t gen_new_nodeid();
+
         protected:
 
             variables_map m_args;
