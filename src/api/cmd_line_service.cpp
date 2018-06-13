@@ -389,7 +389,7 @@ namespace ai
                 opts.add_options()
                     ("help,h", "get task running logs")
                     ("tail", bpo::value<std::string>(), "get log from tail")
-                    //("head", bpo::value<std::string>(), "get log from head")
+                    ("head", bpo::value<std::string>(), "get log from head")
                     ("task,t", bpo::value<std::string>(), "task id");
 
                 //parse
@@ -409,11 +409,11 @@ namespace ai
                         req->head_or_tail = GET_LOG_TAIL;          //get log from tail
                         number_of_lines = vm["tail"].as<std::string>();
                     }
-                    //else if (vm.count("head"))
-                    //{
-                    //    req->head_or_tail = GET_LOG_HEAD;          //get log from head
-                    //    number_of_lines = vm["head"].as<std::string>();
-                    //}
+                    else if (vm.count("head"))
+                    {
+                        req->head_or_tail = GET_LOG_HEAD;          //get log from head
+                        number_of_lines = vm["head"].as<std::string>();
+                    }
                     else
                     {
                         req->head_or_tail = GET_LOG_TAIL;          //get log from tail
@@ -436,6 +436,7 @@ namespace ai
                         {
                             cout << argv[0] << " tail number_of_lines must < " << MAX_NUMBER_OF_LINES << endl;
                             cout << opts;
+                            return;
                         }
 
                         req->number_of_lines = (uint16_t)lines;
