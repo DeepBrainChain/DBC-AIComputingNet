@@ -152,6 +152,7 @@ namespace ai
             cmd_resp->result = E_SUCCESS;
             cmd_resp->task_info.task_id = "";
             cmd_resp->task_info.create_time = time(nullptr);
+            cmd_resp->task_info.status = task_unknown;
 
             std::shared_ptr<base> content = msg->get_content();
             std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
@@ -608,8 +609,8 @@ namespace ai
             //body
             for (auto info : vec_task_infos)
             {
-                //filter out closed task
-                if (0 != (info.status & (task_succefully_closed | task_abnormally_closed)))
+                //add unclosed task to request
+                if (info.status & (task_unknown | task_queueing | task_running))
                 {
                     req_content->body.task_list.push_back(info.task_id);
                     vec_task_infos_to_show->push_back(info);
@@ -623,7 +624,8 @@ namespace ai
                 {
                     if (vec_task_infos_to_show->size() >= MAX_TASK_SHOWN_ON_LIST)
                         break;
-                    if (0 != (info.status | (task_succefully_closed | task_abnormally_closed)))
+                    //append some closed task to show on cmd console
+                    if (info.status & (task_stopped | task_succefully_closed | task_abnormally_closed))
                     {
                         vec_task_infos_to_show->push_back(info);
                     }

@@ -36,7 +36,7 @@ namespace matrix
         enum CLIENT_CONNECT_STATUS
         {
             CLIENT_CONNECT_SUCCESS      =   0,
-            CLIENT_CONNECT_ERROR
+            CLIENT_CONNECT_FAIL
         };
 
         class client_tcp_connect_notification : public message

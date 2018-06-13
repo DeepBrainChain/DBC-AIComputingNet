@@ -606,7 +606,6 @@ namespace matrix
                 nid = req_content->body.node_id;
                 core_version = req_content->body.core_version;
                 protocol_version = req_content->body.protocol_version;
-                peer_addr = req_content->body.addr_me;
             }
             else
             {
@@ -666,7 +665,8 @@ namespace matrix
             }
             else
             {
-                node->m_peer_addr = endpoint_address(peer_addr.ip, peer_addr.port);
+                //temp: supposed addr
+                node->m_peer_addr = endpoint_address(ep.address().to_string(), std::atoi(CONF_MANAGER->get_net_listen_port().c_str()));
             }
             node->m_local_addr = ptr_tcp_ch->get_local_addr();
 

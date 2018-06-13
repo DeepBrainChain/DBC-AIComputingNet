@@ -56,7 +56,11 @@ namespace matrix
                     return;
                 }
 
-                LOG_DEBUG << "tcp_connector reconnect timer expires and begin to async connect.";
+                if (self)
+                {
+                    const tcp::endpoint &ep = self->get_connect_addr();
+                    LOG_DEBUG << "tcp_connector reconnect to " << ep.address().to_string() << ":" << ep.port();
+                }
                 async_connect();
             };
 
@@ -133,14 +137,14 @@ namespace matrix
             }
             else
             {
-                LOG_ERROR << "Reach reconnect threshold. " <<
+                LOG_INFO << "Reach reconnect threshold. " <<
                              " address: " << m_connect_addr <<
                              " , reconnect times: " << m_reconnect_times <<
                              errorinfo <<
                              " , " << m_sid.to_string() ;
 
                 //not reconnect, just notification
-                connect_notification(CLIENT_CONNECT_ERROR);
+                connect_notification(CLIENT_CONNECT_FAIL);
             }
         }
 
