@@ -12,6 +12,7 @@
 #include "document.h"
 #include "prettywriter.h"
 #include "stringbuffer.h"
+#include "error/en.h"
 
 namespace matrix
 {
@@ -208,8 +209,12 @@ namespace matrix
             {
                 //parse resp
                 rapidjson::Document doc;
-                doc.Parse<0>(buf.c_str());
-
+                //doc.Parse<0>(buf.c_str());
+                if (doc.Parse<0>(buf.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
+                    return;
+                }
                 //id
                 if (false == doc.HasMember("Id"))
                 {
