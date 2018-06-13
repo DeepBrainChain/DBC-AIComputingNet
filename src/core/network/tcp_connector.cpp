@@ -75,7 +75,7 @@ namespace matrix
             if (true == m_connected)
             {
                 m_reconnect_timer_handler = nullptr;
-                LOG_DEBUG << "tcp connector stop: has connected to remote server; no need to stop more.";
+                LOG_DEBUG << "tcp connector stop: has connected to remote server; sid: " << m_sid.to_string() << "; no need to stop more.";
                 return E_SUCCESS;
             }
 
@@ -163,7 +163,7 @@ namespace matrix
             //modify by regulus:if error isn't report and the connection isn't valid, then the system will be crash in channel->start
             try
             {
-                std::shared_ptr<tcp_socket_channel> channel = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel);
+                auto channel = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel);
                 //start to work
                 if (E_SUCCESS != m_client_channel->start())
                 {
@@ -199,8 +199,7 @@ namespace matrix
         {
             auto msg = std::make_shared<client_tcp_connect_notification>();
 
-            msg->header.src_sid = this->m_sid;
-//            msg->ep = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_remote_addr();
+            msg->header.src_sid = m_sid;
             msg->ep = m_connect_addr;
             msg->status = status;
 

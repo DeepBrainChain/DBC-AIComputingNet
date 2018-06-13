@@ -176,7 +176,7 @@ namespace ai
                 }
             
                 console_printer printer;
-                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 64)(LEFT_ALIGN, 20)(LEFT_ALIGN, 10);
+                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 16);
 
                 printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << matrix::core::endl;
                 int i = 0;

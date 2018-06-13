@@ -456,7 +456,7 @@ namespace ai
                 {
                     cmd_resp->result = E_DEFAULT;
                     cmd_resp->result_info = "training task file does not exist";
-                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
 
                     return E_DEFAULT;
                 }
@@ -586,10 +586,14 @@ namespace ai
             
             //cache task infos to show on cmd console
             auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
+            for (auto t : vec_task_infos)
+            {
+                vec_task_infos_to_show->push_back(t);
+            }
 
             //sort by create_time
             std::sort(vec_task_infos_to_show->begin(), vec_task_infos_to_show->end()
-                , [](ai::dbc::cmd_task_info &task1, ai::dbc::cmd_task_info &task2) -> bool { return task1.create_time >= task2.create_time; });
+                , [](ai::dbc::cmd_task_info task1, ai::dbc::cmd_task_info task2) -> bool { return task1.create_time > task2.create_time; });
             //debug
             for (auto t : *vec_task_infos_to_show)
             {

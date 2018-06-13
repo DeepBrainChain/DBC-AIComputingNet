@@ -365,7 +365,7 @@ namespace ai
 
             if (0 == m_training_tasks.size())
             {
-                LOG_DEBUG << "ai power provider service training queuing task is empty";
+                LOG_DEBUG << "ai power provider service training task is empty";
                 return E_SUCCESS;
             }
 
