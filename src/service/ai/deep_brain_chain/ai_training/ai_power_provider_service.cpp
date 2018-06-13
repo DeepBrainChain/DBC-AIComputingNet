@@ -485,7 +485,7 @@ namespace ai
             //content body
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
-            log.__set_log_content((nullptr == container_resp) ? "get log content error" : std::move(format_logs(container_resp->log_content)));
+            log.__set_log_content((nullptr == container_resp) ? "get log content error" : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
             log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
 
             rsp_content->body.__set_log(log);
@@ -499,7 +499,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        std::string ai_power_provider_service::format_logs(const std::string  &raw_logs)
+        std::string ai_power_provider_service::format_logs(const std::string  &raw_logs, uint16_t max_lines)
         {
             //docker logs has special format with each line of log:
             // 0x01 0x00  0x00 0x00 0x00 0x00 0x00 0x38
@@ -510,7 +510,7 @@ namespace ai
 
             int push_char_count = 0;
             const char *p = raw_logs.c_str();
-
+            uint16_t line_count = 1;
             for (size_t i = 0; i < size; )
             {
                 //0x30 0x0d 0x0a 
@@ -518,6 +518,11 @@ namespace ai
                     && (0x30 == *p)
                     && (0x0d == *(p + 1))
                     && (0x0a == *(p + 2)))
+                {
+                    break;
+                }
+
+                if (max_lines != 0 && line_count > max_lines)
                 {
                     break;
                 }
@@ -536,7 +541,14 @@ namespace ai
                     continue;
                 }
 
-                log_vector[push_char_count++] = *p++;
+                log_vector[push_char_count] = *p++;
+
+                if (log_vector[push_char_count] == '\n')
+                {
+                    line_count++;
+                }
+
+                ++push_char_count;
                 i++;
             }
 
