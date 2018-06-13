@@ -102,6 +102,29 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t conf_manager::gen_new_nodeid()
+        {
+            //node info
+            node_info info;
+            id_generator gen;
+            int32_t ret = gen.generate_node_info(info);                 //check: if exists, not init again and print promption.
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "dbc_server_initiator init node info error";
+                return ret;
+            }
+
+            //serialization
+            ret = conf_manager::serialize_node_info(info);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "dbc node info serialization failed: node_id=" << info.node_id;
+                return ret;
+            }
+            LOG_DEBUG << "dbc_server_initiator init node info successfully, node_id: " << info.node_id;
+            return E_SUCCESS;
+        }
+
         int32_t conf_manager::parse_node_dat()
         {
             //node dat description
@@ -113,9 +136,22 @@ namespace matrix
             //node.dat path
             fs::path node_dat_path = env_manager::get_dat_path();
             node_dat_path /= fs::path(NODE_FILE_NAME);
+            
             if (!fs::exists(node_dat_path) || fs::is_empty(node_dat_path))
             {
-                std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
+                //if not exist then gen new nodeid
+                int32_t gen_ret = gen_new_nodeid();
+                if (gen_ret != E_SUCCESS)
+                {
+                    LOG_ERROR << "generate new nodeid error.";
+                    return gen_ret;
+                }
+            }
+
+            if (!fs::exists(node_dat_path) || fs::is_empty(node_dat_path))
+            {
+                //std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
+                LOG_ERROR << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." ;
                 return E_DEFAULT;
             }
 
@@ -128,7 +164,8 @@ namespace matrix
             }
             catch (const boost::exception & e)
             {
-                std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
+                //std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
+                LOG_ERROR << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited.";
                 LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
                 return E_DEFAULT;
             }
