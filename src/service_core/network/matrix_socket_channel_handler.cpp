@@ -47,7 +47,13 @@ namespace matrix
         {
             if (in.get_valid_read_len() > 0)
             {
-                m_decoder->recv_message(in);
+                decode_status recv_status = m_decoder->recv_message(in);
+                if (recv_status != DECODE_SUCCESS)
+                {
+                    LOG_ERROR << "recv error msg." << m_sid.to_string();
+                    return recv_status;
+                }
+
                 while (m_decoder->has_complete_message())
                 {
                     shared_ptr<message> msg = std::make_shared<message>();
