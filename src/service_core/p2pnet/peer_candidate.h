@@ -17,6 +17,7 @@
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include "util.h"
+#include "error/en.h"
 
 using namespace std;
 #ifdef WIN32
@@ -151,9 +152,14 @@ namespace matrix
             {
                 rj::Document doc;
                 doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str());
-                //transfer to cands
-                if (!doc.HasMember("peer_cands"))
+                if (doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
                     return E_DEFAULT;
+                }
+                ////transfer to cands
+                //if (!doc.HasMember("peer_cands"))
+                //    return E_DEFAULT;
                 rj::Value &val_arr = doc["peer_cands"];
                 if (val_arr.IsArray())
                 {
