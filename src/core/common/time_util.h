@@ -30,7 +30,7 @@ namespace matrix
                 err = localtime_s(&_tm, &t);
                 if (err != 0)
                 {
-                    std::cout << "get local time err: " << err << std::endl;
+                    //std::cout << "get local time err: " << err << std::endl;
                     return "";
                 }
 #else

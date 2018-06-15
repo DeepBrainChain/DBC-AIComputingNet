@@ -814,22 +814,21 @@ namespace matrix
 
         int32_t p2p_net_service::on_tcp_channel_error(std::shared_ptr<message> &msg)
         {
-            if (msg)
+            if (!msg)
             {
                 LOG_ERROR << "null ptr of msg;";
                 return E_NULL_POINTER;
             }
 
             socket_id  sid = msg->header.src_sid;
-            LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string();
-
             //find and update peer candidate
             std::shared_ptr<tcp_socket_channel_error_msg> err_msg = std::dynamic_pointer_cast<tcp_socket_channel_error_msg>(msg);
-            if (err_msg)
+            if (!err_msg)
             {
                 LOG_ERROR << "null ptr of err_msg: " << sid.to_string();
                 return E_NULL_POINTER;
-            }
+            }  
+            LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string() << "---" << err_msg->ep.address().to_string() << ":" << err_msg->ep.port();
 
             std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
                 , [=](peer_candidate& pc) -> bool { return err_msg->ep == pc.tcp_ep; });
