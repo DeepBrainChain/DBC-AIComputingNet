@@ -59,7 +59,7 @@ namespace matrix
 
         int32_t tcp_socket_channel::stop()
         {
-            LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string();
+            LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string() << "---" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
 
             m_stopped = true;           //notify nio call back function, now i'm stopped and should exit ASAP
 
@@ -91,7 +91,7 @@ namespace matrix
             }
 
             std::unique_lock<std::mutex> lock(m_queue_mutex);
-            LOG_DEBUG << "tcp socket channel clear send queue: " << m_sid.to_string();
+            LOG_DEBUG << "tcp socket channel clear send queue: " << m_sid.to_string() << "---" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             m_send_queue.clear();
 
             return E_SUCCESS;
@@ -162,6 +162,7 @@ namespace matrix
 
                 //other error
                 LOG_ERROR << "tcp socket channel on read error: " << error.value() << " "  << error.message() << m_sid.to_string();
+                LOG_DEBUG << "tcp read error: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
                 on_error();
                 return;
             }
@@ -410,6 +411,7 @@ namespace matrix
         void tcp_socket_channel::on_error()
         {
             LOG_ERROR << "tcp socket channel error and ready to say bye!" << m_sid.to_string();
+            LOG_DEBUG << "on_error: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
             error_notify();
             this->stop();
         }
@@ -425,6 +427,7 @@ namespace matrix
             std::shared_ptr<message> msg = std::dynamic_pointer_cast<message>(error_msg);
 
             //notify this to service layer
+            LOG_DEBUG << "error_notify: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
         }
 
