@@ -544,6 +544,7 @@ namespace matrix
         {
             LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
 
+            write_lock_guard<rw_lock> lock(m_nodes_lock);
             tcp::endpoint ep;
             if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
             {
@@ -583,11 +584,10 @@ namespace matrix
             node->m_live_time = 0;
             node->m_connection_status = connected;
             node->m_peer_addr = ptr_tcp_ch->get_remote_addr();
-            node->m_local_addr = ptr_tcp_ch->get_local_addr();
+            node->m_local_addr = ptr_tcp_ch->get_local_addr();            
             
-            write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
-            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port();
+            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port() << sid.to_string();
 
             return true;
         }
@@ -683,7 +683,7 @@ namespace matrix
 
             write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
-            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port();
+            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port() << "sid=" << sid.to_string();
 
             return true;
         }
