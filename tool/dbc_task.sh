@@ -152,7 +152,7 @@ echo "======================================================="
 echo -n "begin to exec task: "
 echo $home_dir/$code_dir_hash/$task
 cd $home_dir/$code_dir_hash/
-python ./$task
+python ./$task | tee /training_result_file
 
 if [ $? -ne 0 ]; then
 	echo "exec task failed and dbc_task.sh exit"
@@ -161,6 +161,9 @@ fi
 
 echo -n "end to exec task: "
 echo $home_dir/$code_dir_hash/$task
+
+echo "start to upload training_result"
+python /upload_training_result.py
 
 
 

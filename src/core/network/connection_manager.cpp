@@ -391,7 +391,6 @@ namespace matrix
             else
             {
                 LOG_DEBUG << "connection manager add channel successfully " << sid.to_string();
-                LOG_DEBUG << "channel add channel end use count " << channel.use_count() << channel->id().to_string();
 
                 return E_SUCCESS;
             }
@@ -435,7 +434,7 @@ namespace matrix
             auto it = m_channels.find(sid);
             if (it == m_channels.end())
             {
-                LOG_ERROR << "connection manager send message failed for not found " << sid.to_string();
+                LOG_ERROR << "connection manager send message failed: channel not found " << sid.to_string();
                 return E_DEFAULT;
             }
 
