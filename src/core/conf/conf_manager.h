@@ -98,6 +98,9 @@ namespace matrix
 
             int32_t gen_new_nodeid();
 
+
+            bool check_node_info();
+
         protected:
 
             variables_map m_args;

@@ -2,6 +2,7 @@
 #pragma once
 
 #include<string>
+#include<vector>
 
 
 #define NODE_ID_VERSION                          '0'
@@ -36,6 +37,10 @@ namespace matrix
 
             std::string generate_task_id();
 
+            //bool check_node_info(const std::string & node_id, const std::string & node_privarte_key);
+            bool check_node_id(const std::string & node_id);
+            
+            bool check_node_private_key(const std::string & node_privarte_key);
         private:
 
         };

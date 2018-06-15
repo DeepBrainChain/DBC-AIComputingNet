@@ -108,6 +108,71 @@ namespace matrix
             return EncodeBase58Check(task_id_data);
         }
 
+        //bool id_generator::check_node_info(const std::string & node_id, const std::string & node_privarte_key)
+        //{
+        //    std::vector<unsigned char> vch_nodeid_ret;
+        //    std::vector<unsigned char> vch_private_key_ret;
+
+        //    check_node_id(node_id, vch_nodeid_ret);
+        //    check_node_private_key(node_privarte_key, vch_private_key_ret);
+        //    
+        //    //CKey secret;
+        //    ////secret.MakeNewKey(true);
+        //    //secret.Set(vch_private_key_ret.begin(), vch_private_key_ret.end(), true);
+        //    //CPubKey pubkey(vch_nodeid_ret.begin(), vch_nodeid_ret.end());
+        //    //CPrivKey private_key;
+        //    //private_key.insert(private_key.end(), vch_private_key_ret.begin(), vch_private_key_ret.end());
+        //    //check_ret = secret.Load(private_key, pubkey, false);
+
+        //    return 0;
+        //}
+
+        bool id_generator::check_node_id(const std::string & node_id)
+        {
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(node_id, vchRet) != true)
+            {
+                return false;
+            }
+            std::vector<unsigned char> id_prefix = { 'n', 'o', 'd', 'e', '.', NODE_ID_VERSION, '.' };
+            std::vector<unsigned char>::iterator it1;
+            std::vector<unsigned char>::iterator it2;
+            for (it1 = id_prefix.begin(), it2 = vchRet.begin(); it1 != id_prefix.end() && it2 != vchRet.end();)
+            {
+                if (*it1 != *it2)
+                {
+                    return false;
+                }
+                it2 = vchRet.erase(it2);
+                it1++;
+            }
+
+            return true;
+        }
+
+       bool id_generator::check_node_private_key(const std::string &node_privarte_key)
+       {
+           std::vector<unsigned char> vchRet;
+           if (DecodeBase58Check(node_privarte_key, vchRet) != true)
+           {
+               return false;
+           }
+
+           std::vector<unsigned char> private_key_prefix = { PRIVATE_KEY_VERSION, '.' };
+           std::vector<unsigned char>::iterator it_prfix;
+           std::vector<unsigned char>::iterator it_key;
+           for (it_prfix = private_key_prefix.begin(), it_key = vchRet.begin(); it_prfix != private_key_prefix.end() && it_key != vchRet.end(); )
+           {
+               if (*it_prfix != *it_key)
+               {
+                   return false;
+               }
+               it_key = vchRet.erase(it_key);
+               it_prfix++;
+           }
+           return true;
+       }
+
     }
 
 }
