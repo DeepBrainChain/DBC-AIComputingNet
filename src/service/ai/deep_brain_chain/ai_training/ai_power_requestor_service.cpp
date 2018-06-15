@@ -607,9 +607,13 @@ namespace ai
             {
                 //add unclosed task to request
                 if (info.status & (task_unknown | task_queueing | task_running))
-                {
-                    req_content->body.task_list.push_back(info.task_id);
-                    vec_task_infos_to_show->push_back(info);
+                {                    
+                    //case: more than MAX_TASK_SHOWN_ON_LIST
+                    if (vec_task_infos_to_show->size() < MAX_TASK_SHOWN_ON_LIST)
+                    {
+                        req_content->body.task_list.push_back(info.task_id);
+                        vec_task_infos_to_show->push_back(info);
+                    }
                 }
             }
 
@@ -839,6 +843,11 @@ namespace ai
                             cmd_task_status cts;
                             cts.task_id = tid;
                             cts.status = task_unknown;
+                            ai::dbc::cmd_task_info info;
+                            if (read_task_info_from_db(tid, info))
+                            {
+                                cts.create_time = info.create_time;
+                            }
                             cmd_resp->task_status_list.push_back(std::move(cts));
                         }
                     }

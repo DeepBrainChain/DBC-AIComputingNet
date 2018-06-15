@@ -473,6 +473,17 @@ namespace matrix
                         && it->reconn_cnt <= max_reconnect_times)
                     )
                 {
+                    //case: inverse connect to peer
+                    if (!it->node_id.empty())
+                    {
+                        read_lock_guard<rw_lock> lock(m_nodes_lock);
+                        if (m_peer_nodes_map.find(it->node_id) != m_peer_nodes_map.end())
+                        {
+                            //it->net_st = ns_in_use;//do not change state
+                            continue;
+                        }
+                    }
+                    
                     //connect
                     it->last_conn_tm = time(nullptr);
                     it->net_st = ns_in_use;
