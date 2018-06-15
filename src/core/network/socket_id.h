@@ -50,9 +50,9 @@ namespace matrix
 
             socket_id & operator=(const socket_id &sid) { this->m_id = sid.m_id; this->m_type = sid.m_type; return *this; }
 
-            bool operator==(const socket_id &sid) { return m_id == sid.get_id() || m_type == sid.get_type(); }
+            //bool operator==(const socket_id &sid) { return (m_id == sid.get_id()) && (m_type == sid.get_type()); }
 
-            bool operator!=(const socket_id &sid) { return !(*this == sid); }
+            //bool operator!=(const socket_id &sid) { return !(*this == sid); }
 
             std::string to_string() const 
             { 
@@ -70,9 +70,14 @@ namespace matrix
 
         inline bool operator==(const socket_id &s1, const socket_id &s2)
         {
-            return (s1.get_id() == s2.get_id()) && (s1.get_type() && s2.get_type());
+            return (s1.get_id() == s2.get_id()) && (s1.get_type() == s2.get_type());
         }
 
+        inline bool operator!=(const socket_id &s1, const socket_id &s2)
+        {
+            return !(s1 == s2);
+        }
+        
         class cmp_key
         {
         public:
