@@ -350,9 +350,9 @@ namespace ai
 
         int32_t ai_power_provider_service::on_list_training_req(std::shared_ptr<message> &msg)
         {
-            LOG_DEBUG << "ai power provider service relay broadcast list_training req to neighbor peer nodes";
             std::shared_ptr<list_training_req> req_content = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
             assert(nullptr != req_content);
+            LOG_DEBUG << "on_list_training_req recv req, nonce: " << req_content->header.nonce << ", session: " << req_content->header.session_id;
 
             if (req_content->body.task_list.size() == 0)
             {
@@ -369,9 +369,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::make_shared<matrix::service_core::list_training_resp>();
-
-            int32_t count = 0;
+            std::vector<matrix::service_core::task_status> status_list;
             for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
             {
                 //find task
@@ -384,31 +382,52 @@ namespace ai
                 matrix::service_core::task_status ts;
                 ts.task_id = it_task->second->task_id;
                 ts.status = it_task->second->status;
-                rsp_content->body.task_status_list.push_back(ts);
+                status_list.push_back(ts);
+                LOG_DEBUG << "on_list_training_req task: " << ts.task_id << "--" << to_training_task_status_string(ts.status);
 
-                //should restrict max count
-                if (++count > MAX_LIST_TASK_COUNT || it + 1 == req_content->body.task_list.end())
+                if (status_list.size() >= MAX_LIST_TASK_COUNT)
                 {
-                    if (!rsp_content->body.task_status_list.empty())
-                    {
-                        //content header
-                        rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-                        rsp_content->header.__set_msg_name(LIST_TRAINING_RESP);
-                        rsp_content->header.__set_nonce(id_generator().generate_nonce());
-                        rsp_content->header.__set_session_id(req_content->header.session_id);
+                    std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::make_shared<matrix::service_core::list_training_resp>();
+                    //content header
+                    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+                    rsp_content->header.__set_msg_name(LIST_TRAINING_RESP);
+                    rsp_content->header.__set_nonce(id_generator().generate_nonce());
+                    rsp_content->header.__set_session_id(req_content->header.session_id);
 
-                        //resp msg
-                        std::shared_ptr<message> resp_msg = std::make_shared<message>();
-                        resp_msg->set_name(LIST_TRAINING_RESP);
-                        resp_msg->set_content(rsp_content);
-                        CONNECTION_MANAGER->broadcast_message(resp_msg);
-                    }
+                    rsp_content->body.task_status_list.swap(status_list);
+                    status_list.clear(); 
 
-                    if (count > MAX_LIST_TASK_COUNT)
-                    {
-                        count = 0;
-                    }
-                }
+                    //resp msg
+                    std::shared_ptr<message> resp_msg = std::make_shared<message>();
+                    resp_msg->set_name(LIST_TRAINING_RESP);
+                    resp_msg->set_content(rsp_content);
+                    CONNECTION_MANAGER->broadcast_message(resp_msg);   
+
+                    LOG_DEBUG << "on_list_training_req send resp, nonce: " << rsp_content->header.nonce << ", session: " << rsp_content->header.session_id
+                        << "task cnt: " << rsp_content->body.task_status_list.size();
+                 }
+            }
+            if (status_list.size() > 0)
+            {
+                std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::make_shared<matrix::service_core::list_training_resp>();
+                //content header
+                rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+                rsp_content->header.__set_msg_name(LIST_TRAINING_RESP);
+                rsp_content->header.__set_nonce(id_generator().generate_nonce());
+                rsp_content->header.__set_session_id(req_content->header.session_id);
+
+                rsp_content->body.task_status_list.swap(status_list);
+
+                //resp msg
+                std::shared_ptr<message> resp_msg = std::make_shared<message>();
+                resp_msg->set_name(LIST_TRAINING_RESP);
+                resp_msg->set_content(rsp_content);
+                CONNECTION_MANAGER->broadcast_message(resp_msg);
+
+                status_list.clear();
+
+                LOG_DEBUG << "on_list_training_req send resp, nonce: " << rsp_content->header.nonce << ", session: " << rsp_content->header.session_id
+                    << "task cnt: " << rsp_content->body.task_status_list.size();
             }
 
             return E_SUCCESS;
