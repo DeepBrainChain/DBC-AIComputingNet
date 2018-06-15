@@ -456,7 +456,7 @@ namespace ai
                 {
                     cmd_resp->result = E_DEFAULT;
                     cmd_resp->result_info = "training task file does not exist";
-                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
 
                     return E_DEFAULT;
                 }
@@ -480,6 +480,7 @@ namespace ai
                     ai::dbc::cmd_task_info task_info;
                     task_info.create_time = time(nullptr);
                     task_info.task_id = req_content->body.task_id;
+                    task_info.status = task_unknown;
                     cmd_resp->task_info_list.push_back(task_info);
 
                     //flush to db
@@ -588,13 +589,8 @@ namespace ai
             auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
 
             //sort by create_time
-            std::sort(vec_task_infos_to_show->begin(), vec_task_infos_to_show->end()
-                , [](ai::dbc::cmd_task_info &task1, ai::dbc::cmd_task_info &task2) -> bool { return task1.create_time >= task2.create_time; });
-            //debug
-            for (auto t : *vec_task_infos_to_show)
-            {
-                cout << t.task_id << "-----" << t.create_time << endl;
-            }
+            std::sort(vec_task_infos.begin(), vec_task_infos.end()
+                , [](ai::dbc::cmd_task_info task1, ai::dbc::cmd_task_info task2) -> bool { return task1.create_time > task2.create_time; });
 
             //prepare for resp
             std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -611,9 +607,13 @@ namespace ai
             {
                 //add unclosed task to request
                 if (info.status & (task_unknown | task_queueing | task_running))
-                {
-                    req_content->body.task_list.push_back(info.task_id);
-                    vec_task_infos_to_show->push_back(info);
+                {                    
+                    //case: more than MAX_TASK_SHOWN_ON_LIST
+                    if (vec_task_infos_to_show->size() < MAX_TASK_SHOWN_ON_LIST)
+                    {
+                        req_content->body.task_list.push_back(info.task_id);
+                        vec_task_infos_to_show->push_back(info);
+                    }
                 }
             }
 
@@ -843,6 +843,11 @@ namespace ai
                             cmd_task_status cts;
                             cts.task_id = tid;
                             cts.status = task_unknown;
+                            ai::dbc::cmd_task_info info;
+                            if (read_task_info_from_db(tid, info))
+                            {
+                                cts.create_time = info.create_time;
+                            }
                             cmd_resp->task_status_list.push_back(std::move(cts));
                         }
                     }
@@ -964,23 +969,31 @@ namespace ai
             }
             task_infos.clear();
 
-            //read from db           
-            std::unique_ptr<leveldb::Iterator> it;
-            it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
-            for (it->SeekToFirst(); it->Valid(); it->Next())
+            //read from db   
+            try
             {
-                //deserialization
-                std::shared_ptr<byte_buf> buf(new byte_buf);
-                buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-                binary_protocol proto(buf.get());
-                ai::dbc::cmd_task_info t_info;
-                t_info.read(&proto);
-
-                if (0 == (filter_status & t_info.status))
+                std::unique_ptr<leveldb::Iterator> it;
+                it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
+                for (it->SeekToFirst(); it->Valid(); it->Next())
                 {
-                    task_infos.push_back(std::move(t_info));
-                    LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
-                }                
+                    //deserialization
+                    std::shared_ptr<byte_buf> buf(new byte_buf);
+                    buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
+                    binary_protocol proto(buf.get());
+                    ai::dbc::cmd_task_info t_info;
+                    t_info.read(&proto);
+
+                    if (0 == (filter_status & t_info.status))
+                    {
+                        task_infos.push_back(std::move(t_info));
+                        LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                    }                
+                }
+            }
+            catch (...)
+            {
+                LOG_ERROR << "ai power requester service read task: broken data format";
+                return false;
             }
 
             return !task_infos.empty();
