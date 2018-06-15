@@ -102,6 +102,25 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        bool conf_manager::check_node_info()
+        {
+            id_generator gen;
+
+            if (gen.check_node_id(m_node_id) != true)
+            {
+                LOG_ERROR << "node id check failed";
+                return false;
+            }
+
+            if (gen.check_node_private_key(m_node_private_key) != true)
+            {
+                LOG_ERROR << "node private_key check failed";
+                return false;
+            }
+
+            return true;
+        }
+
         int32_t conf_manager::gen_new_nodeid()
         {
             //node info
@@ -197,6 +216,12 @@ namespace matrix
                 LOG_ERROR << "conf_manager has no node type error";
                 return E_DEFAULT;
             }
+
+            if (check_node_info() != true)
+            {
+                return E_DEFAULT;
+            }
+            
             m_net_type = m_args["net_type"].as<std::string>();
 
             //net flag
