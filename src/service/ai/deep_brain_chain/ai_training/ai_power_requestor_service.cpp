@@ -480,6 +480,7 @@ namespace ai
                     ai::dbc::cmd_task_info task_info;
                     task_info.create_time = time(nullptr);
                     task_info.task_id = req_content->body.task_id;
+                    task_info.status = task_unknown;
                     cmd_resp->task_info_list.push_back(task_info);
 
                     //flush to db
@@ -586,19 +587,10 @@ namespace ai
             
             //cache task infos to show on cmd console
             auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
-            for (auto t : vec_task_infos)
-            {
-                vec_task_infos_to_show->push_back(t);
-            }
 
             //sort by create_time
-            std::sort(vec_task_infos_to_show->begin(), vec_task_infos_to_show->end()
+            std::sort(vec_task_infos.begin(), vec_task_infos.end()
                 , [](ai::dbc::cmd_task_info task1, ai::dbc::cmd_task_info task2) -> bool { return task1.create_time > task2.create_time; });
-            //debug
-            for (auto t : *vec_task_infos_to_show)
-            {
-                cout << t.task_id << "-----" << t.create_time << endl;
-            }
 
             //prepare for resp
             std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -968,23 +960,31 @@ namespace ai
             }
             task_infos.clear();
 
-            //read from db           
-            std::unique_ptr<leveldb::Iterator> it;
-            it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
-            for (it->SeekToFirst(); it->Valid(); it->Next())
+            //read from db   
+            try
             {
-                //deserialization
-                std::shared_ptr<byte_buf> buf(new byte_buf);
-                buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-                binary_protocol proto(buf.get());
-                ai::dbc::cmd_task_info t_info;
-                t_info.read(&proto);
-
-                if (0 == (filter_status & t_info.status))
+                std::unique_ptr<leveldb::Iterator> it;
+                it.reset(m_req_training_task_db->NewIterator(leveldb::ReadOptions()));
+                for (it->SeekToFirst(); it->Valid(); it->Next())
                 {
-                    task_infos.push_back(std::move(t_info));
-                    LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
-                }                
+                    //deserialization
+                    std::shared_ptr<byte_buf> buf(new byte_buf);
+                    buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
+                    binary_protocol proto(buf.get());
+                    ai::dbc::cmd_task_info t_info;
+                    t_info.read(&proto);
+
+                    if (0 == (filter_status & t_info.status))
+                    {
+                        task_infos.push_back(std::move(t_info));
+                        LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                    }                
+                }
+            }
+            catch (...)
+            {
+                LOG_ERROR << "ai power requester service read task: broken data format";
+                return false;
             }
 
             return !task_infos.empty();
