@@ -107,7 +107,7 @@ namespace matrix
                 auto range = m_topic_registry.equal_range(msg_type);
                 if (range.first == range.second)
                 {
-                    LOG_ERROR << "topic manager could not find topic invoke function: " << topic;
+                    LOG_ERROR << "1 topic manager could not find topic invoke function: " << topic;
                     return;
                 }
 
@@ -129,7 +129,7 @@ namespace matrix
                 auto range = m_topic_registry.equal_range(msg_type);
                 if (range.first == m_topic_registry.end())
                 {
-                    LOG_ERROR << "topic manager could not find topic invoke function: " << topic;
+                    LOG_ERROR << "2 topic manager could not find topic invoke function: " << topic;
                     return;
                 }
 
