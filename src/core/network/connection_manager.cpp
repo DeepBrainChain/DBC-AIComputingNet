@@ -453,11 +453,13 @@ namespace matrix
                     if (it->first == id)
                         continue;
                 }
+                
                 if (!it->second->is_logined())
                 {
-                    LOG_DEBUG << "peer socket " << it->first.get_id() << "not logined.";
+                    LOG_DEBUG << "connection manager broadcast message, but peer socket id: " << it->first.get_id() << " not logined.";
                     continue;
                 }
+                
 				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
 				it->second->write(msg);
 			}			
