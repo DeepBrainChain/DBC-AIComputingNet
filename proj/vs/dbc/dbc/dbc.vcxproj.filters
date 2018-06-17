@@ -379,6 +379,9 @@
     <ClCompile Include="..\..\..\..\src\core\conf\net_type_params.cpp">
       <Filter>src\core\conf</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\log\log.cpp">
+      <Filter>src\core\log</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">

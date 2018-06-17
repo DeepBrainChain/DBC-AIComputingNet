@@ -152,7 +152,7 @@ namespace matrix
             }
             else
             {
-                LOG_DEBUG << "service module message queue full";
+                LOG_ERROR << "service module message queue full";
                 return E_MSG_QUEUE_FULL;
             }
 

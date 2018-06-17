@@ -32,13 +32,28 @@ namespace expr = boost::log::expressions;
 namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 
+extern const char * get_short_file_name(const char * file_path);
 
+#ifndef LOG_DEBUG_INFO_ADDED
+#define LOG_DEBUG_INFO_ADDED
+#define __SHORT_FILE__        get_short_file_name(__FILE__)
+#endif
+
+#ifdef LOG_DEBUG_INFO_ADDED
+#define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)        << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#define LOG_DEBUG               BOOST_LOG_TRIVIAL(debug)     << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#define LOG_INFO                   BOOST_LOG_TRIVIAL(info)          << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#define LOG_WARNING         BOOST_LOG_TRIVIAL(warning) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#define LOG_ERROR               BOOST_LOG_TRIVIAL(error)       << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#define LOG_FATAL                BOOST_LOG_TRIVIAL(fatal)         << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#else
 #define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)
 #define LOG_DEBUG              BOOST_LOG_TRIVIAL(debug)
 #define LOG_INFO                  BOOST_LOG_TRIVIAL(info)
 #define LOG_WARNING         BOOST_LOG_TRIVIAL(warning)
 #define LOG_ERROR              BOOST_LOG_TRIVIAL(error)
 #define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal)
+#endif
 
 //#define LOG_DEBUG \
 //   BOOST_LOG_STREAM_WITH_PARAMS( \
@@ -103,8 +118,8 @@ namespace matrix
                                     << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
                                     << " | " << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
                                     << " | " << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
-                                    << "[" << expr::attr<std::string>("File")
-                                    << ":" << expr::attr<int>("Line") << "] "
+                                    //<< "[" << expr::attr<std::string>("File")
+                                    //<< ":" << expr::attr<int>("Line") << "] "
                                     << " | " << expr::smessage
                     )
                 );
