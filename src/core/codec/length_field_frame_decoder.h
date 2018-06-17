@@ -86,7 +86,7 @@ namespace matrix
             virtual decode_status decode(channel_handler_context &ctx, std::shared_ptr<message> &message)
             {
                 net_message &net_msg = m_recv_messages.front();
-
+                LOG_DEBUG << "decode buf: " << net_msg.get_message_stream().to_string();
                 if (!net_msg.complete())
                 {
                     m_recv_messages.push_back(std::move(net_msg));

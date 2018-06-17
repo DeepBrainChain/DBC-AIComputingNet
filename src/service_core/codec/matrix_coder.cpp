@@ -178,11 +178,6 @@ namespace matrix
             //body invoker
             auto invoker = it->second;
             invoker(msg, header, proto);
-
-            //pass context to caller
-            variable_value val;
-            val.value() = header.__isset.nonce ? header.nonce : DEFAULT_STRING;
-            ctx.get_args().insert(std::make_pair("nonce", val));
             
             return DECODE_SUCCESS;
         }
@@ -251,11 +246,6 @@ namespace matrix
 
             content->header.write(proto.get());
             content->body.write(proto.get());
-
-            //pass context to caller
-            variable_value val;
-            val.value() = content->header.__isset.nonce ? content->header.nonce : DEFAULT_STRING;
-            ctx.get_args().insert(std::make_pair("nonce", val));
         }
 
         decode_status matrix_coder::recv_message(byte_buf &in)
