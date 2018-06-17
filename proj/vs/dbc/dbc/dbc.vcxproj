@@ -199,6 +199,7 @@
     <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server_initiator_factory.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\start_up.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\log\log.cpp" />
     <ClCompile Include="..\..\..\..\src\core\math\os_math.cpp" />
     <ClCompile Include="..\..\..\..\src\core\memory\byte_buf.cpp" />
     <ClCompile Include="..\..\..\..\src\core\memory\cleanse.cpp" />

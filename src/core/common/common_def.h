@@ -23,6 +23,7 @@
 #define TEST_NET_TYPE                                                       "test"
 #define DEFAULT_NET_TYPE                                                  MAIN_NET_TYPE
 
+#define DEFAULT_CHAR_STRING                                         ""
 
 extern std::string DEFAULT_STRING;
 extern std::string DEFAULT_IP_V4;
