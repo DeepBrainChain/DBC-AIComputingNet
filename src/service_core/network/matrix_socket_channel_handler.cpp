@@ -90,11 +90,11 @@ namespace matrix
                             {
                                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
-                                LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce << m_sid.to_string()
+                                LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce << m_sid.to_string();
                             }
                             else
                             {
-                                LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce << m_sid.to_string()
+                                LOG_DEBUG << "matrix socket channel handler received duplicated msg: " << msg->get_name() << ", nonce: " << nonce << m_sid.to_string();
                             }
                         }
 
