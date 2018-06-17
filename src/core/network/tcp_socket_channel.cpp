@@ -303,7 +303,9 @@ namespace matrix
                 LOG_DEBUG << "tcp socket channel has been stopped and async_write exit directly: " << m_sid.to_string();
                 return;
             }
-            LOG_DEBUG << m_sid.to_string() << "tcp socket channel tcp_socket_channel::async_write " << m_sid.to_string() << " send buf: " << msg_buf->to_string();
+            
+            LOG_DEBUG << "tcp socket channel tcp_socket_channel::async_write" << m_sid.to_string() << " send buf: " << msg_buf->to_string();
+            
             m_socket.async_write_some(boost::asio::buffer(msg_buf->get_read_ptr(), msg_buf->get_valid_read_len()),
                 boost::bind(&tcp_socket_channel::on_write, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
         }
