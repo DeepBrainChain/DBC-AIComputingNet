@@ -79,10 +79,12 @@ namespace matrix
                         if (msg->get_name() != SHAKE_HAND_REQ
                             && msg->get_name() != SHAKE_HAND_RESP)
                         {
-                            variables_map & vm = ctx.get_args();
-                            assert(vm.count("nonce") > 0);
-                            const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
-
+                            if (nullptr == msg || nullptr == msg->content )
+                            {
+                                LOG_ERROR << "decode error, msg is null" << m_sid.to_string();
+                                return DECODE_ERROR;
+                            }
+                            const std::string & nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : DEFAULT_STRING ;
                             //check msg duplicated
                             if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
                             {
@@ -131,10 +133,7 @@ namespace matrix
                 if (msg.get_name() != SHAKE_HAND_REQ
                     && msg.get_name() != SHAKE_HAND_RESP)
                 {
-                    variables_map & vm = ctx.get_args();
-                    assert(vm.count("nonce") > 0);
-                    const std::string & nonce = vm.count("nonce") ? vm["nonce"].as<std::string>() : DEFAULT_STRING;
-
+                    const std::string & nonce = (msg.content)->header.__isset.nonce ? (msg.content)->header.nonce : DEFAULT_STRING;
                     //insert nonce to avoid receive msg sent by itself
                     service_proto_filter::get_mutable_instance().insert_nonce(nonce);
 
