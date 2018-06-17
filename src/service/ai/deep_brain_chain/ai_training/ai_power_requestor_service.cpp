@@ -129,7 +129,7 @@ namespace ai
             leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
             if (false == status.ok())
             {
-                LOG_ERROR << "ai power requester service init training task db error: " << status.ToString();
+                LOG_ERROR << "ai power requestor service init training task db error: " << status.ToString();
                 return E_DEFAULT;
             }
 
@@ -324,7 +324,7 @@ namespace ai
             req_msg->set_content(broadcast_req_content);
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
-            LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
+            LOG_DEBUG << "ai power requestor service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
 
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
@@ -390,7 +390,7 @@ namespace ai
 
             if (!cmd_req_content)
             {
-                LOG_ERROR << "ai power requester service on cmd start multi training received null msg";
+                LOG_ERROR << "ai power requestor service on cmd start multi training received null msg";
 
                 //error resp
                 cmd_resp->result = E_DEFAULT;
@@ -448,27 +448,34 @@ namespace ai
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
+            
             //send to net
             for (auto &file : files) 
             {
                 fs::path task_file_path = fs::system_complete(fs::path(file.c_str()));
-                if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
+                if (false == fs::exists(task_file_path) || (false == fs::is_regular_file(task_file_path)))
                 {
-                    cmd_resp->result = E_DEFAULT;
-                    cmd_resp->result_info = "training task file does not exist";
-                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
+                    LOG_ERROR << "ai power requestor service file not exists or error: " << file;
 
-                    return E_DEFAULT;
+                    ai::dbc::cmd_task_info task_info;
+                    task_info.create_time = time(nullptr);
+                    task_info.result = file + ": task config file error";
+
+                    cmd_resp->task_info_list.push_back(task_info);
+
+                    continue;
                 }
 
                 auto req_msg = create_task_msg_from_file(file, opts);
 
                 if (nullptr == req_msg)
                 {
-                    LOG_ERROR << "ai power requester service create task msg from file error: " << file;
+                    LOG_ERROR << "ai power requestor service create task msg from file error: " << file;
+                    
                     ai::dbc::cmd_task_info task_info;
                     task_info.create_time = time(nullptr);
-                    task_info.result = file + ":  parse task config error";
+                    task_info.result = file + ": parse task config error";
+                    
                     cmd_resp->task_info_list.push_back(task_info);
                 }
                 else
@@ -477,10 +484,12 @@ namespace ai
 
                     std::shared_ptr<matrix::service_core::start_training_req> req_content = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(req_msg->content);
                     assert(nullptr != req_content);
+                    
                     ai::dbc::cmd_task_info task_info;
                     task_info.create_time = time(nullptr);
                     task_info.task_id = req_content->body.task_id;
                     task_info.status = task_unknown;
+                    
                     cmd_resp->task_info_list.push_back(task_info);
 
                     //flush to db
@@ -511,7 +520,7 @@ namespace ai
             //check valid
             if (!is_task_exist_in_db(task_id))
             {
-                LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
+                LOG_ERROR << "ai power requestor service cmd stop task, task id invalid: " << task_id;
                 //public resp directly
                 std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
                 cmd_resp->result = E_DEFAULT;
@@ -676,7 +685,7 @@ namespace ai
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "ai power requester service list training add session error: " << session->get_session_id();
+                LOG_ERROR << "ai power requestor service list training add session error: " << session->get_session_id();
 
                 //remove timer
                 remove_timer(timer_id);
@@ -690,7 +699,7 @@ namespace ai
                 return E_DEFAULT;
             }
             
-            LOG_DEBUG << "ai power requester service list training add session: " << session->get_session_id();
+            LOG_DEBUG << "ai power requestor service list training add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
@@ -720,7 +729,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
             if (nullptr == session)
             {
-                LOG_DEBUG << "ai power requester service get session null: " << rsp_content->header.session_id;
+                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
                 return E_DEFAULT;
             }
 
@@ -740,7 +749,7 @@ namespace ai
 
             if (task_ids->size() < req_content->body.task_list.size())
             {
-                LOG_DEBUG << "ai power requester service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
+                LOG_DEBUG << "ai power requestor service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
                 return E_SUCCESS;
             }
 
@@ -799,7 +808,7 @@ namespace ai
                 session = get_session(session_id);
                 if (nullptr == session)
                 {
-                    LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
+                    LOG_ERROR << "ai power requestor service list training timer get session null: " << session_id;
                     ret_code =  E_DEFAULT;
                     goto FINAL_PROC;
                 }
@@ -859,7 +868,7 @@ namespace ai
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
             if (session)
             {
-                LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
+                LOG_DEBUG << "ai power requestor service list training timer time out remove session: " << session_id;
                 session->clear(); 
                 this->remove_session(session_id);
             }
@@ -923,7 +932,7 @@ namespace ai
             }
             catch (...)
             {
-                LOG_ERROR << "maybe some keys not exist in " << task_file;
+                LOG_ERROR << "ai power requestor service create task msg from file maybe some keys not exist in file: " << task_file;
                 return nullptr;
             }
  
@@ -953,10 +962,11 @@ namespace ai
             leveldb::Status s = m_req_training_task_db->Put(write_options, task_info.task_id, slice);
             if (!s.ok())
             {
-                LOG_ERROR << "write task(" << task_info.task_id << ") failed: " << s.ToString();
+                LOG_ERROR << "ai power requestor service write task to db, task id: " << task_info.task_id << " failed: " << s.ToString();
                 return false;
             }
 
+            LOG_ERROR << "ai power requestor service write task to db, task id: " << task_info.task_id;
             return true;
         }
 
@@ -986,13 +996,13 @@ namespace ai
                     if (0 == (filter_status & t_info.status))
                     {
                         task_infos.push_back(std::move(t_info));
-                        LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                        LOG_DEBUG << "ai power requestor service read task: " << t_info.task_id;
                     }                
                 }
             }
             catch (...)
             {
-                LOG_ERROR << "ai power requester service read task: broken data format";
+                LOG_ERROR << "ai power requestor service read task: broken data format";
                 return false;
             }
 
@@ -1033,7 +1043,7 @@ namespace ai
                 if (0 == (filter_status & t_info.status))
                 {
                     task_infos.push_back(std::move(t_info));
-                    LOG_DEBUG << "ai power requester service read task: " << t_info.task_id;
+                    LOG_DEBUG << "ai power requestor service read task: " << t_info.task_id;
                 }
             }
 
@@ -1093,7 +1103,7 @@ namespace ai
             auto cmd_req = std::dynamic_pointer_cast<cmd_logs_req>(msg->get_content());
             if (nullptr == cmd_req)
             {
-                LOG_ERROR << "ai power requester service cmd logs msg content nullptr";
+                LOG_ERROR << "ai power requestor service cmd logs msg content nullptr";
                 return E_DEFAULT;
             }
 
@@ -1105,7 +1115,7 @@ namespace ai
             leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), cmd_req->task_id, &task_value);
             if (!status.ok())
             {
-                LOG_ERROR << "ai power requester service cmd logs check task id error: " << cmd_req->task_id;                
+                LOG_ERROR << "ai power requestor service cmd logs check task id error: " << cmd_req->task_id;                
 
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "task id not found error";
@@ -1118,7 +1128,7 @@ namespace ai
             //check head or tail
             if (GET_LOG_HEAD != cmd_req->head_or_tail && GET_LOG_TAIL != cmd_req->head_or_tail)
             {
-                LOG_ERROR << "ai power requester service cmd logs check log direction error: " << std::to_string(cmd_req->head_or_tail);
+                LOG_ERROR << "ai power requestor service cmd logs check log direction error: " << std::to_string(cmd_req->head_or_tail);
 
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "log direction error";
@@ -1131,7 +1141,7 @@ namespace ai
             //check number of lines
             if (cmd_req->number_of_lines > MAX_NUMBER_OF_LINES)
             {
-                LOG_ERROR << "ai power requester service cmd logs check number of lines error: " << std::to_string(cmd_req->number_of_lines);
+                LOG_ERROR << "ai power requestor service cmd logs check number of lines error: " << std::to_string(cmd_req->number_of_lines);
 
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "number of lines error: should less than " + std::to_string(cmd_req->number_of_lines);
@@ -1174,7 +1184,7 @@ namespace ai
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "ai power requester service logs add session error: " << session->get_session_id();
+                LOG_ERROR << "ai power requestor service logs add session error: " << session->get_session_id();
 
                 //remove timer
                 remove_timer(timer_id);
@@ -1187,7 +1197,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            LOG_DEBUG << "ai power requester service logs add session: " << session->get_session_id();
+            LOG_DEBUG << "ai power requestor service logs add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
@@ -1214,7 +1224,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
             if (nullptr == session)         //not self or time out, try broadcast
             {
-                LOG_DEBUG << "ai power requester service get session null: " << rsp_content->header.session_id;
+                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
 
                 //broadcast resp
                 CONNECTION_MANAGER->broadcast_message(msg);
@@ -1255,7 +1265,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(session_id);
             if (nullptr == session)
             {
-                LOG_ERROR << "ai power requester service logs timer get session null: " << session_id;
+                LOG_ERROR << "ai power requestor service logs timer get session null: " << session_id;
                 return E_DEFAULT;
             }
 
