@@ -11,6 +11,7 @@ cp ../../tool/p ./
 cp ../../tool/mining_install.sh ./
 cp ../../tool/stopapp ./
 cp ../../tool/startapp ./
+cp ../../tool/rm_containers.sh ./
 chmod +x *
 cd ../
 tar -cvf dbc-linux-$version.tar $version 
