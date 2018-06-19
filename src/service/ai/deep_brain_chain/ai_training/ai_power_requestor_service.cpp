@@ -520,11 +520,11 @@ namespace ai
             //check valid
             if (!is_task_exist_in_db(task_id))
             {
-                LOG_ERROR << "ai power requestor service cmd stop task, task id invalid: " << task_id;
+                LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
                 //public resp directly
                 std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "task id not exists";
+                cmd_resp->result_info = "task id is invalid";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
