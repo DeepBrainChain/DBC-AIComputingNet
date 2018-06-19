@@ -478,6 +478,7 @@ namespace ai
 
             //get container logs
             const std::string &container_id = it->second->container_id;
+            
 
             std::shared_ptr<container_logs_req> container_req = std::make_shared<container_logs_req>();
             container_req->container_id = container_id;
@@ -486,11 +487,22 @@ namespace ai
             container_req->timestamps = true;
 
             std::string log_content;
-            std::shared_ptr<container_logs_resp> container_resp = m_container_client->get_container_log(container_req);
-            if (nullptr == container_resp)
+            std::shared_ptr<container_logs_resp> container_resp = nullptr;
+            if (!container_id.empty())
             {
-                LOG_ERROR << "ai power provider service get container logs error: " << task_id;
+                container_resp = m_container_client->get_container_log(container_req);
+                if (nullptr == container_resp)
+                {
+                    LOG_ERROR << "ai power provider service get container logs error: " << task_id;
+                    log_content = "get log content error";
+                }
             }
+            else
+            {
+                log_content = "log info query only valid when status is running or closed";
+            }
+             
+            
 
             //response content
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
@@ -504,7 +516,7 @@ namespace ai
             //content body
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
-            log.__set_log_content((nullptr == container_resp) ? "get log content error" : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
+            log.__set_log_content((nullptr == container_resp) ? log_content : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
             log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
 
             rsp_content->body.__set_log(log);
