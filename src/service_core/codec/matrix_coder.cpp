@@ -142,7 +142,7 @@ namespace matrix
             assert(in.get_valid_read_len() >= sizeof(matrix_packet_header));
 
             //packet len + packet type
-            int32_t *ptr = (int32_t *)in.get_read_ptr();
+            const int32_t *ptr = (int32_t *)in.get_read_ptr();
             packet_header.packet_len = byte_order::ntoh32(*ptr);
             packet_header.packet_type = byte_order::ntoh32(*(ptr + 1));
 
@@ -185,7 +185,7 @@ namespace matrix
         template<typename msg_type>
         void matrix_coder::decode_invoke(std::shared_ptr<message> &msg, base_header &header, std::shared_ptr<protocol> &proto)
         {
-            std::shared_ptr<msg_type> content(new msg_type);
+            std::shared_ptr<msg_type> content = std::make_shared<msg_type>();
 
             content->header = header;
             content->body.read(proto.get());
