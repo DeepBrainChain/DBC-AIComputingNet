@@ -176,10 +176,10 @@ namespace ai
                 }
             
                 console_printer printer;
-                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 16);
+                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 56)(LEFT_ALIGN, 24)(LEFT_ALIGN, 20);
 
                 printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << matrix::core::endl;
-                int i = 0;
+                int i = 1;
                 for (auto it = task_status_list.begin(); it != task_status_list.end(); ++it, ++i)
                 {
                     printer << matrix::core::init << i << it->task_id << time_util::time_2_str(it->create_time) 
@@ -210,15 +210,18 @@ namespace ai
                 }
 
                 auto it = v->peer_nodes_list.begin();
-                for (; it != v->peer_nodes_list.end(); it++)
+                for (; it != v->peer_nodes_list.end(); ++it)
                 {
-                    std::string service_list;
-                    for (auto svc : it->service_list)
+                    std::string svc_list;
+                    for (auto its = it->service_list.begin(); its != it->service_list.end(); ++its)
                     {
-                        service_list += svc;
-                        service_list += "|";
+                        svc_list += *its;
+                        if (its + 1 != it->service_list.end())
+                        {
+                            svc_list += "|";
+                        }
                     }
-                    printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << service_list << matrix::core::endl;
+                    printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << svc_list << matrix::core::endl;
                 }
             }
         private:
