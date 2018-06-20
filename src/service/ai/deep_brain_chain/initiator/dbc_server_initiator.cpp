@@ -56,7 +56,7 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init crypto service succefully";
+            LOG_DEBUG << "init crypto service successfully";
 
             //parse command line
             LOG_DEBUG << "begin to init command line";
