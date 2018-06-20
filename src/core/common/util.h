@@ -20,6 +20,10 @@
 #include <boost/filesystem/fstream.hpp>
 #include <assert.h>
 
+#ifdef __linux__
+#include <limits.h>
+#endif
+
 namespace bf = boost::filesystem;
 
 
@@ -222,6 +226,38 @@ namespace matrix
                 {
                     return false;
                 }
+            }
+        };
+
+        class path_util
+        {
+        public:
+            static bf::path get_exe_dir()
+            {
+                bf::path exe_dir;// = bf::current_path();
+                char szFilePath[MAX_PATH + 1] = { 0 };
+#if defined(WIN32)                
+                if (GetModuleFileNameA(NULL, szFilePath, MAX_PATH))
+                {
+                    exe_dir = szFilePath;
+                    exe_dir.remove_filename();
+                }
+                else
+                {
+                    int err = ::GetLastError();
+                }
+
+#elif defined(__linux__)
+                int ret = readlink("/proc/self/exe", szFilePath, MAX_PATH);
+                if (ret > 0 && ret < MAX_PATH)
+                {
+                    exe_dir = szFilePath;
+                    exe_dir.remove_filename();
+                }
+//#elif defined(MAC_OSX)
+                //TODO ...
+#endif
+                return exe_dir;
             }
         };
 
