@@ -18,6 +18,9 @@
 #include "stringbuffer.h"
 #include "util.h"
 #include "error/en.h"
+#include "ip_validator.h"
+#include "port_validator.h"
+#include "base58.h"
 
 using namespace std;
 #ifdef WIN32
@@ -117,7 +120,7 @@ namespace matrix
                 root.Accept(writer);
 
                 //open file; if not exist, create it
-                bf::path peers_file = bf::current_path();
+                bf::path peers_file = bf::initial_path();
                 peers_file /= fs::path(DAT_DIR_NAME);
                 peers_file /= fs::path(DAT_PEERS_FILE_NAME);
                 if (matrix::core::file_util::write_file(peers_file, std::string(buffer->GetString())))
@@ -136,7 +139,7 @@ namespace matrix
             cands.clear();
 
             std::string json_str;
-            bf::path peers_file = bf::current_path();
+            bf::path peers_file = bf::initial_path();
             peers_file /= fs::path(DAT_DIR_NAME);
             peers_file /= fs::path(DAT_PEERS_FILE_NAME);
             if (!matrix::core::file_util::read_file(peers_file, json_str))
@@ -148,6 +151,10 @@ namespace matrix
                 return E_DEFAULT;
             }
 
+            //check validation
+            ip_validator ip_vdr;
+            port_validator port_vdr;
+
             try
             {
                 rj::Document doc;
@@ -157,9 +164,7 @@ namespace matrix
                     LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
                     return E_DEFAULT;
                 }
-                ////transfer to cands
-                //if (!doc.HasMember("peer_cands"))
-                //    return E_DEFAULT;
+                //transfer to cands
                 rj::Value &val_arr = doc["peer_cands"];
                 if (val_arr.IsArray())
                 {
@@ -170,7 +175,13 @@ namespace matrix
                         if (!obj.HasMember("ip"))
                             continue;
                         std::string ip = obj["ip"].GetString();
+                        variable_value val_ip(ip, false);
+                        if (!ip_vdr.validate(val_ip))
+                            continue;
                         uint16_t port = obj["port"].GetUint();
+                        variable_value val_port(std::to_string(port), false);
+                        if (!port_vdr.validate(val_port))
+                            continue;
                         tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
                         peer_cand.tcp_ep = ep;
                         net_state ns = (net_state)obj["net_state"].GetUint();
@@ -178,6 +189,12 @@ namespace matrix
                         peer_cand.reconn_cnt = obj["reconn_cnt"].GetUint();
                         peer_cand.score = obj["score"].GetUint();
                         peer_cand.node_id = obj["node_id"].GetString();
+                        std::vector<unsigned char> vch;
+                        if (!peer_cand.node_id.empty() && !DecodeBase58Check(peer_cand.node_id.c_str(), vch))
+                        {
+                            LOG_ERROR << "invalid node id: " << peer_cand.node_id << ", in file: " << peers_file;
+                            continue;
+                        }
 
                         cands.push_back(peer_cand);
                     }
@@ -186,6 +203,7 @@ namespace matrix
             catch (...)
             {
                 LOG_ERROR << "read peers from " << peers_file.c_str() << "failed.";
+                cout << "invalid data or error format in " << peers_file << endl;
                 return E_DEFAULT;
             }
             
