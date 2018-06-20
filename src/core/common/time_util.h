@@ -37,8 +37,8 @@ namespace matrix
                 localtime_r(&t, &_tm);
 #endif
                 char buf[256];
-                memset(buf, 0, sizeof(buf));
-                strftime(buf, sizeof(buf), "%Y-%M-%D %H%M%S", &_tm);
+                memset(buf, 0, sizeof(char) * 256);
+                strftime(buf, sizeof(char) * 256, "%x %X", &_tm);
 
                 return buf;
             }
