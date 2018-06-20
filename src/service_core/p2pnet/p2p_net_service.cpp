@@ -156,7 +156,7 @@ namespace matrix
             //peer address from command line input
             //--peer 117.30.51.196:11107 --peer 1050:0:0:0:5:600:300c:326b:11107
             const std::vector<std::string> & cmd_addresses = options.count("peer") ? options["peer"].as<std::vector<std::string>>() : DEFAULT_VECTOR;
-
+            
             //peer address from peer.conf
             //peer address=117.30.51.196:11107
             //peer address=1050:0:0:0:5:600:300c:326b:11107
@@ -181,6 +181,7 @@ namespace matrix
                 if (pos == std::string::npos)
                 {
                     LOG_ERROR << "p2p net conf file invalid format: " << addr;
+                    cout <<"\"" << addr << "\"" << " is an invalid peer address" << endl;
                     continue;
                 }
 
@@ -194,6 +195,7 @@ namespace matrix
                 if (false == ip_vdr.validate(val))
                 {
                     LOG_ERROR << "p2p_net_service init_connect invalid ip: " << ip;
+                    cout << "\"" << addr << "\"" << " is an invalid peer address" << endl;
                     continue;
                 }
 
@@ -201,6 +203,7 @@ namespace matrix
                 if (str_port.empty())
                 {
                     LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
+                    cout << "\"" << addr << "\"" << " is an invalid peer address" << endl;
                     continue;
                 }                
 
@@ -208,6 +211,7 @@ namespace matrix
                 if (false == port_vdr.validate(val))
                 {
                     LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
+                    cout << "\"" << addr << "\"" << " is an invalid peer address" << endl;
                     continue;
                 }
 
@@ -219,6 +223,7 @@ namespace matrix
                 catch (const std::exception &e)
                 {
                     LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port << ", " << e.what();
+                    cout << "\"" << addr << "\"" << " is an invalid peer address" << endl;
                     continue;
                 }
 
