@@ -120,7 +120,7 @@ namespace matrix
                 root.Accept(writer);
 
                 //open file; if not exist, create it
-                bf::path peers_file = bf::initial_path();
+                bf::path peers_file = matrix::core::path_util::get_exe_dir();
                 peers_file /= fs::path(DAT_DIR_NAME);
                 peers_file /= fs::path(DAT_PEERS_FILE_NAME);
                 if (matrix::core::file_util::write_file(peers_file, std::string(buffer->GetString())))
@@ -139,7 +139,7 @@ namespace matrix
             cands.clear();
 
             std::string json_str;
-            bf::path peers_file = bf::initial_path();
+            bf::path peers_file = matrix::core::path_util::get_exe_dir();
             peers_file /= fs::path(DAT_DIR_NAME);
             peers_file /= fs::path(DAT_PEERS_FILE_NAME);
             if (!matrix::core::file_util::read_file(peers_file, json_str))

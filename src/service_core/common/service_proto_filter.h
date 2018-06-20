@@ -70,7 +70,7 @@ namespace matrix
                 write_lock_guard<rw_lock> lock(m_locker);
                 for (auto it = m_map_proto_tm.begin(); it != m_map_proto_tm.end(); )
                 {
-                    if (it->second < time(nullptr) - TIME_OUT_SEC * 2)
+                    if (it->second < time(nullptr) - TIME_OUT_SEC)
                     {
                         m_map_proto_tm.erase(it++);
                     }
