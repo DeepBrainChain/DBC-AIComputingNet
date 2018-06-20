@@ -20,7 +20,9 @@
 #include <boost/filesystem/fstream.hpp>
 #include <assert.h>
 
-#ifdef __linux__
+#if defined(WIN32)
+#include <windows.h>
+#elif defined(__linux__)
 #include <limits.h>
 #endif
 
@@ -235,8 +237,9 @@ namespace matrix
             static bf::path get_exe_dir()
             {
                 bf::path exe_dir;// = bf::current_path();
+                
+#if defined(WIN32)   
                 char szFilePath[MAX_PATH + 1] = { 0 };
-#if defined(WIN32)                
                 if (GetModuleFileNameA(NULL, szFilePath, MAX_PATH))
                 {
                     exe_dir = szFilePath;
@@ -244,12 +247,13 @@ namespace matrix
                 }
                 else
                 {
-                    int err = ::GetLastError();
+                    //int err = ::GetLastError();
                 }
 
 #elif defined(__linux__)
-                int ret = readlink("/proc/self/exe", szFilePath, MAX_PATH);
-                if (ret > 0 && ret < MAX_PATH)
+                char szFilePath[PATH_MAX + 1] = { 0 };
+                int ret = readlink("/proc/self/exe", szFilePath, PATH_MAX);
+                if (ret > 0 && ret < PATH_MAX)
                 {
                     exe_dir = szFilePath;
                     exe_dir.remove_filename();
