@@ -13,7 +13,7 @@
 #include <fstream> 
 #include <boost/exception/all.hpp>
 #include <vector>
-
+#include "util.h"
 
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
 std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
@@ -274,7 +274,7 @@ namespace matrix
 
             //node.dat path
             fs::path node_dat_path;
-            node_dat_path /= fs::initial_path();
+            node_dat_path /= matrix::core::path_util::get_exe_dir();
             node_dat_path /= fs::path(DAT_DIR_NAME);
 
             //check dat directory

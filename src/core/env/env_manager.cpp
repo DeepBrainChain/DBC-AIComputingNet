@@ -10,6 +10,7 @@
 
 #include "env_manager.h"
 #include "server.h"
+#include "util.h"
 #ifdef WIN32
 #include<tchar.h>
 #include <atlstr.h>
@@ -89,7 +90,7 @@ namespace matrix
         void env_manager::init_core_path()
         {
             //home path
-            fs::path m_home_path = fs::initial_path();
+            fs::path m_home_path = matrix::core::path_util::get_exe_dir();
 
             //conf file full path
             m_conf_path = m_home_path;
