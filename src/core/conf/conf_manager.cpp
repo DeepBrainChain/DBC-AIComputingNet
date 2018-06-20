@@ -274,7 +274,7 @@ namespace matrix
 
             //node.dat path
             fs::path node_dat_path;
-            node_dat_path /= fs::current_path();
+            node_dat_path /= fs::initial_path();
             node_dat_path /= fs::path(DAT_DIR_NAME);
 
             //check dat directory
