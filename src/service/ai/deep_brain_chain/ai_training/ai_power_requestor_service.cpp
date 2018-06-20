@@ -275,11 +275,11 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            const std::vector<std::string> & peer_nodes_lists = vm["peer_nodes_list"].as<std::vector<std::string>>();
+            const std::vector<std::string> & peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
             std::vector<unsigned char> vch;
-            for (auto &node_list : peer_nodes_lists)
+            for (auto &node_id : peer_nodes_list)
             {
-                if (false == DecodeBase58Check(node_list.c_str(), vch))
+                if (false == DecodeBase58Check(node_id.c_str(), vch))
                 {
                     cmd_resp->result = E_DEFAULT;
                     cmd_resp->result_info = "node_list does not match the Base58 code format";
@@ -324,7 +324,7 @@ namespace ai
             req_msg->set_content(broadcast_req_content);
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
-            LOG_DEBUG << "ai power requestor service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
+            LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
 
             CONNECTION_MANAGER->broadcast_message(req_msg);
 
@@ -390,7 +390,7 @@ namespace ai
 
             if (!cmd_req_content)
             {
-                LOG_ERROR << "ai power requestor service on cmd start multi training received null msg";
+                LOG_ERROR << "ai power requester service on cmd start multi training received null msg";
 
                 //error resp
                 cmd_resp->result = E_DEFAULT;
@@ -455,7 +455,7 @@ namespace ai
                 fs::path task_file_path = fs::system_complete(fs::path(file.c_str()));
                 if (false == fs::exists(task_file_path) || (false == fs::is_regular_file(task_file_path)))
                 {
-                    LOG_ERROR << "ai power requestor service file not exists or error: " << file;
+                    LOG_ERROR << "ai power requester service file not exists or error: " << file;
 
                     ai::dbc::cmd_task_info task_info;
                     task_info.create_time = time(nullptr);
@@ -640,12 +640,16 @@ namespace ai
                     }
                 }
             }
+            else if (1 == cmd_req->list_type)
+            {
+                *vec_task_infos_to_show = vec_task_infos;//always has one element
+            }
             //check if no need network req
             if (req_content->body.task_list.empty())
             {
                 //return cmd resp
                 int cnt = 0;
-                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result = E_SUCCESS;
                 for (auto info : *vec_task_infos_to_show)
                 {
                     cmd_task_status cts;
@@ -685,7 +689,7 @@ namespace ai
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "ai power requestor service list training add session error: " << session->get_session_id();
+                LOG_ERROR << "ai power requester service list training add session error: " << session->get_session_id();
 
                 //remove timer
                 remove_timer(timer_id);
@@ -699,7 +703,7 @@ namespace ai
                 return E_DEFAULT;
             }
             
-            LOG_DEBUG << "ai power requestor service list training add session: " << session->get_session_id();
+            LOG_DEBUG << "ai power requester service list training add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
