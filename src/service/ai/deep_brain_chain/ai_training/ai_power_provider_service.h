@@ -25,6 +25,7 @@ using namespace boost::asio::ip;
 #define AI_TRAINING_TASK_TIMER                                      "training_task"
 #define AI_TRAINING_TASK_TIMER_INTERVAL                 (30 * 1000)                                                 //30s timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                  4
+#define AI_TRAINING_MAX_TASK_COUNT                                    3
 
 #define AI_TRAINING_TASK_SCRIPT_HOME                         "/"
 #define AI_TRAINING_TASK_SCRIPT                                       "dbc_task.sh"                                            //training shell script name

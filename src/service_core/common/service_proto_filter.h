@@ -7,7 +7,8 @@
 #include "timer_def.h"
 #include <boost/pointer_cast.hpp>
 
-#define TIME_OUT_SEC    180
+#define TIME_OUT_SEC                        180
+#define MAX_NONCE_COUNT             1000000
 
 namespace matrix
 {
@@ -59,6 +60,13 @@ namespace matrix
                 }
                 else
                 {
+                    //ddos attack?
+                    if (m_map_proto_tm.size() >= MAX_NONCE_COUNT)
+                    {
+                        LOG_ERROR << "message nonce is too many, nonce: " << nonce;
+                        return true;
+                    }
+
                     m_map_proto_tm[nonce] = cur;
                 }
                 
