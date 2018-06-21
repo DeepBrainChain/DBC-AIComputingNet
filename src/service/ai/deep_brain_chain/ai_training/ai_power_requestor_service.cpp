@@ -733,7 +733,7 @@ namespace ai
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
             if (nullptr == session)
             {
-                LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
+                LOG_DEBUG << "ai power requester service get session null: " << rsp_content->header.session_id;
                 return E_DEFAULT;
             }
 
@@ -753,7 +753,7 @@ namespace ai
 
             if (task_ids->size() < req_content->body.task_list.size())
             {
-                LOG_DEBUG << "ai power requestor service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
+                LOG_DEBUG << "ai power requester service list task id less than " << req_content->body.task_list.size() << " and continue to wait";
                 return E_SUCCESS;
             }
 
@@ -806,65 +806,57 @@ namespace ai
                 ret_code = E_NULL_POINTER;
                 goto FINAL_PROC;
             }
+            try
             {
-                 //get session
+                //get session
                 session_id = timer->get_session_id();
                 session = get_session(session_id);
                 if (nullptr == session)
                 {
-                    LOG_ERROR << "ai power requestor service list training timer get session null: " << session_id;
+                    LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
                     ret_code =  E_DEFAULT;
                     goto FINAL_PROC;
                 }
 
                 variables_map &vm = session->get_context().get_args();
                 assert(vm.count("task_ids") > 0);
-                assert(vm.count("req_msg") > 0);
+                assert(vm.count("show_tasks") > 0);
                 auto task_ids = vm["task_ids"].as< std::shared_ptr<std::unordered_map<std::string, int8_t>>>();
+                auto vec_task_infos_to_show = vm["show_tasks"].as<std::shared_ptr<std::vector<ai::dbc::cmd_task_info>>>();
 
                 //publish cmd resp
                 cmd_resp = std::make_shared<ai::dbc::cmd_list_training_resp>();
                 cmd_resp->result = E_SUCCESS;
                 cmd_resp->result_info = "";
-                for (auto it = task_ids->begin(); it != task_ids->end(); it++)
+                
+                for (auto info : *vec_task_infos_to_show)
                 {
                     cmd_task_status cts;
-                    cts.task_id = it->first;
-                    cts.status = it->second;
-                    ai::dbc::cmd_task_info info;
-                    if (read_task_info_from_db(cts.task_id, info))
-                    {
-                        cts.create_time = info.create_time;
+                    cts.task_id = info.task_id;  
+                    cts.create_time = info.create_time;
+                    auto it = task_ids->find(info.task_id);
+                    if (it != task_ids->end())
+                    {            
+                        cts.status = it->second;
+                        //update to db
+                        info.status = it->second;
+                        write_task_info_to_db(info); 
                     }
+                    else
+                    {
+                        cts.status = info.status;
+                    }                    
+
                     cmd_resp->task_status_list.push_back(std::move(cts));
                 }
-                auto req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
-                auto req_content = std::dynamic_pointer_cast<matrix::service_core::list_training_req>(req_msg->get_content());
-                if (!req_content)
-                {
-                    LOG_ERROR << "null ptr of req_content.";
-                    ret_code = E_DEFAULT;
-                    goto FINAL_PROC;
-                }
-                if (task_ids->size() < req_content->body.task_list.size())
-                {
-                    for (auto tid : req_content->body.task_list)
-                    {
-                        auto it_task = task_ids->find(tid);
-                        if (it_task == task_ids->end())
-                        {
-                            cmd_task_status cts;
-                            cts.task_id = tid;
-                            cts.status = task_unknown;
-                            ai::dbc::cmd_task_info info;
-                            if (read_task_info_from_db(tid, info))
-                            {
-                                cts.create_time = info.create_time;
-                            }
-                            cmd_resp->task_status_list.push_back(std::move(cts));
-                        }
-                    }
-                }
+            }
+            catch (system_error &e)
+            {
+                LOG_ERROR << "error: " << e.what();
+            }
+            catch (...)
+            {
+                LOG_ERROR << "error: Unknown error.";
             }
 
         FINAL_PROC:
@@ -872,7 +864,7 @@ namespace ai
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
             if (session)
             {
-                LOG_DEBUG << "ai power requestor service list training timer time out remove session: " << session_id;
+                LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
                 session->clear(); 
                 this->remove_session(session_id);
             }
