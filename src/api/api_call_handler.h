@@ -40,8 +40,8 @@ namespace ai
     namespace dbc
     {
 
-        using ::dbc::cmd_get_peer_nodes_req;
-        using ::dbc::cmd_get_peer_nodes_resp;
+        using matrix::service_core::cmd_get_peer_nodes_req;
+        using matrix::service_core::cmd_get_peer_nodes_resp;
 
         class outputter
         {

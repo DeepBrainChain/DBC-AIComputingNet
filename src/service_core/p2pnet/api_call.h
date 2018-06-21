@@ -13,56 +13,59 @@
 #include "matrix_types.h"
 
 
-namespace dbc {
-
-    enum get_peers_flag
+namespace matrix
+{
+    namespace service_core
     {
-        flag_active,
-        flag_global
-    };
+        enum get_peers_flag
+        {
+            flag_active,
+            flag_global
+        };
 
-    class cmd_network_address {
-    public:
+        class cmd_network_address {
+        public:
 
-        std::string ip;
+            std::string ip;
 
-        uint16_t port;
-    };
+            uint16_t port;
+        };
 
-    class cmd_peer_node_info {
-    public:
+        class cmd_peer_node_info {
+        public:
 
-        std::string peer_node_id;
+            std::string peer_node_id;
 
-        int32_t live_time_stamp;
+            int32_t live_time_stamp;
 
-        cmd_network_address addr;
+            cmd_network_address addr;
 
-        std::vector<std::string> service_list;
+            std::vector<std::string> service_list;
 
-        cmd_peer_node_info &operator=(const matrix::service_core::peer_node_info &info) {
-            peer_node_id = info.peer_node_id;
-            live_time_stamp = info.live_time_stamp;
-            addr.ip = info.addr.ip;
-            addr.port = info.addr.port;
-            service_list = info.service_list;
-            return *this;
-        }
-    };
+            cmd_peer_node_info &operator=(const matrix::service_core::peer_node_info &info) {
+                peer_node_id = info.peer_node_id;
+                live_time_stamp = info.live_time_stamp;
+                addr.ip = info.addr.ip;
+                addr.port = info.addr.port;
+                service_list = info.service_list;
+                return *this;
+            }
+        };
 
-    class cmd_get_peer_nodes_req : public matrix::core::msg_base {
-    public:
+        class cmd_get_peer_nodes_req : public matrix::core::msg_base {
+        public:
 
-        get_peers_flag flag;
+            get_peers_flag flag;
 
-    };
+        };
 
-    class cmd_get_peer_nodes_resp : public matrix::core::msg_base {
-    public:
-        int32_t result;
+        class cmd_get_peer_nodes_resp : public matrix::core::msg_base {
+        public:
+            int32_t result;
 
-        std::string result_info;
+            std::string result_info;
 
-        std::vector<cmd_peer_node_info> peer_nodes_list;
-    };
-}
+            std::vector<cmd_peer_node_info> peer_nodes_list;
+        };
+    }//namespace service_core
+}//namespace matrix

@@ -299,7 +299,7 @@ namespace matrix
             TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<message> &msg) {return send(msg);});
             TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<message> &msg) {return send(msg);});
-            TOPIC_MANAGER->subscribe(typeid(dbc::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) { return send(msg); });
+            TOPIC_MANAGER->subscribe(typeid(matrix::service_core::cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<message> &msg) { return send(msg); });
             TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<message> &msg) { return send(msg); });
             TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<message> &msg) { return send(msg); });
         }
@@ -334,7 +334,7 @@ namespace matrix
 
             //cmd_get_peer_nodes_req
             invoker = std::bind(&p2p_net_service::on_cmd_get_peer_nodes_req, this, std::placeholders::_1);
-            m_invokers.insert({ typeid(dbc::cmd_get_peer_nodes_req).name(),{ invoker } });
+            m_invokers.insert({ typeid(matrix::service_core::cmd_get_peer_nodes_req).name(),{ invoker } });
         }
 
         void p2p_net_service::init_timer()
@@ -967,29 +967,29 @@ namespace matrix
 
         int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<message> &msg)
         {
-            std::shared_ptr<dbc::cmd_get_peer_nodes_resp> cmd_resp = std::make_shared<dbc::cmd_get_peer_nodes_resp>();
+            auto cmd_resp = std::make_shared<matrix::service_core::cmd_get_peer_nodes_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
 
             std::shared_ptr<base> content = msg->get_content();
-            std::shared_ptr<dbc::cmd_get_peer_nodes_req> req = std::dynamic_pointer_cast<dbc::cmd_get_peer_nodes_req>(content);
+            auto req = std::dynamic_pointer_cast<matrix::service_core::cmd_get_peer_nodes_req>(content);
             assert(nullptr != req && nullptr != content);
             if (!req || !content)
             {
                 LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "internal error";
-                TOPIC_MANAGER->publish<void>(typeid(dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(matrix::service_core::cmd_get_peer_nodes_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
             }
 
-            if(req->flag == dbc::flag_active)
+            if(req->flag == matrix::service_core::flag_active)
             {
                 read_lock_guard<rw_lock> lock(m_nodes_lock);
                 for (auto itn = m_peer_nodes_map.begin(); itn != m_peer_nodes_map.end(); ++itn)
                 {
-                    dbc::cmd_peer_node_info node_info;
+                    matrix::service_core::cmd_peer_node_info node_info;
                     node_info.peer_node_id = itn->second->m_id;
                     node_info.live_time_stamp = itn->second->m_live_time;
                     node_info.addr.ip = itn->second->m_peer_addr.get_ip();
@@ -999,7 +999,7 @@ namespace matrix
                     cmd_resp->peer_nodes_list.push_back(std::move(node_info));
                 }
             }
-            else if(req->flag == dbc::flag_global)
+            else if(req->flag == matrix::service_core::flag_global)
             {
                 //case: not too many peers
                 for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
@@ -1008,7 +1008,7 @@ namespace matrix
                         || (ns_in_use == it->net_st)
                         )
                     {
-                        dbc::cmd_peer_node_info node_info;
+                        matrix::service_core::cmd_peer_node_info node_info;
                         node_info.peer_node_id = it->node_id;
                         node_info.live_time_stamp = 0;
                         node_info.addr.ip = it->tcp_ep.address().to_string();
@@ -1020,7 +1020,7 @@ namespace matrix
                 }
             }
 
-            TOPIC_MANAGER->publish<void>(typeid(dbc::cmd_get_peer_nodes_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(matrix::service_core::cmd_get_peer_nodes_resp).name(), cmd_resp);
 
             return E_SUCCESS;
         }

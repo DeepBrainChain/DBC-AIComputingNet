@@ -344,11 +344,11 @@ namespace ai
                     std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
                     if (vm.count("active") || vm.count("a"))
                     {
-                        req->flag = ::dbc::flag_active;
+                        req->flag = matrix::service_core::flag_active;
                     }
                     else if (vm.count("global") || vm.count("g"))
                     {
-                        req->flag = ::dbc::flag_global;
+                        req->flag = matrix::service_core::flag_global;
                     }
 
                     std::shared_ptr<cmd_get_peer_nodes_resp> resp = m_handler.invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
