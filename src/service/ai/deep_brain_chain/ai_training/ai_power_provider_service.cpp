@@ -227,6 +227,7 @@ namespace ai
                 LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
+
             if (it == peer_nodes.end())
             {
                 return E_SUCCESS;//not find self, return
@@ -234,7 +235,13 @@ namespace ai
 
             if (nullptr == m_prov_training_task_db)
             {
-                LOG_ERROR << "ai power provider service training task db is nullptr";
+                LOG_ERROR << "ai power provider service training task db is nullptr, task id: " << req->body.task_id;
+                return E_DEFAULT;
+            }
+
+            if (m_queueing_tasks.size() >= AI_TRAINING_MAX_TASK_COUNT)
+            {
+                LOG_ERROR << "ai power provider service on start training too many tasks, task id: " << req->body.task_id;
                 return E_DEFAULT;
             }
 
@@ -243,16 +250,16 @@ namespace ai
             leveldb::Status status = m_prov_training_task_db->Get(leveldb::ReadOptions(), req->body.task_id, &task_value);
             if (status.ok())                //already exists and directly return
             {
-                LOG_DEBUG << "ai power provider service on start training already had task: " << req->body.task_id;
-                return E_SUCCESS;
+                LOG_ERROR << "ai power provider service on start training already had task: " << req->body.task_id;
+                return E_DEFAULT;
             }
 
             assert(0 == m_training_tasks.count(req->body.task_id));
 
             if (m_training_tasks.count(req->body.task_id) != 0)
             {
-                LOG_DEBUG << "ai power provider service on start training already had task: " << req->body.task_id;
-                return E_SUCCESS;
+                LOG_ERROR << "ai power provider service on start training already had task: " << req->body.task_id;
+                return E_DEFAULT;
             }
 
             std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
