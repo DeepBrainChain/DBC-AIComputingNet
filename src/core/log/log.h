@@ -112,7 +112,6 @@ namespace matrix
                     keywords::file_name = "matrix_core_%N.log",
                     keywords::rotation_size = 100 * 1024 * 1024,
                     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-//                    keywords::format = "[%TimeStamp%][%Severity%]: %Message%"
                     keywords::format = (
                             expr::stream
                                     << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
