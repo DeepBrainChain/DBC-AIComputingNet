@@ -419,42 +419,44 @@ namespace matrix
 
             //use hard code peer seeds 
             //if no neighbor peer nodes and peer candidates
-            if (0 == m_peer_nodes_map.size() && 0 == m_peer_candidates.size())//TODO ...: maybe include zombie peers
+            if (0 == m_peer_nodes_map.size() && !has_available_peer_candidates())
             {
-                try
+                if (m_dns_seeds.size() > 0)
                 {
-                    //get dns seeds
-                    const char *dns_seed = m_dns_seeds.front();
-                    m_dns_seeds.pop_front();
-
-                    if (nullptr == dns_seed)
+                    try
                     {
-                        LOG_ERROR << "p2p net service resolve dns nullptr";
-                        return E_DEFAULT;
+                        //get dns seeds
+                        const char *dns_seed = m_dns_seeds.front();
+                        m_dns_seeds.pop_front();
+
+                        if (nullptr == dns_seed)
+                        {
+                            LOG_ERROR << "p2p net service resolve dns nullptr";
+                            return E_DEFAULT;
+                        }
+
+                        io_service ios;
+                        ip::tcp::resolver rslv(ios);
+                        ip::tcp::resolver::query qry(dns_seed, boost::lexical_cast<string>(80));
+                        ip::tcp::resolver::iterator it = rslv.resolve(qry);
+                        ip::tcp::resolver::iterator end;
+
+                        for ( ; it != end; it++)
+                        {
+                            LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << ", ip: "<< it->endpoint().address().to_string();
+
+                            tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());                        
+                            peer_candidate candidate(ep, ns_idle);
+                            m_peer_candidates.push_back(candidate);
+                        }
                     }
-
-                    io_service ios;
-                    ip::tcp::resolver rslv(ios);
-                    ip::tcp::resolver::query qry(dns_seed, boost::lexical_cast<string>(80));
-                    ip::tcp::resolver::iterator it = rslv.resolve(qry);
-                    ip::tcp::resolver::iterator end;
-
-                    for ( ; it != end; it++)
+                    catch (const boost::exception & e)
                     {
-                        LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << ", ip: "<< it->endpoint().address().to_string();
-
-                        tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());                        
-                        peer_candidate candidate(ep, ns_idle);
-                        m_peer_candidates.push_back(candidate);
+                        LOG_ERROR << "p2p net service resolve dns error: " << diagnostic_information(e);
                     }
                 }
-                catch (const boost::exception & e)
-                {
-                    LOG_ERROR << "p2p net service resolve dns error: " << diagnostic_information(e);
-                }
-
-                //dns seeds empty
-                if (0 == m_dns_seeds.size() && 0 == m_peer_candidates.size())//TODO ...
+                //case: maybe dns resolver produce nothing
+                if (!has_available_peer_candidates())//still no available candidate
                 {
                     //get hard code seeds
                     for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++)
@@ -1178,5 +1180,14 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        bool p2p_net_service::has_available_peer_candidates()
+        {
+            for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+            {
+                if (it->net_st <= ns_in_use || ((it->net_st == ns_failed) && (it->reconn_cnt < max_reconnect_times)))
+                    return true;
+            }
+            return false;
+        }
     }
 }
