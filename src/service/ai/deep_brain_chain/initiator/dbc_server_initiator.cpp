@@ -237,7 +237,7 @@ namespace ai
                 else if (vm.count("version") || vm.count("v"))
                 {
                     std::string ver = STR_VER(CORE_VERSION);
-                    cout << ver.substr(2, 4) << "." << ver.substr(6, 2) << "." << ver.substr(8, 2);
+                    cout << ver.substr(2, 4) << "." << ver.substr(6, 2) << "." << ver.substr(8, 2) << "." << ver.substr(10, 2);
                     return E_EXIT_PARSE_COMMAND_LINE;
                 }
                 else if (vm.count("init"))
@@ -264,7 +264,7 @@ namespace ai
             //node info
             node_info info;
             id_generator gen;
-            int32_t ret = gen.generate_node_info(info);                 //check: if exists, not init again and print promption.
+            int32_t ret = gen.generate_node_info(info);                 //check: if exists, not init again and print prompt.
             if (E_SUCCESS != ret)
             {
                 cout << "dbc init node info error" << endl;
