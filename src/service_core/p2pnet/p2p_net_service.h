@@ -120,6 +120,10 @@ namespace matrix
 
             int32_t on_timer_peer_candidate_dump();
 
+        private:
+
+            bool has_available_peer_candidates();
+
         protected:
 
             std::string m_host_ip;
