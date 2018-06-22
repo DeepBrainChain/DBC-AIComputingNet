@@ -27,6 +27,7 @@ if(LINUX)
     set(CMAKE_CXX_COMPILER "/usr/bin/g++")
     set(CXX_FLAGS "-std=c++11")
     set(CXX_PREPROCESS_FLAGS "${CXX_PREPROCESS_FLAGS} -D__linux__ -D__x86_64__")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 endif()
 
 
@@ -35,7 +36,6 @@ endif()
 if ((DEBUG_MODE) OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
     set(CXX_FLAGS "${CXX_FLAGS} -O0 -Wall -g -ggdb -pthread")
     set(CXX_PREPROCESS_FLAGS "${CXX_PREPROCESS_FLAGS} -DDEBUG -D_REENTRANT -pthread")
-
 else ()
     set(CXX_FLAGS "${CXX_FLAGS} -O3 -Wall -pthread")
     set(CXX_PREPROCESS_FLAGS "${CXX_PREPROCESS_FLAGS} -DNDEBUG -pthread")
