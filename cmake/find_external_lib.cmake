@@ -30,7 +30,7 @@ endif()
 
 
 
-find_package(Boost ${PREFER_BOOST_VER} REQUIRED COMPONENTS thread date_time system filesystem log log_setup exception program_options serialization signals serialization chrono unit_test_framework context)
+find_package(Boost ${PREFER_BOOST_VER} REQUIRED COMPONENTS log log_setup thread date_time system filesystem  exception program_options serialization signals serialization chrono unit_test_framework context)
 
 if (Boost_FOUND)
     message(STATUS "Boost_VERSION: ${Boost_VERSION}")
