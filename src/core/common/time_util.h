@@ -25,8 +25,8 @@ namespace matrix
             static std::string time_2_str(time_t t)
             {
                 struct tm _tm;
-                int err = 0;
 #ifdef WIN32
+                int err = 0;
                 err = localtime_s(&_tm, &t);
                 if (err != 0)
                 {

@@ -68,8 +68,9 @@ namespace matrix
         protected:
 
             void init_core_path();
-
+#if 0
             void init_core_path_with_os_func();
+#endif
 
             void init_signal();
 

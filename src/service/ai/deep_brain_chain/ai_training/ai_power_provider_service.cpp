@@ -729,7 +729,6 @@ namespace ai
                 return nullptr;
             }
 
-            std::string::size_type pos = std::string::npos;
             std::shared_ptr<container_config> config = std::make_shared<container_config>();
 
             //exec cmd: dbc_task.sh data_dir_hash code_dir_hash ai_training_python
