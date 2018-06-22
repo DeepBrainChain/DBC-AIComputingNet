@@ -23,6 +23,7 @@
 #include <boost/log/attributes/mutable_constant.hpp>
 #include "common.h"
 #include <string>
+#include "util.h"
 
 
 namespace logging = boost::log;
@@ -113,7 +114,7 @@ namespace matrix
                 auto sink = logging::add_file_log
                 (
                     //attribute
-                    keywords::file_name = "matrix_core_%N.log",
+                    keywords::file_name = (matrix::core::path_util::get_exe_dir() /= "matrix_core_%N.log").c_str(),
                     keywords::rotation_size = 100 * 1024 * 1024,
                     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
                     keywords::format = (
