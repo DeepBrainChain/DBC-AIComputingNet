@@ -21,7 +21,11 @@
 #include <assert.h>
 
 #if defined(WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
 #elif defined(__linux__)
 #include <limits.h>
 #endif
