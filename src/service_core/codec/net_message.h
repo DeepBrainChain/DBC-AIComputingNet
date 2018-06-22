@@ -33,8 +33,8 @@ namespace matrix
                 int32_t all;
             } theBytes;
 
-            byte_buf m_msg_stream;
             int32_t m_pos = 0;
+            byte_buf m_msg_stream;
             bool m_in_data = false;
 
         };
