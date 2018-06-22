@@ -188,9 +188,9 @@ namespace matrix
                         {
                             LOG_ERROR << port << " is invalid port.";
                             continue;
-                        }
-                        tcp::endpoint ep(address_v4::from_string(ip), (uint16_t)port);
-                        peer_cand.tcp_ep = ep;
+                        } 
+                        boost::asio::ip::address addr = boost::asio::ip::make_address(ip);                        
+                        peer_cand.tcp_ep = tcp::endpoint(addr, (uint16_t)port);
                         net_state ns = (net_state)obj["net_state"].GetUint();
                         peer_cand.net_st = (ns == ns_in_use ? ns_idle : ns);
                         peer_cand.reconn_cnt = obj["reconn_cnt"].GetUint();
