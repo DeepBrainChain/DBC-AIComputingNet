@@ -55,13 +55,15 @@ extern const char * get_short_file_name(const char * file_path);
 #define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal)
 #endif
 
-//#define LOG_DEBUG \
-//   BOOST_LOG_STREAM_WITH_PARAMS( \
-//      (::boost::log::trivial::logger::get()), \
-//         (matrix::core::set_get_attrib("File", matrix::core::path_to_filename(__FILE__))) \
-//         (matrix::core::set_get_attrib("Line", __LINE__)) \
-//         (::boost::log::keywords::severity = (boost::log::trivial::debug)) \
-//   )
+#if 0
+#define LOG_DEBUG \
+  BOOST_LOG_STREAM_WITH_PARAMS( \
+     (::boost::log::trivial::logger::get()), \
+        (matrix::core::set_get_attrib("File", matrix::core::path_to_filename(__FILE__))) \
+        (matrix::core::set_get_attrib("Line", __LINE__)) \
+        (::boost::log::keywords::severity = (boost::log::trivial::debug)) \
+  )
+#endif
 
 
 
@@ -77,10 +79,12 @@ namespace matrix
             return attr.get();
         }
 
+#if 0
         // Convert file path to only the filename
         static std::string path_to_filename(std::string path) {
             return path.substr(path.find_last_of("/\\") + 1);
         }
+#endif
 
         struct log_exception_handler
         {

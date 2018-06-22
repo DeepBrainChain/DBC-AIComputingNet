@@ -111,6 +111,7 @@ namespace matrix
             m_peer_path /= fs::path(PEER_FILE_NAME);
         }
 
+#if 0
         void env_manager::init_core_path_with_os_func()
         {
 #ifdef WIN32
@@ -131,6 +132,7 @@ namespace matrix
             char *path = getenv("PWD");
 #endif
         }
+#endif
 
         void env_manager::init_signal()
         {
