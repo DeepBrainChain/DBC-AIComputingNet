@@ -648,7 +648,6 @@ namespace ai
             if (req_content->body.task_list.empty())
             {
                 //return cmd resp
-                int cnt = 0;
                 cmd_resp->result = E_SUCCESS;
                 for (auto info : *vec_task_infos_to_show)
                 {
