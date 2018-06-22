@@ -14,6 +14,7 @@
 #include <boost/exception/all.hpp>
 #include <vector>
 #include "util.h"
+#include "utilstrencodings.h"
 
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
 std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
@@ -200,15 +201,14 @@ namespace matrix
                 LOG_ERROR << "conf_manager has no node id error";
                 return E_DEFAULT;
             }
-            m_node_id = m_args["node_id"].as<std::string>();
-
+            m_node_id = SanitizeString(m_args["node_id"].as<std::string>());
             //node private key
             if (0 == m_args.count("node_private_key"))
             {
                 LOG_ERROR << "conf_manager has no node private key error";
                 return E_DEFAULT;
             }
-            m_node_private_key = m_args["node_private_key"].as<std::string>();
+            m_node_private_key = SanitizeString(m_args["node_private_key"].as<std::string>());
 
             //net type
             if (0 == m_args.count("net_type"))
