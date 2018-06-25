@@ -2,7 +2,6 @@
 
 cpu_tensorflow_path="dbctraining/tensorflow-cpu-0.1.0:v1"
 gpu_tensorflow_path="dbctraining/tensorflow-gpu-0.1.0:v1"
-cuda8_cudnn6="dbctraining/cuda8.0-cudnn6-tensorflow1.3-ubuntu16.04:v1"
 # add more images...
 
 ubuntu_version=`lsb_release -r --short`
@@ -93,7 +92,6 @@ gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
     echo "need to download GPU-related tensorflow"
     sudo docker pull $gpu_tensorflow_path
-    sudo docker pull $cuda8_cudnn6
     if [ $? -eq 1 ]; then
         echo "pull fail"
 	exit 
