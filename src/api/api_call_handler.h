@@ -199,9 +199,9 @@ namespace ai
             void format_output()
             {
                 console_printer printer;
-                printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
+                printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
 
-                printer << matrix::core::init << "peer_id" << "time_stamp" << "ip" << "port" << "service_list" << matrix::core::endl;
+                printer << matrix::core::init << "peer_id" << "ip" << "port" << "service_list" << matrix::core::endl;
 
                 auto v = m_data.get();
                 if (v == nullptr)
@@ -221,7 +221,7 @@ namespace ai
                             svc_list += "|";
                         }
                     }
-                    printer << matrix::core::init << it->peer_node_id << it->live_time_stamp << it->addr.ip << it->addr.port << svc_list << matrix::core::endl;
+                    printer << matrix::core::init << it->peer_node_id << it->addr.ip << it->addr.port << svc_list << matrix::core::endl;
                 }
             }
         private:
