@@ -237,7 +237,12 @@ namespace matrix
                     if (it == m_peer_candidates.end())
                     {
                         m_peer_candidates.push_back(std::move(pc));
-                    }            
+                    }
+                    else
+                    {
+                        //case: duplicated address from peer_addresses
+                        continue;
+                    }
 
                     //start connect
                     LOG_DEBUG << "matrix connect peer address, ip: " << ip << " port: " << str_port;
@@ -1006,19 +1011,14 @@ namespace matrix
                 //case: not too many peers
                 for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
                 {
-                    if ((ns_idle == it->net_st)
-                        || (ns_in_use == it->net_st)
-                        )
-                    {
-                        matrix::service_core::cmd_peer_node_info node_info;
-                        node_info.peer_node_id = it->node_id;
-                        node_info.live_time_stamp = 0;
-                        node_info.addr.ip = it->tcp_ep.address().to_string();
-                        node_info.addr.port = it->tcp_ep.port();
-                        node_info.service_list.clear();
-                        node_info.service_list.push_back(std::string("ai_training"));
-                        cmd_resp->peer_nodes_list.push_back(std::move(node_info));
-                    }
+                    matrix::service_core::cmd_peer_node_info node_info;
+                    node_info.peer_node_id = it->node_id;
+                    node_info.live_time_stamp = 0;
+                    node_info.addr.ip = it->tcp_ep.address().to_string();
+                    node_info.addr.port = it->tcp_ep.port();
+                    node_info.service_list.clear();
+                    node_info.service_list.push_back(std::string("ai_training"));
+                    cmd_resp->peer_nodes_list.push_back(std::move(node_info));
                 }
             }
 
