@@ -86,6 +86,8 @@ namespace matrix
 
         static int32_t save_peer_candidates(std::list<peer_candidate> &cands)
         {
+            LOG_DEBUG << "save peer candidates: " << cands.size();
+
             if (cands.empty())
             {
                 return E_DEFAULT;
