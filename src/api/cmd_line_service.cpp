@@ -10,19 +10,26 @@
 #include <iostream>
 #include <limits>
 #include <cstdint>
+#include <unistd.h>
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
 
 
 
-void cmd_line_task()
+static void cmd_line_task()
 {
    static ai::dbc::cmd_line_service *service = (ai::dbc::cmd_line_service *)(g_server->get_module_manager()->get(CMD_LINE_API_MODULE).get());
     if (nullptr != service)
     {        
         service->on_usr_cmd();
     }    
+}
+
+static void daemon_monitor_task(){
+    while( true ){
+        sleep( 10 );
+    }
 }
 
 
@@ -59,8 +66,15 @@ namespace ai
         { 
             cout << "Welcome to DeepBrain Chain AI world!" << std::endl;
             cout << std::endl;
-
-            g_server->bind_idle_task(&cmd_line_task);
+            //if the process is launched with "nohup dbc &" or "nohup dbc" , both of tcgetpgrp(0)  and tcgetsid(0) return -1 
+            // or  "dbc &",  tcgetpgrp（0） return bash id , tcgetsid(0) return "bash"  pid 
+            if ( tcgetpgrp( 0 ) == tcgetsid( 0 ) ){
+                cout<< "background mode \n";
+                g_server->bind_idle_task( &daemon_monitor_task );
+            }
+            else {
+                g_server->bind_idle_task(&cmd_line_task);
+            }
 
             return E_SUCCESS;
         }
