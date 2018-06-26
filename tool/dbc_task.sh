@@ -79,7 +79,8 @@ fi
 #add ipfs bootstrap node
 ipfs bootstrap rm --all
 
-ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
+#ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
+ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5
 
 
 echo "end to start ipfs"
@@ -151,7 +152,7 @@ myecho "\n\n"
 echo "======================================================="
 echo -n "begin to exec task: "
 echo $home_dir/$code_dir_hash/$task
-cd $home_dir/$code_dir_hash/
+cd $home_dir/$code_dir_hash
 python ./$task | tee /training_result_file
 
 if [ $? -ne 0 ]; then
@@ -164,8 +165,6 @@ echo $home_dir/$code_dir_hash/$task
 
 echo "start to upload training_result"
 python /upload_training_result.py
-
-
 
 myecho "\n\n"
 
@@ -183,6 +182,3 @@ myecho "\n\n"
 
 echo "======================================================="
 echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
-
-
-

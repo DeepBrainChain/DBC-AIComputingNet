@@ -143,6 +143,8 @@ namespace matrix
             signal(SIGTERM, SIG_IGN);
             signal(SIGINT, SIG_IGN);
             signal(SIGHUP, SIG_IGN);
+			//signal(SIGTTIN, SIG_IGN);
+			//signal(SIGTTOU, SIG_IGN);
             register_signal_function(SIGUSR1, signal_usr1_handler);
 #endif
         }
