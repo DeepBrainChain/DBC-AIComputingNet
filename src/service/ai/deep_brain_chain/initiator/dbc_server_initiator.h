@@ -22,7 +22,7 @@ namespace ai
         {
         public:
 
-            dbc_server_initiator() = default;
+            dbc_server_initiator() : m_daemon(false) {}
 
             virtual int32_t init(int argc, char* argv[]);
 
@@ -33,6 +33,11 @@ namespace ai
 
             virtual int32_t on_cmd_init();
 
+            virtual int32_t on_daemon();
+
+        protected:
+
+            bool m_daemon;
         };
 
     }

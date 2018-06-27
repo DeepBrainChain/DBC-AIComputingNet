@@ -33,7 +33,7 @@ namespace matrix
 
             const std::string & get_net_listen_port() { return m_net_listen_port; }
 
-            void init_net_listen_port(const std::string  & net_listen_port) { m_net_listen_port = net_listen_port; }
+            void init_net_listen_port(const std::string & net_listen_port) { m_net_listen_port = net_listen_port; }
 
         public:
 

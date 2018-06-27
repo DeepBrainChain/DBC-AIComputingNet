@@ -8,6 +8,15 @@
 * author             :   Bruce Feng
 **********************************************************************************/
 #include "dbc_server_initiator.h"
+#if defined(__linux__) || defined(MAC_OSX)
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>  
+#include <sys/stat.h>  
+#include <fcntl.h>  
+#include <stdio.h>
+#endif
 #include "server.h"
 #include "dbc_conf_manager.h"
 #include "connection_manager.h"
@@ -186,17 +195,20 @@ namespace ai
             LOG_DEBUG << "init p2p net service successfully";
 
             //cmd line service
-            LOG_DEBUG << "begin to init command line service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<cmd_line_service>());
-            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
-            ret = mdl->init(vm);
-            if (E_SUCCESS != ret)
+            if (false == m_daemon)
             {
-                //logging
-                return ret;
+                LOG_DEBUG << "begin to init command line service";
+                mdl = std::dynamic_pointer_cast<module>(std::make_shared<cmd_line_service>());
+                g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+                ret = mdl->init(vm);
+                if (E_SUCCESS != ret)
+                {
+                    //logging
+                    return ret;
+                }
+                mdl->start();
+                LOG_DEBUG << "init command line service successfully";
             }
-            mdl->start();
-            LOG_DEBUG << "init command line service successfully";
 
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
@@ -219,6 +231,7 @@ namespace ai
                 ("help,h", "get dbc core help info")
                 ("version,v", "get core version info")
                 ("init,i", "init node id")
+                ("daemon,d", "run as daemon process on Linux or Mac os")
                 ("peer", bpo::value<std::vector<std::string>>(), "");
 
             try
@@ -243,6 +256,10 @@ namespace ai
                 else if (vm.count("init"))
                 {
                     return on_cmd_init();
+                }
+                else if (vm.count("daemon") || vm.count("d"))
+                {
+                    return on_daemon();
                 }
                 //ignore
                 else
@@ -284,6 +301,39 @@ namespace ai
             LOG_DEBUG << "dbc_server_initiator init node info successfully, node_id: " << info.node_id;
 
             return E_EXIT_PARSE_COMMAND_LINE;
+        }
+
+        int32_t dbc_server_initiator::on_daemon()
+        {
+#if defined(__linux__) || defined(MAC_OSX)
+            if (daemon(1, 1))               //log fd is reserved
+            {
+                LOG_ERROR << "dbc daemon error: " << strerror(errno);
+                return E_DEFAULT;
+            }
+
+            LOG_DEBUG << "dbc daemon running succefully";
+
+            //redirect std io to /dev/null
+            int fd = open("/dev/null", O_RDWR);
+            if (fd < 0)
+            {
+                LOG_ERROR << "dbc daemon open /dev/null error";
+                return E_DEFAULT;
+            }
+
+            dup2(fd, STDIN_FILENO);
+            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDERR_FILENO);
+
+            close(fd);
+
+            m_daemon = true;
+            return E_SUCCESS;
+#else
+            LOG_ERROR << "dbc daemon error:  not support";
+            return E_DEFAULT;
+#endif
         }
 
     }

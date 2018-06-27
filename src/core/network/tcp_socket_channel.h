@@ -66,14 +66,10 @@ namespace matrix
 
             io_service *get_io_service() { return m_ios.get(); }
 
-            bool is_logined() 
-            {
-                if (m_socket_handler)
-                {
-                    return m_socket_handler->is_logined();
-                }
-                return false;
-            }
+            //login success and not stopped, channel is ok to send normal service message
+            bool is_channel_ready();
+
+            bool is_stopped() { return m_stopped; }
 
         protected:
 
@@ -106,8 +102,6 @@ namespace matrix
             std::shared_ptr<byte_buf> m_send_buf;
 
             std::shared_ptr<socket_channel_handler> m_socket_handler;
-
-            //channel_handler_context m_handler_context;
 
             tcp::socket m_socket;
 

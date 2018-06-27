@@ -24,6 +24,21 @@ namespace matrix
 
         std::unique_ptr<server> g_server(new server());
 
+
+        void dummy_idle_task()
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
+            //LOG_DEBUG << "main thread do idle cycle task";
+        }
+
+        server::server() 
+            : m_init_result(E_SUCCESS)
+            , m_exited(false)
+            , m_module_manager(new module_manager())
+            , m_idle_task(dummy_idle_task)
+        {        
+        }
+
         int32_t server::init(int argc, char* argv[])
         {
             m_initiator = shared_ptr<server_initiator>(m_init_factory.create_initiator());

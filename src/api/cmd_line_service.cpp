@@ -10,7 +10,7 @@
 #include <iostream>
 #include <limits>
 #include <cstdint>
-#include <unistd.h>
+//#include <unistd.h>
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
@@ -25,13 +25,6 @@ static void cmd_line_task()
         service->on_usr_cmd();
     }    
 }
-
-static void daemon_monitor_task(){
-    while( true ){
-        sleep( 10 );
-    }
-}
-
 
 using namespace std;
 using namespace matrix::core;
@@ -66,16 +59,8 @@ namespace ai
         { 
             cout << "Welcome to DeepBrain Chain AI world!" << std::endl;
             cout << std::endl;
-            //if the process is launched with "nohup dbc &" or "nohup dbc" , both of tcgetpgrp(0)  and tcgetsid(0) return -1 
-            // or  "dbc &",  tcgetpgrp（0） return bash id , tcgetsid(0) return "bash"  pid 
-            if ( tcgetpgrp( 0 ) == tcgetsid( 0 ) ){
-                cout<< "background mode \n";
-                g_server->bind_idle_task( &daemon_monitor_task );
-            }
-            else {
-                g_server->bind_idle_task(&cmd_line_task);
-            }
 
+            g_server->bind_idle_task(&cmd_line_task);
             return E_SUCCESS;
         }
 

@@ -24,7 +24,7 @@ using namespace std;
 using namespace matrix::core;
 using namespace boost::asio;
 
-#define SHAKE_HAND_INTERVAL                             3                  //30s shake hand interval
+#define SHAKE_HAND_INTERVAL                             5                  //shake hand interval
 
 namespace matrix
 {

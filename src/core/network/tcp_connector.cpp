@@ -38,6 +38,7 @@ namespace matrix
             {
                 retry = MAX_RECONNECT_TIMES;
             }
+            
             m_req_reconnect_times = retry;
 
             auto self(shared_from_this());
@@ -61,11 +62,13 @@ namespace matrix
                     const tcp::endpoint &ep = self->get_connect_addr();
                     LOG_DEBUG << "tcp_connector reconnect to " << ep.address().to_string() << ":" << ep.port();
                 }
+                
                 async_connect();
             };
 
             //create tcp socket channel and async connect
             m_client_channel = std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), m_sid, m_handler_create_func, DEFAULT_BUF_LEN);
+
             async_connect();
             return E_SUCCESS;
         }
@@ -164,6 +167,7 @@ namespace matrix
             try
             {
                 auto channel = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel);
+                
                 //start to work
                 if (E_SUCCESS != m_client_channel->start())
                 {
@@ -180,6 +184,7 @@ namespace matrix
                 reconnect(errorinfo);
                 return;
             }
+            
             ////modify by regulus:add_channel after channer start
             //add to connection manager
             int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
@@ -192,6 +197,7 @@ namespace matrix
             //modify by regulus: fix "m_socket_handler =nullptr" when tcp_socket_channel::write.  m_client_channel->start() before connect_notification
             m_connected = true;//mark it before publish
             m_reconnect_times = 0;//reset
+            
             connect_notification(CLIENT_CONNECT_SUCCESS);//last sentence
         }
 

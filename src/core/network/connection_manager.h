@@ -9,7 +9,7 @@
 **********************************************************************************/
 #pragma once
 
-#include "module.h"
+#include "service_module.h"
 #include "nio_loop_group.h"
 #include "tcp_acceptor.h"
 #include "tcp_connector.h"
@@ -23,12 +23,14 @@ using namespace std;
 #define DEFAULT_ACCEPTOR_THREAD_COUNT            1
 #define DEFAULT_CONNECTOR_THREAD_COUNT        1
 #define DEFAULT_WORKER_THREAD_COUNT               8
+#define MIN_RELEASE_CHANNEL_USE_COUNT             2
+
 
 namespace matrix
 {
     namespace core
     {
-        class connection_manager : public module
+        class connection_manager : public service_module
         {
 
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
@@ -38,14 +40,6 @@ namespace matrix
             connection_manager();
 
             virtual ~connection_manager() = default;
-            
-            virtual int32_t init(bpo::variables_map &options);
-
-            virtual int32_t start();
-
-            virtual int32_t stop();
-
-            virtual int32_t exit();
 
             virtual std::string module_name() const { return connection_manager_name; }
 
@@ -67,6 +61,8 @@ namespace matrix
 
             void remove_channel(socket_id sid);
 
+            int32_t stop_channel(socket_id sid);
+
 			shared_ptr<channel> get_channel(socket_id sid);
 
             int32_t send_message(socket_id sid, std::shared_ptr<message> msg);
@@ -74,6 +70,20 @@ namespace matrix
 			void broadcast_message(std::shared_ptr<message> msg, socket_id id = socket_id());
 
         protected:
+
+            virtual int32_t service_init(bpo::variables_map &options);
+
+            int32_t service_exit();
+
+            void init_invoker();
+
+            virtual void init_timer();
+
+            void init_subscription();
+
+            virtual int32_t init_io_services();
+
+            virtual int32_t exit_io_services();
 
             //io_services
             virtual int32_t start_io_services();
@@ -87,13 +97,26 @@ namespace matrix
 
             virtual int32_t stop_all_channel();
 
+            virtual int32_t stop_all_recycle_channel();
+
+            int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
+
+            int32_t on_recycle_timer(std::shared_ptr<matrix::core::core_timer> timer);
+
+            virtual void remove_timers();
+
         protected:
+
+            uint32_t m_channel_recycle_timer;
+
 			//mutex
-            rw_lock m_lock_conn;//connector
+            rw_lock m_lock_conn;        //connector
 
-			rw_lock m_lock_accp;//acceptor
+			rw_lock m_lock_accp;        //acceptor
 
-			rw_lock m_lock_chnl;//channels
+			rw_lock m_lock_chnl;        //channels
+
+            rw_lock m_lock_recycle;     //recycle channels
 
             //io service group
             nio_loop_ptr m_worker_group;
@@ -110,6 +133,9 @@ namespace matrix
 
             //socket channel
             std::map<socket_id, shared_ptr<channel>, cmp_key> m_channels;
+
+            //recycle channel for exception tcp socket channel
+            std::map<socket_id, shared_ptr<channel>, cmp_key> m_recycle_channels;
 
         };
 

@@ -21,7 +21,6 @@
 #include "channel.h"
 #include "ip_validator.h"
 #include "port_validator.h"
-//#include "api_call_handler.h"
 #include "api_call.h"
 #include "id_generator.h"
 #include "version.h"
@@ -570,6 +569,7 @@ namespace matrix
                 LOG_ERROR << "not find in connected channels: " << sid.to_string();
                 return false;
             }
+
             auto ptr_tcp_ch = std::dynamic_pointer_cast<matrix::core::tcp_socket_channel>(ptr_ch);
             if (ptr_tcp_ch)
             {
@@ -750,8 +750,11 @@ namespace matrix
                         {
                             it->last_conn_tm = time(nullptr);
                             it->net_st = ns_zombie;
-                            //close channel
-                            ch->stop();
+
+                            //stop channel
+                            LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
+                            CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+
                             return E_SUCCESS;
                         }
                         else
@@ -765,16 +768,22 @@ namespace matrix
                     }
                 }                
             }
+            else
+            {
+                LOG_ERROR << "p2p net service on ver req get channel error," << msg->header.src_sid.to_string() << "node id: " << req_content->body.node_id;
+                return E_DEFAULT;
+            }
 
             LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
+
             //add new peer node
             if(!add_peer_node(msg))
             {
                 LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed.";
-                if (ch)
-                {                    
-                    ch->stop();//close channel
-                }
+
+                LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
+                CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+
                 return E_DEFAULT;
             }
 
@@ -825,15 +834,20 @@ namespace matrix
                     }
                 }
             }
+            else
+            {
+                LOG_ERROR << "p2p net service on ver resp get channel error," << msg->header.src_sid.to_string() << "node id: " << resp_content->body.node_id;
+                return E_DEFAULT;
+            }
 
             //add new peer node
             if(!add_peer_node(msg))
             {
                 LOG_ERROR << "add node( " << resp_content->body.node_id << " ) failed.";
-                if (ch)
-                {
-                    ch->stop();
-                }
+
+                LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
+                CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+
                 return E_DEFAULT;
             }
 
