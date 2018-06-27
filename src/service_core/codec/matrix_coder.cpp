@@ -220,7 +220,7 @@ namespace matrix
                 auto invoker = it->second;
                 invoker(ctx, proto, msg, out);
 
-                //get msg length and net endiuan and fill in
+                //get msg length and net endian and fill in
                 uint32_t msg_len = out.get_valid_read_len();
                 msg_len = byte_order::hton32(msg_len);
                 memcpy(out.get_read_ptr(), &msg_len, sizeof(msg_len));
