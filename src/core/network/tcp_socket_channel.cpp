@@ -32,6 +32,13 @@ namespace matrix
 
         tcp_socket_channel::~tcp_socket_channel()
         {
+            {
+                LOG_DEBUG << "tcp socket channel clear send queue: " << m_sid.to_string() << "---" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
+
+                std::unique_lock<std::mutex> lock(m_queue_mutex);
+                m_send_queue.clear();
+            }
+
             LOG_DEBUG << "tcp socket channel destroyed, " << m_sid.to_string();
         }
 
@@ -63,12 +70,9 @@ namespace matrix
 
             m_stopped = true;           //notify nio call back function, now i'm stopped and should exit ASAP
 
-            //remove from connection manager
-            CONNECTION_MANAGER->remove_channel(m_sid);
-
             boost::system::error_code error;
 
-            if (m_socket_handler != nullptr)
+            if (m_socket_handler)
             {
                 //stop handler
                 m_socket_handler->stop();
@@ -89,10 +93,6 @@ namespace matrix
             {
                 LOG_ERROR << "tcp socket channel close error: " << error << m_sid.to_string();
             }
-
-            std::unique_lock<std::mutex> lock(m_queue_mutex);
-            LOG_DEBUG << "tcp socket channel clear send queue: " << m_sid.to_string() << "---" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
-            m_send_queue.clear();
 
             return E_SUCCESS;
         }
@@ -118,6 +118,12 @@ namespace matrix
 
         void tcp_socket_channel::async_read()
         {
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "tcp socket channel has been stopped and async read exit directly: " << m_sid.to_string();
+                return;
+            }
+
             //try move but not efficient
             m_recv_buf.move_buf();
 
@@ -412,10 +418,8 @@ namespace matrix
 
         void tcp_socket_channel::on_error()
         {
-            LOG_ERROR << "tcp socket channel error and ready to say bye!" << m_sid.to_string();
-            LOG_DEBUG << "on_error: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
+            LOG_DEBUG << "tcp socket channel on_error: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
             error_notify();
-            this->stop();
         }
 
         void tcp_socket_channel::error_notify()
@@ -431,6 +435,18 @@ namespace matrix
             //notify this to service layer
             LOG_DEBUG << "error_notify: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+        }
+
+        bool tcp_socket_channel::is_channel_ready()
+        {
+            if (nullptr == m_socket_handler
+                || false == m_socket_handler->is_logined()
+                || true == m_stopped)
+            {
+                return false;                       //not ready
+            }
+
+            return true;
         }
 
     }

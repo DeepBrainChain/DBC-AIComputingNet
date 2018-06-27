@@ -13,7 +13,7 @@
 #include<chrono>
 #include "matrix_socket_channel_handler.h"
 
-#define LOST_SHAKE_HAND_COUNT_MAX               5                  //max lost 10 shake hand req
+#define LOST_SHAKE_HAND_COUNT_MAX               3                  //max lost shake hand req
 #define DEFAULT_WAIT_VER_REQ_INTERVAL           5                   //wait VER_REQ interval while socket accepted
 
 

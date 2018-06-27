@@ -32,15 +32,17 @@ namespace matrix
 
         int32_t module_manager::exit_modules()
         {
-            for (auto it = m_modules.begin(); it != m_modules.end(); it++)
+            for (auto it = m_modules_list.rbegin(); it != m_modules_list.rend(); it++)
             {
-                std::shared_ptr<module> module = it->second;
+                std::shared_ptr<module> module = *it;
                 module->stop();
                 std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_STOP_SLEEP_MILLI_SECONDS));
                 module->exit();
             }
 
+            m_modules_list.clear();
             m_modules.clear();
+
             return E_SUCCESS;
         }
 
@@ -63,6 +65,8 @@ namespace matrix
             }
 
             auto p = m_modules.insert(std::make_pair(name, mdl));
+            m_modules_list.push_back(mdl);
+
             return p.second;
         }
 

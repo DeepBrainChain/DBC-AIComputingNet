@@ -56,6 +56,8 @@ namespace matrix
 
             std::unordered_map<std::string, std::shared_ptr<module>> m_modules;
 
+            std::list<std::shared_ptr<module>> m_modules_list;
+
         };
 
     }

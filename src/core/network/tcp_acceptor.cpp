@@ -84,11 +84,20 @@ namespace matrix
         {
             if (error)
             {
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "tcp acceptor on accept aborted: " << error.value() << " " << error.message();
+                    return E_DEFAULT;
+                }
+
                 LOG_ERROR << "tcp acceptor on accept call back error: " << error.value() << " " << error.message();
                 LOG_DEBUG << "channel on_accept use count " << ch.use_count() << ch->id().to_string();
-                ch->on_error();
+
+                ch->on_error();     //?
+
                 //new channel
-                create_channel();//?
+                create_channel();
                 return E_DEFAULT;
             }
 			

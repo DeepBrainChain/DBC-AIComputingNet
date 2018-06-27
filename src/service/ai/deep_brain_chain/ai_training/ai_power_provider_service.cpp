@@ -307,7 +307,7 @@ namespace ai
             //check task_id
             if (0 == m_queueing_tasks.size())
             {
-                LOG_DEBUG << "ai power provider service training queuing task is empty";
+                LOG_DEBUG << "training queuing task is empty";
                 return E_SUCCESS;
             }
 
@@ -508,9 +508,11 @@ namespace ai
             {
                 log_content = "log info query only valid when status is running or closed";
             }
+             
+            
 
             //response content
-            auto rsp_content = std::make_shared<matrix::service_core::logs_resp>();
+            std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
 
             //content header
             rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
@@ -604,7 +606,7 @@ namespace ai
         {
             if (0 == m_queueing_tasks.size())
             {
-                LOG_DEBUG << "ai power provider service training queuing task is empty";
+                LOG_DEBUG << "training queuing task is empty";
                 return E_SUCCESS;
             }
 
@@ -612,12 +614,12 @@ namespace ai
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
             if (task_queueing == task->status)
             {
-                LOG_DEBUG << "ai power provider service training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+                LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
                 return start_exec_training_task(task);
             }
             else if (task_running == task->status)
             {
-                LOG_DEBUG << "ai power provider service training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+                LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
                 return check_training_task_status(task);
             }
             else
@@ -625,7 +627,7 @@ namespace ai
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
-                LOG_ERROR << "ai power provider service training start exec ai training task: " << task->task_id << " invalid status: " << to_training_task_status_string(task->status);
+                LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: " << to_training_task_status_string(task->status);
                 return E_DEFAULT;
             }
         }
@@ -956,7 +958,7 @@ namespace ai
             else
             {
                 task->status = task_succefully_closed;
-                LOG_DEBUG << "ai power provider service restart container while inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_DEBUG << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
                 //flush to db
                 write_task_to_db(task);

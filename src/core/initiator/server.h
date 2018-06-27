@@ -22,11 +22,13 @@
 using namespace std;
 
 
-#define TOPIC_MANAGER                               (g_server->get_topic_manager())
-#define CONF_MANAGER                                (g_server->get_conf_manager())
-#define CONNECTION_MANAGER                  (g_server->get_connection_manager())
-#define P2P_SERVICE                                      (g_server->get_p2p_net_service())
+#define TOPIC_MANAGER                                (g_server->get_topic_manager())
+#define CONF_MANAGER                                 (g_server->get_conf_manager())
+#define CONNECTION_MANAGER                 (g_server->get_connection_manager())
+#define P2P_SERVICE                                        (g_server->get_p2p_net_service())
 
+
+#define DEFAULT_SLEEP_MILLI_SECONDS                 1000
 
 
 namespace matrix
@@ -52,7 +54,7 @@ namespace matrix
 
 		public:
 
-			server() : m_init_result(E_SUCCESS), m_exited(false), m_module_manager(new module_manager()) {}
+            server();
 
 			virtual ~server() = default;
 
