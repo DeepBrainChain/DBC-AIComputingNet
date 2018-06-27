@@ -508,11 +508,9 @@ namespace ai
             {
                 log_content = "log info query only valid when status is running or closed";
             }
-             
-            
 
             //response content
-            std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
+            auto rsp_content = std::make_shared<matrix::service_core::logs_resp>();
 
             //content header
             rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
@@ -524,7 +522,7 @@ namespace ai
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
             log.__set_log_content((nullptr == container_resp) ? log_content : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
-            log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+            log.log_content = log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
 
             rsp_content->body.__set_log(log);
 
