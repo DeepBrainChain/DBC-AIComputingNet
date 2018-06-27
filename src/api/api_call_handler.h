@@ -72,7 +72,7 @@ namespace ai
                     return;
                 }
 
-                cout << "task id: " << task_info.task_id << "       create_time: " << task_info.create_time << endl;
+                cout << "task id: " << task_info.task_id << "       create_time: " << time_util::time_2_str(task_info.create_time) << endl;
             }
         };
 
@@ -127,11 +127,11 @@ namespace ai
                 {
                     if (!it->task_id.empty())
                     {
-                        cout << "task id: " << it->task_id << "     create_time: " << it->create_time << endl;
+                        cout << "task id: " << it->task_id << "     create_time: " << time_util::time_2_str(it->create_time) << endl;
                     }
                     else
                     {
-                        cout << "task id: " << it->task_id << "     create_time: " << it->create_time 
+                        cout << "task id: " << it->task_id << "     create_time: " << time_util::time_2_str(it->create_time)
                             << "result: " << it->result << endl;
                     }                    
                 }
