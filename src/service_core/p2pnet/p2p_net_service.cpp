@@ -662,7 +662,8 @@ namespace matrix
             {
                 //prerequisite: channel has started
                 ep = ptr_tcp_ch->get_remote_addr();
-                if (exist_peer_node(ep))
+                tcp::endpoint epDest(ep.address(), std::atoi(CONF_MANAGER->get_net_listen_port().c_str()));
+                if (exist_peer_node(ep) || exist_peer_node(epDest))
                 {
                     LOG_WARNING << "a new channel established, but remote addr exist in peer_node_list: " << ep.address().to_string() << ":" << ep.port();
                     return false;//exist a p2p channel
@@ -829,6 +830,10 @@ namespace matrix
             if(!add_peer_node(msg))
             {
                 LOG_ERROR << "add node( " << resp_content->body.node_id << " ) failed.";
+                if (ch)
+                {
+                    ch->stop();
+                }
                 return E_DEFAULT;
             }
 
