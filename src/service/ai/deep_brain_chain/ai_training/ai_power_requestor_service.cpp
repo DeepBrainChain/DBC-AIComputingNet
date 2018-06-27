@@ -1098,7 +1098,7 @@ namespace ai
             auto cmd_req = std::dynamic_pointer_cast<cmd_logs_req>(msg->get_content());
             if (nullptr == cmd_req)
             {
-                LOG_ERROR << "ai power requestor service cmd logs msg content nullptr";
+                LOG_ERROR << "ai power requester service cmd logs msg content nullptr";
                 return E_DEFAULT;
             }
 
@@ -1110,7 +1110,7 @@ namespace ai
             leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), cmd_req->task_id, &task_value);
             if (!status.ok())
             {
-                LOG_ERROR << "ai power requestor service cmd logs check task id error: " << cmd_req->task_id;                
+                LOG_ERROR << "ai power requester service cmd logs check task id error: " << cmd_req->task_id;                
 
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "task id not found error";
@@ -1123,7 +1123,7 @@ namespace ai
             //check head or tail
             if (GET_LOG_HEAD != cmd_req->head_or_tail && GET_LOG_TAIL != cmd_req->head_or_tail)
             {
-                LOG_ERROR << "ai power requestor service cmd logs check log direction error: " << std::to_string(cmd_req->head_or_tail);
+                LOG_ERROR << "ai power requester service cmd logs check log direction error: " << std::to_string(cmd_req->head_or_tail);
 
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "log direction error";
@@ -1136,7 +1136,7 @@ namespace ai
             //check number of lines
             if (cmd_req->number_of_lines > MAX_NUMBER_OF_LINES)
             {
-                LOG_ERROR << "ai power requestor service cmd logs check number of lines error: " << std::to_string(cmd_req->number_of_lines);
+                LOG_ERROR << "ai power requester service cmd logs check number of lines error: " << std::to_string(cmd_req->number_of_lines);
 
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "number of lines error: should less than " + std::to_string(cmd_req->number_of_lines);
@@ -1179,7 +1179,7 @@ namespace ai
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "ai power requestor service logs add session error: " << session->get_session_id();
+                LOG_ERROR << "ai power requester service logs add session error: " << session->get_session_id();
 
                 //remove timer
                 remove_timer(timer_id);
@@ -1192,7 +1192,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            LOG_DEBUG << "ai power requestor service logs add session: " << session->get_session_id();
+            LOG_DEBUG << "ai power requester service logs add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);
