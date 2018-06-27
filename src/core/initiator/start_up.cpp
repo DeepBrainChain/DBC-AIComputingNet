@@ -34,6 +34,7 @@ int main_task(int argc, char* argv[])
     {
         LOG_ERROR << "core server init failed and ready to exit, error code: " << result;
         g_server->exit();
+        LOG_ERROR << "core server init exited, error code: " << result;
         return result;
     }
 
