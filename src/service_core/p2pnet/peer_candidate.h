@@ -34,6 +34,7 @@ namespace rj = rapidjson;
 
 #define DEFAULT_CONNECT_PEER_NODE      102400                            //default connect peer nodes
 #define DAT_PEERS_FILE_NAME            "peers.dat"
+#define MAX_PEER_CANDIDATES_CNT        1024
 
 namespace matrix
 {
