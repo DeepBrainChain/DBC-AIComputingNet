@@ -549,7 +549,7 @@ namespace ai
             std::shared_ptr<container_logs_req> container_req = std::make_shared<container_logs_req>();
             container_req->container_id = container_id;
             container_req->head_or_tail = req_content->body.head_or_tail;
-            container_req->number_of_lines = req_content->body.number_of_lines;
+            container_req->number_of_lines = (req_content->body.number_of_lines) ==0 ? MAX_NUMBER_OF_LINES:req_content->body.number_of_lines;
             container_req->timestamps = true;
 
             std::string log_content;
