@@ -1102,7 +1102,7 @@ namespace matrix
                 try
                 {
                     tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
-                    LOG_DEBUG << "recv a peer(" << it->addr.ip << ":" << it->addr.port << "), node_id: " << it->peer_node_id;
+                    LOG_DEBUG << "sid: " << msg->header.src_sid.to_string() << ", recv a peer(" << it->addr.ip << ":" << it->addr.port << "), node_id: " << it->peer_node_id;
                     //is in list
                     std::list<peer_candidate>::iterator it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
                         , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
