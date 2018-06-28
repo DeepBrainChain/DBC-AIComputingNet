@@ -214,7 +214,7 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service nonce error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             //check node id
@@ -315,7 +315,7 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service on_stop_training_req nonce error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             vchRet.clear();
@@ -323,7 +323,7 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req->body.task_id), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service on_stop_training_req task_id error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             //relay on stop_training to network(maybe task running on multiple nodes)
@@ -334,7 +334,7 @@ namespace ai
             if (0 == m_queueing_tasks.size())
             {
                 LOG_DEBUG << "training queuing task is empty";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             std::shared_ptr<ai_training_task> sp_task;
@@ -389,7 +389,7 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service nonce error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             vchRet.clear();
@@ -397,7 +397,7 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service sessionid error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             assert(nullptr != req_content);
@@ -501,7 +501,7 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service nonce error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             vchRet.clear();
@@ -509,14 +509,14 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
             {
                 LOG_DEBUG << "ai power provider service session_id error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
             vchRet.clear();
 
             if (DecodeBase58Check(SanitizeString(req_content->body.task_id), vchRet) != true)
             {
                 LOG_DEBUG << "taskid error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
             
 
