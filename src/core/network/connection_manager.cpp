@@ -549,6 +549,7 @@ namespace matrix
                 auto ch = std::dynamic_pointer_cast<tcp_socket_channel>(it->second);
                 if (nullptr == ch)
                 {
+                    goodbye_channels.push(it->first);
                     continue;
                 }
 
