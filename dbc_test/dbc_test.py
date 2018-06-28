@@ -139,7 +139,7 @@ def start_training_req1(task_id):
     return pack(m)
 
 if __name__=="__main__":
-    print "中文".encode('gb2312')
+    print "中文"
     task_id = u'k'+str(time.time())
     print task_id
     Host = '39.105.47.155'
