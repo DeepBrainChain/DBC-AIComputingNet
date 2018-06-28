@@ -47,17 +47,10 @@ namespace matrix
             virtual std::string module_name() const { return p2p_service_name; }
 
         public:
-
-            //peer node
-            void get_all_peer_nodes(peer_list_type &nodes);
-
-            std::shared_ptr<peer_node> get_peer_node(const std::string &id);
-
             //config param
             std::string get_host_ip() const { return m_host_ip; }
 
             uint16_t get_net_listen_port() const {return m_net_listen_port;}
-
 
         protected:
 
@@ -77,6 +70,12 @@ namespace matrix
             virtual int32_t service_init(bpo::variables_map &options);
 
             int32_t service_exit();
+
+        private:
+            //if call from outside, please think about thread-safe of m_peer_nodes_map
+            void get_all_peer_nodes(peer_list_type &nodes);
+
+            std::shared_ptr<peer_node> get_peer_node(const std::string &id);
 
             bool add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version);
 
@@ -135,8 +134,6 @@ namespace matrix
             uint16_t m_net_listen_port;
 
             std::list<peer_candidate> m_peer_candidates;
-
-            rw_lock m_nodes_lock;
 
             peer_map_type m_peer_nodes_map;
 
