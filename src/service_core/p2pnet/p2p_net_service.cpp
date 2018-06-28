@@ -533,58 +533,6 @@ namespace matrix
             return ret;
         }
 
-        bool p2p_net_service::add_peer_node(const socket_id &sid, const std::string &nid, int32_t core_version, int32_t protocol_version)
-        {
-            LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
-
-            tcp::endpoint ep;
-            if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
-            {
-                LOG_WARNING << "duplicated node id: " << nid;
-                return false;
-            }
-
-            auto ptr_ch = CONNECTION_MANAGER->get_channel(sid);
-            if (!ptr_ch)
-            {
-                LOG_ERROR << "not find in connected channels: " << sid.to_string();
-                return false;
-            }
-
-            auto ptr_tcp_ch = std::dynamic_pointer_cast<matrix::core::tcp_socket_channel>(ptr_ch);
-            if (ptr_tcp_ch)
-            {
-                //prerequisite: channel has started
-                ep = ptr_tcp_ch->get_remote_addr();
-                if (exist_peer_node(ep))
-                {
-                    LOG_WARNING << "a new channel established, but remote addr exist in peer_node_list: " << ep.address().to_string() << ":" << ep.port();
-                    return false;//exist a p2p channel
-                }
-            }
-            else
-            {
-                LOG_ERROR << nid << "not find in connected channels."; 
-                return false;
-            }
-
-            std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
-            node->m_id = nid;
-            node->m_sid = sid;
-            node->m_core_version = core_version;
-            node->m_protocol_version = protocol_version;
-            node->m_connected_time = std::time(nullptr);
-            node->m_live_time = 0;
-            node->m_connection_status = connected;
-            node->m_peer_addr = ptr_tcp_ch->get_remote_addr();
-            node->m_local_addr = ptr_tcp_ch->get_local_addr();            
-            
-            m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
-            LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port() << sid.to_string();
-
-            return true;
-        }
-
         bool p2p_net_service::add_peer_node(std::shared_ptr<message> &msg)
         { 
             if (!msg)
@@ -625,6 +573,9 @@ namespace matrix
             }
             
             LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
+            if (nid.empty())
+                return false;
+
             if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
             {
                 LOG_WARNING << "duplicated node id: " << nid;
@@ -643,12 +594,6 @@ namespace matrix
             {
                 //prerequisite: channel has started
                 ep = ptr_tcp_ch->get_remote_addr();
-                tcp::endpoint epDest(ep.address(), std::atoi(CONF_MANAGER->get_net_listen_port().c_str()));
-                if (exist_peer_node(ep) || exist_peer_node(epDest))
-                {
-                    LOG_WARNING << "a new channel established, but remote addr exist in peer_node_list: " << ep.address().to_string() << ":" << ep.port();
-                    return false;//exist a p2p channel
-                }
             }
             else
             {
@@ -675,7 +620,7 @@ namespace matrix
             }
             node->m_local_addr = ptr_tcp_ch->get_local_addr();
 
-            m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
+            m_peer_nodes_map[node->m_id] = node;
 
             LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port() << "sid=" << sid.to_string();
 
