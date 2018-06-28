@@ -16,6 +16,7 @@
 
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
+#include "task_common_def.h"
 
 
 namespace matrix
@@ -418,7 +419,7 @@ namespace matrix
             //get log from tail
             if (1 == req->head_or_tail)
             {
-                endpoint += (0 == req->number_of_lines) ? "&tail=all" : "&tail=" + std::to_string(req->number_of_lines);
+                endpoint += (0 == req->number_of_lines) ? "&tail="+std::to_string(MAX_NUMBER_OF_LINES) : "&tail=" + std::to_string(req->number_of_lines);
             }
 
             //headers, resp

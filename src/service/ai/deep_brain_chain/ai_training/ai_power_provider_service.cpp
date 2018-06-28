@@ -22,6 +22,8 @@
 #include "port_validator.h"
 #include "task_common_def.h"
 #include "util.h"
+#include "utilstrencodings.h"
+#include "base58.h"
 
 
 using namespace std;
@@ -207,6 +209,14 @@ namespace ai
             std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
             assert(nullptr != req);
 
+            std::vector<unsigned char> vchRet;
+            
+            if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service nonce error ";
+                return E_SUCCESS;
+            }
+
             //check node id
             const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
             auto it = peer_nodes.begin();
@@ -358,6 +368,22 @@ namespace ai
         int32_t ai_power_provider_service::on_list_training_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<list_training_req> req_content = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
+
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service nonce error ";
+                return E_SUCCESS;
+            }
+
+            vchRet.clear();
+
+            if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service sessionid error ";
+                return E_SUCCESS;
+            }
+
             assert(nullptr != req_content);
             LOG_DEBUG << "on_list_training_req recv req, nonce: " << req_content->header.nonce << ", session: " << req_content->header.session_id;
 
@@ -376,6 +402,8 @@ namespace ai
                 return E_SUCCESS;
             }
 
+            
+
             std::vector<matrix::service_core::task_status> status_list;
             for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
             {
@@ -388,6 +416,14 @@ namespace ai
 
                 matrix::service_core::task_status ts;
                 ts.task_id = it_task->second->task_id;
+                vchRet.clear();
+
+                if (DecodeBase58Check(SanitizeString(ts.task_id), vchRet) != true)
+                {
+                    LOG_DEBUG << "ai power provider service taskid error: " << ts.task_id;
+                    continue;
+                }
+                
                 ts.status = it_task->second->status;
                 status_list.push_back(ts);
                 LOG_DEBUG << "on_list_training_req task: " << ts.task_id << "--" << to_training_task_status_string(ts.status);
@@ -444,6 +480,29 @@ namespace ai
         {
             std::shared_ptr<logs_req> req_content = std::dynamic_pointer_cast<logs_req>(msg->get_content());
             assert(nullptr != req_content);
+
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service nonce error ";
+                return E_SUCCESS;
+            }
+
+            vchRet.clear();
+
+            if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service session_id error ";
+                return E_SUCCESS;
+            }
+            vchRet.clear();
+
+            if (DecodeBase58Check(SanitizeString(req_content->body.task_id), vchRet) != true)
+            {
+                LOG_DEBUG << "taskid error ";
+                return E_SUCCESS;
+            }
+            
 
             const std::string &task_id = req_content->body.task_id;
 
@@ -543,6 +602,7 @@ namespace ai
             // 0x01 0x00  0x00 0x00 0x00 0x00 0x00 0x38
             //we should remove it
             //and ends with 0x30 0x0d 0x0a 
+            max_lines = (max_lines==0) ? MAX_NUMBER_OF_LINES : max_lines;
             size_t size = raw_logs.size();
             vector<unsigned char> log_vector(size);
 
