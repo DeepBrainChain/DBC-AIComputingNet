@@ -310,6 +310,22 @@ namespace ai
             std::shared_ptr<matrix::service_core::stop_training_req> req = std::dynamic_pointer_cast<matrix::service_core::stop_training_req>(msg->get_content());
             assert(nullptr != req);
 
+            std::vector<unsigned char> vchRet;
+            
+            if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service on_stop_training_req nonce error ";
+                return E_SUCCESS;
+            }
+
+            vchRet.clear();
+                        
+            if (DecodeBase58Check(SanitizeString(req->body.task_id), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power provider service on_stop_training_req task_id error ";
+                return E_SUCCESS;
+            }
+
             //relay on stop_training to network(maybe task running on multiple nodes)
             LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
             CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);

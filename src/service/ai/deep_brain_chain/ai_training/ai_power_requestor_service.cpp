@@ -29,7 +29,7 @@
 #include "task_common_def.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include "base58.h"
-
+#include "utilstrencodings.h"
 
 
 using namespace std;
@@ -719,10 +719,26 @@ namespace ai
             }
 
             std::shared_ptr<matrix::service_core::list_training_resp> rsp_content = std::dynamic_pointer_cast<matrix::service_core::list_training_resp>(msg->content);
+
+            
             if (!rsp_content)
             {
                 LOG_ERROR << "recv list_training_resp but ctn is nullptr";
                 return E_DEFAULT;
+            }
+
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(rsp_content->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power requster service on_list_training_resp. nonce error ";
+                return E_SUCCESS;
+            }
+
+            vchRet.clear();
+            if (DecodeBase58Check(SanitizeString(rsp_content->header.session_id), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power requster service on_list_training_resp. session_id error ";
+                return E_SUCCESS;
             }
 
             //broadcast resp
@@ -1213,6 +1229,20 @@ namespace ai
             {
                 LOG_ERROR << "recv logs_resp but ctn is nullptr";
                 return E_DEFAULT;
+            }
+
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(rsp_content->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power requster service on_logs_resp. nonce error ";
+                return E_SUCCESS;
+            }
+
+            vchRet.clear();
+            if (DecodeBase58Check(SanitizeString(rsp_content->header.session_id), vchRet) != true)
+            {
+                LOG_DEBUG << "ai power requster service on_logs_resp. session_id error ";
+                return E_SUCCESS;
             }
 
             //get session
