@@ -12,7 +12,6 @@
 
 #include "matrix_types.h"
 
-
 namespace matrix
 {
     namespace service_core
@@ -38,6 +37,8 @@ namespace matrix
 
             int32_t live_time_stamp;
 
+            int8_t net_st = -1;
+
             cmd_network_address addr;
 
             std::vector<std::string> service_list;
@@ -45,6 +46,7 @@ namespace matrix
             cmd_peer_node_info &operator=(const matrix::service_core::peer_node_info &info) {
                 peer_node_id = info.peer_node_id;
                 live_time_stamp = info.live_time_stamp;
+                net_st = -1;
                 addr.ip = info.addr.ip;
                 addr.port = info.addr.port;
                 service_list = info.service_list;
