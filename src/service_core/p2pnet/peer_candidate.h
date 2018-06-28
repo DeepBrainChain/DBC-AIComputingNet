@@ -84,6 +84,23 @@ namespace matrix
             }
         };
 
+        static std::string net_state_2_string(int8_t st)
+        {
+            switch ((net_state)st)
+            {
+            case ns_idle:
+                return "idle";
+            case ns_in_use:
+                return "in_use";
+            case ns_failed:
+                return "failed";
+            case ns_zombie:
+                return "zombie";
+            default:
+                return "";
+            }
+        }
+
         static int32_t save_peer_candidates(std::list<peer_candidate> &cands)
         {
             LOG_DEBUG << "save peer candidates: " << cands.size();

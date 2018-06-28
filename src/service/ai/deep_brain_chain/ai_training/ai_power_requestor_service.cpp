@@ -780,12 +780,15 @@ namespace ai
             for (auto info : *vec_task_infos_to_show)
             {
                 auto it = task_ids->find(info.task_id);
-                if ((it != task_ids->end()) && (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed)))
+                if ((it != task_ids->end()))
                 {
                     info.status = it->second;
-                    write_task_info_to_db(info);
+                    if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed))
+                    {
+                        write_task_info_to_db(info);
+                    }
                 }
-
+                
                 cmd_task_status cts;
                 cts.task_id = info.task_id;
                 cts.status = info.status;

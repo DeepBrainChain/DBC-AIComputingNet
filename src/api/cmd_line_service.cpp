@@ -358,7 +358,7 @@ namespace ai
                     else
                     {
                         cmd_get_peer_nodes_resp_formater formater(resp);
-                        formater.format_output();
+                        formater.format_output(req->flag);
                     }
                 }
                 else if (vm.count("help") || vm.count("h"))

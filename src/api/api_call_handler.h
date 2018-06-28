@@ -23,6 +23,7 @@
 #include <set>
 #include "time_util.h"
 #include "db_types.h"
+#include "peer_candidate.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -196,17 +197,27 @@ namespace ai
                 m_data = data;
             };
 
-            void format_output()
+            void format_output(matrix::service_core::get_peers_flag flag)
             {
-                console_printer printer;
-                printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
-
-                printer << matrix::core::init << "peer_id" << "ip" << "port" << "service_list" << matrix::core::endl;
-
                 auto v = m_data.get();
                 if (v == nullptr)
                 {
                     return;
+                }
+
+                console_printer printer;
+                if (matrix::service_core::flag_active == flag)
+                {
+                    printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
+
+                    printer << matrix::core::init << "peer_id" << "ip" << "port" << "service_list" << matrix::core::endl;
+
+                }
+                else if (matrix::service_core::flag_global == flag)
+                {
+                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 10)(LEFT_ALIGN, 48)(LEFT_ALIGN, 64);
+
+                    printer << matrix::core::init << "ip" << "port" << "state" << "peer_id" << "service_list" << matrix::core::endl;
                 }
 
                 auto it = v->peer_nodes_list.begin();
@@ -221,7 +232,15 @@ namespace ai
                             svc_list += "|";
                         }
                     }
-                    printer << matrix::core::init << it->peer_node_id << it->addr.ip << it->addr.port << svc_list << matrix::core::endl;
+                    if (matrix::service_core::flag_active == flag)
+                    {
+                        printer << matrix::core::init << it->peer_node_id << it->addr.ip << it->addr.port << svc_list << matrix::core::endl;
+                    }
+                    else if (matrix::service_core::flag_global == flag)
+                    {
+                        printer << matrix::core::init << it->addr.ip << it->addr.port << matrix::service_core::net_state_2_string(it->net_st) 
+                            << (it->peer_node_id.empty() ? "*" : it->peer_node_id) << svc_list << matrix::core::endl;
+                    }
                 }
             }
         private:
