@@ -124,6 +124,10 @@ namespace matrix
 
             bool has_available_peer_candidates();
 
+            bool is_peer_candidate_exist(tcp::endpoint &ep);
+
+            bool add_peer_candidate(tcp::endpoint &ep, net_state ns);
+
         protected:
 
             std::string m_host_ip;
