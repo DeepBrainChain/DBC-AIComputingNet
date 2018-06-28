@@ -1048,6 +1048,10 @@ namespace matrix
 
         int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<message> &msg)
         {
+            //limit of candidates
+            if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT)
+                return E_SUCCESS;
+
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> rsp = std::dynamic_pointer_cast<matrix::service_core::get_peer_nodes_resp>(msg->content);
             if (!rsp)
             {
@@ -1184,7 +1188,13 @@ namespace matrix
         }
 
         bool p2p_net_service::add_peer_candidate(tcp::endpoint &ep, net_state ns)
-        {            
+        {     
+            if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT)
+            {
+                //limit
+                return false;
+            }
+
             std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
                 , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
             if (it == m_peer_candidates.end())
