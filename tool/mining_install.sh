@@ -28,7 +28,8 @@ if [ $? -ne 0 ]; then
 fi
 echo "***install third library success***"
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+#curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+cat ./docker_gpg.key | sudo apt-key add -
 if [ $? -ne 0 ]; then
     echo "***curl apt-key error***"
     exit
