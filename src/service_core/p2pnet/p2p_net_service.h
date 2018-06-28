@@ -46,8 +46,6 @@ namespace matrix
 
             virtual std::string module_name() const { return p2p_service_name; }
 
-			virtual int32_t init(bpo::variables_map &options);
-
         public:
 
             //peer node
@@ -127,6 +125,8 @@ namespace matrix
             bool is_peer_candidate_exist(tcp::endpoint &ep);
 
             bool add_peer_candidate(tcp::endpoint &ep, net_state ns);
+
+            bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
 
         protected:
 
