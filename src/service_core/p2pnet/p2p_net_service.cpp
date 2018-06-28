@@ -752,7 +752,7 @@ namespace matrix
                             it->net_st = ns_zombie;
 
                             //stop channel
-                            LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
+                            LOG_DEBUG << "same node_id, p2p net service stop channel: " << msg->header.src_sid.to_string();
                             CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
 
                             return E_SUCCESS;
@@ -1033,6 +1033,7 @@ namespace matrix
                     matrix::service_core::cmd_peer_node_info node_info;
                     node_info.peer_node_id = it->node_id;
                     node_info.live_time_stamp = 0;
+                    node_info.net_st = (int8_t)it->net_st;
                     node_info.addr.ip = it->tcp_ep.address().to_string();
                     node_info.addr.port = it->tcp_ep.port();
                     node_info.service_list.clear();
