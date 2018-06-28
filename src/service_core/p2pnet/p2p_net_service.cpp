@@ -48,7 +48,6 @@ namespace matrix
 
         void p2p_net_service::get_all_peer_nodes(peer_list_type &nodes)
         {
-            read_lock_guard<rw_lock> lock(m_nodes_lock);
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); it++)
             {
                 nodes.push_back(it->second);
@@ -57,8 +56,6 @@ namespace matrix
 
         std::shared_ptr<peer_node> p2p_net_service::get_peer_node(const std::string &id)
         {
-            read_lock_guard<rw_lock> lock(m_nodes_lock);
-
             auto it = m_peer_nodes_map.find(id);
             if (it == m_peer_nodes_map.end())
             {
@@ -473,7 +470,6 @@ namespace matrix
                     //case: inverse connect to peer
                     if (!it->node_id.empty())
                     {
-                        read_lock_guard<rw_lock> lock(m_nodes_lock);
                         if (m_peer_nodes_map.find(it->node_id) != m_peer_nodes_map.end())
                         {
                             //it->net_st = ns_in_use;//do not change state
@@ -541,7 +537,6 @@ namespace matrix
         {
             LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
 
-            write_lock_guard<rw_lock> lock(m_nodes_lock);
             tcp::endpoint ep;
             if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
             {
@@ -680,8 +675,8 @@ namespace matrix
             }
             node->m_local_addr = ptr_tcp_ch->get_local_addr();
 
-            write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.insert(std::make_pair(node->m_id, node));
+
             LOG_DEBUG << "add a new peer_node(" << node->m_id << "), remote addr: " << ep.address().to_string() << ":" << ep.port() << "sid=" << sid.to_string();
 
             return true;
@@ -689,7 +684,6 @@ namespace matrix
         
         void p2p_net_service::remove_peer_node(const std::string &id)
         {
-            write_lock_guard<rw_lock> lock(m_nodes_lock);
             m_peer_nodes_map.erase(id);
             LOG_INFO << "remove node(" << id << ")";
         }
@@ -702,7 +696,6 @@ namespace matrix
             if (addr.get_ip() == m_host_ip && addr.get_port() == m_net_listen_port)
                 return true;
 
-            read_lock_guard<rw_lock> lock(m_nodes_lock);
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
             {
                 if (it->second->m_peer_addr == addr)
@@ -898,7 +891,6 @@ namespace matrix
 
             //rm peer_node                
             LOG_DEBUG << "sizeof m_peer_nodes_map is " << m_peer_nodes_map.size() << "; rm node: " << sid.to_string();
-            write_lock_guard<rw_lock> lock(m_nodes_lock);
             for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
             {
                 if (it->second->m_sid == sid)
@@ -1016,7 +1008,6 @@ namespace matrix
 
             if(req->flag == matrix::service_core::flag_active)
             {
-                read_lock_guard<rw_lock> lock(m_nodes_lock);
                 for (auto itn = m_peer_nodes_map.begin(); itn != m_peer_nodes_map.end(); ++itn)
                 {
                     matrix::service_core::cmd_peer_node_info node_info;
@@ -1073,7 +1064,6 @@ namespace matrix
 
             const uint32_t max_peer_cnt_per_pack = 50;
             const uint32_t max_pack_cnt = 10;            
-            read_lock_guard<rw_lock> lock(m_nodes_lock);
             auto it = m_peer_nodes_map.begin();
             for (uint32_t i = 0; (i <= m_peer_nodes_map.size() / max_peer_cnt_per_pack) && (i < max_pack_cnt); i++)
             {
@@ -1201,22 +1191,20 @@ namespace matrix
             }
             else// broadcast all nodes
             {
+                for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
                 {
-                    read_lock_guard<rw_lock> lock(m_nodes_lock);
-                    for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
+                    if (it->second->m_id == CONF_MANAGER->get_node_id())
                     {
-                        if (it->second->m_id == CONF_MANAGER->get_node_id())
-                        {
-                            //assert(0); //should never occur
-                            LOG_ERROR << "peer node(" << it->second->m_id << ") is myself.";
-                            continue;
-                        }     
-                        matrix::service_core::peer_node_info info;
-                        assign_peer_info(info, it->second);
-                        info.service_list.push_back(std::string("ai_training"));
-                        resp_content->body.peer_nodes_list.push_back(std::move(info));
-                    }
+                        //assert(0); //should never occur
+                        LOG_ERROR << "peer node(" << it->second->m_id << ") is myself.";
+                        continue;
+                    }     
+                    matrix::service_core::peer_node_info info;
+                    assign_peer_info(info, it->second);
+                    info.service_list.push_back(std::string("ai_training"));
+                    resp_content->body.peer_nodes_list.push_back(std::move(info));
                 }
+
                 //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
                 if (resp_content->body.peer_nodes_list.size() > 0)
                 {
