@@ -46,13 +46,6 @@ namespace matrix
 
         }
 
-        int32_t p2p_net_service::init(bpo::variables_map &options)
-        {
-            uint32_t ret = service_module::init(options);
-
-            return ret;
-        }
-
         void p2p_net_service::get_all_peer_nodes(peer_list_type &nodes)
         {
             read_lock_guard<rw_lock> lock(m_nodes_lock);
@@ -229,13 +222,6 @@ namespace matrix
                 try
                 {
                     tcp::endpoint ep(ip::address::from_string(ip), (uint16_t)port);
-                    if (is_peer_candidate_exist(ep))
-                    {
-                        //case: duplicated address from peer_addresses
-                        continue;                        
-                    }
-                    add_peer_candidate(ep, ns_in_use);
-
                     //start connect
                     LOG_DEBUG << "matrix connect peer address, ip: " << ip << " port: " << str_port;
                     if (exist_peer_node(ep))
@@ -248,6 +234,15 @@ namespace matrix
                     {
                         LOG_ERROR << "matrix init connector invalid peer address, ip: " << ip << " port: " << str_port;
                         continue;
+                    }   
+                    if (is_peer_candidate_exist(ep))
+                    {
+                        //case: duplicated address from peer_addresses
+                        update_peer_candidate_state(ep, ns_in_use);                      
+                    }
+                    else
+                    {
+                        add_peer_candidate(ep, ns_in_use);
                     }
                 }
                 catch (const std::exception &e)
@@ -1262,6 +1257,19 @@ namespace matrix
             if (it == m_peer_candidates.end())
             {
                 m_peer_candidates.emplace_back(ep, ns);
+                return true;
+            }
+
+            return false;
+        }
+
+        bool p2p_net_service::update_peer_candidate_state(tcp::endpoint &ep, net_state ns)
+        {
+            std::list<peer_candidate>::iterator it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
+            if (it != m_peer_candidates.end())
+            {
+                it->net_st = ns;
                 return true;
             }
 
