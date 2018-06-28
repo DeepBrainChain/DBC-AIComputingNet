@@ -501,6 +501,13 @@ namespace matrix
 
         void connection_manager::broadcast_message(std::shared_ptr<message> msg, socket_id id /*= socket_id()*/)
         {
+            
+            if (msg->content->header.nonce.length() == 0)
+            {
+                LOG_DEBUG << "nonce is null. not broadcast. " << msg->get_name();
+                return;
+            }
+            
             read_lock_guard<rw_lock> lock(m_lock_chnl);
             auto it = m_channels.begin();
             for (; it != m_channels.end(); ++it)

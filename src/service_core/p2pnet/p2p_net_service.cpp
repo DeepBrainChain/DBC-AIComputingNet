@@ -726,6 +726,13 @@ namespace matrix
                 return E_DEFAULT;
             }
 
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "p2p_net_service ver_req. nonce error ";
+                return E_DEFAULT;
+            }
+
             //filter node which connects to the same node(maybe another process with same nodeid)   
             auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
             if (ch)
@@ -803,7 +810,18 @@ namespace matrix
         int32_t p2p_net_service::on_ver_resp(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::dynamic_pointer_cast<matrix::service_core::ver_resp>(msg->content);
+            if (!resp_content)
+            {
+                LOG_ERROR << "recv ver_resp, but resp_content is null.";
+                return E_DEFAULT;
+            }
 
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(resp_content->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "p2p_net_service ver_resp. nonce error ";
+                return E_DEFAULT;
+            }
             LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id;
 
             auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
@@ -1045,6 +1063,18 @@ namespace matrix
                 //ignore request
                 return E_SUCCESS;
             }
+            std::shared_ptr<matrix::service_core::get_peer_nodes_req> req = std::dynamic_pointer_cast<matrix::service_core::get_peer_nodes_req>(msg->content);
+            if (!req)
+            {
+                LOG_ERROR << "recv get_peer_nodes_req, but req_content is null.";
+                return E_DEFAULT;
+            }
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "p2p_net_service on_get_peer_nodes_req. nonce error ";
+                return E_DEFAULT;
+            }
 
             const uint32_t max_peer_cnt_per_pack = 50;
             const uint32_t max_pack_cnt = 10;            
@@ -1089,6 +1119,18 @@ namespace matrix
         int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> rsp = std::dynamic_pointer_cast<matrix::service_core::get_peer_nodes_resp>(msg->content);
+            if (!rsp)
+            {
+                LOG_ERROR << "recv get_peer_nodes_resp, but req_content is null.";
+                return E_DEFAULT;
+            }
+
+            std::vector<unsigned char> vchRet;
+            if (DecodeBase58Check(SanitizeString(rsp->header.nonce), vchRet) != true)
+            {
+                LOG_DEBUG << "p2p_net_service on_get_peer_nodes_resp. nonce error ";
+                return E_SUCCESS;
+            }
             for (auto it = rsp->body.peer_nodes_list.begin(); it != rsp->body.peer_nodes_list.end(); ++it)
             {
                 try

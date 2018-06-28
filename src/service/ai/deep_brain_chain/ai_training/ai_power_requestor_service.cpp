@@ -731,14 +731,14 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(rsp_content->header.nonce), vchRet) != true)
             {
                 LOG_DEBUG << "ai power requster service on_list_training_resp. nonce error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             vchRet.clear();
             if (DecodeBase58Check(SanitizeString(rsp_content->header.session_id), vchRet) != true)
             {
                 LOG_DEBUG << "ai power requster service on_list_training_resp. session_id error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             //broadcast resp
@@ -1238,14 +1238,14 @@ namespace ai
             if (DecodeBase58Check(SanitizeString(rsp_content->header.nonce), vchRet) != true)
             {
                 LOG_DEBUG << "ai power requster service on_logs_resp. nonce error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             vchRet.clear();
             if (DecodeBase58Check(SanitizeString(rsp_content->header.session_id), vchRet) != true)
             {
                 LOG_DEBUG << "ai power requster service on_logs_resp. session_id error ";
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
             //get session
