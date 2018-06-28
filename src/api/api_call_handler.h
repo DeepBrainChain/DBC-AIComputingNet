@@ -215,31 +215,31 @@ namespace ai
                 }
                 else if (matrix::service_core::flag_global == flag)
                 {
-                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 10)(LEFT_ALIGN, 48)(LEFT_ALIGN, 64);
+                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 10)(LEFT_ALIGN, 48);
 
-                    printer << matrix::core::init << "ip" << "port" << "state" << "peer_id" << "service_list" << matrix::core::endl;
+                    printer << matrix::core::init << "ip" << "port" << "state" << "peer_id" << matrix::core::endl;
                 }
 
                 auto it = v->peer_nodes_list.begin();
                 for (; it != v->peer_nodes_list.end(); ++it)
                 {
-                    std::string svc_list;
-                    for (auto its = it->service_list.begin(); its != it->service_list.end(); ++its)
-                    {
-                        svc_list += *its;
-                        if (its + 1 != it->service_list.end())
-                        {
-                            svc_list += "|";
-                        }
-                    }
                     if (matrix::service_core::flag_active == flag)
-                    {
+                    {                    
+                        std::string svc_list;
+                        for (auto its = it->service_list.begin(); its != it->service_list.end(); ++its)
+                        {
+                            svc_list += *its;
+                            if (its + 1 != it->service_list.end())
+                            {
+                                svc_list += "|";
+                            }
+                        }
                         printer << matrix::core::init << it->peer_node_id << it->addr.ip << it->addr.port << svc_list << matrix::core::endl;
                     }
                     else if (matrix::service_core::flag_global == flag)
                     {
                         printer << matrix::core::init << it->addr.ip << it->addr.port << matrix::service_core::net_state_2_string(it->net_st) 
-                            << (it->peer_node_id.empty() ? "*" : it->peer_node_id) << svc_list << matrix::core::endl;
+                            << (it->peer_node_id.empty() ? "N/A" : it->peer_node_id) << matrix::core::endl;
                     }
                 }
             }
