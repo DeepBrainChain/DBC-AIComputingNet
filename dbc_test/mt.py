@@ -171,6 +171,7 @@ def decode2(msg,msg_len):
     print "body: "
     pprint(vars(body), indent=4, width=24)
     print "#############################################"
+    return packet_header_len, protocol_type,h,body
 
 
 
