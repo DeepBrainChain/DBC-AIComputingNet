@@ -9,7 +9,7 @@ import struct
 import mt
 import binascii
 import time
-
+import unittest
 # redefine STOP mark from 0x00 to 0x7f
 def pack(tMemoryBuffer):
     code = struct.pack('!L', tMemoryBuffer.getvalue().__len__() + 8)
@@ -137,111 +137,144 @@ def start_training_req1(task_id):
     m.flush()
     #send_s = binascii.hexlify(code)
     return pack(m)
+class TestDecode (unittest.TestCase):
+
+    def test_handshake(self):
+        task_id = u'k' + str(time.time())
+        print task_id
+        Host = '39.105.47.155'
+        PORT = 21107
+        BUFSIZE = 10240
+        ADDR = (Host, PORT)
+        tcpclisock = socket(AF_INET, SOCK_STREAM)
+        tcpclisock.connect(ADDR)
+        tcpclisock.send(ver_req())
+
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        recv_s = binascii.hexlify(rd)
+
+        packet_header_len, protocol_type, h, body = mt.decode2(rd, len(rd))
+        self.assertTrue(packet_header_len>0)
+        self.assertTrue(protocol_type ==0)
+        self.assertTrue(vars(h).get("msg_name")=="ver_resp")
+
+        print "##--------------------------"
+        ##--------------------------
+        tcpclisock.send(shake_hand_req1())
+
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        recv_s = binascii.hexlify(rd)
+        packet_header_len, protocol_type, h, body =mt.decode2(rd, len(rd))
+        self.assertTrue(packet_header_len > 0)
+        self.assertTrue(protocol_type == 0)
+        self.assertTrue(vars(h).get("msg_name") == "shake_hand_resp")
+        print "##--------------------------"
+        tcpclisock.send(get_peer_node_req1())
+
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        recv_s = binascii.hexlify(rd)
+
+        packet_header_len, protocol_type, h, body = mt.decode2(rd, len(rd))
+        self.assertTrue(packet_header_len > 0)
+        self.assertTrue(protocol_type == 0)
+        self.assertTrue(vars(h).get("msg_name") == "get_peer_nodes_resp")
+        self.assertTrue(len(vars(body).get("peer_nodes_list")) > 0)
+        self.assertTrue(vars(body).get("peer_nodes_list")[0].addr.port==21107)
+        self.assertIsNotNone(vars(body).get("peer_nodes_list")[0].peer_node_id)
+        print "##--------------------------"
+        ##--------------------------
+        tcpclisock.send(list_training_req1("k1530189402.26"))
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        recv_s = binascii.hexlify(rd)
+
+        packet_header_len, protocol_type, h, body = mt.decode2(rd, len(rd))
+        self.assertTrue(packet_header_len > 0)
+        self.assertTrue(protocol_type == 0)
+        self.assertTrue(vars(h).get("msg_name") == "list_training_resp")
+        self.assertTrue(len(vars(body).get("task_status_list")) >= 0)
+        self.assertTrue(vars(body).get("task_status_list")[0].status == 16)
+        self.assertTrue(vars(body).get("task_status_list")[0].task_id == "k1530189402.26")
+        print "##--------------------------"
+        ##sleep 180
+        ##--------------------------
+
+        tcpclisock.send(start_training_req1(task_id))
+
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        ##reconnect
+        print "reconnect"
+        tcpclisock = socket(AF_INET, SOCK_STREAM)
+        tcpclisock.connect(ADDR)
+        tcpclisock.send(ver_req())
+
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+        ##--------------------------
+        tcpclisock.send(shake_hand_req1())
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+        tcpclisock.send(list_training_req1(task_id))
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        recv_s = binascii.hexlify(rd)
+        packet_header_len, protocol_type, h, body = mt.decode2(rd, len(rd))
+        self.assertTrue(packet_header_len > 0)
+        self.assertTrue(protocol_type == 0)
+        self.assertTrue(vars(h).get("msg_name") == "list_training_resp")
+        self.assertTrue(len(vars(body).get("task_status_list")) >= 0)
+        self.assertTrue(vars(body).get("task_status_list")[0].status <= 4)
+        self.assertTrue(vars(body).get("task_status_list")[0].task_id == task_id)
+        ##get task update status
+        print "get task update status"
+        time.sleep(300)
+        print "reconnect"
+        tcpclisock = socket(AF_INET, SOCK_STREAM)
+        tcpclisock.connect(ADDR)
+        tcpclisock.send(ver_req())
+
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+        ##--------------------------
+        tcpclisock.send(shake_hand_req1())
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+        tcpclisock.send(list_training_req1(task_id))
+        rd = tcpclisock.recv(BUFSIZE)
+        if not rd:
+            print("error")
+
+        recv_s = binascii.hexlify(rd)
+        packet_header_len, protocol_type, h, body = mt.decode2(rd, len(rd))
+        self.assertTrue(packet_header_len > 0)
+        self.assertTrue(protocol_type == 0)
+        self.assertTrue(vars(h).get("msg_name") == "list_training_resp")
+        self.assertTrue(len(vars(body).get("task_status_list")) >= 0)
+        self.assertTrue(vars(body).get("task_status_list")[0].status == 16)
+        self.assertTrue(vars(body).get("task_status_list")[0].task_id == task_id)
 
 if __name__=="__main__":
-    print "中文"
-    task_id = u'k'+str(time.time())
-    print task_id
-    Host = '39.105.47.155'
-    PORT = 21107
-    BUFSIZE = 10240
-    ADDR = (Host, PORT)
-    tcpclisock = socket(AF_INET, SOCK_STREAM)
-    tcpclisock.connect(ADDR)
-    tcpclisock.send(ver_req())
+    print "test"
 
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    recv_s = binascii.hexlify(rd)
-
-    mt.decode2(rd,len(rd))
-    print "##--------------------------"
-    ##--------------------------
-    tcpclisock.send(shake_hand_req1())
-
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    recv_s = binascii.hexlify(rd)
-    mt.decode2(rd, len(rd))
-    print "##--------------------------"
-    tcpclisock.send(get_peer_node_req1())
-
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    recv_s = binascii.hexlify(rd)
-
-    mt.decode2(rd, len(rd))
-    print "##--------------------------"
-    ##--------------------------
-    tcpclisock.send(list_training_req1("k1530189402.26"))
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    recv_s = binascii.hexlify(rd)
-
-    mt.decode2(rd, len(rd))
-    print "##--------------------------"
-    ##暂停三分钟
-    ##--------------------------
-
-    tcpclisock.send(start_training_req1(task_id))
-
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    ##重新连接
-    print "重新连接"
-    tcpclisock = socket(AF_INET, SOCK_STREAM)
-    tcpclisock.connect(ADDR)
-    tcpclisock.send(ver_req())
-
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-    ##--------------------------
-    tcpclisock.send(shake_hand_req1())
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-    tcpclisock.send(list_training_req1(task_id))
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    recv_s = binascii.hexlify(rd)
-
-    mt.decode2(rd, len(rd))
-    ##获取任务更新状态
-    print "获取任务更新状态"
-    time.sleep(300)
-    print "重新连接"
-    tcpclisock = socket(AF_INET, SOCK_STREAM)
-    tcpclisock.connect(ADDR)
-    tcpclisock.send(ver_req())
-
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-    ##--------------------------
-    tcpclisock.send(shake_hand_req1())
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-    tcpclisock.send(list_training_req1(task_id))
-    rd = tcpclisock.recv(BUFSIZE)
-    if not rd:
-        print("error")
-
-    recv_s = binascii.hexlify(rd)
-
-    mt.decode2(rd, len(rd))
 
 
