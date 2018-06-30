@@ -111,7 +111,7 @@ namespace ai
 
             int32_t on_logs_req(const std::shared_ptr<message> &msg);
 
-            std::string format_logs(const std::string  &raw_logs, uint16_t max_lines);
+            std::string format_logs(const std::string &raw_logs, uint16_t max_lines);
 
         protected:
 

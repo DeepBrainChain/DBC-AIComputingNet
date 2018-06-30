@@ -27,6 +27,9 @@ using namespace stdext;
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
+#define MIN_PEER_NODES_COUNT                    8
+#define MAX_SEND_PEER_NODES_COUNT       128
+
 namespace matrix
 {
     namespace service_core
@@ -83,6 +86,8 @@ namespace matrix
 
             bool exist_peer_node(tcp::endpoint ep);
 
+            uint32_t get_peer_nodes_count_by_socket_type(socket_type type);
+
         protected:
 
             int32_t on_ver_req(std::shared_ptr<message> &msg);
@@ -119,11 +124,23 @@ namespace matrix
 
             bool has_available_peer_candidates();
 
+            uint32_t get_available_peer_candidates_count();
+
             bool is_peer_candidate_exist(tcp::endpoint &ep);
 
             bool add_peer_candidate(tcp::endpoint &ep, net_state ns);
 
             bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
+
+            int32_t load_peer_candidates(std::list<peer_candidate> &cands);
+
+            int32_t save_peer_candidates(std::list<peer_candidate> &cands);
+
+        protected:
+
+            int32_t add_dns_seeds();
+
+            int32_t add_hard_code_seeds();
 
         protected:
 

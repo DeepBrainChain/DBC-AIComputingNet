@@ -26,7 +26,7 @@
 
 
 #define MAX_BYTE_BUF_LEN                (16 * 1024 * 1024)                       //max 16M bytes
-#define DEFAULT_BUF_LEN     10240 
+#define DEFAULT_BUF_LEN     (10 * 1024)
 
 
 

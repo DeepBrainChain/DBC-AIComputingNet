@@ -17,7 +17,7 @@ namespace matrix
     {
         void default_dummy()
         {
-            LOG_DEBUG << "callback_wait received notify msg";
+            //LOG_DEBUG << "callback_wait received notify msg";
         }
 
     }
