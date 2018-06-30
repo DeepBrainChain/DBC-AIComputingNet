@@ -16,7 +16,6 @@
 #include "server.h"
 
 
-
 static void cmd_line_task()
 {
    static ai::dbc::cmd_line_service *service = (ai::dbc::cmd_line_service *)(g_server->get_module_manager()->get(CMD_LINE_API_MODULE).get());

@@ -32,9 +32,9 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace matrix::core;
 
-const uint32_t max_reconnect_times = 2;
-const uint32_t max_connected_cnt = 200;
-const uint32_t max_connect_per_check = 10;
+const uint32_t max_reconnect_times = 1;
+const uint32_t max_connected_cnt = 32;
+const uint32_t max_connect_per_check = 16;
 
 namespace matrix
 {
@@ -116,13 +116,6 @@ namespace matrix
 
         int32_t p2p_net_service::init_acceptor()
         {
-            //init ip and port
-            if (E_SUCCESS != init_conf())
-            {
-                LOG_ERROR << "p2p_net_service init acceptor error and exit";
-                return E_DEFAULT;
-            }
-
             //ipv4 or ipv6
             tcp::endpoint ep(ip::address::from_string(m_host_ip), m_net_listen_port);
 
@@ -226,12 +219,14 @@ namespace matrix
                         LOG_DEBUG << "tcp channel exist to: " << ep.address().to_string();
                         continue;
                     }
+                    
                     int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);                   
                     if (E_SUCCESS != ret)
                     {
                         LOG_ERROR << "matrix init connector invalid peer address, ip: " << ip << " port: " << str_port;
                         continue;
-                    }   
+                    }
+                    
                     if (is_peer_candidate_exist(ep))
                     {
                         //case: duplicated address from peer_addresses
@@ -257,6 +252,13 @@ namespace matrix
         int32_t p2p_net_service::service_init(bpo::variables_map &options)
         {
             int32_t ret = E_SUCCESS;
+
+            //init ip and port
+            if (E_SUCCESS != init_conf())
+            {
+                LOG_ERROR << "p2p_net_service init acceptor error and exit";
+                return E_DEFAULT;
+            }
 
             //load peer candidates
             ret = load_peer_candidates(m_peer_candidates);
@@ -398,7 +400,8 @@ namespace matrix
                     m_peer_candidates.erase(it++);
                     continue;
                 }
-                ++it;
+                
+                it++;
             }
 
             if (in_use_peer_cnt >= max_connected_cnt)
@@ -408,53 +411,15 @@ namespace matrix
 
             //use hard code peer seeds 
             //if no neighbor peer nodes and peer candidates
-            if (0 == m_peer_nodes_map.size() && !has_available_peer_candidates())
+            if (get_available_peer_candidates_count() < MIN_PEER_NODES_COUNT)
             {
-                if (m_dns_seeds.size() > 0)
-                {
-                    try
-                    {
-                        //get dns seeds
-                        const char *dns_seed = m_dns_seeds.front();
-                        m_dns_seeds.pop_front();
+                    add_dns_seeds();
+            }
 
-                        if (nullptr == dns_seed)
-                        {
-                            LOG_ERROR << "p2p net service resolve dns nullptr";
-                            return E_DEFAULT;
-                        }
-
-                        io_service ios;
-                        ip::tcp::resolver rslv(ios);
-                        ip::tcp::resolver::query qry(dns_seed, boost::lexical_cast<string>(80));
-                        ip::tcp::resolver::iterator it = rslv.resolve(qry);
-                        ip::tcp::resolver::iterator end;
-
-                        for ( ; it != end; it++)
-                        {
-                            LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << ", ip: "<< it->endpoint().address().to_string();
-
-                            tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port()); 
-                            add_peer_candidate(ep, ns_idle);
-                        }
-                    }
-                    catch (const boost::exception & e)
-                    {
-                        LOG_ERROR << "p2p net service resolve dns error: " << diagnostic_information(e);
-                    }
-                }
-                //case: maybe dns resolver produce nothing
-                if (!has_available_peer_candidates())//still no available candidate
-                {
-                    //get hard code seeds
-                    for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++)
-                    {
-                        LOG_DEBUG << "p2p net service add candidate, ip: " << it->seed << ", port: " << it->port;
-
-                        tcp::endpoint ep(ip::address::from_string(it->seed), it->port);
-                        add_peer_candidate(ep, ns_idle);
-                    }
-                }
+            //case: maybe dns resolver produce nothing
+            if (get_available_peer_candidates_count() < MIN_PEER_NODES_COUNT)       //still no available candidate
+            {
+                add_hard_code_seeds();
             }
 
             //increase connections
@@ -490,6 +455,7 @@ namespace matrix
                             LOG_DEBUG << "tcp channel exist to: " << it->tcp_ep.address().to_string() << ":" << it->tcp_ep.port();
                             continue;
                         }
+                        
                         int32_t ret = CONNECTION_MANAGER->start_connect(it->tcp_ep, &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
 
@@ -559,7 +525,7 @@ namespace matrix
                 core_version = req_content->body.core_version;
                 protocol_version = req_content->body.protocol_version;
             }
-            else
+            else if (msg->get_name() == VER_RESP)
             {
                 auto rsp_content = std::dynamic_pointer_cast<matrix::service_core::ver_resp>(msg->content);
                 if (!rsp_content)
@@ -570,6 +536,11 @@ namespace matrix
                 nid = rsp_content->body.node_id;
                 core_version = rsp_content->body.core_version;
                 protocol_version = rsp_content->body.protocol_version;
+            }
+            else
+            {
+                LOG_ERROR << "add peer node unknown msg: " << msg->get_name();
+                return false;
             }
             
             LOG_DEBUG << "add peer(" << nid << "), sid=" << sid.to_string();
@@ -804,7 +775,7 @@ namespace matrix
                 return E_NULL_POINTER;
             }
 
-            socket_id  sid = msg->header.src_sid;
+            socket_id sid = msg->header.src_sid;
             //find and update peer candidate
             std::shared_ptr<tcp_socket_channel_error_msg> err_msg = std::dynamic_pointer_cast<tcp_socket_channel_error_msg>(msg);
             if (!err_msg)
@@ -1065,12 +1036,14 @@ namespace matrix
                 LOG_DEBUG << "p2p_net_service on_get_peer_nodes_resp. nonce error ";
                 return E_SUCCESS;
             }
+            
             for (auto it = rsp->body.peer_nodes_list.begin(); it != rsp->body.peer_nodes_list.end(); ++it)
             {
                 try
                 {
                     tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
                     LOG_DEBUG << "sid: " << msg->header.src_sid.to_string() << ", recv a peer(" << it->addr.ip << ":" << it->addr.port << "), node_id: " << it->peer_node_id;
+                    
                     //is in list
                     std::list<peer_candidate>::iterator it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
                         , [=](peer_candidate& pc) -> bool { return ep == pc.tcp_ep; });
@@ -1122,6 +1095,7 @@ namespace matrix
             resp_msg->header.msg_name = P2P_GET_PEER_NODES_RESP;
             resp_msg->header.msg_priority = 0;
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
+            
             //header
             resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
@@ -1140,25 +1114,33 @@ namespace matrix
             }
             else// broadcast all nodes
             {
+                int count = 0;
                 for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
                 {
-                    if (it->second->m_id == CONF_MANAGER->get_node_id())
+                    if (nullptr == it->second || SERVER_SOCKET == it->second->m_sid.get_type())             //NAT IP is avoided to broadcast
                     {
-                        //assert(0); //should never occur
-                        LOG_ERROR << "peer node(" << it->second->m_id << ") is myself.";
                         continue;
-                    }     
+                    }
+                    
                     matrix::service_core::peer_node_info info;
                     assign_peer_info(info, it->second);
                     info.service_list.push_back(std::string("ai_training"));
                     resp_content->body.peer_nodes_list.push_back(std::move(info));
+
+                    if (++count > MAX_SEND_PEER_NODES_COUNT)
+                    {
+                        LOG_DEBUG << "p2p net service send peer nodes too many and break: " << m_peer_nodes_map.size();
+                        break;
+                    }
                 }
 
                 //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
                 if (resp_content->body.peer_nodes_list.size() > 0)
                 {
+                    LOG_DEBUG << "p2p net service send peer nodes, count: " << resp_content->body.peer_nodes_list.size();
+
                     resp_msg->set_content(resp_content);
-                    CONNECTION_MANAGER->broadcast_message(resp_msg);//filer ??
+                    CONNECTION_MANAGER->broadcast_message(resp_msg);        //filer ??
                 }
                 else
                 {
@@ -1176,6 +1158,7 @@ namespace matrix
                 if (it->net_st <= ns_in_use || ((it->net_st == ns_failed) && (it->reconn_cnt < max_reconnect_times)))
                     return true;
             }
+            
             return false;
         }
 
@@ -1218,5 +1201,238 @@ namespace matrix
 
             return false;
         }
+
+        uint32_t p2p_net_service::get_peer_nodes_count_by_socket_type(socket_type type)
+        {
+            uint32_t count = 0;
+
+            for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); it++)
+            {
+                if (nullptr != it->second && type == it->second->m_sid.get_type())
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        uint32_t p2p_net_service::get_available_peer_candidates_count()
+        {
+            uint32_t count = 0;
+
+            for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+            {
+                if (it->net_st <= ns_in_use || ((it->net_st == ns_failed) && (it->reconn_cnt < max_reconnect_times)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        int32_t p2p_net_service::save_peer_candidates(std::list<peer_candidate> &cands)
+        {
+            LOG_DEBUG << "save peer candidates: " << cands.size();
+
+            if (cands.empty())
+            {
+                return E_DEFAULT;
+            }
+
+            try
+            {
+                //serialize
+                rj::Document document;
+                rj::Document::AllocatorType& allocator = document.GetAllocator();
+                rj::Value root(rj::kObjectType);
+                rj::Value peer_cands(rj::kArrayType);
+                for (auto it = cands.begin(); it != cands.end(); ++it)
+                {
+                    rj::Value peer_cand(rj::kObjectType);
+                    std::string ip = it->tcp_ep.address().to_string();
+                    rj::Value str_val(ip.c_str(), (rj::SizeType) ip.length(), allocator);
+                    peer_cand.AddMember("ip", str_val, allocator);
+                    peer_cand.AddMember("port", it->tcp_ep.port(), allocator);
+                    peer_cand.AddMember("net_state", it->net_st, allocator);
+                    peer_cand.AddMember("reconn_cnt", it->reconn_cnt, allocator);
+                    peer_cand.AddMember("last_conn_tm", (uint64_t)it->last_conn_tm, allocator);
+                    peer_cand.AddMember("score", it->score, allocator);
+                    rj::Value str_nid(it->node_id.c_str(), (rj::SizeType) it->node_id.length(), allocator);
+                    peer_cand.AddMember("node_id", str_nid, allocator);
+
+                    peer_cands.PushBack(peer_cand, allocator);
+                }
+                root.AddMember("peer_cands", peer_cands, allocator);
+
+                std::shared_ptr<rj::StringBuffer> buffer = std::make_shared<rj::StringBuffer>();
+                rj::PrettyWriter<rj::StringBuffer> writer(*buffer);
+                root.Accept(writer);
+
+                //open file; if not exist, create it
+                bf::path peers_file = matrix::core::path_util::get_exe_dir();
+                peers_file /= fs::path(DAT_DIR_NAME);
+                peers_file /= fs::path(DAT_PEERS_FILE_NAME);
+                if (matrix::core::file_util::write_file(peers_file, std::string(buffer->GetString())))
+                    return E_SUCCESS;
+            }
+            catch (...)
+            {
+                return E_DEFAULT;
+            }
+
+            return E_DEFAULT;
+        }
+
+        int32_t p2p_net_service::load_peer_candidates(std::list<peer_candidate> &cands)
+        {
+            cands.clear();
+
+            std::string json_str;
+            bf::path peers_file = matrix::core::path_util::get_exe_dir();
+            peers_file /= fs::path(DAT_DIR_NAME);
+            peers_file /= fs::path(DAT_PEERS_FILE_NAME);
+            if (!matrix::core::file_util::read_file(peers_file, json_str))
+            {
+                return E_FILE_FAILURE;
+            }
+            if (json_str.empty())
+            {
+                return E_DEFAULT;
+            }
+
+            //check validation
+            ip_validator ip_vdr;
+            port_validator port_vdr;
+
+            try
+            {
+                rj::Document doc;
+                doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str());
+                if (doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
+                    return E_DEFAULT;
+                }
+
+                //transfer to cands
+                rj::Value &val_arr = doc["peer_cands"];
+                if (val_arr.IsArray())
+                {
+                    for (rj::SizeType i = 0; i < val_arr.Size(); i++)
+                    {
+                        const rj::Value& obj = val_arr[i];
+                        peer_candidate peer_cand;
+                        if (!obj.HasMember("ip"))
+                            continue;
+                        std::string ip = obj["ip"].GetString();
+                        variable_value val_ip(ip, false);
+                        if (!ip_vdr.validate(val_ip))
+                        {
+                            LOG_ERROR << ip << " is invalid ip.";
+                            continue;
+                        }
+                        uint16_t port = obj["port"].GetUint();
+                        variable_value val_port(std::to_string(port), false);
+                        if (!port_vdr.validate(val_port))
+                        {
+                            LOG_ERROR << port << " is invalid port.";
+                            continue;
+                        }
+
+                        boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
+                        peer_cand.tcp_ep = tcp::endpoint(addr, (uint16_t)port);
+                        net_state ns = (net_state)obj["net_state"].GetUint();
+                        peer_cand.net_st = (ns == ns_in_use ? ns_idle : ns);
+                        peer_cand.reconn_cnt = obj["reconn_cnt"].GetUint();
+                        peer_cand.score = obj["score"].GetUint();
+                        peer_cand.node_id = obj["node_id"].GetString();
+                        if (!peer_cand.node_id.empty())
+                        {
+                            std::string nid = peer_cand.node_id;
+                            nid = SanitizeString(nid);
+                            if (nid.empty())
+                            {
+                                LOG_ERROR << "node id: " << peer_cand.node_id << " contains unsafe char, in file: " << peers_file;
+                                continue;
+                            }
+
+                            std::vector<unsigned char> vch;
+                            if (!DecodeBase58Check(nid.c_str(), vch))
+                            {
+                                LOG_ERROR << "node id: " << peer_cand.node_id << " is not Base58 code, in file: " << peers_file;
+                                continue;
+                            }
+                        }
+
+                        cands.push_back(peer_cand);
+                    }
+                }
+            }
+            catch (...)
+            {
+                LOG_ERROR << "read peers from " << peers_file.c_str() << "failed.";
+                cout << "invalid data or error format in " << peers_file << endl;
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t p2p_net_service::add_dns_seeds()
+        {
+            try
+            {
+                if (m_dns_seeds.empty())
+                {
+                    LOG_DEBUG << "add dns seeds empty";
+                    return E_SUCCESS;
+                }
+
+                //get dns seeds
+                const char *dns_seed = m_dns_seeds.front();
+                m_dns_seeds.pop_front();
+
+                if (nullptr == dns_seed)
+                {
+                    LOG_ERROR << "p2p net service resolve dns nullptr";
+                    return E_DEFAULT;
+                }
+
+                io_service ios;
+                ip::tcp::resolver rslv(ios);
+                ip::tcp::resolver::query qry(dns_seed, boost::lexical_cast<string>(80));
+                ip::tcp::resolver::iterator it = rslv.resolve(qry);
+                ip::tcp::resolver::iterator end;
+
+                for (; it != end; it++)
+                {
+                    LOG_DEBUG << "p2p net service resolve dns: " << dns_seed << ", ip: " << it->endpoint().address().to_string();
+
+                    tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());
+                    add_peer_candidate(ep, ns_idle);
+                }
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "p2p net service resolve dns error: " << diagnostic_information(e);
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t p2p_net_service::add_hard_code_seeds()
+        {
+            //get hard code seeds
+            for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++)
+            {
+                LOG_DEBUG << "p2p net service add candidate, ip: " << it->seed << ", port: " << it->port;
+
+                tcp::endpoint ep(ip::address::from_string(it->seed), it->port);
+                add_peer_candidate(ep, ns_idle);
+            }
+
+            return E_SUCCESS;
+        }
+
     }
 }

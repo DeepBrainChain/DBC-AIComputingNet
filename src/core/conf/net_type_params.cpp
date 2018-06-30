@@ -41,18 +41,20 @@ namespace matrix
             { "114.116.41.44", 21107 },
             { "114.115.219.202", 21107 },
             { "39.107.81.6", 21107 },
-            { "47.93.24.54", 21107 },
-            { "fe80::f816:3eff:fe44:afc9", 21107 },
-            { "fe80::f816:3eff:fe33:d8db", 21107 }
+            { "47.93.24.54", 21107 }
+            //{ "fe80::f816:3eff:fe44:afc9", 21107 },
+            //{ "fe80::f816:3eff:fe33:d8db", 21107 }
         };
 
         static const char* g_main_dns_seeds[] = 
         {
-            "seed.deepbrainchain.org"
+            "seed.dbccloud.io", 
+            "seed.deepbrainchain.org"            
         };
 
         static const char* g_test_dns_seeds[] =
         {
+            "testnet-seed.dbccloud.io",
             "testnet-seed.deepbrainchain.org"
         };  
 

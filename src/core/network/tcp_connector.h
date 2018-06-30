@@ -25,7 +25,7 @@ using namespace boost::asio::ip;
 
 
 #define RECONNECT_INTERVAL                     2                    //2->4->8->16->32->64...
-#define MAX_RECONNECT_TIMES                    2
+#define MAX_RECONNECT_TIMES                    3
 
 
 

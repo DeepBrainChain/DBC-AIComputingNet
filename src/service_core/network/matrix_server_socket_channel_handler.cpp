@@ -157,6 +157,13 @@ namespace matrix
 
             if (VER_REQ == msg.get_name())
             {
+                auto req_content = std::dynamic_pointer_cast<matrix::service_core::ver_req>(msg.content);
+                if (req_content->body.node_id == CONF_MANAGER->get_node_id())
+                {
+                    LOG_ERROR << "matrix server socket channel received itself node id: " << req_content->body.node_id << msg.header.src_sid.to_string();
+                    return E_DEFAULT;
+                }
+
                 if (true == m_recv_ver_req)
                 {
                     LOG_ERROR << "matrix server socket channel received duplicated VER_REQ message" << msg.header.src_sid.to_string();
