@@ -113,9 +113,9 @@ namespace matrix
                 auto sink = logging::add_file_log
                 (
                     //attribute
-                    keywords::file_name = (matrix::core::path_util::get_exe_dir() /= "matrix_core_%Y%m%d%H%M%S_%N.log").c_str(),
+                    keywords::file_name = (matrix::core::path_util::get_exe_dir() /= "logs/matrix_core_%Y%m%d%H%M%S_%N.log").c_str(),
                     keywords::target = (matrix::core::path_util::get_exe_dir() /= "logs"),
-                    keywords::max_files = 20,
+                    keywords::max_files = 10,
                     keywords::rotation_size = 100 * 1024 * 1024,
                     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
                     keywords::format = (
