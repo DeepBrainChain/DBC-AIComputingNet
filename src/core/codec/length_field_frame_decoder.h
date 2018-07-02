@@ -123,12 +123,13 @@ namespace matrix
 
                 //decode frame
                 decode_status status = decode_frame(ctx, net_msg.get_message_stream(), message);
+
+                m_recv_messages.pop_front();
                 if (status != DECODE_SUCCESS)
                 {
                     return status;
                 }
-
-                m_recv_messages.pop_front();
+                
                 return DECODE_SUCCESS;
             }
 
