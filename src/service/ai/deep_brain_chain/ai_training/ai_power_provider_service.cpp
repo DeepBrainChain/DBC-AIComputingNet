@@ -213,7 +213,14 @@ namespace ai
             
             if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
             {
-                LOG_DEBUG << "ai power provider service nonce error ";
+                LOG_ERROR << "ai power provider service nonce error ";
+                return E_DEFAULT;
+            }
+
+            vchRet.clear();
+            if (DecodeBase58Check(SanitizeString(req->body.task_id), vchRet) != true)
+            {
+                LOG_ERROR << "ai power provider service task_id error ";
                 return E_DEFAULT;
             }
 
@@ -222,9 +229,15 @@ namespace ai
             auto it = peer_nodes.begin();
             for (; it != peer_nodes.end(); it++)
             {
+                if (id_generator().check_node_id((*it)) != true)
+                {
+                    LOG_ERROR <<"ai power provider service node_id error " << (*it);
+                    return E_DEFAULT;
+                }
+                
                 if ((*it) == CONF_MANAGER->get_node_id())
                 {
-                    LOG_DEBUG << "ai power provider service found self node id in on start training: " << req->body.task_id << " node id: " << (*it);
+                    LOG_ERROR << "ai power provider service found self node id in on start training: " << req->body.task_id << " node id: " << (*it);
                     break;
                 }
             }
@@ -232,9 +245,9 @@ namespace ai
             //not find self; or find self, but designate more than one node
             if (it == peer_nodes.end() || peer_nodes.size() > 1)
             {
-                LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
+                LOG_ERROR << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
                 //relay start training in network
-                LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
+                LOG_ERROR << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
@@ -409,16 +422,26 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
+            {
+                vchRet.clear();
+
+                if (DecodeBase58Check(SanitizeString(*it), vchRet) != true)
+                {
+                    LOG_DEBUG << "ai power provider service taskid error: " << *it;
+                    continue;
+                }
+                
+            }
+
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
             CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             if (0 == m_training_tasks.size())
             {
                 LOG_DEBUG << "ai power provider service training task is empty";
-                return E_SUCCESS;
-            }
-
-            
+                return E_DEFAULT;
+            }            
 
             std::vector<matrix::service_core::task_status> status_list;
             for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
@@ -432,13 +455,7 @@ namespace ai
 
                 matrix::service_core::task_status ts;
                 ts.task_id = it_task->second->task_id;
-                vchRet.clear();
-
-                if (DecodeBase58Check(SanitizeString(ts.task_id), vchRet) != true)
-                {
-                    LOG_DEBUG << "ai power provider service taskid error: " << ts.task_id;
-                    continue;
-                }
+                
                 
                 ts.status = it_task->second->status;
                 status_list.push_back(ts);
@@ -500,7 +517,7 @@ namespace ai
             std::vector<unsigned char> vchRet;
             if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
             {
-                LOG_DEBUG << "ai power provider service nonce error ";
+                LOG_ERROR << "ai power provider service nonce error ";
                 return E_DEFAULT;
             }
 
@@ -508,14 +525,14 @@ namespace ai
 
             if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
             {
-                LOG_DEBUG << "ai power provider service session_id error ";
+                LOG_ERROR << "ai power provider service session_id error ";
                 return E_DEFAULT;
             }
             vchRet.clear();
 
             if (DecodeBase58Check(SanitizeString(req_content->body.task_id), vchRet) != true)
             {
-                LOG_DEBUG << "taskid error ";
+                LOG_ERROR << "taskid error ";
                 return E_DEFAULT;
             }
             
