@@ -630,8 +630,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(req_content->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service ver_req. nonce error ";
                 return E_DEFAULT;
@@ -720,8 +719,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(resp_content->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(resp_content->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service ver_resp. nonce error ";
                 return E_DEFAULT;
@@ -971,8 +969,8 @@ namespace matrix
                 LOG_ERROR << "recv get_peer_nodes_req, but req_content is null.";
                 return E_DEFAULT;
             }
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
+
+            if (id_generator().check_base58_id(req->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service on_get_peer_nodes_req. nonce error ";
                 return E_DEFAULT;
@@ -1030,8 +1028,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(rsp->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(rsp->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service on_get_peer_nodes_resp. nonce error ";
                 return E_SUCCESS;
@@ -1348,16 +1345,16 @@ namespace matrix
                         peer_cand.node_id = obj["node_id"].GetString();
                         if (!peer_cand.node_id.empty())
                         {
-                            std::string nid = peer_cand.node_id;
-                            nid = SanitizeString(nid);
-                            if (nid.empty())
-                            {
-                                LOG_ERROR << "node id: " << peer_cand.node_id << " contains unsafe char, in file: " << peers_file;
-                                continue;
-                            }
+                            //std::string nid = peer_cand.node_id;
+                            //nid = SanitizeString(nid);
+                            //{
+                            //  if (nid.empty())
+                            //    LOG_ERROR << "node id: " << peer_cand.node_id << " contains unsafe char, in file: " << peers_file;
+                            //    continue;
+                            //}
 
-                            std::vector<unsigned char> vch;
-                            if (!DecodeBase58Check(nid.c_str(), vch))
+                            //std::vector<unsigned char> vch;
+                            if (!id_generator().check_base58_id(peer_cand.node_id))
                             {
                                 LOG_ERROR << "node id: " << peer_cand.node_id << " is not Base58 code, in file: " << peers_file;
                                 continue;

@@ -279,7 +279,7 @@ namespace ai
             std::vector<unsigned char> vch;
             for (auto &node_id : peer_nodes_list)
             {
-                if (false == DecodeBase58Check(node_id.c_str(), vch))
+                if (false == id_generator().check_base58_id(node_id))
                 {
                     cmd_resp->result = E_DEFAULT;
                     cmd_resp->result_info = "node_list does not match the Base58 code format";
@@ -727,15 +727,13 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(rsp_content->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(rsp_content->header.nonce) != true)
             {
                 LOG_DEBUG << "ai power requster service on_list_training_resp. nonce error ";
                 return E_DEFAULT;
             }
-
-            vchRet.clear();
-            if (DecodeBase58Check(SanitizeString(rsp_content->header.session_id), vchRet) != true)
+            
+            if (id_generator().check_base58_id(rsp_content->header.session_id) != true)
             {
                 LOG_DEBUG << "ai power requster service on_list_training_resp. session_id error ";
                 return E_DEFAULT;
@@ -1234,15 +1232,13 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(rsp_content->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(rsp_content->header.nonce) != true)
             {
                 LOG_DEBUG << "ai power requster service on_logs_resp. nonce error ";
                 return E_DEFAULT;
             }
 
-            vchRet.clear();
-            if (DecodeBase58Check(SanitizeString(rsp_content->header.session_id), vchRet) != true)
+            if (id_generator().check_base58_id(rsp_content->header.session_id) != true)
             {
                 LOG_DEBUG << "ai power requster service on_logs_resp. session_id error ";
                 return E_DEFAULT;

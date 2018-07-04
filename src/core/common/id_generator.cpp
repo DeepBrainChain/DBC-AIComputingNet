@@ -2,6 +2,8 @@
 #include  "key.h"
 #include "base58.h"
 #include "common.h"
+#include "utilstrencodings.h"
+
 
 namespace matrix
 {
@@ -130,7 +132,7 @@ namespace matrix
         bool id_generator::check_node_id(const std::string & node_id)
         {
             std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(node_id, vchRet) != true)
+            if (DecodeBase58Check(SanitizeString(node_id), vchRet) != true)
             {
                 return false;
             }
@@ -153,7 +155,7 @@ namespace matrix
        bool id_generator::check_node_private_key(const std::string &node_privarte_key)
        {
            std::vector<unsigned char> vchRet;
-           if (DecodeBase58Check(node_privarte_key, vchRet) != true)
+           if (DecodeBase58Check(SanitizeString(node_privarte_key), vchRet) != true)
            {
                return false;
            }
@@ -171,6 +173,18 @@ namespace matrix
                it_prfix++;
            }
            return true;
+       }
+
+       bool id_generator::check_base58_id(const std::string & id)
+       {
+            std::vector<unsigned char> vchRet;
+            
+            if (DecodeBase58Check(SanitizeString(id), vchRet) != true)
+            {
+                return false;
+            }
+
+            return true;
        }
 
     }
