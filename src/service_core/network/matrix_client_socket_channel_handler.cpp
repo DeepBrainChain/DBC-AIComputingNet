@@ -61,6 +61,7 @@ namespace matrix
                 reset_has_message();
 
                 //next time async wait
+                assert(nullptr != m_shake_hand_timer_handler);
                 m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
                 m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
             };

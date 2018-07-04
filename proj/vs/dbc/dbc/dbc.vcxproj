@@ -209,6 +209,7 @@
     <ClCompile Include="..\..\..\..\src\core\module\module_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\http_client.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\net_address.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\nio_loop_group.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_acceptor.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_connector.cpp" />
@@ -526,6 +527,7 @@
     <ClInclude Include="..\..\..\..\src\service_core\codec\net_message.h" />
     <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\common_service.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\common\service_common_def.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\service_proto_filter.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.h" />

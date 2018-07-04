@@ -15,6 +15,7 @@
 #include "endpoint_address.h"
 #include "socket_id.h"
 #include "matrix_types.h"
+#include "service_common_def.h"
 
 
 using namespace std;
@@ -28,9 +29,9 @@ namespace matrix
 
         enum connection_status
         {
-            disconnected = 0,
+            DISCONNECTED = 0,
 
-            connected
+            CONNECTED
         };
 
         class peer_node
@@ -41,7 +42,7 @@ namespace matrix
 
         public:
 
-            peer_node() = default;
+            peer_node();
 
             virtual ~peer_node() = default;
 
@@ -68,6 +69,8 @@ namespace matrix
             endpoint_address m_peer_addr;
 
             endpoint_address m_local_addr;                   //local addr
+
+            peer_node_type m_node_type;              //seed node or not
 
         };
 

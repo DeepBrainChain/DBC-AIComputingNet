@@ -17,6 +17,17 @@ namespace matrix
     namespace service_core
     {
 
+        peer_node::peer_node()
+            : m_core_version(0)
+            , m_protocol_version(0)
+            , m_connected_time(0)
+            , m_live_time(0)
+            , m_connection_status(DISCONNECTED)
+            , m_node_type(NORMAL_NODE)
+        {
+
+        }
+
         peer_node::peer_node(const peer_node &src)
         {
             *this = src;
@@ -38,6 +49,7 @@ namespace matrix
             this->m_connection_status = src.m_connection_status;
             this->m_peer_addr = src.m_peer_addr;
             this->m_local_addr = src.m_local_addr;
+            this->m_node_type = src.m_node_type;
 
             return *this;
         }

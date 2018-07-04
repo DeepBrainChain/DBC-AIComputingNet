@@ -93,6 +93,8 @@ namespace matrix
 
         void timer_matrix_manager::start_timer()
         {
+            assert(nullptr != m_timer_handler);
+            
             //start tick timer
             m_timer->expires_from_now(std::chrono::milliseconds(DEFAULT_TIMER_INTERVAL));
             m_timer->async_wait(m_timer_handler);

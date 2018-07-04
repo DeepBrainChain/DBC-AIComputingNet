@@ -32,6 +32,11 @@ namespace matrix
 
         }
 
+        tcp_connector::~tcp_connector()
+        {
+            LOG_DEBUG << "tcp connector destroyed" << m_sid.to_string();
+        }
+
         int32_t tcp_connector::start(uint32_t retry/* = MAX_RECONNECT_TIMES*/)
         {
             if (retry > MAX_RECONNECT_TIMES)
@@ -111,6 +116,7 @@ namespace matrix
 
         void tcp_connector::async_connect()
         {
+            assert(nullptr != shared_from_this());
             std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_socket().async_connect(m_connect_addr, boost::bind(&tcp_connector::on_connect, shared_from_this(), boost::asio::placeholders::error));
         }
 
@@ -135,6 +141,7 @@ namespace matrix
                     << errorinfo << ", "
                     << m_sid.to_string();                
 
+                assert(nullptr != m_reconnect_timer_handler);
                 m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
                 m_reconnect_timer.async_wait(m_reconnect_timer_handler);
             }
@@ -155,6 +162,12 @@ namespace matrix
         {
             if (error)
             {
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "tcp_connector on connect aborted." << m_sid.to_string();
+                    return;
+                }
+                                
                 //modify by regulus: fix connect crash
                 ostringstream errorinfo;
                 errorinfo << ", error: " << error.value() << " " << error.message();
@@ -175,7 +188,7 @@ namespace matrix
                 }
                 else
                 {
-                    LOG_DEBUG << "tcp connector channel start work successfully. remote addr:" << m_connect_addr << " host addr:" << channel->get_local_addr() << m_sid.to_string();;
+                    LOG_DEBUG << "tcp connector channel start work successfully. remote addr:" << m_connect_addr << " host addr:" << channel->get_local_addr() << m_sid.to_string();
                 }
             }
             catch (const boost::exception & e)
@@ -193,6 +206,8 @@ namespace matrix
                 LOG_ERROR << "tcp connector on connect error, add channel failed";
                 return;
             }
+
+            LOG_DEBUG << "tcp connector add channel to connection manager" << m_sid.to_string() << " remote addr:" << m_connect_addr;
                 
             //modify by regulus: fix "m_socket_handler =nullptr" when tcp_socket_channel::write.  m_client_channel->start() before connect_notification
             m_connected = true;//mark it before publish

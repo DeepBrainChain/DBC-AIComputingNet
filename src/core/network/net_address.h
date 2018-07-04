@@ -13,7 +13,9 @@
 
 #include <string>
 #include "common.h"
+#include <boost/asio.hpp>
 
+using namespace boost::asio::ip;
 
 namespace matrix
 {
@@ -31,6 +33,8 @@ namespace matrix
             net_address(const std::string &ip) : m_ip(ip) {}
 
             const std::string get_ip() const { return m_ip; }
+
+            static bool is_rfc1918(tcp::endpoint tcp_ep);
 
         protected:
 
