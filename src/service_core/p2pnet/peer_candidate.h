@@ -22,6 +22,8 @@
 #include "port_validator.h"
 #include "base58.h"
 #include "utilstrencodings.h"
+#include "service_common_def.h"
+
 
 using namespace std;
 #ifdef WIN32
@@ -47,15 +49,17 @@ namespace matrix
             ns_idle = 0,   //can use whenever needed
             ns_in_use,     //connecting or connected
             ns_failed,     //not use within a long time
-            //ns_discard,    //i.e: itself
-            ns_zombie
+            ns_zombie,
+            ns_addr_good
         };
+
         enum node_net_type
         {
             nnt_normal_node = 0,    //nat1-4
             nnt_public_node,        //nat0
             nnt_super_node,         //
         };
+
         struct peer_candidate
         {
             tcp::endpoint   tcp_ep;
@@ -65,6 +69,7 @@ namespace matrix
             uint32_t        score;//indicate level of Qos, update when disconnect
             //node_net_type   node_type;
             std::string     node_id;
+            peer_node_type node_type;
 
             peer_candidate()
                 : net_st(ns_idle)
@@ -72,10 +77,11 @@ namespace matrix
                 , last_conn_tm(time(nullptr))
                 , score(0)
                 , node_id("")
+                , node_type(NORMAL_NODE)
             {
             }
 
-            peer_candidate(tcp::endpoint ep, net_state ns = ns_idle, uint32_t rc_cnt = 0
+            peer_candidate(tcp::endpoint ep, net_state ns = ns_idle, peer_node_type ntype = NORMAL_NODE, uint32_t rc_cnt = 0
                 , time_t t = time(nullptr), uint32_t sc = 0, std::string nid = "")
                 : tcp_ep(ep)
                 , net_st(ns)
@@ -83,6 +89,7 @@ namespace matrix
                 , last_conn_tm(t)
                 , score(sc)
                 , node_id(nid)
+                , node_type(ntype)
             {
             }
         };
@@ -99,6 +106,8 @@ namespace matrix
                 return "failed";
             case ns_zombie:
                 return "zombie";
+            case ns_addr_good:
+                return "good";
             default:
                 return "";
             }

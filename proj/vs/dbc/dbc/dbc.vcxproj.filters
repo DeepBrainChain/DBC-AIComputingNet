@@ -382,6 +382,9 @@
     <ClCompile Include="..\..\..\..\src\core\log\log.cpp">
       <Filter>src\core\log</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\net_address.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1247,6 +1250,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\common\time_util.h">
       <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\common\service_common_def.h">
+      <Filter>src\service_core\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

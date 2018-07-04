@@ -18,6 +18,8 @@
 #include "peer_node.h"
 #include "peer_candidate.h"
 #include "peer_seeds.h"
+#include "service_common_def.h"
+#include "random.h"
 
 
 using namespace std;
@@ -27,8 +29,12 @@ using namespace stdext;
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
-#define MIN_PEER_NODES_COUNT                    8
-#define MAX_SEND_PEER_NODES_COUNT       128
+
+#define MIN_PEER_CANDIDATES_COUNT                    8
+#define MAX_SEND_PEER_NODES_COUNT                128
+#define MIN_NORMAL_ADDR_GOOD_COUNT              2
+#define DISCONNECT_NODE_PER_MINUTES              5
+
 
 namespace matrix
 {
@@ -57,6 +63,8 @@ namespace matrix
 
         protected:
 
+            int32_t init_rand();
+
             int32_t init_conf();
 
             int32_t init_acceptor();
@@ -75,6 +83,7 @@ namespace matrix
             int32_t service_exit();
 
         private:
+
             //if call from outside, please think about thread-safe of m_peer_nodes_map
             void get_all_peer_nodes(peer_list_type &nodes);
 
@@ -100,7 +109,6 @@ namespace matrix
 
             int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
 
-            //cmd get peer nodes
             int32_t on_cmd_get_peer_nodes_req(std::shared_ptr<message> &msg);
 
 			int32_t on_get_peer_nodes_req(std::shared_ptr<message> &msg);
@@ -108,35 +116,48 @@ namespace matrix
 			int32_t on_get_peer_nodes_resp(std::shared_ptr<message> &msg);
 
         protected:
+
             //active pull
             int32_t send_get_peer_nodes();
 
             //active push
             int32_t send_put_peer_nodes(std::shared_ptr<peer_node> node);
 
-            int32_t on_timer_one_minute(std::shared_ptr<matrix::core::core_timer> timer);
+            int32_t on_timer_check_peer_candidates(std::shared_ptr<matrix::core::core_timer> timer);
 
-            int32_t on_timer_peer_info_exchange();
+            int32_t on_timer_dyanmic_adjust_network(std::shared_ptr<matrix::core::core_timer> timer);
 
-            int32_t on_timer_check_peer_candidate();
+            int32_t on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer);
 
-            int32_t on_timer_peer_candidate_dump();
+            int32_t on_timer_peer_candidate_dump(std::shared_ptr<matrix::core::core_timer> timer);
 
         private:
+
+            uint32_t get_rand32() {return m_rand_ctx.rand32();}
 
             bool has_available_peer_candidates();
 
             uint32_t get_available_peer_candidates_count();
 
+            int32_t get_addr_good_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &addr_good_candidates);
+
+            uint32_t get_addr_good_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
+
             bool is_peer_candidate_exist(tcp::endpoint &ep);
 
-            bool add_peer_candidate(tcp::endpoint &ep, net_state ns);
+            bool add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype);
 
             bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
 
-            int32_t load_peer_candidates(std::list<peer_candidate> &cands);
+            int32_t load_peer_candidates();
 
-            int32_t save_peer_candidates(std::list<peer_candidate> &cands);
+            int32_t save_peer_candidates();
+
+            uint32_t start_connect(tcp::endpoint   tcp_ep);
+
+            std::shared_ptr<peer_node> get_dynamic_disconnect_peer_node();
+
+            std::shared_ptr<peer_candidate> get_dynamic_connect_peer_candidate();
 
         protected:
 
@@ -144,21 +165,33 @@ namespace matrix
 
             int32_t add_hard_code_seeds();
 
+            void advertise_local(tcp::endpoint tcp_ep, socket_id sid);
+
         protected:
+
+            uint256 m_rand_seed;
+
+            FastRandomContext m_rand_ctx;
 
             std::string m_host_ip;
 
             uint16_t m_net_listen_port;
 
-            std::list<peer_candidate> m_peer_candidates;
+            std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;
 
-            peer_map_type m_peer_nodes_map;
-
-            uint32_t m_timer_id_one_minute;
+            std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;
 
             std::list<const char *> m_dns_seeds;
 
             std::list<peer_seeds> m_hard_code_seeds;
+
+            uint32_t m_timer_check_peer_candidates;
+
+            uint32_t m_timer_dyanmic_adjust_network;
+
+            uint32_t m_timer_peer_info_exchange;
+
+            uint32_t m_timer_dump_peer_candidates;
 
         };
 

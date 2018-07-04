@@ -68,6 +68,7 @@ namespace matrix
                 }
 
                 //async wait
+                assert(nullptr != m_shake_hand_timer_handler);
                 m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
                 m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
             };
@@ -102,7 +103,7 @@ namespace matrix
                 //time out and disconnect tcp socket
                 if (m_wait_ver_req_timer.expires_at() < std::chrono::steady_clock::now())
                 {
-                    LOG_ERROR << "matrix server socket channel handler connect successfully but no message received, " << m_sid.to_string();
+                    LOG_ERROR << "matrix server socket channel handler connect successfully but no message received and stop channel, " << m_sid.to_string();
 
                     //stop_wait_ver_req_timer();
                     if (auto ch = m_channel.lock())
@@ -235,6 +236,7 @@ namespace matrix
 
         void matrix_server_socket_channel_handler::start_wait_ver_req_timer()
         {
+            assert(nullptr != m_wait_ver_req_timer_handler);
             m_wait_ver_req_timer.expires_from_now(std::chrono::seconds(DEFAULT_WAIT_VER_REQ_INTERVAL));
             m_wait_ver_req_timer.async_wait(m_wait_ver_req_timer_handler);
 

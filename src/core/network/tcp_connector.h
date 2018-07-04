@@ -25,7 +25,7 @@ using namespace boost::asio::ip;
 
 
 #define RECONNECT_INTERVAL                     2                    //2->4->8->16->32->64...
-#define MAX_RECONNECT_TIMES                    3
+#define MAX_RECONNECT_TIMES                  2
 
 
 
@@ -45,7 +45,7 @@ namespace matrix
 
             tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func);
 
-            virtual ~tcp_connector() = default;
+            virtual ~tcp_connector();
 
             virtual int32_t start(uint32_t retry = MAX_RECONNECT_TIMES);
 
