@@ -26,99 +26,62 @@ namespace matrix
 
         int32_t matrix_server_socket_channel_handler::start()
         {
-            auto self(shared_from_this());
-
-            //shake hand timer
-            m_shake_hand_timer_handler =
-                [this, self](const boost::system::error_code & error)
-            {
-
-                if (true == m_stopped)
-                {
-                    LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
-                    return;
-                }
-
-                if (error)
-                {
-                    //aborted, maybe cancel triggered
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        LOG_DEBUG << "matrix client socket channel handler timer aborted.";
-                        return;
-                    }
-
-                    LOG_ERROR << "matrix server socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return;
-                }
-
-                //lost shake hand too many times
-                if (++m_lost_shake_hand_count >= m_lost_shake_hand_count_max)
-                {
-                    LOG_ERROR << "matrix server socket channel handler lost shake hand count error timers: " << m_lost_shake_hand_count;
-                    if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return;
-                }
-
-                //async wait
-                assert(nullptr != m_shake_hand_timer_handler);
-                m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
-                m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
-            };
-
-            //wait ver req timer
-            m_wait_ver_req_timer_handler =
-                [this, self] (const boost::system::error_code & error)
-            {
-                if (true == m_stopped)
-                {
-                    LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and m_wait_ver_req_timer_handler exit directly" << m_sid.to_string();
-                    return;
-                }
-
-                if (error)
-                {
-                    //aborted, maybe cancel triggered
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        LOG_DEBUG << "matrix server socket channel handler wait ver req timer aborted.";
-                        return;
-                    }
-
-                    LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return;
-                }
-
-                //time out and disconnect tcp socket
-                if (m_wait_ver_req_timer.expires_at() < std::chrono::steady_clock::now())
-                {
-                    LOG_ERROR << "matrix server socket channel handler connect successfully but no message received and stop channel, " << m_sid.to_string();
-
-                    //stop_wait_ver_req_timer();
-                    if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return;
-                }
-
-                //restart timer for not time out
-                start_wait_ver_req_timer();
-            };
-
             return E_SUCCESS;
 
+        }
+
+
+        void matrix_server_socket_channel_handler::start_shake_hand_timer_ext()
+        {
+            m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
+            m_shake_hand_timer.async_wait(boost::bind(&matrix_server_socket_channel_handler::on_shake_hand_timer_expired,
+                std::dynamic_pointer_cast<matrix_server_socket_channel_handler>(shared_from_this()), boost::asio::placeholders::error));
+        }
+
+
+        void matrix_server_socket_channel_handler::on_shake_hand_timer_expired(const boost::system::error_code& error)
+        {
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
+                return;
+            }
+
+            if (error)
+            {
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "matrix client socket channel handler timer aborted.";
+                    return;
+                }
+
+                LOG_ERROR << "matrix server socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
+                if (auto ch = m_channel.lock())
+                {
+                    ch->on_error();
+                }
+                return;
+            }
+
+            //lost shake hand too many times
+            if (++m_lost_shake_hand_count >= m_lost_shake_hand_count_max)
+            {
+                LOG_ERROR << "matrix server socket channel handler lost shake hand count error timers: " << m_lost_shake_hand_count;
+                if (auto ch = m_channel.lock())
+                {
+                    ch->on_error();
+                }
+                return;
+            }
+
+            //async wait
+            //m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
+            //m_shake_hand_timer.async_wait(boost::bind(&matrix_server_socket_channel_handler::on_shake_hand_timer_expired,
+            //                                          std::dynamic_pointer_cast<matrix_server_socket_channel_handler>(shared_from_this()),
+            //                                          boost::asio::placeholders::error));
+
+            start_shake_hand_timer_ext();
         }
 
         int32_t matrix_server_socket_channel_handler::stop()
@@ -209,7 +172,7 @@ namespace matrix
         }
 
         std::shared_ptr<socket_channel_handler> matrix_server_socket_channel_handler::create(std::shared_ptr<channel> ch)
-        { 
+        {
             shared_ptr<socket_channel_handler> handler(new matrix_server_socket_channel_handler(ch));
             return handler->shared_from_this();
         }
@@ -236,9 +199,10 @@ namespace matrix
 
         void matrix_server_socket_channel_handler::start_wait_ver_req_timer()
         {
-            assert(nullptr != m_wait_ver_req_timer_handler);
             m_wait_ver_req_timer.expires_from_now(std::chrono::seconds(DEFAULT_WAIT_VER_REQ_INTERVAL));
-            m_wait_ver_req_timer.async_wait(m_wait_ver_req_timer_handler);
+            //m_wait_ver_req_timer.async_wait(m_wait_ver_req_timer_handler);
+            m_wait_ver_req_timer.async_wait(boost::bind(&matrix_server_socket_channel_handler::on_ver_req_timer_expired,
+                std::dynamic_pointer_cast<matrix_server_socket_channel_handler>(shared_from_this()), boost::asio::placeholders::error));
 
             LOG_DEBUG << "matrix server socket channel handler start wait ver req timer, " << m_sid.to_string();
         }
@@ -257,7 +221,51 @@ namespace matrix
                 LOG_DEBUG << "matrix server socket channel handler stop wait ver req timer, " << m_sid.to_string();
             }
             //modify by regulus:fix can't free resource when client disconnect 
-            m_wait_ver_req_timer_handler = nullptr;
+            //m_wait_ver_req_timer_handler = nullptr;
+        }
+
+
+        void matrix_server_socket_channel_handler::on_ver_req_timer_expired(const boost::system::error_code& error)
+        {
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and on_ver_req_timer_expired exit directly" << m_sid.to_string();
+                return;
+            }
+
+            if (error)
+            {
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "matrix server socket channel handler wait ver req timer aborted.";
+                    return;
+                }
+
+                LOG_ERROR << "matrix server socket channel handler wait ver req timer error: " << error.value() << " " << error.message() << m_sid.to_string();
+                if (auto ch = m_channel.lock())
+                {
+                    ch->on_error();
+                }
+                return;
+            }
+
+            //time out and disconnect tcp socket
+            if (m_wait_ver_req_timer.expires_at() < std::chrono::steady_clock::now())
+            {
+                LOG_ERROR << "matrix server socket channel handler connect successfully but no message received, " << m_sid.to_string();
+
+                //stop_wait_ver_req_timer();
+                if (auto ch = m_channel.lock())
+                {
+                    ch->on_error();
+                }
+                return;
+            }
+
+            //restart timer for not time out
+            start_wait_ver_req_timer();
+
         }
 
     }

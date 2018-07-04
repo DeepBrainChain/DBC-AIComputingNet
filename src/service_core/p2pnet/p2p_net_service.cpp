@@ -406,73 +406,64 @@ namespace matrix
             }
 
             //use dns peer seeds 
-            //if no neighbor peer nodes and peer candidates
             if (get_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)
             {
                 add_dns_seeds();
             }
 
             //use hard code peer seeds 
-            //case: maybe dns resolver produce nothing
             if (get_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)       //still no available candidate
             {
                 add_hard_code_seeds();
             }
 
-            //increase connections
+            //check connections
             uint32_t new_conn_cnt = 0;
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
             {
+                //not too many conn at a time
+                if (new_conn_cnt > max_connect_per_check)
+                {
+                    break;
+                }
+
                 std::shared_ptr<peer_candidate> candidate = *it;
 
                 if ((ns_idle == candidate->net_st)
                     || ((ns_failed == candidate->net_st) && candidate->reconn_cnt < max_reconnect_times))
-                        //&& (time(nullptr) > TIMER_INTERV_MIN_P2P_CONNECT_NEW_PEER * candidate->reconn_cnt + candidate->last_conn_tm)))
                 {
-                    //case: inverse connect to peer
-                    if (!candidate->node_id.empty() && m_peer_nodes_map.find(candidate->node_id) != m_peer_nodes_map.end())
-                    {
-                        continue;
-                    }
-
-                    //connect
-                    candidate->last_conn_tm = time(nullptr);
-                    candidate->net_st = ns_in_use;
-                    candidate->reconn_cnt++;
-
                     try
                     {
-                        LOG_DEBUG << "p2p net service connect peer address; ip: " << candidate->tcp_ep.address() << " port: " << candidate->tcp_ep.port();
-                        if (exist_peer_node(it->tcp_ep) || exist_peer_node(it->node_id))
+                        LOG_DEBUG << "p2p net service connect peer address: " << candidate->tcp_ep;
+
+                        candidate->last_conn_tm = time(nullptr);
+                        candidate->net_st = ns_in_use;
+                        candidate->reconn_cnt++;
+
+                        //case: inverse connect to peer
+                        if (exist_peer_node(candidate->node_id) || exist_peer_node(candidate->tcp_ep))
                         {
+                            candidate->reconn_cnt = 0;
                             LOG_DEBUG << "tcp channel exist to: " << candidate->tcp_ep.address().to_string() << ":" << candidate->tcp_ep.port();
                             continue;
                         }
 
+                        //connect
                         int32_t ret = CONNECTION_MANAGER->start_connect(candidate->tcp_ep, &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
 
                         if (E_SUCCESS != ret)
                         {
-                            LOG_ERROR << "matrix init connector invalid peer address, ip: " << candidate->tcp_ep.address() << " port: " << candidate->tcp_ep.port();
+                            LOG_ERROR << "matrix init connector invalid peer address: " << candidate->tcp_ep;
                             candidate->net_st = ns_failed;
-                            continue;
                         }
                     }
                     catch (const std::exception &e)
                     {
                         candidate->net_st = ns_failed;
-                        LOG_ERROR << "timer connect ip catch exception. addr info: " << candidate->tcp_ep.address() << ":" << candidate->tcp_ep.port() << ", " << e.what();
-                        continue;
+                        LOG_ERROR << "timer connect ip catch exception. addr info: " << candidate->tcp_ep << ", " << e.what();
                     }
                 }
-
-                //not too many conn at a time
-                if (new_conn_cnt > max_connect_per_check)
-                {
-                    break;              
-                }
-
             }
 
             return E_SUCCESS;
@@ -487,20 +478,20 @@ namespace matrix
             //neighbour node is not enough
             if (client_peer_nodes_count < max_connected_cnt)
             {
-                uint32_t get_count = (uint32_t)(max_connected_cnt - m_peer_nodes_map.size());
-                std::vector<std::shared_ptr<peer_candidate>> addr_good_candidates;
+                uint32_t get_count = (uint32_t)(max_connected_cnt - client_peer_nodes_count);
+                std::vector<std::shared_ptr<peer_candidate>> available_candidates;
                 
                 //get peer candidates
-                if (E_SUCCESS != get_addr_good_peer_candidates(get_count, addr_good_candidates))
+                if (E_SUCCESS != get_available_peer_candidates(get_count, available_candidates))
                 {
                     LOG_ERROR << "p2p net service get addr good peer candidates error";
                     return E_DEFAULT;
                 }
 
-                LOG_ERROR << "p2p net service get addr good peer candidates count: " << addr_good_candidates.size();
+                LOG_ERROR << "p2p net service get addr good peer candidates count: " << available_candidates.size();
 
                 //start connect
-                for (auto it : addr_good_candidates)
+                for (auto it : available_candidates)
                 {
                     if (E_SUCCESS != start_connect(it->tcp_ep))
                     {
@@ -520,26 +511,37 @@ namespace matrix
             else
             {
                 //normal node with addr good status
-                uint32_t addr_good_normal_nodes_count = get_addr_good_peer_candidates_count_by_node_type(NORMAL_NODE);
-                if (addr_good_normal_nodes_count >= MIN_NORMAL_ADDR_GOOD_COUNT)
+                uint32_t available_normal_nodes_count = get_available_peer_candidates_count_by_node_type(NORMAL_NODE);
+                if (available_normal_nodes_count >= MIN_NORMAL_AVAILABLE_NODE_COUNT)
                 {
-                    std::shared_ptr<peer_node> peer_node = get_dynamic_disconnect_peer_node();
-                    if (nullptr == peer_node)
+                    std::shared_ptr<peer_node> node = get_dynamic_disconnect_peer_node();
+                    if (nullptr == node)
                     {
                         LOG_DEBUG << "p2p net service does not find dynamic disconnect peer nodes";
                         return E_DEFAULT;
                     }
 
                     //stop tcp socket channel
-                    LOG_DEBUG << "p2p net service dynamic disconnect peer node: " << peer_node->m_id << peer_node->m_sid.to_string();
-                    m_peer_nodes_map.erase(peer_node->m_id);
-                    CONNECTION_MANAGER->stop_channel(peer_node->m_sid);         //wether should set ip candidates with addr_good status if not will be erase from candidates
+                    LOG_DEBUG << "p2p net service dynamic disconnect peer node: " << node->m_id << node->m_sid.to_string();
+                    m_peer_nodes_map.erase(node->m_id);
+                    CONNECTION_MANAGER->stop_channel(node->m_sid);         //wether should set ip candidates with available status if not will be erase from candidates
 
                     //get connect candidate
                     auto connect_candidate = get_dynamic_connect_peer_candidate();
                     if (nullptr == connect_candidate)
                     {
                         return E_DEFAULT;
+                    }
+
+                    //update net state to addr good after get connect candidate
+                    tcp::endpoint node_ep(address_v4::from_string(node->m_peer_addr.get_ip()), (uint16_t)node->m_peer_addr.get_port());
+                    auto candidate = get_peer_candidate(node_ep);
+                    if (nullptr != candidate)
+                    {
+                        candidate->net_st = ns_available;
+
+                        remove_peer_candidate(node_ep);
+                        m_peer_candidates.push_back(candidate);
                     }
 
                     //create new tcp connector
@@ -743,44 +745,6 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            //filter node which connects to the same node(maybe another process with same nodeid)   
-            auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
-            if (ch)
-            {
-                auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
-                if (tcp_ch)
-                {
-                    auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                        , [=](std::shared_ptr<peer_candidate> & pc) -> bool { return tcp_ch->get_remote_addr() == pc->tcp_ep; });
-                    if (it != m_peer_candidates.end())
-                    {    
-                        if (req_content->body.node_id == CONF_MANAGER->get_node_id())
-                        {
-                            (*it)->last_conn_tm = time(nullptr);
-                            (*it)->net_st = ns_zombie;
-
-                            //stop channel
-                            LOG_DEBUG << "same node_id, p2p net service stop channel: " << msg->header.src_sid.to_string();
-                            CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
-
-                            return E_SUCCESS;
-                        }
-                        else
-                        {
-                            (*it)->node_id = req_content->body.node_id;
-                        }
-                    }
-                    else
-                    {
-                        LOG_INFO << "recv a new peer(" << req_content->body.node_id << ")";
-                    }
-                }                
-            }
-            else
-            {
-                LOG_ERROR << "p2p net service on ver req get channel error," << msg->header.src_sid.to_string() << "node id: " << req_content->body.node_id;
-                return E_DEFAULT;
-            }
 
             LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
 
@@ -840,27 +804,30 @@ namespace matrix
                 LOG_ERROR << "p2p net service on ver resp get channel error," << msg->header.src_sid.to_string() << "node id: " << resp_content->body.node_id;
                 return E_DEFAULT;
             }
+            
 
-            tcp::endpoint ep = tcp_ch->get_local_addr();
-            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                , [=](std::shared_ptr<peer_candidate> & pc) -> bool { return tcp_ch->get_remote_addr() == pc->tcp_ep; });
-            if (it != m_peer_candidates.end())
+            auto candidate = get_peer_candidate(tcp_ch->get_remote_addr());
+            if (nullptr != candidate)
             {
-                (*it)->node_id = resp_content->body.node_id;
+                candidate->node_id = resp_content->body.node_id;
             }
             else
             {
-                LOG_INFO << "recv a ver resp, but it's a new peer:" << resp_content->body.node_id << msg->header.src_sid.to_string();
+                LOG_ERROR << "recv a ver resp, but it it NOT found in peer candidates:" << resp_content->body.node_id << msg->header.src_sid.to_string();
             }
 
-            //larger than max connected count, so just tag its status with addr_good and stop channel
+            //larger than max connected count, so just tag its status with available and stop channel
             uint32_t client_peer_nodes_count = get_peer_nodes_count_by_socket_type(CLIENT_SOCKET);
             if (client_peer_nodes_count >= max_connected_cnt)
             {
                 LOG_DEBUG << "current client peer nodes count: " << client_peer_nodes_count
                     << " larger than max connected count,  MUST stop client tcp connection:" << msg->header.src_sid.to_string();
 
-                (*it)->net_st = ns_addr_good;
+                if (nullptr != candidate)
+                {
+                    candidate->net_st = ns_available;
+                }
+                
                 CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
                 return E_SUCCESS;
             }
@@ -876,7 +843,8 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            advertise_local(ep, msg->header.src_sid);            //advertise local self address to neighbour peer node
+            tcp::endpoint local_ep = tcp_ch->get_local_addr();
+            advertise_local(local_ep, msg->header.src_sid);            //advertise local self address to neighbour peer node
             return E_SUCCESS;
         }
 
@@ -898,21 +866,17 @@ namespace matrix
             }  
             LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string() << "---" << err_msg->ep.address().to_string() << ":" << err_msg->ep.port();
 
-            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                , [=](std::shared_ptr<peer_candidate> & pc) -> bool { return err_msg->ep == pc->tcp_ep; });
-            if (it != m_peer_candidates.end())
+            auto candidate = get_peer_candidate(err_msg->ep);
+            if (nullptr != candidate)
             {
-                if ((*it)->net_st != ns_zombie && (*it)->net_st != ns_addr_good)
+                if (candidate->net_st != ns_zombie && candidate->net_st != ns_available)
                 {
-                    (*it)->last_conn_tm = time(nullptr);
-                    (*it)->net_st = ns_failed;
+                    candidate->last_conn_tm = time(nullptr);
+                    candidate->net_st = ns_failed;
                     
-                    //move it to the tail
-                    auto pc = *it;
-                    
-                    LOG_DEBUG << "move peer: " << pc->tcp_ep << " to the tail of candidate list, sid: " << sid.to_string();
-                    m_peer_candidates.erase(it);
-                    m_peer_candidates.push_back(pc);
+                    LOG_DEBUG << "move peer: " << candidate->tcp_ep << " to the tail of candidate list, sid: " << sid.to_string();
+                    remove_peer_candidate(err_msg->ep);
+                    m_peer_candidates.push_back(candidate);
                 }
             }
             else
@@ -945,10 +909,8 @@ namespace matrix
             }
             
             //find peer candidate
-            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                , [=](std::shared_ptr<peer_candidate> & pc) -> bool { return notification_content->ep == pc->tcp_ep; });
-
-            if (it == m_peer_candidates.end())
+            auto candidate = get_peer_candidate(notification_content->ep);
+            if (nullptr == candidate)
             {
                 LOG_ERROR << "a client tcp connection established, but not in peer candidate: " << notification_content->ep.address() << ":" << notification_content->ep.port();
                 assert(0);
@@ -957,7 +919,7 @@ namespace matrix
             if (CLIENT_CONNECT_SUCCESS == notification_content->status)
             {
                 //update peer candidate info
-                (*it)->reconn_cnt = 0;
+                candidate->reconn_cnt = 0;
 
                 //create ver_req message
                 std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -996,8 +958,8 @@ namespace matrix
             else
             {
                 //update peer candidate info
-                (*it)->last_conn_tm = time(nullptr);//time resume after connection finished.
-                (*it)->net_st = ns_failed;
+                candidate->last_conn_tm = time(nullptr);        //time resume after connection finished.
+                candidate->net_st = ns_failed;
             }
 
             CONNECTION_MANAGER->release_connector(msg->header.src_sid);
@@ -1140,12 +1102,45 @@ namespace matrix
             //if adverise local ip, peer nodes list is just one and should relay to neighbour node
             if (1 == rsp->body.peer_nodes_list.size())
             {
-                const peer_node_info &node_info = rsp->body.peer_nodes_list[0];
-                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-                
-                LOG_DEBUG << "p2p net service relay peer node " << node_info.addr.ip << ":" << node_info.addr.port 
-                    << ", node_id: " << node_info.peer_node_id << msg->header.src_sid.to_string();
-                return E_SUCCESS;
+                const peer_node_info &node = rsp->body.peer_nodes_list[0];
+
+                try
+                {
+                    tcp::endpoint ep(address_v4::from_string(node.addr.ip), (uint16_t)node.addr.port);
+
+                    LOG_DEBUG << "p2p net service relay peer node " << node.addr.ip << ":" << node.addr.port
+                        << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
+
+                    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
+                    //find in neighbour node
+                    if (nullptr != get_peer_node(node.peer_node_id))           //neighbour node already existed
+                    {
+                        return E_SUCCESS;
+                    }
+
+                    //add to peer candidates
+                    if (false == add_peer_candidate(ep, ns_idle, NORMAL_NODE))
+                    {
+                        LOG_DEBUG << "p2p net service add peer candidate error: " << ep;
+                    }
+
+                    LOG_DEBUG << "p2p net service add peer candidate: " << ep;
+                    return E_SUCCESS;
+                }
+                catch (boost::system::system_error e)
+                {
+                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << node.addr.port 
+                        << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string()
+                        << e.what();
+                    return E_DEFAULT;
+                }
+                catch (...)
+                {
+                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << node.addr.port
+                        << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
+                    return E_DEFAULT;
+                }
             }
             
             for (auto it = rsp->body.peer_nodes_list.begin(); it != rsp->body.peer_nodes_list.end(); ++it)
@@ -1157,17 +1152,16 @@ namespace matrix
                         << ", node_id: " << it->peer_node_id << msg->header.src_sid.to_string();
                     
                     //is in list
-                    auto it_pc = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                        , [=](std::shared_ptr<peer_candidate> & pc) -> bool { return ep == pc->tcp_ep; });
-                    if (it_pc == m_peer_candidates.end())
+                    auto candidate = get_peer_candidate(ep);
+                    if (nullptr == candidate)
                     {
                         std::shared_ptr<peer_candidate> pc = std::make_shared<peer_candidate>(ep, ns_idle);
                         pc->node_id = it->peer_node_id;
                         m_peer_candidates.push_back(pc);
                     }
-                    else if((*it_pc)->node_id.empty() && !it->peer_node_id.empty())
+                    else if(candidate->node_id.empty() && !it->peer_node_id.empty())
                     {
-                        (*it_pc)->node_id = it->peer_node_id;
+                        candidate->node_id = it->peer_node_id;
                     }
                 }
                 catch (boost::system::system_error e)
@@ -1248,7 +1242,7 @@ namespace matrix
                 
                 for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
                 {
-                    if (ns_addr_good == (*it)->net_st && NORMAL_NODE == (*it)->node_type)
+                    if (ns_available == (*it)->net_st && NORMAL_NODE == (*it)->node_type)
                     {
                         matrix::service_core::peer_node_info info;
                         
@@ -1289,8 +1283,12 @@ namespace matrix
         {
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
             {
-                if ((*it)->net_st <= ns_in_use || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times)))
+                if (ns_idle == (*it)->net_st
+                    || ns_in_use == (*it)->net_st
+                    || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times)))
+                {
                     return true;
+                }
             }
             
             return false;
@@ -1312,9 +1310,8 @@ namespace matrix
                 return false;
             }
 
-            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                , [=](std::shared_ptr<peer_candidate>& pc) -> bool { return ep == pc->tcp_ep; });
-            if (it == m_peer_candidates.end())
+            auto candidate = get_peer_candidate(ep);
+            if (nullptr == candidate)
             {
                 m_peer_candidates.emplace_back(std::make_shared<peer_candidate>(ep, ns, ntype));
                 return true;
@@ -1325,11 +1322,10 @@ namespace matrix
 
         bool p2p_net_service::update_peer_candidate_state(tcp::endpoint &ep, net_state ns)
         {
-            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
-                , [=](std::shared_ptr<peer_candidate>& pc) -> bool { return ep == pc->tcp_ep; });
-            if (it != m_peer_candidates.end())
+            auto candidate = get_peer_candidate(ep);
+            if (nullptr != candidate)
             {
-                (*it)->net_st = ns;
+                candidate->net_st = ns;
                 return true;
             }
 
@@ -1357,24 +1353,30 @@ namespace matrix
 
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
             {
-                if ((*it)->net_st <= ns_in_use || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times)))
+                if (ns_idle == (*it)->net_st
+                    || ns_in_use == (*it)->net_st
+                    || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times)))
+                {
                     count++;
+                }
             }
 
             return count;
         }
 
-        int32_t p2p_net_service::get_addr_good_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &addr_good_candidates)
+        int32_t p2p_net_service::get_available_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &available_candidates)
         {
+            available_candidates.clear();
+
             uint32_t i = 0;
 
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
             {
-                if (ns_addr_good == (*it)->net_st && i < count)
+                if (ns_available == (*it)->net_st && i < count)
                 {
-                    LOG_DEBUG << "p2p net service add addr good peer candidates: " << (*it)->tcp_ep.address().to_string() << "port: " << std::to_string((*it)->tcp_ep.port());
+                    LOG_DEBUG << "p2p net service add addr good peer candidates: " << (*it)->tcp_ep;
 
-                    addr_good_candidates.push_back(*it);
+                    available_candidates.push_back(*it);
                     i++;
                 }
             }
@@ -1500,11 +1502,10 @@ namespace matrix
                         peer_cand->score = obj["score"].GetUint();
                         peer_cand->node_id = obj["node_id"].GetString();
                         peer_cand->node_type = (peer_node_type)obj["node_type"].GetUint();
+
                         if (!peer_cand->node_id.empty())
                         {
-
-                            //std::vector<unsigned char> vch;
-                            if (!id_generator().check_base58_id(peer_cand.node_id))
+                            if (!id_generator().check_base58_id(peer_cand->node_id))
                             {
                                 LOG_ERROR << "node id: " << peer_cand->node_id << " is not Base58 code, in file: " << peers_file;
                                 continue;
@@ -1608,13 +1609,13 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        uint32_t p2p_net_service::get_addr_good_peer_candidates_count_by_node_type(peer_node_type node_type)
+        uint32_t p2p_net_service::get_available_peer_candidates_count_by_node_type(peer_node_type node_type)
         {
             uint32_t count = 0;
 
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
             {
-                if (ns_addr_good == (*it)->net_st && node_type == (*it)->node_type)
+                if (ns_available == (*it)->net_st && node_type == (*it)->node_type)
                 {
                     count++;
                 }
@@ -1676,12 +1677,12 @@ namespace matrix
 
             for (auto it : m_peer_candidates)
             {
-                if (ns_addr_good == it->net_st && SEED_NODE == it->node_type)
+                if (ns_available == it->net_st && SEED_NODE == it->node_type)
                 {
                     seed_node_candidates.push_back(it);
                 }
 
-                if (ns_addr_good == it->net_st && NORMAL_NODE == it->node_type)
+                if (ns_available == it->net_st && NORMAL_NODE == it->node_type)
                 {
                     normal_node_candidates.push_back(it);
                 }
@@ -1730,6 +1731,27 @@ namespace matrix
 
             LOG_DEBUG << "p2p net service advertise local self address: " << tcp_ep.address().to_string() << ", port: " << tcp_ep.port();
             send_put_peer_nodes(node);
+        }
+
+
+        std::shared_ptr<peer_candidate> p2p_net_service::get_peer_candidate(const tcp::endpoint &ep)
+        {
+            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                , [=](std::shared_ptr<peer_candidate> & candidate) -> bool { return ep == candidate->tcp_ep; });
+
+            return (it != m_peer_candidates.end()) ? *it : nullptr;
+        }
+
+        void p2p_net_service::remove_peer_candidate(const tcp::endpoint &ep)
+        {
+            auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
+                , [=](std::shared_ptr<peer_candidate> & candidate) -> bool { return ep == candidate->tcp_ep; });
+
+            if (it != m_peer_candidates.end())
+            {
+                m_peer_candidates.erase(it);
+                LOG_DEBUG << "p2p net service remove peer candidate: " << ep;
+            }
         }
 
     }

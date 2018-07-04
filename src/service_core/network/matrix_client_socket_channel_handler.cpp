@@ -18,55 +18,61 @@ namespace matrix
         matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(std::shared_ptr<channel> ch)
             : matrix_socket_channel_handler(ch)
         {
- 
+
         }
 
         int32_t matrix_client_socket_channel_handler::start()
         {
-            auto self(shared_from_this());
-
-            m_shake_hand_timer_handler =
-                [this, self](const boost::system::error_code & error)
-            {
-                if (true == m_stopped)
-                {
-                    LOG_DEBUG << "matrix_client_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
-                    return;
-                }
-
-                if (error)
-                {
-                    //aborted, maybe cancel triggered
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        LOG_DEBUG << "matrix client socket channel handler timer aborted.";
-                        return;
-                    }
-
-                    LOG_ERROR << "matrix client socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    if (auto ch = m_channel.lock())
-                    {
-                        ch->on_error();
-                    }
-                    return;
-                }
-
-                //login success and no message, time out and send shake hand
-                if (true == m_login_success && false == m_has_message)
-                {
-                    send_shake_hand_req();
-                }
-
-                //reset
-                reset_has_message();
-
-                //next time async wait
-                assert(nullptr != m_shake_hand_timer_handler);
-                m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
-                m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
-            };
-
             return E_SUCCESS;
+        }
+
+
+        void matrix_client_socket_channel_handler::start_shake_hand_timer_ext()
+        {
+            m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
+            m_shake_hand_timer.async_wait(boost::bind(&matrix_client_socket_channel_handler::on_shake_hand_timer_expired,
+                std::dynamic_pointer_cast<matrix_client_socket_channel_handler>(shared_from_this()), boost::asio::placeholders::error));
+        }
+
+
+        void matrix_client_socket_channel_handler::on_shake_hand_timer_expired(const boost::system::error_code& error)
+        {
+
+            if (true == m_stopped)
+            {
+                LOG_DEBUG << "matrix_client_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
+                return;
+            }
+
+            if (error)
+            {
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "matrix client socket channel handler timer aborted.";
+                    return;
+                }
+
+                LOG_ERROR << "matrix client socket channel handler timer error: " << error.value() << " " << error.message() << m_sid.to_string();
+                if (auto ch = m_channel.lock())
+                {
+                    ch->on_error();
+                }
+                return;
+            }
+
+            //login success and no message, time out and send shake hand
+            if (true == m_login_success && false == m_has_message)
+            {
+                send_shake_hand_req();
+            }
+
+            //reset
+            reset_has_message();
+
+            //next time async wait
+
+            start_shake_hand_timer_ext();
         }
 
         int32_t matrix_client_socket_channel_handler::on_after_msg_received(message &msg)
@@ -76,7 +82,7 @@ namespace matrix
                 LOG_ERROR << "matrix client socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
                 /*if (auto ch = m_channel.lock())
                 {
-                    ch->on_error();
+                ch->on_error();
                 }
                 return E_SUCCESS;*/
                 return E_DEFAULT;
@@ -97,7 +103,7 @@ namespace matrix
                     LOG_ERROR << "matrix client socket channel handler received duplicated VER_RESP" << m_sid.to_string();
                     /*if (auto ch = m_channel.lock())
                     {
-                        ch->on_error();
+                    ch->on_error();
                     }*/
                     return E_DEFAULT;
                 }
