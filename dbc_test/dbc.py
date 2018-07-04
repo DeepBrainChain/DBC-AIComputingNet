@@ -195,7 +195,7 @@ def start_training_req1(task_id):
     m.flush()
     #send_s = binascii.hexlify(code)
     return pack(m)
-class f (unittest.TestCase):
+class TestDecode(unittest.TestCase):
     def test_handshake(self):
         task_id = get_random_id()
         print task_id
