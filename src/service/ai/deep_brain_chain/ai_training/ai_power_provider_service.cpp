@@ -209,16 +209,13 @@ namespace ai
             std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
             assert(nullptr != req);
 
-            std::vector<unsigned char> vchRet;
-            
-            if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(req->header.nonce) != true)
             {
                 LOG_ERROR << "ai power provider service nonce error ";
                 return E_DEFAULT;
             }
 
-            vchRet.clear();
-            if (DecodeBase58Check(SanitizeString(req->body.task_id), vchRet) != true)
+            if (id_generator().check_base58_id(req->body.task_id) != true)
             {
                 LOG_ERROR << "ai power provider service task_id error ";
                 return E_DEFAULT;
@@ -322,18 +319,14 @@ namespace ai
         {
             std::shared_ptr<matrix::service_core::stop_training_req> req = std::dynamic_pointer_cast<matrix::service_core::stop_training_req>(msg->get_content());
             assert(nullptr != req);
-
-            std::vector<unsigned char> vchRet;
             
-            if (DecodeBase58Check(SanitizeString(req->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(req->header.nonce) != true)
             {
                 LOG_DEBUG << "ai power provider service on_stop_training_req nonce error ";
                 return E_DEFAULT;
             }
-
-            vchRet.clear();
                         
-            if (DecodeBase58Check(SanitizeString(req->body.task_id), vchRet) != true)
+            if (id_generator().check_base58_id(req->body.task_id) != true)
             {
                 LOG_DEBUG << "ai power provider service on_stop_training_req task_id error ";
                 return E_DEFAULT;
@@ -398,16 +391,13 @@ namespace ai
         {
             std::shared_ptr<list_training_req> req_content = std::dynamic_pointer_cast<list_training_req>(msg->get_content());
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(req_content->header.nonce) != true)
             {
                 LOG_DEBUG << "ai power provider service nonce error ";
                 return E_DEFAULT;
             }
 
-            vchRet.clear();
-
-            if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
+            if (id_generator().check_base58_id(req_content->header.session_id) != true)
             {
                 LOG_DEBUG << "ai power provider service sessionid error ";
                 return E_DEFAULT;
@@ -424,9 +414,7 @@ namespace ai
 
             for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
             {
-                vchRet.clear();
-
-                if (DecodeBase58Check(SanitizeString(*it), vchRet) != true)
+                if (id_generator().check_base58_id(*it) != true)
                 {
                     LOG_DEBUG << "ai power provider service taskid error: " << *it;
                     continue;
@@ -514,23 +502,20 @@ namespace ai
             std::shared_ptr<logs_req> req_content = std::dynamic_pointer_cast<logs_req>(msg->get_content());
             assert(nullptr != req_content);
 
-            std::vector<unsigned char> vchRet;
-            if (DecodeBase58Check(SanitizeString(req_content->header.nonce), vchRet) != true)
+            if (id_generator().check_base58_id(req_content->header.nonce) != true)
             {
                 LOG_ERROR << "ai power provider service nonce error ";
                 return E_DEFAULT;
             }
 
-            vchRet.clear();
-
-            if (DecodeBase58Check(SanitizeString(req_content->header.session_id), vchRet) != true)
+    
+            if (id_generator().check_base58_id(req_content->header.session_id) != true)
             {
                 LOG_ERROR << "ai power provider service session_id error ";
                 return E_DEFAULT;
             }
-            vchRet.clear();
-
-            if (DecodeBase58Check(SanitizeString(req_content->body.task_id), vchRet) != true)
+    
+            if (id_generator().check_base58_id(req_content->body.task_id) != true)
             {
                 LOG_ERROR << "taskid error ";
                 return E_DEFAULT;
