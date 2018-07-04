@@ -50,8 +50,6 @@ namespace matrix
 
             peer_node& operator=(const peer_node &src);
 
-        protected:
-
             std::string m_id;                               //peer node_id
 
             socket_id m_sid;                                //if connected directly, it has socket id

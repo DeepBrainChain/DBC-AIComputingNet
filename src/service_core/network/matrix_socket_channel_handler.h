@@ -53,9 +53,9 @@ namespace matrix
 
             virtual int32_t stop();
 
-            virtual int32_t on_read(channel_handler_context &ctx, byte_buf &in);  
+            virtual int32_t on_read(channel_handler_context &ctx, byte_buf &in);
 
-            virtual int32_t on_write(channel_handler_context &ctx, message &msg, byte_buf &buf); 
+            virtual int32_t on_write(channel_handler_context &ctx, message &msg, byte_buf &buf);
 
             virtual int32_t on_error();
 
@@ -69,11 +69,15 @@ namespace matrix
 
             virtual bool is_logined() { return m_login_success; }
 
+            virtual void on_shake_hand_timer_expired(const boost::system::error_code& error) {}
+
         protected:
 
             virtual void start_shake_hand_timer();
 
             virtual void stop_shake_hand_timer();
+
+            virtual void start_shake_hand_timer_ext() {}
 
             void set_has_message(message &msg);
 
@@ -91,7 +95,7 @@ namespace matrix
 
             steady_timer m_shake_hand_timer;
 
-            std::function<timer_handler_type> m_shake_hand_timer_handler;
+            //std::function<timer_handler_type> m_shake_hand_timer_handler;
 
             bool m_has_message;
 
