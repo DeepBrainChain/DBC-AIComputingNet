@@ -450,7 +450,7 @@ namespace matrix
                     try
                     {
                         LOG_DEBUG << "matrix connect peer address; ip: " << it->tcp_ep.address() << " port: " << it->tcp_ep.port();
-                        if (exist_peer_node(it->tcp_ep))
+                        if (exist_peer_node(it->tcp_ep) || exist_peer_node(it->node_id))
                         {
                             LOG_DEBUG << "tcp channel exist to: " << it->tcp_ep.address().to_string() << ":" << it->tcp_ep.port();
                             continue;
@@ -617,6 +617,18 @@ namespace matrix
                 if (it->second->m_peer_addr == addr)
                     return true;
             }
+
+            return false;
+        }
+
+        bool p2p_net_service::exist_peer_node(std::string &nid)
+        {
+            if (nid.empty())
+                return false;
+
+            auto it = m_peer_nodes_map.find(nid);
+            if (it != m_peer_nodes_map.end())
+                return true;
 
             return false;
         }

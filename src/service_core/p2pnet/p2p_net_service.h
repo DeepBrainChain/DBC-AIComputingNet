@@ -86,6 +86,8 @@ namespace matrix
 
             bool exist_peer_node(tcp::endpoint ep);
 
+            bool exist_peer_node(std::string &nid);
+
             uint32_t get_peer_nodes_count_by_socket_type(socket_type type);
 
         protected:
