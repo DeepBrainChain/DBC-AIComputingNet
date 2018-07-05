@@ -12,7 +12,7 @@
 
 #include <boost/asio.hpp>
 #include <leveldb/db.h>
-#include "db_types.h"
+#include "ai_db_types.h"
 #include <string>
 #include "task_common_def.h"
 #include "service_module.h"

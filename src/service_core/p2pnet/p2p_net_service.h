@@ -20,6 +20,7 @@
 #include "peer_seeds.h"
 #include "service_common_def.h"
 #include "random.h"
+#include <leveldb/db.h>
 
 
 using namespace std;
@@ -66,6 +67,8 @@ namespace matrix
             int32_t init_rand();
 
             int32_t init_conf();
+
+            int32_t init_db();
 
             int32_t init_acceptor();
 
@@ -151,7 +154,9 @@ namespace matrix
 
             int32_t save_peer_candidates();
 
-            uint32_t start_connect(tcp::endpoint   tcp_ep);
+            int32_t clear_peer_candidates_db();
+
+            uint32_t start_connect(const tcp::endpoint tcp_ep);
 
             std::shared_ptr<peer_node> get_dynamic_disconnect_peer_node();
 
@@ -194,6 +199,8 @@ namespace matrix
             uint32_t m_timer_peer_info_exchange;
 
             uint32_t m_timer_dump_peer_candidates;
+
+            std::shared_ptr<leveldb::DB> m_peers_db;
 
         };
 

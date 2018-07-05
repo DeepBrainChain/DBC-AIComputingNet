@@ -289,9 +289,6 @@
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.cpp">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\container\container_client.cpp">
       <Filter>src\core\container</Filter>
     </ClCompile>
@@ -384,6 +381,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\network\net_address.cpp">
       <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\p2pnet\peers_db_types.cpp">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_db_types.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -680,9 +683,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\3rd\db\leveldb\write_batch.h">
       <Filter>src\3rd\db\leveldb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.h">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\container\container_client.h">
       <Filter>src\core\container</Filter>
@@ -1253,6 +1253,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service_core\common\service_common_def.h">
       <Filter>src\service_core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peers_db_types.h">
+      <Filter>src\service_core\p2pnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_db_types.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
