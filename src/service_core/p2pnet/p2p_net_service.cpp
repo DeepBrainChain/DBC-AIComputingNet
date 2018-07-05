@@ -1125,8 +1125,12 @@ namespace matrix
                     {
                         LOG_DEBUG << "p2p net service add peer candidate error: " << ep;
                     }
+                    else
+                    {
 
-                    LOG_DEBUG << "p2p net service add peer candidate: " << ep;
+                        LOG_DEBUG << "p2p net service add peer candidate: " << ep;
+                    }
+                    
                     return E_SUCCESS;
                 }
                 catch (boost::system::system_error e)

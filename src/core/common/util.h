@@ -20,6 +20,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <assert.h>
 #include <boost/asio.hpp>
+#include "log.h"
 
 #if defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -121,18 +122,25 @@ namespace matrix
 
             static std::string fuzz_ip(const std::string &ip)
             {
-               boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
-                if (addr.is_v4())
+                try
                 {
-                    boost::asio::ip::address_v4::bytes_type bytes = addr.to_v4().to_bytes();
-                    return "*.*." + std::to_string(bytes[2]) + "." + std::to_string(bytes[3]);
+                    boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
+                    if (addr.is_v4())
+                    {
+                        boost::asio::ip::address_v4::bytes_type bytes = addr.to_v4().to_bytes();
+                        return "*.*." + std::to_string(bytes[2]) + "." + std::to_string(bytes[3]);
+                    }
+                    else if (addr.is_v6())
+                    {
+                        boost::asio::ip::address_v6::bytes_type bytes = addr.to_v6().to_bytes();
+                        return "*:*:*:*:*:*:*:*";
+                    }
+                    else
+                    {
+                        return "*.*.*.*";
+                    }
                 }
-                else if (addr.is_v6())
-                {
-                    boost::asio::ip::address_v6::bytes_type bytes = addr.to_v6().to_bytes();
-                    return "*.*.*.*";
-                }
-                else
+                catch (const boost::exception & e)
                 {
                     return "*.*.*.*";
                 }
