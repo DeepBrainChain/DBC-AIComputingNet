@@ -372,7 +372,7 @@ namespace ai
 
         int32_t ai_power_requestor_service::validate_entry_file_name(const std::string &entry_file_name)
         {
-            cregex reg = cregex::compile("(^[0-9a-zA-Z]{1,}[-_]{0,}[0-9a-zA-Z]{0,}.py$)");
+            cregex reg = cregex::compile("(^[a-zA-Z_0-9].*.py$)");
             if (regex_match(entry_file_name.c_str(), reg))
             {
                 return E_SUCCESS;
