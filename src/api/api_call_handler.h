@@ -24,6 +24,7 @@
 #include "time_util.h"
 #include "db_types.h"
 #include "peer_candidate.h"
+#include "util.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -238,11 +239,11 @@ namespace ai
                                 svc_list += "|";
                             }
                         }
-                        printer << matrix::core::init << it->addr.ip << it->addr.port << svc_list  << it->peer_node_id  << matrix::core::endl;
+                        printer << matrix::core::init << string_util::fuzz_ip(it->addr.ip) << it->addr.port << svc_list  << it->peer_node_id  << matrix::core::endl;
                     }
                     else if (matrix::service_core::flag_global == flag)
                     {
-                        printer << matrix::core::init << it->addr.ip << it->addr.port << matrix::service_core::net_state_2_string(it->net_st) 
+                        printer << matrix::core::init << string_util::fuzz_ip(it->addr.ip) << it->addr.port << matrix::service_core::net_state_2_string(it->net_st)
                             << (it->peer_node_id.empty() ? "N/A" : it->peer_node_id) << matrix::core::endl;
                     }
                 }

@@ -135,9 +135,7 @@ namespace matrix
 
             uint32_t get_rand32() {return m_rand_ctx.rand32();}
 
-            bool has_available_peer_candidates();
-
-            uint32_t get_available_peer_candidates_count();
+            uint32_t get_maybe_available_peer_candidates_count();
 
             int32_t get_available_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &available_candidates);
 
