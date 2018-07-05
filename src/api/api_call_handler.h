@@ -22,7 +22,7 @@
 #include "api_call.h"
 #include <set>
 #include "time_util.h"
-#include "db_types.h"
+#include "ai_db_types.h"
 #include "peer_candidate.h"
 #include "util.h"
 

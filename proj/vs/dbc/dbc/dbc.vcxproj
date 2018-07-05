@@ -229,9 +229,9 @@
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\main.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_db_types.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_requestor_service.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.cpp" />
@@ -243,6 +243,7 @@
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\p2pnet\peers_db_types.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\p2pnet\peer_node.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
@@ -517,9 +518,9 @@
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\timer_service\time_tick_notification.h" />
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_db_types.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_requestor_service.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_power_provider_service.h" />
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\db_types.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_common_def.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\conf\dbc_conf_manager.h" />
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\initiator\dbc_server_initiator.h" />
@@ -534,6 +535,7 @@
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\api_call.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\p2p_net_service.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peers_db_types.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_candidate.h" />
     <ClInclude Include="..\..\..\..\src\service_core\p2pnet\peer_node.h" />
   </ItemGroup>

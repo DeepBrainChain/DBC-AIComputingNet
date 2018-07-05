@@ -27,6 +27,8 @@
 #include "tcp_socket_channel.h"
 #include "timer_def.h"
 #include "peer_seeds.h"
+#include "peers_db_types.h"
+#include <leveldb/write_batch.h>
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -123,6 +125,44 @@ namespace matrix
             //hard_code_seeds
             m_hard_code_seeds.insert(m_hard_code_seeds.begin(), CONF_MANAGER->get_hard_code_seeds().begin(), CONF_MANAGER->get_hard_code_seeds().end());
 
+            return E_SUCCESS;
+        }
+
+        int32_t p2p_net_service::init_db()
+        {
+            leveldb::DB *db = nullptr;
+            leveldb::Options options;
+            options.create_if_missing = true;
+
+            //get db path
+            fs::path task_db_path = env_manager::get_db_path();
+            if (false == fs::exists(task_db_path))
+            {
+                LOG_DEBUG << "db directory path does not exist and create db directory";
+                fs::create_directory(task_db_path);
+            }
+
+            //check db directory
+            if (false == fs::is_directory(task_db_path))
+            {
+                LOG_ERROR << "db directory path does not exist and exit";
+                return E_DEFAULT;
+            }
+
+            task_db_path /= fs::path("peers.db");
+            LOG_DEBUG << "peers db path: " << task_db_path.generic_string();
+
+            //open db
+            leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
+            if (false == status.ok())
+            {
+                LOG_ERROR << "p2p net service init peers db error: " << status.ToString();
+                return E_DEFAULT;
+            }
+
+            //smart point auto close db
+            m_peers_db.reset(db);
+            
             return E_SUCCESS;
         }
 
@@ -271,6 +311,13 @@ namespace matrix
             if (E_SUCCESS != init_conf())
             {
                 LOG_ERROR << "p2p_net_service init acceptor error and exit";
+                return E_DEFAULT;
+            }
+
+            //init db
+            if (E_SUCCESS != init_db())
+            {
+                LOG_ERROR << "p2p_net_service init db error and exit";
                 return E_DEFAULT;
             }
 
@@ -586,7 +633,7 @@ namespace matrix
             int32_t ret = save_peer_candidates();
             if (E_SUCCESS != ret)
             {
-                LOG_WARNING << "save peer candidates failed.";
+                LOG_ERROR << "save peer candidates failed.";
             }
 
             return ret;
@@ -1375,148 +1422,155 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t p2p_net_service::load_peer_candidates()
+        {
+            m_peer_candidates.clear();
+
+            try
+            {
+                ip_validator ip_vdr;
+                port_validator port_vdr;
+
+                std::shared_ptr<db_peer_candidate> db_candidate;
+
+                //iterate peer candidates in db
+                std::unique_ptr<leveldb::Iterator> it;
+                it.reset(m_peers_db->NewIterator(leveldb::ReadOptions()));
+
+                for (it->SeekToFirst(); it->Valid(); it->Next())
+                {
+                    db_candidate = std::make_shared<db_peer_candidate>();
+
+                    //deserialization
+                    std::shared_ptr<byte_buf> peer_candidate_buf(new byte_buf);
+                    peer_candidate_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());            //may exception
+
+                    binary_protocol proto(peer_candidate_buf.get());
+                    db_candidate->read(&proto);             //may exception
+
+                    //validate ip
+                    variable_value val_ip(db_candidate->ip, false);
+                    if (!ip_vdr.validate(val_ip))
+                    {
+                        LOG_ERROR << "p2p net service load peer candidate error: " << db_candidate->ip << " is invalid ip.";
+                        continue;
+                    }
+
+                    //validate port
+                    variable_value val_port(std::to_string(db_candidate->port), false);
+                    if (!port_vdr.validate(val_port))
+                    {
+                        LOG_ERROR << "p2p net service load peer candidate error: " << db_candidate->port << " is invalid port.";
+                        continue;
+                    }
+
+                    //validate node id
+                    if (!db_candidate->node_id.empty() && !id_generator().check_base58_id(db_candidate->node_id))
+                    {
+                        LOG_ERROR << "p2p net service load peer candidate error: " << "node id: " << db_candidate->node_id << " is not Base58 code";
+                        continue;
+                    }
+
+                    std::shared_ptr<peer_candidate> candidate = std::make_shared<peer_candidate>();
+
+                    boost::asio::ip::address addr = boost::asio::ip::make_address(db_candidate->ip);
+                    candidate->tcp_ep = tcp::endpoint(addr, (uint16_t)db_candidate->port);
+
+                    candidate->net_st =ns_idle;
+                    candidate->reconn_cnt = 0;
+                    candidate->last_conn_tm = db_candidate->last_conn_tm;
+                    candidate->score = db_candidate->score;
+                    candidate->node_id = db_candidate->node_id;
+                    candidate->node_type = (peer_node_type)db_candidate->node_type;
+
+                    m_peer_candidates.push_back(candidate);
+                }
+            }
+            catch (...)
+            {
+                LOG_ERROR << "p2p net service load peer candidates from db exception";
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
+
         int32_t p2p_net_service::save_peer_candidates()
         {
             LOG_DEBUG << "save peer candidates: " << m_peer_candidates.size();
 
             if (m_peer_candidates.empty())
             {
-                return E_DEFAULT;
+                return E_SUCCESS;
             }
+
+            //clear db
+            clear_peer_candidates_db();
 
             try
             {
-                //serialize
-                rj::Document document;
-                rj::Document::AllocatorType& allocator = document.GetAllocator();
-                rj::Value root(rj::kObjectType);
-                rj::Value peer_cands(rj::kArrayType);
-                for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+                leveldb::WriteBatch batch;
+
+                for (auto it : m_peer_candidates)
                 {
-                    rj::Value peer_cand(rj::kObjectType);
-                    std::string ip = (*it)->tcp_ep.address().to_string();
-                    rj::Value str_val(ip.c_str(), (rj::SizeType) ip.length(), allocator);
-                    peer_cand.AddMember("ip", str_val, allocator);
-                    peer_cand.AddMember("port", (*it)->tcp_ep.port(), allocator);
-                    peer_cand.AddMember("net_state", (*it)->net_st, allocator);
-                    peer_cand.AddMember("reconn_cnt", (*it)->reconn_cnt, allocator);
-                    peer_cand.AddMember("last_conn_tm", (uint64_t)(*it)->last_conn_tm, allocator);
-                    peer_cand.AddMember("score", (*it)->score, allocator);
-                    rj::Value str_nid((*it)->node_id.c_str(), (rj::SizeType) (*it)->node_id.length(), allocator);
-                    peer_cand.AddMember("node_id", str_nid, allocator);
-                    peer_cand.AddMember("node_type", (*it)->node_type, allocator);
+                    std::shared_ptr<db_peer_candidate> db_candidate = std::make_shared<db_peer_candidate>();
 
-                    peer_cands.PushBack(peer_cand, allocator);
+                    db_candidate->__set_ip(it->tcp_ep.address().to_string());
+                    db_candidate->__set_port(it->tcp_ep.port());
+                    db_candidate->__set_net_state(it->net_st);
+                    db_candidate->__set_reconn_cnt(it->reconn_cnt);
+                    db_candidate->__set_last_conn_tm(it->last_conn_tm);
+                    db_candidate->__set_score(it->score);
+                    db_candidate->__set_node_id(it->node_id);
+                    db_candidate->__set_node_type(it->node_type);
+
+                    //serialization
+                    std::shared_ptr<byte_buf> out_buf(new byte_buf);
+                    binary_protocol proto(out_buf.get());
+                    db_candidate->write(&proto);
+
+                    leveldb::Slice slice(out_buf->get_read_ptr(), out_buf->get_valid_read_len());
+                    batch.Put(db_candidate->ip, slice);
                 }
-                root.AddMember("peer_cands", peer_cands, allocator);
 
-                std::shared_ptr<rj::StringBuffer> buffer = std::make_shared<rj::StringBuffer>();
-                rj::PrettyWriter<rj::StringBuffer> writer(*buffer);
-                root.Accept(writer);
+                //flush to db
+                leveldb::WriteOptions write_options;
+                //write_options.sync = true;                    //no need sync
 
-                //open file; if not exist, create it
-                bf::path peers_file = matrix::core::path_util::get_exe_dir();
-                peers_file /= fs::path(DAT_DIR_NAME);
-                peers_file /= fs::path(DAT_PEERS_FILE_NAME);
-                if (matrix::core::file_util::write_file(peers_file, std::string(buffer->GetString())))
-                    return E_SUCCESS;
+                leveldb::Status status = m_peers_db->Write(write_options, &batch);
+                if (!status.ok())
+                {
+                    LOG_ERROR << "p2p net service save peer candidates error: " << status.ToString();
+                    return E_DEFAULT;
+                }
+
+                return E_SUCCESS;
             }
             catch (...)
             {
+                LOG_ERROR << "p2p net service save peer candidates error";
                 return E_DEFAULT;
             }
 
-            return E_DEFAULT;
+            return E_SUCCESS;
         }
 
-        int32_t p2p_net_service::load_peer_candidates()
+        int32_t p2p_net_service::clear_peer_candidates_db()
         {
-            m_peer_candidates.clear();
-
-            std::string json_str;
-            bf::path peers_file = matrix::core::path_util::get_exe_dir();
-            peers_file /= fs::path(DAT_DIR_NAME);
-            peers_file /= fs::path(DAT_PEERS_FILE_NAME);
-            if (!matrix::core::file_util::read_file(peers_file, json_str))
-            {
-                return E_FILE_FAILURE;
-            }
-            if (json_str.empty())
-            {
-                return E_DEFAULT;
-            }
-
-            //check validation
-            ip_validator ip_vdr;
-            port_validator port_vdr;
-
             try
             {
-                rj::Document doc;
-                doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str());
-                if (doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str()).HasParseError())
+                //iterate task in db
+                std::unique_ptr<leveldb::Iterator> it;
+                it.reset(m_peers_db->NewIterator(leveldb::ReadOptions()));
+
+                for (it->SeekToFirst(); it->Valid(); it->Next())
                 {
-                    LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
-                    return E_DEFAULT;
-                }
-
-                if (!doc.HasMember("peer_cands"))
-                {
-                    LOG_ERROR << "p2p net service load peer candidates error: no peer_cands";
-                    return E_DEFAULT;
-                }
-
-                //transfer to cands
-                rj::Value &val_arr = doc["peer_cands"];
-                if (val_arr.IsArray())
-                {
-                    for (rj::SizeType i = 0; i < val_arr.Size(); i++)
-                    {
-                        const rj::Value& obj = val_arr[i];
-                        std::shared_ptr<peer_candidate> peer_cand = std::make_shared<peer_candidate>();
-                        if (!obj.HasMember("ip"))
-                            continue;
-                        std::string ip = obj["ip"].GetString();
-                        variable_value val_ip(ip, false);
-                        if (!ip_vdr.validate(val_ip))
-                        {
-                            LOG_ERROR << ip << " is invalid ip.";
-                            continue;
-                        }
-                        uint16_t port = obj["port"].GetUint();
-                        variable_value val_port(std::to_string(port), false);
-                        if (!port_vdr.validate(val_port))
-                        {
-                            LOG_ERROR << port << " is invalid port.";
-                            continue;
-                        }
-
-                        boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
-                        peer_cand->tcp_ep = tcp::endpoint(addr, (uint16_t)port);
-                        //net_state ns = (net_state)obj["net_state"].GetUint();
-                        peer_cand->net_st = ns_idle;
-                        peer_cand->reconn_cnt = 0;
-                        peer_cand->score = obj["score"].GetUint();
-                        peer_cand->node_id = obj["node_id"].GetString();
-                        peer_cand->node_type = (peer_node_type)obj["node_type"].GetUint();
-
-                        if (!peer_cand->node_id.empty())
-                        {
-                            if (!id_generator().check_base58_id(peer_cand->node_id))
-                            {
-                                LOG_ERROR << "node id: " << peer_cand->node_id << " is not Base58 code, in file: " << peers_file;
-                                continue;
-                            }
-                        }
-
-                        m_peer_candidates.push_back(peer_cand);
-                    }
+                    m_peers_db->Delete(leveldb::WriteOptions(), it->key());
                 }
             }
             catch (...)
             {
-                LOG_ERROR << "read peers from " << peers_file.c_str() << "failed.";
-                cout << "invalid data or error format in " << peers_file << endl;
+                LOG_ERROR << "p2p net service clear peer candidates db exception";
                 return E_DEFAULT;
             }
 
@@ -1578,7 +1632,7 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        uint32_t p2p_net_service::start_connect(tcp::endpoint tcp_ep)
+        uint32_t p2p_net_service::start_connect(const tcp::endpoint tcp_ep)
         {
             try
             {

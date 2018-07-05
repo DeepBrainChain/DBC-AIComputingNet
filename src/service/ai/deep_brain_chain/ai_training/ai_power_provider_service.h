@@ -13,7 +13,7 @@
 #include <leveldb/db.h>
 #include <string>
 #include "service_module.h"
-#include "db_types.h"
+#include "ai_db_types.h"
 #include "container_client.h"
 #include "task_common_def.h"
 
