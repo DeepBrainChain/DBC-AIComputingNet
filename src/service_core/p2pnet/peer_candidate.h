@@ -50,7 +50,7 @@ namespace matrix
             ns_in_use,     //connecting or connected
             ns_failed,     //not use within a long time
             ns_zombie,
-            ns_addr_good
+            ns_available
         };
 
         enum node_net_type
@@ -106,8 +106,8 @@ namespace matrix
                 return "failed";
             case ns_zombie:
                 return "zombie";
-            case ns_addr_good:
-                return "good";
+            case ns_available:
+                return "available";
             default:
                 return "";
             }
