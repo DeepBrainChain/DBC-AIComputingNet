@@ -4,6 +4,13 @@ cpu_tensorflow_path="dbctraining/tensorflow-cpu-0.1.0:v1"
 gpu_tensorflow_path="dbctraining/tensorflow-gpu-0.1.0:v1"
 # add more images...
 
+user=`whoami`
+if [ $user == "root" ]; then
+   echo "can not install mining_install.sh in root authorization"
+   exit
+fi
+
+
 ubuntu_version=`lsb_release -r --short`
 if [ $ubuntu_version != "16.04" ]; then
    echo "dismatch ubuntu16.04 version"
