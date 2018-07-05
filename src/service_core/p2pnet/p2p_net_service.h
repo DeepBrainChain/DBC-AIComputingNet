@@ -32,7 +32,7 @@ using namespace boost::asio::ip;
 
 #define MIN_PEER_CANDIDATES_COUNT                    8
 #define MAX_SEND_PEER_NODES_COUNT                128
-#define MIN_NORMAL_ADDR_GOOD_COUNT              2
+#define MIN_NORMAL_AVAILABLE_NODE_COUNT              2
 #define DISCONNECT_NODE_PER_MINUTES              5
 
 
@@ -139,9 +139,9 @@ namespace matrix
 
             uint32_t get_available_peer_candidates_count();
 
-            int32_t get_addr_good_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &addr_good_candidates);
+            int32_t get_available_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &available_candidates);
 
-            uint32_t get_addr_good_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
+            uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
 
             bool is_peer_candidate_exist(tcp::endpoint &ep);
 
@@ -158,6 +158,10 @@ namespace matrix
             std::shared_ptr<peer_node> get_dynamic_disconnect_peer_node();
 
             std::shared_ptr<peer_candidate> get_dynamic_connect_peer_candidate();
+
+            std::shared_ptr<peer_candidate> get_peer_candidate(const tcp::endpoint &ep);
+
+            void remove_peer_candidate(const tcp::endpoint &ep);
 
         protected:
 

@@ -48,9 +48,15 @@ namespace matrix
             if (in.get_valid_read_len() > 0)
             {
                 decode_status recv_status = m_decoder->recv_message(in);
+
                 if (recv_status != DECODE_SUCCESS)
                 {
                     LOG_ERROR << "recv error msg." << m_sid.to_string();
+                    return recv_status;
+                }
+
+                if (recv_status != DECODE_SUCCESS)
+                {
                     return recv_status;
                 }
 
@@ -79,12 +85,12 @@ namespace matrix
                         if (msg->get_name() != SHAKE_HAND_REQ
                             && msg->get_name() != SHAKE_HAND_RESP)
                         {
-                            if (nullptr == msg || nullptr == msg->content )
+                            if (nullptr == msg || nullptr == msg->content)
                             {
                                 LOG_ERROR << "decode error, msg is null" << m_sid.to_string();
                                 return DECODE_ERROR;
                             }
-                            const std::string & nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : DEFAULT_STRING ;
+                            const std::string & nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : DEFAULT_STRING;
                             //check msg duplicated
                             if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
                             {
@@ -117,7 +123,7 @@ namespace matrix
                         return status;
                     }
                 }
-                
+
             }
             return E_SUCCESS;
         }
@@ -137,7 +143,7 @@ namespace matrix
                     //insert nonce to avoid receive msg sent by itself
                     service_proto_filter::get_mutable_instance().insert_nonce(nonce);
 
-                    LOG_DEBUG << m_sid.to_string() <<  " matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce << " buf message:" << buf.to_string();
+                    LOG_DEBUG << m_sid.to_string() << " matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce << " buf message:" << buf.to_string();
                 }
 
                 //has message
@@ -169,9 +175,9 @@ namespace matrix
 
         void matrix_socket_channel_handler::start_shake_hand_timer()
         {
-            assert(nullptr != m_shake_hand_timer_handler);
-            m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
-            m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
+            //m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
+            //m_shake_hand_timer.async_wait(m_shake_hand_timer_handler);
+            start_shake_hand_timer_ext();
             reset_has_message();
         }
 
@@ -186,7 +192,7 @@ namespace matrix
             }
 
             //modify by regulus:fix can't free resource when client disconnect 
-            m_shake_hand_timer_handler = nullptr;
+            //m_shake_hand_timer_handler = nullptr;
 
         }
 

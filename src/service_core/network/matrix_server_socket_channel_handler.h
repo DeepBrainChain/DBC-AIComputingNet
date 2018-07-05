@@ -47,13 +47,18 @@ namespace matrix
         protected:
 
             //I think don't worry about multi thread visit
-            void reset_lost_shake_hand_count() { m_lost_shake_hand_count = 0; }         
+            void reset_lost_shake_hand_count() { m_lost_shake_hand_count = 0; }
 
             void send_shake_hand_resp();
 
             virtual void start_wait_ver_req_timer();
 
             virtual void stop_wait_ver_req_timer();
+
+            void on_shake_hand_timer_expired(const boost::system::error_code& error);
+            virtual void start_shake_hand_timer_ext();
+
+            void on_ver_req_timer_expired(const boost::system::error_code& error);
 
         protected:
 
@@ -66,7 +71,7 @@ namespace matrix
 
             steady_timer m_wait_ver_req_timer;
 
-            std::function<timer_handler_type> m_wait_ver_req_timer_handler;
+            //std::function<timer_handler_type> m_wait_ver_req_timer_handler;
         private:
             bool m_recv_ver_req;
 

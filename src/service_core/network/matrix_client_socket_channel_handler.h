@@ -38,6 +38,10 @@ namespace matrix
             virtual int32_t on_after_msg_received(message &msg);
 
         protected:
+            virtual void on_shake_hand_timer_expired(const boost::system::error_code& error);
+            virtual void start_shake_hand_timer_ext();
+
+        protected:
 
             void send_shake_hand_req();
 
