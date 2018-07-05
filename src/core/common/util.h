@@ -19,6 +19,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <assert.h>
+#include <boost/asio.hpp>
 
 #if defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -31,6 +32,8 @@
 #endif
 
 namespace bf = boost::filesystem;
+
+using namespace boost::asio::ip;
 
 
 namespace matrix
@@ -113,6 +116,25 @@ namespace matrix
                 if (str[str.length() - 1] == ' ')
                 {
                     str.erase(str.find_last_not_of(" ") + 1);
+                }
+            }
+
+            static std::string fuzz_ip(const std::string &ip)
+            {
+               boost::asio::ip::address addr = boost::asio::ip::make_address(ip);
+                if (addr.is_v4())
+                {
+                    boost::asio::ip::address_v4::bytes_type bytes = addr.to_v4().to_bytes();
+                    return "*.*." + std::to_string(bytes[2]) + "." + std::to_string(bytes[3]);
+                }
+                else if (addr.is_v6())
+                {
+                    boost::asio::ip::address_v6::bytes_type bytes = addr.to_v6().to_bytes();
+                    return "*.*.*.*";
+                }
+                else
+                {
+                    return "*.*.*.*";
                 }
             }
 

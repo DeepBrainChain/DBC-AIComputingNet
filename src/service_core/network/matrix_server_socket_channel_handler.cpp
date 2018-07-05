@@ -74,13 +74,7 @@ namespace matrix
                 }
                 return;
             }
-
-            //async wait
-            //m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
-            //m_shake_hand_timer.async_wait(boost::bind(&matrix_server_socket_channel_handler::on_shake_hand_timer_expired,
-            //                                          std::dynamic_pointer_cast<matrix_server_socket_channel_handler>(shared_from_this()),
-            //                                          boost::asio::placeholders::error));
-
+            
             start_shake_hand_timer_ext();
         }
 
@@ -220,8 +214,6 @@ namespace matrix
             {
                 LOG_DEBUG << "matrix server socket channel handler stop wait ver req timer, " << m_sid.to_string();
             }
-            //modify by regulus:fix can't free resource when client disconnect 
-            //m_wait_ver_req_timer_handler = nullptr;
         }
 
 

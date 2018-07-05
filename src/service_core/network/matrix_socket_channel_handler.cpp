@@ -55,11 +55,6 @@ namespace matrix
                     return recv_status;
                 }
 
-                if (recv_status != DECODE_SUCCESS)
-                {
-                    return recv_status;
-                }
-
                 while (m_decoder->has_complete_message())
                 {
                     shared_ptr<message> msg = std::make_shared<message>();

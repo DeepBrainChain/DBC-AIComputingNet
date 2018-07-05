@@ -406,13 +406,13 @@ namespace matrix
             }
 
             //use dns peer seeds 
-            if (get_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)
+            if (get_maybe_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)
             {
                 add_dns_seeds();
             }
 
             //use hard code peer seeds 
-            if (get_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)       //still no available candidate
+            if (get_maybe_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)       //still no available candidate
             {
                 add_hard_code_seeds();
             }
@@ -533,7 +533,7 @@ namespace matrix
                         return E_DEFAULT;
                     }
 
-                    //update net state to addr good after get connect candidate
+                    //update net state to available after get connect candidate
                     tcp::endpoint node_ep(address_v4::from_string(node->m_peer_addr.get_ip()), (uint16_t)node->m_peer_addr.get_port());
                     auto candidate = get_peer_candidate(node_ep);
                     if (nullptr != candidate)
@@ -914,6 +914,7 @@ namespace matrix
             {
                 LOG_ERROR << "a client tcp connection established, but not in peer candidate: " << notification_content->ep.address() << ":" << notification_content->ep.port();
                 assert(0);
+                return E_DEFAULT;
             }
 
             if (CLIENT_CONNECT_SUCCESS == notification_content->status)
@@ -1279,21 +1280,6 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        bool p2p_net_service::has_available_peer_candidates()
-        {
-            for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
-            {
-                if (ns_idle == (*it)->net_st
-                    || ns_in_use == (*it)->net_st
-                    || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times)))
-                {
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-
         bool p2p_net_service::is_peer_candidate_exist(tcp::endpoint &ep)
         {
             auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end()
@@ -1347,7 +1333,7 @@ namespace matrix
             return count;
         }
 
-        uint32_t p2p_net_service::get_available_peer_candidates_count()
+        uint32_t p2p_net_service::get_maybe_available_peer_candidates_count()
         {
             uint32_t count = 0;
 
@@ -1355,6 +1341,7 @@ namespace matrix
             {
                 if (ns_idle == (*it)->net_st
                     || ns_in_use == (*it)->net_st
+                    || ns_available == (*it)->net_st
                     || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times)))
                 {
                     count++;
@@ -1466,6 +1453,12 @@ namespace matrix
                 if (doc.Parse<rj::kParseStopWhenDoneFlag>(json_str.c_str()).HasParseError())
                 {
                     LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
+                    return E_DEFAULT;
+                }
+
+                if (!doc.HasMember("peer_cands"))
+                {
+                    LOG_ERROR << "p2p net service load peer candidates error: no peer_cands";
                     return E_DEFAULT;
                 }
 
