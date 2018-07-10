@@ -735,21 +735,17 @@ namespace matrix
             node->m_connected_time = std::time(nullptr);
             node->m_live_time = 0;
             node->m_connection_status = CONNECTED;
+            node->m_peer_addr = ep;
+            node->m_local_addr = ptr_tcp_ch->get_local_addr();
+
             if (msg->get_name() == VER_RESP)
             {
-                node->m_peer_addr = ep;
                 auto candidate = get_peer_candidate(ep);
                 if (candidate)
                 {
                     node->m_node_type = candidate->node_type;
                 }
             }
-            else
-            {
-                //temp: supposed addr
-                node->m_peer_addr = endpoint_address(ep.address().to_string(), std::atoi(CONF_MANAGER->get_net_listen_port().c_str()));
-            }
-            node->m_local_addr = ptr_tcp_ch->get_local_addr();
 
             m_peer_nodes_map[node->m_id] = node;
 
@@ -1183,20 +1179,19 @@ namespace matrix
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
 
                     //find in neighbor node
-                    if (nullptr != get_peer_node(node.peer_node_id))           //neighbor node already existed
-                    {                    
-                        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-                        return E_SUCCESS;
-                    }
+                    //if (nullptr != get_peer_node(node.peer_node_id))           //neighbor node already existed
+                    //{                    
+                    //    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                    //    return E_SUCCESS;
+                    //}
 
                     //add to peer candidates
-                    if (false == add_peer_candidate(ep, ns_idle, NORMAL_NODE))
+                    if (false == add_peer_candidate(ep, ns_available, NORMAL_NODE))
                     {
                         LOG_DEBUG << "p2p net service add peer candidate error: " << ep;
                     }
                     else
                     {
-
                         LOG_DEBUG << "p2p net service add peer candidate: " << ep;
                     }
                     
@@ -1297,7 +1292,7 @@ namespace matrix
                 int count = 0;
                 for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it)
                 {
-                    if (nullptr == it->second || SERVER_SOCKET == it->second->m_sid.get_type())             //NAT IP is avoided to broadcast
+                    if (nullptr == it->second || SERVER_SOCKET == it->second->m_sid.get_type() || SEED_NODE == it->second->m_node_type)             //NAT IP is avoided to broadcast
                     {
                         continue;
                     }
@@ -1754,6 +1749,11 @@ namespace matrix
 
             for (auto it : m_peer_candidates)
             {
+                if (nullptr != get_peer_node(it->node_id))
+                {
+                    continue;
+                }
+
                 if (ns_available == it->net_st && SEED_NODE == it->node_type)
                 {
                     seed_node_candidates.push_back(it);
