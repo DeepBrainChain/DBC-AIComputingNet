@@ -446,6 +446,7 @@ namespace matrix
             {
                 if (ns_failed == (*it)->net_st && (*it)->reconn_cnt >= max_reconnect_times)
                 {
+                    LOG_DEBUG << "remove peer candidate: " << (*it)->node_id << ", state= " << net_state_2_string((*it)->net_st);
                     m_peer_candidates.erase(it++);
                     continue;
                 }
@@ -495,6 +496,13 @@ namespace matrix
                             continue;
                         }
 
+                        //case: my own node id and addr in list
+                        if (CONF_MANAGER->get_node_id() == candidate->node_id)
+                        {
+                            candidate->net_st = ns_zombie;
+                            continue;
+                        }
+
                         //connect
                         int32_t ret = CONNECTION_MANAGER->start_connect(candidate->tcp_ep, &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
@@ -518,11 +526,10 @@ namespace matrix
 
         int32_t p2p_net_service::on_timer_dyanmic_adjust_network(std::shared_ptr<matrix::core::core_timer> timer)
         {
-
             uint32_t client_peer_nodes_count = get_peer_nodes_count_by_socket_type(CLIENT_SOCKET);
             LOG_DEBUG << "p2p net service peer nodes map count: " << m_peer_nodes_map.size() << ", client peer nodes count: " << client_peer_nodes_count << ", peer candidates count: " << m_peer_candidates.size();
 
-            //neighbour node is not enough
+            //neighbor node is not enough
             if (client_peer_nodes_count < max_connected_cnt)
             {
                 uint32_t get_count = (uint32_t)(max_connected_cnt - client_peer_nodes_count);
@@ -571,7 +578,7 @@ namespace matrix
                     //stop tcp socket channel
                     LOG_DEBUG << "p2p net service dynamic disconnect peer node: " << node->m_id << node->m_sid.to_string();
                     m_peer_nodes_map.erase(node->m_id);
-                    CONNECTION_MANAGER->stop_channel(node->m_sid);         //wether should set ip candidates with available status if not will be erase from candidates
+                    CONNECTION_MANAGER->stop_channel(node->m_sid);         //whether should set ip candidates with available status if not will be erase from candidates
 
                     //get connect candidate
                     auto connect_candidate = get_dynamic_connect_peer_candidate();
@@ -600,7 +607,7 @@ namespace matrix
                     }
                     else
                     {
-                        LOG_ERROR << "p2p net service dynamic adjust network and start connect: " << connect_candidate->tcp_ep.address() << " port: " << connect_candidate->tcp_ep.port();
+                        LOG_DEBUG << "p2p net service dynamic adjust network and start connect: " << connect_candidate->tcp_ep.address() << " port: " << connect_candidate->tcp_ep.port();
                         connect_candidate->net_st = ns_in_use;
                         return E_SUCCESS;
                     }
@@ -688,7 +695,11 @@ namespace matrix
             {
                 return false;
             }
-
+            if (CONF_MANAGER->get_node_id() == nid)
+            {
+                LOG_DEBUG << "node id of my own: " << nid;
+                return false;
+            }
             if (m_peer_nodes_map.find(nid) != m_peer_nodes_map.end())
             {
                 LOG_WARNING << "duplicated node id: " << nid;
@@ -725,6 +736,11 @@ namespace matrix
             if (msg->get_name() == VER_RESP)
             {
                 node->m_peer_addr = ep;
+                auto candidate = get_peer_candidate(ep);
+                if (candidate)
+                {
+                    node->m_node_type = candidate->node_type;
+                }
             }
             else
             {
@@ -889,9 +905,13 @@ namespace matrix
 
                 return E_DEFAULT;
             }
+            if (candidate)
+            {
+                candidate->reconn_cnt = 0;
+            }
 
             tcp::endpoint local_ep = tcp_ch->get_local_addr();
-            advertise_local(local_ep, msg->header.src_sid);            //advertise local self address to neighbour peer node
+            advertise_local(local_ep, msg->header.src_sid);            //advertise local self address to neighbor peer node
             return E_SUCCESS;
         }
 
@@ -966,8 +986,7 @@ namespace matrix
 
             if (CLIENT_CONNECT_SUCCESS == notification_content->status)
             {
-                //update peer candidate info
-                candidate->reconn_cnt = 0;
+                //candidate->reconn_cnt = 0;//case: update when recv ver_resp
 
                 //create ver_req message
                 std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -1042,6 +1061,7 @@ namespace matrix
                     node_info.live_time_stamp = itn->second->m_live_time;
                     node_info.addr.ip = itn->second->m_peer_addr.get_ip();
                     node_info.addr.port = itn->second->m_peer_addr.get_port();
+                    node_info.node_type = (int8_t)itn->second->m_node_type;
                     node_info.service_list.clear();
                     node_info.service_list.push_back(std::string("ai_training"));
                     cmd_resp->peer_nodes_list.push_back(std::move(node_info));
@@ -1058,6 +1078,7 @@ namespace matrix
                     node_info.net_st = (int8_t)(*it)->net_st;
                     node_info.addr.ip = (*it)->tcp_ep.address().to_string();
                     node_info.addr.port = (*it)->tcp_ep.port();
+                    node_info.node_type = (int8_t)(*it)->node_type;
                     node_info.service_list.clear();
                     node_info.service_list.push_back(std::string("ai_training"));
                     cmd_resp->peer_nodes_list.push_back(std::move(node_info));
@@ -1147,7 +1168,7 @@ namespace matrix
                 return E_SUCCESS;
             }
 
-            //if adverise local ip, peer nodes list is just one and should relay to neighbour node
+            //if advertise local ip, peer nodes list is just one and should relay to neighbor node
             if (1 == rsp->body.peer_nodes_list.size())
             {
                 const peer_node_info &node = rsp->body.peer_nodes_list[0];
@@ -1159,11 +1180,10 @@ namespace matrix
                     LOG_DEBUG << "p2p net service relay peer node " << node.addr.ip << ":" << node.addr.port
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
 
-                    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-
-                    //find in neighbour node
-                    if (nullptr != get_peer_node(node.peer_node_id))           //neighbour node already existed
-                    {
+                    //find in neighbor node
+                    if (nullptr != get_peer_node(node.peer_node_id))           //neighbor node already existed
+                    {                    
+                        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                         return E_SUCCESS;
                     }
 
@@ -1405,6 +1425,10 @@ namespace matrix
         int32_t p2p_net_service::get_available_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &available_candidates)
         {
             available_candidates.clear();
+            if (count == 0)
+            {
+                return E_SUCCESS;
+            }
 
             uint32_t i = 0;
 
@@ -1769,7 +1793,7 @@ namespace matrix
         {
             if (net_address::is_rfc1918(tcp_ep))
             {                
-                LOG_DEBUG << "ip address is RFC1918 prive network ip and will not advertise local: " << tcp_ep.address().to_string();
+                LOG_DEBUG << "ip address is RFC1918 private network ip and will not advertise local: " << tcp_ep.address().to_string();
                 return;
             }
 
