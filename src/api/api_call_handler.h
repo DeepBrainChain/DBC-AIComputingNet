@@ -213,16 +213,16 @@ namespace ai
 
                     //printer << matrix::core::init << "peer_id" <<  "service_list" << matrix::core::endl;
 
-                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 20)(LEFT_ALIGN, 30)(LEFT_ALIGN, 48);
+                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 10)(LEFT_ALIGN, 30)(LEFT_ALIGN, 48);
 
-                    printer << matrix::core::init << "ip" << "port" << "service_list" << "peer_id" << matrix::core::endl;
+                    printer << matrix::core::init << "ip" << "port" << "nt" << "service_list" << "peer_id" << matrix::core::endl;
 
                 }
                 else if (matrix::service_core::flag_global == flag)
                 {
-                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 20)(LEFT_ALIGN, 30)(LEFT_ALIGN, 48);
+                    printer(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 10)(LEFT_ALIGN, 30)(LEFT_ALIGN, 48);
 
-                    printer << matrix::core::init << "ip" << "port" << "status" << "peer_id" << matrix::core::endl;
+                    printer << matrix::core::init << "ip" << "port" << "nt" << "status" << "peer_id" << matrix::core::endl;
                 }
 
                 auto it = v->peer_nodes_list.begin();
@@ -239,12 +239,23 @@ namespace ai
                                 svc_list += "|";
                             }
                         }
-                        printer << matrix::core::init << string_util::fuzz_ip(it->addr.ip) << it->addr.port << svc_list  << it->peer_node_id  << matrix::core::endl;
+                        printer << matrix::core::init 
+                            << string_util::fuzz_ip(it->addr.ip) 
+                            << it->addr.port 
+                            << (int32_t)it->node_type
+                            << svc_list  
+                            << it->peer_node_id  
+                            << matrix::core::endl;
                     }
                     else if (matrix::service_core::flag_global == flag)
                     {
-                        printer << matrix::core::init << string_util::fuzz_ip(it->addr.ip) << it->addr.port << matrix::service_core::net_state_2_string(it->net_st)
-                            << (it->peer_node_id.empty() ? "N/A" : it->peer_node_id) << matrix::core::endl;
+                        printer << matrix::core::init 
+                            << string_util::fuzz_ip(it->addr.ip) 
+                            << it->addr.port 
+                            << (int32_t)it->node_type
+                            << matrix::service_core::net_state_2_string(it->net_st)
+                            << (it->peer_node_id.empty() ? "N/A" : it->peer_node_id) 
+                            << matrix::core::endl;
                     }
                 }
             }
