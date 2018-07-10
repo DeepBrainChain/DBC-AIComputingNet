@@ -41,6 +41,8 @@ namespace matrix
 
             cmd_network_address addr;
 
+            int8_t node_type = 0;
+
             std::vector<std::string> service_list;
 
             cmd_peer_node_info &operator=(const matrix::service_core::peer_node_info &info) {
@@ -49,6 +51,7 @@ namespace matrix
                 net_st = -1;
                 addr.ip = info.addr.ip;
                 addr.port = info.addr.port;
+                //node_type = info.
                 service_list = info.service_list;
                 return *this;
             }
