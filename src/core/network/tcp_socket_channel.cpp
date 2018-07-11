@@ -191,9 +191,6 @@ namespace matrix
                     return;
                 }
 
-                //log
-                LOG_DEBUG << "tcp socket channel " << m_sid.to_string() << " recv buf: " << m_recv_buf.to_string();
-
                 //call back handler on_read
                 channel_handler_context handler_context;
                 if (E_SUCCESS == m_socket_handler->on_read(handler_context, m_recv_buf))

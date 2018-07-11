@@ -132,7 +132,7 @@ namespace matrix
                     }
                     else if (addr.is_v6())
                     {
-                        boost::asio::ip::address_v6::bytes_type bytes = addr.to_v6().to_bytes();
+                        //boost::asio::ip::address_v6::bytes_type bytes = addr.to_v6().to_bytes();
                         return "*:*:*:*:*:*:*:*";
                     }
                     else
