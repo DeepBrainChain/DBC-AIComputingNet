@@ -619,18 +619,8 @@ namespace matrix
 
         int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer)
         {
-            static uint32_t even_num = 0;
-            ++even_num;
-
-            //pull
-            send_get_peer_nodes();
-
-            if (even_num % 2 == 0)
-            {
-                even_num = 0;
-                //push
-                send_put_peer_nodes(nullptr);
-            }
+            //push
+            send_put_peer_nodes(nullptr);
 
             return E_SUCCESS;
         }
@@ -806,8 +796,15 @@ namespace matrix
                 return E_DEFAULT;
             }
 
+            //if (!req_content->__isset.body)
+            //{
+            //    LOG_ERROR << "recv ver_req, but body of req_content is not set.";
+            //    return E_DEFAULT;
+            //}
 
-            LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id;
+            LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id
+                << ", core_ver=" << req_content->body.core_version
+                << ", protocol_ver=" << req_content->body.protocol_version;
 
             //add new peer node
             if(!add_peer_node(msg))
@@ -856,7 +853,16 @@ namespace matrix
                 LOG_DEBUG << "p2p_net_service ver_resp. nonce error ";
                 return E_DEFAULT;
             }
-            LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id;
+
+            //if (!resp_content->__isset.body)
+            //{
+            //    LOG_ERROR << "recv ver_resp, but body of resp_content is not set.";
+            //    return E_DEFAULT;
+            //}
+
+            LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id
+                << ", core_ver=" << resp_content->body.core_version
+                << ", protocol_ver=" << resp_content->body.protocol_version;
 
             auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
             auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
@@ -943,10 +949,6 @@ namespace matrix
                     remove_peer_candidate(err_msg->ep);
                     m_peer_candidates.push_back(candidate);
                 }
-            }
-            else
-            {
-                LOG_ERROR << "a peer_node network error occurs, but not in ip candidates: " << err_msg->ep.address() << ":" << err_msg->ep.port();
             }
 
             //rm peer_node                
@@ -1090,6 +1092,7 @@ namespace matrix
 
         int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<message> &msg)
         {
+#if 0
             if (m_peer_nodes_map.size() == 0)
             {
                 //ignore request
@@ -1143,6 +1146,7 @@ namespace matrix
 
                 CONNECTION_MANAGER->send_message(msg->header.src_sid, resp_msg);
             }
+#endif
 
             return E_SUCCESS;
         }
@@ -1302,14 +1306,15 @@ namespace matrix
                     info.service_list.push_back(std::string("ai_training"));
                     resp_content->body.peer_nodes_list.push_back(std::move(info));
 
-                    if (++count > MAX_SEND_PEER_NODES_COUNT)
+                    if (++count >= MAX_SEND_PEER_NODES_COUNT)
                     {
                         LOG_DEBUG << "p2p net service send peer nodes too many and break: " << m_peer_nodes_map.size();
                         break;
                     }
                 }
                 
-                for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
+                std::list<std::shared_ptr<peer_candidate> > tmp_candi_list;
+                for (auto it = m_peer_candidates.begin(); (it != m_peer_candidates.end()) && (count < MAX_SEND_PEER_NODES_COUNT); )
                 {
                     if (ns_available == (*it)->net_st && NORMAL_NODE == (*it)->node_type)
                     {
@@ -1322,14 +1327,16 @@ namespace matrix
 
                         info.service_list.push_back(std::string("ai_training"));
                         resp_content->body.peer_nodes_list.push_back(std::move(info));
-
-                        if (++count > MAX_SEND_PEER_NODES_COUNT)
-                        {
-                            LOG_DEBUG << "p2p net service send peer nodes too many and break: " << m_peer_candidates.size();
-                            break;
-                        }
+                        ++count;
+                        tmp_candi_list.push_back(*it);
+                        it = m_peer_candidates.erase(it);
+                    }
+                    else
+                    {
+                        ++it;
                     }
                 }
+                m_peer_candidates.insert(m_peer_candidates.end(), tmp_candi_list.begin(), tmp_candi_list.end());
 
                 //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
                 if (resp_content->body.peer_nodes_list.size() > 0)
@@ -1337,7 +1344,7 @@ namespace matrix
                     LOG_DEBUG << "p2p net service send peer nodes, count: " << resp_content->body.peer_nodes_list.size();
 
                     resp_msg->set_content(resp_content);
-                    CONNECTION_MANAGER->broadcast_message(resp_msg);        //filer ??
+                    CONNECTION_MANAGER->broadcast_message(resp_msg);
                 }
                 else
                 {
@@ -1478,10 +1485,10 @@ namespace matrix
                     }
 
                     //validate port
-                    variable_value val_port(std::to_string(db_candidate->port), false);
+                    variable_value val_port(std::to_string((unsigned int)(uint16_t)db_candidate->port), false);
                     if (!port_vdr.validate(val_port))
                     {
-                        LOG_ERROR << "p2p net service load peer candidate error: " << db_candidate->port << " is invalid port.";
+                        LOG_ERROR << "p2p net service load peer candidate error: " << (uint16_t)db_candidate->port << " is invalid port.";
                         continue;
                     }
 
