@@ -25,7 +25,7 @@
 #define GET_LOG_HEAD                                            0
 #define GET_LOG_TAIL                                            1
 
-#define MAX_NUMBER_OF_LINES                                     500
+#define MAX_NUMBER_OF_LINES                                     100
 #define DEFAULT_NUMBER_OF_LINES                                 100
 
 #define MAX_LOG_CONTENT_SIZE                                    (8 * 1024)

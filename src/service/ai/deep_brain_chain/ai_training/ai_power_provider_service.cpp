@@ -242,9 +242,9 @@ namespace ai
             //not find self; or find self, but designate more than one node
             if (it == peer_nodes.end() || peer_nodes.size() > 1)
             {
-                LOG_ERROR << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
+                LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
                 //relay start training in network
-                LOG_ERROR << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
+                LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
@@ -340,7 +340,7 @@ namespace ai
             if (0 == m_queueing_tasks.size())
             {
                 LOG_DEBUG << "training queuing task is empty";
-                return E_DEFAULT;
+                return E_SUCCESS;
             }
 
             std::shared_ptr<ai_training_task> sp_task;
@@ -417,7 +417,7 @@ namespace ai
                 if (id_generator().check_base58_id(*it) != true)
                 {
                     LOG_DEBUG << "ai power provider service taskid error: " << *it;
-                    continue;
+                    return E_DEFAULT;
                 }
                 
             }
@@ -428,7 +428,7 @@ namespace ai
             if (0 == m_training_tasks.size())
             {
                 LOG_DEBUG << "ai power provider service training task is empty";
-                return E_DEFAULT;
+                return E_SUCCESS;
             }            
 
             std::vector<matrix::service_core::task_status> status_list;
@@ -601,7 +601,20 @@ namespace ai
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
             log.__set_log_content((nullptr == container_resp) ? log_content : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
-            log.log_content = log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+
+            if (GET_LOG_HEAD == req_content->body.head_or_tail)
+            {
+                log.log_content = log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+            }
+            else
+            {
+                size_t log_lenth = log.log_content.length();
+                if (log_lenth > MAX_LOG_CONTENT_SIZE)
+                {
+                    log.log_content = log.log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
+                }
+                
+            }
 
             rsp_content->body.__set_log(log);
 
