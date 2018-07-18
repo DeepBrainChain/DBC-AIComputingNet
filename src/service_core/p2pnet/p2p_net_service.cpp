@@ -979,8 +979,10 @@ namespace matrix
             auto candidate = get_peer_candidate(notification_content->ep);
             if (nullptr == candidate)
             {
-                LOG_ERROR << "a client tcp connection established, but not in peer candidate: " << notification_content->ep.address() << ":" << notification_content->ep.port();
-                assert(0);
+                LOG_ERROR << "a client tcp connection established, but not in peer candidate: " 
+                    << notification_content->ep.address() << ":" << notification_content->ep.port();
+                CONNECTION_MANAGER->release_connector(msg->header.src_sid);
+                CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
                 return E_DEFAULT;
             }
 
@@ -1155,7 +1157,9 @@ namespace matrix
         {
             //limit of candidates
             if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT)
+            {
                 return E_SUCCESS;
+            }
 
             std::shared_ptr<matrix::service_core::get_peer_nodes_resp> rsp = std::dynamic_pointer_cast<matrix::service_core::get_peer_nodes_resp>(msg->content);
             if (!rsp)
@@ -1179,7 +1183,7 @@ namespace matrix
                 {
                     tcp::endpoint ep(address_v4::from_string(node.addr.ip), (uint16_t)node.addr.port);
 
-                    LOG_DEBUG << "p2p net service relay peer node " << node.addr.ip << ":" << node.addr.port
+                    LOG_DEBUG << "p2p net service relay peer node " << node.addr.ip << ":" << (uint16_t)node.addr.port
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
 
                     //find in neighbor node
@@ -1203,14 +1207,14 @@ namespace matrix
                 }
                 catch (boost::system::system_error e)
                 {
-                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << node.addr.port 
+                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << (uint16_t)node.addr.port 
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string()
                         << e.what();
                     return E_DEFAULT;
                 }
                 catch (...)
                 {
-                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << node.addr.port
+                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << (uint16_t)node.addr.port
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
                     return E_DEFAULT;
                 }
@@ -1221,7 +1225,7 @@ namespace matrix
                 try
                 {
                     tcp::endpoint ep(address_v4::from_string(it->addr.ip), (uint16_t)it->addr.port);
-                    LOG_DEBUG << "p2p net service received peer node: " << ", recv a peer: " << it->addr.ip << ":" << it->addr.port 
+                    LOG_DEBUG << "p2p net service received peer node: " << ", recv a peer: " << it->addr.ip << ":" << (uint16_t)it->addr.port
                         << ", node_id: " << it->peer_node_id << msg->header.src_sid.to_string();
                     
                     //is in list
@@ -1244,7 +1248,7 @@ namespace matrix
                 }
                 catch (...)
                 {
-                    LOG_DEBUG << "recv a peer(" << it->addr.ip << ":" << it->addr.port << ")" << ", but failed to parse.";
+                    LOG_DEBUG << "recv a peer(" << it->addr.ip << ":" << (uint16_t)it->addr.port << ")" << ", but failed to parse.";
                     continue;
                 }
             }
@@ -1365,12 +1369,6 @@ namespace matrix
 
         bool p2p_net_service::add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype)
         {     
-            if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT)
-            {
-                //limit
-                return false;
-            }
-
             auto candidate = get_peer_candidate(ep);
             if (nullptr == candidate)
             {
