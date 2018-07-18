@@ -15,121 +15,6 @@ import sys
 from thrift.transport import TTransport
 all_structs = []
 
-TType.STOP = 127
-
-class msg_header(object):
-    """
-    Attributes:
-     - magic
-     - msg_name
-     - nonce
-     - session_id
-     - exten_info
-    """
-
-
-    def __init__(self, magic=None, msg_name=None, nonce=None, session_id=None, exten_info=None,):
-        self.magic = magic
-        self.msg_name = msg_name
-        self.nonce = nonce
-        self.session_id = session_id
-        self.exten_info = exten_info
-
-    def read(self, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
-            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
-            return
-        iprot.readStructBegin()
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.I32:
-                    self.magic = iprot.readI32()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
-                if ftype == TType.STRING:
-                    self.msg_name = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 3:
-                if ftype == TType.STRING:
-                    self.nonce = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 4:
-                if ftype == TType.STRING:
-                    self.session_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 255:
-                if ftype == TType.MAP:
-                    self.exten_info = {}
-                    (_ktype1, _vtype2, _size0) = iprot.readMapBegin()
-                    for _i4 in range(_size0):
-                        _key5 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        _val6 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        self.exten_info[_key5] = _val6
-                    iprot.readMapEnd()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('msg_header')
-        if self.magic is not None:
-            oprot.writeFieldBegin('magic', TType.I32, 1)
-            oprot.writeI32(self.magic)
-            oprot.writeFieldEnd()
-        if self.msg_name is not None:
-            oprot.writeFieldBegin('msg_name', TType.STRING, 2)
-            oprot.writeString(self.msg_name.encode('utf-8') if sys.version_info[0] == 2 else self.msg_name)
-            oprot.writeFieldEnd()
-        if self.nonce is not None:
-            oprot.writeFieldBegin('nonce', TType.STRING, 3)
-            oprot.writeString(self.nonce.encode('utf-8') if sys.version_info[0] == 2 else self.nonce)
-            oprot.writeFieldEnd()
-        if self.session_id is not None:
-            oprot.writeFieldBegin('session_id', TType.STRING, 4)
-            oprot.writeString(self.session_id.encode('utf-8') if sys.version_info[0] == 2 else self.session_id)
-            oprot.writeFieldEnd()
-        if self.exten_info is not None:
-            oprot.writeFieldBegin('exten_info', TType.MAP, 255)
-            oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.exten_info))
-            for kiter7, viter8 in self.exten_info.items():
-                oprot.writeString(kiter7.encode('utf-8') if sys.version_info[0] == 2 else kiter7)
-                oprot.writeString(viter8.encode('utf-8') if sys.version_info[0] == 2 else viter8)
-            oprot.writeMapEnd()
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.magic is None:
-            raise TProtocolException(message='Required field magic is unset!')
-        if self.msg_name is None:
-            raise TProtocolException(message='Required field msg_name is unset!')
-        return
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
 
 class empty(object):
 
@@ -371,10 +256,10 @@ class peer_node_info(object):
             elif fid == 6:
                 if ftype == TType.LIST:
                     self.service_list = []
-                    (_etype12, _size9) = iprot.readListBegin()
-                    for _i13 in range(_size9):
-                        _elem14 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        self.service_list.append(_elem14)
+                    (_etype3, _size0) = iprot.readListBegin()
+                    for _i4 in range(_size0):
+                        _elem5 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.service_list.append(_elem5)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -411,8 +296,8 @@ class peer_node_info(object):
         if self.service_list is not None:
             oprot.writeFieldBegin('service_list', TType.LIST, 6)
             oprot.writeListBegin(TType.STRING, len(self.service_list))
-            for iter15 in self.service_list:
-                oprot.writeString(iter15.encode('utf-8') if sys.version_info[0] == 2 else iter15)
+            for iter6 in self.service_list:
+                oprot.writeString(iter6.encode('utf-8') if sys.version_info[0] == 2 else iter6)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -584,13 +469,11 @@ class ver_req_body(object):
 class ver_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -603,12 +486,6 @@ class ver_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = ver_req_body()
                     self.body.read(iprot)
@@ -624,12 +501,8 @@ class ver_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('ver_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -737,13 +610,11 @@ class ver_resp_body(object):
 class ver_resp(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -756,12 +627,6 @@ class ver_resp(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = ver_resp_body()
                     self.body.read(iprot)
@@ -777,12 +642,8 @@ class ver_resp(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('ver_resp')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -806,13 +667,11 @@ class ver_resp(object):
 class shake_hand_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -825,12 +684,6 @@ class shake_hand_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = empty()
                     self.body.read(iprot)
@@ -846,12 +699,8 @@ class shake_hand_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('shake_hand_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -875,13 +724,11 @@ class shake_hand_req(object):
 class shake_hand_resp(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -894,12 +741,6 @@ class shake_hand_resp(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = empty()
                     self.body.read(iprot)
@@ -915,12 +756,8 @@ class shake_hand_resp(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('shake_hand_resp')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -944,13 +781,11 @@ class shake_hand_resp(object):
 class get_peer_nodes_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -963,12 +798,6 @@ class get_peer_nodes_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = empty()
                     self.body.read(iprot)
@@ -984,12 +813,8 @@ class get_peer_nodes_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('get_peer_nodes_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1032,11 +857,11 @@ class get_peer_nodes_resp_body(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.peer_nodes_list = []
-                    (_etype19, _size16) = iprot.readListBegin()
-                    for _i20 in range(_size16):
-                        _elem21 = peer_node_info()
-                        _elem21.read(iprot)
-                        self.peer_nodes_list.append(_elem21)
+                    (_etype10, _size7) = iprot.readListBegin()
+                    for _i11 in range(_size7):
+                        _elem12 = peer_node_info()
+                        _elem12.read(iprot)
+                        self.peer_nodes_list.append(_elem12)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1053,8 +878,8 @@ class get_peer_nodes_resp_body(object):
         if self.peer_nodes_list is not None:
             oprot.writeFieldBegin('peer_nodes_list', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.peer_nodes_list))
-            for iter22 in self.peer_nodes_list:
-                iter22.write(oprot)
+            for iter13 in self.peer_nodes_list:
+                iter13.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1080,13 +905,11 @@ class get_peer_nodes_resp_body(object):
 class get_peer_nodes_resp(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -1099,12 +922,6 @@ class get_peer_nodes_resp(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = get_peer_nodes_resp_body()
                     self.body.read(iprot)
@@ -1120,12 +937,8 @@ class get_peer_nodes_resp(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('get_peer_nodes_resp')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1168,11 +981,11 @@ class peer_nodes_broadcast_req_body(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.peer_nodes_list = []
-                    (_etype26, _size23) = iprot.readListBegin()
-                    for _i27 in range(_size23):
-                        _elem28 = peer_node_info()
-                        _elem28.read(iprot)
-                        self.peer_nodes_list.append(_elem28)
+                    (_etype17, _size14) = iprot.readListBegin()
+                    for _i18 in range(_size14):
+                        _elem19 = peer_node_info()
+                        _elem19.read(iprot)
+                        self.peer_nodes_list.append(_elem19)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1189,8 +1002,8 @@ class peer_nodes_broadcast_req_body(object):
         if self.peer_nodes_list is not None:
             oprot.writeFieldBegin('peer_nodes_list', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.peer_nodes_list))
-            for iter29 in self.peer_nodes_list:
-                iter29.write(oprot)
+            for iter20 in self.peer_nodes_list:
+                iter20.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1216,13 +1029,11 @@ class peer_nodes_broadcast_req_body(object):
 class peer_nodes_broadcast_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -1235,12 +1046,6 @@ class peer_nodes_broadcast_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = peer_nodes_broadcast_req_body()
                     self.body.read(iprot)
@@ -1256,12 +1061,8 @@ class peer_nodes_broadcast_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('peer_nodes_broadcast_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1341,10 +1142,10 @@ class start_training_req_body(object):
             elif fid == 4:
                 if ftype == TType.LIST:
                     self.peer_nodes_list = []
-                    (_etype33, _size30) = iprot.readListBegin()
-                    for _i34 in range(_size30):
-                        _elem35 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        self.peer_nodes_list.append(_elem35)
+                    (_etype24, _size21) = iprot.readListBegin()
+                    for _i25 in range(_size21):
+                        _elem26 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.peer_nodes_list.append(_elem26)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1359,8 +1160,8 @@ class start_training_req_body(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 7:
-                if ftype == TType.I32:
-                    self.training_engine = iprot.readI32()
+                if ftype == TType.STRING:
+                    self.training_engine = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 8:
@@ -1413,8 +1214,8 @@ class start_training_req_body(object):
         if self.peer_nodes_list is not None:
             oprot.writeFieldBegin('peer_nodes_list', TType.LIST, 4)
             oprot.writeListBegin(TType.STRING, len(self.peer_nodes_list))
-            for iter36 in self.peer_nodes_list:
-                oprot.writeString(iter36.encode('utf-8') if sys.version_info[0] == 2 else iter36)
+            for iter27 in self.peer_nodes_list:
+                oprot.writeString(iter27.encode('utf-8') if sys.version_info[0] == 2 else iter27)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.server_specification is not None:
@@ -1426,8 +1227,8 @@ class start_training_req_body(object):
             oprot.writeI32(self.server_count)
             oprot.writeFieldEnd()
         if self.training_engine is not None:
-            oprot.writeFieldBegin('training_engine', TType.I32, 7)
-            oprot.writeI32(self.training_engine)
+            oprot.writeFieldBegin('training_engine', TType.STRING, 7)
+            oprot.writeString(self.training_engine.encode('utf-8') if sys.version_info[0] == 2 else self.training_engine)
             oprot.writeFieldEnd()
         if self.code_dir is not None:
             oprot.writeFieldBegin('code_dir', TType.STRING, 8)
@@ -1457,6 +1258,8 @@ class start_training_req_body(object):
             raise TProtocolException(message='Required field task_id is unset!')
         if self.select_mode is None:
             raise TProtocolException(message='Required field select_mode is unset!')
+        if self.peer_nodes_list is None:
+            raise TProtocolException(message='Required field peer_nodes_list is unset!')
         if self.training_engine is None:
             raise TProtocolException(message='Required field training_engine is unset!')
         if self.code_dir is None:
@@ -1484,13 +1287,11 @@ class start_training_req_body(object):
 class start_training_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -1503,12 +1304,6 @@ class start_training_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = start_training_req_body()
                     self.body.read(iprot)
@@ -1524,12 +1319,8 @@ class start_training_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('start_training_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1611,13 +1402,11 @@ class stop_training_req_body(object):
 class stop_training_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -1630,12 +1419,6 @@ class stop_training_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = stop_training_req_body()
                     self.body.read(iprot)
@@ -1651,12 +1434,8 @@ class stop_training_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('stop_training_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1699,10 +1478,10 @@ class list_training_req_body(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.task_list = []
-                    (_etype40, _size37) = iprot.readListBegin()
-                    for _i41 in range(_size37):
-                        _elem42 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        self.task_list.append(_elem42)
+                    (_etype31, _size28) = iprot.readListBegin()
+                    for _i32 in range(_size28):
+                        _elem33 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.task_list.append(_elem33)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1719,8 +1498,8 @@ class list_training_req_body(object):
         if self.task_list is not None:
             oprot.writeFieldBegin('task_list', TType.LIST, 1)
             oprot.writeListBegin(TType.STRING, len(self.task_list))
-            for iter43 in self.task_list:
-                oprot.writeString(iter43.encode('utf-8') if sys.version_info[0] == 2 else iter43)
+            for iter34 in self.task_list:
+                oprot.writeString(iter34.encode('utf-8') if sys.version_info[0] == 2 else iter34)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1746,13 +1525,11 @@ class list_training_req_body(object):
 class list_training_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -1765,12 +1542,6 @@ class list_training_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = list_training_req_body()
                     self.body.read(iprot)
@@ -1786,12 +1557,8 @@ class list_training_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('list_training_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1834,11 +1601,11 @@ class list_training_resp_body(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.task_status_list = []
-                    (_etype47, _size44) = iprot.readListBegin()
-                    for _i48 in range(_size44):
-                        _elem49 = task_status()
-                        _elem49.read(iprot)
-                        self.task_status_list.append(_elem49)
+                    (_etype38, _size35) = iprot.readListBegin()
+                    for _i39 in range(_size35):
+                        _elem40 = task_status()
+                        _elem40.read(iprot)
+                        self.task_status_list.append(_elem40)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1855,8 +1622,8 @@ class list_training_resp_body(object):
         if self.task_status_list is not None:
             oprot.writeFieldBegin('task_status_list', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.task_status_list))
-            for iter50 in self.task_status_list:
-                iter50.write(oprot)
+            for iter41 in self.task_status_list:
+                iter41.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1882,13 +1649,11 @@ class list_training_resp_body(object):
 class list_training_resp(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -1901,12 +1666,6 @@ class list_training_resp(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = list_training_resp_body()
                     self.body.read(iprot)
@@ -1922,12 +1681,8 @@ class list_training_resp(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('list_training_resp')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1981,10 +1736,10 @@ class logs_req_body(object):
             elif fid == 2:
                 if ftype == TType.LIST:
                     self.peer_nodes_list = []
-                    (_etype54, _size51) = iprot.readListBegin()
-                    for _i55 in range(_size51):
-                        _elem56 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        self.peer_nodes_list.append(_elem56)
+                    (_etype45, _size42) = iprot.readListBegin()
+                    for _i46 in range(_size42):
+                        _elem47 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.peer_nodes_list.append(_elem47)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -2015,8 +1770,8 @@ class logs_req_body(object):
         if self.peer_nodes_list is not None:
             oprot.writeFieldBegin('peer_nodes_list', TType.LIST, 2)
             oprot.writeListBegin(TType.STRING, len(self.peer_nodes_list))
-            for iter57 in self.peer_nodes_list:
-                oprot.writeString(iter57.encode('utf-8') if sys.version_info[0] == 2 else iter57)
+            for iter48 in self.peer_nodes_list:
+                oprot.writeString(iter48.encode('utf-8') if sys.version_info[0] == 2 else iter48)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.head_or_tail is not None:
@@ -2056,13 +1811,11 @@ class logs_req_body(object):
 class logs_req(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -2075,12 +1828,6 @@ class logs_req(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = logs_req_body()
                     self.body.read(iprot)
@@ -2096,12 +1843,8 @@ class logs_req(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('logs_req')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -2255,13 +1998,11 @@ class logs_resp_body(object):
 class logs_resp(object):
     """
     Attributes:
-     - header
      - body
     """
 
 
-    def __init__(self, header=None, body=None,):
-        self.header = header
+    def __init__(self, body=None,):
         self.body = body
 
     def read(self, iprot):
@@ -2274,12 +2015,6 @@ class logs_resp(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.header = msg_header()
-                    self.header.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
                 if ftype == TType.STRUCT:
                     self.body = logs_resp_body()
                     self.body.read(iprot)
@@ -2295,12 +2030,8 @@ class logs_resp(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('logs_resp')
-        if self.header is not None:
-            oprot.writeFieldBegin('header', TType.STRUCT, 1)
-            self.header.write(oprot)
-            oprot.writeFieldEnd()
         if self.body is not None:
-            oprot.writeFieldBegin('body', TType.STRUCT, 2)
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
             self.body.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -2319,265 +2050,541 @@ class logs_resp(object):
 
     def __ne__(self, other):
         return not (self == other)
-all_structs.append(msg_header)
-msg_header.thrift_spec = (
-    None,  # 0
-    (1, TType.I32, 'magic', None, None, ),  # 1
-    (2, TType.STRING, 'msg_name', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'nonce', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'session_id', 'UTF8', None, ),  # 4
-    None,  # 5
-    None,  # 6
-    None,  # 7
-    None,  # 8
-    None,  # 9
-    None,  # 10
-    None,  # 11
-    None,  # 12
-    None,  # 13
-    None,  # 14
-    None,  # 15
-    None,  # 16
-    None,  # 17
-    None,  # 18
-    None,  # 19
-    None,  # 20
-    None,  # 21
-    None,  # 22
-    None,  # 23
-    None,  # 24
-    None,  # 25
-    None,  # 26
-    None,  # 27
-    None,  # 28
-    None,  # 29
-    None,  # 30
-    None,  # 31
-    None,  # 32
-    None,  # 33
-    None,  # 34
-    None,  # 35
-    None,  # 36
-    None,  # 37
-    None,  # 38
-    None,  # 39
-    None,  # 40
-    None,  # 41
-    None,  # 42
-    None,  # 43
-    None,  # 44
-    None,  # 45
-    None,  # 46
-    None,  # 47
-    None,  # 48
-    None,  # 49
-    None,  # 50
-    None,  # 51
-    None,  # 52
-    None,  # 53
-    None,  # 54
-    None,  # 55
-    None,  # 56
-    None,  # 57
-    None,  # 58
-    None,  # 59
-    None,  # 60
-    None,  # 61
-    None,  # 62
-    None,  # 63
-    None,  # 64
-    None,  # 65
-    None,  # 66
-    None,  # 67
-    None,  # 68
-    None,  # 69
-    None,  # 70
-    None,  # 71
-    None,  # 72
-    None,  # 73
-    None,  # 74
-    None,  # 75
-    None,  # 76
-    None,  # 77
-    None,  # 78
-    None,  # 79
-    None,  # 80
-    None,  # 81
-    None,  # 82
-    None,  # 83
-    None,  # 84
-    None,  # 85
-    None,  # 86
-    None,  # 87
-    None,  # 88
-    None,  # 89
-    None,  # 90
-    None,  # 91
-    None,  # 92
-    None,  # 93
-    None,  # 94
-    None,  # 95
-    None,  # 96
-    None,  # 97
-    None,  # 98
-    None,  # 99
-    None,  # 100
-    None,  # 101
-    None,  # 102
-    None,  # 103
-    None,  # 104
-    None,  # 105
-    None,  # 106
-    None,  # 107
-    None,  # 108
-    None,  # 109
-    None,  # 110
-    None,  # 111
-    None,  # 112
-    None,  # 113
-    None,  # 114
-    None,  # 115
-    None,  # 116
-    None,  # 117
-    None,  # 118
-    None,  # 119
-    None,  # 120
-    None,  # 121
-    None,  # 122
-    None,  # 123
-    None,  # 124
-    None,  # 125
-    None,  # 126
-    None,  # 127
-    None,  # 128
-    None,  # 129
-    None,  # 130
-    None,  # 131
-    None,  # 132
-    None,  # 133
-    None,  # 134
-    None,  # 135
-    None,  # 136
-    None,  # 137
-    None,  # 138
-    None,  # 139
-    None,  # 140
-    None,  # 141
-    None,  # 142
-    None,  # 143
-    None,  # 144
-    None,  # 145
-    None,  # 146
-    None,  # 147
-    None,  # 148
-    None,  # 149
-    None,  # 150
-    None,  # 151
-    None,  # 152
-    None,  # 153
-    None,  # 154
-    None,  # 155
-    None,  # 156
-    None,  # 157
-    None,  # 158
-    None,  # 159
-    None,  # 160
-    None,  # 161
-    None,  # 162
-    None,  # 163
-    None,  # 164
-    None,  # 165
-    None,  # 166
-    None,  # 167
-    None,  # 168
-    None,  # 169
-    None,  # 170
-    None,  # 171
-    None,  # 172
-    None,  # 173
-    None,  # 174
-    None,  # 175
-    None,  # 176
-    None,  # 177
-    None,  # 178
-    None,  # 179
-    None,  # 180
-    None,  # 181
-    None,  # 182
-    None,  # 183
-    None,  # 184
-    None,  # 185
-    None,  # 186
-    None,  # 187
-    None,  # 188
-    None,  # 189
-    None,  # 190
-    None,  # 191
-    None,  # 192
-    None,  # 193
-    None,  # 194
-    None,  # 195
-    None,  # 196
-    None,  # 197
-    None,  # 198
-    None,  # 199
-    None,  # 200
-    None,  # 201
-    None,  # 202
-    None,  # 203
-    None,  # 204
-    None,  # 205
-    None,  # 206
-    None,  # 207
-    None,  # 208
-    None,  # 209
-    None,  # 210
-    None,  # 211
-    None,  # 212
-    None,  # 213
-    None,  # 214
-    None,  # 215
-    None,  # 216
-    None,  # 217
-    None,  # 218
-    None,  # 219
-    None,  # 220
-    None,  # 221
-    None,  # 222
-    None,  # 223
-    None,  # 224
-    None,  # 225
-    None,  # 226
-    None,  # 227
-    None,  # 228
-    None,  # 229
-    None,  # 230
-    None,  # 231
-    None,  # 232
-    None,  # 233
-    None,  # 234
-    None,  # 235
-    None,  # 236
-    None,  # 237
-    None,  # 238
-    None,  # 239
-    None,  # 240
-    None,  # 241
-    None,  # 242
-    None,  # 243
-    None,  # 244
-    None,  # 245
-    None,  # 246
-    None,  # 247
-    None,  # 248
-    None,  # 249
-    None,  # 250
-    None,  # 251
-    None,  # 252
-    None,  # 253
-    None,  # 254
-    (255, TType.MAP, 'exten_info', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 255
-)
+
+
+class show_req_body(object):
+    """
+    Attributes:
+     - o_node_id
+     - d_node_id
+     - keys
+    """
+
+
+    def __init__(self, o_node_id=None, d_node_id=None, keys=None,):
+        self.o_node_id = o_node_id
+        self.d_node_id = d_node_id
+        self.keys = keys
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.o_node_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRING:
+                    self.d_node_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.keys = []
+                    (_etype52, _size49) = iprot.readListBegin()
+                    for _i53 in range(_size49):
+                        _elem54 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.keys.append(_elem54)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('show_req_body')
+        if self.o_node_id is not None:
+            oprot.writeFieldBegin('o_node_id', TType.STRING, 1)
+            oprot.writeString(self.o_node_id.encode('utf-8') if sys.version_info[0] == 2 else self.o_node_id)
+            oprot.writeFieldEnd()
+        if self.d_node_id is not None:
+            oprot.writeFieldBegin('d_node_id', TType.STRING, 2)
+            oprot.writeString(self.d_node_id.encode('utf-8') if sys.version_info[0] == 2 else self.d_node_id)
+            oprot.writeFieldEnd()
+        if self.keys is not None:
+            oprot.writeFieldBegin('keys', TType.LIST, 3)
+            oprot.writeListBegin(TType.STRING, len(self.keys))
+            for iter55 in self.keys:
+                oprot.writeString(iter55.encode('utf-8') if sys.version_info[0] == 2 else iter55)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.o_node_id is None:
+            raise TProtocolException(message='Required field o_node_id is unset!')
+        if self.d_node_id is None:
+            raise TProtocolException(message='Required field d_node_id is unset!')
+        if self.keys is None:
+            raise TProtocolException(message='Required field keys is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class show_req(object):
+    """
+    Attributes:
+     - body
+    """
+
+
+    def __init__(self, body=None,):
+        self.body = body
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.body = show_req_body()
+                    self.body.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('show_req')
+        if self.body is not None:
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
+            self.body.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class show_resp_body(object):
+    """
+    Attributes:
+     - o_node_id
+     - d_node_id
+     - kvs
+    """
+
+
+    def __init__(self, o_node_id=None, d_node_id=None, kvs=None,):
+        self.o_node_id = o_node_id
+        self.d_node_id = d_node_id
+        self.kvs = kvs
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.o_node_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRING:
+                    self.d_node_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.MAP:
+                    self.kvs = {}
+                    (_ktype57, _vtype58, _size56) = iprot.readMapBegin()
+                    for _i60 in range(_size56):
+                        _key61 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        _val62 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.kvs[_key61] = _val62
+                    iprot.readMapEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('show_resp_body')
+        if self.o_node_id is not None:
+            oprot.writeFieldBegin('o_node_id', TType.STRING, 1)
+            oprot.writeString(self.o_node_id.encode('utf-8') if sys.version_info[0] == 2 else self.o_node_id)
+            oprot.writeFieldEnd()
+        if self.d_node_id is not None:
+            oprot.writeFieldBegin('d_node_id', TType.STRING, 2)
+            oprot.writeString(self.d_node_id.encode('utf-8') if sys.version_info[0] == 2 else self.d_node_id)
+            oprot.writeFieldEnd()
+        if self.kvs is not None:
+            oprot.writeFieldBegin('kvs', TType.MAP, 3)
+            oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.kvs))
+            for kiter63, viter64 in self.kvs.items():
+                oprot.writeString(kiter63.encode('utf-8') if sys.version_info[0] == 2 else kiter63)
+                oprot.writeString(viter64.encode('utf-8') if sys.version_info[0] == 2 else viter64)
+            oprot.writeMapEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.o_node_id is None:
+            raise TProtocolException(message='Required field o_node_id is unset!')
+        if self.d_node_id is None:
+            raise TProtocolException(message='Required field d_node_id is unset!')
+        if self.kvs is None:
+            raise TProtocolException(message='Required field kvs is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class show_resp(object):
+    """
+    Attributes:
+     - body
+    """
+
+
+    def __init__(self, body=None,):
+        self.body = body
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.body = show_resp_body()
+                    self.body.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('show_resp')
+        if self.body is not None:
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
+            self.body.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class node_service_info(object):
+    """
+    Attributes:
+     - service_list
+     - name
+     - time_stamp
+     - kvs
+    """
+
+
+    def __init__(self, service_list=None, name=None, time_stamp=None, kvs=None,):
+        self.service_list = service_list
+        self.name = name
+        self.time_stamp = time_stamp
+        self.kvs = kvs
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.LIST:
+                    self.service_list = []
+                    (_etype68, _size65) = iprot.readListBegin()
+                    for _i69 in range(_size65):
+                        _elem70 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.service_list.append(_elem70)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.I64:
+                    self.time_stamp = iprot.readI64()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.MAP:
+                    self.kvs = {}
+                    (_ktype72, _vtype73, _size71) = iprot.readMapBegin()
+                    for _i75 in range(_size71):
+                        _key76 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        _val77 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        self.kvs[_key76] = _val77
+                    iprot.readMapEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('node_service_info')
+        if self.service_list is not None:
+            oprot.writeFieldBegin('service_list', TType.LIST, 1)
+            oprot.writeListBegin(TType.STRING, len(self.service_list))
+            for iter78 in self.service_list:
+                oprot.writeString(iter78.encode('utf-8') if sys.version_info[0] == 2 else iter78)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 2)
+            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeFieldEnd()
+        if self.time_stamp is not None:
+            oprot.writeFieldBegin('time_stamp', TType.I64, 3)
+            oprot.writeI64(self.time_stamp)
+            oprot.writeFieldEnd()
+        if self.kvs is not None:
+            oprot.writeFieldBegin('kvs', TType.MAP, 4)
+            oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.kvs))
+            for kiter79, viter80 in self.kvs.items():
+                oprot.writeString(kiter79.encode('utf-8') if sys.version_info[0] == 2 else kiter79)
+                oprot.writeString(viter80.encode('utf-8') if sys.version_info[0] == 2 else viter80)
+            oprot.writeMapEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.service_list is None:
+            raise TProtocolException(message='Required field service_list is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class service_broadcast_req_body(object):
+    """
+    Attributes:
+     - node_service_info_map
+    """
+
+
+    def __init__(self, node_service_info_map=None,):
+        self.node_service_info_map = node_service_info_map
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.MAP:
+                    self.node_service_info_map = {}
+                    (_ktype82, _vtype83, _size81) = iprot.readMapBegin()
+                    for _i85 in range(_size81):
+                        _key86 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        _val87 = node_service_info()
+                        _val87.read(iprot)
+                        self.node_service_info_map[_key86] = _val87
+                    iprot.readMapEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('service_broadcast_req_body')
+        if self.node_service_info_map is not None:
+            oprot.writeFieldBegin('node_service_info_map', TType.MAP, 1)
+            oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.node_service_info_map))
+            for kiter88, viter89 in self.node_service_info_map.items():
+                oprot.writeString(kiter88.encode('utf-8') if sys.version_info[0] == 2 else kiter88)
+                viter89.write(oprot)
+            oprot.writeMapEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.node_service_info_map is None:
+            raise TProtocolException(message='Required field node_service_info_map is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class service_broadcast_req(object):
+    """
+    Attributes:
+     - body
+    """
+
+
+    def __init__(self, body=None,):
+        self.body = body
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.body = service_broadcast_req_body()
+                    self.body.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('service_broadcast_req')
+        if self.body is not None:
+            oprot.writeFieldBegin('body', TType.STRUCT, 1)
+            self.body.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
 all_structs.append(empty)
 empty.thrift_spec = (
 )
@@ -2617,8 +2624,7 @@ ver_req_body.thrift_spec = (
 all_structs.append(ver_req)
 ver_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [ver_req_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [ver_req_body, None], None, ),  # 1
 )
 all_structs.append(ver_resp_body)
 ver_resp_body.thrift_spec = (
@@ -2630,26 +2636,22 @@ ver_resp_body.thrift_spec = (
 all_structs.append(ver_resp)
 ver_resp.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [ver_resp_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [ver_resp_body, None], None, ),  # 1
 )
 all_structs.append(shake_hand_req)
 shake_hand_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [empty, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [empty, None], None, ),  # 1
 )
 all_structs.append(shake_hand_resp)
 shake_hand_resp.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [empty, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [empty, None], None, ),  # 1
 )
 all_structs.append(get_peer_nodes_req)
 get_peer_nodes_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [empty, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [empty, None], None, ),  # 1
 )
 all_structs.append(get_peer_nodes_resp_body)
 get_peer_nodes_resp_body.thrift_spec = (
@@ -2659,8 +2661,7 @@ get_peer_nodes_resp_body.thrift_spec = (
 all_structs.append(get_peer_nodes_resp)
 get_peer_nodes_resp.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [get_peer_nodes_resp_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [get_peer_nodes_resp_body, None], None, ),  # 1
 )
 all_structs.append(peer_nodes_broadcast_req_body)
 peer_nodes_broadcast_req_body.thrift_spec = (
@@ -2670,8 +2671,7 @@ peer_nodes_broadcast_req_body.thrift_spec = (
 all_structs.append(peer_nodes_broadcast_req)
 peer_nodes_broadcast_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [peer_nodes_broadcast_req_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [peer_nodes_broadcast_req_body, None], None, ),  # 1
 )
 all_structs.append(start_training_req_body)
 start_training_req_body.thrift_spec = (
@@ -2682,7 +2682,7 @@ start_training_req_body.thrift_spec = (
     (4, TType.LIST, 'peer_nodes_list', (TType.STRING, 'UTF8', False), None, ),  # 4
     (5, TType.STRING, 'server_specification', 'UTF8', None, ),  # 5
     (6, TType.I32, 'server_count', None, None, ),  # 6
-    (7, TType.I32, 'training_engine', None, None, ),  # 7
+    (7, TType.STRING, 'training_engine', 'UTF8', None, ),  # 7
     (8, TType.STRING, 'code_dir', 'UTF8', None, ),  # 8
     (9, TType.STRING, 'entry_file', 'UTF8', None, ),  # 9
     (10, TType.STRING, 'data_dir', 'UTF8', None, ),  # 10
@@ -2692,8 +2692,7 @@ start_training_req_body.thrift_spec = (
 all_structs.append(start_training_req)
 start_training_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [start_training_req_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [start_training_req_body, None], None, ),  # 1
 )
 all_structs.append(stop_training_req_body)
 stop_training_req_body.thrift_spec = (
@@ -2703,8 +2702,7 @@ stop_training_req_body.thrift_spec = (
 all_structs.append(stop_training_req)
 stop_training_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [stop_training_req_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [stop_training_req_body, None], None, ),  # 1
 )
 all_structs.append(list_training_req_body)
 list_training_req_body.thrift_spec = (
@@ -2714,8 +2712,7 @@ list_training_req_body.thrift_spec = (
 all_structs.append(list_training_req)
 list_training_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [list_training_req_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [list_training_req_body, None], None, ),  # 1
 )
 all_structs.append(list_training_resp_body)
 list_training_resp_body.thrift_spec = (
@@ -2725,8 +2722,7 @@ list_training_resp_body.thrift_spec = (
 all_structs.append(list_training_resp)
 list_training_resp.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [list_training_resp_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [list_training_resp_body, None], None, ),  # 1
 )
 all_structs.append(logs_req_body)
 logs_req_body.thrift_spec = (
@@ -2739,8 +2735,7 @@ logs_req_body.thrift_spec = (
 all_structs.append(logs_req)
 logs_req.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [logs_req_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [logs_req_body, None], None, ),  # 1
 )
 all_structs.append(peer_node_log)
 peer_node_log.thrift_spec = (
@@ -2756,8 +2751,49 @@ logs_resp_body.thrift_spec = (
 all_structs.append(logs_resp)
 logs_resp.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'header', [msg_header, None], None, ),  # 1
-    (2, TType.STRUCT, 'body', [logs_resp_body, None], None, ),  # 2
+    (1, TType.STRUCT, 'body', [logs_resp_body, None], None, ),  # 1
+)
+all_structs.append(show_req_body)
+show_req_body.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'o_node_id', 'UTF8', None, ),  # 1
+    (2, TType.STRING, 'd_node_id', 'UTF8', None, ),  # 2
+    (3, TType.LIST, 'keys', (TType.STRING, 'UTF8', False), None, ),  # 3
+)
+all_structs.append(show_req)
+show_req.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'body', [show_req_body, None], None, ),  # 1
+)
+all_structs.append(show_resp_body)
+show_resp_body.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'o_node_id', 'UTF8', None, ),  # 1
+    (2, TType.STRING, 'd_node_id', 'UTF8', None, ),  # 2
+    (3, TType.MAP, 'kvs', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 3
+)
+all_structs.append(show_resp)
+show_resp.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'body', [show_resp_body, None], None, ),  # 1
+)
+all_structs.append(node_service_info)
+node_service_info.thrift_spec = (
+    None,  # 0
+    (1, TType.LIST, 'service_list', (TType.STRING, 'UTF8', False), None, ),  # 1
+    (2, TType.STRING, 'name', 'UTF8', None, ),  # 2
+    (3, TType.I64, 'time_stamp', None, None, ),  # 3
+    (4, TType.MAP, 'kvs', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 4
+)
+all_structs.append(service_broadcast_req_body)
+service_broadcast_req_body.thrift_spec = (
+    None,  # 0
+    (1, TType.MAP, 'node_service_info_map', (TType.STRING, 'UTF8', TType.STRUCT, [node_service_info, None], False), None, ),  # 1
+)
+all_structs.append(service_broadcast_req)
+service_broadcast_req.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'body', [service_broadcast_req_body, None], None, ),  # 1
 )
 fix_spec(all_structs)
 del all_structs

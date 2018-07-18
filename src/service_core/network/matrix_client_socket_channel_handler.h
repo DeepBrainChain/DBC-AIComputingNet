@@ -37,14 +37,22 @@ namespace matrix
 
             virtual int32_t on_after_msg_received(message &msg);
 
+            virtual int32_t on_after_msg_sent(message &msg);
+
+
         protected:
             virtual void on_shake_hand_timer_expired(const boost::system::error_code& error);
             virtual void start_shake_hand_timer_ext();
+            void send_shake_hand_req();
+            
+            virtual void start_wait_ver_resp_timer();
+            virtual void stop_wait_ver_resp_timer();
+            void on_ver_resp_timer_expired(const boost::system::error_code& error);
 
         protected:
-
-            void send_shake_hand_req();
-
+            steady_timer m_wait_ver_resp_timer;
+            uint16_t m_lost_shake_hand_count;
+            uint16_t m_lost_shake_hand_count_max;
         };
 
     }

@@ -20,17 +20,31 @@
 #include <boost/filesystem/fstream.hpp>
 #include <assert.h>
 #include <boost/asio.hpp>
-#include "log.h"
+//#include "log.h"
 
 #if defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#include <sysinfoapi.h>
+
 #undef WIN32_LEAN_AND_MEAN
 #elif defined(__linux__)
 #include <limits.h>
+#include <sys/sysinfo.h>
+#ifdef _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
 #endif
+#define _POSIX_C_SOURCE 200112L
+#include <sys/stat.h>
+#include <sys/resource.h>
+#endif
+
+
+#include <algorithm>
+#include <fcntl.h>
+
 
 namespace bf = boost::filesystem;
 
@@ -144,6 +158,29 @@ namespace matrix
                 {
                     return "*.*.*.*";
                 }
+            }
+            /**
+             * trim indicated character from string's end
+             * @param s, the string
+             * @param c, the character
+             * @return the new string
+             */
+            static std::string rtrim(std::string& s, char c)
+            {
+                if (s.size() == 0)
+                {
+                    return "";
+                }
+
+                int i = ((int) s.length()) - 1;
+
+                for(; i>=0; i--)
+                {
+                    if(s[i] != c)
+                        break;
+                }
+
+                return s.substr(0,i+1);
             }
 
         };
@@ -298,6 +335,49 @@ namespace matrix
                 return exe_dir;
             }
         };
+
+        /**
+        * this function tries to raise the file descriptor limit to the requested number.
+        * It returns the actual file descriptor limit (which may be more or less than nMinFD)
+        */
+        inline int32_t RaiseFileDescriptorLimit(int nMinFD) {
+#if defined(WIN32)
+            return 2048;
+#else
+            struct rlimit limitFD;
+            if (getrlimit(RLIMIT_NOFILE, &limitFD) != -1) {
+                if (limitFD.rlim_cur < (rlim_t)nMinFD) {
+                    limitFD.rlim_cur = nMinFD;
+                    if (limitFD.rlim_cur > limitFD.rlim_max)
+                        limitFD.rlim_cur = limitFD.rlim_max;
+                    setrlimit(RLIMIT_NOFILE, &limitFD);
+                    getrlimit(RLIMIT_NOFILE, &limitFD);
+                }
+                return limitFD.rlim_cur;
+            }
+            return nMinFD; // getrlimit failed, assume it's fine
+#endif
+        }
+
+        inline void get_sys_mem(int64_t & mem, int64_t & mem_swap)
+        {
+#if defined(WIN32)
+            MEMORYSTATUSEX memoryInfo;
+            memoryInfo.dwLength = sizeof(memoryInfo);
+            GlobalMemoryStatusEx(&memoryInfo);
+            mem = memoryInfo.ullTotalPhys;
+            mem_swap = memoryInfo.ullTotalVirtual;
+#elif defined(__linux__)
+            struct sysinfo s_info;
+            if (0 == sysinfo(&s_info))
+            {
+                mem = s_info.totalram;
+                mem_swap = mem + s_info.totalswap;
+            }
+
+#endif
+
+        }
 
     }
 

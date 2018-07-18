@@ -43,6 +43,14 @@
 #define P2P_GET_PEER_NODES_RESP								"get_peer_nodes_resp"
 
 
+#define SHOW_REQ                                                 "show_req"
+#define SHOW_RESP                                                "show_resp"
+
+#define SERVICE_BROADCAST_REQ                                    "service_broadcast_req"
+
+#define GET_TASK_QUEUE_SIZE_REQ                                 "get_task_queue_size_req"
+#define GET_TASK_QUEUE_SIZE_RESP                                "get_task_queue_size_resp"
+
 #endif
 
 

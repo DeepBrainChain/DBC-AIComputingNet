@@ -16,6 +16,8 @@
 #include "ai_db_types.h"
 #include "container_client.h"
 #include "task_common_def.h"
+#include "prettywriter.h"
+#include "document.h"
 
 
 using namespace matrix::core;
@@ -29,6 +31,8 @@ using namespace boost::asio::ip;
 
 #define AI_TRAINING_TASK_SCRIPT_HOME                         "/"
 #define AI_TRAINING_TASK_SCRIPT                                       "dbc_task.sh"                                            //training shell script name
+#define AI_TRAINING_BIND_LOCALTIME                                    "/etc/localtime:/etc/localtime:ro"                          //set docker container time=local host time
+#define AI_TRAINING_BIND_TIMEZONE                                    "/etc/timezone:/etc/timezone:ro"                          //set docker container time=local host time
 
 //gpu env
 #define AI_TRAINING_ENV_PATH                                            "PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -44,6 +48,7 @@ using namespace boost::asio::ip;
 #define DEFAULT_SPLIT_COUNT                                                         2
 #define DEFAULT_NVIDIA_DOCKER_PORT                                                3476
 
+namespace image_rj = rapidjson;
 namespace ai
 {
 	namespace dbc
@@ -113,6 +118,8 @@ namespace ai
 
             std::string format_logs(const std::string &raw_logs, uint16_t max_lines);
 
+            int32_t on_get_task_queue_size_req(std::shared_ptr<message> &msg);
+
         protected:
 
             //ai power provider service
@@ -129,7 +136,12 @@ namespace ai
 
             int32_t write_task_to_db(std::shared_ptr<ai_training_task> task);
 
-            int32_t load_task_from_db();            
+            int32_t load_task_from_db();
+
+            int32_t load_container();
+
+            int32_t check_cpu_config(const double & cpu_info);
+            int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
 
         protected:
 
@@ -139,7 +151,7 @@ namespace ai
 
             uint16_t m_container_port;
 
-            std::string m_container_image;
+            //std::string m_container_image;
 
             std::shared_ptr<container_client> m_container_client;
 
@@ -152,7 +164,10 @@ namespace ai
             uint32_t m_training_task_timer_id;
 
             std::shared_ptr<nvidia_config> m_nv_config;
+            variables_map m_container_args;
 
+            const int64_t m_nano_cpu = 1000000000;
+            const int64_t m_g_bytes = 1073741824;
         };
 
 	}

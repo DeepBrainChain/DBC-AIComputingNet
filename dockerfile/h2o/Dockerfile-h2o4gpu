@@ -1,0 +1,177 @@
+FROM nvcr.io/nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+#FROM ubuntu:16.04
+# maintainer details
+MAINTAINER deepbrainchain "h2o.ai"
+
+ENV HOME=/root
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=/usr/local/cuda/bin:$PATH
+ENV CUDADIR=/usr/local/cuda/include/
+ENV LD_LIBRARY_PATH=/usr/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+
+ENV MINICONDA_VERSION=4.4.10
+ENV PILLOW_VERSION=4.2.1
+
+
+RUN \
+  echo 'DPkg::Post-Invoke {"/bin/rm -f /var/cache/apt/archives/*.deb || true";};' | tee /etc/apt/apt.conf.d/no-cache && \
+  echo "deb http://mirror.math.princeton.edu/pub/ubuntu xenial main universe" >> /etc/apt/sources.list && \
+  apt-get update -q -y && \
+  apt-get dist-upgrade -y && \
+  apt-get clean && \
+  rm -rf /var/cache/apt/* && \
+
+# Install Oracle Java 8
+  DEBIAN_FRONTEND=noninteractive apt-get install -y wget unzip python-pip python-sklearn python-pandas python-numpy python-matplotlib software-properties-common python-software-properties && \
+  add-apt-repository -y ppa:webupd8team/java && \
+  apt-get update -q && \
+  echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
+  echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y oracle-java8-installer && \
+  apt-get clean
+
+RUN  apt-get install -y --no-install-recommends build-essential
+
+# Setup gcc etc.
+RUN apt-get install -y --no-install-recommends  gcc g++ libgomp1 libc6 libc6-dev libc6-dbg libstdc++6
+
+
+# Git requirements
+RUN apt-get install -y --no-install-recommends  git libcurl4-openssl-dev zlib1g-dev asciidoc xmlto wget make cmake autoconf gettext libpcre3 libpcre3-dev pbzip2 libxml2-dev
+
+
+# H2O4GPU requirements + util programs
+RUN apt-get install -y --no-install-recommends \
+    libncurses5-dev \
+        bzip2 \
+        axel \
+        openssl libssl-dev \
+        libpng-dev \
+        libfreetype6-dev \
+        libblas-dev  \
+        libboost-all-dev \
+        libopenblas-dev && \
+    wget https://repo.continuum.io/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-`arch`.sh && \
+    bash Miniconda3-${MINICONDA_VERSION}-Linux-`arch`.sh -b -p /opt/h2oai/h2o4gpu/python
+
+ENV PATH=/opt/h2oai/h2o4gpu/python/bin:$PATH
+
+#
+# Builds from source due to too old versions in 
+#
+WORKDIR $HOME
+
+# Arrow
+RUN bash -c 'if [ `arch` = "ppc64le" ]; then \
+	git clone https://github.com/apache/arrow.git && \
+	cd $HOME/arrow/cpp && \
+	git checkout tags/apache-arrow-0.8.0 && \
+  	pip install numpy cython && \
+	cmake -DARROW_CXXFLAGS="-lutil" -DARROW_PYTHON=on && make -j && make install && \
+	cd $HOME/arrow/python && \
+	ARROW_HOME=/usr/local python setup.py install && \
+	apt-get install -y --no-install-recommends libjpeg-dev;\
+	fi'
+	
+# Pillow
+RUN bash -c 'if [ `arch` = "ppc64le" ]; then \
+	wget https://files.pythonhosted.org/packages/55/aa/f7f983fb72710a9daa4b3374b7c160091d3f94f5c09221f9336ade9027f3/Pillow-${PILLOW_VERSION}.tar.gz && \
+	tar xvf Pillow-${PILLOW_VERSION}.tar.gz && \
+	cd $HOME/Pillow-${PILLOW_VERSION} && \
+	sed -i "s/'ppc64'/'ppc64le'/g" setup.py && \
+	python setup.py install && \
+	cd $HOME && \
+	rm -rf Pillow-${PILLOW_VERSION}*; \
+	fi'
+	
+#
+# Install Python requirements
+#
+RUN pip install numpy setuptools
+
+#COPY src/interface_py/requirements_buildonly.txt requirements_buildonly.txt
+COPY src/interface_py/requirements_runtime.txt requirements_runtime.txt
+COPY src/interface_py/requirements_runtime_demos.txt requirements_runtime_demos.txt
+
+RUN pip install -r requirements_buildonly.txt
+RUN pip install -r requirements_runtime.txt
+#RUN pip install -r requirements_runtime_demos.txt
+
+RUN chmod -R o+rwx /opt/h2oai/h2o4gpu/python
+RUN chmod -R o+rwx /root
+
+#RUN cd /opt && \
+#    wget https://s3.amazonaws.com/h2o-release/h2o4gpu/releases/stable/ai/h2o/h2o4gpu/0.2-nccl-cuda9/h2o4gpu-0.2.0-cp36-cp36m-linux_x86_64.whl && \
+#    pip install h2o4gpu-0.2.0-cp36-cp36m-linux_x86_64.whl
+
+#WORKDIR $HOME
+
+
+
+WORKDIR /
+
+
+# Add a canned jupyter notebook demo to the container
+RUN \
+  mkdir -p jupyter/demos
+COPY examples/py/demos/H2O4GPU_Ridge.ipynb /jupyter/demos/H2O4GPU_Ridge.ipynb
+COPY examples/py/demos/H2O4GPU_LinearRegression.ipynb /jupyter/demos/H2O4GPU_LinearRegression.ipynb
+COPY examples/py/demos/H2O4GPU_GBM.ipynb /jupyter/demos/H2O4GPU_GBM.ipynb
+COPY examples/py/demos/H2O4GPU_GLM.ipynb /jupyter/demos/H2O4GPU_GLM.ipynb
+COPY examples/py/demos/H2O4GPU_Lasso.ipynb /jupyter/demos/H2O4GPU_Lasso.ipynb
+COPY examples/py/demos/H2O4GPU_KMeans_Images.ipynb /jupyter/demos/H2O4GPU_KMeans_Images.ipynb
+COPY examples/py/demos/H2O4GPU_KMeans_Quantization.ipynb /jupyter/demos/H2O4GPU_KMeans_Quantization.ipynb
+COPY examples/py/demos/Multi-GPU-H2O-GLM-simple.ipynb /jupyter/demos/Multi-GPU-H2O-GLM-simple.ipynb
+COPY examples/py/demos/H2O4GPU_TruncatedSVD.ipynb /jupyter/demos/H2O4GPU_TruncatedSVD.ipynb
+COPY examples/py/demos/H2O4GPU_PCA.ipynb /jupyter/demos/H2O4GPU_PCA.ipynb
+COPY examples/py/demos/H2O4GPU_Daal_LinearRegression.ipynb /jupyter/demos/H2O4GPU_Daal_LinearRegression.ipynb
+COPY examples/py/demos/figures /jupyter/demos/figures
+RUN \
+  cd /jupyter/demos && \
+  chmod -R a+rwx /jupyter && \
+  mkdir /scikit_learn_data && \
+  chmod -R a+rwx /scikit_learn_data && \
+  mkdir -p /jupyter/scikit_learn_data/covertype && \
+  chmod -R a+rwx /jupyter/scikit_learn_data/covertype && \
+  mkdir -p /jupyter/scikit_learn_data/lfw_home && \
+  chmod -R a+rwx /jupyter/scikit_learn_data/lfw_home && \
+  HOME=/jupyter jupyter notebook --generate-config && \
+  sed -i "s/#c.NotebookApp.token = '<generated>'/c.NotebookApp.token = 'h2o'/" /jupyter/.jupyter/jupyter_notebook_config.py && \
+  chmod -R a+rwx /jupyter/.jupyter
+
+# Add shell wrapper
+COPY scripts/run.sh /run.sh
+RUN \
+  chmod a+rwx run.sh
+
+#install ipfs
+ADD go-ipfs_v0.4.15_linux-amd64.tar.gz /opt  
+#RUN tar -zxvf /opt/go-ipfs* -C /opt && \
+RUN  cd /opt/go-ipfs && \
+     ./install.sh  && \
+     rm -rf /opt/go-ipfs
+     
+RUN pip install ipfsapi
+
+ADD swarm.key /
+ADD dbc_task.sh /
+ADD upload_training_result.py /
+RUN cd / && \
+    chmod +x dbc_task.sh
+    
+
+ARG h2o4gpu_VERSION
+ARG h2o4gpu_COMMIT
+ARG DOCKER_VERSION_TAG
+LABEL \
+h2o4gpu_commit="$h2o4gpu_COMMIT" \
+docker_version_tag="$DOCKER_VERSION_TAG"
+
+#ENTRYPOINT ["./run.sh"]
+EXPOSE 8888
+EXPOSE 54321
+EXPOSE 54322
+
+CMD \
+  ["/bin/bash"]
+

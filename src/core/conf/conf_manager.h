@@ -27,7 +27,9 @@ using namespace boost::program_options;
 
 extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
 extern std::string DEFAULT_CONTAINER_IMAGE_NAME;      
-
+extern const int32_t DEFAULT_MAX_CONNECTION_NUM;
+extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
+extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
 
 
 extern const std::string conf_manager_name;
@@ -76,7 +78,18 @@ namespace matrix
 
             const std::string & get_container_port() { return m_args.count("container_port") ? m_args["container_port"].as<std::string>() : DEFAULT_CONTAINER_LISTEN_PORT; }
 
-            const std::string & get_container_image() { return m_args.count("container_image") ? m_args["container_image"].as<std::string>() : DEFAULT_CONTAINER_IMAGE_NAME; }
+            const int32_t & get_max_connect() {return m_args.count("max_connect") ? m_args["max_connect"].as<int32_t>() : DEFAULT_MAX_CONNECTION_NUM;}
+
+            const int32_t & get_timer_service_broadcast_in_second() {
+                return m_args.count("timer_service_broadcast_in_second") ? m_args["timer_service_broadcast_in_second"].as<int32_t>() : DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
+            }
+
+            const int32_t & get_timer_service_list_expired_in_second() {
+                return m_args.count("timer_service_list_expired_in_second") ? m_args["timer_service_list_expired_in_second"].as<int32_t>() : DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
+            }
+
+
+            //const std::string & get_container_image() { return m_args.count("container_image") ? m_args["container_image"].as<std::string>() : DEFAULT_CONTAINER_IMAGE_NAME; }
 
             const std::string & get_node_id() const { return m_node_id; }
 

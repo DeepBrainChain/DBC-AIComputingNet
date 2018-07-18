@@ -26,6 +26,26 @@ using namespace std;
 #define MIN_RELEASE_CHANNEL_USE_COUNT             2
 
 
+#ifdef WIN32
+// Win32 LevelDB doesn't use filedescriptors, and the ones used for
+// accessing block files don't count towards the fd_set size limit
+// anyway.
+#define MIN_CORE_FILEDESCRIPTORS 0
+#else
+#define MIN_CORE_FILEDESCRIPTORS 150
+#endif
+
+/** Maximum number of automatic outgoing nodes */
+static const int MAX_OUTBOUND_CONNECTIONS = 8;
+/** Maximum number of addnode outgoing nodes */
+static const int MAX_ADDNODE_CONNECTIONS = 8;
+
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE // prevent redefinition compiler warning
+#endif
+#define FD_SETSIZE 1024 // max number of fds in fd_set
+
+
 namespace matrix
 {
     namespace core
@@ -67,7 +87,15 @@ namespace matrix
 
             int32_t send_message(socket_id sid, std::shared_ptr<message> msg);
 
-			void broadcast_message(std::shared_ptr<message> msg, socket_id id = socket_id());
+			int32_t broadcast_message(std::shared_ptr<message> msg, socket_id id = socket_id());
+
+            size_t get_connection_num() { return m_channels.size();}
+
+            bool send_resp_message(std::shared_ptr<message> msg, socket_id id = socket_id());
+
+            shared_ptr<channel> find_fast_path(std::vector<std::string>& path);
+
+            bool have_active_channel();
 
         protected:
 
@@ -97,6 +125,12 @@ namespace matrix
 
             virtual int32_t stop_all_channel();
 
+            int32_t get_connect_num();
+            int32_t get_out_connect_num();
+            int32_t get_in_connect_num();
+
+            bool check_over_max_connect(socket_type st);
+
             virtual int32_t stop_all_recycle_channel();
 
             int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
@@ -105,16 +139,18 @@ namespace matrix
 
             virtual void remove_timers();
 
+            int32_t load_max_connect(bpo::variables_map &options);
+
         protected:
 
             uint32_t m_channel_recycle_timer;
 
 			//mutex
-            rw_lock m_lock_conn;        //connector
+            rw_lock m_lock_conn;//connector
 
-			rw_lock m_lock_accp;        //acceptor
+			rw_lock m_lock_accp;//acceptor
 
-			rw_lock m_lock_chnl;        //channels
+			rw_lock m_lock_chnl;//channels
 
             rw_lock m_lock_recycle;     //recycle channels
 
@@ -134,9 +170,11 @@ namespace matrix
             //socket channel
             std::map<socket_id, shared_ptr<channel>, cmp_key> m_channels;
 
+
+            int32_t m_max_connect;
+
             //recycle channel for exception tcp socket channel
             std::map<socket_id, shared_ptr<channel>, cmp_key> m_recycle_channels;
-
         };
 
     }

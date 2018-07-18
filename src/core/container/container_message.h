@@ -82,6 +82,17 @@ namespace matrix
 
         };
 
+        class container_ulimits
+        {
+        public:
+            container_ulimits(std::string name, int32_t soft, int32_t hard):m_name(name), m_soft(soft), m_hard(hard)
+            {
+            }
+            std::string m_name;
+            int32_t m_soft;
+            int32_t m_hard;
+        };
+
         class container_ports
         {
         public:
@@ -100,15 +111,20 @@ namespace matrix
 
             std::string source;
 
-            std::string destination;
+            //std::string destination;
+            std::string tag;
 
-            std::string driver;
+            //std::string driver;
 
-            std::string mode;
+            //std::string mode;
 
-            bool rw;
+            //bool rw;
 
-            std::string propagation;
+            //std::string propagation;
+
+            bool read_only;
+
+            std::string consistency;   //default, consistent, cached, or delegated
 
         };
 
@@ -158,6 +174,15 @@ namespace matrix
 
             std::list<std::string> volumes_from;
 
+            int64_t  nano_cpus;
+
+            int64_t memory_swap;
+            
+            int64_t memory;
+
+            int64_t share_memory;
+            
+            std::list<container_ulimits> ulimits;
         };
 
         class container_config : public json_io_buf
@@ -180,7 +205,7 @@ namespace matrix
 
             int64_t memory_limit;
 
-            int64_t memory_swap;
+            //int64_t memory_swap;
 
             int32_t cup_shares;
 
