@@ -853,10 +853,12 @@ namespace matrix
     {
 
         typedef struct _base_header__isset {
-            _base_header__isset() : nonce(false), session_id(false), exten_info(false) {}
+            _base_header__isset() : nonce(false), session_id(false), path(false), exten_info(false) {}
             bool nonce : 1;
             bool session_id : 1;
+            bool path :1;
             bool exten_info : 1;
+
         } _base_header__isset;
 
         class base_header {
@@ -872,6 +874,7 @@ namespace matrix
             std::string msg_name;
             std::string nonce;
             std::string session_id;
+            std::vector<std::string>  path;
             std::map<std::string, std::string>  exten_info;
 
             _base_header__isset __isset;
@@ -883,6 +886,8 @@ namespace matrix
             void __set_nonce(const std::string& val);
 
             void __set_session_id(const std::string& val);
+
+            void __set_path(const std::vector<std::string> & val);
 
             void __set_exten_info(const std::map<std::string, std::string> & val);
 
@@ -899,6 +904,10 @@ namespace matrix
                 if (__isset.session_id != rhs.__isset.session_id)
                     return false;
                 else if (__isset.session_id && !(session_id == rhs.session_id))
+                    return false;
+                if (__isset.path != rhs.__isset.path)
+                    return false;
+                else if (__isset.path && !(path == rhs.path))
                     return false;
                 if (__isset.exten_info != rhs.__isset.exten_info)
                     return false;

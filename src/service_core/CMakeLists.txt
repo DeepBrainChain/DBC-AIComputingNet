@@ -26,6 +26,7 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/core/service_module/pc
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
+        ${SRC_PATH}/core
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/db/
@@ -37,12 +38,6 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/network/rapidjson
         ${SRC_PATH}/3rd/network/rapidjson/internal
         ${SRC_PATH}/3rd/network/rapidjson/error
-
-        ${SRC_PATH}/service_core/codec
-        ${SRC_PATH}/service_core/codec/thrift
-        ${SRC_PATH}/service_core/common
-        ${SRC_PATH}/service_core/network
-        ${SRC_PATH}/service_core/p2pnet
 )
 
 
@@ -53,6 +48,9 @@ foreach(f ${SRC_FOLDER_LIST})
 #    message(STATUS ${f})
     AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/${f} tmp)
     list(APPEND SRC_LIST ${tmp})
+
+    INCLUDE_DIRECTORIES(  ${SRC_PATH}/service_core/${f})
+
 endforeach()
 
 

@@ -53,6 +53,11 @@ namespace matrix
 
             BIND_DECODE_INVOKER(logs_req);
             BIND_DECODE_INVOKER(logs_resp);
+
+            BIND_DECODE_INVOKER(show_req);
+            BIND_DECODE_INVOKER(show_resp);
+
+            BIND_DECODE_INVOKER(service_broadcast_req);
         }
 
         void matrix_coder::init_encode_invoker()
@@ -79,6 +84,10 @@ namespace matrix
             BIND_ENCODE_INVOKER(logs_req);
             BIND_ENCODE_INVOKER(logs_resp);
 
+            BIND_ENCODE_INVOKER(show_req);
+            BIND_ENCODE_INVOKER(show_resp);
+
+            BIND_ENCODE_INVOKER(service_broadcast_req);
         }
 
         std::shared_ptr<protocol> matrix_coder::get_protocol(int32_t type)

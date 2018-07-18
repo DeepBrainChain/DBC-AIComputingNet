@@ -18,6 +18,7 @@
 #include "connection_manager.h"
 #include "module_manager.h"
 #include "server_initiator_factory.h"
+#include "server_info.h"
 
 using namespace std;
 
@@ -80,6 +81,8 @@ namespace matrix
 
 			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
+            server_info& get_server_info() { return m_server_info; }
+			void add_service_list(std::string s)  { m_server_info.add_service_list(s); }
 
 		protected:
 
@@ -99,6 +102,7 @@ namespace matrix
 
 			idle_task_functor_type m_idle_task;
 
+			server_info m_server_info;  // provide infomation like service list, of the computer node that dbc program controlls.
 		};
 
 	}

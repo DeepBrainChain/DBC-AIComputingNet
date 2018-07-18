@@ -26,6 +26,9 @@ using namespace boost::asio;
 
 #define SHAKE_HAND_INTERVAL                             5                  //shake hand interval
 
+#define LOST_SHAKE_HAND_COUNT_MAX               3                  //max lost shake hand req
+#define DEFAULT_WAIT_VER_REQ_INTERVAL           5                   //wait VER_REQ interval while socket accepted
+
 namespace matrix
 {
     namespace service_core

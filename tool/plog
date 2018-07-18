@@ -1,0 +1,14 @@
+#!/bin/bash
+cmd=$*
+
+cd ./logs
+loglatest=`ls -t|head -1`
+
+echo $loglatest
+
+if [[ $# = 0 ]];then
+    tail $loglatest
+    exit 0
+fi
+
+exec $cmd  $loglatest

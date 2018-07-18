@@ -33,7 +33,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
 
   ai_training_task(const ai_training_task&);
   ai_training_task& operator=(const ai_training_task&);
-  ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(0), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), error_times(0), container_id(), received_time_stamp(0), status(0) {
+  ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), error_times(0), container_id(), received_time_stamp(0), status(0) {
   }
 
   virtual ~ai_training_task() throw();
@@ -43,7 +43,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   std::vector<std::string>  peer_nodes_list;
   std::string server_specification;
   int32_t server_count;
-  int32_t training_engine;
+  std::string training_engine;
   std::string code_dir;
   std::string entry_file;
   std::string data_dir;
@@ -68,7 +68,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
 
   void __set_server_count(const int32_t val);
 
-  void __set_training_engine(const int32_t val);
+  void __set_training_engine(const std::string& val);
 
   void __set_code_dir(const std::string& val);
 

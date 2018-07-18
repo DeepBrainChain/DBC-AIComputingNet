@@ -19,13 +19,14 @@ namespace matrix
     {
 
         tcp_socket_channel::tcp_socket_channel(ios_ptr ios, socket_id sid, handler_create_functor func, int32_t len)
-            : m_stopped(false)
+            : m_state(CHANNEL_ACTIVE)
             , m_ios(ios)
             , m_sid(sid)
             , m_recv_buf(len)
             , m_send_buf(new byte_buf(DEFAULT_BUF_LEN))
             , m_socket(*ios)
             , m_handler_functor(func)
+            , m_remote_node_id("")
         {
 
         }
@@ -64,11 +65,35 @@ namespace matrix
             return this->read();
         }
 
+        bool tcp_socket_channel::close()
+        {
+             m_state = CHANNEL_STOPPED; 
+             boost::system::error_code error;
+
+             //cancel
+            LOG_DEBUG << "tcp socket channel cancel socket: " << m_sid.to_string();
+            m_socket.cancel(error);
+            if (error)
+            {
+                LOG_ERROR << "tcp socket channel cancel error: " << error << m_sid.to_string();
+            }
+
+            //close
+            LOG_DEBUG << "tcp socket channel close socket: " << m_sid.to_string();
+            m_socket.close(error);
+            if (error)
+            {
+                LOG_ERROR << "tcp socket channel close error: " << error << m_sid.to_string();
+            }
+
+            return E_SUCCESS;
+        }
+
         int32_t tcp_socket_channel::stop()
         {
             LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string() << "---" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
 
-            m_stopped = true;           //notify nio call back function, now i'm stopped and should exit ASAP
+            m_state = CHANNEL_STOPPED;           //notify nio call back function, now i'm stopped and should exit ASAP
 
             boost::system::error_code error;
 
@@ -118,7 +143,7 @@ namespace matrix
 
         void tcp_socket_channel::async_read()
         {
-            if (true == m_stopped)
+            if (CHANNEL_STOPPED == m_state)
             {
                 LOG_DEBUG << "tcp socket channel has been stopped and async read exit directly: " << m_sid.to_string();
                 return;
@@ -144,7 +169,7 @@ namespace matrix
 
         void tcp_socket_channel::on_read(const boost::system::error_code& error, size_t bytes_transferred)
         {
-            if (true == m_stopped)
+            if (CHANNEL_STOPPED == m_state)
             {
                 LOG_DEBUG << "tcp socket channel has been stopped and on_read exit directly: " << m_sid.to_string();
                 return;
@@ -224,7 +249,7 @@ namespace matrix
         int32_t tcp_socket_channel::write(std::shared_ptr<message> msg)
         {
 
-            if (true == m_stopped)
+            if (CHANNEL_STOPPED == m_state)
             {
                 LOG_DEBUG << "tcp socket channel has been stopped and write exit directly: " << m_sid.to_string();
                 return E_DEFAULT;
@@ -302,7 +327,7 @@ namespace matrix
 
         void tcp_socket_channel::async_write(std::shared_ptr<byte_buf> &msg_buf)
         {
-            if (true == m_stopped)
+            if (CHANNEL_STOPPED == m_state)
             {
                 LOG_DEBUG << "tcp socket channel has been stopped and async_write exit directly: " << m_sid.to_string();
                 return;
@@ -317,7 +342,7 @@ namespace matrix
 
         void tcp_socket_channel::on_write(const boost::system::error_code& error, size_t bytes_transferred)
         {
-            if (true == m_stopped)
+            if (CHANNEL_STOPPED == m_state)
             {
                 LOG_DEBUG << "tcp socket channel has been stopped and on_write exit directly: " << m_sid.to_string();
                 return;
@@ -440,7 +465,7 @@ namespace matrix
         {
             if (nullptr == m_socket_handler
                 || false == m_socket_handler->is_logined()
-                || true == m_stopped)
+                || CHANNEL_STOPPED == m_state)
             {
                 return false;                       //not ready
             }

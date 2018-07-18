@@ -25,11 +25,14 @@
 #define GET_LOG_HEAD                                            0
 #define GET_LOG_TAIL                                            1
 
+//#define MAX_NUMBER_OF_LINES                                     500
 #define MAX_NUMBER_OF_LINES                                     100
 #define DEFAULT_NUMBER_OF_LINES                                 100
 
 #define MAX_LOG_CONTENT_SIZE                                    (8 * 1024)
 
+#define MAX_ENTRY_FILE_NAME_LEN                                 128
+#define MAX_ENGINE_IMGE_NAME_LEN                                128
 
 namespace ai
 {
@@ -49,7 +52,8 @@ namespace ai
         //__BEGIN_DECLS
 
         extern std::string to_training_task_status_string(int8_t status);
-
+        extern bool check_task_engine(std::string engine);
+        extern void set_task_engine(std::string engine);
         //__END_DECLS;
 
     }

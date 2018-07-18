@@ -108,7 +108,7 @@ namespace matrix
 
                 return E_DEFAULT;
             }
-
+			
             try
             {
                 //start run
@@ -125,11 +125,16 @@ namespace matrix
                 create_channel();
                 return E_DEFAULT;
             }
-
+			
             //add to connection manager
             int32_t ret = CONNECTION_MANAGER->add_channel(socket_channel->id(), socket_channel->shared_from_this());
-            assert(E_SUCCESS == ret);                                           //if not success, we should check whether socket id is duplicated
-
+            //assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
+            if (ret != E_SUCCESS)
+            {
+                LOG_DEBUG << "tcp acceptor abnormal." << ch->id().to_string();
+                ch->close();
+                ch->on_error();
+            }
             LOG_DEBUG << "tcp acceptor add channel to connection manager" << socket_channel->id().to_string() << " remote addr:" << socket_channel->get_remote_addr();
 
             //new channel

@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 import sys
 import unittest
+import types
 
 from pprint import pprint
 from thrift_py.matrix.ttypes import *
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 from thrift.transport.TTransport import TMemoryBuffer
+
+import ttypes_header
 
 
 # redefine STOP mark from 0x00 to 0x7f
@@ -42,21 +45,25 @@ def s_to_b(s):
     return len_, ''.join(bs)
 
 
-name_2_body ={
-    "shake_hand_req": empty,
-    "shake_hand_resp": empty,
-    "ver_req": ver_req_body,
-    "ver_resp": ver_resp_body,
-    "get_peer_nodes_req":  empty,
-    "get_peer_nodes_resp": get_peer_nodes_resp_body,
-    "peer_nodes_broadcast_req": peer_nodes_broadcast_req_body,
-    "start_training_req": start_training_req_body,
-    "stop_training_req": stop_training_req_body,
-    "list_training_req": list_training_req_body,
-    "list_training_resp": list_training_resp_body,
-    "logs_req": logs_req_body,
-    "logs_resp": logs_resp_body
-}
+# use globals() instead
+# name_2_body ={
+#     "shake_hand_req": empty,
+#     "shake_hand_resp": empty,
+#     "ver_req": ver_req_body,
+#     "ver_resp": ver_resp_body,
+#     "get_peer_nodes_req":  empty,
+#     "get_peer_nodes_resp": get_peer_nodes_resp_body,
+#     "peer_nodes_broadcast_req": peer_nodes_broadcast_req_body,
+#     "start_training_req": start_training_req_body,
+#     "stop_training_req": stop_training_req_body,
+#     "list_training_req": list_training_req_body,
+#     "list_training_resp": list_training_resp_body,
+#     "logs_req": logs_req_body,
+#     "logs_resp": logs_resp_body,
+#     "show_req": show_req_body,
+#     "show_resp": show_resp_body,
+#     "service_broadcast_req": service_broadcast_req_body
+# }
 
 
 def decode_packet_header(p):
@@ -86,7 +93,8 @@ def decode(msg):
     print "packet header: \n{   'len': %d,\n    'protocol_type': %d\n}" % (packet_header_len, protocol_type)
 
     try:
-        h = msg_header()
+        # h = msg_header()
+        h = ttypes_header.msg_header()
         h.read(p)
     except EOFError:
         print "Error: msg header decode failure"
@@ -96,21 +104,22 @@ def decode(msg):
     pprint(vars(h), indent=4)
 
     # print m._buffer.tell()  # buffer offset
-    global name_2_body
-    if name_2_body.has_key(h.msg_name):
-        t = name_2_body[h.msg_name]
-        try:
-            body = name_2_body[h.msg_name]()
-            body.read(p)
-        except EOFError:
-            print "Error: msg body decode failure"
-            return
-
-        print "body: "
-        pprint(vars(body), indent=4, width=24)
-        print
+    s = h.msg_name+"_body"
+    if s in globals():
+        t = globals()[s]
     else:
-        print "unknown msg: %s" % h.msg_name
+        t = empty
+
+    try:
+        body= t()
+        body.read(p)
+    except EOFError:
+        print "Error: msg body decode failure"
+        return
+
+    print "body: "
+    pprint(vars(body), indent=4, width=24)
+    print
 
 
 class TestDecode(unittest.TestCase):
@@ -140,6 +149,21 @@ class TestDecode(unittest.TestCase):
               ' 7F'
         decode(msg)
 
+
+    def test_service_broadcast_req(self):
+        msg = '00 00 00 B6 00 00 00 00' \
+              ' 08 00 01 E1 D1 A0 97 0B 00 02 00 00 00 15 73 65 72 76 69 63 65 5F 62 72 6F 61 64 63 61 73 74 5F 72 65 71' \
+              ' 0B 00 03 00 00 00 31 7A 31 43 47 4C 72 37 53 4E 79 6D 4D 4C 66 50 72 54 6B 79 51 71 79 4A 43 45 50 64 48 33 47 32 70 6B 77 63 45 79 56 70 78 53 4E 76 34 51 50 32 43 78 0B 00 04 00 00 00 03 31 32 33 7F' \
+              ' 0D 00 01' \
+              ' 0B 0C 00 00 00 01 00 00 00 2B' \
+              ' 32 67 66 70 70 33 4D 41 42 34 41 45 72 4E 31 62 64 7A 43 63 71 72 4B 61 4D 78 56 4B 79 48 45 73 74 58 54 52 78 45 72 39 55 66 75' \
+              ' 0F 00 01 0B 00 00 00 01 00 00 00 02 61 69 7F 7F'
+
+        decode(msg)
+
+    def test_list_training_req(self):
+        msg = '00 00 00 D8 00 00 00 00 08 00 01 E1 D1 A0 97 0B 00 02 00 00 00 11 6C 69 73 74 5F 74 72 61 69 6E 69 6E 67 5F 72 65 71 0B 00 03 00 00 00 32 32 5A 57 56 74 4E 48 41 33 6F 70 75 6B 71 55 41 79 76 43 45 45 67 4A 38 46 65 69 61 63 68 64 52 67 39 48 67 79 55 66 46 34 70 52 51 6E 66 73 63 35 6B 0B 00 04 00 00 00 31 6D 6F 52 48 6E 47 68 78 43 62 56 53 68 6A 45 54 48 68 66 77 61 68 53 65 53 33 50 39 43 33 38 31 31 53 53 33 55 52 7A 55 56 39 46 32 68 5A 42 4B 4D 7F 0F 00 01 0B 00 00 00 01 00 00 00 32 32 53 71 67 5A 71 48 45 57 34 78 73 56 64 7A 4A 48 46 53 46 39 56 41 6F 39 4C 4A 4D 68 36 36 68 56 57 73 6F 33 4E 47 36 6F 63 7A 56 45 52 64 67 45 38 7F'
+        decode(msg)
 
 if __name__=="__main__":
     msg = load_msg()
