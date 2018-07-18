@@ -50,7 +50,7 @@ namespace matrix
                 live_time_stamp = info.live_time_stamp;
                 net_st = -1;
                 addr.ip = info.addr.ip;
-                addr.port = info.addr.port;
+                addr.port = (uint16_t)info.addr.port;
                 //node_type = info.
                 service_list = info.service_list;
                 return *this;

@@ -138,7 +138,7 @@ namespace matrix
                 LOG_ERROR << "tcp connector on connect failed, addr: " << m_connect_addr
                     << ", start " << m_reconnect_times << " times to reconnect" 
                     << ", reconnect seconds: " << interval << ", "
-                    << errorinfo << ", "
+                    << errorinfo
                     << m_sid.to_string();                
 
                 assert(nullptr != m_reconnect_timer_handler);
@@ -147,11 +147,10 @@ namespace matrix
             }
             else
             {
-                LOG_INFO << "Reach reconnect threshold. " <<
-                             " address: " << m_connect_addr <<
-                             " , reconnect times: " << m_reconnect_times <<
-                             errorinfo <<
-                             " , " << m_sid.to_string() ;
+                LOG_ERROR << "Reach reconnect threshold. " 
+                    << "address: " << m_connect_addr 
+                    << ", reconnect times: " << m_reconnect_times << ", "
+                    << errorinfo << m_sid.to_string();
 
                 //not reconnect, just notification
                 connect_notification(CLIENT_CONNECT_FAIL);
@@ -170,7 +169,7 @@ namespace matrix
                                 
                 //modify by regulus: fix connect crash
                 ostringstream errorinfo;
-                errorinfo << ", error: " << error.value() << " " << error.message();
+                errorinfo << "error: " << error.value() << " " << error.message();
                 reconnect(errorinfo.str());
 
                 return;
