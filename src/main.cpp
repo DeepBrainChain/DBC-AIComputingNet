@@ -45,10 +45,14 @@ int pre_main_task()
     server_start_time = high_resolution_clock::now();
 
     //init log
-    log::init();
+    int32_t ret = log::init();
+    if (ret != E_SUCCESS)
+    {
+        return ret;
+    }
 
     //bind init creator
-    LOG_DEBUG << "------dbc is starting------";
+    LOG_INFO << "------dbc is starting------";
     server_initiator_factory::bind_creator(create_functor_type(create_initiator));
 
     return 0;
@@ -56,7 +60,11 @@ int pre_main_task()
 
 int main(int argc, char* argv[])
 {
-    pre_main_task();
+    int32_t ret = pre_main_task();
+    if (ret != E_SUCCESS)
+    {
+        return ret;
+    }
     
     return main_task(argc, argv);
 }

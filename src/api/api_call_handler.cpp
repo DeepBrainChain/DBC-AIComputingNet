@@ -27,6 +27,9 @@ namespace ai
             TOPIC_MANAGER->subscribe(typeid(cmd_list_training_resp).name(), [this](std::shared_ptr<cmd_list_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_resp).name(), [this](std::shared_ptr<cmd_get_peer_nodes_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_logs_resp).name(), [this](std::shared_ptr<cmd_logs_resp> &rsp) {m_resp = rsp; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_show_resp).name(), [this](std::shared_ptr<cmd_show_resp> &rsp) {m_resp = rsp; m_wait->set(); });
+            //TOPIC_MANAGER->subscribe(typeid(cmd_clear_resp).name(), [this](std::shared_ptr<cmd_clear_resp> &rsp) {m_resp = rsp; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_ps_resp).name(), [this](std::shared_ptr<cmd_ps_resp> &rsp) {m_resp = rsp; m_wait->set(); });
         }
 
     }

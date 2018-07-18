@@ -16,7 +16,7 @@
 
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
-
+#include "error/en.h"
 
 namespace matrix
 {
@@ -48,6 +48,8 @@ namespace matrix
 
             //req content, headers, resp
             std::string && req_content = config->to_string();
+
+            LOG_DEBUG<<"req_content:" << req_content;
             
             kvs headers;
             headers.push_back({"Content-Type", "application/json"});
@@ -68,7 +70,7 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
-                LOG_DEBUG << "create container failed: " <<  resp.body;
+                LOG_DEBUG << "create container failed: " <<  resp.body << " name:" << name;
                 return nullptr;
             }
 
@@ -122,15 +124,18 @@ namespace matrix
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                //rapidjson::Document doc;
-                //doc.Parse<0>(resp.body.c_str());
+                rapidjson::Document doc;
+                if (!doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    //message
+                    if (doc.HasMember("message"))
+                    {
+                        rapidjson::Value &message = doc["message"];
+                        LOG_ERROR << "start container message: " << message.GetString();
+                    }
 
-                ////message
-                //if (doc.HasMember("message"))
-                //{
-                //    rapidjson::Value &message = doc["message"];
-                //    LOG_ERROR << "start container message: " << message.GetString();
-                //}
+                }
+
                 return ret;
             }
 
@@ -243,7 +248,12 @@ namespace matrix
             {
                 //parse resp
                 rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //doc.Parse<0>(resp.body.c_str());
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse wait_container file error:" << GetParseError_En(doc.GetParseError());
+                    return E_DEFAULT;
+                }
 
                 //StatusCode
                 if (! doc.HasMember("StatusCode"))
@@ -360,7 +370,12 @@ namespace matrix
             else
             {
                 rapidjson::Document doc;
-                doc.Parse<0>(resp.body.c_str());
+                //doc.Parse<0>(resp.body.c_str());
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
+                    return nullptr;
+                }
 
                 std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
 

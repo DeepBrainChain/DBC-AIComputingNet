@@ -3,35 +3,11 @@
 SET(OUTPUT_NAME dbc)
 
 #path setting
-SET(HOME_PATH .)
-SET(SRC_PATH ../../src)
+SET(HOME_PATH ${CMAKE_SOURCE_DIR})
+SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
 #include directory
 INCLUDE_DIRECTORIES(
-        ${SRC_PATH}/core/alarm
-        ${SRC_PATH}/core/codec
-        ${SRC_PATH}/core/common
-        ${SRC_PATH}/core/conf
-        ${SRC_PATH}/core/conf/validator
-        ${SRC_PATH}/core/container
-        ${SRC_PATH}/core/crypto
-        ${SRC_PATH}/core/data_structure
-        ${SRC_PATH}/core/env
-        ${SRC_PATH}/core/initiator
-        ${SRC_PATH}/core/log
-        ${SRC_PATH}/core/math
-        ${SRC_PATH}/core/memory
-        ${SRC_PATH}/core/module
-        ${SRC_PATH}/core/monitor
-        ${SRC_PATH}/core/mutex
-        ${SRC_PATH}/core/network
-        ${SRC_PATH}/core/sem
-        ${SRC_PATH}/core/service_bus
-        ${SRC_PATH}/core/service_module
-        ${SRC_PATH}/core/service_module/pc
-        ${SRC_PATH}/core/storage
-        ${SRC_PATH}/core/timer_service
-
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/db/
         ${SRC_PATH}/3rd/network/libevent
@@ -42,22 +18,26 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/network/rapidjson
         ${SRC_PATH}/3rd/network/rapidjson/internal
         ${SRC_PATH}/3rd/network/rapidjson/error
+        ${SRC_PATH}/core
 )
 
 
 # all sub folders under core/
 set(SRC_FOLDER_LIST alarm codec common conf conf/validataor
         crypto container data_structure env
-        initiator log math memory module monitor mutext
+        initiator log math memory module monitor mutex
         network sem service_bus service_module
-        service_module/pc storage timer_service)
+        service_module/pc storage timer_service filter)
 
 set(SRC_LIST)
 
 foreach(f ${SRC_FOLDER_LIST})
-#    message(STATUS ${f})
+    message(STATUS ${f})
     AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/${f} tmp)
     list(APPEND SRC_LIST ${tmp})
+
+    INCLUDE_DIRECTORIES(  ${SRC_PATH}/core/${f})
+
 endforeach()
 
 

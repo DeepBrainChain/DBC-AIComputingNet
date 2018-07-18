@@ -79,6 +79,10 @@ namespace ai
             //cmd logs req
             SUBSCRIBE_BUS_MESSAGE(typeid(cmd_logs_req).name());
 
+            //cmd logs req
+            //SUBSCRIBE_BUS_MESSAGE(typeid(cmd_clear_req).name());
+            
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_ps_req).name());
             //list training resp
             SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_RESP);
 
@@ -96,6 +100,9 @@ namespace ai
             BIND_MESSAGE_INVOKER(typeid(cmd_list_training_req).name(), &ai_power_requestor_service::on_cmd_list_training_req);
             BIND_MESSAGE_INVOKER(typeid(cmd_logs_req).name(), &ai_power_requestor_service::on_cmd_logs_req);
 
+            //BIND_MESSAGE_INVOKER(typeid(cmd_clear_req).name(), &ai_power_requestor_service::on_cmd_clear);
+            BIND_MESSAGE_INVOKER(typeid(cmd_ps_req).name(), &ai_power_requestor_service::on_cmd_ps);
+
             BIND_MESSAGE_INVOKER(LIST_TRAINING_RESP, &ai_power_requestor_service::on_list_training_resp);
             BIND_MESSAGE_INVOKER(LOGS_RESP, &ai_power_requestor_service::on_logs_resp);
 
@@ -109,32 +116,47 @@ namespace ai
 
             //get db path
             fs::path task_db_path = env_manager::get_db_path();
-            if (false == fs::exists(task_db_path))
+            try
             {
-                LOG_DEBUG << "db directory path does not exist and create db directory";
-                fs::create_directory(task_db_path);
-            }
+                if (false == fs::exists(task_db_path))
+                {
+                    LOG_DEBUG << "db directory path does not exist and create db directory";
+                    fs::create_directory(task_db_path);
+                }
 
-            //check db directory
-            if (false == fs::is_directory(task_db_path))
+                //check db directory
+                if (false == fs::is_directory(task_db_path))
+                {
+                    LOG_ERROR << "db directory path does not exist and exit";
+                    return E_DEFAULT;
+                }
+
+                task_db_path /= fs::path("req_training_task.db");
+                LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
+
+                //open db
+                leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
+
+
+                if (false == status.ok())
+                {
+                    LOG_ERROR << "ai power requestor service init training task db error: " << status.ToString();
+                    return E_DEFAULT;
+                }
+
+                //smart point auto close db
+                m_req_training_task_db.reset(db);
+            }
+            catch (const std::exception & e)
             {
-                LOG_ERROR << "db directory path does not exist and exit";
+                LOG_ERROR << "create task req db error: " << e.what();
                 return E_DEFAULT;
             }
-
-            task_db_path /= fs::path("req_training_task.db");
-            LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
-
-            //open db
-            leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
-            if (false == status.ok())
+            catch (const boost::exception & e)
             {
-                LOG_ERROR << "ai power requestor service init training task db error: " << status.ToString();
+                LOG_ERROR << "create task req db error" << diagnostic_information(e);
                 return E_DEFAULT;
             }
-
-            //smart point auto close db
-            m_req_training_task_db.reset(db);
 
             return E_SUCCESS;
         }
@@ -182,17 +204,17 @@ namespace ai
             bpo::options_description task_config_opts("task config file options");
             task_config_opts.add_options()
                 ("task_id", bpo::value<std::string>(), "")
-                ("select_mode", bpo::value<int8_t>()->default_value(0), "")
-                ("master", bpo::value<std::string>(), "")
+                ("select_mode", bpo::value<int8_t>(), "")
+                ("master", bpo::value<std::string>()->default_value(""), "")
                 ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
-                ("server_specification", bpo::value<std::string>(), "")
-                ("server_count", bpo::value<int32_t>(), "")
-                ("training_engine", bpo::value<int32_t>(), "")
+                ("server_specification", bpo::value<std::string>()->default_value(""), "")
+                ("server_count", bpo::value<int32_t>()->default_value(0), "")
+                ("training_engine", bpo::value<std::string>(), "")
                 ("code_dir", bpo::value<std::string>(), "")
                 ("entry_file", bpo::value<std::string>(), "")
-                ("data_dir", bpo::value<std::string>(), "")
-                ("checkpoint_dir", bpo::value<std::string>(), "")
-                ("hyper_parameters", bpo::value<std::string>(), "");
+                ("data_dir", bpo::value<std::string>()->default_value(""), "")
+                ("checkpoint_dir", bpo::value<std::string>()->default_value(""), "")
+                ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
 
             try
             {
@@ -211,14 +233,14 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (0 == vm.count("master") || vm["master"].as<std::string>().empty())
+            /*if (0 == vm.count("master") || vm["master"].as<std::string>().empty())
             {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "ai training task config file's option master node is empty";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
-            }
+            }*/
 
             if (0 == vm.count("entry_file") || vm["entry_file"].as<std::string>().empty())
             {
@@ -232,20 +254,20 @@ namespace ai
             if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
             {
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "entry_file name is not valid or entry_file is not .py file type ";
+                cmd_resp->result_info = "entry_file name is not valid ";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
             }
 
-            if (0 == vm.count("data_dir") || vm["data_dir"].as<std::string>().empty())
+            /*if (0 == vm.count("data_dir") || vm["data_dir"].as<std::string>().empty())
             {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "ai training task config file's option data_dir is empty";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
-            }
+            }*/
 
             if (0 == vm.count("code_dir") || vm["code_dir"].as<std::string>().empty())
             {
@@ -256,11 +278,19 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (E_SUCCESS != validate_ipfs_path(vm["code_dir"].as<std::string>())
-                || E_SUCCESS != validate_ipfs_path(vm["data_dir"].as<std::string>()))
+            if (E_SUCCESS != validate_ipfs_path(vm["code_dir"].as<std::string>()))
             {
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "code_dir or data_dir path is not valid";
+                cmd_resp->result_info = "code_dir path is not valid";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+            if (0 != vm.count("data_dir") && !vm["data_dir"].as<std::string>().empty() && E_SUCCESS != validate_ipfs_path(vm["data_dir"].as<std::string>()))
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "data_dir path is not valid";
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
@@ -276,7 +306,7 @@ namespace ai
             }
 
             const std::vector<std::string> & peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
-            std::vector<unsigned char> vch;
+
             for (auto &node_id : peer_nodes_list)
             {
                 if (false == id_generator().check_base58_id(node_id))
@@ -299,6 +329,16 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if (check_task_engine(vm["training_engine"].as<std::string>()) != true)
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "training_engine format is not correct ";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+
+
             //prepare broadcast req
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
@@ -314,7 +354,8 @@ namespace ai
             broadcast_req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
             broadcast_req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
             broadcast_req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
-            broadcast_req_content->body.__set_training_engine(vm["training_engine"].as<int32_t>());
+            
+            broadcast_req_content->body.__set_training_engine(vm["training_engine"].as<std::string>());
             broadcast_req_content->body.__set_code_dir(vm["code_dir"].as<std::string>());
             broadcast_req_content->body.__set_entry_file(vm["entry_file"].as<std::string>());
             broadcast_req_content->body.__set_data_dir(vm["data_dir"].as<std::string>());
@@ -326,7 +367,13 @@ namespace ai
 
             LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
 
-            CONNECTION_MANAGER->broadcast_message(req_msg);
+            if (CONNECTION_MANAGER->broadcast_message(req_msg) != E_SUCCESS)
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "submit error. pls check network";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
 
             //peer won't reply, so public resp directly
             cmd_resp->result = E_SUCCESS;
@@ -342,16 +389,16 @@ namespace ai
         int32_t ai_power_requestor_service::validate_cmd_training_task_conf(const bpo::variables_map &vm)
         {
             if (0 == vm.count("select_mode")
-                || 0 == vm.count("master")
+                //|| 0 == vm.count("master")
                 || 0 == vm.count("peer_nodes_list")
-                || 0 == vm.count("server_specification")
-                || 0 == vm.count("server_count")
+                //|| 0 == vm.count("server_specification")
+                //|| 0 == vm.count("server_count")
                 || 0 == vm.count("training_engine")
                 || 0 == vm.count("code_dir")
                 || 0 == vm.count("entry_file")
-                || 0 == vm.count("data_dir")
-                || 0 == vm.count("checkpoint_dir")
-                || 0 == vm.count("hyper_parameters")
+                //|| 0 == vm.count("data_dir")
+                //|| 0 == vm.count("checkpoint_dir")
+                //|| 0 == vm.count("hyper_parameters")
                 )
             {
                 return E_DEFAULT;
@@ -372,12 +419,13 @@ namespace ai
 
         int32_t ai_power_requestor_service::validate_entry_file_name(const std::string &entry_file_name)
         {
-            cregex reg = cregex::compile("(^[a-zA-Z_0-9].*.py$)");
+            /*cregex reg = cregex::compile("(^[0-9a-zA-Z]{1,}[-_]{0,}[0-9a-zA-Z]{0,}.py$)");
             if (regex_match(entry_file_name.c_str(), reg))
             {
                 return E_SUCCESS;
-            }
-            return E_DEFAULT;
+            }*/
+            //return E_DEFAULT;
+            return E_SUCCESS;
         }
 
         int32_t ai_power_requestor_service::on_cmd_start_multi_training_req(std::shared_ptr<message> &msg)
@@ -448,6 +496,14 @@ namespace ai
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
+
+            if (!CONNECTION_MANAGER->have_active_channel())
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "dbc node do not connect to network, pls check.";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_multi_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
             
             //send to net
             for (auto &file : files) 
@@ -480,7 +536,15 @@ namespace ai
                 }
                 else
                 {
-                    CONNECTION_MANAGER->broadcast_message(req_msg);
+                    if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
+                    {
+                        ai::dbc::cmd_task_info task_info;
+                        task_info.create_time = time(nullptr);
+                        task_info.result = file + "broad cast error.";
+
+                        cmd_resp->task_info_list.push_back(task_info);
+                        continue;
+                    }
 
                     std::shared_ptr<matrix::service_core::start_training_req> req_content = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(req_msg->content);
                     assert(nullptr != req_content);
@@ -542,12 +606,18 @@ namespace ai
 
             req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
-            CONNECTION_MANAGER->broadcast_message(req_msg);
 
-            //there's no reply, so public resp directly
             std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
+            
+            if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
+            {
+                cmd_resp->result = E_INACTIVE_CHANNEL;
+                cmd_resp->result_info = "dbc node don't connect to network, pls check ";
+            }
+
+            //there's no reply, so public resp directly            
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
 
             return E_SUCCESS;
@@ -610,6 +680,11 @@ namespace ai
             req_content->header.__set_msg_name(LIST_TRAINING_REQ);
             req_content->header.__set_nonce(id_generator().generate_nonce());
             req_content->header.__set_session_id(id_generator().generate_session_id());
+
+            //for efficient resp msg transport
+            std::vector<std::string> path;
+            path.push_back(CONF_MANAGER->get_node_id());
+            req_content->header.__set_path(path);
 
             //body
             for (auto info : vec_task_infos)
@@ -684,6 +759,14 @@ namespace ai
             task_ids.value() = std::make_shared<std::unordered_map<std::string, int8_t>>();
             session->get_context().add("task_ids", task_ids);
 
+            if (!CONNECTION_MANAGER->have_active_channel())
+            {
+                cmd_resp->result = E_INACTIVE_CHANNEL;
+                cmd_resp->result_info = "dbc node do not connect to network, pls check.";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
             //add to session
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
@@ -732,7 +815,7 @@ namespace ai
                 LOG_DEBUG << "ai power requster service on_list_training_resp. nonce error ";
                 return E_DEFAULT;
             }
-            
+
             if (id_generator().check_base58_id(rsp_content->header.session_id) != true)
             {
                 LOG_DEBUG << "ai power requster service on_list_training_resp. session_id error ";
@@ -740,7 +823,7 @@ namespace ai
             }
 
             //broadcast resp
-            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+            CONNECTION_MANAGER->send_resp_message(msg, msg->header.src_sid);
 
             //get session
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
@@ -935,7 +1018,7 @@ namespace ai
                 req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
                 req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
                 req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
-                req_content->body.__set_training_engine(vm["training_engine"].as<int32_t>());
+                req_content->body.__set_training_engine(vm["training_engine"].as<std::string>());
                 req_content->body.__set_code_dir(vm["code_dir"].as<std::string>());
                 req_content->body.__set_entry_file(vm["entry_file"].as<std::string>());
                 req_content->body.__set_data_dir(vm["data_dir"].as<std::string>());
@@ -1172,6 +1255,11 @@ namespace ai
             req_content->header.__set_nonce(id_generator().generate_nonce());
             req_content->header.__set_session_id(id_generator().generate_session_id());
 
+            //for efficient resp msg transport
+            std::vector<std::string> path;
+            path.push_back(CONF_MANAGER->get_node_id());
+            req_content->header.__set_path(path);
+
             req_content->body.__set_task_id(cmd_req->task_id);
             //req_content->body.peer_nodes_list
             req_content->body.__set_head_or_tail(cmd_req->head_or_tail);
@@ -1191,6 +1279,14 @@ namespace ai
             variable_value val;
             val.value() = req_msg;
             session->get_context().add("req_msg", val);
+
+            if (!CONNECTION_MANAGER->have_active_channel())
+            {
+                cmd_resp->result = E_INACTIVE_CHANNEL;
+                cmd_resp->result_info = "dbc node do not connect to network, pls check.";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
 
             //add to session
             int32_t ret = this->add_session(session->get_session_id(), session);
@@ -1251,7 +1347,7 @@ namespace ai
                 LOG_DEBUG << "ai power requestor service get session null: " << rsp_content->header.session_id;
 
                 //broadcast resp
-                CONNECTION_MANAGER->broadcast_message(msg);
+                CONNECTION_MANAGER->send_resp_message(msg);
 
                 return E_SUCCESS;
             }
@@ -1264,6 +1360,7 @@ namespace ai
             cmd_peer_node_log log;
             log.peer_node_id = rsp_content->body.log.peer_node_id;
             log.log_content = std::move(rsp_content->body.log.log_content);
+
 
             cmd_resp->peer_node_logs.push_back(std::move(log));
 
@@ -1309,5 +1406,70 @@ namespace ai
             return E_SUCCESS;
         }
 
+        //int32_t ai_power_requestor_service::on_cmd_clear(const std::shared_ptr<message> &msg)
+        //{
+        //    fs::path task_db_path = env_manager::get_db_path();
+        //    leveldb::Options options;
+        //    
+        //    options.create_if_missing = true;
+        //    task_db_path /= fs::path("req_training_task.db");
+        //    
+        //    if (true == fs::is_directory(task_db_path))
+        //    {
+        //        leveldb::Status s = leveldb::DestroyDB(task_db_path.generic_string(), options);
+
+        //        if (false == s.ok())
+        //        {
+        //            LOG_DEBUG << "ai power requestor service get logs timer time out remove session: ";
+        //        }
+        //    }           
+
+        //    //publish cmd resp
+        //    std::shared_ptr<ai::dbc::cmd_clear_resp> cmd_resp = std::make_shared<ai::dbc::cmd_clear_resp>();
+
+
+        //    //return cmd resp
+        //    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_clear_resp).name(), cmd_resp);
+
+        //    return E_SUCCESS;
+        //}
+
+        int32_t ai_power_requestor_service::on_cmd_ps(const std::shared_ptr<message> &msg)
+        {
+            if (!msg)
+            {
+                LOG_ERROR << "recv logs_resp but msg is nullptr";
+                return E_DEFAULT;
+            }
+           
+            auto cmd_req = std::dynamic_pointer_cast<cmd_ps_req>(msg->get_content());
+            if (!cmd_req)
+            {
+                LOG_ERROR << "recv logs_resp but ctn is nullptr";
+                return E_DEFAULT;
+            }
+            std::vector<ai::dbc::cmd_task_info>  task_infos;
+            if (cmd_req->task_id == "all")
+            {
+                read_task_info_from_db(task_infos);
+            }
+            else
+            {
+                std::vector<std::string> vec;
+                string_util::split(cmd_req->task_id, ",", vec);
+                std::list<std::string> task_ids;
+                std::copy(vec.begin(), vec.end(), std::back_inserter(task_ids));
+                read_task_info_from_db(task_ids, task_infos);
+            }
+            
+
+            //publish cmd resp
+            std::shared_ptr<ai::dbc::cmd_ps_resp> cmd_resp = std::make_shared<ai::dbc::cmd_ps_resp>();
+            cmd_resp->task_infos = task_infos;
+            //return cmd resp
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_ps_resp).name(), cmd_resp);
+
+            return E_SUCCESS;
+        }
     }//service_core
 }

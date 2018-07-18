@@ -26,7 +26,7 @@ namespace matrix
             stdin_once = false;
 
             memory_limit = 0;
-            memory_swap = 0;
+            //memory_swap = 0;
             cup_shares = 0;
 
             attach_stdin = false;
@@ -49,9 +49,9 @@ namespace matrix
             root.AddMember("Tty", tty, allocator);
             root.AddMember("OpenStdin", stdin_open, allocator);
             root.AddMember("StdinOnce", stdin_once, allocator);
-            root.AddMember("Memory", memory_limit, allocator);
-            root.AddMember("MemorySwap", memory_swap, allocator);
-            root.AddMember("CpuShares", cup_shares, allocator);
+            //root.AddMember("Memory", memory_limit, allocator);
+            //root.AddMember("MemorySwap", memory_swap, allocator);
+            //root.AddMember("CpuShares", cup_shares, allocator);
             root.AddMember("AttachStdin", attach_stdin, allocator);
             root.AddMember("AttachStdout", attach_stdout, allocator);
             root.AddMember("AttachStderr", attach_stderr, allocator);
@@ -162,11 +162,12 @@ namespace matrix
                 json_mount.AddMember("Type", STRING_REF(it->type), allocator);
                 json_mount.AddMember("Name", STRING_REF(it->name), allocator);
                 json_mount.AddMember("Source", STRING_REF(it->source), allocator);
-                json_mount.AddMember("Destination", STRING_REF(it->destination), allocator);
-                json_mount.AddMember("Driver", STRING_REF(it->driver), allocator);
-                json_mount.AddMember("Mode", STRING_REF(it->mode), allocator);
-                json_mount.AddMember("RW", it->rw, allocator);
-                json_mount.AddMember("Propagation", STRING_REF(it->propagation), allocator);
+                //json_mount.AddMember("Destination", STRING_REF(it->destination), allocator);
+                json_mount.AddMember("Tag", STRING_REF(it->tag), allocator);
+                //json_mount.AddMember("Driver", STRING_REF(it->driver), allocator);
+                //json_mount.AddMember("Mode", STRING_REF(it->mode), allocator);
+                //json_mount.AddMember("RW", it->rw, allocator);
+                //json_mount.AddMember("Propagation", STRING_REF(it->propagation), allocator);
 
                 json_mounts.PushBack(json_mount.Move(), allocator);
             }
@@ -187,6 +188,29 @@ namespace matrix
 
             //json_host_config: publish_all_ports
             json_host_config.AddMember("PublishAllPorts", host_config.publish_all_ports, allocator);
+
+            //json_host_config: Memory
+            json_host_config.AddMember("Memory", host_config.memory, allocator);
+
+            //json_host_config: MemorySwap
+            json_host_config.AddMember("MemorySwap", host_config.memory_swap, allocator);
+
+            json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
+
+            json_host_config.AddMember("ShmSize", host_config.share_memory, allocator);
+
+
+            rapidjson::Value json_ulimts(rapidjson::kArrayType);
+            for (auto it = host_config.ulimits.begin(); it != host_config.ulimits.end(); it++)
+            {
+                rapidjson::Value json_limt(rapidjson::kObjectType);
+                json_limt.AddMember("Name", STRING_REF(it->m_name), allocator);
+                json_limt.AddMember("Hard", it->m_hard, allocator);
+                json_limt.AddMember("Soft", it->m_soft, allocator);                
+                json_ulimts.PushBack(json_limt.Move(), allocator);
+            }
+            
+            json_host_config.AddMember("Ulimits", json_ulimts, allocator);
 
             //json_host_config: dns
 
@@ -210,11 +234,13 @@ namespace matrix
                 //parse resp
                 rapidjson::Document doc;
                 //doc.Parse<0>(buf.c_str());
+
                 if (doc.Parse<0>(buf.c_str()).HasParseError())
                 {
-                    LOG_ERROR << "parse peer_candidates file error:" << GetParseError_En(doc.GetParseError());
-                    return;
+                    LOG_ERROR << "parse container_create_resp file error:" << GetParseError_En(doc.GetParseError());
+                    return ;
                 }
+
                 //id
                 if (false == doc.HasMember("Id"))
                 {
@@ -251,8 +277,12 @@ namespace matrix
             try
             {
                 rapidjson::Document doc;
-                doc.Parse<0>(buf.c_str());              //left to later not all fields set
-
+                //doc.Parse<0>(buf.c_str());              //left to later not all fields set
+                if (doc.Parse<0>(buf.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse container_inspect_response file error:" << GetParseError_En(doc.GetParseError());
+                    return;
+                }
                 //message
                 if (!doc.HasMember("State"))
                 {

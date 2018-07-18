@@ -69,7 +69,14 @@ namespace matrix
             //login success and not stopped, channel is ok to send normal service message
             bool is_channel_ready();
 
-            bool is_stopped() { return m_stopped; }
+            bool is_stopped() { return m_state == CHANNEL_STOPPED; }
+
+            bool close();
+
+            channel_state get_state() {return m_state;}
+
+            void set_remote_node_id(std::string node_id) {m_remote_node_id = node_id;}
+            std::string get_remote_node_id() {return m_remote_node_id;}
 
         protected:
 
@@ -87,7 +94,7 @@ namespace matrix
             
         protected:
 
-            bool m_stopped;
+            channel_state m_state;
 
             ios_ptr m_ios;
 
@@ -110,6 +117,8 @@ namespace matrix
 			tcp::endpoint m_local_addr;
 			
             handler_create_functor m_handler_functor;
+
+            std::string m_remote_node_id; //used for efficient query response transport
 
         };
 

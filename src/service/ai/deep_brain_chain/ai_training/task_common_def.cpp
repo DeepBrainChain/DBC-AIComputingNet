@@ -9,13 +9,13 @@
 **********************************************************************************/
 
 #include "task_common_def.h"
-
+#include <boost/xpressive/xpressive_dynamic.hpp>  
 
 namespace ai
 {
     namespace dbc
     {
-
+        using namespace boost::xpressive;
         std::string to_training_task_status_string(int8_t status)
         {
             switch (status)
@@ -35,6 +35,30 @@ namespace ai
             default:
                 return DEFAULT_STRING;
             }
+        }
+        std::string engine_reg;
+        bool check_task_engine(std::string engine)
+        {
+            if (engine_reg.empty())
+            {
+                return true;
+            }
+            try 
+            {
+                cregex reg = cregex::compile(engine_reg);
+                return regex_match(engine.c_str(), reg);
+            }
+            catch (...)
+            {
+                return false;
+            }
+            
+            return false;
+        }
+
+        void set_task_engine(std::string engine)
+        {
+            engine_reg = engine;
         }
 
     }

@@ -1,1 +1,1 @@
-__all__ = ['ttypes', 'constants', 'dbc_service']
+__all__ = ['ttypes', 'constants']
