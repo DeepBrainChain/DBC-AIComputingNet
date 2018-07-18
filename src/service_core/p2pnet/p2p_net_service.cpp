@@ -35,7 +35,9 @@ using namespace boost::asio::ip;
 using namespace matrix::core;
 
 const uint32_t max_reconnect_times = 1;
-const uint32_t max_connected_cnt = 8;
+//const uint32_t max_connected_cnt = 8;
+const uint32_t max_connected_cnt =MAX_OUTBOUND_CONNECTIONS;
+
 const uint32_t max_connect_per_check = 16;
 
 
@@ -133,35 +135,48 @@ namespace matrix
             leveldb::DB *db = nullptr;
             leveldb::Options options;
             options.create_if_missing = true;
-
-            //get db path
-            fs::path task_db_path = env_manager::get_db_path();
-            if (false == fs::exists(task_db_path))
+            try
             {
-                LOG_DEBUG << "db directory path does not exist and create db directory";
-                fs::create_directory(task_db_path);
+                //get db path
+                fs::path task_db_path = env_manager::get_db_path();
+                if (false == fs::exists(task_db_path))
+                {
+                    LOG_DEBUG << "db directory path does not exist and create db directory";
+                    fs::create_directory(task_db_path);
+                }
+
+                //check db directory
+                if (false == fs::is_directory(task_db_path))
+                {
+                    LOG_ERROR << "db directory path does not exist and exit";
+                    return E_DEFAULT;
+                }
+
+                task_db_path /= fs::path("peers.db");
+                LOG_DEBUG << "peers db path: " << task_db_path.generic_string();
+
+                //open db
+                leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
+                if (false == status.ok())
+                {
+                    LOG_ERROR << "p2p net service init peers db error: " << status.ToString();
+                    return E_DEFAULT;
+                }
+
+                //smart point auto close db
+                m_peers_db.reset(db);
             }
-
-            //check db directory
-            if (false == fs::is_directory(task_db_path))
+            catch (const std::exception & e)
             {
-                LOG_ERROR << "db directory path does not exist and exit";
+                LOG_ERROR << "create p2p db error: " << e.what();
+                return E_DEFAULT;
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "create p2p db error" << diagnostic_information(e);
                 return E_DEFAULT;
             }
 
-            task_db_path /= fs::path("peers.db");
-            LOG_DEBUG << "peers db path: " << task_db_path.generic_string();
-
-            //open db
-            leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
-            if (false == status.ok())
-            {
-                LOG_ERROR << "p2p net service init peers db error: " << status.ToString();
-                return E_DEFAULT;
-            }
-
-            //smart point auto close db
-            m_peers_db.reset(db);
             
             return E_SUCCESS;
         }
@@ -174,7 +189,7 @@ namespace matrix
             int32_t ret = E_SUCCESS;
 
             //net
-            LOG_DEBUG << "p2p net service init net, ip: " << m_host_ip << " port: " << m_net_listen_port;
+            LOG_INFO << "p2p net service init net, ip: " << m_host_ip << " port: " << m_net_listen_port;
             ret = CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
             if (E_SUCCESS != ret)
             {
@@ -717,6 +732,8 @@ namespace matrix
                 return false;
             }
 
+            ptr_tcp_ch->set_remote_node_id(nid); //set remote node id of the tcp channel, and the node id will be used for efficient resp message transport.
+
             std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
             node->m_id = nid;
             node->m_sid = sid;
@@ -870,7 +887,7 @@ namespace matrix
             {
                 LOG_ERROR << "p2p net service on ver resp get channel error," << msg->header.src_sid.to_string() << "node id: " << resp_content->body.node_id;
                 return E_DEFAULT;
-            }            
+            }
 
             auto candidate = get_peer_candidate(tcp_ch->get_remote_addr());
             if (nullptr != candidate)
@@ -915,7 +932,7 @@ namespace matrix
 
             tcp::endpoint local_ep = tcp_ch->get_local_addr();
             advertise_local(local_ep, msg->header.src_sid);            //advertise local self address to neighbor peer node
-            
+
             return E_SUCCESS;
         }
 
@@ -979,7 +996,7 @@ namespace matrix
             auto candidate = get_peer_candidate(notification_content->ep);
             if (nullptr == candidate)
             {
-                LOG_ERROR << "a client tcp connection established, but not in peer candidate: " 
+                LOG_ERROR << "a client tcp connection established, but not in peer candidate: "
                     << notification_content->ep.address() << ":" << notification_content->ep.port();
                 CONNECTION_MANAGER->release_connector(msg->header.src_sid);
                 CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
@@ -1188,10 +1205,16 @@ namespace matrix
 
                     //find in neighbor node
                     //if (nullptr != get_peer_node(node.peer_node_id))           //neighbor node already existed
-                    //{                    
+                    //{
                     //    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     //    return E_SUCCESS;
                     //}
+
+                    if (net_address::is_rfc1918(ep))
+                    {
+                        LOG_ERROR << "Peer Ip address is RFC1918 prive network. ip: " << ep.address().to_string();
+                        return false;
+                    }
 
                     //add to peer candidates
                     if (false == add_peer_candidate(ep, ns_available, NORMAL_NODE))
@@ -1207,7 +1230,7 @@ namespace matrix
                 }
                 catch (boost::system::system_error e)
                 {
-                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << (uint16_t)node.addr.port 
+                    LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << (uint16_t)node.addr.port
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string()
                         << e.what();
                     return E_DEFAULT;
@@ -1228,13 +1251,28 @@ namespace matrix
                     LOG_DEBUG << "p2p net service received peer node: " << ", recv a peer: " << it->addr.ip << ":" << (uint16_t)it->addr.port
                         << ", node_id: " << it->peer_node_id << msg->header.src_sid.to_string();
                     
+                    if (net_address::is_rfc1918(ep))
+                    {
+                        LOG_ERROR << "Peer Ip address is RFC1918 prive network. ip: " << ep.address().to_string();
+                        continue;
+                    }
+
                     //is in list
                     auto candidate = get_peer_candidate(ep);
                     if (nullptr == candidate)
                     {
-                        std::shared_ptr<peer_candidate> pc = std::make_shared<peer_candidate>(ep, ns_idle);
-                        pc->node_id = it->peer_node_id;
-                        m_peer_candidates.push_back(pc);
+                        //std::shared_ptr<peer_candidate> pc = std::make_shared<peer_candidate>(ep, ns_idle);
+                        //pc->node_id = it->peer_node_id;
+                        //m_peer_candidates.push_back(pc);
+                        if (false == add_peer_candidate(ep, ns_idle, NORMAL_NODE))
+                        {
+                            LOG_DEBUG << "p2p net service add peer candidate error: " << ep;
+                        }
+                        else
+                        {
+
+                            LOG_DEBUG << "p2p net service add peer candidate: " << ep;
+                        }
                     }
                     else if(candidate->node_id.empty() && !it->peer_node_id.empty())
                     {
@@ -1369,6 +1407,12 @@ namespace matrix
 
         bool p2p_net_service::add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype)
         {     
+            if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT)
+            {
+                //limit
+                return false;
+            }
+
             auto candidate = get_peer_candidate(ep);
             if (nullptr == candidate)
             {
@@ -1425,7 +1469,7 @@ namespace matrix
         }
 
         int32_t p2p_net_service::get_available_peer_candidates(uint32_t count, std::vector<std::shared_ptr<peer_candidate>> &available_candidates)
-        {            
+        {
             if (count == 0)
             {
                 return E_SUCCESS;

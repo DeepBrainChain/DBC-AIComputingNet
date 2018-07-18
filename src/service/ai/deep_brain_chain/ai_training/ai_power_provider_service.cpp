@@ -25,6 +25,10 @@
 #include "utilstrencodings.h"
 #include "base58.h"
 
+#include "error/en.h"
+#include <boost/thread/thread.hpp>
+#include "utilstrencodings.h"
+#include "service_topic.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -93,8 +97,6 @@ namespace ai
             m_container_client->set_address(m_container_ip, m_container_port);
             m_nvidia_client->set_address(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT);
 
-            m_container_image = CONF_MANAGER->get_container_image();
-
             return E_SUCCESS;
         }
 
@@ -114,6 +116,145 @@ namespace ai
             {
                 LOG_ERROR << "ai power provider service init db error";
                 return ret;
+            }
+
+            ret = load_container();
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "ai power provider service load container config error";
+                return ret;
+            }
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::check_cpu_config(const double & cpu_info)
+        {
+            uint16_t cpu_num = std::thread::hardware_concurrency();
+
+            double temp = cpu_info * m_nano_cpu;
+            if (temp - (int64_t)temp > 0)
+            {
+                return E_DEFAULT;
+            }
+
+            if (temp > cpu_num * m_nano_cpu)
+            {
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size)
+        {
+            if (memory < 0 )
+            {
+                LOG_ERROR << "memory config error. memeory was smaller than 0";
+                return E_DEFAULT;
+            }
+
+            if ( memory_swap < -1)
+            {
+                LOG_ERROR << "memory_swap config error.memory_swap was smaller than -1";
+                return E_DEFAULT;
+            }
+
+            if (shm_size < 1)
+            {
+                LOG_ERROR << "shm_size config error. shm_size was smaller than 1";
+                return E_DEFAULT;
+            }
+
+            if (((memory_swap != 0) && (memory_swap != -1))
+                &&(memory > memory_swap))
+            {
+                LOG_ERROR << "config error:memory > memory_swap";
+                return E_DEFAULT;
+            }
+
+            int64_t sys_mem = 0;
+            int64_t sys_swap = 0;
+            get_sys_mem(sys_mem, sys_swap);
+
+            if (0==sys_mem || 0==sys_swap)
+            {
+                return E_SUCCESS;
+            }
+
+            if ( ((memory != 0) && (memory * m_g_bytes) > sys_mem)
+                 || (memory != 0 && shm_size > memory))
+            {
+                LOG_ERROR << "check memory failed.";
+                return E_DEFAULT;
+            }
+
+
+            if (((memory_swap != 0) || (memory_swap != -1))
+               && (memory_swap * m_g_bytes) > sys_swap)
+            {
+                LOG_ERROR << "check memory_swap failed.";
+                return E_DEFAULT;
+            }
+
+            if (memory != 0 && shm_size > memory)
+            {
+                LOG_ERROR << "check shm_size failed.";
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::load_container()
+        {
+            //file path
+            const fs::path &container_path = env_manager::get_container_path();
+            bpo::options_description container_opts("container file options");
+
+            container_opts.add_options()
+                ("memory", bpo::value<int64_t>()->default_value(0), "")
+                ("memory_swap", bpo::value<int64_t>()->default_value(-1), "")
+                ("cpus", bpo::value<double>()->default_value(0), "")
+                ("shm_size", bpo::value<int64_t>()->default_value(1), "")
+                ("host_volum_dir", bpo::value<std::string>()->default_value(""), "")
+                ("engine_reg", bpo::value<std::string>()->default_value(""), "");
+
+            try
+            {
+                //container.conf
+                std::ifstream conf_ifs(container_path.generic_string());
+                bpo::store(bpo::parse_config_file(conf_ifs, container_opts), m_container_args);
+
+                bpo::notify(m_container_args);
+
+                std::string host_dir = m_container_args["host_volum_dir"].as<std::string>();
+
+                if (!fs::exists(host_dir) && !host_dir.empty())
+                {
+                    LOG_ERROR << "host volum dir is not exist. pls check";
+                    return E_DEFAULT;
+                }
+
+                int32_t ret = check_cpu_config( m_container_args["cpus"].as<double>());
+
+                if (ret != E_SUCCESS)
+                {
+                    return ret;
+                }
+
+                ret = check_memory_config(m_container_args["memory"].as<int64_t>(), m_container_args["memory_swap"].as<int64_t>(), m_container_args["shm_size"].as<int64_t>());
+                if (ret != E_SUCCESS)
+                {
+                    return ret;
+                }
+
+                //std::string engine_reg = "(^dbctraining/.*-(cpu|gpu):v[0-9]\.[0-9]\.[0-9])";
+                set_task_engine(m_container_args["engine_reg"].as<std::string>());
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "parse container.conf error: " << diagnostic_information(e);
+                return E_DEFAULT;
             }
 
             return E_SUCCESS;
@@ -138,6 +279,10 @@ namespace ai
 
             //task logs req
             SUBSCRIBE_BUS_MESSAGE(LOGS_REQ);
+
+            //task queue size query
+            SUBSCRIBE_BUS_MESSAGE(typeid(service::get_task_queue_size_req_msg).name());
+
         }
 
         void ai_power_provider_service::init_invoker()
@@ -155,6 +300,9 @@ namespace ai
 
             //task logs req
             BIND_MESSAGE_INVOKER(LOGS_REQ, &ai_power_provider_service::on_logs_req);
+
+            //task queue size req
+            BIND_MESSAGE_INVOKER(typeid(service::get_task_queue_size_req_msg).name(), &ai_power_provider_service::on_get_task_queue_size_req);
         }
 
         int32_t ai_power_provider_service::init_db()
@@ -162,38 +310,51 @@ namespace ai
             leveldb::DB *db = nullptr;
             leveldb::Options  options;
             options.create_if_missing = true;
-
-            //get db path
-            fs::path task_db_path = env_manager::get_db_path();
-            if (false == fs::exists(task_db_path))
+            try
             {
-                LOG_DEBUG << "db directory path does not exist and create db directory";
-                fs::create_directory(task_db_path);
+                //get db path
+                fs::path task_db_path = env_manager::get_db_path();
+                if (false == fs::exists(task_db_path))
+                {
+                    LOG_DEBUG << "db directory path does not exist and create db directory";
+                    fs::create_directory(task_db_path);
+                }
+
+                //check db directory
+                if (false == fs::is_directory(task_db_path))
+                {
+                    LOG_ERROR << "db directory path does not exist and exit";
+                    return E_DEFAULT;
+                }
+
+                task_db_path /= fs::path("prov_training_task.db");
+                LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
+
+                //open db
+                leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
+                if (false == status.ok())
+                {
+                    LOG_ERROR << "ai power provider service init training task db error: " << status.ToString();
+                    return E_DEFAULT;
+                }
+
+                //smart point auto close db
+                m_prov_training_task_db.reset(db);
+
+                //load task
+                load_task_from_db();
             }
-
-            //check db directory
-            if (false == fs::is_directory(task_db_path))
+            catch (const std::exception & e)
             {
-                LOG_ERROR << "db directory path does not exist and exit";
+                LOG_ERROR << "create task provider db error: " << e.what();
+                return E_DEFAULT;
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "create task provider db error" << diagnostic_information(e);
                 return E_DEFAULT;
             }
 
-            task_db_path /= fs::path("prov_training_task.db");
-            LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
-
-            //open db
-            leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
-            if (false == status.ok())
-            {
-                LOG_ERROR << "ai power provider service init training task db error: " << status.ToString();
-                return E_DEFAULT;
-            }
-
-            //smart point auto close db
-            m_prov_training_task_db.reset(db);
-
-            //load task
-            load_task_from_db();
             return E_SUCCESS;
         }
 
@@ -234,7 +395,7 @@ namespace ai
                 
                 if ((*it) == CONF_MANAGER->get_node_id())
                 {
-                    LOG_ERROR << "ai power provider service found self node id in on start training: " << req->body.task_id << " node id: " << (*it);
+                    LOG_DEBUG << "ai power provider service found self node id in on start training: " << req->body.task_id << " node id: " << (*it);
                     break;
                 }
             }
@@ -305,12 +466,12 @@ namespace ai
 
             //flush to db
             write_task_to_db(task);
-            LOG_DEBUG << "ai power provider service flush task to db: " << req->body.task_id;
+            LOG_INFO << "ai power provider service flush task to db: " << req->body.task_id;
 
             //add to task queue
             m_queueing_tasks.push_back(task);
             m_training_tasks[task->task_id] = task;
-            LOG_DEBUG << "ai power provider service task(" << req->body.task_id << ") is in task_queueing";
+            LOG_INFO << "ai power provider service task(" << req->body.task_id << ") is in task_queueing";
 
             return E_SUCCESS;
         }
@@ -319,16 +480,16 @@ namespace ai
         {
             std::shared_ptr<matrix::service_core::stop_training_req> req = std::dynamic_pointer_cast<matrix::service_core::stop_training_req>(msg->get_content());
             assert(nullptr != req);
-            
+
             if (id_generator().check_base58_id(req->header.nonce) != true)
             {
-                LOG_DEBUG << "ai power provider service on_stop_training_req nonce error ";
+                LOG_ERROR << "ai power provider service on_stop_training_req nonce error ";
                 return E_DEFAULT;
             }
-                        
+
             if (id_generator().check_base58_id(req->body.task_id) != true)
             {
-                LOG_DEBUG << "ai power provider service on_stop_training_req task_id error ";
+                LOG_ERROR << "ai power provider service on_stop_training_req task_id error ";
                 return E_DEFAULT;
             }
 
@@ -359,7 +520,7 @@ namespace ai
 
             if (sp_task) //found
             {
-                LOG_DEBUG << "stop training, task_status: " << sp_task->status << endl;
+                LOG_INFO << "stop training, task_status: " << sp_task->status << endl;
 
                 if (task_running == sp_task->status)
                 {
@@ -393,13 +554,13 @@ namespace ai
 
             if (id_generator().check_base58_id(req_content->header.nonce) != true)
             {
-                LOG_DEBUG << "ai power provider service nonce error ";
+                LOG_ERROR << "ai power provider service nonce error ";
                 return E_DEFAULT;
             }
 
             if (id_generator().check_base58_id(req_content->header.session_id) != true)
             {
-                LOG_DEBUG << "ai power provider service sessionid error ";
+                LOG_ERROR << "ai power provider service sessionid error ";
                 return E_DEFAULT;
             }
 
@@ -408,7 +569,7 @@ namespace ai
 
             if (req_content->body.task_list.size() == 0)
             {
-                LOG_DEBUG << "ai power provider service recv empty list training tasks";
+                LOG_ERROR << "ai power provider service recv empty list training tasks";
                 return E_DEFAULT;
             }
 
@@ -416,20 +577,23 @@ namespace ai
             {
                 if (id_generator().check_base58_id(*it) != true)
                 {
-                    LOG_DEBUG << "ai power provider service taskid error: " << *it;
+                    LOG_ERROR << "ai power provider service taskid error: " << *it;
                     return E_DEFAULT;
                 }
                 
             }
 
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
+
+            req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
+
             CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             if (0 == m_training_tasks.size())
             {
-                LOG_DEBUG << "ai power provider service training task is empty";
+                LOG_INFO << "ai power provider service training task is empty";
                 return E_SUCCESS;
-            }            
+            }
 
             std::vector<matrix::service_core::task_status> status_list;
             for (auto it = req_content->body.task_list.begin(); it != req_content->body.task_list.end(); ++it)
@@ -458,6 +622,8 @@ namespace ai
                     rsp_content->header.__set_nonce(id_generator().generate_nonce());
                     rsp_content->header.__set_session_id(req_content->header.session_id);
 
+                    rsp_content->header.__set_path(req_content->header.path); // for efficient resp msg transport
+
                     rsp_content->body.task_status_list.swap(status_list);
                     status_list.clear(); 
 
@@ -465,7 +631,7 @@ namespace ai
                     std::shared_ptr<message> resp_msg = std::make_shared<message>();
                     resp_msg->set_name(LIST_TRAINING_RESP);
                     resp_msg->set_content(rsp_content);
-                    CONNECTION_MANAGER->broadcast_message(resp_msg);   
+                    CONNECTION_MANAGER->send_resp_message(resp_msg);
 
                     LOG_DEBUG << "on_list_training_req send resp, nonce: " << rsp_content->header.nonce << ", session: " << rsp_content->header.session_id
                         << "task cnt: " << rsp_content->body.task_status_list.size();
@@ -480,13 +646,15 @@ namespace ai
                 rsp_content->header.__set_nonce(id_generator().generate_nonce());
                 rsp_content->header.__set_session_id(req_content->header.session_id);
 
+                rsp_content->header.__set_path(req_content->header.path); // for efficient resp msg transport
+
                 rsp_content->body.task_status_list.swap(status_list);
 
                 //resp msg
                 std::shared_ptr<message> resp_msg = std::make_shared<message>();
                 resp_msg->set_name(LIST_TRAINING_RESP);
                 resp_msg->set_content(rsp_content);
-                CONNECTION_MANAGER->broadcast_message(resp_msg);
+                CONNECTION_MANAGER->send_resp_message(resp_msg);
 
                 status_list.clear();
 
@@ -527,14 +695,14 @@ namespace ai
             //check log direction
             if (GET_LOG_HEAD != req_content->body.head_or_tail && GET_LOG_TAIL != req_content->body.head_or_tail)
             {
-                LOG_DEBUG << "ai power provider service on logs req log direction error: " << task_id;
+                LOG_ERROR << "ai power provider service on logs req log direction error: " << task_id;
                 return E_DEFAULT;
             }
 
             //check number of lines
             if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES || req_content->body.number_of_lines < 0)
             {
-                LOG_DEBUG << "ai power provider service on logs req number of lines error: " << req_content->body.number_of_lines;
+                LOG_ERROR << "ai power provider service on logs req number of lines error: " << req_content->body.number_of_lines;
                 return E_DEFAULT;
             }
 
@@ -555,6 +723,9 @@ namespace ai
             {
                 //relay msg to network
                 LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
+
+                req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
+
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
                 return E_SUCCESS;
@@ -581,12 +752,14 @@ namespace ai
                     log_content = "get log content error";
                 }
             }
-            else
+            else if (it->second->status == task_queueing)
             {
                 log_content = "log info query only valid when status is running or closed";
             }
-             
-            
+            else
+            {
+                log_content = "task abnormal. get log content error";
+            }
 
             //response content
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
@@ -597,11 +770,12 @@ namespace ai
             rsp_content->header.__set_nonce(id_generator().generate_nonce());
             rsp_content->header.__set_session_id(req_content->header.session_id);
 
+            rsp_content->header.__set_path(req_content->header.path); // for efficient resp msg transport
+
             //content body
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
             log.__set_log_content((nullptr == container_resp) ? log_content : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
-
             if (GET_LOG_HEAD == req_content->body.head_or_tail)
             {
                 log.log_content = log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
@@ -613,8 +787,9 @@ namespace ai
                 {
                     log.log_content = log.log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
                 }
-                
+
             }
+
 
             rsp_content->body.__set_log(log);
 
@@ -622,7 +797,8 @@ namespace ai
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             resp_msg->set_name(LOGS_RESP);
             resp_msg->set_content(rsp_content);
-            CONNECTION_MANAGER->broadcast_message(resp_msg);
+            //CONNECTION_MANAGER->broadcast_message(resp_msg);
+            CONNECTION_MANAGER->send_resp_message(resp_msg);
 
             return E_SUCCESS;
         }
@@ -639,7 +815,9 @@ namespace ai
 
             int push_char_count = 0;
             const char *p = raw_logs.c_str();
+
             uint16_t line_count = 1;
+
             for (size_t i = 0; i < size; )
             {
                 //0x30 0x0d 0x0a 
@@ -828,22 +1006,55 @@ namespace ai
             std::string exec_cmd = AI_TRAINING_TASK_SCRIPT_HOME;
             exec_cmd += AI_TRAINING_TASK_SCRIPT;
 
-            std::string py_cmd = task->entry_file + " " + task->hyper_parameters;
-
-            //tensorflow-cpu
-            if (std::string::npos != m_container_image.find("tensorflow-cpu"))
+            if (task->entry_file.empty())
             {
-                config->cmd.push_back(exec_cmd);
-                config->cmd.push_back(task->data_dir);
-                config->cmd.push_back(task->code_dir);
-                config->cmd.push_back(py_cmd);
-
-                config->image = m_container_image;
-
-                return config;
+                LOG_ERROR << "entry_file non exist in task." ;
+                return nullptr;
             }
-            //tensorflow-gpu
-            else if (std::string::npos != m_container_image.find("tensorflow-gpu"))
+
+            if (task->entry_file.size() > MAX_ENTRY_FILE_NAME_LEN)
+            {
+
+                LOG_ERROR << "entry_file name lenth is too long." << task->entry_file.size();
+                return nullptr;
+            }
+
+            if (task->training_engine.size() > MAX_ENGINE_IMGE_NAME_LEN)
+            {
+                LOG_ERROR << "engine image lenth is too long." << task->training_engine.size();
+                return nullptr;
+            }
+
+            if (check_task_engine(task->training_engine) != true)
+            {
+                LOG_ERROR << "engine name is error." << task->training_engine.size();
+                return nullptr;
+            }
+            std::string start_cmd = task->entry_file + " " + task->hyper_parameters;
+
+            config->image = task->training_engine;
+            config->cmd.push_back(exec_cmd);
+            config->cmd.push_back(task->data_dir);
+            config->cmd.push_back(task->code_dir);
+            config->cmd.push_back(start_cmd);
+
+            config->host_config.binds.push_back(AI_TRAINING_BIND_LOCALTIME);
+            config->host_config.binds.push_back(AI_TRAINING_BIND_TIMEZONE);
+
+            config->host_config.memory = m_container_args["memory"].as<int64_t>()* m_g_bytes;
+            config->host_config.memory_swap = m_container_args["memory_swap"].as<int64_t>()  * m_g_bytes;
+            config->host_config.nano_cpus = (int64_t) (m_container_args["cpus"].as<double>() * m_nano_cpu);
+
+            std::string mount_dir = m_container_args["host_volum_dir"].as<std::string>();
+
+            if (!mount_dir.empty())
+            {
+                mount_dir = mount_dir + ":" + "/dbc";
+                config->host_config.binds.push_back(mount_dir);
+            }
+
+
+            if (std::string::npos != (config->image).find("gpu"))
             {
                 //nv config
                 std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
@@ -853,20 +1064,14 @@ namespace ai
                     return nullptr;
                 }
 
-                config->cmd.push_back(exec_cmd);
-                config->cmd.push_back(task->data_dir);
-                config->cmd.push_back(task->code_dir);
-                config->cmd.push_back(py_cmd);
-
-                config->image = m_container_image;
-
                 //env
-                config->env.push_back(AI_TRAINING_ENV_PATH);
-                config->env.push_back(AI_TRAINING_LD_LIBRARY_PATH);
+                //config->env.push_back(AI_TRAINING_ENV_PATH);
+                //config->env.push_back(AI_TRAINING_LD_LIBRARY_PATH);
                 config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
                 config->env.push_back(AI_TRAINING_NVIDIA_DRIVER_CAPABILITIES);
-                config->env.push_back(AI_TRAINING_LIBRARY_PATH);
-
+                //config->env.push_back(AI_TRAINING_LIBRARY_PATH);
+                config->host_config.share_memory = m_container_args["shm_size"].as<int64_t>() * m_g_bytes;
+                config->host_config.ulimits.push_back(container_ulimits("memlock", -1, -1));
                 //binds
                 config->host_config.binds.push_back(nv_config->volume);
 
@@ -912,8 +1117,7 @@ namespace ai
 
                 return config;
             }
-
-            return nullptr;
+            return config;
         }
 
         int32_t ai_power_provider_service::start_exec_training_task(std::shared_ptr<ai_training_task> task)
@@ -931,7 +1135,7 @@ namespace ai
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
-                LOG_DEBUG << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_WARNING << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
             }
 
@@ -950,7 +1154,7 @@ namespace ai
                 }
 
                 //create container                
-                std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config);
+                std::shared_ptr<container_create_resp> resp = m_container_client->create_container(config, task->task_id);
                 if (nullptr == resp || resp->container_id.empty())
                 {
                     task->error_times++;
@@ -971,7 +1175,7 @@ namespace ai
                     //flush to db: update container id, check point 1
                     write_task_to_db(task);
 
-                    LOG_DEBUG << "ai power provider service create container successfully, container id: " << task->container_id;
+                    LOG_INFO << "ai power provider service create container successfully, container id: " << task->container_id;
                 }
             }
 
@@ -995,7 +1199,7 @@ namespace ai
                 //flush to db: update status, check point 2
                 write_task_to_db(task);
 
-                LOG_DEBUG << "ai power provider service start container successfully and update task status running, task id: " << task->task_id << "  container id: " << task->container_id;
+                LOG_INFO << "ai power provider service start container successfully and update task status running, task id: " << task->task_id << "  container id: " << task->container_id;
                 return E_SUCCESS;
             }
         }
@@ -1013,7 +1217,7 @@ namespace ai
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
-                LOG_DEBUG << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_WARNING << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
             }
 
@@ -1037,19 +1241,22 @@ namespace ai
             }
             else if (0 != resp->state.exit_code)
             {
-                LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
+
+                task->status = task_abnormally_closed;
 
                 task->error_times++;
                 write_task_to_db(task);
 
+                m_queueing_tasks.pop_front();
                 //restart container
-                start_exec_training_task(task);
+                //start_exec_training_task(task);
                 return E_SUCCESS;
             }
             else
             {
                 task->status = task_succefully_closed;
-                LOG_DEBUG << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_INFO << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
                 //flush to db
                 write_task_to_db(task);
@@ -1130,6 +1337,21 @@ namespace ai
             return E_SUCCESS;
         }
 
+
+        int32_t ai_power_provider_service::on_get_task_queue_size_req(std::shared_ptr<message> &msg)
+        {
+            LOG_DEBUG << "on_get_task_queue_size_req";
+
+            auto resp = std::make_shared<service::get_task_queue_size_resp_msg>();
+
+            resp->set(m_queueing_tasks.size());
+
+            auto resp_msg = std::dynamic_pointer_cast<message>(resp);
+
+            TOPIC_MANAGER->publish<int32_t>(typeid(service::get_task_queue_size_resp_msg).name(), resp_msg);
+
+            return E_SUCCESS;
+        }
     }
 
 }

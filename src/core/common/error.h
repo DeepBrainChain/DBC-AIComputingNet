@@ -21,6 +21,8 @@
 #define E_FILE_FAILURE                                      -7                  //file op failure
 #define E_NOT_FOUND                                         -8                  //not found specified object
 #define E_EXISTED                                           -9                  //dest already exist
+#define E_INACTIVE_CHANNEL                                   -10                 //broadcast error, no active channel
+#define E_NONCE                                             -11                  // nonce error
 
 
 #endif

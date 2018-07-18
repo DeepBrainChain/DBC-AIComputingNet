@@ -29,6 +29,7 @@ add_subdirectory("src/service_core")
 # unit test
 add_subdirectory("src/core/unittest")
 add_subdirectory("src/service_core/unittest")
+add_subdirectory("src/service/unittest")
 
 # dependency: ensure libraries build before dbc does
 add_dependencies(dbc dbc_core dbc_service_core)
@@ -36,3 +37,4 @@ add_dependencies(dbc dbc_core dbc_service_core)
 add_dependencies(dbc_service_core dbc_core)
 add_dependencies(dbc_core_test dbc_core)
 add_dependencies(dbc_service_core_test dbc_core dbc_service_core)
+add_dependencies(dbc_service_test dbc_core dbc_service_core)

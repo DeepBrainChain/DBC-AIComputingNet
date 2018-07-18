@@ -14,6 +14,8 @@
 #include "api_call_handler.h"
 #include "module.h"
 #include "task_common_def.h"
+#include <vector>
+#include <string>
 
 
 using namespace matrix::core;
@@ -66,6 +68,10 @@ namespace ai
 
             void logs(int argc, char* argv[]);
 
+            void show(int argc, char* argv[]);
+            void clear(int argc, char* argv[]);
+            void ps(int argc, char* argv[]);
+
         protected:
 
             template<typename resp_type>
@@ -77,11 +83,9 @@ namespace ai
 
             cmd_invokers m_invokers;
 
-            int m_argc;
-
-            char *m_argv[MAX_CMD_LINE_ARGS_COUNT];
-
             char m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN];
+
+            std::vector<std::string> m_argvs;
 
         };
 

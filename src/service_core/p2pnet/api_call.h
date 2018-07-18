@@ -12,6 +12,7 @@
 
 #include "matrix_types.h"
 
+
 namespace matrix
 {
     namespace service_core

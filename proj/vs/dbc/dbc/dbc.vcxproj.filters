@@ -155,6 +155,18 @@
     <Filter Include="src\service\deep_brain_chain\conf">
       <UniqueIdentifier>{37f8fb92-3d42-43f0-8223-8e46efa9e4c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\service\misc">
+      <UniqueIdentifier>{da48dcac-8991-4a50-80b0-1b21f60eaa48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\filter">
+      <UniqueIdentifier>{337527bf-98f8-4e3d-8502-388660efd090}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\cli">
+      <UniqueIdentifier>{b4cbd371-4efb-433d-aee4-f9360a5d25c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\3rd\cli\readline">
+      <UniqueIdentifier>{eaf95a6d-3fe0-4390-88c2-6259fef05051}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -387,6 +399,33 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_db_types.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\misc\data_query_service.cpp">
+      <Filter>src\service\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\misc\node_info_collection.cpp">
+      <Filter>src\service\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\misc\node_info_query_req_msg.cpp">
+      <Filter>src\service\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\misc\node_info_query_resp_msg.cpp">
+      <Filter>src\service\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\misc\service_broadcast_req_msg.cpp">
+      <Filter>src\service\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\misc\service_info_collection.cpp">
+      <Filter>src\service\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\filter\fulltext.cpp">
+      <Filter>src\core\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\filter\simple_expression.cpp">
+      <Filter>src\core\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\initiator\server_info.cpp">
+      <Filter>src\core\initiator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1259,6 +1298,42 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\ai_db_types.h">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\data_query_service.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\node_info_collection.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\node_info_query_req_msg.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\node_info_query_resp_msg.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\node_info_query_sh.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\service_broadcast_req_msg.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\misc\service_info_collection.h">
+      <Filter>src\service\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\filter\fulltext.h">
+      <Filter>src\core\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\filter\simple_expression.h">
+      <Filter>src\core\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\cli\readline\history.h">
+      <Filter>src\3rd\cli\readline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\cli\readline\readline.h">
+      <Filter>src\3rd\cli\readline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\initiator\server_info.h">
+      <Filter>src\core\initiator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

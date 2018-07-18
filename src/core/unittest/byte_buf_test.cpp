@@ -67,22 +67,22 @@ namespace utf = boost::unit_test;
         delete []s;
     }
 
-    BOOST_AUTO_TEST_CASE(test_write_zero_byte) {
+    //BOOST_AUTO_TEST_CASE(test_write_zero_byte) {
+    //
+    //    byte_buf b(1024);
+    //    char s[]="123456";
+    //
+    //    b.write_to_byte_buf(s, 0);
+    //    BOOST_TEST(b.get_valid_read_len(), 0);
+    //}
 
-        byte_buf b(1024);
-        char s[]="123456";
-
-        b.write_to_byte_buf(s, 0);
-        BOOST_TEST(b.get_valid_read_len(), 0);
-    }
-
-    BOOST_AUTO_TEST_CASE(test_write_nil_data) {
-
-        byte_buf b(1024);
-
-        b.write_to_byte_buf(nullptr, 0);
-        BOOST_TEST(b.get_valid_read_len(), 0);
-    }
+    //BOOST_AUTO_TEST_CASE(test_write_nil_data) {
+    //
+    //    byte_buf b(1024);
+    //
+    //    b.write_to_byte_buf(nullptr, 0);
+    //    BOOST_TEST(b.get_valid_read_len(), 0);
+    //}
 
     BOOST_AUTO_TEST_CASE(test_write_beyond_threshold) {
 

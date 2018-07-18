@@ -6,7 +6,7 @@ import sys
 
 
 def parse(f):
-    m = re.compile(r'^.+(recv buf:|send buf:)([\s\da-fA-F]+)')
+    m = re.compile(r'^.+(decode buf:|send buf:)([\s\da-fA-F]+)')
 
     try:
         while True:

@@ -30,6 +30,12 @@ namespace matrix
             http_channel
         };
 
+        enum channel_state
+        {
+            CHANNEL_ACTIVE,
+            CHANNEL_STOPPED            
+        };
+
         class channel
         {
         public:
@@ -54,6 +60,10 @@ namespace matrix
 
             virtual bool is_channel_ready() = 0;
 
+            virtual channel_state get_state() = 0;
+
+            virtual bool is_stopped() = 0;
+            virtual bool close() = 0;
         };
     }
 }

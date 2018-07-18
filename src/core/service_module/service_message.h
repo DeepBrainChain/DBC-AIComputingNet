@@ -77,7 +77,7 @@ namespace matrix
             virtual uint32_t get_priority() { return header.msg_priority; }
             virtual void set_priority(uint32_t msg_priority) { header.msg_priority = msg_priority; }
 
-            virtual std::shared_ptr<base> get_content() { return content; }
+            virtual std::shared_ptr<msg_base> get_content() { return content; }
             virtual void set_content(std::shared_ptr<msg_base> content) { this->content = content; }
 
             virtual uint32_t validate() const { return content->validate(); }

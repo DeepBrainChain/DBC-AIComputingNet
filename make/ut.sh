@@ -21,18 +21,23 @@ fi
 #
 
 echo "make dbc ut "
-SECONDS=0
-#make -j 4 dbc_core_test VERBOSE=1 2>&1 | tee  ../build_dbc_ut1.log 
-make -j 4 dbc_core_test 2>&1 | tee  ../build_dbc_ut1.log 
-if [ $? -ne 0 ]
+#make -j 4 dbc_core_test VERBOSE=1 2>&1 | tee  ../build_dbc_ut1.log
+make -j 4 dbc_core_test 2>&1 | tee  ../build_dbc_ut.log
+if [ ${PIPESTATUS[0]} -ne 0 ]
 then
     echo "fail: see build_dbc_ut.log for more details"
     exit 1
 fi
 
-SECONDS=0
-make -j 4 dbc_service_core_test 2>&1 | tee ../build_dbc_ut2.log 
-if [ $? -ne 0 ]
+make -j 4 dbc_service_core_test 2>&1 | tee ../build_dbc_ut.log
+if [ ${PIPESTATUS[0]} -ne 0 ]
+then
+    echo "fail: see build_dbc_ut.log for more details"
+    exit 1
+fi
+
+make -j 4 dbc_service_test 2>&1 | tee ../build_dbc_ut.log
+if [ ${PIPESTATUS[0]} -ne 0 ]
 then
     echo "fail: see build_dbc_ut.log for more details"
     exit 1
@@ -46,3 +51,6 @@ echo "run dbc core test"
 
 echo "run dbc service core test"
 ./src/service_core/unittest/dbc_service_core_test  -r detailed -l all ${@:1}
+
+echo "run dbc service test"
+./src/service/unittest/dbc_service_test  -r detailed -l all ${@:1}

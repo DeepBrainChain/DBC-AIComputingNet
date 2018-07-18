@@ -14,7 +14,13 @@
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
+#ifndef WIN32
+#include "readline/readline.h"
+#include "readline/history.h"
+#endif
 
+#include "log.h"
+#include "filter/simple_expression.h"
 
 static void cmd_line_task()
 {
@@ -42,13 +48,16 @@ namespace ai
             cout << "list:          list training tasks" << endl;
             cout << "peers:         get information of peers" << endl;
             cout << "logs:          get logs of task" << endl;
+            cout << "show:          get attributes from taget node" <<endl;
+            cout << "ps:            print ai request task cache info" << endl;
+            cout << "clear:         clean screen" << endl;
             cout << "quit / exit:   exit program" << endl;
             cout << "-----------------------------------------" << endl;
         }
 
-        cmd_line_service::cmd_line_service() : m_argc(0)
+        cmd_line_service::cmd_line_service()
         {
-            memset(m_argv, 0x00, sizeof(m_argv));
+            m_argvs.clear();
             memset(m_cmd_line_buf, 0x00, sizeof(m_cmd_line_buf));
 
             init_cmd_invoker();
@@ -71,38 +80,62 @@ namespace ai
             m_invokers["list"] = std::bind(&cmd_line_service::list_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["peers"] = std::bind(&cmd_line_service::get_peers, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["logs"] = std::bind(&cmd_line_service::logs, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["show"] = std::bind(&cmd_line_service::show, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["clear"] = std::bind(&cmd_line_service::clear, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
         }
         
         void cmd_line_service::on_usr_cmd()
         {
-            cout << "dbc>>>";
+#ifdef WIN32
+            cout << "dbc>>> ";
 
             //read user input
             cin.get(m_cmd_line_buf, MAX_CMD_LINE_BUF_LEN);
             cin.clear();
             cin.ignore((std::numeric_limits<int>::max)(), '\n');
+#else
+            auto line = readline("dbc>>> ");
+            if (line == nullptr)
+            {
+                LOG_ERROR << "readline return nullptr";
+                return;
+            }
 
-            int m_argc = MAX_CMD_LINE_ARGS_COUNT;
-            memset(m_argv, 0x00, sizeof(m_argv));
+            add_history(line);
 
-            //split parse
-            string_util::split(m_cmd_line_buf, ' ', m_argc, m_argv);
-            if (0 == m_argc)
+            strncpy(m_cmd_line_buf,line,MAX_CMD_LINE_BUF_LEN);
+            m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN-1]=0;
+
+            free(line);
+#endif
+
+
+
+#ifdef WIN32
+            m_argvs = bpo::split_winmain(m_cmd_line_buf);
+#else
+            m_argvs = bpo::split_unix(m_cmd_line_buf);
+#endif
+
+            if (0 == m_argvs.size())
             {
                 return;
             }
-            if (std::string(m_argv[0]).compare("help") == 0)
+
+            std::string cmd = m_argvs[0];
+            if (cmd.compare("help") == 0)
             {
                 print_cmd_usage();
                 return;
             }
-            else if (std::string(m_argv[0]).compare("quit") == 0 || std::string(m_argv[0]).compare("exit") == 0)
+            else if (cmd.compare("quit") == 0 || cmd.compare("exit") == 0)
             {
                 g_server->set_exited(true);
                 return;
             }
 
-            auto it = m_invokers.find(m_argv[0]);
+            auto it = m_invokers.find(cmd);
             if (it == m_invokers.end())
             {
                 cout << "unknown command, for prompt please input 'help'" << endl;
@@ -111,7 +144,13 @@ namespace ai
 
             //call handler function
             auto func = it->second;
-            func(m_argc, m_argv);
+            char ** argv = new char* [m_argvs.size()];
+            for (uint32_t i=0; i<m_argvs.size(); i++ )
+            {
+                argv[i] = (char *)m_argvs[i].c_str();
+            }
+            func(m_argvs.size(), argv);
+            delete []argv;
         }
 
         void cmd_line_service::start_training(int argc, char* argv[])
@@ -478,6 +517,207 @@ namespace ai
 
             //format output
             resp->format_output();
+        }
+
+        void cmd_line_service::clear(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("clear info options");
+            try
+            {
+                opts.add_options()
+                        ("help,h", "clear help")
+                        //("all,a", "clear all info in this node")
+                        ("screen,s", "clear screen");
+                std::string cmd = "";
+#if  defined(__linux__) || defined(MAC_OSX)
+                cmd = "clear";
+#elif defined(WIN32)
+                cmd = "cls";
+
+#endif
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+                if (vm.count("screen") || vm.count("s"))
+                {
+                    system(cmd.c_str());
+                    return;
+                }
+
+               /* if (vm.count("all") || vm.count("a"))
+                {
+                    std::shared_ptr<cmd_clear_req> req = std::make_shared<cmd_clear_req>();
+                    std::shared_ptr<cmd_clear_resp> resp = m_handler.invoke<cmd_clear_req, cmd_clear_resp>(req);
+                    system("cls");
+                    return;
+                }*/
+
+                system(cmd.c_str());
+
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
+        }
+
+        void cmd_line_service::ps(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("clear info options");
+            try
+            {
+                opts.add_options()
+                    ("help,h", "clear help")
+                    ("all,a","show all task cache state")
+                    ("task,t",bpo::value<std::string>(), "show assign task cache state");
+
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+                if (vm.count("task") || vm.count("t"))
+                {
+                    std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
+                    req->task_id = vm["task"].as<std::string>();;
+                    std::shared_ptr<cmd_ps_resp> resp = m_handler.invoke<cmd_ps_req, cmd_ps_resp>(req);
+                    format_output(resp);
+                    return;
+                }
+
+                if (vm.count("all") || vm.count("a"))
+                {
+                    std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
+                    req->task_id = "all";;
+                    std::shared_ptr<cmd_ps_resp> resp = m_handler.invoke<cmd_ps_req, cmd_ps_resp>(req);
+                    format_output(resp);
+                    return;
+                }
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
+        }
+
+        void cmd_line_service::show(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("show node info options");
+
+            try
+            {
+                opts.add_options()
+                        ("help,h", "show service info and specific node info")
+                        ("node,n", bpo::value<std::string>(), "print node's hardware info of indicated node id")
+                        ("keys,k", bpo::value<std::vector<std::string>>(), "if -n is specified, only print the value of indicated attribute.")
+                        ("service,s", "print nodes' service info in the network")
+                        ("filter,f", bpo::value<std::vector<std::string>>(), "if -s is specified, only print node matchs the filter.");
+
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                std::shared_ptr<cmd_show_req> req= std::make_shared<cmd_show_req>();
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+                if (vm.count("node") || vm.count("n"))
+                {
+                    req->o_node_id = CONF_MANAGER->get_node_id();
+                    req->d_node_id = vm["node"].as<std::string>();
+                    req->op = OP_SHOW_NODE_INFO;
+
+
+                    if (vm.count("keys") || vm.count("k"))
+                    {
+                        std::vector<std::string> tmp = vm["keys"].as<std::vector<std::string>>();
+                        std::copy(std::make_move_iterator(tmp.begin()), std::make_move_iterator(tmp.end()), std::back_inserter(req->keys));
+                        tmp.clear();
+                    }
+                    else
+                    {
+                        // default key: all
+                        req->keys.push_back("all");
+                    }
+                }
+
+                if (vm.count("service") || vm.count("s"))
+                {
+                    req->op = OP_SHOW_SERVICE_LIST;
+
+
+                    if (vm.count("filter") || vm.count("f"))
+                    {
+                        std::vector<std::string> tmp = vm["filter"].as<std::vector<std::string>>();
+
+                        req->filter = "";
+                        for (auto &s: tmp)
+                        {
+                            if (req->filter.length() != 0)
+                            {
+                                req->filter += (" and " + s);
+                            }
+                            else
+                            {
+                                req->filter += s;
+                            }
+                        }
+
+                        expression e(req->filter);
+                        if (!e.is_valid())
+                        {
+                            cout << endl << "invalid filter " << req->filter << endl;
+                            return;
+                        }
+                    }
+                }
+
+                if(OP_SHOW_UNKNOWN == req->op)
+                {
+                    cout << argv[0] << " invalid option" << endl;
+                    cout << opts;
+                    return;
+                }
+
+                std::shared_ptr<cmd_show_resp> resp = m_handler.invoke<cmd_show_req, cmd_show_resp>(req);
+                if (nullptr == resp)
+                {
+                    cout << endl << "command time out" << endl;
+                    return;
+                }
+                else
+                {
+                    LOG_DEBUG << "cmd_show_resp received!";
+                    format_output(resp);
+                }
+
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
         }
 
     }

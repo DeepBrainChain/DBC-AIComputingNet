@@ -53,15 +53,20 @@ ${SRC_PATH}/core/service_bus
 ${SRC_PATH}/core/service_module 
 ${SRC_PATH}/core/service_module/pc 
 ${SRC_PATH}/core/storage 
-${SRC_PATH}/core/timer_service 
+${SRC_PATH}/core/timer_service
+${SRC_PATH}/core
 
-${SRC_PATH}/service_core/codec 
+${SRC_PATH}/service_core/codec
 ${SRC_PATH}/service_core/codec/thrift
 ${SRC_PATH}/service_core/common
 ${SRC_PATH}/service_core/network
-${SRC_PATH}/service_core/p2pnet 
+${SRC_PATH}/service_core/p2pnet
 
-${SRC_PATH}/service/ai/deep_brain_chain/conf 
+
+${SRC_PATH}/service/misc
+${SRC_PATH}/service/topic
+
+${SRC_PATH}/service/ai/deep_brain_chain/conf
 ${SRC_PATH}/service/ai/deep_brain_chain/initiator
 ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
 
@@ -74,6 +79,7 @@ ${SRC_PATH}/3rd/network/openssl/openssl
 ${SRC_PATH}/3rd/network/rapidjson
 ${SRC_PATH}/3rd/network/rapidjson/internal
 ${SRC_PATH}/3rd/network/rapidjson/error
+${SRC_PATH}/3rd/cli
 
 ${SRC_PATH}/api
 )
@@ -81,6 +87,8 @@ ${SRC_PATH}/api
 #source directory
 AUX_SOURCE_DIRECTORY(${SRC_PATH} DIR_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/api API_SRCS)
+
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/misc SERVICE_MISC_SRCS)
 
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/conf SERVICE_DBC_CONF_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/initiator SERVICE_DBC_INITIATOR_SRCS)
@@ -107,7 +115,7 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/leveldb)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
-
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/readline)
 
 #add target source
 ADD_EXECUTABLE(dbc
@@ -116,6 +124,7 @@ ${API_SRCS}
 ${SERVICE_DBC_CONF_SRCS} 
 ${SERVICE_DBC_INITIATOR_SRCS}
 ${SERVICE_DBC_TRAINING_SRCS}
+${SERVICE_MISC_SRCS}
 ${THIRD_LEVEL_DB_SRCS}
 ${THIRD_RAPIDJSON_SRCS}
 ${THIRD_RAPIDJSON_INTERNAL_SRCS}
@@ -132,7 +141,11 @@ set(LIBRARIES)
 
 set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
 
-TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -pthread -ldl)
+TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -pie -pthread -ldl)
+
+#if (LINUX)
+#    TARGET_LINK_LIBRARIES(dbc -ltinfo)
+#endif()
 
 if (APPLE)
     TARGET_LINK_LIBRARIES(dbc -lsnappy)
