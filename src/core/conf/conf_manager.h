@@ -52,7 +52,9 @@ namespace matrix
 
             virtual int32_t exit() { m_args.clear(); return E_SUCCESS; }
 
-        public:            
+        public:       
+
+            int32_t get_log_level() { return m_log_level; }
 
             int32_t get_net_flag() { return m_net_flag; }
 
@@ -98,7 +100,6 @@ namespace matrix
 
             int32_t gen_new_nodeid();
 
-
             bool check_node_info();
 
         protected:
@@ -112,6 +113,8 @@ namespace matrix
             std::string m_net_type;
 
             int32_t m_net_flag;
+
+            int32_t m_log_level = 1;
 
             //params relative with net type
             std::shared_ptr<net_type_params> m_net_params;

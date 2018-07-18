@@ -33,3 +33,15 @@ const char * get_short_file_name(const char * file_path)
 
     return short_file_name;
 }
+
+const char* get_short_func_name(const char* func_name)
+{
+    std::string str_fn = func_name;
+    size_t pos = str_fn.rfind(":");
+    if (pos != std::string::npos)
+    {
+        return func_name + pos + 1;
+    }
+    
+    return func_name;
+}
