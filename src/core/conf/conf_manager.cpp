@@ -57,6 +57,9 @@ namespace matrix
                 return ret;
             }
 
+            //update log level
+            log::set_filter_level((boost::log::trivial::severity_level) m_log_level);
+
             return E_SUCCESS;
         }
 
@@ -66,6 +69,7 @@ namespace matrix
             //core opt description
             bpo::options_description core_opts("config file options");
             core_opts.add_options()
+                ("log_level", bpo::value<uint32_t>()->default_value(DEFAULT_LOG_LEVEL))
                 ("net_type", bpo::value<std::string>()->default_value(DEFAULT_NET_TYPE), "")
                 ("host_ip", bpo::value<std::string>()->default_value(DEFAULT_LOCAL_IP), "")
                 ("main_net_listen_port", bpo::value<std::string>()->default_value(DEFAULT_MAIN_NET_LISTEN_PORT), "")
@@ -248,6 +252,12 @@ namespace matrix
 
             //init seeds
             m_net_params->init_seeds();
+
+            //init log level
+            if (0 != m_args.count("log_level"))
+            {
+                m_log_level = m_args["log_level"].as<uint32_t>();
+            }
 
             return E_SUCCESS;
         }

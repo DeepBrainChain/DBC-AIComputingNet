@@ -34,19 +34,21 @@ namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 
 extern const char * get_short_file_name(const char * file_path);
+extern const char* get_short_func_name(const char* func_name);
 
 #ifndef LOG_DEBUG_INFO_ADDED
 #define LOG_DEBUG_INFO_ADDED
 #define __SHORT_FILE__        get_short_file_name(__FILE__)
+#define __SHORT_FUNC__        get_short_func_name(__FUNCTION__)
 #endif
 
 #ifdef LOG_DEBUG_INFO_ADDED
-#define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)        << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
-#define LOG_DEBUG               BOOST_LOG_TRIVIAL(debug)     << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
-#define LOG_INFO                   BOOST_LOG_TRIVIAL(info)          << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
-#define LOG_WARNING         BOOST_LOG_TRIVIAL(warning) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
-#define LOG_ERROR               BOOST_LOG_TRIVIAL(error)       << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
-#define LOG_FATAL                BOOST_LOG_TRIVIAL(fatal)         << __SHORT_FILE__ << " | " << __LINE__ << " | " << __FUNCTION__  << " | " 
+#define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)        << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " 
+#define LOG_DEBUG               BOOST_LOG_TRIVIAL(debug)     << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " 
+#define LOG_INFO                   BOOST_LOG_TRIVIAL(info)          << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " 
+#define LOG_WARNING         BOOST_LOG_TRIVIAL(warning) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " 
+#define LOG_ERROR               BOOST_LOG_TRIVIAL(error)       << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " 
+#define LOG_FATAL                BOOST_LOG_TRIVIAL(fatal)         << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " 
 #else
 #define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)
 #define LOG_DEBUG              BOOST_LOG_TRIVIAL(debug)
@@ -120,16 +122,14 @@ namespace matrix
                     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
                     keywords::format = (
                             expr::stream
-                                    << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
-                                    << " | " << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
-                                    << " | " << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
-                                    //<< "[" << expr::attr<std::string>("File")
-                                    //<< ":" << expr::attr<int>("Line") << "] "
-                                    << " | " << expr::smessage
+                                    << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%d %H:%M:%S.%f")
+                                    << "|" << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
+                                    << "|" << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
+                                    << "|" << expr::smessage
                     )
                 );
 
-                logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
+                logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
                 sink->locked_backend()->auto_flush(true);
              
                 logging::add_common_attributes();
@@ -143,6 +143,25 @@ namespace matrix
                 //BOOST_LOG_TRIVIAL(info) << "init core log success.";
 
                 return E_SUCCESS;
+            }
+
+            static void set_filter_level(boost::log::trivial::severity_level level)
+            {
+                switch (level)
+                {
+                case boost::log::trivial::trace:
+                case boost::log::trivial::debug:
+                case boost::log::trivial::info:
+                case boost::log::trivial::warning:
+                case boost::log::trivial::error:
+                case boost::log::trivial::fatal:
+                {
+                    logging::core::get()->set_filter(boost::log::trivial::severity >= level);
+                    break;
+                }
+                default:
+                    break;
+                }                
             }
             
         };
