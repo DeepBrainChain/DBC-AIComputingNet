@@ -24,7 +24,9 @@ namespace matrix
     namespace core
     {
 
-        conf_manager::conf_manager() : m_net_params(std::make_shared<net_type_params>())
+        conf_manager::conf_manager() 
+            : m_net_params(std::make_shared<net_type_params>())
+            , m_log_level(1)
         {
 
         }

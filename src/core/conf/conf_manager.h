@@ -114,7 +114,7 @@ namespace matrix
 
             int32_t m_net_flag;
 
-            int32_t m_log_level = 1;
+            int32_t m_log_level;
 
             //params relative with net type
             std::shared_ptr<net_type_params> m_net_params;
