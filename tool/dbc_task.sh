@@ -33,6 +33,25 @@ myecho()
     echo $1
 }
 
+stop_ipfs()
+{
+    #stop ipfs
+    echo "======================================================="
+    PROC_NAME='ipfs'
+    PROC_ID=`ps -aef | grep ipfs | grep -v grep | awk ' {print $2}'`
+    echo -n "ipfs daemon pid: "
+    echo $PROC_ID
+    kill -TERM $PROC_ID
+
+    cd $home_dir
+    rm -rf $code_dir_hash
+    rm -rf $data_dir_hash
+
+    myecho "\n\n"
+
+    echo "======================================================="
+    echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
+}
 
 
 myecho "\n\n"
@@ -79,7 +98,7 @@ fi
 #add ipfs bootstrap node
 ipfs bootstrap rm --all
 
-#ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
+ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
 ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5
 
 
@@ -103,31 +122,12 @@ cd $home_dir
 
 myecho "\n\n"
 
-#download data_dir
-echo "======================================================="
-echo -n "begin to download data dir: "
-echo $data_dir_hash
-ipfs get $data_dir_hash
-
-exit_code=$?
-#echo -n "download data dir exitcode: "
-#echo $exit_code
-
-if [ $? -ne 0 ]; then
-	echo "download data dir failed and dbc_task.sh exit"
-	exit
-fi
-
-echo -n "end to download data dir: "
-echo $data_dir_hash
-sleep $sleep_time
-
-
-
-myecho "\n\n"
-
 #download code_dir
 echo "======================================================="
+if [ -z "$code_dir_hash" ]; then
+	  echo -n "code_dir is empty.pls check"
+	  exit
+fi
 echo -n "begin to download code dir: "
 echo $code_dir_hash
 ipfs get $code_dir_hash
@@ -141,6 +141,43 @@ if [ $? -ne 0 ]; then
 	exit
 fi
 
+if [ ! -e $home_dir/$code_dir_hash/$task ]; then
+   echo "task not exist. quit now"
+   rm -rf $home_dir/$code_dir_hash
+   stop_ipfs
+   exit
+fi
+
+#download data_dir
+echo "======================================================="
+if [ -n "$data_dir_hash" ]; then 
+    echo -n "begin to download data dir: "
+    echo $data_dir_hash
+    ipfs get $data_dir_hash
+
+    exit_code=$?
+    #echo -n "download data dir exitcode: "
+    #echo $exit_code
+    
+    if [ $? -ne 0 ]; then
+        echo "download data dir failed and dbc_task.sh exit"
+        stop_ipfs
+        exit
+    fi
+
+    echo -n "end to download data dir: "
+    echo $data_dir_hash
+    
+    # add link from code_dir to data dir
+    cp -rs $home_dir/$data_dir_hash/* $home_dir/$code_dir_hash/
+
+    sleep $sleep_time
+fi
+
+myecho "\n\n"
+
+
+
 echo -n "end to download code dir: "
 echo $code_dir_hash
 sleep $sleep_time
@@ -152,12 +189,20 @@ myecho "\n\n"
 echo "======================================================="
 echo -n "begin to exec task: "
 echo $home_dir/$code_dir_hash/$task
+#python $home_dir/$code_dir_hash/$task
+
 cd $home_dir/$code_dir_hash
-python ./$task | tee /training_result_file
+/bin/sh $task  | tee /training_result_file
 
 if [ $? -ne 0 ]; then
-	echo "exec task failed and dbc_task.sh exit"
-	exit
+    echo "exec task failed and dbc_task.sh exit"
+    echo -n "end to exec task: "
+    echo $home_dir/$code_dir_hash/$task
+
+    echo "start to upload training_result"
+    python /upload_training_result.py
+    stop_ipfs
+    exit
 fi
 
 echo -n "end to exec task: "
@@ -168,17 +213,4 @@ python /upload_training_result.py
 
 myecho "\n\n"
 
-
-#stop ipfs
-echo "======================================================="
-PROC_NAME='ipfs'
-PROC_ID=`ps -aef | grep ipfs | grep -v grep | awk ' {print $2}'`
-echo -n "ipfs daemon pid: "
-echo $PROC_ID
-kill -TERM $PROC_ID
-
-
-myecho "\n\n"
-
-echo "======================================================="
-echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
+stop_ipfs

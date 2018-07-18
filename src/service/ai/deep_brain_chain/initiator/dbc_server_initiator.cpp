@@ -31,6 +31,7 @@
 #include "id_generator.h"
 #include "crypto_service.h"
 #include "timer_matrix_manager.h"
+#include "data_query_service.h"
 
 using namespace std::chrono;
 using namespace matrix::core;
@@ -48,14 +49,14 @@ namespace ai
 
         int32_t dbc_server_initiator::init(int argc, char* argv[])
         {
-            LOG_DEBUG << "begin to init dbc core";
+            LOG_INFO << "begin to init dbc core";
 
             int32_t ret = E_SUCCESS;
             variables_map vm;
             std::shared_ptr<matrix::core::module> mdl(nullptr);
 
             //crypto service
-            LOG_DEBUG << "begin to init crypto service";
+            LOG_INFO << "begin to init crypto service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<crypto_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -65,20 +66,20 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init crypto service successfully";
+            LOG_INFO << "init crypto service successfully";
 
             //parse command line
-            LOG_DEBUG << "begin to init command line";
+            LOG_INFO << "begin to init command line";
             ret = parse_command_line(argc, argv, vm);
             if (E_SUCCESS != ret)
             {
                 //logging
                 return ret;
             }
-            LOG_DEBUG << "parse command line successfully";
+            LOG_INFO << "parse command line successfully";
 
             //env_manager
-            LOG_DEBUG << "begin to init env manager";
+            LOG_INFO << "begin to init env manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<env_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -88,10 +89,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init env manager successfully";
+            LOG_INFO << "init env manager successfully";
 
             //core conf_manager
-            LOG_DEBUG << "begin to init conf manager";
+            LOG_INFO << "begin to init conf manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<conf_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -101,10 +102,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init conf manager successfully";
+            LOG_INFO << "init conf manager successfully";
 
             //topic_manager
-            LOG_DEBUG << "begin to init topic manager";
+            LOG_INFO << "begin to init topic manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<topic_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -114,10 +115,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init topic manager successfully";
+            LOG_INFO << "init topic manager successfully";
 
             //timer matrix manager
-            LOG_DEBUG << "begin to init matrix manager";
+            LOG_INFO << "begin to init matrix manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<timer_matrix_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -127,10 +128,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init timer matrix manager successfully";
+            LOG_INFO << "init timer matrix manager successfully";
 
             //common service
-            LOG_DEBUG << "begin to init common service";
+            LOG_INFO << "begin to init common service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<common_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -140,10 +141,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init common service successfully";
+            LOG_INFO << "init common service successfully";
 
             //ai power requestor service
-            LOG_DEBUG << "begin to init ai power requestor service";
+            LOG_INFO << "begin to init ai power requestor service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_requestor_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -153,10 +154,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init ai power requestor service successfully";
+            LOG_INFO << "init ai power requestor service successfully";
 
             //ai power provider service
-            LOG_DEBUG << "begin to init ai power provider service";
+            LOG_INFO << "begin to init ai power provider service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_provider_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -166,10 +167,24 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init ai power provider service successfully";
+            LOG_INFO << "init ai power provider service successfully";
+
+            //data query service
+            LOG_INFO << "begin to init net misc service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<service::misc::data_query_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "init data query service but failed";
+                return ret;
+            }
+            mdl->start();
+            LOG_INFO << "init data query service successfully";
+
 
             //connection_manager
-            LOG_DEBUG << "begin to init connection manager";
+            LOG_INFO << "begin to init connection manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<connection_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -179,10 +194,10 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init connection manager successfully";
+            LOG_INFO << "init connection manager successfully";
 
             //p2p net service
-            LOG_DEBUG << "begin to init p2p net service";
+            LOG_INFO << "begin to init p2p net service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<matrix::service_core::p2p_net_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
@@ -192,28 +207,28 @@ namespace ai
                 return ret;
             }
             mdl->start();
-            LOG_DEBUG << "init p2p net service successfully";
+            LOG_INFO << "init p2p net service successfully";
 
             //cmd line service
             if (false == m_daemon)
             {
-                LOG_DEBUG << "begin to init command line service";
+                LOG_INFO << "begin to init command line service";
                 mdl = std::dynamic_pointer_cast<module>(std::make_shared<cmd_line_service>());
                 g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
                 ret = mdl->init(vm);
                 if (E_SUCCESS != ret)
                 {
-                    //logging
+                    LOG_ERROR << "init command line service error.error code:" << ret;
                     return ret;
                 }
                 mdl->start();
-                LOG_DEBUG << "init command line service successfully";
+                LOG_INFO << "init command line service successfully";
             }
 
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
             auto time_span_ms = duration_cast<milliseconds>(init_end_time - server_start_time);
-            LOG_DEBUG << "init dbc core successfully, cost time: " << time_span_ms.count() << " ms";
+            LOG_INFO << "init dbc core successfully, cost time: " << time_span_ms.count() << " ms";
 
             return E_SUCCESS;
         }
@@ -232,7 +247,10 @@ namespace ai
                 ("version,v", "get core version info")
                 ("init,i", "init node id")
                 ("daemon,d", "run as daemon process on Linux or Mac os")
-                ("peer", bpo::value<std::vector<std::string>>(), "");
+                ("peer", bpo::value<std::vector<std::string>>(), "")
+                ("ai_training,a", "run as ai training service provider")
+                ("name,n", bpo::value<std::string>(), "node name")
+                ("max_connect", bpo::value<int32_t>(), "");
 
             try
             {

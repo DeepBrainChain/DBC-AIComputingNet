@@ -95,6 +95,9 @@ namespace ai
 
             bool is_task_exist_in_db(std::string task_id);
 
+            //int32_t on_cmd_clear(const std::shared_ptr<message> &msg);
+            int32_t on_cmd_ps(const std::shared_ptr<message> &msg);
+
 
         protected:
 

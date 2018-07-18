@@ -38,6 +38,11 @@ namespace matrix
             __isset.session_id = true;
         }
 
+        void base_header::__set_path(const std::vector<std::string> & val) {
+            this->path = val;
+            __isset.path = true;
+        }
+
         void base_header::__set_exten_info(const std::map<std::string, std::string> & val) {
             this->exten_info = val;
             __isset.exten_info = true;
@@ -108,6 +113,26 @@ namespace matrix
                         xfer += iprot->skip(ftype);
                     }
                     break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->path.clear();
+                            uint32_t _size0;
+                            ::apache::thrift::protocol::TType _etype3;
+                            xfer += iprot->readListBegin(_etype3, _size0);
+                            this->path.resize(_size0);
+                            uint32_t _i4;
+                            for (_i4 = 0; _i4 < _size0; ++_i4)
+                            {
+                                xfer += iprot->readString(this->path[_i4]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        this->__isset.path = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
                 case 255:
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
@@ -171,6 +196,19 @@ namespace matrix
                 xfer += oprot->writeString(this->session_id);
                 xfer += oprot->writeFieldEnd();
             }
+            if (this->__isset.path) {
+                xfer += oprot->writeFieldBegin("path", ::apache::thrift::protocol::T_LIST, 5);
+                {
+                    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->path.size()));
+                    std::vector<std::string> ::const_iterator _iter12;
+                    for (_iter12 = this->path.begin(); _iter12 != this->path.end(); ++_iter12)
+                    {
+                        xfer += oprot->writeString((*_iter12));
+                    }
+                    xfer += oprot->writeListEnd();
+                }
+                xfer += oprot->writeFieldEnd();
+            }
             if (this->__isset.exten_info) {
                 xfer += oprot->writeFieldBegin("exten_info", ::apache::thrift::protocol::T_MAP, 255);
                 {
@@ -196,6 +234,7 @@ namespace matrix
             swap(a.msg_name, b.msg_name);
             swap(a.nonce, b.nonce);
             swap(a.session_id, b.session_id);
+            swap(a.path, b.path);
             swap(a.exten_info, b.exten_info);
             swap(a.__isset, b.__isset);
         }
@@ -205,6 +244,7 @@ namespace matrix
             msg_name = other8.msg_name;
             nonce = other8.nonce;
             session_id = other8.session_id;
+            path = other8.path;
             exten_info = other8.exten_info;
             __isset = other8.__isset;
         }
@@ -213,6 +253,7 @@ namespace matrix
             msg_name = other9.msg_name;
             nonce = other9.nonce;
             session_id = other9.session_id;
+            path = other9.path;
             exten_info = other9.exten_info;
             __isset = other9.__isset;
             return *this;
@@ -224,6 +265,7 @@ namespace matrix
             out << ", " << "msg_name=" << to_string(msg_name);
             out << ", " << "nonce="; (__isset.nonce ? (out << to_string(nonce)) : (out << "<null>"));
             out << ", " << "session_id="; (__isset.session_id ? (out << to_string(session_id)) : (out << "<null>"));
+            out << ", " << "path="; (__isset.path ? (out << to_string(path)) : (out << "<null>"));
             out << ", " << "exten_info="; (__isset.exten_info ? (out << to_string(exten_info)) : (out << "<null>"));
             out << ")";
         }

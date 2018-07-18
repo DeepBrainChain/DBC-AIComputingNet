@@ -13,9 +13,6 @@
 #include<chrono>
 #include "matrix_socket_channel_handler.h"
 
-#define LOST_SHAKE_HAND_COUNT_MAX               3                  //max lost shake hand req
-#define DEFAULT_WAIT_VER_REQ_INTERVAL           5                   //wait VER_REQ interval while socket accepted
-
 
 using namespace boost::asio;
 
@@ -66,12 +63,8 @@ namespace matrix
 
             uint16_t m_lost_shake_hand_count_max;
 
-            //modify by regulus:fix redefine cause ver_req duplication error
-            //bool m_login_success;
-
             steady_timer m_wait_ver_req_timer;
 
-            //std::function<timer_handler_type> m_wait_ver_req_timer_handler;
         private:
             bool m_recv_ver_req;
 

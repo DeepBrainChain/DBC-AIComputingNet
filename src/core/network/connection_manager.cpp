@@ -15,6 +15,9 @@
 #include "common.h"
 #include "server.h"
 #include "timer_def.h"
+#include "server.h"
+#include "common/util.h"
+#include <algorithm>
 
 
 using namespace matrix::core;
@@ -23,8 +26,7 @@ namespace matrix
 {
     namespace core
     {
-
-        connection_manager::connection_manager()
+        connection_manager::connection_manager() 
             : m_channel_recycle_timer(INVALID_TIMER_ID)
             , m_worker_group(new nio_loop_group())
             , m_acceptor_group(new nio_loop_group())
@@ -50,30 +52,62 @@ namespace matrix
                 return ret;
             }
 
+            ret = load_max_connect(options);
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "connection manager load max_connect failed";
+                return ret;
+            }
+
+            return E_SUCCESS;
+        }
+
+        int32_t connection_manager::load_max_connect(bpo::variables_map &options)
+        {
+            m_max_connect = options.count("max_connect") ? options["max_connect"].as<int32_t>() :CONF_MANAGER->get_max_connect();
+
+            if (m_max_connect < 0)
+            {
+                LOG_ERROR << "max_connect config error.";
+                return E_DEFAULT;
+            }
+
+            // Trim requested connection counts, to fit into system limitations
+            m_max_connect = (std::max)((std::min)(m_max_connect, (int32_t)(FD_SETSIZE - 1 - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS)), 0);
+
+            int32_t nFD = RaiseFileDescriptorLimit(m_max_connect + MIN_CORE_FILEDESCRIPTORS + MAX_ADDNODE_CONNECTIONS);
+            if (nFD < MIN_CORE_FILEDESCRIPTORS)
+            {
+                LOG_ERROR << "Not enough file descriptors available.";
+                return E_DEFAULT;
+            }
+
+            m_max_connect = (std::min)(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, m_max_connect);
+            m_max_connect = (std::max)(m_max_connect, MAX_OUTBOUND_CONNECTIONS);
             return E_SUCCESS;
         }
 
         int32_t connection_manager::service_exit()
         {
             //stop server listening
-            LOG_DEBUG << "connection manager stop all server listening...";
+            LOG_INFO << "connection manager stop all server listening...";
             stop_all_listen();
 
             //stop client connect
-            LOG_DEBUG << "connection manager stop all client connecting...";
+            LOG_INFO << "connection manager stop all client connecting...";
             stop_all_connect();
 
-            LOG_DEBUG << "connection manager stop all tcp channels...";
+            LOG_INFO << "connection manager stop all tcp channels...";
             stop_all_channel();
 
-            LOG_DEBUG << "connection manager stop all recycle tcp channels...";
+            LOG_INFO << "connection manager stop all recycle tcp channels...";
             stop_all_recycle_channel();
 
             //stop io service
-            LOG_DEBUG << "connection manager stop all io services...";
+            LOG_INFO << "connection manager stop all io services...";
             stop_io_services();
 
-            LOG_DEBUG << "connection manager exit all io services";
+            LOG_INFO << "connection manager exit all io services";
             exit_io_services();
 
             {
@@ -151,13 +185,13 @@ namespace matrix
 
         int32_t connection_manager::exit_io_services()
         {
-            LOG_DEBUG << "connection manager exit acceptor group";
+            LOG_INFO << "connection manager exit acceptor group";
             m_acceptor_group->exit();
 
-            LOG_DEBUG << "connection manager exit worker group";
+            LOG_INFO << "connection manager exit worker group";
             m_worker_group->exit();
 
-            LOG_DEBUG << "connection manager exit connector group";
+            LOG_INFO << "connection manager exit connector group";
             m_connector_group->exit();
 
             return E_SUCCESS;
@@ -168,7 +202,7 @@ namespace matrix
             int32_t ret = E_SUCCESS;
 
             //acceptor group
-            LOG_DEBUG << "connection manager start acceptor group";
+            LOG_INFO << "connection manager start acceptor group";
             ret = m_acceptor_group->start();
             if (E_SUCCESS != ret)
             {
@@ -177,7 +211,7 @@ namespace matrix
             }
 
             //worker group
-            LOG_DEBUG << "connection manager start worker group";
+            LOG_INFO << "connection manager start worker group";
             ret = m_worker_group->start();
             if (E_SUCCESS != ret)
             {
@@ -187,7 +221,7 @@ namespace matrix
             }
 
             //connector group
-            LOG_DEBUG << "connection manager start connector group";
+            LOG_INFO << "connection manager start connector group";
             ret = m_connector_group->start();
             if (E_SUCCESS != ret)
             {
@@ -204,17 +238,17 @@ namespace matrix
         {
             try
             {
-                LOG_DEBUG << "connection manager stop acceptor group";
+                LOG_INFO << "connection manager stop acceptor group";
                 m_acceptor_group->stop();
 
-                LOG_DEBUG << "connection manager stop worker group";
+                LOG_INFO << "connection manager stop worker group";
                 m_worker_group->stop();
 
-                LOG_DEBUG << "connection manager stop connector group";
+                LOG_INFO << "connection manager stop connector group";
                 m_connector_group->stop();
 
             }
-            catch (const boost::exception & e)
+            catch(const boost::exception & e)
             {
                 LOG_ERROR << "connection_manager stop_io_services error:" << diagnostic_information(e);
             }
@@ -222,17 +256,17 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        int32_t connection_manager::stop_all_listen()
+         int32_t connection_manager::stop_all_listen()
         {
             read_lock_guard<rw_lock> lock(m_lock_accp);
             for (auto it = m_acceptors.begin(); it != m_acceptors.end(); it++)
             {
-                LOG_DEBUG << "connection manager stop listening at port: " << (*it)->get_endpoint().port();
+                LOG_INFO << "connection manager stop listening at port: " << (*it)->get_endpoint().port();
                 (*it)->stop();
             }
 
             return E_SUCCESS;
-        }
+         }
 
         int32_t connection_manager::stop_all_connect()
         {
@@ -259,16 +293,16 @@ namespace matrix
                 {
                     ch->stop();
                     ch.reset();
+                    }
                 }
-            }
 
             m_channels.clear();
 
             return E_SUCCESS;
-        }
+                }
 
         int32_t connection_manager::stop_all_recycle_channel()
-        {
+                {
             std::shared_ptr<tcp_socket_channel> ch = nullptr;
 
             write_lock_guard<rw_lock> lock(m_lock_recycle);
@@ -290,7 +324,7 @@ namespace matrix
 
         int32_t connection_manager::start_listen(tcp::endpoint ep, handler_create_functor func)
         {
-            LOG_DEBUG << "connection manager start listening at ip: " << ep.address().to_string() << " at port: " << ep.port();
+            LOG_INFO << "connection manager start listening at ip: " << ep.address().to_string() << " at port: " << ep.port();
 
             try
             {
@@ -338,7 +372,7 @@ namespace matrix
                 }
 
                 //stop
-                LOG_DEBUG << "connection manager stop listening at port: " << ep.port();
+                LOG_INFO << "connection manager stop listening at port: " << ep.port();
                 (*it)->stop();
 
                 //erase
@@ -435,6 +469,11 @@ namespace matrix
         int32_t connection_manager::add_channel(socket_id sid, shared_ptr<channel> channel)
         {
             write_lock_guard<rw_lock> lock(m_lock_chnl);
+            if (check_over_max_connect(sid.get_type()) != true)
+            {
+                LOG_DEBUG << "add channel failed. over max connect. " << sid.to_string();
+                return E_DEFAULT;
+            }
 
             LOG_DEBUG << "channel add channel begin use count " << channel.use_count() << channel->id().to_string();
 
@@ -473,21 +512,21 @@ namespace matrix
             LOG_DEBUG << "channel remove_channel end use count " << ch.use_count() << ch->id().to_string();
         }
 
-        std::shared_ptr<channel> connection_manager::get_channel(socket_id sid)
-        {
-            read_lock_guard<rw_lock> lock(m_lock_chnl);
-            auto it = m_channels.find(sid);
-            if (it != m_channels.end())
-            {
-                return it->second;
-            }
+		std::shared_ptr<channel> connection_manager::get_channel(socket_id sid)
+		{
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
+			auto it = m_channels.find(sid);
+			if (it != m_channels.end())
+			{
+				return it->second;
+			}
 
-            return nullptr;
-        }
+			return nullptr;
+		}
 
         int32_t connection_manager::send_message(socket_id sid, std::shared_ptr<message> msg)
         {
-            read_lock_guard<rw_lock> lock(m_lock_chnl);
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
             auto it = m_channels.find(sid);
             if (it == m_channels.end())
             {
@@ -499,35 +538,166 @@ namespace matrix
             return it->second->write(msg);
         }
 
-        void connection_manager::broadcast_message(std::shared_ptr<message> msg, socket_id id /*= socket_id()*/)
-        {
+		int32_t connection_manager::broadcast_message(std::shared_ptr<message> msg, socket_id id /*= socket_id()*/)
+		{
             
             if (msg->content->header.nonce.length() == 0)
             {
                 LOG_DEBUG << "nonce is null. not broadcast. " << msg->get_name();
-                return;
+                return E_NONCE;
+            }
+
+            if (! have_active_channel())
+            {
+                LOG_WARNING << "connection manager broadcast message error, no active channel";
+                return E_INACTIVE_CHANNEL;
             }
             
-            read_lock_guard<rw_lock> lock(m_lock_chnl);
-            auto it = m_channels.begin();
-            for (; it != m_channels.end(); ++it)
-            {
+			read_lock_guard<rw_lock> lock(m_lock_chnl);
+			auto it = m_channels.begin();
+			for (; it != m_channels.end(); ++it)
+			{
                 if (id.get_id() != 0)
                 {
                     if (it->first == id)
                         continue;
                 }
-
+                
                 //not login success or stopped, continue
                 if (!it->second->is_channel_ready())
                 {
                     LOG_DEBUG << "connection manager broadcast message, but peer socket id: " << it->first.get_id() << " not logined.";
                     continue;
                 }
+                
+				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
+				it->second->write(msg);
+			}
 
-                LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
-                it->second->write(msg);
+            return E_SUCCESS;
+		}
+
+
+        shared_ptr<channel> connection_manager::find_fast_path(std::vector<std::string>& path)
+        {
+            int i = 0;
+            bool is_next_node_found = false;
+            shared_ptr<channel> c = nullptr;
+            for (auto& node_id: path)
+            {
+                i++;
+                auto it = m_channels.begin();
+                for (; it != m_channels.end(); ++it)
+                {
+                    //not login success or stopped, continue
+                    if (!it->second->is_channel_ready())
+                    {
+                        continue;
+                    }
+
+                    auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(it->second);
+                    if (tcp_ch && tcp_ch->get_remote_node_id() == node_id)
+                    {
+                        LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string();
+                        is_next_node_found = true;
+                        c = it->second;
+                        break;
+                    }
+                }
+
+                if (is_next_node_found) break;
+
             }
+
+
+            if (is_next_node_found)
+            {
+                uint32_t nodes_to_be_removed = path.size() - i + 1 ;
+
+                for (uint32_t i = 0; i < nodes_to_be_removed; i++)
+                {
+                    path.pop_back();
+                }
+            }
+
+            return c;
+        }
+
+        bool connection_manager::have_active_channel()
+        {
+            if (m_channels.size() < 1)
+            {
+                return false;
+            }
+
+            read_lock_guard<rw_lock> lock(m_lock_chnl);
+            auto it = m_channels.begin();
+            for (; it != m_channels.end(); ++it)
+            {
+                if (it->second->is_channel_ready())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        bool connection_manager::send_resp_message(std::shared_ptr<message> msg, socket_id id)
+        {
+
+            if (msg->content->header.nonce.length() == 0)
+            {
+                LOG_DEBUG << "nonce is null, drop it. " << msg->get_name();
+                return true;
+            }
+
+            read_lock_guard<rw_lock> lock(m_lock_chnl);
+
+            auto& path = msg->content->header.path;
+
+            auto c = find_fast_path(path);
+
+            if (c!=nullptr)
+            {
+                LOG_DEBUG << "unicast msg " << msg->get_name();
+                c->write(msg);
+            }
+            else
+            {
+                LOG_DEBUG << "broadcast msg " << msg->get_name();
+                broadcast_message(msg,id);
+            }
+
+            return false;
+        }
+
+        int32_t connection_manager::get_connect_num()
+        {
+            int32_t num = 0;
+            auto it = m_channels.begin();
+            for (; it != m_channels.end(); ++it)
+            {
+                if ((it->second)->get_state() != CHANNEL_STOPPED)
+                {
+                    ++num;
+                }
+            }
+            return num;
+        }
+
+        int32_t connection_manager::get_out_connect_num()
+        {
+            int32_t num = 0;
+            auto it = m_channels.begin();
+            for (; it != m_channels.end(); ++it)
+            {
+                if ((it->first).get_type() == CLIENT_SOCKET && (it->second)->get_state() != CHANNEL_STOPPED)
+                {
+                    ++num;
+                }
+            }
+            return num;
         }
 
         int32_t connection_manager::on_tcp_channel_error(std::shared_ptr<message> &msg)
@@ -536,12 +706,52 @@ namespace matrix
             {
                 return E_NULL_POINTER;
             }
-
             socket_id  sid = msg->header.src_sid;
             LOG_DEBUG << "connection manager received tcp channel error:" << sid.to_string();
 
             //stop channel
             return stop_channel(sid);
+        }
+        
+        int32_t connection_manager::get_in_connect_num()
+        {
+            int32_t num = 0;
+            auto it = m_channels.begin();
+            for (; it != m_channels.end(); ++it)
+            {
+                if ((it->first).get_type() == SERVER_SOCKET && (it->second)->get_state() != CHANNEL_STOPPED)
+                {
+                    ++num;
+                }
+            }
+            return num;
+        }
+
+        bool connection_manager::check_over_max_connect(socket_type st)
+        {
+
+            int32_t num = 0;
+            if (st == SERVER_SOCKET)
+            {
+                num = get_in_connect_num();
+                int32_t n_max_in = m_max_connect - MAX_OUTBOUND_CONNECTIONS;
+                if (num > n_max_in)
+                {
+                    return false;
+                }
+            }
+
+            /*if (st == CLIENT_SOCKET)
+            {
+                num = get_in_connect_num();
+
+                if (num > MAX_OUTBOUND_CONNECTIONS)
+                {
+                    return false;
+                }
+            }*/
+
+            return true;
         }
 
         int32_t connection_manager::on_recycle_timer(std::shared_ptr<matrix::core::core_timer> timer)
@@ -650,8 +860,7 @@ namespace matrix
                 m_channel_recycle_timer = INVALID_TIMER_ID;
             }
         }
-
+    
     }
 
 }
-

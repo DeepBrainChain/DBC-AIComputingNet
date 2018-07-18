@@ -27,6 +27,7 @@ include_directories(
         ${SRC_PATH}/core/service_module/pc
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
+        ${SRC_PATH}/core
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/db/
@@ -46,6 +47,9 @@ include_directories(
 )
 
 link_directories(${SRC_PATH}/core/lib)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
+
 
 add_executable(dbc_service_core_test
         test_main.cpp
@@ -55,7 +59,7 @@ add_executable(dbc_service_core_test
 set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
 
 if(APPLE)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES})
+    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 )
 elseif(LINUX)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lboost_thread -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -ldl)
 endif()

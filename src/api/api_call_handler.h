@@ -26,9 +26,13 @@
 #include "peer_candidate.h"
 #include "util.h"
 
+#include "log.h"
+#include "filter/simple_expression.h"
+
 using namespace std;
 using namespace boost::program_options;
 using namespace matrix::core;
+using namespace matrix::service_core;
 
 
 #define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(30000)                    //unit: ms
@@ -313,6 +317,8 @@ namespace ai
                     return;
                 }
 
+                LOG_DEBUG << "recv: " << result_info;
+
                 auto it = peer_node_logs.begin();
                 for (; it != peer_node_logs.end(); it++)
                 {
@@ -332,6 +338,262 @@ namespace ai
                 cout << "\n";
             }
         };
+
+
+        // sub operation of show cmd
+        enum
+        {
+            OP_SHOW_NODE_INFO = 0,
+            OP_SHOW_SERVICE_LIST = 1,
+            OP_SHOW_UNKNOWN = 0xff
+        };
+
+        class cmd_show_req : public matrix::core::msg_base
+        {
+        public:
+            std::string o_node_id;
+            std::string d_node_id;
+            std::vector<std::string> keys;
+            int32_t op;
+            std::string filter;
+
+        public:
+            cmd_show_req(): op(OP_SHOW_UNKNOWN)
+            {
+
+            }
+        };
+
+        class cmd_show_resp : public matrix::core::msg_base, public outputter
+        {
+        public:
+            std::string o_node_id;
+            std::string d_node_id;
+            std::map<std::string,std::string> kvs;
+            std::map<std::string, node_service_info> id_2_services;
+
+            int32_t op;
+            std::string err;
+
+            std::string filter;
+
+        public:
+
+            cmd_show_resp(): op(OP_SHOW_UNKNOWN),
+                             err("")
+            {
+
+            }
+
+            void error(std::string err_)
+            {
+                err = err_;
+            }
+
+            std::string to_string(std::vector<std::string> in)
+            {
+                std::string out="";
+                for(auto& item: in)
+                {
+                    if(out.length())
+                    {
+                        out += " , ";
+                    }
+                    out += item ;
+                }
+
+                return out;
+            }
+
+
+            std::string get_gpu_num(std::string s)
+            {
+                // 1 * GeForce940MX
+                std::string delimiter = " * ";
+
+                size_t pos = s.find(delimiter);
+                if (pos == std::string::npos)
+                {
+                    return "";
+                }
+
+                std::string token = s.substr(0, s.find(delimiter));
+                return token;
+            }
+
+            std::string get_gpu_type(std::string s)
+            {
+                // 1 * GeForce940MX
+                std::string delimiter = " * ";
+
+                size_t pos = s.find(delimiter);
+                if (pos == std::string::npos)
+                {
+                    return "";
+                }
+
+                s.erase(0, pos + delimiter.length());
+
+                return s;
+            }
+
+            bool check(expression& e, std::string filter, std::string node_id, node_service_info& s_info)
+            {
+                if (filter.length() == 0)
+                {
+                    return true;
+                }
+
+                auto gpu_info = string_util::rtrim(s_info.kvs["gpu"],'\n');
+                string_util::trim(gpu_info);
+
+                auto kvs_plus = s_info.kvs;
+
+                if (gpu_info.length())
+                {
+                    auto gpu_num = get_gpu_num(gpu_info);
+                    auto gpu_type = get_gpu_type(gpu_info);
+                    kvs_plus["gpu_num"] = gpu_num;
+                    kvs_plus["gpu_type"] = gpu_type;
+                }
+
+                std::string text = (node_id + " " + s_info.name
+                                    + " " + to_string(s_info.service_list)
+                                    + " " + s_info.kvs["state"] + " " + gpu_info);
+
+                bool is_matched = e.evaluate(kvs_plus, text);
+
+                return is_matched;
+            }
+
+            void format_service_list()
+            {
+                console_printer printer;
+                printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 20)(LEFT_ALIGN, 24)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
+
+                printer << matrix::core::init << "node_id" << "node_name" << "service_list" <<"state" << "gpu"<< "time_stamp" << matrix::core::endl;
+
+                expression e(filter);
+
+                // no more than 100 nodes
+                int i = 0;
+                const int MAX_NODES_TO_BE_SHOWN = 100;
+                for (auto &it : id_2_services)
+                {
+                    if (!check(e, filter, it.first, it.second)) continue;
+
+                    if (++i > MAX_NODES_TO_BE_SHOWN) break;
+
+
+                    printer << matrix::core::init << it.first
+                            << it.second.name
+                            << to_string(it.second.service_list)
+                            << it.second.kvs["state"]
+                            << string_util::rtrim(it.second.kvs["gpu"],'\n')
+                            << time_util::time_2_str(it.second.time_stamp)
+                            << matrix::core::endl;
+                }
+                printer << matrix::core::endl;
+
+            }
+
+
+            void format_node_info()
+            {
+
+                auto it = kvs.begin();
+                //cout << "node id: " << o_node_id << endl;
+
+                auto count = kvs.size();
+                for (; it != kvs.end(); it++)
+                {
+                    //cout << "******************************************************\n";
+                    cout << "------------------------------------------------------\n";
+                    if (count)
+                    {
+                        cout << it->first << ":\n";
+                    }
+                    cout << it->second << "\n";
+                    cout << "------------------------------------------------------\n";
+                    //cout << "******************************************************\n";
+                }
+                cout << "\n";
+
+            }
+
+            void format_output()
+            {
+                if (err != "")
+                {
+                    cout << err << endl;
+                    return;
+                }
+
+                if (op == OP_SHOW_SERVICE_LIST)
+                {
+                    format_service_list();
+                    return;
+                }
+                else if (op == OP_SHOW_NODE_INFO)
+                {
+                    format_node_info();
+                    return;
+                }
+                else
+                {
+
+                    LOG_ERROR << "unknown op " << op;
+                }
+            }
+        };
+
+        /*class cmd_clear_req : public matrix::core::msg_base
+        {
+        public:
+
+        };
+
+        class cmd_clear_resp : public matrix::core::msg_base
+        {
+        public:
+
+        };*/
+
+        class cmd_ps_req : public matrix::core::msg_base
+        {
+        public:
+            std::string task_id;
+        };
+
+        class cmd_ps_resp : public matrix::core::msg_base, public outputter
+        {
+        public:
+            int32_t result;
+            std::string result_info;
+
+            std::vector<cmd_task_info>  task_infos;
+
+            void format_output()
+            {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+
+                console_printer printer;
+                printer(LEFT_ALIGN, 56)(LEFT_ALIGN, 24) (LEFT_ALIGN, 24)(LEFT_ALIGN, 20);
+
+                printer << matrix::core::init <<"task_id" << "time" << "task_status" << "result" << matrix::core::endl;
+                for (cmd_task_info task_info : task_infos)
+                {
+                    printer  << matrix::core::init << task_info.task_id << task_info.create_time << to_training_task_status_string(task_info.status) << task_info.result << endl;
+                }
+                
+            }
+
+        };
+
 
         class api_call_handler
         {

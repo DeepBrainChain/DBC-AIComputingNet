@@ -103,6 +103,11 @@ namespace matrix
                 using function_type = std::function<ret_type (args_type...)>;
                 std::string msg_type = topic + typeid(function_type).name();
 
+                if (topic != "time_tick_notification")
+                {
+                    LOG_DEBUG << "topic manager publish: "<<topic;
+                }
+
                 read_lock_guard<rw_lock> lock_guard(m_lock);
                 auto range = m_topic_registry.equal_range(msg_type);
                 if (range.first == range.second)

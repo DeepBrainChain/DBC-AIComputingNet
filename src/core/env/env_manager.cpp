@@ -10,7 +10,7 @@
 
 #include "env_manager.h"
 #include "server.h"
-#include "util.h"
+#include "common/util.h"
 #ifdef WIN32
 #include<tchar.h>
 #include <atlstr.h>
@@ -54,6 +54,8 @@ namespace matrix
         fs::path env_manager::m_db_path;
 
         fs::path env_manager::m_peer_path;
+
+        fs::path env_manager::m_container_path;
 
         fs::path env_manager::m_home_path;
 
@@ -109,6 +111,10 @@ namespace matrix
             m_peer_path = m_home_path;
             m_peer_path /= fs::path(CONF_DIR_NAME);
             m_peer_path /= fs::path(PEER_FILE_NAME);
+
+            m_container_path = m_home_path;
+            m_container_path /= fs::path(CONF_DIR_NAME);
+            m_container_path /= fs::path(CONTAINER_FILE_NAME);
         }
 
 #if 0

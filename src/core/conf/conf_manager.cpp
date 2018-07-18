@@ -13,11 +13,15 @@
 #include <fstream> 
 #include <boost/exception/all.hpp>
 #include <vector>
-#include "util.h"
+#include "common/util.h"
+#include "utilstrencodings.h"
 #include "utilstrencodings.h"
 
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
 std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
+const int32_t DEFAULT_MAX_CONNECTION_NUM = 128;
+const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
+const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
 
 namespace matrix
 {
@@ -78,7 +82,10 @@ namespace matrix
                 ("test_net_listen_port", bpo::value<std::string>()->default_value(DEFAULT_TEST_NET_LISTEN_PORT), "")
                 ("container_ip", bpo::value<std::string>()->default_value(DEFAULT_LOCAL_IP), "")
                 ("container_port", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_LISTEN_PORT), "")
-                ("container_image", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_IMAGE_NAME), "");
+                ("max_connect", bpo::value<int32_t>()->default_value(128), "")
+                ("timer_service_broadcast_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND), "")
+                ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "");
+                //("container_image", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_IMAGE_NAME), "");
 
             //peer opt description
             bpo::options_description peer_opts("peer options");
@@ -109,17 +116,18 @@ namespace matrix
             return E_SUCCESS;
         }
 
+
         bool conf_manager::check_node_info()
         {
-            id_generator gen;
+            //id_generator gen;
 
-            if (gen.check_node_id(m_node_id) != true)
+            if (id_generator().check_node_id(m_node_id) != true)
             {
                 LOG_ERROR << "node id check failed";
                 return false;
             }
 
-            if (gen.check_node_private_key(m_node_private_key) != true)
+            if (id_generator().check_node_private_key(m_node_private_key) != true)
             {
                 LOG_ERROR << "node private_key check failed";
                 return false;
@@ -169,7 +177,8 @@ namespace matrix
                 int32_t gen_ret = gen_new_nodeid();
                 if (gen_ret != E_SUCCESS)
                 {
-                    LOG_ERROR << "generate new nodeid error.";
+
+                    LOG_ERROR << "generate new nodeid error";
                     return gen_ret;
                 }
             }
@@ -181,6 +190,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
+
             try
             {
                 std::ifstream node_dat_ifs(node_dat_path.generic_string());
@@ -191,7 +201,8 @@ namespace matrix
             catch (const boost::exception & e)
             {
                 //std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
-                LOG_ERROR << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited.";
+                LOG_ERROR << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." ;
+
                 LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
                 return E_DEFAULT;
             }
@@ -208,6 +219,7 @@ namespace matrix
                 return E_DEFAULT;
             }
             m_node_id = SanitizeString(m_args["node_id"].as<std::string>());
+
             //node private key
             if (0 == m_args.count("node_private_key"))
             {
@@ -286,35 +298,49 @@ namespace matrix
 
             //node.dat path
             fs::path node_dat_path;
-            node_dat_path /= matrix::core::path_util::get_exe_dir();
-            node_dat_path /= fs::path(DAT_DIR_NAME);
 
-            //check dat directory
-            if (false == fs::exists(node_dat_path))
+            try
             {
-                LOG_DEBUG << "dat directory path does not exist and create dat directory";
-                fs::create_directory(node_dat_path);
+                node_dat_path /= matrix::core::path_util::get_exe_dir();
+                node_dat_path /= fs::path(DAT_DIR_NAME);
+
+                //check dat directory
+                if (false == fs::exists(node_dat_path))
+                {
+                    LOG_DEBUG << "dat directory path does not exist and create dat directory";
+                    fs::create_directory(node_dat_path);
+                }
+
+                //check dat directory
+                if (false == fs::is_directory(node_dat_path))
+                {
+                    LOG_ERROR << "dat directory path does not exist and exit";
+                    return E_DEFAULT;
+                }
+
+                node_dat_path /= fs::path(NODE_FILE_NAME);
+
+                //open file w+
+    #ifdef WIN32
+                errno_t err = fopen_s(&fp, node_dat_path.generic_string().c_str(), "w+");
+                if (0 != err)
+    #else
+                fp = fopen(node_dat_path.generic_string().c_str(), "w+");
+                if (nullptr == fp)
+    #endif
+                {
+                    LOG_ERROR << "conf_manager open node.dat error: fp is nullptr";
+                    return E_DEFAULT;
+                }
             }
-
-            //check dat directory
-            if (false == fs::is_directory(node_dat_path))
+            catch (const std::exception & e)
             {
-                LOG_ERROR << "dat directory path does not exist and exit";
+                LOG_ERROR << "create node error: " << e.what();
                 return E_DEFAULT;
             }
-
-            node_dat_path /= fs::path(NODE_FILE_NAME);
-
-            //open file w+
-#ifdef WIN32
-            errno_t err = fopen_s(&fp, node_dat_path.generic_string().c_str(), "w+");
-            if (0 != err)
-#else
-            fp = fopen(node_dat_path.generic_string().c_str(), "w+");
-            if (nullptr == fp)
-#endif
+            catch (const boost::exception & e)
             {
-                LOG_ERROR << "conf_manager open node.dat error: fp is nullptr";
+                LOG_ERROR << "create node error" << diagnostic_information(e);
                 return E_DEFAULT;
             }
 

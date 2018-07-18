@@ -25,9 +25,9 @@ endif()
 
 if(LINUX)
     set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-    set(CXX_FLAGS "-std=c++11")
+    set(CXX_FLAGS "-std=c++11 -fpie")
     set(CXX_PREPROCESS_FLAGS "${CXX_PREPROCESS_FLAGS} -D__linux__ -D__x86_64__")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
+#	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 endif()
 
 
