@@ -40,8 +40,8 @@ RUN tar -xvzf /home/root/boost_1_66_0.tar.gz
 RUN rm -f /home/root/boost_1_66_0.tar.gz
 WORKDIR /home/root/boost_1_66_0
 RUN ./bootstrap.sh --prefix=/usr/local --with-libraries=all
-RUN ./b2 install
-
+#RUN ./b2 install
+RUN ./b2 toolset=gcc cxxflags="-std=c++11 -fpie" install
 
 # workaround for gcc 5 compile issue
 RUN sed -i 's/result.count < result.max_buffers/(result.count) < result.max_buffers/g' /usr/local/include/boost/asio/detail/consuming_buffers.hpp
