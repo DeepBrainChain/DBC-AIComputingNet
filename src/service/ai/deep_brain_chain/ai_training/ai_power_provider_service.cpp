@@ -382,6 +382,31 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if (req->body.entry_file.empty())
+            {
+                LOG_ERROR << "entry_file non exist in task.";
+                return E_DEFAULT;
+            }
+
+            if (req->body.entry_file.size() > MAX_ENTRY_FILE_NAME_LEN)
+            {
+
+                LOG_ERROR << "entry_file name lenth is too long." << req->body.entry_file.size();
+                return E_DEFAULT;
+            }
+
+            if (req->body.training_engine.size() > MAX_ENGINE_IMGE_NAME_LEN)
+            {
+                LOG_ERROR << "engine image lenth is too long." << req->body.training_engine.size();
+                return E_DEFAULT;
+            }
+
+            if (check_task_engine(req->body.training_engine) != true)
+            {
+                LOG_ERROR << "engine name is error." << req->body.training_engine.size();
+                return E_DEFAULT;
+            }
+
             //check node id
             const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
             auto it = peer_nodes.begin();
@@ -1006,7 +1031,7 @@ namespace ai
             std::string exec_cmd = AI_TRAINING_TASK_SCRIPT_HOME;
             exec_cmd += AI_TRAINING_TASK_SCRIPT;
 
-            if (task->entry_file.empty())
+            /*if (task->entry_file.empty())
             {
                 LOG_ERROR << "entry_file non exist in task." ;
                 return nullptr;
@@ -1029,7 +1054,7 @@ namespace ai
             {
                 LOG_ERROR << "engine name is error." << task->training_engine.size();
                 return nullptr;
-            }
+            }*/
             std::string start_cmd = task->entry_file + " " + task->hyper_parameters;
 
             config->image = task->training_engine;

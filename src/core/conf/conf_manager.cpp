@@ -133,7 +133,7 @@ namespace matrix
                 return false;
             }
 
-            return true;
+            return id_generator().check_node_id_by_privatekey(m_node_id, m_node_private_key);
         }
 
         int32_t conf_manager::gen_new_nodeid()
@@ -237,6 +237,7 @@ namespace matrix
 
             if (check_node_info() != true)
             {
+                LOG_ERROR << "node_id error";
                 return E_DEFAULT;
             }
             
