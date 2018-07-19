@@ -123,17 +123,16 @@ namespace matrix
 
             if (id_generator().check_node_id(m_node_id) != true)
             {
-                LOG_ERROR << "node id check failed";
                 return false;
             }
-
-            if (id_generator().check_node_private_key(m_node_private_key) != true)
+            std::string node_derived;
+            bool derived = id_generator().derive_node_id_by_private_key(m_node_private_key, node_derived);
+            if (derived != true)
             {
-                LOG_ERROR << "node private_key check failed";
-                return false;
+                return derived;
             }
 
-            return id_generator().check_node_id_by_privatekey(m_node_id, m_node_private_key);
+            return node_derived == m_node_id;
         }
 
         int32_t conf_manager::gen_new_nodeid()

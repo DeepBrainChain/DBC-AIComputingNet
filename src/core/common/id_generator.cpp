@@ -127,15 +127,10 @@ namespace matrix
        {
             std::vector<unsigned char> vchRet;
             
-            if (DecodeBase58Check(SanitizeString(id), vchRet) != true)
-            {
-                return false;
-            }
-
-            return true;
+            return DecodeBase58Check(SanitizeString(id), vchRet);
        }
 
-       bool id_generator::check_node_id_by_privatekey(const std::string & node_id, const std::string & node_privarte_key)
+       bool id_generator::derive_node_id_by_private_key(std::string & node_privarte_key, std::string & node_id)
        {
            std::vector<unsigned char> vch;
            if (true != decode_private_key(node_privarte_key, vch))
@@ -160,9 +155,8 @@ namespace matrix
            id_data.reserve(id_prefix.size() + keyID.size());
            id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
            id_data.insert(id_data.end(), keyID.begin(), keyID.end());
-           std::string node_id_check = EncodeBase58Check(id_data);
-
-           return node_id_check == node_id;
+           node_id = EncodeBase58Check(id_data);
+           return true;
        }
 
        bool id_generator::decode_node_id(const std::string & node_id, std::vector<uint8_t> & vch_node)
@@ -207,10 +201,7 @@ namespace matrix
            }
            return true;
        }
-
-
     }
-
 }
 
 
