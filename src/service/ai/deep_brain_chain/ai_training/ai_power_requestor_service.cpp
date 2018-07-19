@@ -202,19 +202,20 @@ namespace ai
 
             //parse task config file
             bpo::options_description task_config_opts("task config file options");
-            task_config_opts.add_options()
-                ("task_id", bpo::value<std::string>(), "")
-                ("select_mode", bpo::value<int8_t>(), "")
-                ("master", bpo::value<std::string>()->default_value(""), "")
-                ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
-                ("server_specification", bpo::value<std::string>()->default_value(""), "")
-                ("server_count", bpo::value<int32_t>()->default_value(0), "")
-                ("training_engine", bpo::value<std::string>(), "")
-                ("code_dir", bpo::value<std::string>(), "")
-                ("entry_file", bpo::value<std::string>(), "")
-                ("data_dir", bpo::value<std::string>()->default_value(""), "")
-                ("checkpoint_dir", bpo::value<std::string>()->default_value(""), "")
-                ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
+            add_task_config_opts(task_config_opts);
+            //task_config_opts.add_options()
+            //    ("task_id", bpo::value<std::string>(), "")
+            //    ("select_mode", bpo::value<int8_t>(), "")
+            //    ("master", bpo::value<std::string>()->default_value(""), "")
+            //    ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
+            //    ("server_specification", bpo::value<std::string>()->default_value(""), "")
+            //    ("server_count", bpo::value<int32_t>()->default_value(0), "")
+            //    ("training_engine", bpo::value<std::string>(), "")
+            //    ("code_dir", bpo::value<std::string>(), "")
+            //    ("entry_file", bpo::value<std::string>(), "")
+            //    ("data_dir", bpo::value<std::string>()->default_value(""), "")
+            //    ("checkpoint_dir", bpo::value<std::string>()->default_value(""), "")
+            //    ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
 
             try
             {
@@ -974,17 +975,18 @@ namespace ai
         void ai_power_requestor_service::add_task_config_opts(bpo::options_description &opts) const
         {
             opts.add_options()
-                ("select_mode", bpo::value<int8_t>()->default_value(0), "")
-                ("master", bpo::value<std::string>(), "")
+                ("task_id", bpo::value<std::string>(), "")
+                ("select_mode", bpo::value<int8_t>(), "")
+                ("master", bpo::value<std::string>()->default_value(""), "")
                 ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
-                ("server_specification", bpo::value<std::string>(), "")
-                ("server_count", bpo::value<int32_t>(), "")
-                ("training_engine", bpo::value<int32_t>(), "")
+                ("server_specification", bpo::value<std::string>()->default_value(""), "")
+                ("server_count", bpo::value<int32_t>()->default_value(0), "")
+                ("training_engine", bpo::value<std::string>(), "")
                 ("code_dir", bpo::value<std::string>(), "")
                 ("entry_file", bpo::value<std::string>(), "")
-                ("data_dir", bpo::value<std::string>(), "")
-                ("checkpoint_dir", bpo::value<std::string>(), "")
-                ("hyper_parameters", bpo::value<std::string>(), "");
+                ("data_dir", bpo::value<std::string>()->default_value(""), "")
+                ("checkpoint_dir", bpo::value<std::string>()->default_value(""), "")
+                ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
         }
 
         std::shared_ptr<message> ai_power_requestor_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts)
