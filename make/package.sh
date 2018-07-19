@@ -16,6 +16,7 @@ cp ../../tool/p ./
 cp ../../tool/mining_install.sh ./
 cp ../../tool/stopapp ./
 cp ../../tool/startapp ./
+cp ../../tool/startaiserver ./
 cp ../../tool/rm_containers.sh ./
 cp ../../tool/docker_gpg.key ./
 cp ../../tool/plog           ./

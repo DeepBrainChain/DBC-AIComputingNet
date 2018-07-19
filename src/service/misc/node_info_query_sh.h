@@ -60,7 +60,10 @@ function get {
     ;;
 
     "image")
-        docker image list | grep dbctraining | grep -v none | awk '{print $1":"$2}'
+        if ! which docker>/dev/null; then echo "N/A";
+        else
+            docker image list | grep dbctraining | grep -v none | awk '{print $1":"$2}'
+        fi
     ;;
     *)
     echo "N/A"

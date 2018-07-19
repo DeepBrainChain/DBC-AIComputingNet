@@ -149,7 +149,7 @@ TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lle
 #endif()
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc -lsnappy)
+    TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
 endif()
 
 ############################################################################
