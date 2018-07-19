@@ -141,7 +141,10 @@ namespace matrix
            secp256k1_context *ctx_sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
            const int32_t key_len = 32;
            unsigned char privkey_data[key_len];
-           ec_privkey_import_der(ctx_sign, privkey_data, vch.data(), vch.size());
+           if (1 != ec_privkey_import_der(ctx_sign, privkey_data, vch.data(), vch.size()))
+           {
+               return false;
+           }
 
            CKey secret;
            secret.Set(privkey_data, privkey_data + key_len, true);

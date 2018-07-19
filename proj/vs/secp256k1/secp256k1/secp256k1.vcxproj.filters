@@ -141,5 +141,8 @@
     <ClCompile Include="..\..\..\..\src\3rd\crypto\secp256k1\src\secp256k1.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\3rd\crypto\secp256k1\contrib\lax_der_privatekey_parsing.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
