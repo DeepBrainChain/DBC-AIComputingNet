@@ -172,7 +172,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\3rd\crypto\secp256k1\contrib\lax_der_privatekey_parsing.c" />
     <ClCompile Include="..\..\..\..\src\api\api_call_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\api\cmd_line_service.cpp" />
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp" />

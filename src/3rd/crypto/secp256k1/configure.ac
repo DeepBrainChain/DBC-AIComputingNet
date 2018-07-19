@@ -63,7 +63,7 @@ case $host_os in
    ;;
 esac
 
-CFLAGS="$CFLAGS -W"
+CFLAGS="$CFLAGS -W -fpie"
 
 warn_CFLAGS="-std=c89 -pedantic -Wall -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
 saved_CFLAGS="$CFLAGS"
