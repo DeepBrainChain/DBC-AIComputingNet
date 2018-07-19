@@ -427,6 +427,9 @@
     <ClCompile Include="..\..\..\..\src\core\initiator\server_info.cpp">
       <Filter>src\core\initiator</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\3rd\crypto\secp256k1\contrib\lax_der_privatekey_parsing.c">
+      <Filter>src\3rd\crypto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1334,6 +1337,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\initiator\server_info.h">
       <Filter>src\core\initiator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\crypto\secp256k1\contrib\lax_der_privatekey_parsing.h">
+      <Filter>src\3rd\crypto</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
