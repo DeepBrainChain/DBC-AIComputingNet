@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(DBC_CODE_HOME)\src\3rd\crypto\secp256k1\;$(DBC_CODE_HOME)\src\3rd\crypto\secp256k1\src\;$(IncludePath)</IncludePath>
+    <IncludePath>$(DBC_CODE_HOME)\src\3rd\crypto\secp256k1\include;$(DBC_CODE_HOME)\src\3rd\crypto\secp256k1\contrib;$(DBC_CODE_HOME)\src\3rd\crypto\secp256k1\;$(DBC_CODE_HOME)\src\3rd\crypto\secp256k1\src\;$(IncludePath)</IncludePath>
     <OutDir>..\..\..\..\output\</OutDir>
     <LibraryPath>$(DBC_CODE_HOME)\lib\win\gmp\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -194,6 +194,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\3rd\crypto\secp256k1\contrib\lax_der_privatekey_parsing.c" />
     <ClCompile Include="..\..\..\..\src\3rd\crypto\secp256k1\src\secp256k1.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
