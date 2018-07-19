@@ -134,11 +134,13 @@ namespace ai
             double temp = cpu_info * m_nano_cpu;
             if (temp - (int64_t)temp > 0)
             {
+                LOG_DEBUG << "cpu num config error";
                 return E_DEFAULT;
             }
 
             if (temp > cpu_num * m_nano_cpu)
             {
+                LOG_DEBUG << "cpu num error" << " system cpu is:" << cpu_num << " cpu config num is" << cpu_info;
                 return E_DEFAULT;
             }
 
