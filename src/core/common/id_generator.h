@@ -43,7 +43,7 @@ namespace matrix
             bool check_node_private_key(const std::string & node_privarte_key);
             bool check_base58_id(const std::string & id);
 
-            bool check_node_id_by_privatekey(const std::string & node_id, const std::string & node_privarte_key);
+            bool derive_node_id_by_private_key(std::string & node_privarte_key, std::string & node_id);
         private:
             bool decode_node_id(const std::string & node_id, std::vector<uint8_t> & vch);
             bool decode_private_key(const std::string & node_id, std::vector<uint8_t> & vch);
