@@ -5,12 +5,19 @@ if [ $# -lt 1 ]; then
     exit
 fi
 version=$1
+os_name=`uname -a | awk '{print $1}'`
+if [ $os_name == 'Linux' ];then
+    os_name=linux
+fi
+if [ $os_name == 'Darwin' ];then
+    os_name=macos
+fi
 rm -rf ../package
 mkdir -p  ../package/$version
 cd ../package/$version
 pwd
 cp ../../output/dbc ./
-cp -R ../../conf/ ./
+cp -R ../../conf ./
 cp ../../tool/add_dbc_user.sh ./
 cp ../../tool/p ./
 cp ../../tool/mining_install.sh ./
@@ -23,5 +30,5 @@ cp ../../tool/plog           ./
 cp ../../tool/swarm.key      ./
 chmod +x *
 cd ../
-tar -cvf dbc-linux-$version.tar $version 
+tar -cvf dbc-$os_name-$version.tar $version
 gzip *.tar
