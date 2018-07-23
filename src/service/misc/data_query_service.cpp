@@ -57,7 +57,14 @@ namespace service
         {
             LOG_DEBUG << "data_query_service::int";
 
-            auto rtn = m_node_info_collection.init();
+            bool enable_node_info_collection = false;
+            if (options.count("ai_training"))
+            {
+                enable_node_info_collection = true;
+            }
+
+
+            auto rtn = m_node_info_collection.init(enable_node_info_collection);
             if ( rtn != E_SUCCESS )
             {
                 return rtn;

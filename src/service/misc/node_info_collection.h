@@ -32,10 +32,9 @@ namespace service
             void set(std::string k, uint32_t v);
 
             void refresh();
-            int32_t init();
+            int32_t init(bool enable=true);
 
             std::vector<std::string> get_keys();
-
         private:
             bool generate_query_sh_file(std::string text);
             std::string query(std::string k);
@@ -51,6 +50,8 @@ namespace service
             std::vector<std::string> m_keys;
 
             std::string m_query_sh_file_name;
+
+            bool m_enable;
         };
 
     }
