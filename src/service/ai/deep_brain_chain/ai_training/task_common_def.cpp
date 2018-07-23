@@ -41,7 +41,7 @@ namespace ai
         {
             if (engine_reg.empty())
             {
-                return true;
+                return engine.length()!=0;
             }
             try 
             {
