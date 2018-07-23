@@ -223,12 +223,12 @@ namespace ai
                 bpo::store(bpo::parse_config_file(conf_task, task_config_opts), vm);
                 bpo::notify(vm);
             }
-            catch (const boost::exception & e)
+            catch (const std::exception & e)
             {
-                LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
+                LOG_ERROR << "task config parse local conf error: " << e.what();
 
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "parse ai training task error";
+                cmd_resp->result_info = std::string("parse ai training task error: ") + std::string(e.what());
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
