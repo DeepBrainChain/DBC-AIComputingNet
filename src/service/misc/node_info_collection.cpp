@@ -42,6 +42,8 @@ namespace service
 
         node_info_collection::node_info_collection()
         {
+            m_enable = true;
+
             m_query_sh_file_name = ".node_info_query.sh";
 
             m_node_2_services.clear();
@@ -96,6 +98,11 @@ namespace service
          */
         bool node_info_collection::generate_query_sh_file(std::string text)
         {
+            if(!m_enable)
+            {
+                return false;
+            }
+
             if(!is_linux_os())
             {
                 return false;
@@ -166,6 +173,11 @@ namespace service
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
 
+            if(!m_enable)
+            {
+                return;
+            }
+
             if(!is_linux_os())
             {
                 return;
@@ -187,8 +199,14 @@ namespace service
          * initial node info collection, e.g. generate query shell script.
          * @return error code
          */
-        int32_t node_info_collection::init()
+        int32_t node_info_collection::init(bool enable)
         {
+            if(!enable)
+            {
+                m_enable = false;
+                return E_SUCCESS;
+            }
+
             if(!is_linux_os())
             {
                 LOG_DEBUG << "skip node info collection for none linux os" ;
