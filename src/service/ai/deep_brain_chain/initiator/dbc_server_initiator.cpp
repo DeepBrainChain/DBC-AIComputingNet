@@ -32,6 +32,7 @@
 #include "crypto_service.h"
 #include "timer_matrix_manager.h"
 #include "data_query_service.h"
+#include <boost/exception/all.hpp>
 
 using namespace std::chrono;
 using namespace matrix::core;
@@ -284,6 +285,11 @@ namespace ai
                 {
                     return E_SUCCESS;
                 }
+            }
+            catch (const std::exception &e)
+            {
+                cout << "invalid command option " << e.what() << endl;
+                cout << opts;
             }
             catch (...)
             {

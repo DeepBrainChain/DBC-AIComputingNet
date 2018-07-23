@@ -84,7 +84,7 @@ namespace matrix
                 ("container_port", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_LISTEN_PORT), "")
                 ("max_connect", bpo::value<int32_t>()->default_value(128), "")
                 ("timer_service_broadcast_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND), "")
-                ("magic_num", bpo::value<std::string>()->default_value("0xF1E1B0A7"), "")
+                ("magic_num", bpo::value<std::string>()->default_value("0XE1D1A098"), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "");
                 //("container_image", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_IMAGE_NAME), "");
 
