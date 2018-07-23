@@ -18,12 +18,12 @@ SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
 ############################################################################
 
-if (LINUX)
+#if (LINUX)
 SET(EXECUTABLE_OUTPUT_PATH ${HOME_PATH}/output/)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${HOME_PATH}/output)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${HOME_PATH}/output)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${HOME_PATH}/output)
-endif()
+#endif()
 
 
 #include directory
