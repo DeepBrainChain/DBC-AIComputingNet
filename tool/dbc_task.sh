@@ -200,6 +200,10 @@ if [ $? -ne 0 ]; then
     echo $home_dir/$code_dir_hash/$task
 
     echo "start to upload training_result"
+    if [ ! -f "/training_result_file" ]; then
+          echo "can not find training result file"
+          exit
+    fi
     python /upload_training_result.py
     stop_ipfs
     exit
@@ -209,6 +213,10 @@ echo -n "end to exec task: "
 echo $home_dir/$code_dir_hash/$task
 
 echo "start to upload training_result"
+if [ ! -f "/training_result_file" ]; then
+       echo "can not find training result file"
+       exit
+fi
 python /upload_training_result.py
 
 myecho "\n\n"
