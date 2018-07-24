@@ -126,7 +126,7 @@ namespace matrix
                         keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
                         keywords::format = (
                             expr::stream
-                                    << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%d %H:%M:%S.%f")
+                                    << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%m-%d %H:%M:%S.%f")
                                     << "|" << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
                                     << "|" << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
                                     << "|" << expr::smessage
