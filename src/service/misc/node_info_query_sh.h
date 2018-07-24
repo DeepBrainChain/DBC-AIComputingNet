@@ -21,7 +21,7 @@ function get {
     "gpu")
         if ! which nvidia-smi>/dev/null; then echo "N/A";
         else
-            nvidia-smi -L | awk -F "(" '{print $1}' | awk -F ":" '{print $2}' | uniq -c | awk '{out=$1" * "; for(i=2;i<=NF;i++){out=out$i}; print out}'
+            nvidia-smi -L | awk -F "(" '{print $1}' | awk -F ":" '{print $2}' | uniq -c | awk '{out=$1" * "; for(i=2;i<=NF;i++){out=out$i}; print out}' | tr '\n' ' '
         fi
     ;;
 
@@ -33,6 +33,13 @@ function get {
         if ! which nvidia-smi>/dev/null; then echo "N/A";
         else
             nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv | grep -v "utilization" | awk -F "," '{print "gpu: "$1 "\nmem:"$2}'
+        fi
+    ;;
+
+    "gpu_driver")
+        if ! which nvidia-smi>/dev/null; then echo "N/A";
+        else
+            nvidia-smi --query-gpu=driver_version --format=csv | tr '\n' ' '
         fi
     ;;
 

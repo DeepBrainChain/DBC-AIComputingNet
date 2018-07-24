@@ -50,12 +50,13 @@ namespace service
             m_kvs.clear();
 
 
-            const char* ATTRS[9] = {
+            const char* ATTRS[] = {
             "gpu",
             "cpu",
             "mem",
             "disk",
             "gpu_usage",
+            "gpu_driver",
             "cpu_usage",
             "mem_usage",
             "state",
@@ -224,6 +225,7 @@ namespace service
             m_kvs["mem"] = query("mem");
             m_kvs["disk"] = query("disk");
             m_kvs["image"] = query("image");
+            m_kvs["gpu_driver"] = query("gpu_driver");
 
             return E_SUCCESS;
         }

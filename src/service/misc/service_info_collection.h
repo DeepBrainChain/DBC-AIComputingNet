@@ -18,6 +18,8 @@
 
 #include "matrix_types.h"
 
+#include "filter/simple_expression.h"
+
 using namespace boost::serialization;
 using namespace matrix::service_core;
 
@@ -34,7 +36,7 @@ namespace service
             void init(std::string );
             void add(std::string id, node_service_info s);
             void add(service_info_map);
-            service_info_map& get();
+            service_info_map get(std::string filter);
             void update_own_node_time_stamp(std::string own_node_id);
             void remove_unlived_nodes(int32_t time_in_second);
 
@@ -43,6 +45,13 @@ namespace service
 
             void reset_change_set();
             service_info_map& get_change_set();
+
+
+        private:
+            bool check(expression& e, std::string filter, std::string node_id, node_service_info& s_info);
+            std::string get_gpu_type(std::string s);
+            std::string get_gpu_num(std::string s);
+            std::string to_string(std::vector<std::string> in);
 
 
         public:
