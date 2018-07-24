@@ -22,7 +22,7 @@
 #define MAIN_NET_TYPE                                                      "main"
 #define TEST_NET_TYPE                                                      "test"
 #define DEFAULT_NET_TYPE                                                   TEST_NET_TYPE
-#define DEFAULT_LOG_LEVEL                                                   1
+#define DEFAULT_LOG_LEVEL                                                  2
 
 #define DEFAULT_CHAR_STRING                                         ""
 
