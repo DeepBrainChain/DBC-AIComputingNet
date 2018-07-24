@@ -12,6 +12,7 @@
 #include "service_info_collection.h"
 #include "server.h"
 #include <stdlib.h>
+#include "service_name.h"
 
 
 namespace service
@@ -52,8 +53,7 @@ namespace service
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
 
-            const std::string AI_SERVICE = "ai_training";
-            if (std::find(s.service_list.begin(), s.service_list.end(), AI_SERVICE) != s.service_list.end())
+            if (std::find(s.service_list.begin(), s.service_list.end(), SERVICE_NAME_AI_TRAINING) != s.service_list.end())
             {
                 if ( 0 == m_id_2_info.count(id))
                 {
@@ -77,11 +77,106 @@ namespace service
          * return service info from cache
          * @return
          */
-        service_info_map& service_info_collection::get()
+        service_info_map service_info_collection::get(std::string filter)
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
 
-            return m_id_2_info;
+            expression e(filter);
+
+            // no more than 100 nodes
+            int i = 0;
+            const int MAX_NODES_TO_BE_SHOWN = 100;
+
+            service_info_map result;
+
+            for (auto &it : m_id_2_info)
+            {
+                if (!check(e, filter, it.first, it.second)) continue;
+
+                if (++i > MAX_NODES_TO_BE_SHOWN) break;
+
+                result[it.first] = it.second;
+            }
+
+            return result;
+        }
+
+
+        bool service_info_collection::check(expression& e, std::string filter, std::string node_id, node_service_info& s_info)
+        {
+            if (filter.length() == 0)
+            {
+                return true;
+            }
+
+            auto gpu_info = string_util::rtrim(s_info.kvs["gpu"],'\n');
+            string_util::trim(gpu_info);
+
+            auto kvs_plus = s_info.kvs;
+
+            if (gpu_info.length())
+            {
+                auto gpu_num = get_gpu_num(gpu_info);
+                auto gpu_type = get_gpu_type(gpu_info);
+                kvs_plus["gpu_num"] = gpu_num;
+                kvs_plus["gpu_type"] = gpu_type;
+            }
+
+            std::string text = (node_id + " " + s_info.name
+                                + " " + to_string(s_info.service_list)
+                                + " " + s_info.kvs["state"] + " " + gpu_info);
+
+            bool is_matched = e.evaluate(kvs_plus, text);
+
+            return is_matched;
+        }
+
+
+        std::string service_info_collection::to_string(std::vector<std::string> in)
+        {
+            std::string out="";
+            for(auto& item: in)
+            {
+                if(out.length())
+                {
+                    out += " , ";
+                }
+                out += item ;
+            }
+
+            return out;
+        }
+
+
+        std::string service_info_collection::get_gpu_num(std::string s)
+        {
+            // 1 * GeForce940MX
+            std::string delimiter = " * ";
+
+            size_t pos = s.find(delimiter);
+            if (pos == std::string::npos)
+            {
+                return "";
+            }
+
+            std::string token = s.substr(0, s.find(delimiter));
+            return token;
+        }
+
+        std::string service_info_collection::get_gpu_type(std::string s)
+        {
+            // 1 * GeForce940MX
+            std::string delimiter = " * ";
+
+            size_t pos = s.find(delimiter);
+            if (pos == std::string::npos)
+            {
+                return "";
+            }
+
+            s.erase(0, pos + delimiter.length());
+
+            return s;
         }
 
 

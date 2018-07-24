@@ -24,6 +24,7 @@
 #include "node_info_collection.h"
 #include "service_info_collection.h"
 #include "service_broadcast_req_msg.h"
+#include "service_name.h"
 
 #include "service_topic.h"
 #include <ctime>
@@ -58,7 +59,7 @@ namespace service
             LOG_DEBUG << "data_query_service::int";
 
             bool enable_node_info_collection = false;
-            if (options.count("ai_training"))
+            if (options.count(SERVICE_NAME_AI_TRAINING))
             {
                 enable_node_info_collection = true;
             }
@@ -109,9 +110,9 @@ namespace service
         {
             node_service_info info;
 
-            if (options.count("ai_training"))
+            if (options.count(SERVICE_NAME_AI_TRAINING))
             {
-                info.service_list.push_back("ai_training");
+                info.service_list.push_back(SERVICE_NAME_AI_TRAINING);
             }
             else
             {
@@ -234,9 +235,9 @@ namespace service
 
             if (req->op == ai::dbc::OP_SHOW_SERVICE_LIST)
             {
-                cmd_resp->id_2_services = m_service_info_collection.get();
-                cmd_resp->op = req->op;
                 cmd_resp->filter = req->filter;
+                cmd_resp->op = req->op;
+                cmd_resp->id_2_services = m_service_info_collection.get(cmd_resp->filter);
 
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_show_resp).name(), cmd_resp);
 

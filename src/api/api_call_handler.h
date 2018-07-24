@@ -27,7 +27,6 @@
 #include "util.h"
 
 #include "log.h"
-#include "filter/simple_expression.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -405,67 +404,6 @@ namespace ai
                 return out;
             }
 
-
-            std::string get_gpu_num(std::string s)
-            {
-                // 1 * GeForce940MX
-                std::string delimiter = " * ";
-
-                size_t pos = s.find(delimiter);
-                if (pos == std::string::npos)
-                {
-                    return "";
-                }
-
-                std::string token = s.substr(0, s.find(delimiter));
-                return token;
-            }
-
-            std::string get_gpu_type(std::string s)
-            {
-                // 1 * GeForce940MX
-                std::string delimiter = " * ";
-
-                size_t pos = s.find(delimiter);
-                if (pos == std::string::npos)
-                {
-                    return "";
-                }
-
-                s.erase(0, pos + delimiter.length());
-
-                return s;
-            }
-
-            bool check(expression& e, std::string filter, std::string node_id, node_service_info& s_info)
-            {
-                if (filter.length() == 0)
-                {
-                    return true;
-                }
-
-                auto gpu_info = string_util::rtrim(s_info.kvs["gpu"],'\n');
-                string_util::trim(gpu_info);
-
-                auto kvs_plus = s_info.kvs;
-
-                if (gpu_info.length())
-                {
-                    auto gpu_num = get_gpu_num(gpu_info);
-                    auto gpu_type = get_gpu_type(gpu_info);
-                    kvs_plus["gpu_num"] = gpu_num;
-                    kvs_plus["gpu_type"] = gpu_type;
-                }
-
-                std::string text = (node_id + " " + s_info.name
-                                    + " " + to_string(s_info.service_list)
-                                    + " " + s_info.kvs["state"] + " " + gpu_info);
-
-                bool is_matched = e.evaluate(kvs_plus, text);
-
-                return is_matched;
-            }
-
             void format_service_list()
             {
                 console_printer printer;
@@ -473,18 +411,8 @@ namespace ai
 
                 printer << matrix::core::init << "node_id" << "node_name" << "service_list" <<"state" << "gpu"<< "time_stamp" << matrix::core::endl;
 
-                expression e(filter);
-
-                // no more than 100 nodes
-                int i = 0;
-                const int MAX_NODES_TO_BE_SHOWN = 100;
                 for (auto &it : id_2_services)
                 {
-                    if (!check(e, filter, it.first, it.second)) continue;
-
-                    if (++i > MAX_NODES_TO_BE_SHOWN) break;
-
-
                     printer << matrix::core::init << it.first
                             << it.second.name
                             << to_string(it.second.service_list)

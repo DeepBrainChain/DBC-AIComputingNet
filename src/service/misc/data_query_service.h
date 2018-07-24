@@ -82,8 +82,6 @@ namespace service
             void rm_data_query_session(std::shared_ptr<service_session> session);
 
         private:
-            uint32_t m_timer_id;
-
             std::string m_own_node_id;
 
             service_info_collection m_service_info_collection;
