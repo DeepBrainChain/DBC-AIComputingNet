@@ -495,10 +495,9 @@ namespace service
 
             if (s_map_size == 0)
             {
-                LOG_DEBUG << "skip broadcast due to no valid service info in cache";
+                //LOG_DEBUG << "skip broadcast due to no valid service info in cache";
                 return E_SUCCESS;
             }
-
 
             // update service_info_collection
             std::string v = m_node_info_collection.get("gpu");
@@ -507,7 +506,9 @@ namespace service
             v = m_node_info_collection.get("state");
             m_service_info_collection.update(m_own_node_id,"state", v);
 
+            //if(m_node_info_collection.is_honest_node())
             m_service_info_collection.update_own_node_time_stamp(m_own_node_id);
+
             m_service_info_collection.remove_unlived_nodes(CONF_MANAGER->get_timer_service_list_expired_in_second());
 
 
