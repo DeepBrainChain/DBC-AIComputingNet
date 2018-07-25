@@ -5,8 +5,8 @@
 
 
 if [ $# -ne 3 ]; then
-	echo "params count is 3, please check params error"
-	exit
+        echo "params count is 3, please check params error"
+        exit
 fi
 
 
@@ -29,7 +29,7 @@ myecho()
         echo -e $1
         return
     fi
-    
+
     echo $1
 }
 
@@ -69,8 +69,8 @@ exit_code=$?
 #echo $exit_code
 
 if [ $exit_code -ne 0 ]; then
-	echo "init ipfs failed and dbc_task.sh exit"
-	exit
+        echo "init ipfs failed and dbc_task.sh exit"
+        exit
 fi
 
 echo "end to init ipfs"
@@ -91,8 +91,8 @@ exit_code=$?
 #echo $exit_code
 
 if [ $exit_code -ne 0 ]; then
-	echo "start ipfs failed and dbc_task.sh exit"
-	exit
+        echo "start ipfs failed and dbc_task.sh exit"
+        exit
 fi
 
 #add ipfs bootstrap node
@@ -114,7 +114,7 @@ myecho "\n\n"
 #create dir
 echo "======================================================="
 if [ ! -d $home_dir ]; then
-	mkdir $home_dir
+        mkdir $home_dir
 fi
 
 echo -n "cd "
@@ -127,8 +127,8 @@ myecho "\n\n"
 #download code_dir
 echo "======================================================="
 if [ -z "$code_dir_hash" ]; then
-	  echo -n "code_dir is empty.pls check"
-	  exit
+          echo -n "code_dir is empty.pls check"
+          exit
 fi
 echo -n "begin to download code dir: "
 echo $code_dir_hash
@@ -139,8 +139,8 @@ exit_code=$?
 #echo $exit_code
 
 if [ $? -ne 0 ]; then
-	echo "download code dir failed and dbc_task.sh exit"
-	exit
+        echo "download code dir failed and dbc_task.sh exit"
+        exit
 fi
 
 if [ ! -e $home_dir/$code_dir_hash/$task ]; then
@@ -152,7 +152,7 @@ fi
 
 #download data_dir
 echo "======================================================="
-if [ -n "$data_dir_hash" ]; then 
+if [ -n "$data_dir_hash" ]; then
     echo -n "begin to download data dir: "
     echo $data_dir_hash
     ipfs get $data_dir_hash
@@ -160,7 +160,7 @@ if [ -n "$data_dir_hash" ]; then
     exit_code=$?
     #echo -n "download data dir exitcode: "
     #echo $exit_code
-    
+
     if [ $? -ne 0 ]; then
         echo "download data dir failed and dbc_task.sh exit"
         stop_ipfs
@@ -169,7 +169,7 @@ if [ -n "$data_dir_hash" ]; then
 
     echo -n "end to download data dir: "
     echo $data_dir_hash
-    
+
     # add link from code_dir to data dir
     cp -rs $home_dir/$data_dir_hash/* $home_dir/$code_dir_hash/
 
@@ -203,10 +203,24 @@ if [ $? -ne 0 ]; then
 
     echo "start to upload training_result"
     if [ ! -f "/training_result_file" ]; then
-          echo "can not find training result file"
-          exit
+        echo "can not find training result file"
+        exit
     fi
-    python /upload_training_result.py
+    #python /upload_training_result.py
+    RESULT_HASH=`ipfs add /training_result_file | tail -n 1 | awk '{print $2}'`
+    if [ ${PIPESTATUS[0]} -ne 0 ];then
+        echo -n "ipfs add error and exit:"
+        exit
+    fi
+    echo -n "RESULT_HASH:"
+    echo $RESULT_HASH
+    curl http://122.112.243.44:5001/api/v0/get?arg=/ipfs/$RESULT_HASH > /dev/null
+    if [ $? -ne 0 ]; then
+         echo "***curl training result file to ipfs error***"
+         exit
+    fi
+    echo "***curl training result file to ipfs success***"
+
     stop_ipfs
     exit
 fi
@@ -216,11 +230,25 @@ echo $home_dir/$code_dir_hash/$task
 
 echo "start to upload training_result"
 if [ ! -f "/training_result_file" ]; then
-       echo "can not find training result file"
-       exit
+    echo "can not find training result file"
+    exit
 fi
-python /upload_training_result.py
+#python /upload_training_result.py
+RESULT_HASH=`ipfs add /training_result_file | tail -n 1 | awk '{print $2}'`
+if [ ${PIPESTATUS[0]} -ne 0 ];then
+    echo -n "ipfs add error and exit:"
+    exit
+fi
+echo -n "RESULT_HASH:"
+echo $RESULT_HASH
+curl http://122.112.243.44:5001/api/v0/get?arg=/ipfs/$RESULT_HASH > /dev/null
+if [ $? -ne 0 ]; then
+    echo "***curl training result file to ipfs error***"
+    exit
+fi
+echo "***curl training result file to ipfs success***"
 
 myecho "\n\n"
 
 stop_ipfs
+            
