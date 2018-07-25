@@ -203,20 +203,9 @@ namespace ai
             //parse task config file
             bpo::options_description task_config_opts("task config file options");
             add_task_config_opts(task_config_opts);
-            //task_config_opts.add_options()
-            //    ("task_id", bpo::value<std::string>(), "")
-            //    ("select_mode", bpo::value<int8_t>(), "")
-            //    ("master", bpo::value<std::string>()->default_value(""), "")
-            //    ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
-            //    ("server_specification", bpo::value<std::string>()->default_value(""), "")
-            //    ("server_count", bpo::value<int32_t>()->default_value(0), "")
-            //    ("training_engine", bpo::value<std::string>(), "")
-            //    ("code_dir", bpo::value<std::string>(), "")
-            //    ("entry_file", bpo::value<std::string>(), "")
-            //    ("data_dir", bpo::value<std::string>()->default_value(""), "")
-            //    ("checkpoint_dir", bpo::value<std::string>()->default_value(""), "")
-            //    ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
 
+            
+            
             try
             {
                 std::ifstream conf_task(req->task_file_path);
@@ -234,115 +223,19 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            /*if (0 == vm.count("master") || vm["master"].as<std::string>().empty())
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "ai training task config file's option master node is empty";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }*/
-
-            if (0 == vm.count("entry_file") || vm["entry_file"].as<std::string>().empty())
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "ai training task config file's option entry_file is empty";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "entry_file name is not valid ";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            /*if (0 == vm.count("data_dir") || vm["data_dir"].as<std::string>().empty())
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "ai training task config file's option data_dir is empty";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }*/
-
-            if (0 == vm.count("code_dir") || vm["code_dir"].as<std::string>().empty())
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "ai training task config file's option code_dir is empty";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            if (E_SUCCESS != validate_ipfs_path(vm["code_dir"].as<std::string>()))
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "code_dir path is not valid";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            if (0 != vm.count("data_dir") && !vm["data_dir"].as<std::string>().empty() && E_SUCCESS != validate_ipfs_path(vm["data_dir"].as<std::string>()))
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "data_dir path is not valid";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::vector<std::string>>().empty())
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "ai training task config file's option peer_nodes_list is empty";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            const std::vector<std::string> & peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
-
-            for (auto &node_id : peer_nodes_list)
-            {
-                if (false == id_generator().check_base58_id(node_id))
-                {
-                    cmd_resp->result = E_DEFAULT;
-                    cmd_resp->result_info = "node_list does not match the Base58 code format";
-                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                    return E_DEFAULT;
-                }
-            }
-
-            //validate parameters
-            if (E_DEFAULT == validate_cmd_training_task_conf(vm))
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "parse ai training task parameters error";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-            if (check_task_engine(vm["training_engine"].as<std::string>()) != true)
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "training_engine format is not correct ";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
-
-                return E_DEFAULT;
-            }
-
-
             //prepare broadcast req
-            std::shared_ptr<message> req_msg = std::make_shared<message>();
-            std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
+            //std::shared_ptr<message> req_msg = std::make_shared<message>();
+            ai::dbc::cmd_task_info  task_info;
+            auto req_msg = create_task_msg_from_file(req->task_file_path, task_config_opts, task_info);
+            if (nullptr == req_msg)
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = task_info.result;
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                return E_DEFAULT;
+            }
+            /*std::shared_ptr<matrix::service_core::start_training_req> broadcast_req_content = std::make_shared<matrix::service_core::start_training_req>();
 
             id_generator gen;
             broadcast_req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
@@ -366,7 +259,23 @@ namespace ai
             req_msg->set_content(broadcast_req_content);
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
 
-            LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << broadcast_req_content->header.nonce;
+            std::string message = broadcast_req_content->body.task_id + broadcast_req_content->body.code_dir + broadcast_req_content->header.nonce;
+            std::string sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
+            if (sign.empty())
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "sign error. pls check node key or task property";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+            std::map<std::string, std::string> extern_info;
+            extern_info["sign"] = sign;
+            extern_info["sign_algo"] = "ECDSA";
+            extern_info["origin_id"] = CONF_MANAGER->get_node_id();
+            broadcast_req_content->header.__set_exten_info(extern_info);*/
+
+            LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << req_msg->get_content()->header.nonce;
 
             if (CONNECTION_MANAGER->broadcast_message(req_msg) != E_SUCCESS)
             {
@@ -378,7 +287,8 @@ namespace ai
 
             //peer won't reply, so public resp directly
             cmd_resp->result = E_SUCCESS;
-            cmd_resp->task_info.task_id = broadcast_req_content->body.task_id;
+            //cmd_resp->task_info.task_id = broadcast_req_content->body.task_id;
+            cmd_resp->task_info = task_info;
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
             //flush to db
@@ -522,14 +432,14 @@ namespace ai
 
                     continue;
                 }
-
-                auto req_msg = create_task_msg_from_file(file, opts);
+                ai::dbc::cmd_task_info task_info;
+                auto req_msg = create_task_msg_from_file(file, opts, task_info);
 
                 if (nullptr == req_msg)
                 {
                     LOG_ERROR << "ai power requestor service create task msg from file error: " << file;
                     
-                    ai::dbc::cmd_task_info task_info;
+                    
                     task_info.create_time = time(nullptr);
                     task_info.result = file + ": parse task config error";
                     
@@ -539,7 +449,7 @@ namespace ai
                 {
                     if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
                     {
-                        ai::dbc::cmd_task_info task_info;
+                        //ai::dbc::cmd_task_info task_info;
                         task_info.create_time = time(nullptr);
                         task_info.result = file + "broad cast error.";
 
@@ -607,11 +517,26 @@ namespace ai
 
             req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
-
             std::shared_ptr<ai::dbc::cmd_stop_training_resp> cmd_resp = std::make_shared<ai::dbc::cmd_stop_training_resp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-            
+
+            std::string message = req_content->body.task_id + req_content->header.nonce;
+            std::string sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
+            if (sign.empty())
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "sign error. pls check node key or task property";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+            std::map<std::string, std::string> extern_info;
+            extern_info["sign"] = sign;
+            extern_info["sign_algo"] = "ECDSA";
+            extern_info["origin_id"] = CONF_MANAGER->get_node_id();
+            req_content->header.__set_exten_info(extern_info);
+
             if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
             {
                 cmd_resp->result = E_INACTIVE_CHANNEL;
@@ -989,7 +914,7 @@ namespace ai
                 ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
         }
 
-        std::shared_ptr<message> ai_power_requestor_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts)
+        std::shared_ptr<message> ai_power_requestor_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts, ai::dbc::cmd_task_info & task_info)
         {
             bpo::variables_map vm;
             
@@ -1002,6 +927,69 @@ namespace ai
             catch (const boost::exception & e)
             {
                 LOG_ERROR << "task config parse local conf error: " << diagnostic_information(e);
+                return nullptr;
+            }
+
+            if (0 == vm.count("entry_file") || vm["entry_file"].as<std::string>().empty())
+            {
+                task_info.result = "ai training task config file's option entry_file is empty";
+
+                return nullptr;
+            }
+
+            if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
+            {
+                task_info.result = "entry_file name is not valid ";
+             
+                return nullptr;
+            }
+
+
+            if (0 == vm.count("code_dir") || vm["code_dir"].as<std::string>().empty())
+            {
+                task_info.result = "ai training task config file's option code_dir is empty";
+                return nullptr;
+            }
+
+            if (E_SUCCESS != validate_ipfs_path(vm["code_dir"].as<std::string>()))
+            {
+                task_info.result = "code_dir path is not valid";
+                return nullptr;
+            }
+
+            if (0 != vm.count("data_dir") && !vm["data_dir"].as<std::string>().empty() && E_SUCCESS != validate_ipfs_path(vm["data_dir"].as<std::string>()))
+            {
+                task_info.result = "data_dir path is not valid";
+                return nullptr;
+            }
+
+            if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::vector<std::string>>().empty())
+            {
+                task_info.result = "ai training task config file's option peer_nodes_list is empty";
+                return nullptr;
+            }
+
+            const std::vector<std::string> & peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
+
+            for (auto &node_id : peer_nodes_list)
+            {
+                if (false == id_generator().check_base58_id(node_id))
+                {
+                    task_info.result = "node_list does not match the Base58 code format";
+                    return nullptr;
+                }
+            }
+
+            //validate parameters
+            if (E_DEFAULT == validate_cmd_training_task_conf(vm))
+            {
+                task_info.result = "parse ai training task parameters error";
+                return nullptr;
+            }
+
+            if (check_task_engine(vm["training_engine"].as<std::string>()) != true)
+            {
+                task_info.result = "training_engine format is not correct ";
                 return nullptr;
             }
 
@@ -1035,6 +1023,23 @@ namespace ai
  
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
             req_msg->set_content(req_content);
+
+            std::string message = req_content->body.task_id + req_content->body.code_dir + req_content->header.nonce;
+            std::string sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
+            if (sign.empty())
+            {
+                task_info.result = "sign error.pls check node key or task property";
+                return nullptr;
+            }
+
+            task_info.task_id = req_content->body.task_id;
+
+            std::map<std::string, std::string> extern_info;
+            extern_info["sign"] = sign;
+            extern_info["sign_algo"] = "ECDSA";
+            extern_info["origin_id"] = CONF_MANAGER->get_node_id();
+            req_content->header.__set_exten_info(extern_info);
+
             return req_msg;
         }
 
