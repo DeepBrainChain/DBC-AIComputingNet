@@ -11,8 +11,8 @@
 #include "protocol.h"
 #include "service_message.h"
 #include "TToString.h"
-using namespace matrix::core;
 
+using namespace matrix::core;
 
 namespace ai { namespace dbc {
 
@@ -21,11 +21,12 @@ class ai_training_task;
 class cmd_task_info;
 
 typedef struct _ai_training_task__isset {
-  _ai_training_task__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false) {}
+  _ai_training_task__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), ai_user_node_id(false) {}
   bool master :1;
   bool server_specification :1;
   bool server_count :1;
   bool hyper_parameters :1;
+  bool ai_user_node_id :1;
 } _ai_training_task__isset;
 
 class ai_training_task : public virtual ::apache::thrift::TBase {
@@ -33,7 +34,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
 
   ai_training_task(const ai_training_task&);
   ai_training_task& operator=(const ai_training_task&);
-  ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), error_times(0), container_id(), received_time_stamp(0), status(0) {
+  ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), ai_user_node_id(), start_time(0), end_time(0), error_times(0), container_id(), received_time_stamp(0), status(0) {
   }
 
   virtual ~ai_training_task() throw();
@@ -49,6 +50,9 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   std::string data_dir;
   std::string checkpoint_dir;
   std::string hyper_parameters;
+  std::string ai_user_node_id;
+  int64_t start_time;
+  int64_t end_time;
   int8_t error_times;
   std::string container_id;
   int64_t received_time_stamp;
@@ -79,6 +83,12 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   void __set_checkpoint_dir(const std::string& val);
 
   void __set_hyper_parameters(const std::string& val);
+
+  void __set_ai_user_node_id(const std::string& val);
+
+  void __set_start_time(const int64_t val);
+
+  void __set_end_time(const int64_t val);
 
   void __set_error_times(const int8_t val);
 
@@ -121,6 +131,14 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
     if (__isset.hyper_parameters != rhs.__isset.hyper_parameters)
       return false;
     else if (__isset.hyper_parameters && !(hyper_parameters == rhs.hyper_parameters))
+      return false;
+    if (__isset.ai_user_node_id != rhs.__isset.ai_user_node_id)
+      return false;
+    else if (__isset.ai_user_node_id && !(ai_user_node_id == rhs.ai_user_node_id))
+      return false;
+    if (!(start_time == rhs.start_time))
+      return false;
+    if (!(end_time == rhs.end_time))
       return false;
     if (!(error_times == rhs.error_times))
       return false;
