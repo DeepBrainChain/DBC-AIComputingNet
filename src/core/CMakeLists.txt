@@ -25,7 +25,7 @@ INCLUDE_DIRECTORIES(
 
 # all sub folders under core/
 set(SRC_FOLDER_LIST alarm codec common conf conf/validataor
-        crypto container data_structure env
+        crypto container bill data_structure env
         initiator log math memory module monitor mutex
         network sem service_bus service_module
         service_module/pc storage timer_service filter)

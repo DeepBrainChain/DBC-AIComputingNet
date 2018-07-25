@@ -20,13 +20,13 @@ endif ()
 
 if(APPLE)
     set(CXX_FLAGS "-std=c++11 -Wno-inconsistent-missing-override")
-    set(CXX_PREPROCESS_FLAGS "-DMAC_OSX -D_DARWIN_C_SOURCE")
+    set(CXX_PREPROCESS_FLAGS "-DMAC_OSX -D_DARWIN_C_SOURCE -DEVENT__HAVE_OPENSSL")
 endif()
 
 if(LINUX)
     set(CMAKE_CXX_COMPILER "/usr/bin/g++")
     set(CXX_FLAGS "-std=c++11 -fpie")
-    set(CXX_PREPROCESS_FLAGS "${CXX_PREPROCESS_FLAGS} -D__linux__ -D__x86_64__")
+    set(CXX_PREPROCESS_FLAGS "${CXX_PREPROCESS_FLAGS} -D__linux__ -D__x86_64__ -DEVENT__HAVE_OPENSSL")
 #	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 endif()
 
