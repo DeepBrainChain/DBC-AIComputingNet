@@ -19,7 +19,6 @@
 #include <event2/event.h>
 #include <event2/http.h>
 
-
 #define DEFAULT_HTTP_TIME_OUT                 3
 
 using kvs = typename std::list<std::pair<std::string, std::string>>;
@@ -70,6 +69,14 @@ inline raii_evhttp_connection obtain_evhttp_connection_base(struct event_base* b
     return result;
 }
 
+inline raii_evhttp_connection obtain_evhttp_connection_base2(struct event_base* base, struct bufferevent *bev, std::string host, uint16_t port)
+{
+    auto result = raii_evhttp_connection(evhttp_connection_base_bufferevent_new(base, nullptr, bev, host.c_str(), port));
+    if (!result.get())
+        throw std::runtime_error("create connection failed");
+    return result;
+}
+
 
 namespace matrix
 {
@@ -92,6 +99,7 @@ namespace matrix
             http_client(std::string remote_ip, uint16_t remote_port);
 
             virtual ~http_client() = default;
+            http_client(std::string &url);
 
             void set_remote(std::string remote_ip, uint16_t remote_port);
 
@@ -101,11 +109,21 @@ namespace matrix
 
             int32_t del(const std::string &endpoint, const kvs &headers, http_response &resp);
 
+            bufferevent * add_ssl_engine(event_base *base);
+
+            int32_t parse_url(const std::string & url);
+
+            std::string get_uri() { return m_uri; }
+        protected:
+            //bufferevent * create_bev(event_base *base, SSL *ssl);
         protected:
 
             std::string m_remote_ip;
 
             uint16_t m_remote_port;
+
+            std::string m_uri;
+            std::string m_scheme;
 
         };
 

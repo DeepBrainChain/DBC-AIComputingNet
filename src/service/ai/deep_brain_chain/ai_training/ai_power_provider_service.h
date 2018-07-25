@@ -18,6 +18,7 @@
 #include "task_common_def.h"
 #include "prettywriter.h"
 #include "document.h"
+#include "bill_client.h"
 
 
 using namespace matrix::core;
@@ -25,6 +26,7 @@ using namespace boost::asio::ip;
 
 
 #define AI_TRAINING_TASK_TIMER                                      "training_task"
+#define AI_AUTH_TASK_TIMER                                          "auth_task"
 #define AI_TRAINING_TASK_TIMER_INTERVAL                 (30 * 1000)                                                 //30s timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                  4
 #define AI_TRAINING_MAX_TASK_COUNT                                    3
@@ -130,6 +132,8 @@ namespace ai
 
             int32_t on_training_task_timer(std::shared_ptr<core_timer> timer);
 
+            int32_t on_auth_task_timer(std::shared_ptr<core_timer> timer);
+
             int32_t start_exec_training_task(std::shared_ptr<ai_training_task> task);
 
             int32_t check_training_task_status(std::shared_ptr<ai_training_task> task);
@@ -139,6 +143,7 @@ namespace ai
             int32_t load_task_from_db();
 
             int32_t load_container();
+            int32_t load_bill_config();
 
             int32_t check_cpu_config(const double & cpu_info);
             int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
@@ -157,6 +162,8 @@ namespace ai
 
             std::shared_ptr<container_client> m_nvidia_client;
 
+            std::shared_ptr<bill_client> m_bill_client;
+
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;             //ai power provider cached training task in memory
 
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
@@ -168,6 +175,9 @@ namespace ai
 
             const int64_t m_nano_cpu = 1000000000;
             const int64_t m_g_bytes = 1073741824;
+
+            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
+            int32_t auth_task(std::shared_ptr<ai_training_task> task, std::shared_ptr<auth_task_resp> resp);
         };
 
 	}

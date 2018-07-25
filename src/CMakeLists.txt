@@ -37,6 +37,7 @@ ${SRC_PATH}/core/common
 ${SRC_PATH}/core/conf 
 ${SRC_PATH}/core/conf/validator
 ${SRC_PATH}/core/container
+${SRC_PATH}/core/bill
 ${SRC_PATH}/core/crypto
 ${SRC_PATH}/core/data_structure
 ${SRC_PATH}/core/env 
@@ -71,6 +72,7 @@ ${SRC_PATH}/service/ai/deep_brain_chain/initiator
 ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
 
 ${SRC_PATH}/3rd/crypto/secp256k1/include
+${SRC_PATH}/3rd/crypto/secp256k1/src/modules/recovery
 ${SRC_PATH}/3rd/crypto/secp256k1/contrib
 ${SRC_PATH}/3rd/db/
 ${SRC_PATH}/3rd/network/libevent

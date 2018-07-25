@@ -43,6 +43,12 @@ namespace matrix
                 return buf;
             }
 
+            static std::string time_2_utc(time_t t)
+            {
+                std::time_t result = std::time(nullptr);
+                return std::asctime(std::gmtime(&result));
+            }
+
         };
     }
 
