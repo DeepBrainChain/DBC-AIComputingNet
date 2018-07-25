@@ -65,11 +65,13 @@ namespace matrix
 
             std::shared_ptr<message> make_time_tick_notification();
 
+            void on_timer_expired(const boost::system::error_code& error);
+
         protected:
 
             std::shared_ptr<nio_loop_group> m_timer_group;
 
-            std::function<timer_handler_type> m_timer_handler;
+            //std::function<timer_handler_type> m_timer_handler;
 
             std::shared_ptr<steady_timer> m_timer;
 

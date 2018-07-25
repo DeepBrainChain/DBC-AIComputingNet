@@ -35,11 +35,17 @@ namespace service
             int32_t init(bool enable=true);
 
             std::vector<std::string> get_keys();
+            bool is_honest_node();
+
         private:
             bool generate_query_sh_file(std::string text);
-            std::string query(std::string k);
 
+            std::string query(std::string k);
             std::string get_one(std::string k);
+
+            bool check_sh_file(std::string fn);
+
+            void reset_node_info();
 
 
         private:
@@ -52,6 +58,8 @@ namespace service
             std::string m_query_sh_file_name;
 
             bool m_enable;
+            std::size_t m_sh_file_hash;
+            bool m_honest;
         };
 
     }
