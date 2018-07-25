@@ -18,7 +18,10 @@
 #include <prettywriter.h>
 #include <event2/event.h>
 #include <event2/http.h>
-
+#include <openssl/ssl.h>
+#include <openssl/tls1.h>
+#include <openssl/rand.h>
+#include <event2/bufferevent_ssl.h>
 
 #define DEFAULT_HTTP_TIME_OUT                 3
 
@@ -38,6 +41,8 @@ MAKE_RAII(event);
 MAKE_RAII(evhttp);
 MAKE_RAII(evhttp_request);
 MAKE_RAII(evhttp_connection);
+////////////////////////////
+MAKE_RAII(bufferevent);
 
 inline raii_event_base obtain_event_base() 
 {
@@ -70,6 +75,40 @@ inline raii_evhttp_connection obtain_evhttp_connection_base(struct event_base* b
     return result;
 }
 
+inline raii_evhttp_connection obtain_evhttp_connection_base2(struct event_base* base, struct bufferevent *bev, std::string host, uint16_t port)
+{
+    auto result = raii_evhttp_connection(evhttp_connection_base_bufferevent_new(base, nullptr, bev, host.c_str(), port));
+    if (!result.get())
+        throw std::runtime_error("create connection failed");
+    return result;
+}
+
+inline bufferevent * obtain_evhttp_bev(struct event_base* base, SSL *ssl)
+{
+    bufferevent * bev = nullptr;
+    if (ssl != nullptr)
+    {
+#ifdef __linux__
+        bev = bufferevent_openssl_socket_new(base, -1, ssl, BUFFEREVENT_SSL_CONNECTING, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_DEFER_CALLBACKS);
+        if (!bev)
+        {
+            return nullptr;
+        }
+            
+        bufferevent_openssl_set_allow_dirty_shutdown(bev, 1);
+        return bev;
+#endif
+    }
+    else
+    {
+        bev = bufferevent_socket_new(base, -1, BEV_OPT_CLOSE_ON_FREE);
+        if (!bev)
+        {
+            return nullptr;
+        }
+        return bev;
+    }
+}
 
 namespace matrix
 {
@@ -91,7 +130,8 @@ namespace matrix
 
             http_client(std::string remote_ip, uint16_t remote_port);
 
-            virtual ~http_client() = default;
+            virtual ~http_client();
+            http_client(std::string &url);
 
             void set_remote(std::string remote_ip, uint16_t remote_port);
 
@@ -101,12 +141,24 @@ namespace matrix
 
             int32_t del(const std::string &endpoint, const kvs &headers, http_response &resp);
 
-        protected:
+            int32_t parse_url(const std::string & url);
 
+            std::string get_uri() { return m_uri; }
+            std::string  get_remote_host();
+
+        protected:
+            bool start_ssl_engine();
+            bool stop_ssl_engine();
+
+        protected:
             std::string m_remote_ip;
 
             uint16_t m_remote_port;
 
+            std::string m_uri;
+            std::string m_scheme;
+            SSL_CTX* m_ssl_ctx;
+            SSL* m_ssl;
         };
 
     }

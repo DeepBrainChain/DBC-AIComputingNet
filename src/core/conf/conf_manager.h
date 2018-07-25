@@ -97,6 +97,15 @@ namespace matrix
 
             static int32_t serialize_node_info(const node_info &info);
 
+            const std::string & get_bill_url() 
+            {
+                if (m_args.count("bill_url") > 0)
+                {
+                    return m_args["bill_url"].as<std::string>();
+                }
+                return  DEFAULT_STRING;
+            }
+
         protected:
 
             int32_t parse_local_conf();
