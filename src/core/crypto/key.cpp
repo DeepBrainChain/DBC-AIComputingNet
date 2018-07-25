@@ -196,16 +196,16 @@ bool CKey::VerifyPubKey(const CPubKey& pubkey) const {
 bool CKey::SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig) const {
     if (!fValid)
         return false;
-//    vchSig.resize(65);
-//    int rec = -1;
-//    secp256k1_ecdsa_recoverable_signature sig;
+    vchSig.resize(65);
+    int rec = -1;
+    secp256k1_ecdsa_recoverable_signature sig;
     //left to later!!! 2018.04.20
-    //int ret = secp256k1_ecdsa_sign_recoverable(secp256k1_context_sign, &sig, hash.begin(), begin(), secp256k1_nonce_function_rfc6979, nullptr);
+    int ret = secp256k1_ecdsa_sign_recoverable(secp256k1_context_sign, &sig, hash.begin(), begin(), secp256k1_nonce_function_rfc6979, nullptr);
     //assert(ret);
-    //secp256k1_ecdsa_recoverable_signature_serialize_compact(secp256k1_context_sign, (unsigned char*)&vchSig[1], &rec, &sig);
-    //assert(ret);
-    //assert(rec != -1);
-    //vchSig[0] = 27 + rec + (fCompressed ? 4 : 0);
+    secp256k1_ecdsa_recoverable_signature_serialize_compact(secp256k1_context_sign, (unsigned char*)&vchSig[1], &rec, &sig);
+    assert(ret);
+    assert(rec != -1);
+    vchSig[0] = 27 + rec + (fCompressed ? 4 : 0);
     return true;
 }
 
