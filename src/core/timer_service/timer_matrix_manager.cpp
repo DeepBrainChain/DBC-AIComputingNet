@@ -46,24 +46,24 @@ namespace matrix
         { 
             m_timer = std::make_shared<steady_timer>(*(m_timer_group->get_io_service()));
 
-            auto self(shared_from_this());
-            m_timer_handler = [this, self](const boost::system::error_code & error)
-            {
-                if (boost::asio::error::operation_aborted == error)
-                {
-                    LOG_DEBUG << "timer matrix manager timer error: aborted";
-                    return;
-                }
-
-                ++m_cur_tick;
-
-                //publish notification
-                std::shared_ptr<message> msg = make_time_tick_notification();
-                TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-
-                //next
-                start_timer();
-            };
+            //auto self(shared_from_this());
+            //m_timer_handler = [this, self](const boost::system::error_code & error)
+            //{
+            //    if (boost::asio::error::operation_aborted == error)
+            //    {
+            //        LOG_DEBUG << "timer matrix manager timer error: aborted";
+            //        return;
+            //    }
+            //
+            //    ++m_cur_tick;
+            //
+            //    //publish notification
+            //    std::shared_ptr<message> msg = make_time_tick_notification();
+            //    TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+            //
+            //    //next
+            //    start_timer();
+            //};
 
             //start thread
             int32_t ret = m_timer_group->start();
@@ -81,7 +81,7 @@ namespace matrix
         {
             stop_timer();
             m_timer_group->stop();
-            m_timer_handler = nullptr;
+            //m_timer_handler = nullptr;
             LOG_DEBUG << "timer matrix manager has stopped";
             return E_SUCCESS;
         }
@@ -93,13 +93,35 @@ namespace matrix
 
         void timer_matrix_manager::start_timer()
         {
-            assert(nullptr != m_timer_handler);
+            //assert(nullptr != m_timer_handler);
             
             //start tick timer
             m_timer->expires_from_now(std::chrono::milliseconds(DEFAULT_TIMER_INTERVAL));
-            m_timer->async_wait(m_timer_handler);
+            //m_timer->async_wait(m_timer_handler);
+            m_timer->async_wait(boost::bind(&timer_matrix_manager::on_timer_expired,
+                                            shared_from_this(), boost::asio::placeholders::error));
 
             //LOG_DEBUG << "timer matrix manager start timer: " << DEFAULT_TIMER_INTERVAL << "ms";
+        }
+
+
+        void timer_matrix_manager::on_timer_expired(const boost::system::error_code& error)
+        {
+            if (boost::asio::error::operation_aborted == error)
+            {
+                LOG_DEBUG << "timer matrix manager timer error: aborted";
+                return;
+            }
+
+            ++m_cur_tick;
+
+            //publish notification
+            std::shared_ptr<message> msg = make_time_tick_notification();
+            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+
+            //next
+            start_timer();
+
         }
 
         void timer_matrix_manager::stop_timer()
