@@ -39,16 +39,22 @@ namespace service
         };
 
 
-
         node_info_collection::node_info_collection()
         {
             m_enable = true;
+            m_honest = true;
 
             m_query_sh_file_name = ".node_info_query.sh";
+            m_sh_file_hash = std::hash<std::string> {} (node_info_query_sh_str);
 
             m_node_2_services.clear();
-            m_kvs.clear();
 
+            reset_node_info();
+        }
+
+        void node_info_collection::reset_node_info()
+        {
+            m_kvs.clear();
 
             const char* ATTRS[] = {
             "gpu",
@@ -167,6 +173,26 @@ namespace service
             return "N/A";
         }
 
+        bool node_info_collection::check_sh_file(std::string fn)
+        {
+
+            std::ifstream t(m_query_sh_file_name);
+
+            if(t)
+            {
+                std::stringstream buffer;
+                buffer << t.rdbuf();
+
+                std::size_t h = std::hash<std::string>{} (buffer.str());
+
+                if (h == m_sh_file_hash)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /**
          * update hardware usage of dbc own node
          */
@@ -181,6 +207,22 @@ namespace service
 
             if(!is_linux_os())
             {
+                return;
+            }
+
+            // cheat once then be forbiden forever
+            if (m_honest)
+            {
+                m_honest = check_sh_file(node_info_query_sh_str);
+            }
+
+            if(!m_honest)
+            {
+                LOG_ERROR << "SH file check failed, it is not a honest node!";
+
+                reset_node_info();
+                m_kvs["gpu"] = "suspected node";
+
                 return;
             }
 
@@ -277,6 +319,12 @@ namespace service
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
             m_kvs[k] = std::to_string(v);
+        }
+
+
+        bool node_info_collection::is_honest_node()
+        {
+            return m_honest;
         }
 
     }

@@ -87,6 +87,7 @@ namespace matrix
             , m_scheme("http")
         {
             parse_url(url);
+            init_ssl_ctx();
         }
 
         http_client::~http_client()
@@ -369,81 +370,6 @@ namespace matrix
             }
         }
 
-        bool http_client::stop_ssl_engine()
-        {
-            if (m_ssl_ctx)
-            {
-                SSL_CTX_free(m_ssl_ctx);
-            }
-
-            if (m_ssl)
-            {
-                //SSL_free(m_ssl);
-            }
-
-            #if OPENSSL_VERSION_NUMBER < 0x10100000L
-              EVP_cleanup();
-              ERR_free_strings();
-
-            #ifdef EVENT__HAVE_ERR_REMOVE_THREAD_STATE
-              ERR_remove_thread_state(NULL);
-            #else
-              ERR_remove_state(0);
-            #endif
-              CRYPTO_cleanup_all_ex_data();
-
-              k_SSL_COMP_free(SSL_COMP_get_compression_methods());
-            #endif /*OPENSSL_VERSION_NUMBER < 0x10100000L */
-              return true;
-        }
-
-        bool http_client::start_ssl_engine()
-        {     
-            if (m_scheme != "https")
-            {
-                return true;
-            }
-#ifdef __linux__
-            m_ssl_ctx = SSL_CTX_new(SSLv23_method());
-            const std::string crt = "/etc/ssl/certs/ca-certificates.crt";
-            int32_t random = RAND_poll();
-            if (random == 0) 
-            {
-                std::cout << "RAND_poll" ;
-            }
-
-            if (nullptr == m_ssl_ctx)
-            {
-                std::cout << "SSL_CTX_new";
-                return false;
-            }
-#ifndef _WIN32
-            if (1 != SSL_CTX_load_verify_locations(m_ssl_ctx, crt.c_str(), NULL))
-            {
-                std::cout << "SSL_CTX_load_verify_locations";
-                return false;
-            }
-#endif
-            m_ssl = SSL_new(m_ssl_ctx);
-
-            if (nullptr == m_ssl)
-            {
-                std::cout << "SSL_new()";
-                return false;
-            }
-
-#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
-            // Set hostname for SNI extension
-            SSL_set_tlsext_host_name(m_ssl, m_remote_ip.c_str());
-            SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_PEER, NULL);
-            SSL_CTX_set_cert_verify_callback(m_ssl_ctx, cert_verify_callback, (void *)m_remote_ip.c_str());
-#endif
-            return true;
-#endif
-            
-            return false;
-        }
-
         int32_t http_client::parse_url(const std::string & url)
         {
             struct evhttp_uri *http_uri = evhttp_uri_parse(url.c_str());
@@ -494,6 +420,98 @@ namespace matrix
         std::string  http_client::get_remote_host()
         {
             return boost::str(boost::format("%s:%s") % m_remote_ip % m_remote_port);
+        }
+
+        bool http_client::stop_ssl_engine()
+        {
+            if (m_ssl_ctx)
+            {
+                SSL_CTX_free(m_ssl_ctx);
+            }
+
+            if (m_ssl)
+            {
+                //SSL_free(m_ssl);
+            }
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+            EVP_cleanup();
+            ERR_free_strings();
+
+#ifdef EVENT__HAVE_ERR_REMOVE_THREAD_STATE
+            ERR_remove_thread_state(NULL);
+#else
+            ERR_remove_state(0);
+#endif
+            CRYPTO_cleanup_all_ex_data();
+
+            k_SSL_COMP_free(SSL_COMP_get_compression_methods());
+#endif /*OPENSSL_VERSION_NUMBER < 0x10100000L */
+            return true;
+        }
+
+        bool http_client::start_ssl_engine()
+        {
+            if (m_scheme != "https")
+            {
+                return true;
+            }
+#ifdef __linux__
+            m_ssl = SSL_new(m_ssl_ctx);
+
+            if (nullptr == m_ssl)
+            {
+                std::cout << "SSL_new()";
+                return false;
+            }
+
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+            // Set hostname for SNI extension
+            SSL_set_tlsext_host_name(m_ssl, m_remote_ip.c_str());
+#endif
+            return true;
+#endif
+
+            return false;
+        }
+
+        bool http_client::init_ssl_ctx()
+        {
+            if (m_scheme != "https")
+            {
+                return true;
+            }
+#ifdef __linux__
+            m_ssl_ctx = SSL_CTX_new(SSLv23_method());
+            const std::string crt = "/etc/ssl/certs/ca-certificates.crt";
+            int32_t random = RAND_poll();
+            if (random == 0)
+            {
+                std::cout << "RAND_poll";
+            }
+
+            if (nullptr == m_ssl_ctx)
+            {
+                std::cout << "SSL_CTX_new";
+                return false;
+            }
+#ifndef _WIN32
+            if (1 != SSL_CTX_load_verify_locations(m_ssl_ctx, crt.c_str(), NULL))
+            {
+                std::cout << "SSL_CTX_load_verify_locations";
+                return false;
+            }
+#endif
+
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+            // Set hostname for SNI extension
+            SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_PEER, NULL);
+            SSL_CTX_set_cert_verify_callback(m_ssl_ctx, cert_verify_callback, (void *)m_remote_ip.c_str());
+#endif
+            return true;
+#endif
+
+            return false;
         }
 
         /*bufferevent * http_client::create_bev(event_base *base, SSL *ssl)
