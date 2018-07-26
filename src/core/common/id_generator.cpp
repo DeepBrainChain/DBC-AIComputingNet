@@ -1,5 +1,4 @@
 #include "id_generator.h"
-#include  "key.h"
 #include "base58.h"
 #include "common.h"
 #include "utilstrencodings.h"
@@ -33,18 +32,9 @@ namespace matrix
             //public key
             CPubKey pubkey = secret.GetPubKey();
 
-            //create compressed public key
-            CKeyID keyID = pubkey.GetID();
-
             //encode node id
             CPrivKey private_key = secret.GetPrivKey();
-
-            std::vector<unsigned char> id_data;
-            std::vector<unsigned char> id_prefix = { 'n', 'o', 'd', 'e', '.', NODE_ID_VERSION, '.' };
-            id_data.reserve(id_prefix.size() + keyID.size());
-            id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
-            id_data.insert(id_data.end(), keyID.begin(), keyID.end());
-            info.node_id = EncodeBase58Check(id_data);
+            info.node_id = encode_node_id(pubkey);
 
             //encode node private key
             std::vector<unsigned char> private_key_data;
@@ -149,16 +139,8 @@ namespace matrix
            CKey secret;
            secret.Set(privkey_data, privkey_data + key_len, true);
            CPubKey pubkey = secret.GetPubKey();
-
-           //create compressed public key
-           CKeyID keyID = pubkey.GetID();
-
-           std::vector<unsigned char> id_data;
-           std::vector<unsigned char> id_prefix = { 'n', 'o', 'd', 'e', '.', NODE_ID_VERSION, '.' };
-           id_data.reserve(id_prefix.size() + keyID.size());
-           id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
-           id_data.insert(id_data.end(), keyID.begin(), keyID.end());
-           node_id = EncodeBase58Check(id_data);
+           
+           node_id = encode_node_id(pubkey);
            return true;
        }
 
@@ -182,6 +164,16 @@ namespace matrix
            }
            return true;
        }
+       std::string id_generator::encode_node_id(const CPubKey & pubkey)
+       {
+           CKeyID keyID = pubkey.GetID();       
+           std::vector<unsigned char> id_data;
+           std::vector<unsigned char> id_prefix = { 'n', 'o', 'd', 'e', '.', NODE_ID_VERSION, '.' };
+           id_data.reserve(id_prefix.size() + keyID.size());
+           id_data.insert(id_data.end(), id_prefix.begin(), id_prefix.end());
+           id_data.insert(id_data.end(), keyID.begin(), keyID.end());
+           return EncodeBase58Check(id_data);
+       }
 
        bool id_generator::decode_private_key(const std::string & node_privarte_key, std::vector<uint8_t> & vch)
        {
@@ -202,6 +194,49 @@ namespace matrix
                it_key = vch.erase(it_key);
                it_prfix++;
            }
+           return true;
+       }
+
+       std::string id_generator::sign(const std::string & message, const std::string & node_private_key)
+       {
+           std::vector<unsigned char> vch;
+           if (false == decode_private_key(node_private_key, vch))
+           {
+               return DEFAULT_STRING;
+           }
+
+           CPrivKey prikey;
+           prikey.insert(prikey.end(), vch.begin(), vch.end());
+
+           secp256k1_context *ctx_sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+           const int32_t key_len = 32;
+           unsigned char privkey2[key_len];
+           if (1 != ec_privkey_import_der(ctx_sign, privkey2, prikey.data(), prikey.size()))
+           {
+               return DEFAULT_STRING;
+           }
+
+           CKey secret;
+           secret.Set(privkey2, privkey2 + key_len, true);
+           uint256 hash;
+           CHash256().Write((unsigned char*)message.data(), message.size()).Finalize(hash.begin());
+
+           std::vector<unsigned char> vchSig;
+           secret.SignCompact(hash, vchSig);
+           std::string sig_hex = HexStr(vchSig);
+           return sig_hex;
+       }
+
+       bool id_generator::derive_node_id_by_sign(const std::string & message, const std::string & sign, std::string & node_id)
+       {
+           uint256 hash;
+           CHash256().Write((unsigned char*)message.data(), message.size()).Finalize(hash.begin());
+           std::vector<unsigned char> vchSig = ParseHex(sign);
+           
+           CPubKey depubkey;           
+           depubkey.RecoverCompact(hash, vchSig);
+           node_id = encode_node_id(depubkey);
+
            return true;
        }
     }
