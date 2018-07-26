@@ -69,6 +69,7 @@ stop_ipfs()
     cd $home_dir
     rm -rf $code_dir_hash
     rm -rf $data_dir_hash
+    rm -rf *
 
     echo "======================================================="
     echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
@@ -183,7 +184,7 @@ if [ -n "$data_dir_hash" ]; then
     echo $data_dir_hash
 
     # add link from code_dir to data dir
-    cp -rs $home_dir/$data_dir_hash/* $home_dir/$code_dir_hash/
+    cp -rs $home_dir/$data_dir_hash/* $home_dir/$code_dir_hash/ > /dev/null 2>&1
 
     sleep $sleep_time
 fi
@@ -199,7 +200,8 @@ echo $home_dir/$code_dir_hash/$task
 #python $home_dir/$code_dir_hash/$task
 
 cd $home_dir/$code_dir_hash
-/bin/sh $task  | tee /training_result_file
+chmod +x  $task
+/bin/bash $task  | tee /training_result_file
 
 if [ $? -ne 0 ]; then
     echo "exec task failed and dbc_task.sh exit"

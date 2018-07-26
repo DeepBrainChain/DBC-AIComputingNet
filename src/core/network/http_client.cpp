@@ -94,7 +94,7 @@ namespace matrix
         {
             if (m_scheme == "https")
             {
-                stop_ssl_engine();
+                clear_ssl_ctx();
             }
         }
 
@@ -175,7 +175,7 @@ namespace matrix
                 return E_DEFAULT;
             }*/        
             //bufferevent_free(bev);
-            stop_ssl_engine();
+            //stop_ssl_engine();
             return E_SUCCESS;
         }
 
@@ -358,14 +358,14 @@ namespace matrix
                 cert_str, sizeof(cert_str));
 
             if (res == MatchFound) {
-                printf("https server '%s' has this certificate, "
+                /*printf("https server '%s' has this certificate, "
                     "which looks good to me:\n%s\n",
-                    host, cert_str);
+                    host, cert_str);*/
                 return 1;
             }
             else {
-                printf("Got '%s' for hostname '%s' and certificate:\n%s\n",
-                    res_str, host, cert_str);
+                /*printf("Got '%s' for hostname '%s' and certificate:\n%s\n",
+                    res_str, host, cert_str);*/
                 return 0;
             }
         }
@@ -424,29 +424,10 @@ namespace matrix
 
         bool http_client::stop_ssl_engine()
         {
-            if (m_ssl_ctx)
-            {
-                SSL_CTX_free(m_ssl_ctx);
-            }
-
             if (m_ssl)
             {
-                //SSL_free(m_ssl);
+                SSL_free(m_ssl);
             }
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-            EVP_cleanup();
-            ERR_free_strings();
-
-#ifdef EVENT__HAVE_ERR_REMOVE_THREAD_STATE
-            ERR_remove_thread_state(NULL);
-#else
-            ERR_remove_state(0);
-#endif
-            CRYPTO_cleanup_all_ex_data();
-
-            k_SSL_COMP_free(SSL_COMP_get_compression_methods());
-#endif /*OPENSSL_VERSION_NUMBER < 0x10100000L */
             return true;
         }
 
@@ -473,6 +454,34 @@ namespace matrix
 #endif
 
             return false;
+        }
+
+        bool http_client::clear_ssl_ctx()
+        {
+            if (m_ssl_ctx)
+            {
+                SSL_CTX_free(m_ssl_ctx);
+            }
+
+            if (m_ssl)
+            {
+                SSL_free(m_ssl);
+            }
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+            EVP_cleanup();
+            ERR_free_strings();
+
+#ifdef EVENT__HAVE_ERR_REMOVE_THREAD_STATE
+            ERR_remove_thread_state(NULL);
+#else
+            ERR_remove_state(0);
+#endif
+            CRYPTO_cleanup_all_ex_data();
+
+            k_SSL_COMP_free(SSL_COMP_get_compression_methods());
+#endif /*OPENSSL_VERSION_NUMBER < 0x10100000L */
+            return true;
         }
 
         bool http_client::init_ssl_ctx()
