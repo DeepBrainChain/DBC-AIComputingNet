@@ -223,12 +223,12 @@ namespace ai
 
             //prepare broadcast req
             //std::shared_ptr<message> req_msg = std::make_shared<message>();
-            ai::dbc::cmd_task_info  task_info;
-            auto req_msg = create_task_msg_from_file(req->task_file_path, task_config_opts, task_info);
+            //ai::dbc::cmd_task_info  task_info;
+            auto req_msg = create_task_msg_from_file(req->task_file_path, task_config_opts, cmd_resp->task_info);
             if (nullptr == req_msg)
             {
                 cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = task_info.result;
+                cmd_resp->result_info = cmd_resp->task_info.result;
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
                 return E_DEFAULT;
@@ -246,8 +246,7 @@ namespace ai
 
             //peer won't reply, so public resp directly
             cmd_resp->result = E_SUCCESS;
-            //cmd_resp->task_info.task_id = broadcast_req_content->body.task_id;
-            cmd_resp->task_info = task_info;
+
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
             //flush to db
