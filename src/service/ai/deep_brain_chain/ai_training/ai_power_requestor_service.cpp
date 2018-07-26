@@ -904,7 +904,7 @@ namespace ai
 
             if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
             {
-                task_info.result = "entry_file name or length exceeds maximum ";
+                task_info.result = "entry_file name length exceed maximum ";
              
                 return nullptr;
             }
