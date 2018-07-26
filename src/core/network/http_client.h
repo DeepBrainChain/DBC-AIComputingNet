@@ -147,6 +147,7 @@ namespace matrix
             std::string  get_remote_host();
 
         protected:
+            bool init_ssl_ctx();
             bool start_ssl_engine();
             bool stop_ssl_engine();
 
@@ -155,8 +156,8 @@ namespace matrix
 
             uint16_t m_remote_port;
 
-            std::string m_uri;
-            std::string m_scheme;
+            std::string m_uri="";
+            std::string m_scheme="";
             SSL_CTX* m_ssl_ctx = nullptr;
             SSL* m_ssl = nullptr;
         };
