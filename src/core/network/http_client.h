@@ -108,6 +108,7 @@ inline bufferevent * obtain_evhttp_bev(struct event_base* base, SSL *ssl)
         }
         return bev;
     }
+    return bev;
 }
 
 namespace matrix
@@ -148,6 +149,7 @@ namespace matrix
 
         protected:
             bool init_ssl_ctx();
+            bool clear_ssl_ctx();
             bool start_ssl_engine();
             bool stop_ssl_engine();
 
