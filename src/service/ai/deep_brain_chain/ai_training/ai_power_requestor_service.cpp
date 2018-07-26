@@ -296,6 +296,11 @@ namespace ai
                 return E_SUCCESS;
             }*/
             //return E_DEFAULT;
+            if (entry_file_name.size() > MAX_ENTRY_FILE_NAME_LEN)
+            {
+                return E_DEFAULT;
+            }
+
             return E_SUCCESS;
         }
 
@@ -899,7 +904,7 @@ namespace ai
 
             if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
             {
-                task_info.result = "entry_file name is not valid ";
+                task_info.result = "entry_file name or lenth is not valid ";
              
                 return nullptr;
             }
@@ -947,11 +952,19 @@ namespace ai
                 return nullptr;
             }
 
-            if (check_task_engine(vm["training_engine"].as<std::string>()) != true)
+            std::string engine_name = vm["training_engine"].as<std::string>();
+            if (check_task_engine(engine_name) != true)
             {
                 task_info.result = "training_engine format is not correct ";
                 return nullptr;
             }
+
+            if (engine_name.size() > MAX_ENGINE_IMGE_NAME_LEN)
+            {
+                task_info.result = "training_engine name lenth is not correct ";
+                return nullptr;
+            }
+
 
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::start_training_req> req_content = std::make_shared<matrix::service_core::start_training_req>();
