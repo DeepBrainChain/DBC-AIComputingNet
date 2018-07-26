@@ -33,6 +33,29 @@ myecho()
     echo $1
 }
 
+upload_result_file()
+{
+    echo "start to upload training_result"
+    if [ ! -f "/training_result_file" ]; then
+        echo "can not find training result file"
+        exit
+    fi
+    #python /upload_training_result.py
+    RESULT_HASH=`ipfs add /training_result_file | tail -n 1 | awk '{print $2}'`
+    if [ ${PIPESTATUS[0]} -ne 0 ];then
+        echo -n "ipfs add error and exit:"
+        exit
+    fi
+    echo -n "RESULT_HASH:"
+    echo $RESULT_HASH
+    curl http://122.112.243.44:5001/api/v0/get?arg=/ipfs/$RESULT_HASH > /dev/null
+    if [ $? -ne 0 ]; then
+         echo "***curl training result file to ipfs error***"
+         exit
+    fi
+    echo "***curl training result file to ipfs success***"
+}
+
 stop_ipfs()
 {
     #stop ipfs
@@ -47,14 +70,9 @@ stop_ipfs()
     rm -rf $code_dir_hash
     rm -rf $data_dir_hash
 
-    myecho "\n\n"
-
     echo "======================================================="
     echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
 }
-
-
-myecho "\n\n"
 
 echo "======================================================="
 echo "begin to exec dbc_task.sh"
@@ -77,8 +95,6 @@ echo "end to init ipfs"
 sleep $sleep_time
 
 cp /swarm.key /root/.ipfs/
-
-myecho "\n\n"
 
 #start ipfs
 echo "======================================================="
@@ -107,10 +123,6 @@ ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2
 echo "end to start ipfs"
 sleep $sleep_time
 
-
-
-myecho "\n\n"
-
 #create dir
 echo "======================================================="
 if [ ! -d $home_dir ]; then
@@ -120,9 +132,6 @@ fi
 echo -n "cd "
 echo $home_dir
 cd $home_dir
-
-
-myecho "\n\n"
 
 #download code_dir
 echo "======================================================="
@@ -149,6 +158,9 @@ if [ ! -e $home_dir/$code_dir_hash/$task ]; then
    stop_ipfs
    exit
 fi
+
+echo -n "end to download code dir: "
+echo $code_dir_hash
 
 #download data_dir
 echo "======================================================="
@@ -178,14 +190,7 @@ fi
 
 myecho "\n\n"
 
-
-
-echo -n "end to download code dir: "
-echo $code_dir_hash
 sleep $sleep_time
-
-
-myecho "\n\n"
 
 #start exec task
 echo "======================================================="
@@ -200,26 +205,7 @@ if [ $? -ne 0 ]; then
     echo "exec task failed and dbc_task.sh exit"
     echo -n "end to exec task: "
     echo $home_dir/$code_dir_hash/$task
-
-    echo "start to upload training_result"
-    if [ ! -f "/training_result_file" ]; then
-        echo "can not find training result file"
-        exit
-    fi
-    #python /upload_training_result.py
-    RESULT_HASH=`ipfs add /training_result_file | tail -n 1 | awk '{print $2}'`
-    if [ ${PIPESTATUS[0]} -ne 0 ];then
-        echo -n "ipfs add error and exit:"
-        exit
-    fi
-    echo -n "RESULT_HASH:"
-    echo $RESULT_HASH
-    curl http://122.112.243.44:5001/api/v0/get?arg=/ipfs/$RESULT_HASH > /dev/null
-    if [ $? -ne 0 ]; then
-         echo "***curl training result file to ipfs error***"
-         exit
-    fi
-    echo "***curl training result file to ipfs success***"
+    upload_result_file
 
     stop_ipfs
     exit
@@ -227,26 +213,7 @@ fi
 
 echo -n "end to exec task: "
 echo $home_dir/$code_dir_hash/$task
-
-echo "start to upload training_result"
-if [ ! -f "/training_result_file" ]; then
-    echo "can not find training result file"
-    exit
-fi
-#python /upload_training_result.py
-RESULT_HASH=`ipfs add /training_result_file | tail -n 1 | awk '{print $2}'`
-if [ ${PIPESTATUS[0]} -ne 0 ];then
-    echo -n "ipfs add error and exit:"
-    exit
-fi
-echo -n "RESULT_HASH:"
-echo $RESULT_HASH
-curl http://122.112.243.44:5001/api/v0/get?arg=/ipfs/$RESULT_HASH > /dev/null
-if [ $? -ne 0 ]; then
-    echo "***curl training result file to ipfs error***"
-    exit
-fi
-echo "***curl training result file to ipfs success***"
+upload_result_file
 
 myecho "\n\n"
 
