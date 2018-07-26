@@ -904,7 +904,7 @@ namespace ai
 
             if (E_SUCCESS != validate_entry_file_name(vm["entry_file"].as<std::string>()))
             {
-                task_info.result = "entry_file name or lenth is not valid ";
+                task_info.result = "entry_file name or length exceeds maximum ";
              
                 return nullptr;
             }
@@ -961,7 +961,7 @@ namespace ai
 
             if (engine_name.size() > MAX_ENGINE_IMGE_NAME_LEN)
             {
-                task_info.result = "training_engine name lenth is not correct ";
+                task_info.result = "training_engine name length exceed maximum ";
                 return nullptr;
             }
 
