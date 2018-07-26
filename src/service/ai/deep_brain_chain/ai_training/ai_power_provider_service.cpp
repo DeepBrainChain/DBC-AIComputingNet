@@ -447,7 +447,11 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"]);
+            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"]))
+            {
+                LOG_ERROR << "sign error.";
+                return E_DEFAULT;
+            }
 
             //check node id
             const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
@@ -567,7 +571,11 @@ namespace ai
                 LOG_ERROR << "exten info error.";
                 return E_DEFAULT;
             }
-            check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"]);
+            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"]))
+            {
+                LOG_ERROR << "sign error.";
+                return E_DEFAULT;
+            }
 
             //relay on stop_training to network(maybe task running on multiple nodes)
             LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
