@@ -16,7 +16,7 @@ import struct
 from thrift.transport import TTransport
 all_structs = []
 
-magic = -506355561
+# magic = -506355567
 
 
 def pack_head(m):

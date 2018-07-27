@@ -46,7 +46,7 @@ namespace matrix
                 LOG_DEBUG << "matrix_server_socket_channel_handler has been stopped and shake_hand_timer_handler exit directly" << m_sid.to_string();
                 return;
             }
-
+            LOG_INFO << "message count: " << get_count();
             if (error)
             {
                 //aborted, maybe cancel triggered

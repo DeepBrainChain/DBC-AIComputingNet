@@ -46,7 +46,8 @@ namespace ai
             task_running = 4,
             task_stopped = 8,
             task_succefully_closed = 16,
-            task_abnormally_closed = 32
+            task_abnormally_closed = 32,
+            task_overdue_close     = 64
         };
 
         //__BEGIN_DECLS
@@ -54,6 +55,7 @@ namespace ai
         extern std::string to_training_task_status_string(int8_t status);
         extern bool check_task_engine(std::string engine);
         extern void set_task_engine(std::string engine);
+        const std::string ECDSA = "ecdsa";
         //__END_DECLS;
 
     }

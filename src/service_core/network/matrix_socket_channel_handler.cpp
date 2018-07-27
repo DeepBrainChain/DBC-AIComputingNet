@@ -28,7 +28,16 @@ namespace matrix
             , m_has_message(false)
             , m_login_success(false)
             , m_sid(ch->id())
-        {}
+        {
+            if (CONF_MANAGER->get_max_recv_speed() > 0)
+            {
+                int32_t recv_speed = CONF_MANAGER->get_max_recv_speed();
+                int32_t cycle = 1;
+                int32_t slice = 2;
+                m_f_ctl = std::make_shared<flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
+                m_f_ctl->start();
+            }
+        }
 
         matrix_socket_channel_handler::~matrix_socket_channel_handler()
         {
@@ -39,6 +48,10 @@ namespace matrix
         {
             m_stopped = true;
             stop_shake_hand_timer();
+            if (CONF_MANAGER->get_max_recv_speed() > 0)
+            {
+                m_f_ctl->stop();
+            }
 
             return E_SUCCESS;
         }
@@ -94,8 +107,14 @@ namespace matrix
                             //check msg duplicated
                             if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
                             {
+                                if (m_f_ctl != nullptr && m_f_ctl->over_speed(1))
+                                {
+                                    LOG_INFO << "over_speed";
+                                    return E_SUCCESS;
+                                }
+                                m_count++;
                                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-
+                                //LOG_INFO << "m_count "<< m_count << endl;
                                 LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce << m_sid.to_string();
                             }
                             else
