@@ -169,6 +169,7 @@ namespace ai
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
 
             uint32_t m_training_task_timer_id;
+            uint32_t m_auth_task_timer_id;
 
             std::shared_ptr<nvidia_config> m_nv_config;
             variables_map m_container_args;

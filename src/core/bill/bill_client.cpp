@@ -23,9 +23,10 @@ namespace matrix
     namespace core
     {
 
-        bill_client::bill_client(std::string url)
+        bill_client::bill_client(const std::string & url, const std::string & crt)
             : m_url(url),
-            m_http_client(url)
+            m_crt(crt),
+            m_http_client(url, crt)
         {
         }
         void bill_client::post_test()

@@ -99,11 +99,12 @@ namespace matrix
 
             const std::string & get_bill_url() 
             {
-                if (m_args.count("bill_url") > 0)
-                {
-                    return m_args["bill_url"].as<std::string>();
-                }
-                return  DEFAULT_STRING;
+                return  m_args.count("bill_url") > 0 ?  m_args["bill_url"].as<std::string>():DEFAULT_STRING;
+            }
+
+            const std::string & get_bill_crt()
+            {
+                return m_args.count("bill_crt") > 0 ? m_args["bill_crt"].as<std::string>() : DEFAULT_STRING;
             }
 
             std::string get_dbc_path() { return m_dbc_path;}
