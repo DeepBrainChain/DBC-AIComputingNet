@@ -251,7 +251,8 @@ namespace ai
                 ("peer", bpo::value<std::vector<std::string>>(), "")
                 ("ai_training,a", "run as ai training service provider")
                 ("name,n", bpo::value<std::string>(), "node name")
-                ("max_connect", bpo::value<int32_t>(), "");
+                ("max_connect", bpo::value<int32_t>(), "")
+                ("path", bpo::value<std::string>(), "path of dbc exe file");
 
             try
             {
