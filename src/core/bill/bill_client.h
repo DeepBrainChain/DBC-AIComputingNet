@@ -23,12 +23,11 @@ namespace matrix
 {
     namespace core
     { 
-
         class bill_client
         {
         public:
 
-            bill_client(std::string url);
+            bill_client(const std::string & url, const std::string &crt);
 
             //auth_task
             std::shared_ptr<auth_task_resp> post_auth_task(std::shared_ptr<auth_task_req> req);
@@ -43,6 +42,7 @@ namespace matrix
             http_client m_http_client;
 
             std::string m_url;
+            std::string m_crt;
         };
 
     }

@@ -10,6 +10,7 @@
 #include <ostream>
 #include <TToString.h>
 
+
 namespace ai { namespace dbc {
 
 
@@ -66,12 +67,10 @@ void ai_training_task::__set_checkpoint_dir(const std::string& val) {
 
 void ai_training_task::__set_hyper_parameters(const std::string& val) {
   this->hyper_parameters = val;
-__isset.hyper_parameters = true;
 }
 
 void ai_training_task::__set_ai_user_node_id(const std::string& val) {
   this->ai_user_node_id = val;
-__isset.ai_user_node_id = true;
 }
 
 void ai_training_task::__set_start_time(const int64_t val) {
@@ -124,6 +123,8 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
   bool isset_entry_file = false;
   bool isset_data_dir = false;
   bool isset_checkpoint_dir = false;
+  bool isset_hyper_parameters = false;
+  bool isset_ai_user_node_id = false;
   bool isset_start_time = false;
   bool isset_end_time = false;
   bool isset_error_times = false;
@@ -242,7 +243,7 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
       case 12:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->hyper_parameters);
-          this->__isset.hyper_parameters = true;
+          isset_hyper_parameters = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -250,7 +251,7 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
       case 13:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->ai_user_node_id);
-          this->__isset.ai_user_node_id = true;
+          isset_ai_user_node_id = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -328,6 +329,10 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_checkpoint_dir)
     throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_hyper_parameters)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_ai_user_node_id)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_start_time)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_end_time)
@@ -403,16 +408,14 @@ uint32_t ai_training_task::write(::apache::thrift::protocol::TProtocol* oprot) c
   xfer += oprot->writeString(this->checkpoint_dir);
   xfer += oprot->writeFieldEnd();
 
-  if (this->__isset.hyper_parameters) {
-    xfer += oprot->writeFieldBegin("hyper_parameters", ::apache::thrift::protocol::T_STRING, 12);
-    xfer += oprot->writeString(this->hyper_parameters);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.ai_user_node_id) {
-    xfer += oprot->writeFieldBegin("ai_user_node_id", ::apache::thrift::protocol::T_STRING, 13);
-    xfer += oprot->writeString(this->ai_user_node_id);
-    xfer += oprot->writeFieldEnd();
-  }
+  xfer += oprot->writeFieldBegin("hyper_parameters", ::apache::thrift::protocol::T_STRING, 12);
+  xfer += oprot->writeString(this->hyper_parameters);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("ai_user_node_id", ::apache::thrift::protocol::T_STRING, 13);
+  xfer += oprot->writeString(this->ai_user_node_id);
+  xfer += oprot->writeFieldEnd();
+
   xfer += oprot->writeFieldBegin("start_time", ::apache::thrift::protocol::T_I64, 14);
   xfer += oprot->writeI64(this->start_time);
   xfer += oprot->writeFieldEnd();
@@ -525,8 +528,8 @@ void ai_training_task::printTo(std::ostream& out) const {
   out << ", " << "entry_file=" << to_string(entry_file);
   out << ", " << "data_dir=" << to_string(data_dir);
   out << ", " << "checkpoint_dir=" << to_string(checkpoint_dir);
-  out << ", " << "hyper_parameters="; (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
-  out << ", " << "ai_user_node_id="; (__isset.ai_user_node_id ? (out << to_string(ai_user_node_id)) : (out << "<null>"));
+  out << ", " << "hyper_parameters=" << to_string(hyper_parameters);
+  out << ", " << "ai_user_node_id=" << to_string(ai_user_node_id);
   out << ", " << "start_time=" << to_string(start_time);
   out << ", " << "end_time=" << to_string(end_time);
   out << ", " << "error_times=" << to_string(error_times);

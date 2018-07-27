@@ -12,7 +12,6 @@
 #include "service_message.h"
 #include "TToString.h"
 
-using namespace matrix::core;
 
 namespace ai { namespace dbc {
 
@@ -21,12 +20,10 @@ class ai_training_task;
 class cmd_task_info;
 
 typedef struct _ai_training_task__isset {
-  _ai_training_task__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), ai_user_node_id(false) {}
+  _ai_training_task__isset() : master(false), server_specification(false), server_count(false) {}
   bool master :1;
   bool server_specification :1;
   bool server_count :1;
-  bool hyper_parameters :1;
-  bool ai_user_node_id :1;
 } _ai_training_task__isset;
 
 class ai_training_task : public virtual ::apache::thrift::TBase {
@@ -128,13 +125,9 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
       return false;
     if (!(checkpoint_dir == rhs.checkpoint_dir))
       return false;
-    if (__isset.hyper_parameters != rhs.__isset.hyper_parameters)
+    if (!(hyper_parameters == rhs.hyper_parameters))
       return false;
-    else if (__isset.hyper_parameters && !(hyper_parameters == rhs.hyper_parameters))
-      return false;
-    if (__isset.ai_user_node_id != rhs.__isset.ai_user_node_id)
-      return false;
-    else if (__isset.ai_user_node_id && !(ai_user_node_id == rhs.ai_user_node_id))
+    if (!(ai_user_node_id == rhs.ai_user_node_id))
       return false;
     if (!(start_time == rhs.start_time))
       return false;

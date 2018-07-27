@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments> peer D:\source\deepbrain\deepbrain_dev_0.3\deepbrainchain\output\db\peers.db</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>  pro D:\source\gerrit2\deepbrainchain\tool\db_show\prov_training_task.db</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
