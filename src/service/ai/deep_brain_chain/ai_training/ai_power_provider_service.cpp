@@ -1237,14 +1237,22 @@ namespace ai
             config->host_config.memory_swap = m_container_args["memory_swap"].as<int64_t>()  * m_g_bytes;
             config->host_config.nano_cpus = (int64_t) (m_container_args["cpus"].as<double>() * m_nano_cpu);
 
-            std::string mount_dir = m_container_args["host_volum_dir"].as<std::string>();
+            std::string mount_dbc_data_dir = m_container_args["host_volum_dir"].as<std::string>();
 
-            if (!mount_dir.empty())
+            if (!mount_dbc_data_dir.empty())
             {
-                mount_dir = mount_dir + ":" + "/dbc";
-                config->host_config.binds.push_back(mount_dir);
+                mount_dbc_data_dir = mount_dbc_data_dir + ":" + "/dbc";
+                config->host_config.binds.push_back(mount_dbc_data_dir);
             }
 
+            std::string mount_dbc_utils_dir = CONF_MANAGER->get_dbc_path();
+
+            if (!mount_dbc_utils_dir.empty())
+            {
+                // read only
+                mount_dbc_utils_dir = mount_dbc_utils_dir + "/dbc_utils:" + "/home/dbc_utils:ro";
+                config->host_config.binds.push_back(mount_dbc_utils_dir);
+            }
 
             if (std::string::npos != (config->image).find("gpu"))
             {
