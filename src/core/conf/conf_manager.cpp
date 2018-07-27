@@ -104,6 +104,7 @@ namespace matrix
                 ("timer_service_broadcast_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND), "")
                 ("magic_num", bpo::value<std::string>()->default_value("0XE1D1A098"), "")
                 ("bill_url", bpo::value<std::string>()->default_value(""), "")
+                ("bill_crt", bpo::value<std::string>()->default_value(""), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "");
                 //("container_image", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_IMAGE_NAME), "");
 

@@ -436,6 +436,12 @@
     <ClCompile Include="..\..\..\..\src\core\bill\bill_message.cpp">
       <Filter>src\core\bill</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\hostcheck.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\openssl_hostname_validation.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1352,6 +1358,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\bill\bill_message.h">
       <Filter>src\core\bill</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\openssl_hostname_validation.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\hostcheck.h">
+      <Filter>src\core\network</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

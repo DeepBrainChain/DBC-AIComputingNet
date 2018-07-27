@@ -125,7 +125,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;secp256k1.lib;leveldb.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;secp256k1.lib;leveldb.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;libevent_openssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <GenerateMapFile>true</GenerateMapFile>
@@ -216,9 +216,11 @@
     <ClCompile Include="..\..\..\..\src\core\module\module.cpp" />
     <ClCompile Include="..\..\..\..\src\core\module\module_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\hostcheck.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\http_client.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\net_address.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\nio_loop_group.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\openssl_hostname_validation.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_acceptor.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_connector.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_socket_channel.cpp" />
@@ -506,10 +508,12 @@
     <ClInclude Include="..\..\..\..\src\core\network\connection_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\network\endpoint_address.h" />
     <ClInclude Include="..\..\..\..\src\core\network\handler_create_functor.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\hostcheck.h" />
     <ClInclude Include="..\..\..\..\src\core\network\http_client.h" />
     <ClInclude Include="..\..\..\..\src\core\network\io_service_wrapper.h" />
     <ClInclude Include="..\..\..\..\src\core\network\net_address.h" />
     <ClInclude Include="..\..\..\..\src\core\network\nio_loop_group.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\openssl_hostname_validation.h" />
     <ClInclude Include="..\..\..\..\src\core\network\socket_channel_handler.h" />
     <ClInclude Include="..\..\..\..\src\core\network\socket_id.h" />
     <ClInclude Include="..\..\..\..\src\core\network\tcp_acceptor.h" />

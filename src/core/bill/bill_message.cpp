@@ -32,8 +32,8 @@ namespace matrix
             root.AddMember("start_time", STRING_REF(start_time), allocator);
             root.AddMember("task_state", STRING_REF(task_state), allocator);
             root.AddMember("end_time", STRING_REF(end_time), allocator);
-            root.AddMember("sign_type", STRING_REF(task_state), allocator);
-            root.AddMember("sign", STRING_REF(end_time), allocator);
+            root.AddMember("sign_type", STRING_REF(sign_type), allocator);
+            root.AddMember("sign", STRING_REF(sign), allocator);
 
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
@@ -56,27 +56,52 @@ namespace matrix
                 //message
                 if (!doc.HasMember("status"))
                 {
+                    this->status = AUTH_NET_ERROR;
                     LOG_ERROR << "parse bill_resp file error. Do not have status";
                     return;
                 }
+               
                 rapidjson::Value &status = doc["status"];
+                auto  ret_type = status.GetType();
+                if (ret_type != rapidjson::kNumberType)
+                {
+                    this->status = AUTH_NET_ERROR;
+                    return;
+                }
+
                 this->status = status.GetInt();
 
                 //contract_state
                 if (!doc.HasMember("contract_state"))
                 {
                     LOG_ERROR << "parse bill_resp file error. Do not have status";
+                    this->status = AUTH_NET_ERROR;
                     return;
                 }
                 rapidjson::Value &contract_state = doc["contract_state"];
+                ret_type = contract_state.GetType();
+                if (ret_type != rapidjson::kStringType)
+                {
+                    this->status = AUTH_NET_ERROR;
+                    return;
+                }
                 this->contract_state = contract_state.GetString();
+                
 
                 //report_cycle
                 if (doc.HasMember("report_cycle"))
                 {
                     rapidjson::Value &report_cycle = doc["report_cycle"];
-                    this->report_cycle = report_cycle.GetInt();
+                    
+                    ret_type = report_cycle.GetType();
+                    if (ret_type != rapidjson::kNumberType)
+                    {
+                        this->status = AUTH_NET_ERROR;
+                        return;
+                    }
+                    this->report_cycle = report_cycle.GetInt() < 1 ? DEFAULT_AUTH_REPORT_CYTLE : report_cycle.GetInt();
                 }
+                
             }
             catch (...)
             {
