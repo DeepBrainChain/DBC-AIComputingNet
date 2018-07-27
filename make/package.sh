@@ -29,6 +29,11 @@ cp ../../tool/docker_gpg.key ./
 cp ../../tool/plog           ./
 cp ../../tool/swarm.key      ./
 chmod +x *
+
+if [ $os_name == 'Linux' ];then
+    cp -r ../../dbc_utils ./
+fi
+
 cd ../
 tar -cvf dbc-$os_name-$version.tar $version
 gzip *.tar

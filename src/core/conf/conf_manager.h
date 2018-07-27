@@ -106,6 +106,8 @@ namespace matrix
                 return  DEFAULT_STRING;
             }
 
+            std::string get_dbc_path() { return m_dbc_path;}
+
         protected:
 
             int32_t parse_local_conf();
@@ -140,6 +142,8 @@ namespace matrix
 
             //params relative with net type
             std::shared_ptr<net_type_params> m_net_params;
+
+            std::string m_dbc_path;
         };
 
     }

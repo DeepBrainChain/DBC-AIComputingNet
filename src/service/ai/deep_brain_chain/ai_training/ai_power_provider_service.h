@@ -31,7 +31,7 @@ using namespace boost::asio::ip;
 #define AI_TRAINING_MAX_RETRY_TIMES                                  4
 #define AI_TRAINING_MAX_TASK_COUNT                                    3
 
-#define AI_TRAINING_TASK_SCRIPT_HOME                         "/"
+#define AI_TRAINING_TASK_SCRIPT_HOME                         "/home/dbc_utils/"
 #define AI_TRAINING_TASK_SCRIPT                                       "dbc_task.sh"                                            //training shell script name
 #define AI_TRAINING_BIND_LOCALTIME                                    "/etc/localtime:/etc/localtime:ro"                          //set docker container time=local host time
 #define AI_TRAINING_BIND_TIMEZONE                                    "/etc/timezone:/etc/timezone:ro"                          //set docker container time=local host time
