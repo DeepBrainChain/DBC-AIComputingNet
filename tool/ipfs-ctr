@@ -1,0 +1,104 @@
+#!/bin/bash
+
+
+if [ $# -lt 1 ]; then
+    echo "ipfs-ctr [start] [stop] [status]"
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
+fi
+
+
+workspace=`pwd`
+
+stop()
+{
+    pid=$(ps -A | grep "[i]pfs " | awk '{print $1}')
+    if [[ -n "$pid" ]]; then
+        echo "stop ipfs daemon"
+        ipfs shutdown > /dev/null 2>&1
+        kill -TERM $pid > /dev/null 2>&1
+    fi
+    echo "ipfs daemon was stopped"
+}
+
+status()
+{
+    pid=$(ps -A | grep "[i]pfs "| awk '{print $1}')
+    if [[ -n "$pid" ]]; then
+
+        echo "alive"
+
+        if [ "$1" = "-v" ]; then
+            echo
+            echo "-- ipfs peers -- "
+            ipfs swarm peers
+
+            echo
+            echo "-- ipfs storage -- "
+            ipfs repo stat
+            echo
+        fi
+
+        return 0
+    else
+        echo "down"
+        return 1
+    fi
+}
+
+arg=$1
+
+case "$arg" in
+
+"start")
+    status > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "ipfs daemon is running"
+        exit 0
+    else
+        echo "ipfs daemon is starting"
+        nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
+        sleep 5
+        echo "ipfs daemon is started"
+    fi
+;;
+
+"stop")
+   stop
+;;
+
+"status")
+    status $2
+;;
+
+#"install")
+#    status > /dev/null
+#    if [ $? -eq 0 ]; then
+#        echo "please stop ipfs and then retry"
+#        exit 0
+#    fi
+#
+#    os_name=`uname -a | awk '{print $1}'`
+#    if [ $os_name == 'Linux' ];then
+#        ipfs_pkg="go-ipfs_v0.4.15_linux-amd64.tar.gz"
+#    fi
+#
+#    if [ $os_name == 'Darwin' ];then
+#        ipfs_pkg="go-ipfs_v0.4.15_darwin-amd64.tar.gz"
+#    fi
+#
+#    cd ./ipfs_repo
+#    bash ./install_ipfs.sh ./${ipfs_pkg}
+#    cd $workspace
+#
+#
+#    # set proper storage size
+#    #ipfs config  Datastore.StorageMax 1GB
+#
+#    stop_ipfs
+#    status
+#
+#;;
+*)
+echo "ipfs-ctr [start|stop|status]"
+;;
+esac

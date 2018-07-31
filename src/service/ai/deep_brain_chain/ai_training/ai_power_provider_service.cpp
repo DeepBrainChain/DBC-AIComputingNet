@@ -143,13 +143,13 @@ namespace ai
             double temp = cpu_info * m_nano_cpu;
             if (temp - (int64_t)temp > 0)
             {
-                LOG_DEBUG << "cpu num config error";
+                LOG_ERROR << "cpu num config error";
                 return E_DEFAULT;
             }
 
             if (temp > cpu_num * m_nano_cpu)
             {
-                LOG_DEBUG << "cpu num error" << " system cpu is:" << cpu_num << " cpu config num is" << cpu_info;
+                LOG_ERROR << "cpu num error" << " system cpu is:" << cpu_num << " cpu config num is" << cpu_info;
                 return E_DEFAULT;
             }
 
@@ -1250,7 +1250,7 @@ namespace ai
             if (!mount_dbc_utils_dir.empty())
             {
                 // read only
-                mount_dbc_utils_dir = mount_dbc_utils_dir + "/dbc_utils:" + "/home/dbc_utils:ro";
+                mount_dbc_utils_dir = mount_dbc_utils_dir + "/container:" + "/home/dbc_utils:ro";
                 config->host_config.binds.push_back(mount_dbc_utils_dir);
             }
 
