@@ -1,0 +1,143 @@
+#!/bin/bash
+
+
+if [ $# -lt 1 ]; then
+    echo "dbc-ctr [start] [stop] [status]"
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
+fi
+
+
+workspace=`pwd`
+
+status()
+{
+    pid=$(ps -A | grep "[d]bc" | grep -v "dbc-ctr" | awk '{print $1}')
+    if [[ -n "$pid" ]]; then
+        echo "alive"
+        return 0
+    else
+        echo "down"
+        return 1
+    fi
+}
+
+start()
+{
+    type=$1
+    name=$2
+
+    status > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "warning: another dbc instanse is running in the same node!"
+        exit 1
+    fi
+
+    case "$type" in
+    "ai_server")
+        if [ -z "$name" ]; then
+            ./dbc --ai --daemon --path `pwd`
+        else
+        # use specified node name
+            ./dbc --ai --daemon -n "$name" --path `pwd`
+        fi
+
+        for i in `seq 1 10`;
+        do
+            status > /dev/null
+            if [ $? -eq 0 ]; then
+                echo "dbc was started!"
+                exit 0
+            fi
+            sleep 1
+        done
+
+        echo "error: dbc fail to start!"
+        exit 1
+    ;;
+
+    "seed")
+        ./dbc --daemon
+        for i in `seq 1 10`;
+        do
+            status > /dev/null
+            if [ $? -eq 0 ]; then
+                echo "dbc was started!"
+                exit 0
+            fi
+            sleep 1
+        done
+
+        echo "error: dbc fail to start!"
+        exit 1
+    ;;
+
+    "ai_client")
+        ./dbc
+    ;;
+    "")
+        ./dbc
+    ;;
+    *)
+        echo "unknown type $type"
+        echo "mining: dbc-ctr start ai_server"
+        echo "client: dbc-ctr start"
+        return 1
+    ;;
+
+    esac
+}
+
+stop()
+{
+    pid=$(ps -e -o pid -o command| grep "[d]bc" | grep -v "dbc-ctr" | awk '{print $1}')
+    if [[ -n "$pid" ]]; then
+        echo "stop dbc "
+        kill -USR1 $pid > /dev/null 2>&1
+    fi
+
+    pid=$(ps -e -o pid -o command | grep "[d]bc" | grep -v grep | grep -v stop | grep -v "daemon" | awk '{print $1}')
+    if [[ -n "$pid" ]]; then
+        #echo "kill dbc client "
+        kill -9 $pid > /dev/null 2>&1
+    fi
+
+    ppid=$(ps -e -o pid -o command | grep "[d]bc-ctr" | grep "start" | awk '{print $1}')
+    if [[ -n "$ppid" ]]; then
+        #echo "stop dbc-ctr start"
+        kill -9 $ppid > /dev/null 2>&1
+    fi
+}
+
+arg=$1
+
+case "$arg" in
+
+"start")
+    start $2 "$3"
+;;
+
+"stop")
+    stop
+
+    for i in `seq 1 10`;
+    do
+        status > /dev/null
+        if [ $? -eq 1 ]; then
+            echo "dbc was stopped!"
+            exit 0
+        fi
+        sleep 1
+    done
+
+    echo "error: dbc fail to stop!"
+    exit 1
+;;
+
+"status")
+    status $2
+;;
+
+*)
+    echo "dbc-ctr [start|stop|status|install]"
+;;
+esac
