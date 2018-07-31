@@ -191,12 +191,25 @@ namespace ai
 
             //check file exist
             fs::path task_file_path = fs::system_complete(fs::path(req->task_file_path.c_str()));
-            if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "training task file does not exist";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
+            try
+            {
+                if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
+                {
+                    cmd_resp->result = E_DEFAULT;
+                    cmd_resp->result_info = "training task file does not exist";
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
+
+                    return E_DEFAULT;
+                }
+            }
+            catch (const std::exception & e)
+            {
+                // what():  boost::filesystem::status: Permission denied
+                LOG_ERROR << "read file error: " << e.what();
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = e.what();
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
                 return E_DEFAULT;
             }
 
