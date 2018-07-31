@@ -98,7 +98,7 @@ namespace ai
             auto line = readline("dbc>>> ");
             if (line == nullptr)
             {
-                LOG_ERROR << "readline return nullptr";
+                //LOG_ERROR << "readline return nullptr";
                 return;
             }
 
@@ -119,7 +119,14 @@ namespace ai
 #ifdef WIN32
             m_argvs = bpo::split_winmain(m_cmd_line_buf);
 #else
-            m_argvs = bpo::split_unix(m_cmd_line_buf);
+            try
+            {
+                m_argvs = bpo::split_unix(m_cmd_line_buf);
+            }
+            catch (const boost::exception & e)
+            {
+                return;
+            }
 #endif
 
             if (0 == m_argvs.size())
