@@ -1,7 +1,7 @@
 #!/bin/bash
 cmd=$*
 
-cd ./logs
+cd ../logs
 loglatest=`ls -t|head -1`
 
 echo $loglatest
