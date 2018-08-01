@@ -169,6 +169,7 @@ namespace ai
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
 
             uint32_t m_training_task_timer_id;
+            uint32_t m_auth_task_timer_id;
 
             std::shared_ptr<nvidia_config> m_nv_config;
             variables_map m_container_args;
@@ -176,9 +177,9 @@ namespace ai
             const int64_t m_nano_cpu = 1000000000;
             const int64_t m_g_bytes = 1073741824;
 
-            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
-            int32_t auth_task(std::shared_ptr<ai_training_task> task, std::shared_ptr<auth_task_resp> resp);
-            int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id);
+            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task, bool is_report_cycle=false);
+            int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_report_cycle=false);
+            int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
         };
 
 	}

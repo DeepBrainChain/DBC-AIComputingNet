@@ -32,6 +32,8 @@ namespace ai
                 return "task_succefully_closed";
             case task_abnormally_closed:
                 return "task_abnormally_closed";
+            case task_overdue_close:
+                return "task_overdue_close";
             default:
                 return DEFAULT_STRING;
             }
