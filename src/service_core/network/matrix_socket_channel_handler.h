@@ -18,6 +18,7 @@
 #include "matrix_types.h"
 #include "server.h"
 #include "service_message_id.h"
+#include "flow_ctrl.h"
 
 
 using namespace std;
@@ -74,6 +75,8 @@ namespace matrix
 
             virtual void on_shake_hand_timer_expired(const boost::system::error_code& error) {}
 
+            int32_t get_count() { return m_count; }
+
         protected:
 
             virtual void start_shake_hand_timer();
@@ -104,7 +107,11 @@ namespace matrix
 
             bool m_login_success;
 
+            int32_t m_count = 0;
+
             socket_id m_sid;
+
+            std::shared_ptr<flow_ctrl> m_f_ctl = nullptr;
         };
 
     }

@@ -438,9 +438,9 @@ namespace ai
                     assert(nullptr != req_content);
                     
                     ai::dbc::cmd_task_info task_info;
-                    task_info.create_time = time(nullptr);
-                    task_info.task_id = req_content->body.task_id;
-                    task_info.status = task_unknown;
+                    task_info.__set_create_time(std::time(nullptr));
+                    task_info.__set_task_id(req_content->body.task_id);
+                    task_info.__set_status(task_unknown);
                     
                     cmd_resp->task_info_list.push_back(task_info);
 
@@ -510,7 +510,7 @@ namespace ai
 
             std::map<std::string, std::string> extern_info;
             extern_info["sign"] = sign;
-            extern_info["sign_algo"] = "ECDSA";
+            extern_info["sign_algo"] = ECDSA;
             extern_info["origin_id"] = CONF_MANAGER->get_node_id();
             req_content->header.__set_exten_info(extern_info);
 
@@ -1021,7 +1021,7 @@ namespace ai
 
             std::map<std::string, std::string> extern_info;
             extern_info["sign"] = sign;
-            extern_info["sign_algo"] = "ECDSA";
+            extern_info["sign_algo"] = ECDSA;
             extern_info["origin_id"] = CONF_MANAGER->get_node_id();
             req_content->header.__set_exten_info(extern_info);
 

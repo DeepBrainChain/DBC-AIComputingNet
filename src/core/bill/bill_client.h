@@ -4,8 +4,8 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        :   container_client.h
 * description    :   container client for definition
-* date                  :   2018.04.04
-* author            :   Bruce Feng
+* date                  :   2018.07.020
+* author            :   Regulus
 **********************************************************************************/
 
 #pragma once
@@ -23,18 +23,14 @@ namespace matrix
 {
     namespace core
     { 
-
         class bill_client
         {
         public:
 
-            bill_client(std::string url);
+            bill_client(const std::string & url, const std::string &crt);
 
             //auth_task
             std::shared_ptr<auth_task_resp> post_auth_task(std::shared_ptr<auth_task_req> req);
-
-            void post_test();
-
 
             ~bill_client() = default;
 
@@ -43,6 +39,7 @@ namespace matrix
             http_client m_http_client;
 
             std::string m_url;
+            std::string m_crt;
         };
 
     }
