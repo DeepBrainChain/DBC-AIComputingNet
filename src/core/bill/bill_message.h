@@ -15,13 +15,17 @@
 #include "container_message.h"
 
 
-#define STRING_REF(VAR)                        rapidjson::StringRef(VAR.c_str(), VAR.length())
-
-
 namespace matrix
 {
     namespace core
     {
+        enum AUTH_ERROR
+        {
+            AUTH_NET_ERROR = -1,
+            AUTH_SUCCESS =    0
+        } ;
+
+        const int32_t DEFAULT_AUTH_REPORT_CYTLE = 60;
         class auth_task_req : public json_io_buf
         {
         public:
@@ -49,11 +53,11 @@ namespace matrix
         {
         public:
 
-            int32_t status;
+            int32_t status = AUTH_NET_ERROR;
 
             std::string contract_state;
 
-            int32_t report_cycle = 0;
+            int32_t report_cycle = DEFAULT_AUTH_REPORT_CYTLE;
             void from_string(const std::string & buf);
         };
     }

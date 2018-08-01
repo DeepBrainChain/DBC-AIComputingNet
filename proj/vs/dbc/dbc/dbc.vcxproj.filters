@@ -436,6 +436,9 @@
     <ClCompile Include="..\..\..\..\src\core\bill\bill_message.cpp">
       <Filter>src\core\bill</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\flow_ctrl.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1352,6 +1355,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\bill\bill_message.h">
       <Filter>src\core\bill</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\flow_ctrl.h">
+      <Filter>src\core\network</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
