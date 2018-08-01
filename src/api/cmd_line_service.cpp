@@ -95,6 +95,8 @@ namespace ai
             cin.clear();
             cin.ignore((std::numeric_limits<int>::max)(), '\n');
 #else
+            try
+            {
             auto line = readline("dbc>>> ");
             if (line == nullptr)
             {
@@ -112,9 +114,14 @@ namespace ai
             m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN-1]=0;
 
             free(line);
+            }
+            catch (const std::exception &e)
+            {
+                std::cout << e.what();
+                return;
+            }
+            
 #endif
-
-
 
 #ifdef WIN32
             m_argvs = bpo::split_winmain(m_cmd_line_buf);
