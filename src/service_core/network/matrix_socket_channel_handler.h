@@ -18,6 +18,7 @@
 #include "matrix_types.h"
 #include "server.h"
 #include "service_message_id.h"
+#include "flow_ctrl.h"
 
 
 using namespace std;
@@ -105,6 +106,8 @@ namespace matrix
             bool m_login_success;
 
             socket_id m_sid;
+
+            std::shared_ptr<flow_ctrl> m_f_ctl = nullptr;
         };
 
     }

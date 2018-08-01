@@ -95,26 +95,32 @@ namespace ai
             cin.clear();
             cin.ignore((std::numeric_limits<int>::max)(), '\n');
 #else
-            auto line = readline("dbc>>> ");
-            if (line == nullptr)
+            try
             {
-                //LOG_ERROR << "readline return nullptr";
+                auto line = readline("dbc>>> ");
+                if (line == nullptr)
+                {
+                     //LOG_ERROR << "readline return nullptr";
+                      return;
+                }
+
+                if (line[0]!=0)
+                {
+                    // save the cmd if it is not empty
+                    add_history(line);
+                }
+
+                strncpy(m_cmd_line_buf,line,MAX_CMD_LINE_BUF_LEN);
+                m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN-1]=0;
+
+                free(line);
+            }
+            catch (const std::exception &e)
+            {
                 return;
             }
-
-            if (line[0]!=0)
-            {
-                // save the cmd if it is not empty
-                add_history(line);
-            }
-
-            strncpy(m_cmd_line_buf,line,MAX_CMD_LINE_BUF_LEN);
-            m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN-1]=0;
-
-            free(line);
+            
 #endif
-
-
 
 #ifdef WIN32
             m_argvs = bpo::split_winmain(m_cmd_line_buf);
