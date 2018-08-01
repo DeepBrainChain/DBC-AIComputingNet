@@ -158,6 +158,7 @@ namespace ai
             if (temp > cpu_num * m_nano_cpu)
             {
                 LOG_ERROR << "cpu num error" << " system cpu is:" << cpu_num << " cpu config num is" << cpu_info;
+
                 return E_DEFAULT;
             }
 
