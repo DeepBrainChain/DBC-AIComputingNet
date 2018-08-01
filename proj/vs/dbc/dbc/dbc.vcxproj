@@ -125,7 +125,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;secp256k1.lib;leveldb.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;secp256k1.lib;leveldb.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;libevent_openssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <GenerateMapFile>true</GenerateMapFile>
@@ -216,6 +216,7 @@
     <ClCompile Include="..\..\..\..\src\core\module\module.cpp" />
     <ClCompile Include="..\..\..\..\src\core\module\module_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\flow_ctrl.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\http_client.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\net_address.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\nio_loop_group.cpp" />
@@ -505,6 +506,7 @@
     <ClInclude Include="..\..\..\..\src\core\network\channel_handler_context.h" />
     <ClInclude Include="..\..\..\..\src\core\network\connection_manager.h" />
     <ClInclude Include="..\..\..\..\src\core\network\endpoint_address.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\flow_ctrl.h" />
     <ClInclude Include="..\..\..\..\src\core\network\handler_create_functor.h" />
     <ClInclude Include="..\..\..\..\src\core\network\http_client.h" />
     <ClInclude Include="..\..\..\..\src\core\network\io_service_wrapper.h" />

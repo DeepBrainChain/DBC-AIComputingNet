@@ -42,7 +42,8 @@ MAKE_RAII(evhttp);
 MAKE_RAII(evhttp_request);
 MAKE_RAII(evhttp_connection);
 ////////////////////////////
-MAKE_RAII(bufferevent);
+//MAKE_RAII(bufferevent);
+MAKE_RAII(evhttp_uri);
 
 inline raii_event_base obtain_event_base() 
 {
@@ -83,12 +84,21 @@ inline raii_evhttp_connection obtain_evhttp_connection_base2(struct event_base* 
     return result;
 }
 
+inline raii_evhttp_uri obtain_evhttp_uri_parse(const std::string & url)
+{
+    auto result = raii_evhttp_uri(evhttp_uri_parse(url.c_str()));
+    if (!result.get())
+        throw std::runtime_error("parse url error");
+    return result;
+}
+
+//struct evhttp_uri *http_uri = evhttp_uri_parse(url.c_str());
+
 inline bufferevent * obtain_evhttp_bev(struct event_base* base, SSL *ssl)
 {
     bufferevent * bev = nullptr;
     if (ssl != nullptr)
     {
-#ifdef __linux__
         bev = bufferevent_openssl_socket_new(base, -1, ssl, BUFFEREVENT_SSL_CONNECTING, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_DEFER_CALLBACKS);
         if (!bev)
         {
@@ -97,7 +107,6 @@ inline bufferevent * obtain_evhttp_bev(struct event_base* base, SSL *ssl)
             
         bufferevent_openssl_set_allow_dirty_shutdown(bev, 1);
         return bev;
-#endif
     }
     else
     {
@@ -132,7 +141,7 @@ namespace matrix
             http_client(std::string remote_ip, uint16_t remote_port);
 
             virtual ~http_client();
-            http_client(std::string &url);
+            http_client(const std::string &url, const std::string & crt);
 
             void set_remote(std::string remote_ip, uint16_t remote_port);
 
@@ -162,6 +171,7 @@ namespace matrix
             std::string m_scheme="";
             SSL_CTX* m_ssl_ctx = nullptr;
             SSL* m_ssl = nullptr;
+            std::string m_crt;
         };
 
     }
