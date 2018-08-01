@@ -31,6 +31,8 @@
 #include "service_topic.h"
 #include <ctime>
 #include <iostream>
+#include <boost/format.hpp>
+#include "url_validator.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -51,6 +53,7 @@ namespace ai
             , m_container_client(std::make_shared<container_client>(m_container_ip, m_container_port))
             , m_nvidia_client(std::make_shared<container_client>(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT))
             , m_training_task_timer_id(INVALID_TIMER_ID)
+            , m_auth_task_timer_id(INVALID_TIMER_ID)
             , m_nv_config(nullptr)
         {
 
@@ -127,7 +130,12 @@ namespace ai
                 return ret;
             }
 
-            load_bill_config();
+            ret = load_bill_config();
+            if (E_SUCCESS != ret)
+            {
+                LOG_ERROR << "ai power provider service load bill config error";
+                return ret;
+            }
             return E_SUCCESS;
         }
 
@@ -170,11 +178,11 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (shm_size < 1)
+            /*if (shm_size < 1)
             {
                 LOG_ERROR << "shm_size config error. shm_size was smaller than 1";
                 return E_DEFAULT;
-            }
+            }*/
 
             if (((memory_swap != 0) && (memory_swap != -1))
                 &&(memory > memory_swap))
@@ -231,7 +239,7 @@ namespace ai
                 ("memory", bpo::value<int64_t>()->default_value(0), "")
                 ("memory_swap", bpo::value<int64_t>()->default_value(-1), "")
                 ("cpus", bpo::value<double>()->default_value(0), "")
-                ("shm_size", bpo::value<int64_t>()->default_value(1), "")
+                ("shm_size", bpo::value<int64_t>()->default_value(0), "")
                 ("host_volum_dir", bpo::value<std::string>()->default_value(""), "")
                 ("engine_reg", bpo::value<std::string>()->default_value(""), "");
 
@@ -245,10 +253,16 @@ namespace ai
 
                 std::string host_dir = m_container_args["host_volum_dir"].as<std::string>();
 
-                if (!fs::exists(host_dir) && !host_dir.empty())
+                if (!host_dir.empty() && !fs::exists(host_dir))
                 {
                     LOG_ERROR << "host volum dir is not exist. pls check";
                     return E_DEFAULT;
+                }
+
+                if (!host_dir.empty() && !fs::is_empty(host_dir))
+                {
+                    LOG_WARNING << "dangerous: host_volum_dir contain files. pls check";
+                    //return E_DEFAULT;
                 }
 
                 int32_t ret = check_cpu_config( m_container_args["cpus"].as<double>());
@@ -279,14 +293,35 @@ namespace ai
         int32_t ai_power_provider_service::load_bill_config()
         {
             std::string url = CONF_MANAGER->get_bill_url();
-            if (!url.empty())
-            {
-                m_bill_client = std::make_shared<bill_client>(url);
-            }
-
-            if (m_bill_client != nullptr)
+            if (url.empty())
             {
                 return E_SUCCESS;
+            }
+            variable_value val;
+            val.value() = url;
+            if (true != url_validator().validate(val))
+            {
+                LOG_ERROR << "url config error";
+                return E_DEFAULT;
+            }
+
+            std::string crt = CONF_MANAGER->get_bill_crt();
+            if (! crt.empty() && !fs::exists(crt))
+            {
+                LOG_ERROR << "crt path error";
+                return E_DEFAULT;
+            }
+            if (!url.empty())
+            {
+                m_bill_client = std::make_shared<bill_client>(url, crt);
+                if (m_bill_client != nullptr)
+                {
+                    return E_SUCCESS;
+                }
+                else
+                {
+                    return E_DEFAULT;
+                }
             }
 
             return E_SUCCESS;
@@ -295,6 +330,7 @@ namespace ai
         int32_t ai_power_provider_service::service_exit()
         {
             remove_timer(m_training_task_timer_id);
+            //remove_timer(m_auth_task_timer_id);
             return E_SUCCESS;
         }
 
@@ -447,7 +483,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"]))
+            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
             {
                 LOG_ERROR << "sign error.";
                 return E_DEFAULT;
@@ -517,26 +553,25 @@ namespace ai
             std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
             assert(nullptr != task);
 
+            task->__set_task_id(req->body.task_id);
+            task->__set_select_mode(req->body.select_mode);
+            task->__set_master(req->body.master);
+            task->__set_peer_nodes_list(req->body.peer_nodes_list);
+            task->__set_server_specification(req->body.server_specification);
+            task->__set_server_count(req->body.server_count);
+            task->__set_training_engine(req->body.training_engine);
+            task->__set_code_dir(req->body.code_dir);
+            task->__set_entry_file(req->body.entry_file);
+            task->__set_data_dir(req->body.data_dir);
+            task->__set_checkpoint_dir(req->body.checkpoint_dir);
+            task->__set_hyper_parameters(req->body.hyper_parameters);
+            task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
 
-            task->task_id = req->body.task_id;
-            task->select_mode = req->body.select_mode;
-            task->master = req->body.master;
-            task->peer_nodes_list.swap(req->body.peer_nodes_list);
-            task->server_specification = req->body.server_specification;
-            task->server_count = req->body.server_count;
-            task->training_engine = req->body.training_engine;
-            task->code_dir = req->body.code_dir;
-            task->entry_file = req->body.entry_file;
-            task->data_dir = req->body.data_dir;
-            task->checkpoint_dir = req->body.checkpoint_dir;
-            task->hyper_parameters = req->body.hyper_parameters;
-            task->ai_user_node_id = req->header.exten_info["origin_id"];
-
-            task->error_times = 0;
-            task->container_id = "";
-            task->received_time_stamp = std::time(nullptr);
-            task->status = task_queueing;
-
+            task->__set_error_times(0);
+            task->__set_container_id("");
+            task->__set_received_time_stamp(std::time(nullptr));
+            task->__set_status(task_queueing);
+            
             //flush to db
             write_task_to_db(task);
             LOG_INFO << "ai power provider service flush task to db: " << req->body.task_id;
@@ -571,7 +606,7 @@ namespace ai
                 LOG_ERROR << "exten info error.";
                 return E_DEFAULT;
             }
-            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"]))
+            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
             {
                 LOG_ERROR << "sign error.";
                 return E_DEFAULT;
@@ -622,12 +657,22 @@ namespace ai
                     }
                 }
 
+                
+                auto first_task = m_queueing_tasks.front();
+                if (first_task->task_id == sp_task->task_id)
+                {                     
+                     //remove_timer(m_auth_task_timer_id);
+                }
                 //remove from queue
                 m_queueing_tasks.erase(it);
 
                 //flush to db: update status
-                sp_task->status = task_stopped;
+                sp_task->__set_status(task_stopped);
+                sp_task->__set_end_time(std::time(nullptr));
+                auth_task(sp_task);
                 write_task_to_db(sp_task);
+                
+
 
             }
             else
@@ -961,14 +1006,15 @@ namespace ai
             return formatted_str;
         }
         
-        int32_t ai_power_provider_service::auth_task(std::shared_ptr<ai_training_task> task, std::shared_ptr<auth_task_resp> resp)
+        int32_t ai_power_provider_service::auth_task(std::shared_ptr<ai_training_task> task, bool is_report_cycle)
         {
             if (nullptr == m_bill_client)
             {
+                LOG_WARNING << "bill system is not config.";
                 return E_SUCCESS;
             }
 
-            std::shared_ptr<auth_task_req> task_req = create_auth_task_req(task);
+            std::shared_ptr<auth_task_req> task_req = create_auth_task_req(task,is_report_cycle);
             if (nullptr == task_req)
             {
                 return E_SUCCESS;
@@ -979,75 +1025,114 @@ namespace ai
                 LOG_DEBUG << "sign error";
                 return E_DEFAULT;
             }
+            
             if (m_bill_client != nullptr)
             {
-                resp = m_bill_client->post_auth_task(task_req);
+                std::shared_ptr<auth_task_resp> resp = m_bill_client->post_auth_task(task_req);
                 if (nullptr == resp)
                 {
+                    LOG_WARNING << "bill system can not arrive." << " Next auth time:" <<  DEFAULT_AUTH_REPORT_CYTLE << "m";
+                    m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, DEFAULT_AUTH_REPORT_CYTLE*60*1000, 1, task->task_id);
                     return E_SUCCESS;
                 }
 
-                if (0 == resp->status && resp->contract_state == "Active")
+                if (AUTH_SUCCESS == resp->status  && resp->contract_state == "Active" 
+                    && (task->status ==task_queueing || task->status ==task_running ))
+                {
+                    LOG_DEBUG << "auth success " << " next auth time:" << resp->report_cycle << "m";
+                    m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, resp->report_cycle*60*1000, 1,task->task_id);
+                    return E_SUCCESS;
+                }
+
+                if (AUTH_SUCCESS == resp->status  && resp->contract_state == "Active" )
                 {
                     return E_SUCCESS;
                 }
+                
+                //if status=-1, means the rsp message is not real auth_resp
+                if (AUTH_NET_ERROR == resp->status)
+                {
+                    m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, DEFAULT_AUTH_REPORT_CYTLE*60*1000, 1, task->task_id);
+                    LOG_WARNING << "bill system can not arrive." << " Next auth time:" <<  DEFAULT_AUTH_REPORT_CYTLE << "m";
+                    return E_SUCCESS;
+                }
+
+                LOG_DEBUG << "auth failed " << " auth_status:" << resp->status << " contract_state:" << resp->contract_state;
+
             }
             else
             {
                 return E_SUCCESS;
             }
+
+            
             return E_DEFAULT;
         }
 
-        std::shared_ptr<auth_task_req> ai_power_provider_service::create_auth_task_req(std::shared_ptr<ai_training_task> task)
+        std::shared_ptr<auth_task_req> ai_power_provider_service::create_auth_task_req(std::shared_ptr<ai_training_task> task, bool is_report_cycle)
         {
             //if have auth before running, then return directly
-            if (task->start_time > 0 && task->status ==task_queueing)
+            if (task->start_time > 0 && task->status ==task_queueing &&  !is_report_cycle)
             {
                 return nullptr;
             }
 
             if (0 == task->start_time)
             {
-                task->start_time = std::time(nullptr);
+                task->__set_start_time(std::time(nullptr));
             }
 
             std::shared_ptr<auth_task_req> req = std::make_shared<auth_task_req>();
             req->ai_user_node_id = task->ai_user_node_id;
             req->mining_node_id = CONF_MANAGER->get_node_id();
             req->task_id = task->task_id;
-            req->start_time = time_util::time_2_utc(task->start_time);
-            req->task_state = to_training_task_status_string(task->status);
-            req->sign_type = "ecdsa";
-            req->end_time = time_util::time_2_utc(task->end_time);
 
-            std::string message = req->ai_user_node_id + req->mining_node_id + req->task_id + req->start_time + req->task_state + req->end_time;
+            req->start_time = boost::str(boost::format("%d") % task->start_time);
+            
+            req->task_state = to_training_task_status_string(task->status==task_queueing ? task_running:task->status);
+            req->sign_type = ECDSA;
+
+            int64_t end_tmp = (task->end_time == 0) ? std::time(nullptr) : task->end_time;
+            req->end_time = boost::str(boost::format("%d") % end_tmp);
+            std::string message = req->mining_node_id + req->ai_user_node_id + req->task_id + req->start_time + req->task_state + req->end_time;
+
+            LOG_DEBUG << "sign message:" << message;
+
             req->sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
             return req;
         }
 
         int32_t ai_power_provider_service::on_auth_task_timer(std::shared_ptr<core_timer> timer)
         {
+            if (m_queueing_tasks.empty())
+            {
+                LOG_DEBUG << "task queueing is empty";
+                return E_SUCCESS;
+            }
+
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
+            std::string task_id = timer->get_session_id();
+            if (task_id != task->task_id)
+            {
+                LOG_DEBUG << "task id different,  front_task:" << task->task_id << " timer_task: " << task_id;
+                return E_SUCCESS;
+            }
+
+            //remove_timer(m_auth_task_timer_id);
             
-            if (task_running == task->status)
+            LOG_DEBUG <<"on_auth_task_timer" << " task is:" << task->task_id;
+            if (task_running == task->status || task_queueing == task->status)
             {
                 ////////////auth_task to ocs/////////////////
-                std::shared_ptr<auth_task_resp> resp = nullptr;
-                int32_t ret = auth_task(task, resp);
+                int32_t ret = auth_task(task, true);
 
                 if (E_SUCCESS == ret)
                 {
-                    LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+                    LOG_DEBUG << "continue training: " << task->task_id << " status: " << to_training_task_status_string(task->status);
                     
-                    int32_t ret = start_exec_training_task(task);
-                    
-                    if (ret == E_SUCCESS && resp != nullptr && resp->report_cycle > 0)
-                    {
-                        this->add_timer(AI_AUTH_TASK_TIMER, resp->report_cycle * 60 * 1000, 1);
-                    }
                     return ret;
                 }
+                
                 else
                 {
                     //stop container
@@ -1056,7 +1141,8 @@ namespace ai
                     {
                         LOG_ERROR << "ai power provider service stop container error, container id: " << task->container_id;
                     }
-                    task->status = task_abnormally_closed;
+                    task->__set_end_time(std::time(nullptr));
+                    task->__set_status( task_overdue_close);
                     write_task_to_db(task);
                     m_queueing_tasks.pop_front();
                 }
@@ -1078,22 +1164,16 @@ namespace ai
             if (task_queueing == task->status)
             {
                 ////////////auth_task from ocs/////////////////
-                std::shared_ptr<auth_task_resp> resp = nullptr;
-                int32_t ret = auth_task(task, resp);
+                int32_t ret = auth_task(task);
                 if (E_SUCCESS == ret)
-                {
+                {                    
                     LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
-                    int32_t ret = start_exec_training_task(task);
-                    if (ret == E_SUCCESS && resp != nullptr && resp->report_cycle > 0)
-                    {
-                        this->add_timer(AI_AUTH_TASK_TIMER, resp->report_cycle*60*1000, 1);
-                    }
-                    return ret;
+                    return ret = start_exec_training_task(task);
                 }
                 else
                 {
-                    task->end_time = std::time(nullptr);
-                    task->status = task_abnormally_closed;
+                    task->__set_end_time(std::time(nullptr));
+                    task->__set_status(task_overdue_close);
                     write_task_to_db(task);
                     m_queueing_tasks.pop_front();
                     return E_SUCCESS;
@@ -1327,7 +1407,9 @@ namespace ai
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
-                task->status = task_abnormally_closed;
+                task->__set_status(task_abnormally_closed);
+                task->__set_end_time(std::time(nullptr));
+                auth_task(task);
 
                 //flush to db
                 write_task_to_db(task);
@@ -1409,7 +1491,9 @@ namespace ai
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
-                task->status = task_abnormally_closed;
+                task->__set_status(task_abnormally_closed);
+                task->__set_end_time(std::time(nullptr));
+                auth_task(task);
 
                 //flush to db
                 write_task_to_db(task);
@@ -1428,7 +1512,6 @@ namespace ai
                 LOG_ERROR << "ai power provider service check container error, container id: " << task->container_id;
 
                 task->error_times++;
-
                 //flush to db
                 write_task_to_db(task);
                 return E_DEFAULT;
@@ -1443,38 +1526,34 @@ namespace ai
             {
                 LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
 
-                task->status = task_abnormally_closed;
+                //remove_timer(m_auth_task_timer_id);
+                task->__set_status(task_abnormally_closed);
 
                 task->error_times++;
-                write_task_to_db(task);
+                task->__set_end_time(std::time(nullptr));
+                auth_task(task);
 
+                write_task_to_db(task);
                 m_queueing_tasks.pop_front();
-                std::shared_ptr<auth_task_resp> resp = nullptr;
-                task->end_time = std::time(nullptr);
-                int32_t ret = auth_task(task, resp);
-                if (ret != 0)
-                {
-                    LOG_DEBUG << "auth error";
-                }
+                
                 //restart container
                 //start_exec_training_task(task);
                 return E_SUCCESS;
             }
             else
             {
-                task->status = task_succefully_closed;
+                //remove_timer(m_auth_task_timer_id);
+                task->__set_status(task_succefully_closed);
                 LOG_INFO << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
+                task->__set_end_time(std::time(nullptr));
+                int32_t ret = auth_task(task);
                 //flush to db
                 write_task_to_db(task);
-
                 //pop from task queue
                 m_queueing_tasks.pop_front();
-
-                std::shared_ptr<auth_task_resp> resp = nullptr;
-                task->end_time = std::time(nullptr);
-                int32_t ret = auth_task(task, resp);
-                if (ret != 0)
+                                
+                if (ret != E_SUCCESS)
                 {
                     LOG_DEBUG << "auth error";
                 }
@@ -1567,8 +1646,13 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_provider_service::check_sign(const std::string message, const std::string &sign, const std::string &origin_id)
+        int32_t ai_power_provider_service::check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo)
         {
+            if (sign_algo != ECDSA)
+            {
+                LOG_ERROR << "sign_algorithm error.";
+                return E_DEFAULT;
+            }
             if (origin_id.empty() || sign.empty())
             {
                 LOG_ERROR << "sign error.";

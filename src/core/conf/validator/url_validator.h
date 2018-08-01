@@ -4,42 +4,48 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        :   ip_validator.h
 * description    :   ip validator for config parameter
-* date                  :   2018.03.21
-* author            :   Bruce Feng
+* date                  :   2018.07.29
+* author            :   Regulus
 **********************************************************************************/
-
 #pragma once
 
 
+#include "util.h"
+#include "common.h"
 #include "conf_validator.h"
-#include <boost/xpressive/xpressive_dynamic.hpp>  
+#include "http_client.h"
 using namespace boost::xpressive;
+
 namespace matrix
 {
     namespace core
     {
-        class port_validator : public conf_validator
+
+        class url_validator : public conf_validator
         {
         private:
-            cregex m_reg_port = cregex::compile("(^[1-9]\\d{0,3}$)|(^[1-5]\\d{4}$)|(^6[0-4]\\d{3}$)|(^65[0-4]\\d{2}$)|(^655[0-2]\\d$)|(^6553[0-5]$)");
+            
         public:
+            url_validator() = default;
             bool validate(const variable_value &val)
-            {                
+            {
                 try
                 {
-                    std::string port = val.as<std::string>(); 
-                    return regex_match(port.c_str(), m_reg_port);
+                    std::string url = val.as<std::string>();
+                    raii_evhttp_uri http_url =  obtain_evhttp_uri_parse(url);
+                    if (http_url.get())
+                    {
+                        return true;
+                    }
+                    return false;
                 }
-                catch (const boost::exception & e)
+                catch (const std::exception & e)
                 {
-                    LOG_ERROR << "port_validator validate exception: " << diagnostic_information(e);
+                    LOG_ERROR << "url_validator validate exception: " << e.what();
                     return false;
                 }
             }
-
         };
-
-         
 
     }
 

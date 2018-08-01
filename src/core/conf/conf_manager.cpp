@@ -16,13 +16,14 @@
 #include "common/util.h"
 #include "utilstrencodings.h"
 #include "utilstrencodings.h"
+#include <boost/format.hpp>
 
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
 std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
 const int32_t DEFAULT_MAX_CONNECTION_NUM = 128;
 const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
 const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
-
+const int32_t DEFAULT_SPEED = 0;
 namespace matrix
 {
     namespace core
@@ -104,8 +105,9 @@ namespace matrix
                 ("timer_service_broadcast_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND), "")
                 ("magic_num", bpo::value<std::string>()->default_value("0XE1D1A098"), "")
                 ("bill_url", bpo::value<std::string>()->default_value(""), "")
+                ("bill_crt", bpo::value<std::string>()->default_value(""), "")
+                ("max_recv_speed", bpo::value<int32_t>()->default_value(0), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "");
-                //("container_image", bpo::value<std::string>()->default_value(DEFAULT_CONTAINER_IMAGE_NAME), "");
 
             //peer opt description
             bpo::options_description peer_opts("peer options");
@@ -313,15 +315,17 @@ namespace matrix
                 catch (const std::exception &e)
                 {
                     LOG_ERROR << "magic_num abnormal." << m_args["magic_num"].as<std::string>() << ", " << e.what();
-                    m_net_flag = TEST_NET;
+                    m_net_flag = TEST_NET; 
+                    LOG_DEBUG << "use magic num:" << boost::str(boost::format("0x%0x") % m_net_flag);
                     return;
                 }
-
+                
             }
             else
             {
                 m_net_flag = MAIN_NET;
             }
+            LOG_DEBUG << "use magic num:" << boost::str(boost::format("0x%0x") % m_net_flag);
         }
 
         int32_t conf_manager::serialize_node_info(const node_info &info)

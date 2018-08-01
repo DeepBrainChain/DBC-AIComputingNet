@@ -30,7 +30,7 @@ extern std::string DEFAULT_CONTAINER_IMAGE_NAME;
 extern const int32_t DEFAULT_MAX_CONNECTION_NUM;
 extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
-
+extern const int32_t DEFAULT_SPEED;
 
 extern const std::string conf_manager_name;
 
@@ -99,11 +99,17 @@ namespace matrix
 
             const std::string & get_bill_url() 
             {
-                if (m_args.count("bill_url") > 0)
-                {
-                    return m_args["bill_url"].as<std::string>();
-                }
-                return  DEFAULT_STRING;
+                return  m_args.count("bill_url") > 0 ?  m_args["bill_url"].as<std::string>():DEFAULT_STRING;
+            }
+
+            const std::string & get_bill_crt()
+            {
+                return m_args.count("bill_crt") > 0 ? m_args["bill_crt"].as<std::string>() : DEFAULT_STRING;
+            }
+
+            const int32_t & get_max_recv_speed()
+            {
+                return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
             }
 
             std::string get_dbc_path() { return m_dbc_path;}
