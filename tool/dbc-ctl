@@ -41,6 +41,7 @@ start()
             ./dbc --ai --daemon -n "$name" --path `pwd`
         fi
 
+        sleep 2
         for i in `seq 1 10`;
         do
             status > /dev/null
@@ -57,6 +58,8 @@ start()
 
     "seed")
         ./dbc --daemon
+
+        sleep 2
         for i in `seq 1 10`;
         do
             status > /dev/null
@@ -79,8 +82,8 @@ start()
     ;;
     *)
         echo "unknown type $type"
-        echo "mining: dbc-ctl start ai_server"
-        echo "client: dbc-ctl start"
+        echo "    mining: dbc-ctl start ai_server"
+        echo "    client: dbc-ctl start"
         return 1
     ;;
 
@@ -89,13 +92,13 @@ start()
 
 stop()
 {
-    pid=$(ps -e -o pid -o command| grep "[d]bc" | grep -v "dbc-ctl" | awk '{print $1}')
+    pid=$(ps -e -o pid -o command| grep "/[d]bc" | grep -v "dbc-ctl" | awk '{print $1}')
     if [[ -n "$pid" ]]; then
         echo "stop dbc "
         kill -USR1 $pid > /dev/null 2>&1
     fi
 
-    pid=$(ps -e -o pid -o command | grep "[d]bc" | grep -v grep | grep -v stop | grep -v "daemon" | awk '{print $1}')
+    pid=$(ps -e -o pid -o command | grep "/[d]bc" | grep -v grep | grep -v stop | grep -v "daemon" | awk '{print $1}')
     if [[ -n "$pid" ]]; then
         #echo "kill dbc client "
         kill -9 $pid > /dev/null 2>&1
