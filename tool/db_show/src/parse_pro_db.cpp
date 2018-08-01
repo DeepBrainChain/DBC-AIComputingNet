@@ -57,7 +57,11 @@ void parse_provide_db(const char *path)
                 << "error_times:" << (int)task.error_times << ","
                 << "container_id" << task.container_id << ","
                 << "recv_time_stamp" << task.received_time_stamp << ","
-                << "status:" << to_training_task_status_string(task.status) << endl;
+                << "status:" << to_training_task_status_string(task.status) << ","
+                << "ai_user_id:" << task.ai_user_node_id << ","
+                << "start_time:" << task.start_time << ","
+                <<"end_time:" << task.end_time << endl;
+
             //cout << "ai power provider service, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << task->status;
 
 
