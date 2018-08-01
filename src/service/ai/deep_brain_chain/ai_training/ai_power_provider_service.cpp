@@ -330,7 +330,10 @@ namespace ai
         int32_t ai_power_provider_service::service_exit()
         {
             remove_timer(m_training_task_timer_id);
-            //remove_timer(m_auth_task_timer_id);
+            if (INVALID_TIMER_ID != m_auth_task_timer_id)
+            {
+                remove_timer(m_auth_task_timer_id);
+            }
             return E_SUCCESS;
         }
 
@@ -661,7 +664,11 @@ namespace ai
                 auto first_task = m_queueing_tasks.front();
                 if (first_task->task_id == sp_task->task_id)
                 {                     
-                     //remove_timer(m_auth_task_timer_id);
+                    if (INVALID_TIMER_ID != m_auth_task_timer_id)
+                    {
+                        remove_timer(m_auth_task_timer_id);
+                        m_auth_task_timer_id = INVALID_TIMER_ID;
+                    }
                 }
                 //remove from queue
                 m_queueing_tasks.erase(it);
@@ -1033,6 +1040,11 @@ namespace ai
                 {
                     LOG_WARNING << "bill system can not arrive." << " Next auth time:" <<  DEFAULT_AUTH_REPORT_CYTLE << "m";
                     m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, DEFAULT_AUTH_REPORT_CYTLE*60*1000, 1, task->task_id);
+                    if (INVALID_TIMER_ID == m_auth_task_timer_id)
+                    {
+                        LOG_WARNING << "invalid timer id";
+                        return E_SUCCESS;
+                    }
                     return E_SUCCESS;
                 }
 
@@ -1041,6 +1053,11 @@ namespace ai
                 {
                     LOG_DEBUG << "auth success " << " next auth time:" << resp->report_cycle << "m";
                     m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, resp->report_cycle*60*1000, 1,task->task_id);
+                    if (INVALID_TIMER_ID == m_auth_task_timer_id)
+                    {
+                        LOG_WARNING << "invalid timer id";
+                        return E_SUCCESS;
+                    }
                     return E_SUCCESS;
                 }
 
@@ -1053,6 +1070,11 @@ namespace ai
                 if (AUTH_NET_ERROR == resp->status)
                 {
                     m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, DEFAULT_AUTH_REPORT_CYTLE*60*1000, 1, task->task_id);
+                    if (INVALID_TIMER_ID == m_auth_task_timer_id)
+                    {
+                        LOG_WARNING << "invalid timer id";
+                        return E_SUCCESS;
+                    }
                     LOG_WARNING << "bill system can not arrive." << " Next auth time:" <<  DEFAULT_AUTH_REPORT_CYTLE << "m";
                     return E_SUCCESS;
                 }
@@ -1104,6 +1126,7 @@ namespace ai
 
         int32_t ai_power_provider_service::on_auth_task_timer(std::shared_ptr<core_timer> timer)
         {
+            m_auth_task_timer_id = INVALID_TIMER_ID;
             if (m_queueing_tasks.empty())
             {
                 LOG_DEBUG << "task queueing is empty";
@@ -1118,8 +1141,6 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            //remove_timer(m_auth_task_timer_id);
-            
             LOG_DEBUG <<"on_auth_task_timer" << " task is:" << task->task_id;
             if (task_running == task->status || task_queueing == task->status)
             {
@@ -1409,6 +1430,11 @@ namespace ai
             {
                 task->__set_status(task_abnormally_closed);
                 task->__set_end_time(std::time(nullptr));
+                if (INVALID_TIMER_ID != m_auth_task_timer_id)
+                {
+                    remove_timer(m_auth_task_timer_id);
+                    m_auth_task_timer_id = INVALID_TIMER_ID;
+                }
                 auth_task(task);
 
                 //flush to db
@@ -1491,6 +1517,12 @@ namespace ai
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
+                if (INVALID_TIMER_ID != m_auth_task_timer_id)
+                {
+                    remove_timer(m_auth_task_timer_id);
+                    m_auth_task_timer_id = INVALID_TIMER_ID;
+                }
+
                 task->__set_status(task_abnormally_closed);
                 task->__set_end_time(std::time(nullptr));
                 auth_task(task);
@@ -1525,8 +1557,12 @@ namespace ai
             else if (0 != resp->state.exit_code)
             {
                 LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
+                if (INVALID_TIMER_ID != m_auth_task_timer_id)
+                {
+                    remove_timer(m_auth_task_timer_id);
+                    m_auth_task_timer_id = INVALID_TIMER_ID;
+                }
 
-                //remove_timer(m_auth_task_timer_id);
                 task->__set_status(task_abnormally_closed);
 
                 task->error_times++;
@@ -1542,7 +1578,11 @@ namespace ai
             }
             else
             {
-                //remove_timer(m_auth_task_timer_id);
+                if (INVALID_TIMER_ID != m_auth_task_timer_id)
+                {
+                    remove_timer(m_auth_task_timer_id);
+                    m_auth_task_timer_id = INVALID_TIMER_ID;
+                }
                 task->__set_status(task_succefully_closed);
                 LOG_INFO << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
