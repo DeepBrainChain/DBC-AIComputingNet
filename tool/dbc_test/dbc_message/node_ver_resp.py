@@ -13,7 +13,7 @@ def make_ver_resp():
     p = TBinaryProtocol(m)
     msg_name = VER_RESP
     nonce = get_random_id()
-    head = msg_header(magic, msg_name, nonce)
+    head = msg_header(get_magic(), msg_name, nonce)
     head.write(p)
     req=ver_resp_body(gen_node_id(), core_version, pro_version)
     req.write(p)

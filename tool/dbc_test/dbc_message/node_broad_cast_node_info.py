@@ -13,7 +13,7 @@ def make_broad_cast_node_info(node_id, name):
     p = TBinaryProtocol(m)
     msg_name = SERVICE_BROADCAST_REQ
     nonce = get_random_id()
-    head = msg_header(magic, msg_name, nonce)
+    head = msg_header(get_magic(), msg_name, nonce)
     head.write(p)
 
     node_info = node_service_info()
