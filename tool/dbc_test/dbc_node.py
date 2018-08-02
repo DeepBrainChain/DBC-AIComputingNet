@@ -22,6 +22,7 @@ from dbc_message.node_ver_req import *
 from dbc_message.node_start_training_req import  *
 from dbc_message.node_broad_cast_node_info import *
 from dbc_message.node_get_peer_rsp import *
+from dbc_message.node_stop_training_req import *
 from dbc_message.node_logs_req import *
 import threading
 from  tcpserver import *
@@ -60,12 +61,7 @@ class dbc_node(Thread):
         send_s = binascii.hexlify(buff)
         print(send_s)
         self.dbc_client.PutInData(buff)
-        # buff_s=make_start_training_req("D:\\test_case\\task\\task-h2o.conf")
-        # print(binascii.hexlify(buff_s))
-        # self.dbc_client.PutInData(buff_s)
-        #interval = random.randint(1, 20)
         interval = 5
-        # print("shake hand interval %d" %interval)
         timer = threading.Timer(interval, self.make_shake_hand)
         timer.start()
 
@@ -91,11 +87,10 @@ class dbc_node(Thread):
 
         packet_header_len, protocol_type = decode_packet_header(p)
         try:
-            # h = msg_header()
             h = msg_header()
             h.read(p)
         except EOFError:
-            print "Error: msg header decode failure"
+            print("Error: msg header decode failure")
             return
         print("package_len:")
         print(packet_header_len)
@@ -114,12 +109,11 @@ class dbc_node(Thread):
             body = t()
             body.read(p)
         except EOFError:
-            print "Error: msg body decode failure"
+            print("Error: msg body decode failure")
             return
 
-        print "body: "
+        print("body: ")
         pprint(vars(body), indent=4, width=24)
-        print
 
         if msg_name=="ver_resp":
             self.deal_ver_resp()
@@ -151,29 +145,18 @@ def main ():
     node = dbc_node(100000, node_id, Host, PORT)
     node.start()
     # node.close()
-    # (peer_ip, peer_port,node_id)
     node.send(make_ver_req(Host, PORT, node_id))
 
     msg_count=0
     i=0
     while i < 1:
         i=i+1
-        node.send(make_start_training_req("D:\\test_case\\task\\task-h2o.conf"))
+        #node.send(make_start_training_req("D:\\test_case\\task\\task-h2o.conf"))
+        node.send(make_stop_training_req("Jc1HFzzN1YThSxThLf4JsJs4TKYL7PY2U"))
         # node.send(make_logs_req("2gfpp3MAB48e5nSEXrTUcLwXvobXh6oUyG2hTNLvNhF"))
         msg_count = msg_count + 1
         print("msg countis %d" %msg_count)
         # sleep(0.001)
-        #node.send(make_logs_req("2gfpp3MAB48e5nSEXrTUcLwXvobXh6oUyG2hTNLvNhF"))
-        # pack1="000000D700000000080001E1D1A0970B0002000000116C6973745F747261696E696E675F7265710B00030000003139517331686A5458736D6178745932354D6354486738634A506E414143386A42616948367359764D636253655058484E530B000400000032324C50525241376D3936"
-        # pack2="4C50525241376D3936715154334D654836543574596F396D37696F5362666E43537A453857785A35704574503752586F447F0F00010C000000010B00010000003137505435376945703431533462565153416B6D4E5661636F445A5A64684177446B79576B3477316B566D684850566E3831030002017F7F"
-        # pack3="000000D700000000080001E1D1A0970B0002000000116C6973745F747261696E696E675F7265710B00030000003139517331686A5458736D6178745932354D6354486738634A506E414143386A42616948367359764D636253655058484E530B000400000032324C50525241376D3936715154334D654836543574596F396D37696F5362666E43537A453857785A35704574503752586F447F0F00010B000000010000003137505435376945703431533462565153416B6D4E5661636F445A5A64684177446B79576B3477316B566D684850566E38317F"
-
-        # buff1=bytes().fromhex(pack1)
-        # buff2=bytes().fromhex(pack2)
-        # node.send(make_start_training_req("D:\\test_case\\task\\task-h2o.conf"))
-        # node.send(buff1)
-        # node.send(buff2)
-        # node.send(buff2)
         # j = 23809
         # while j < 23869:
         #     j = j+1
