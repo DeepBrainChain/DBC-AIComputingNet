@@ -80,9 +80,13 @@ dbc_package()
     cp ../../../output/dbc      $dbc_repo_dir/
 
     # strip
-#    if [ $os_name == 'linux' ]; then
-#        strip --strip-all $dbc_repo_dir/dbc
-#    fi
+    if [ $os_name == 'linux' ]; then
+        strip --strip-all $dbc_repo_dir/dbc
+    fi
+
+    if [ $os_name == 'macos' ]; then
+        strip -S $dbc_repo_dir/dbc
+    fi
 
     cp -R ../../../conf         $dbc_repo_dir/
 
