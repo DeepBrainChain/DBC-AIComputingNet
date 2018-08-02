@@ -12,17 +12,15 @@ sleep_time=5s
 wait_ipfs_init_time=10s
 wait_ipfs_daemon_time=30s
 ipfs_tgz=$1
-ipfs_path=$3
 
-
-if [ "$2" != "force" ]; then
-    read -p "Are you sure? " -n 1 -r
-    echo    # (optional) move to a new line
-    if [[ ! $REPLY =~ ^[Yy]$ ]]
-    then
-        [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
-    fi
+# env IPFS_PATH, as ipfs product doc required. by default ~/.ipfs
+ipfs_path=$IPFS_PATH
+if [ -z "$ipfs_path" ]; then
+    ipfs_path=~/.ipfs
 fi
+
+rm -rf $ipfs_path
+mkdir $ipfs_path
 
 # install ipfs
 echo "install ipfs"
@@ -56,11 +54,8 @@ fi
 echo "end to init ipfs"
 sleep $sleep_time
 
-if [ -z "$ipfs_path" ]; then
-    cp ./swarm.key ~/.ipfs/
-else
-    cp ./swarm.key $ipfs_path/
-fi
+
+cp ./swarm.key $ipfs_path/
 
 #start ipfs
 #echo "======================================================="
