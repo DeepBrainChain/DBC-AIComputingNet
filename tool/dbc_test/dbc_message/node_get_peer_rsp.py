@@ -13,7 +13,7 @@ def make_get_peer_nodes_resp(dport):
     p = TBinaryProtocol(m)
     msg_name = P2P_GET_PEER_NODES_RESP
     nonce = get_random_id()
-    head = msg_header(magic, msg_name, nonce)
+    head = msg_header(get_magic(), msg_name, nonce)
     head.write(p)
     print("nonce:%s" %(nonce))
 

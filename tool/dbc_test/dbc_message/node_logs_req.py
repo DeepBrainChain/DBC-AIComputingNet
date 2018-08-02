@@ -14,7 +14,7 @@ def make_logs_req(node_id):
     msg_name = LOGS_REQ
     nonce = get_random_id()
     session_id = get_random_id()
-    head = msg_header(magic, msg_name, nonce, session_id)
+    head = msg_header(get_magic(), msg_name, nonce, session_id)
     head.write(p)
     print("logs req.nonce:%s, node_id:%s" %(nonce,  node_id))
 
