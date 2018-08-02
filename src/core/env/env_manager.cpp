@@ -39,6 +39,7 @@ BOOL WINAPI ConsoleHandler(DWORD msgType)
 void signal_usr1_handler(int)
 {
     g_server->set_exited();
+    close(STDIN_FILENO); // let the cli exit
 }
 #endif
 

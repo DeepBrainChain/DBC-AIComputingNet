@@ -8,10 +8,14 @@ fi
 
 
 workspace=`pwd`
+USERID=`id -u`
+PROC_NAME="ipfs"
+ps_="ps -e -o uid -o pid -o command"
 
 stop()
 {
-    pid=$(ps -A | grep "[i]pfs " | awk '{print $1}')
+    pid=$($ps_  | grep [d]aemon |  awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+
     if [[ -n "$pid" ]]; then
         echo "stop ipfs daemon"
         ipfs shutdown > /dev/null 2>&1
@@ -22,7 +26,7 @@ stop()
 
 status()
 {
-    pid=$(ps -A | grep "[i]pfs "| awk '{print $1}')
+    pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
     if [[ -n "$pid" ]]; then
 
         echo "alive"

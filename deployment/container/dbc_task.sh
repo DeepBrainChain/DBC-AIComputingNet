@@ -2,6 +2,7 @@
 #set -x
 
 # cp utility
+cp -f /home/dbc_utils/dbc_task.sh /
 cp -f /home/dbc_utils/dbc_task_imp.sh /
 cp -f /home/dbc_utils/swarm.key /
 cp -f /home/dbc_utils/install_ipfs.sh /
@@ -34,7 +35,7 @@ export IPFS_PATH=$ipfs_install_path
 # install ipfs repo
 cp -f /home/dbc_utils/go-ipfs_v0.4.15_linux-amd64.tar.gz /
 
-bash ./install_ipfs.sh ./go-ipfs_v0.4.15_linux-amd64.tar.gz force $ipfs_install_path
+bash ./install_ipfs.sh ./go-ipfs_v0.4.15_linux-amd64.tar.gz force
 
 # install curl
 if [ ! `which curl` ]; then
