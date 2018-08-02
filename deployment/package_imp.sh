@@ -92,17 +92,26 @@ dbc_package()
     fi
 
     # dbc related tool
-    cp $tool_dir/dbc-ctl            $dbc_repo_dir/
+    if [ $os_name == 'linux' -a $type == 'mining' ]; then
+        cp $tool_dir/startaiserver  $dbc_repo_dir/startapp
+        cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
+
+        chmod +x $dbc_repo_dir/startapp
+        chmod +x $dbc_repo_dir/stopapp
+    fi
+
+    cp $tool_dir/p                  $dbc_repo_dir/p
+    cp $tool_dir/stopapp            $dbc_repo_dir/tool/
     cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/tool/
-    cp $tool_dir/p                  $dbc_repo_dir/tool/
     cp $tool_dir/rm_containers.sh   $dbc_repo_dir/tool/
-    cp $tool_dir/plog               $dbc_repo_dir/tool/
+    cp $tool_dir/plog               $dbc_repo_dir/
     cp $tool_dir/ipfs-ctl           $dbc_repo_dir/tool/
     cp $tool_dir/upload.sh          $dbc_repo_dir/tool/
 
+    chmod +x $dbc_repo_dir/plog
     chmod +x $dbc_repo_dir/dbc
-    chmod +x $dbc_repo_dir/dbc-ctl
     chmod +x $dbc_repo_dir/tool/*
+    chmod +x $dbc_repo_dir/p
 
     # test task conf
 #    if [ $type == 'client' ];then
@@ -116,6 +125,7 @@ dbc_package()
         echo "    substep: container package"
 
         cp -r $deployment_dir/container $dbc_repo_dir/
+        chmod +x $dbc_repo_dir/container/dbc_task.sh
 
         # add ipfs install pkg
         cp $ipfs_repo_src_dir/swarm.key         $dbc_repo_dir/container/
@@ -141,7 +151,7 @@ ipfs_package()
     cp $ipfs_repo_src_dir/install_ipfs.sh       $ipfs_repo_dir/
 
     # 3) ipfs tar gz
-    cp $ipfs_repo_src_dir/$ipfs_pkg_tgz             $ipfs_repo_dir/
+    cp $ipfs_repo_src_dir/$ipfs_pkg_tgz         $ipfs_repo_dir/
 }
 
 mining_package()
