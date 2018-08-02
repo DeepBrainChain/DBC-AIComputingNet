@@ -88,3 +88,13 @@ def gen_node_id():
     global node_id
     node_id = base58.b58encode_check(node_gen_src)
     return node_id
+
+def dbc_sign(message):
+    private_key = get_private_key()
+    message_hash = bin_dbl_sha256(from_string_to_bytes(message))
+    message_hash_hex = binascii.hexlify(message_hash)
+    v, r, s = ecdsa_raw_sign(message_hash_hex, private_key)
+    sig = encode_sig(v, r, s)
+    vb, rb, sb = from_int_to_byte(v + 4), encode(r, 16), encode(s, 16)
+    sign = binascii.hexlify(vb) + rb + sb
+    return sign

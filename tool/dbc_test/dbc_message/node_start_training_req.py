@@ -35,7 +35,7 @@ def make_start_training_req(task_path):
         #pns = result["peer_nodes_list"]
         #peer_nodes_list = pns.split(",")
         # peer_node=gen_node_id()
-        peer_node="2gfpp3MAB48e5nSEXrTUcLwXvobXh6oUyG2hTNLvNhF"
+        peer_node="2gfpp3MAB3ygccXrgc8Tk5dfCZicxzzQHN17PE4fT2C"
         peer_node_list=[]
         peer_node_list.append(peer_node)
         server_specification =""
@@ -51,25 +51,13 @@ def make_start_training_req(task_path):
                                       server_count, training_engine, code_dir, entry_file, data_dir, checkpoint_dir,
                                       hyper_parameters)
 
-        private_key = get_private_key()
         message=task_id+code_dir+nonce
-        # message="2gfpp3MAB44HccrbJMrta4Ssz1qVbFW9A1Gc5vNSUVd2gfpp3MAB4JMBmhbcPxyP7PuqstPmUu3ndFyXcXJgvi29e94uwBYonjq71cFJMRPXR39hqKPWZ133KJQnbHcHiaHSs1UVFri Jul 27 09:49:34 2018task_runningThu Jan  1 00:00:00 1970"
-        # message="2CiAEWj1LS3S9tTJsGmGVzu4P69nyCySxqKQnHtQJSNukVyamYQmagBdWnQiREZnkeuoMBitcSZEuvN5P8ihWy8r9waG6tUe2NB8hSVhyKMc8e1t3hUomNHJfPhjhFan94pSuUgcgqYamhxtp2"
-        # private_key=derive_dbcprivate_key("29SjBR3HHvBSPMKjTgEaQLZcP3PEGC8zgjLkAjcfpj9uESRdssM1wHpusKkoajUyqNXbdCoyXXp4bCzYzdaqUaqcYHnFh9hLzQNJ2qobncd862Uwgd47sHv82QXEmeUBEJ8yFXM58trw1RSscnXvV49bYGrbt3FDrMgN9EeJCv1AfVryab9rZgFrPbsXvcYqym4hnYU1bAgS5DUPrTaZESkQtqbu5y9CKsvDvqZKzx9ug47JpWW3Nzig88vTcBfFJ3Wqnz22iC3WdaFTwGwU8gZ2gPSE1b3LkUvS46n4SF8BS")
-        print("message: ", message)
-        message_hash=bin_dbl_sha256(from_string_to_bytes(message))
-        message_hash_hex = binascii.hexlify(message_hash)
-        v, r, s = ecdsa_raw_sign(message_hash_hex, private_key)
-        sig = encode_sig(v, r, s)
-        vb, rb, sb = from_int_to_byte(v+4), encode(r, 16), encode(s, 16)
-        sign=binascii.hexlify(vb)  + rb + sb
-
         sign_algo="ecdsa"
         origin=get_node_id()
         exten_info={}
         exten_info["origin_id"]=origin
         exten_info["sign_algo"]=sign_algo
-        exten_info["sign"] = sign
+        exten_info["sign"] = dbc_sign(message)
         head.exten_info = exten_info
         head.write(p)
         req.write(p)
