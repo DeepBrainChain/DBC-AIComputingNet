@@ -28,11 +28,17 @@ GET_TASK_QUEUE_SIZE_REQ           =                            "get_task_queue_s
 GET_TASK_QUEUE_SIZE_RESP          =                             "get_task_queue_size_resp"
 core_version = 0x00020200
 pro_version = 0x00000001
+
 magic = -506355567
 start_height=1
 
 private_key=""
 node_id=""
+
+def set_magic(magic_num):
+    global magic
+    bb = binascii.a2b_hex(magic_num)
+    magic = struct.unpack('!i', bb[0:4])[0]
 
 def get_private_key():
     return private_key
