@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from bitcoin import *
-import base58
+from base58 import base58
 
 VER_REQ                           =                        "ver_req"
 VER_RESP                          =                        "ver_resp"
@@ -28,8 +28,17 @@ GET_TASK_QUEUE_SIZE_REQ           =                            "get_task_queue_s
 GET_TASK_QUEUE_SIZE_RESP          =                             "get_task_queue_size_resp"
 core_version = 0x00020200
 pro_version = 0x00000001
-magic = -506355561
+magic = -506355567
 start_height=1
+
+private_key=""
+node_id=""
+
+def get_private_key():
+    return private_key
+
+def get_node_id():
+    return node_id
 
 def get_random_id():
     private_key = random_key()
@@ -47,11 +56,35 @@ def get_random_name():
     salt = ''.join(sa)
     return salt
 
+def derive_dbcprivate_key(prikey):
+    # prikey="29SjBR3HHvBSPMKjTgEaQLZcP3PEGC8zgjLkAjcfpj9uESRdssM1wHpusKkoajUyqNXbdCoyXXp4bCzYzdaqUaqcYHnFh9hLzQNJ2qobncd862Uwgd47sHv82QXEmeUBEJ8yFXM58trw1RSscnXvV49bYGrbt3FDrMgN9EeJCv1AfVryab9rZgFrPbsXvcYqym4hnYU1bAgS5DUPrTaZESkQtqbu5y9CKsvDvqZKzx9ug47JpWW3Nzig88vTcBfFJ3Wqnz22iC3WdaFTwGwU8gZ2gPSE1b3LkUvS46n4SF8BS"
+    bb = base58.b58decode_check(prikey)
+    return binascii.hexlify(bb[10:42])
+
+def derive_dbcprivate_key_node():
+    prikey="29SjBR3HHvBSPMKjTgEaQLZcP3PEGC8zgjLkAjcfpj9uESRdssM1wHpusKkoajUyqNXbdCoyXXp4bCzYzdaqUaqcYHnFh9hLzQNJ2qobncd862Uwgd47sHv82QXEmeUBEJ8yFXM58trw1RSscnXvV49bYGrbt3FDrMgN9EeJCv1AfVryab9rZgFrPbsXvcYqym4hnYU1bAgS5DUPrTaZESkQtqbu5y9CKsvDvqZKzx9ug47JpWW3Nzig88vTcBfFJ3Wqnz22iC3WdaFTwGwU8gZ2gPSE1b3LkUvS46n4SF8BS"
+    bb = base58.b58decode_check(prikey)
+    t1= binascii.hexlify(bb[10:42])
+    pub_key = privkey_to_pubkey(t1)
+    pub_key_bin = binascii.a2b_hex(pub_key)
+    pub_160 = hash160(pub_key_bin)
+    keyid = binascii.a2b_hex(pub_160)
+    node_prefix = bytes("node.0.")
+    node_gen_src = node_prefix + keyid
+    node_id = base58.b58encode_check(node_gen_src)
+    print(node_id)
+
 def gen_node_id():
+    global private_key
     private_key = random_key()
+    # seed = random_electrum_seed()
+    # private_key=electrum_privkey(seed,1)
     pub_key = privkey_to_pubkey(private_key)
     pub_key_bin = binascii.a2b_hex(pub_key)
-    pub_160 = bin_hash160(pub_key)
+    pub_160 = hash160(pub_key_bin)
+    keyid = binascii.a2b_hex(pub_160)
     node_prefix = bytes("node.0.")
-    node_gen_src = node_prefix + pub_160
-    return base58.b58encode_check(node_gen_src)
+    node_gen_src = node_prefix + keyid
+    global node_id
+    node_id = base58.b58encode_check(node_gen_src)
+    return node_id
