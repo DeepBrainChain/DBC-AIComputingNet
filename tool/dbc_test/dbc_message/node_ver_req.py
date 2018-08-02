@@ -12,7 +12,7 @@ def make_ver_req(peer_ip, peer_port,node_id):
     p = TBinaryProtocol(m)
     msg_name = VER_REQ
     nonce = get_random_id()
-    head = msg_header(magic, msg_name, nonce)
+    head = msg_header(get_magic(), msg_name, nonce)
     head.write(p)
     print("nonce:%s, node_id:%s" %(nonce,  node_id))
     addr_me = network_address("127.0.0.1", 21107)
