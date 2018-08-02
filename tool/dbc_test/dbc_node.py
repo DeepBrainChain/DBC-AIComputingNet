@@ -51,7 +51,7 @@ class dbc_node(Thread):
         m = TMemoryBuffer()
         p = TBinaryProtocol(m)
         msg_name = SHAKE_HAND_REQ
-        head = msg_header(magic, msg_name)
+        head = msg_header(get_magic(), msg_name)
         head.write(p)
         req = shake_hand_req()
         req.write(p)
@@ -131,14 +131,13 @@ class dbc_node(Thread):
 
 def main ():
     peer_addr=[
-               "127.0.0.1:21107 ","114.116.19.45:21107","114.116.21.175:21107","49.51.47.187:21107","49.51.47.174:21107","35.237.254.158:21107",
+               "10.10.254.187:21107 ","114.116.19.45:21107","114.116.21.175:21107","49.51.47.187:21107","49.51.47.174:21107","35.237.254.158:21107",
                 "35.227.90.8:21107","18.221.213.48:21107","18.188.157.102:21107","114.116.41.44:21107","114.115.219.202:21107",
                 "39.107.81.6:21107","47.93.24.54:21107", "fe80::f816:3eff:fe44:afc9:21107","fe80::f816:3eff:fe33:d8db:21107"
     ]
 
     set_magic("E1D1A091")
 
-    # derive_dbcprivate_key_node();
     Host = peer_addr[0].split(":")[0]
     PORT = int(peer_addr[0].split(":")[1])
 
@@ -154,7 +153,7 @@ def main ():
     i=0
     while i < 1:
         i=i+1
-        #node.send(make_start_training_req("D:\\test_case\\task\\task-h2o.conf"))
+        node.send(make_start_training_req("D:\\test_case\\task\\task-h2o1.conf"))
         node.send(make_stop_training_req("Jc1HFzzN1YThSxThLf4JsJs4TKYL7PY2U"))
         # node.send(make_logs_req("2gfpp3MAB48e5nSEXrTUcLwXvobXh6oUyG2hTNLvNhF"))
         msg_count = msg_count + 1

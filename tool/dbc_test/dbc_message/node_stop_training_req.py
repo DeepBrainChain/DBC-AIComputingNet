@@ -14,7 +14,7 @@ def make_stop_training_req(in_task_id):
     msg_name = STOP_TRAINING_REQ
     nonce = get_random_id()
     session_id = get_random_id()
-    head = msg_header(magic, msg_name, nonce, session_id)
+    head = msg_header(get_magic(), msg_name, nonce, session_id)
 
     print("stop req.nonce:%s, task_id:%s" %(nonce,  in_task_id))
 
