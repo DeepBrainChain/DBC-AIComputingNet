@@ -4,14 +4,17 @@ dbctraining/tensorflow1.9-gpu-cuda9.2-py3:v0.3.0
 
 dbctraining/caffe2-gpu-cuda8-py2:v0.0.2
 dbctraining/caffe2-gpu-cuda9-py2:v0.0.2
-
-dbctraining/cntk-py3-gpu:v1.0.0
-dbctraining/mxnet-py3-gpu:v1.0.0
-dbctraining/mxnet-py2-gpu:v1.0.0
-
 dbctraining/caffe2-gpu-cuda8-py2:v1.0.0
 dbctraining/caffe2-gpu-cuda9-py2:v1.0.0
 dbctraining/caffe2-gpu-cuda9-py3:v1.0.0
+
+dbctraining/h2o-cpu-py2:v1.0.0
+dbctraining/h2o-gpu-cuda9-py3:v1.0.0
+
+dbctraining/mxnet-gpu-cuda9-py3:v1.0.0
+dbctraining/mxnet-gpu-cuda9-py2:v1.0.0
+
+dbctraining/cntk-gpu-cuda9-py3:v1.0.0
 dbctraining/pytorch-gpu-cuda9-py3:v1.0.0
 
 
