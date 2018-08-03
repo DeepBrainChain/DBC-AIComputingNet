@@ -96,21 +96,21 @@ if [ $? -eq 0 ]; then
     echo "***install nvidia-docker success ***"
 fi
 
-gpu_flag=`lspci |grep -i nvidia`
-if [ $? -eq 0 ]; then
-    echo "need to download GPU-related tensorflow"
-    sudo docker pull $gpu_tensorflow_path
-    if [ $? -eq 1 ]; then
-        echo "pull fail"
-	exit 
-    fi 
-    echo "***pull tensorflow GPU image success***"    
-else
-    echo "need to download CPU-related tensorflow"
-    sudo docker pull $cpu_tensorflow_path
-    if [ $? -eq 1 ]; then
-        echo "pull fail"
-	exit
-    fi 
-    echo "***pull tensorflow CPU image success***"
-fi
+#gpu_flag=`lspci |grep -i nvidia`
+#if [ $? -eq 0 ]; then
+#    echo "need to download GPU-related tensorflow"
+#    sudo docker pull $gpu_tensorflow_path
+#    if [ $? -eq 1 ]; then
+#        echo "pull fail"
+#	exit
+#    fi
+#    echo "***pull tensorflow GPU image success***"
+#else
+#    echo "need to download CPU-related tensorflow"
+#    sudo docker pull $cpu_tensorflow_path
+#    if [ $? -eq 1 ]; then
+#        echo "pull fail"
+#	exit
+#    fi
+#    echo "***pull tensorflow CPU image success***"
+#fi
