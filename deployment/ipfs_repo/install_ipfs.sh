@@ -22,6 +22,7 @@ fi
 rm -rf $ipfs_path
 mkdir $ipfs_path
 
+
 # install ipfs
 echo "install ipfs"
 cp -f $ipfs_tgz /tmp
@@ -31,8 +32,14 @@ cd /tmp/go-ipfs
 
 user=`whoami`
 if [ "$user" != "root" ]; then
+    if [ ! -d "/usr/local/bin" ]; then
+        sudo mkdir -p /usr/local/bin
+    fi
     sudo ./install.sh
 else
+    if [ ! -d "/usr/local/bin" ]; then
+        mkdir -p /usr/local/bin
+    fi
     ./install.sh
 fi
 
@@ -83,4 +90,5 @@ ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2
 
 
 echo "ipfs configure complete"
+
 sleep $sleep_time
