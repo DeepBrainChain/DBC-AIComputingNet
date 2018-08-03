@@ -1,7 +1,6 @@
 dbctraining/tensorflow1.3-gpu-cuda8-py3:v0.3.0
 dbctraining/tensorflow1.3-gpu-cuda8-py2:v0.3.0
 dbctraining/tensorflow1.9-gpu-cuda9.2-py3:v0.3.0
-
 dbctraining/caffe2-gpu-cuda8-py2:v0.0.2
 dbctraining/caffe2-gpu-cuda9-py2:v0.0.2
 dbctraining/caffe2-gpu-cuda8-py2:v1.0.0
