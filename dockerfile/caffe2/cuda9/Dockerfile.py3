@@ -1,8 +1,7 @@
-FROM caffe2ai/caffe2:c2v0.8.1.cuda8.cudnn7.ubuntu16.04
+FROM nvcr.io/nvidia/caffe2:18.01-py3
 
 RUN pip install --upgrade pip
 
 RUN pip install nltk
 RUN pip install numpy
 RUN pip install gensim
-RUN pip install pickle
