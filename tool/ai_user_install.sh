@@ -28,8 +28,3 @@ echo -e
 echo "begin to start DBC program"
 cd ./dbc_repo/
 ./dbc
-sleep 3s
-./p
-cd ./../
-echo "start DBC program finished"
-echo -e
