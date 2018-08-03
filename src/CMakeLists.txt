@@ -144,13 +144,14 @@ set(LIBRARIES)
 
 set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
 
-TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -pie -pthread -ldl)
 
-#if (LINUX)
+if (LINUX)
+    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -pie -pthread -ldl)
 #    TARGET_LINK_LIBRARIES(dbc -ltinfo)
-#endif()
+endif()
 
 if (APPLE)
+    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -pie -pthread -ldl)
     TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
 endif()
 
