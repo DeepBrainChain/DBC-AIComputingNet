@@ -65,7 +65,7 @@ namespace ai
 
         int32_t cmd_line_service::init(bpo::variables_map &options)
         { 
-            cout << "Welcome to DeepBrain Chain AI world!" << std::endl;
+            cout << "Welcome to DeepBrain Chain Decentralized AI world!" << std::endl;
             cout << std::endl;
 
             g_server->bind_idle_task(&cmd_line_task);
