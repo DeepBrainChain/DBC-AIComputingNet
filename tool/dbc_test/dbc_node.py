@@ -130,6 +130,16 @@ class dbc_node(Thread):
 
 
 def main ():
+    j=0
+    node_list=[]
+    f = open('D:\\test_case\\task\\node_id.txt', 'w')
+    while j<1000:
+        j = j+1
+        nodeid = gen_node_id();
+        f.write(nodeid)
+        f.write("\n")
+        # node_list.append(nodeid)
+
     peer_addr=[
                "10.10.254.187:21107 ","114.116.19.45:21107","114.116.21.175:21107","49.51.47.187:21107","49.51.47.174:21107","35.237.254.158:21107",
                 "35.227.90.8:21107","18.221.213.48:21107","18.188.157.102:21107","114.116.41.44:21107","114.115.219.202:21107",
@@ -137,7 +147,7 @@ def main ():
     ]
 
     set_magic("E1D1A091")
-
+    dbc_sign_2("9VgByrLRWzrdNrEiybC8mey5fcS4z592b2gfpp3MAB3wy6KYsHDrXQynNo1r2i5TFYEWorNdajyVJrnrSAPSvR9BFB1dPLND3BoNSao63ArgU","1bb996c866710c5930be3ac39e3dc5cd69522a71add57d135c49a20ad0d4a89f")
     Host = peer_addr[0].split(":")[0]
     PORT = int(peer_addr[0].split(":")[1])
 
