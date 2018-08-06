@@ -26,6 +26,7 @@ namespace matrix
         } ;
 
         const int32_t DEFAULT_AUTH_REPORT_CYTLE = 60;
+        const int32_t MAX_AUTH_REPORT_CYTLE = 3* DEFAULT_AUTH_REPORT_CYTLE;
         class auth_task_req : public json_io_buf
         {
         public:
@@ -53,7 +54,7 @@ namespace matrix
         {
         public:
 
-            int32_t status = AUTH_NET_ERROR;
+            int64_t status = AUTH_NET_ERROR;
 
             std::string contract_state;
 

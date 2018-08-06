@@ -69,7 +69,7 @@ namespace matrix
                     return;
                 }
 
-                this->status = status.GetInt();
+                this->status = status.GetInt64();
                 if (this->status != 0)
                 {
                     return;
@@ -110,7 +110,8 @@ namespace matrix
                         this->status = AUTH_NET_ERROR;
                         return;
                     }
-                    
+
+                    this->report_cycle = (this->report_cycle > MAX_AUTH_REPORT_CYTLE) ? MAX_AUTH_REPORT_CYTLE : this->report_cycle;
                 }
                 
             }

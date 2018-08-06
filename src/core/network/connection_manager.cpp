@@ -84,6 +84,7 @@ namespace matrix
 
             m_max_connect = (std::min)(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, m_max_connect);
             m_max_connect = (std::max)(m_max_connect, MAX_OUTBOUND_CONNECTIONS);
+            LOG_DEBUG << "max_connect: " <<m_max_connect;
             return E_SUCCESS;
         }
 

@@ -32,6 +32,8 @@ std::string to_training_task_status_string(int8_t status)
         return "task_succefully_closed";
     case task_abnormally_closed:
         return "task_abnormally_closed";
+    case task_overdue_close:
+        return "task_overdue_close";
     default:
         return "";
     }
