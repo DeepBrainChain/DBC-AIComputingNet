@@ -62,11 +62,22 @@ done
 
 if [ -z $num ];then
    echo "container.conf item :host_volum_dir will be set as default value:$default_install_directory "
-   sed -i "5c host_volum_dir=$default_install_directory" ./dbc_repo/conf/container.conf
+   sudo mkdir $default_install_directory/container_data_dir
+   if [ $? -ne 0 ]; then
+      echo "mkdir error:maybe no authorization or readonly directory"
+      exit
+   fi
+   sed -i "5c host_volum_dir=$default_install_directory/container_data_dir" ./dbc_repo/conf/container.conf
 else
    echo "yo have choosed number:$num,host_volum_dir will be set as ${array[$num]} "
-   sed -i "5c host_volum_dir=${array[$num]}" ./dbc_repo/conf/container.conf
+   sudo mkdir ${array[$num]}/container_data_dir
+   if [ $? -ne 0 ]; then
+      echo "mkdir error:maybe no authorization or readonly directory"
+      exit
+   fi
+   sed -i "5c host_volum_dir=${array[$num]}/container_data_dir" ./dbc_repo/conf/container.conf
 fi
+
 echo "configure the container.conf item :host_volum_dir finished"
 echo -e
 
