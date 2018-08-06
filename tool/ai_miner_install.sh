@@ -69,7 +69,7 @@ if [ -z $num ];then
    fi
    sed -i "5c host_volum_dir=$default_install_directory/container_data_dir" ./dbc_repo/conf/container.conf
 else
-   echo "yo have choosed number:$num,host_volum_dir will be set as ${array[$num]} "
+   echo "you have choosed number:$num,host_volum_dir will be set as ${array[$num]} "
    sudo mkdir ${array[$num]}/container_data_dir
    if [ $? -ne 0 ]; then
       echo "mkdir error:maybe no authorization or readonly directory"
