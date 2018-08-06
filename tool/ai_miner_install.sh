@@ -18,9 +18,9 @@ current_directory=`pwd`
 echo "current directory is $current_directory "
 
 echo "Execution script mining_install.sh to install docker,nvidia-docker,pull images(only for miner)"
-cd ./mining_repo/
-/bin/bash ./mining_install.sh
-cd ./../
+#cd ./mining_repo/
+#/bin/bash ./mining_install.sh
+#cd ./../
 echo "mining_install.sh execution finished"
 echo -e
 
@@ -61,7 +61,8 @@ while [[ $num -lt 0 || $num -gt $loop ]];do
 done
 
 if [ -z $num ];then
-   echo "container.conf item :host_volum_dir will be set as default value:$default_install_directory "
+   echo "container.conf item :host_volum_dir will be set as default value:$default_install_directory"
+   sudo rm -rf $default_install_directory/container_data_dir
    sudo mkdir $default_install_directory/container_data_dir
    if [ $? -ne 0 ]; then
       echo "mkdir error:maybe no authorization or readonly directory"
@@ -70,6 +71,7 @@ if [ -z $num ];then
    sed -i "5c host_volum_dir=$default_install_directory/container_data_dir" ./dbc_repo/conf/container.conf
 else
    echo "you have choosed number:$num,host_volum_dir will be set as ${array[$num]} "
+   sudo rm -rf $default_install_directory/container_data_dir
    sudo mkdir ${array[$num]}/container_data_dir
    if [ $? -ne 0 ]; then
       echo "mkdir error:maybe no authorization or readonly directory"
