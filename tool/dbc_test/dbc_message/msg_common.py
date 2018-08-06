@@ -86,7 +86,7 @@ def derive_dbcprivate_key_node():
 def gen_node_id():
     global private_key
     private_key = random_key()
-    print("private key:", private_key)
+    # print("private key:", private_key)
     # seed = random_electrum_seed()
     # private_key=electrum_privkey(seed,1)
     pub_key = privkey_to_pubkey(private_key)
@@ -97,7 +97,7 @@ def gen_node_id():
     node_gen_src = node_prefix + keyid
     global node_id
     node_id = base58.b58encode_check(node_gen_src)
-    print("node_id:", node_id)
+    # print("node_id:", node_id)
     return node_id
 
 def gen_node_id_key(pkk):
@@ -122,8 +122,8 @@ def dbc_sign(message):
     message_hash_hex = binascii.hexlify(message_hash)
     v, r, s = ecdsa_raw_sign(message_hash_hex, private_key)
     sig = encode_sig(v, r, s)
-    vb, rb, sb = from_int_to_byte(v+4), encode(r, 16), encode(s, 16)
-    sign = binascii.hexlify(vb) + rb + sb
+    vb, rb, sb = from_int_to_byte(v+4), encode(r, 256), encode(s, 256)
+    sign = binascii.hexlify(vb) + binascii.hexlify(rb) + binascii.hexlify(sb)
     return sign
 
 def dbc_sign_2(message, prikey):
@@ -131,6 +131,6 @@ def dbc_sign_2(message, prikey):
     message_hash_hex = binascii.hexlify(message_hash)
     v, r, s = ecdsa_raw_sign(message_hash_hex, prikey)
     sig = encode_sig(v, r, s)
-    vb, rb, sb = from_int_to_byte(v+4), encode(r, 16), encode(s, 16)
-    sign = binascii.hexlify(vb) + rb + sb
+    vb, rb, sb = from_int_to_byte(v+4), encode(r, 256), encode(s, 256)
+    sign = binascii.hexlify(vb) + binascii.hexlify(rb) + binascii.hexlify(sb)
     return sign

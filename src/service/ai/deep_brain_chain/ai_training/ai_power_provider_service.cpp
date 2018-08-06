@@ -33,6 +33,7 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include "url_validator.h"
+#include "time_util.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -650,18 +651,6 @@ namespace ai
                 }
 
                 LOG_INFO << "stop training, task_status: " << sp_task->status << endl;
-
-                if (task_running == sp_task->status)
-                {
-                    //stop container
-                    int32_t ret = m_container_client->stop_container(sp_task->container_id);
-                    if (E_SUCCESS != ret)
-                    {
-                        LOG_ERROR << "ai power provider service stop container error, container id: " << sp_task->container_id;
-                    }
-                }
-
-                
                 auto first_task = m_queueing_tasks.front();
                 if (first_task->task_id == sp_task->task_id)
                 {                     
@@ -671,17 +660,13 @@ namespace ai
                         m_auth_task_timer_id = INVALID_TIMER_ID;
                     }
                 }
+                
+                stop_task(sp_task, task_stopped);
+
+                auth_task(sp_task);
+
                 //remove from queue
                 m_queueing_tasks.erase(it);
-
-                //flush to db: update status
-                sp_task->__set_status(task_stopped);
-                sp_task->__set_end_time(std::time(nullptr));
-                auth_task(sp_task);
-                write_task_to_db(sp_task);
-                
-
-
             }
             else
             {
@@ -1016,13 +1001,26 @@ namespace ai
         
         int32_t ai_power_provider_service::auth_task(std::shared_ptr<ai_training_task> task, bool is_report_cycle)
         {
+            //if task have been authed before running and is not timer trigger the auth, then return directly 
+            if (task->start_time > 0 && task->status == task_queueing && !is_report_cycle)
+            {
+                return E_SUCCESS;
+            }
+
+            if (0 == task->start_time)
+            {
+                task->__set_start_time(time_util::get_time_stamp_ms());
+            }
+
+            task->__set_end_time(time_util::get_time_stamp_ms());
+
             if (nullptr == m_bill_client)
             {
                 LOG_WARNING << "bill system is not config.";
                 return E_SUCCESS;
             }
 
-            std::shared_ptr<auth_task_req> task_req = create_auth_task_req(task,is_report_cycle);
+            std::shared_ptr<auth_task_req> task_req = create_auth_task_req(task);
             if (nullptr == task_req)
             {
                 return E_SUCCESS;
@@ -1092,19 +1090,8 @@ namespace ai
             return E_DEFAULT;
         }
 
-        std::shared_ptr<auth_task_req> ai_power_provider_service::create_auth_task_req(std::shared_ptr<ai_training_task> task, bool is_report_cycle)
+        std::shared_ptr<auth_task_req> ai_power_provider_service::create_auth_task_req(std::shared_ptr<ai_training_task> task)
         {
-            //if have auth before running, then return directly
-            if (task->start_time > 0 && task->status ==task_queueing &&  !is_report_cycle)
-            {
-                return nullptr;
-            }
-
-            if (0 == task->start_time)
-            {
-                task->__set_start_time(std::time(nullptr));
-            }
-
             std::shared_ptr<auth_task_req> req = std::make_shared<auth_task_req>();
             req->ai_user_node_id = task->ai_user_node_id;
             req->mining_node_id = CONF_MANAGER->get_node_id();
@@ -1115,8 +1102,7 @@ namespace ai
             req->task_state = to_training_task_status_string(task->status==task_queueing ? task_running:task->status);
             req->sign_type = ECDSA;
 
-            int64_t end_tmp = (task->end_time == 0) ? std::time(nullptr) : task->end_time;
-            req->end_time = boost::str(boost::format("%d") % end_tmp);
+            req->end_time = boost::str(boost::format("%d") % task->end_time);
             std::string message = req->mining_node_id + req->ai_user_node_id + req->task_id + req->start_time + req->task_state + req->end_time;
 
             LOG_DEBUG << "sign message:" << message;
@@ -1157,15 +1143,8 @@ namespace ai
                 
                 else
                 {
-                    //stop container
-                    int32_t ret = m_container_client->stop_container(task->container_id);
-                    if (E_SUCCESS != ret)
-                    {
-                        LOG_ERROR << "ai power provider service stop container error, container id: " << task->container_id;
-                    }
-                    task->__set_end_time(std::time(nullptr));
-                    task->__set_status( task_overdue_close);
-                    write_task_to_db(task);
+                    LOG_DEBUG << "auth failed. " << " drop task:" << task->task_id;
+                    stop_task(task, task_overdue_close);
                     m_queueing_tasks.pop_front();
                 }
             }
@@ -1185,7 +1164,7 @@ namespace ai
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
             if (task_queueing == task->status)
             {
-                ////////////auth_task from ocs/////////////////
+                ////////////auth_task -> ocs/////////////////
                 int32_t ret = auth_task(task);
                 if (E_SUCCESS == ret)
                 {                    
@@ -1194,9 +1173,8 @@ namespace ai
                 }
                 else
                 {
-                    task->__set_end_time(std::time(nullptr));
-                    task->__set_status(task_overdue_close);
-                    write_task_to_db(task);
+                    LOG_DEBUG << "auth failed. " << " drop task:" << task->task_id;
+                    stop_task(task, task_overdue_close);
                     m_queueing_tasks.pop_front();
                     return E_SUCCESS;
                 }
@@ -1429,13 +1407,13 @@ namespace ai
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
-                task->__set_status(task_abnormally_closed);
-                task->__set_end_time(std::time(nullptr));
                 if (INVALID_TIMER_ID != m_auth_task_timer_id)
                 {
                     remove_timer(m_auth_task_timer_id);
                     m_auth_task_timer_id = INVALID_TIMER_ID;
                 }
+
+                task->__set_status(task_abnormally_closed);                
                 auth_task(task);
 
                 //flush to db
@@ -1525,12 +1503,11 @@ namespace ai
                 }
 
                 task->__set_status(task_abnormally_closed);
-                task->__set_end_time(std::time(nullptr));
+   
+                //report task state
                 auth_task(task);
-
                 //flush to db
                 write_task_to_db(task);
-
                 //pop from task queue
                 m_queueing_tasks.pop_front();
 
@@ -1553,8 +1530,24 @@ namespace ai
             if (true == resp->state.running)
             {
                 LOG_DEBUG << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
+
+                //dbc maybe restart and the task is  running state, at this time, dbc should send auth req
+                if (INVALID_TIMER_ID == m_auth_task_timer_id)
+                {
+                    int32_t ret = auth_task(task);
+                    if (E_SUCCESS != ret)
+                    {
+                        LOG_DEBUG << "auth failed. " << "drop task:" << task->task_id;
+
+                        stop_task(task, task_overdue_close);
+                        m_queueing_tasks.pop_front();
+                        return E_SUCCESS;
+                    }
+                }
+                    
                 return E_SUCCESS;
             }
+            
             else if (0 != resp->state.exit_code)
             {
                 LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
@@ -1567,9 +1560,7 @@ namespace ai
                 task->__set_status(task_abnormally_closed);
 
                 task->error_times++;
-                task->__set_end_time(std::time(nullptr));
                 auth_task(task);
-
                 write_task_to_db(task);
                 m_queueing_tasks.pop_front();
                 
@@ -1587,7 +1578,6 @@ namespace ai
                 task->__set_status(task_succefully_closed);
                 LOG_INFO << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
-                task->__set_end_time(std::time(nullptr));
                 int32_t ret = auth_task(task);
                 //flush to db
                 write_task_to_db(task);
@@ -1708,6 +1698,23 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::stop_task(std::shared_ptr<ai_training_task> task, training_task_status status)
+        {
+            if (task_running == task->status)
+            {
+                int32_t ret = m_container_client->stop_container(task->container_id);
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "ai power provider service stop container error, container id: " << task->container_id;
+                }
+            }
+            
+            task->__set_end_time(time_util::get_time_stamp_ms());
+            task->__set_status(status);
+            write_task_to_db(task);
             return E_SUCCESS;
         }
     }

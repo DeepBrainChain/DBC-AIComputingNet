@@ -148,6 +148,8 @@ namespace ai
             int32_t check_cpu_config(const double & cpu_info);
             int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
 
+            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status status);
+
         protected:
 
             std::shared_ptr<leveldb::DB> m_prov_training_task_db;
@@ -177,7 +179,7 @@ namespace ai
             const int64_t m_nano_cpu = 1000000000;
             const int64_t m_g_bytes = 1073741824;
 
-            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task, bool is_report_cycle=false);
+            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
             int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_report_cycle=false);
             int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
         };
