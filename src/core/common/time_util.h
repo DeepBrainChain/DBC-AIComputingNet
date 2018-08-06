@@ -50,6 +50,15 @@ namespace matrix
                 return temp.erase(temp.find("\n"));
             }
 
+            //get time stamp milliseconds
+            static std::time_t get_time_stamp_ms()
+            {
+                std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> tp = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+                auto tmp = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch());
+                std::time_t time_stamp = tmp.count();
+                return time_stamp;
+            }
+
         };
     }
 

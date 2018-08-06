@@ -37,7 +37,8 @@ enum training_task_status
     task_running = 4,
     task_stopped = 8,
     task_succefully_closed = 16,
-    task_abnormally_closed = 32
+    task_abnormally_closed = 32,
+    task_overdue_close = 64
 };
 
 enum net_state
