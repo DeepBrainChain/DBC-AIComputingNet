@@ -18,9 +18,9 @@ current_directory=`pwd`
 echo "current directory is $current_directory "
 
 echo "Execution script mining_install.sh to install docker,nvidia-docker,pull images(only for miner)"
-#cd ./mining_repo/
-#/bin/bash ./mining_install.sh
-#cd ./../
+cd ./mining_repo/
+/bin/bash ./mining_install.sh
+cd ./../
 echo "mining_install.sh execution finished"
 echo -e
 
