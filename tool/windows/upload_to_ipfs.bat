@@ -6,24 +6,9 @@
 :: or run upload_to_ipfs.bat directly, then input full name of file or directory;
 ::----------------------------------------
 
-::-----get UAC-----
-@echo off 
->nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system" 
-if '%errorlevel%' NEQ '0' ( 
-goto UACPrompt 
-) else ( goto gotAdmin ) 
-:UACPrompt 
-echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs" 
-echo UAC.ShellExecute "%~s0", "", "", "runas", 1 >> "%temp%\getadmin.vbs" 
-"%temp%\getadmin.vbs"
-del "%temp%\getadmin.vbs"
-exit /B 
-:gotAdmin
-if exist "%temp%\getadmin.vbs" (del "%temp%\getadmin.vbs")
 
 ::------upload process------
 @echo off
-:start
 @rem echo "check param cnt"
 set /a cnt=0
 for %%a in (%*) do set /a cnt+=1
@@ -35,6 +20,7 @@ if %cnt% GTR 1 (
 if %cnt% EQU 1 (
 	set file_dir=%1
 	) else (
+	:start
 	set /p file_dir=please input file or directory to upload to ipfs:
 	)
 
@@ -51,14 +37,14 @@ if not exist %file_dir% (
 cd ..
 set parent_path=%cd%
 cd tool
-"%parent_path%/ipfs/ipfs.exe" add -r %file_dir% > tmp.txt
+"%parent_path%/ipfs/ipfs.exe" add -r "%file_dir%" > "%temp%\tmp.txt"
 
 setlocal enabledelayedexpansion
 set hash_code=
-for /f "tokens=2 delims= " %%i in (tmp.txt) do (
+for /f "tokens=2 delims= " %%i in (%temp%\tmp.txt) do (
  set hash_code=%%i
  )
-del tmp.txt
+del "%temp%\tmp.txt"
 echo "hash_code: "
 echo %hash_code%
 echo ------------------------------------------
@@ -75,9 +61,9 @@ if defined hash_code (
 	ping !IP[%index%]! > nul
 	::echo %errorlevel%	
 	if errorlevel 1 (
+		:nextIP
 		set /a tmp_index=!index!+1
 		set /a index=!tmp_index!%%3
-		echo !index!
 		if %first_idx% equ %index% (
 			echo "no available ipfs peers"
 			pause > nul
@@ -101,7 +87,7 @@ if defined hash_code (
 	if errorlevel 1 (
 		echo failed to add "%file_dir%"
 		echo !IP[%index%]! is not available.
-		goto checkIP
+		goto nextIP
 		)
 	) else (
 	echo "add to ipfs failed, restart ipfs may fix it."
