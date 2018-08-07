@@ -59,6 +59,10 @@ if [ -d /dbc/.ipfs ]; then
     ipfs bootstrap add $line
   done
   rm ./bootstrap_nodes
+
+  #set ipfs repo
+  ipfs config Datastore.StorageMax 100GB
+
   cd /
 else
   mkdir $ipfs_install_path
@@ -70,6 +74,9 @@ if [ ! `which curl` ]; then
     echo "install curl"
     apt-get update
     apt-get install --yes curl
+
+    #set ipfs repo
+    ipfs config Datastore.StorageMax 100GB
 fi
 
 # run ai-training task
