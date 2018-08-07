@@ -101,7 +101,7 @@ if defined hash_code (
 	if errorlevel 1 (
 		echo failed to add "%file_dir%"
 		echo !IP[%index%]! is not available.
-		goto err_exit
+		goto checkIP
 		)
 	) else (
 	echo "add to ipfs failed, restart ipfs may fix it."
