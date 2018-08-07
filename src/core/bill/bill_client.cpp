@@ -22,11 +22,10 @@ namespace matrix
 {
     namespace core
     {
-
         bill_client::bill_client(const std::string & url, const std::string & crt)
             : m_url(url),
             m_crt(crt),
-            m_http_client(url, crt)
+            m_http_client(url, crt, DEFAULT_HTTPS_TIME_OUT)
         {
         }
             
@@ -56,7 +55,7 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "auth failed: " << resp.body;
+                LOG_DEBUG << "auth failed: " << resp.body;
                 return nullptr;
             }
 
