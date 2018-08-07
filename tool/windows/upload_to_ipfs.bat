@@ -1,39 +1,41 @@
 @rem created by Allan
 @rem 2018/08/04
 :: Example:
-:: upload_to_ipfs.bat "file name"
-:: upload_to_ipfs.bat "file directory"
+:: upload_to_ipfs.bat "file name";
+:: or upload_to_ipfs.bat "file directory";
+:: or run upload_to_ipfs.bat directly, then input full name of file or directory;
 ::----------------------------------------
 
 @echo off
-
+:start
 @rem echo "check param cnt"
 set /a cnt=0
 for %%a in (%*) do set /a cnt+=1
-if %cnt% LSS 1 (
-	echo "you should append a file or directory as a param"
-	pause>nul
-	exit
-	)
 if %cnt% GTR 1 (
 	echo "you should append only one param"
 	pause>nul
 	exit
 	)
+if %cnt% EQU 1 (
+	set file_dir=%1
+	) else (
+	set /p file_dir=please input file or directory to upload to ipfs:
+	)
+
+if not defined file_dir goto start
 
 @rem echo "check file or dir exist"
-if not exist %1 (
-	echo "%1 not exist"
+if not exist %file_dir% (
+	echo "%file_dir%" not exist.
 	pause>nul
-	exit	
+	goto start
 	)
 
 @rem echo "start to add file to ipfs"
-set file_dir=%1
 cd ..
 set parent_path=%cd%
 cd tool
-%parent_path%/ipfs/ipfs.exe add -r %file_dir% > tmp.txt
+"%parent_path%/ipfs/ipfs.exe" add -r %file_dir% > tmp.txt
 
 setlocal enabledelayedexpansion
 set hash_code=
@@ -68,7 +70,7 @@ if defined hash_code (
 		goto checkIP
 		)
 
-	%cd%/curl.exe http://!IP[%index%]!:5001/api/v0/get?arg=/ipfs/%hash_code% --output nul
+	"%cd%/curl.exe" http://!IP[%index%]!:5001/api/v0/get?arg=/ipfs/%hash_code% --output nul
 
 	::echo %errorlevel%
 	REM for /f %%i in (%cd%/output.txt) do (
@@ -82,6 +84,7 @@ if defined hash_code (
 		REM )
 	if errorlevel 1 (
 		echo failed to add "%file_dir%"
+		echo !IP[%index%]! is not available.
 		goto err_exit
 		)
 	) else (
@@ -90,9 +93,10 @@ if defined hash_code (
 )
 echo upload "%file_dir%" finished, hash_code=%hash_code%.
 echo ------------------------------------------
-pause > nul
 
 :err_exit
-pause > nul
+pause
+set file_dir=
+goto start
 ::del output.txt
 ::exit
