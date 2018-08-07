@@ -24,6 +24,7 @@
 #include <event2/bufferevent_ssl.h>
 
 #define DEFAULT_HTTP_TIME_OUT                 3
+#define DEFAULT_HTTPS_TIME_OUT                10
 
 using kvs = typename std::list<std::pair<std::string, std::string>>;
 
@@ -138,10 +139,10 @@ namespace matrix
         {
         public:
 
-            http_client(std::string remote_ip, uint16_t remote_port);
+            http_client(std::string remote_ip, uint16_t remote_port, int32_t out_time = DEFAULT_HTTP_TIME_OUT);
 
             virtual ~http_client();
-            http_client(const std::string &url, const std::string & crt);
+            http_client(const std::string &url, const std::string & crt, int32_t out_time= DEFAULT_HTTP_TIME_OUT);
 
             void set_remote(std::string remote_ip, uint16_t remote_port);
 
@@ -172,6 +173,7 @@ namespace matrix
             SSL_CTX* m_ssl_ctx = nullptr;
             SSL* m_ssl = nullptr;
             std::string m_crt;
+            int32_t m_out_time = DEFAULT_HTTP_TIME_OUT;
         };
 
     }
