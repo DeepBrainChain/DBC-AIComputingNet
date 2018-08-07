@@ -15,7 +15,6 @@
 #include <boost/format.hpp>
 #include "openssl_hostname_validation.h"
 
-
 namespace matrix
 {
     namespace core
@@ -116,8 +115,7 @@ namespace matrix
                 //event base
                 raii_event_base base = obtain_event_base();
                 bufferevent *  bev = obtain_evhttp_bev(base.get(), m_ssl);
-                //raii_bufferevent  bev = obtain_evhttp_bev(base.get(), m_ssl);
-
+    
                 //connection base
                 raii_evhttp_connection evcon = obtain_evhttp_connection_base2(base.get(), bev, m_remote_ip, m_remote_port);
                 evhttp_connection_set_timeout(evcon.get(), DEFAULT_HTTP_TIME_OUT);
@@ -145,7 +143,6 @@ namespace matrix
                 struct evbuffer* output_buffer = evhttp_request_get_output_buffer(req.get());
                 assert(output_buffer);
                 evbuffer_add(output_buffer, req_content.data(), req_content.size());
-
                 //make request
                 int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
                 req.release();                 // ownership moved to evcon in above call
@@ -155,7 +152,6 @@ namespace matrix
                 }
 
                 event_base_dispatch(base.get());
-
                 if (resp.status == 0)
                 {
                     LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);

@@ -878,7 +878,7 @@ namespace ai
         {
             opts.add_options()
                 ("task_id", bpo::value<std::string>(), "")
-                ("select_mode", bpo::value<int8_t>(), "")
+                ("select_mode", bpo::value<int8_t>()->default_value(0), "")
                 ("master", bpo::value<std::string>()->default_value(""), "")
                 ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
                 ("server_specification", bpo::value<std::string>()->default_value(""), "")

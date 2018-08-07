@@ -26,7 +26,6 @@ namespace matrix
         class bill_client
         {
         public:
-
             bill_client(const std::string & url, const std::string &crt);
 
             //auth_task
