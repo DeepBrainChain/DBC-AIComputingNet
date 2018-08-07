@@ -1,15 +1,15 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.3.0
+release_version=0.3.3.1
 
 echo "begin to wget DBC release package"
-wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.0/dbc-linux-client-0.3.3.0.tar.gz
+wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/dbc-linux-client-0.3.3.1.tar.gz
 if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
 fi
-tar -zxvf dbc-linux-client-0.3.3.0.tar.gz
+tar -zxvf dbc-linux-client-0.3.3.1.tar.gz
 echo "wget DBC release package finished"
 echo -e
 
