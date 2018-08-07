@@ -19,7 +19,7 @@ echo "current directory is $current_directory "
 
 echo "start to install ipfs"
 cd ./ipfs_repo/
-bash ./go-ipfs_v0.4.15_darwin-amd64.tar.gz
+bash ./install_ipfs.sh ./go-ipfs_v0.4.15_darwin-amd64.tar.gz
 cd ./../
 echo "start install ipfs finished"
 echo -e
