@@ -56,7 +56,7 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
-                LOG_ERROR << "auth failed: " << resp.body;
+                LOG_DEBUG << "auth failed: " << resp.body;
                 return nullptr;
             }
 
