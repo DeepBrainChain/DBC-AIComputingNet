@@ -11,7 +11,7 @@
 
 //major version . minor version. revision version. build version
 //version should be revised when official release
-#define CORE_VERSION                        0x00030300                       //00.03.00.00
+#define CORE_VERSION                        0x00030301                       //00.03.00.00
 #define PROTOCO_VERSION                     0x00000001
 
 #define STR_CONV(v)  #v 
