@@ -21,6 +21,7 @@ wait_ipfs_daemon_time=30s
 home_dir=/dbc
 data_dir_hash=$1
 code_dir_hash=$2
+ipfs_get_task_pid=12345
 
 task=$3
 opts="${@:4}"
@@ -64,7 +65,10 @@ stop_ipfs()
     kill -TERM $PROC_ID
 
     cd /
-    rm -rf $home_dir/*
+    rm -rf $home_dir/data
+    rm -rf $home_dir/code
+    rm -rf $home_dir/output
+
 
     echo "======================================================="
     echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
@@ -80,6 +84,106 @@ end_ai_training()
     stop_ipfs
 }
 
+progress()
+{
+    dir=$1
+    cmd="du -sk $dir | awk '{print $1}'"
+    a=0
+    t=10
+    count=0
+
+    while true; do
+        n=$(ps -ef | grep [i]pfs | grep get | wc -l)
+
+        b=$(du -sk $dir | awk '{print $1}')
+        d=$(( b-a ))
+        speed=$(( d/t ))
+
+        if [ $b -eq 0 ]; then
+            echo "recv: $(( b )) KB, speed: $speed KB/s"
+        else
+            echo "recv: $(( b/1024 )) MB, speed: $speed KB/s"
+        fi
+
+        if [ $a -eq $b ]; then
+            count=$(( count+1 ))
+            if [ $count -eq 6 ]; then
+                echo "download stuck, retry"
+                kill -9 $ipfs_get_task_pid
+            fi
+        fi
+
+        a=$b
+
+        if [ $n -eq 0 ]; then
+            echo "ipfs get end"
+            break
+        else
+            sleep $t
+        fi
+    done
+}
+
+
+download_run_once()
+{
+    max_wait_time=60
+    c=$1
+    f=$2
+
+    rm -rf ./$f
+    echo -n "search "
+
+    ipfs get $c -o $f >/dev/null 2>&1  &
+
+    ipfs_get_task_pid=$!
+    echo "ipfs get task's pid: $ipfs_get_task_pid"
+
+
+    for i in `seq 1 $max_wait_time`;
+    do
+        if [ -e $f ]; then
+            break
+        else
+        echo -n "."
+        fi
+        sleep 1
+    done
+    echo
+
+    if [ $i -eq $max_wait_time ]; then
+        echo "error | fail to download $c to $f"
+        kill -9 $ipfs_get_task_pid >/dev/null 2>&1
+        return 1
+    else
+        progress $2
+        wait
+        return 0
+    fi
+
+}
+
+download()
+{
+    max_retry=5
+
+    for i in `seq 1 $max_retry`;
+    do
+        download_run_once $1 $2
+        if [ $? -eq 0 ]; then
+            break
+        fi
+        echo "retry ..."
+    done
+
+    if [ $i -eq $max_retry ]; then
+        echo "error | fail to download "
+        return 1
+    fi
+}
+
+
+
 echo "======================================================="
 echo "begin to exec dbc_task_imp.sh"
 
@@ -90,7 +194,10 @@ if [ ! -d $home_dir ]; then
         mkdir $home_dir
 fi
 
-rm -rf $home_dir/*
+#rm -rf $home_dir/*
+rm -rf $home_dir/data
+rm -rf $home_dir/code
+rm -rf $home_dir/output
 
 
 mkdir $home_dir/output
@@ -107,11 +214,9 @@ if [ -z "$code_dir_hash" ]; then
 fi
 echo -n "begin to download code dir: "
 echo $code_dir_hash
-ipfs get $code_dir_hash -o ./code
 
-exit_code=$?
-#echo -n "download data dir exitcode: "
-#echo $exit_code
+download $code_dir_hash ./code
+#ipfs get $code_dir_hash -o ./code
 
 if [ $? -ne 0 ]; then
         echo "download code dir failed and dbc_task.sh exit"
@@ -133,11 +238,9 @@ echo "======================================================="
 if [ -n "$data_dir_hash" ]; then
     echo -n "begin to download data dir: "
     echo $data_dir_hash
-    ipfs get $data_dir_hash -o ./data
 
-    exit_code=$?
-    #echo -n "download data dir exitcode: "
-    #echo $exit_code
+#    ipfs get $data_dir_hash -o ./data
+    download $data_dir_hash ./data
 
     if [ $? -ne 0 ]; then
         echo "download data dir failed and dbc_task.sh exit"
