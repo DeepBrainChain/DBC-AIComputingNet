@@ -44,7 +44,16 @@ if [ -d /dbc/.ipfs ]; then
   cd /tmp/go-ipfs
   cp /tmp/go-ipfs/ipfs /usr/local/bin/
   ipfs daemon --enable-gc &
-  sleep 5
+  sleep 30
+  #add ipfs bootstrap node
+  ipfs bootstrap rm --all
+
+  wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/bootstrap_nodes
+  cat ./bootstrap_nodes| while read line
+  do
+    ipfs bootstrap add $line
+  done
+  rm ./bootstrap_nodes
   cd /
 else
   mkdir $ipfs_install_path
