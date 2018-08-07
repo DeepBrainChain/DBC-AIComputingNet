@@ -1050,7 +1050,7 @@ namespace ai
                 if (AUTH_SUCCESS == resp->status  && resp->contract_state == "Active" 
                     && (task->status ==task_queueing || task->status ==task_running ))
                 {
-                    LOG_DEBUG << "auth success " << " next auth time:" << resp->report_cycle << "m";
+                    LOG_INFO << "auth success " << " next auth time:" << resp->report_cycle << "m";
                     m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, resp->report_cycle*60*1000, 1,task->task_id);
                     if (INVALID_TIMER_ID == m_auth_task_timer_id)
                     {
@@ -1078,7 +1078,7 @@ namespace ai
                     return E_SUCCESS;
                 }
 
-                LOG_DEBUG << "auth failed " << " auth_status:" << resp->status << " contract_state:" << resp->contract_state;
+                LOG_ERROR << "auth failed " << " auth_status:" << resp->status << " contract_state:" << resp->contract_state;
 
             }
             else
@@ -1143,7 +1143,7 @@ namespace ai
                 
                 else
                 {
-                    LOG_DEBUG << "auth failed. " << " drop task:" << task->task_id;
+                    LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
                     stop_task(task, task_overdue_close);
                     m_queueing_tasks.pop_front();
                 }
@@ -1173,7 +1173,7 @@ namespace ai
                 }
                 else
                 {
-                    LOG_DEBUG << "auth failed. " << " drop task:" << task->task_id;
+                    LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
                     stop_task(task, task_overdue_close);
                     m_queueing_tasks.pop_front();
                     return E_SUCCESS;
@@ -1537,8 +1537,7 @@ namespace ai
                     int32_t ret = auth_task(task);
                     if (E_SUCCESS != ret)
                     {
-                        LOG_DEBUG << "auth failed. " << "drop task:" << task->task_id;
-
+                        LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
                         stop_task(task, task_overdue_close);
                         m_queueing_tasks.pop_front();
                         return E_SUCCESS;
