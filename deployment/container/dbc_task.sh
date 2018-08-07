@@ -17,6 +17,8 @@ cd /
 
 echo "params: " $@
 
+ipfs_tgz=go-ipfs_v0.4.15_linux-amd64.tar.gz
+
 if [ $# -ne 3 ]; then
     echo "expect num of params as 3 but $#"
     exit
@@ -28,14 +30,26 @@ ipfs_install_path=/dbc/.ipfs
 if [ ! -d /dbc ]; then
     mkdir /dbc
 fi
-mkdir $ipfs_install_path
+#mkdir $ipfs_install_path
 
 export IPFS_PATH=$ipfs_install_path
+cp -f /home/dbc_utils/$ipfs_tgz /
 
 # install ipfs repo
-cp -f /home/dbc_utils/go-ipfs_v0.4.15_linux-amd64.tar.gz /
-
-bash ./install_ipfs.sh ./go-ipfs_v0.4.15_linux-amd64.tar.gz
+if [ -d /dbc/.ipfs ]; then
+  echo "reuse ipfs cache"
+  cp -f $ipfs_tgz /tmp
+  cd /tmp
+  tar xvzf $ipfs_tgz >/dev/null
+  cd /tmp/go-ipfs
+  cp /tmp/go-ipfs/ipfs /usr/local/bin/
+  ipfs daemon --enable-gc &
+  sleep 5
+  cd /
+else
+  mkdir $ipfs_install_path
+  bash ./install_ipfs.sh ./$ipfs_tgz
+fi
 
 # install curl
 if [ ! `which curl` ]; then
