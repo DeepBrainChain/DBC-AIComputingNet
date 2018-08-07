@@ -1,15 +1,15 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.3.0
+release_version=0.3.3.1
 
 echo "begin to wget DBC release package"
-wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.0/dbc-linux-mining-0.3.3.0.tar.gz
+wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/dbc-linux-mining-0.3.3.1.tar.gz
 if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
 fi
-tar -zxvf dbc-linux-mining-0.3.3.0.tar.gz
+tar -zxvf dbc-linux-mining-0.3.3.1.tar.gz
 echo "wget DBC release package finished"
 echo -e
 
@@ -71,7 +71,7 @@ if [ -z $num ];then
    sed -i "5c host_volum_dir=$default_install_directory/container_data_dir" ./dbc_repo/conf/container.conf
 else
    echo "you have choosed number:$num,host_volum_dir will be set as ${array[$num]} "
-   sudo rm -rf $default_install_directory/container_data_dir
+   sudo rm -rf ${array[$num]}/container_data_dir
    sudo mkdir ${array[$num]}/container_data_dir
    if [ $? -ne 0 ]; then
       echo "mkdir error:maybe no authorization or readonly directory"
