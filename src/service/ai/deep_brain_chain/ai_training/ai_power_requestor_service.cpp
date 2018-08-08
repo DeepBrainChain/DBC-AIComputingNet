@@ -725,14 +725,16 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            //broadcast resp
-            CONNECTION_MANAGER->send_resp_message(msg, msg->header.src_sid);
 
             //get session
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
             if (nullptr == session)
             {
                 LOG_DEBUG << "ai power requester service get session null: " << rsp_content->header.session_id;
+
+                //broadcast resp
+                CONNECTION_MANAGER->send_resp_message(msg, msg->header.src_sid);
+
                 return E_DEFAULT;
             }
 
