@@ -407,17 +407,21 @@ namespace ai
             void format_service_list()
             {
                 console_printer printer;
-                printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 20)(LEFT_ALIGN, 24)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
+                printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 16)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
 
-                printer << matrix::core::init << "node_id" << "node_name" << "service_list" <<"state" << "gpu"<< "time_stamp" << matrix::core::endl;
+                printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
 
                 for (auto &it : id_2_services)
                 {
-                    printer << matrix::core::init << it.first
+                    std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
+
+                    printer << matrix::core::init
+                            << it.first
                             << it.second.name
-                            << to_string(it.second.service_list)
-                            << it.second.kvs["state"]
+                            << ver
                             << string_util::rtrim(it.second.kvs["gpu"],'\n')
+                            << it.second.kvs["state"]
+                            << to_string(it.second.service_list)
                             << time_util::time_2_str(it.second.time_stamp)
                             << matrix::core::endl;
                 }

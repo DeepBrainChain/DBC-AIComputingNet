@@ -66,7 +66,8 @@ namespace service
             "cpu_usage",
             "mem_usage",
             "state",
-            "image"
+            "image",
+            "version"
             };
 
             int num_of_attrs = sizeof(ATTRS)/sizeof(char*);
@@ -77,6 +78,13 @@ namespace service
                 m_keys.push_back(k);
                 m_kvs[k] = "N/A";
             }
+
+            std::string ver = STR_VER(CORE_VERSION);
+            auto s = matrix::core::string_util::remove_leading_zero(ver.substr(2, 2)) + "."
+                    + matrix::core::string_util::remove_leading_zero(ver.substr(4, 2)) + "."
+                    + matrix::core::string_util::remove_leading_zero(ver.substr(6, 2)) + "."
+                    + matrix::core::string_util::remove_leading_zero(ver.substr(8, 2));
+            m_kvs["version"] = s;
         }
 
         std::vector<std::string> node_info_collection::get_keys()
