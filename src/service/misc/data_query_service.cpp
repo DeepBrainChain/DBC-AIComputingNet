@@ -153,6 +153,9 @@ namespace service
             v = m_node_info_collection.get("state");
             kvs["state"]=v;
 
+            //add version
+            v = m_node_info_collection.get("version");
+            kvs["version"]=v;
 
             info.__set_kvs(kvs);
 
@@ -505,6 +508,9 @@ namespace service
 
             v = m_node_info_collection.get("state");
             m_service_info_collection.update(m_own_node_id,"state", v);
+
+            v = m_node_info_collection.get("version");
+            m_service_info_collection.update(m_own_node_id,"version", v);
 
             //if(m_node_info_collection.is_honest_node())
             m_service_info_collection.update_own_node_time_stamp(m_own_node_id);
