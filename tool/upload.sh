@@ -27,3 +27,5 @@ echo $DIR_HASH
 
 curl http://122.112.243.44:5001/api/v0/get?arg=/ipfs/$DIR_HASH > /dev/null
 
+echo -n "DIR_HASH:"
+echo $DIR_HASH
