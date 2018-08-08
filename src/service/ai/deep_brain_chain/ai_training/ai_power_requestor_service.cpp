@@ -844,7 +844,10 @@ namespace ai
                         cts.status = it->second;
                         //update to db
                         info.status = it->second;
-                        write_task_info_to_db(info); 
+                        if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_close))
+                        {
+                            write_task_info_to_db(info); 
+                        }
                     }
                     else
                     {
