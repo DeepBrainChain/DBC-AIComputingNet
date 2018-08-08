@@ -183,6 +183,24 @@ namespace matrix
                 return s.substr(0,i+1);
             }
 
+            static std::string remove_leading_zero(std::string str)
+            {
+                if (str.empty())
+                {
+                    return str;
+                }
+
+                auto t = str;
+                t.erase(0, str.find_first_not_of('0'));
+
+                if(t.empty() && !str.empty())
+                {
+                    t = std::string("0");
+                }
+
+                return t;
+            }
+
         };
 
         class file_util
