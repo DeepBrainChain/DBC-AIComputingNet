@@ -24,6 +24,24 @@ if [ $# -ne 3 ]; then
     exit
 fi
 
+
+# install necessary tool
+if [ ! `which curl` ] || [ ! `which wget` ]; then
+    echo "apt update"
+    apt-get update
+fi
+
+if [ ! `which curl` ]; then
+    echo "install curl"
+    apt-get install --yes curl
+fi
+
+if [ ! `which wget` ]; then
+    echo "install wget"
+    apt-get install --yes wget
+fi
+
+
 # install ipfs repo to indicated directory, e.g. /dbc/
 ipfs_install_path=/dbc/.ipfs
 
@@ -67,17 +85,11 @@ if [ -d /dbc/.ipfs ]; then
 else
   mkdir $ipfs_install_path
   bash ./install_ipfs.sh ./$ipfs_tgz
+
+  #set ipfs repo
+  ipfs config Datastore.StorageMax 100GB
 fi
 
-# install curl
-if [ ! `which curl` ]; then
-    echo "install curl"
-    apt-get update
-    apt-get install --yes curl
-
-    #set ipfs repo
-    ipfs config Datastore.StorageMax 100GB
-fi
 
 # run ai-training task
 /bin/bash /dbc_task_imp.sh "$1" "$2" $3
