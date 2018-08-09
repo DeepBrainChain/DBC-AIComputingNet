@@ -206,45 +206,6 @@ namespace matrix
         class file_util
         {
         public:
-            static bool create_dir(const std::string &dir_name)
-            {                    
-                if (dir_name.empty())
-                {
-                    return false;
-                } 
-
-                try
-                {
-                    if (!bf::portable_directory_name(dir_name))
-                        return false;
-
-                    bf::path pt(dir_name);
-                    if (!bf::is_directory(pt))
-                        return false;
-
-                    if (bf::exists(pt))
-                    {
-                        if (bf::is_other(pt))
-                        {
-                            return false;
-                        }
-                        return true;
-                    }
-                
-                    bf::create_directory(pt);
-                    return bf::exists(pt);
-                }
-                catch (bf::filesystem_error &e)
-                {
-                    //cout << e.what() << endl;
-                    return false;
-                }
-                catch (...)
-                {
-                    return false;
-                }
-            }
-
             //u can provide a std::string to file_name directly
             static bool write_file(const bf::path file_name, const std::string &str, std::ios_base::openmode mode = std::ios_base::out)
             {
@@ -323,6 +284,39 @@ namespace matrix
         class path_util
         {
         public:
+            static bool create_dir(const std::string &dir_name)
+            {
+                if (dir_name.empty())
+                {
+                    return false;
+                }
+
+                try
+                {
+                    bf::path pt(dir_name);
+                    if (bf::exists(pt))
+                    {
+                        if (bf::is_other(pt))
+                        {
+                            return false;
+                        }
+                        return true;
+                    }
+
+                    bf::create_directories(pt);
+                    return bf::exists(pt);
+                }
+                catch (bf::filesystem_error &e)
+                {
+                    //cout << e.what() << endl;
+                    return false;
+                }
+                catch (...)
+                {
+                    return false;
+                }
+            }
+
             static bf::path get_exe_dir()
             {
                 bf::path exe_dir;// = bf::current_path();
@@ -351,6 +345,59 @@ namespace matrix
                 //TODO ...
 #endif
                 return exe_dir;
+            }
+
+            static bf::path get_user_appdata_path()
+            {
+                try
+                {
+#if defined(WIN32)
+                    static std::wstring s_strAppPath;
+                    if (s_strAppPath.empty())
+                    {
+                        wchar_t buf[MAX_PATH];
+                        GetEnvironmentVariableW(L"USERPROFILE", buf, sizeof(buf) / sizeof(wchar_t));
+                        std::wstring appDataPath = buf;
+
+                        OSVERSIONINFO osvi;
+                        ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+                        osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+                        BOOL bRet = GetVersionEx(&osvi);
+                        if (bRet && osvi.dwMajorVersion >= 6)
+                        {
+                            appDataPath += L"\\AppData\\Local";//vista and above
+                            s_strAppPath = appDataPath;
+                            bf::path pt(s_strAppPath);
+                            create_dir(pt.string());
+                        }
+                        else
+                        {
+                            bf::path pt = get_exe_dir();//xp and below
+                            s_strAppPath = pt.wstring();
+                        }
+                    }
+
+                    return bf::path(s_strAppPath);
+#else
+                    return get_exe_dir();
+#endif
+                }
+                catch (bf::filesystem_error &e)
+                {
+                    //cout << e.what() << endl;
+                    return bf::path();
+                }
+                catch (...)
+                {
+                    return bf::path();
+                }
+            }
+
+            static bf::path get_user_appdata_dbc_path()
+            {
+                bf::path pt = get_user_appdata_path() /= "DBC";
+                create_dir(pt.string());
+                return pt;
             }
         };
 
