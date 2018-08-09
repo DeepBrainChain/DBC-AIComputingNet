@@ -77,7 +77,7 @@ dbc_package()
     mkdir $dbc_repo_dir/tool
 
     # dbc exe and default configure
-    cp ../../../output/dbc      $dbc_repo_dir/
+    cp $base_dir/output/dbc      $dbc_repo_dir/
 
     # strip
     if [ $os_name == 'linux' ]; then
@@ -88,7 +88,18 @@ dbc_package()
         strip -S $dbc_repo_dir/dbc
     fi
 
-    cp -R ../../../conf         $dbc_repo_dir/
+    cp -R $base_dir/conf         $dbc_repo_dir/
+
+    # handle bill related config
+    if [ $type == 'mining' ]; then
+        # enable bill related config
+        sed -i -e 's/^#bill_/bill_/g'  $dbc_repo_dir/conf/core.conf
+        sed -i -e '/^$/d'  $dbc_repo_dir/conf/core.conf
+    else
+        # remove bill related config
+        sed -i -e '/^#bill_/d'  $dbc_repo_dir/conf/core.conf
+        sed -i -e '/^$/d'  $dbc_repo_dir/conf/core.conf
+    fi
 
     if [ $type == 'client' ];then
         echo "    substep: rm container.conf for client"
