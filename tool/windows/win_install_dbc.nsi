@@ -47,7 +47,7 @@ SetCompressor lzma
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "dbc_win_setup.exe"
-InstallDir "$PROGRAMFILES\DBC"
+InstallDir "C:\DBC"
 ShowInstDetails show
 ShowUnInstDetails show
 BrandingText "DBC for AI"
@@ -176,9 +176,9 @@ Function .onGUIEnd
 		Exec	 '"$INSTDIR\ipfs\ipfs.exe" daemon'
 		Sleep 45000
 		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap rm --all'
-		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H'
+		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap add /ip4/18.223.4.215/tcp/4001/ipfs/QmeZR4HygPvdBvheovYR4oVTvaA4tWxDPTgskkPWqbjkGy'
 		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap add /ip4/49.51.49.192/tcp/4001/ipfs/QmRVgowTGwm2FYhAciCgA5AHqFLWG4AvkFxv9bQcVB7m8c'
-		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap add /ip4/49.51.49.145/tcp/4001/ipfs/QmPgyhBk3s4aC4648aCXXGigxqyR5zKnzXtteSkx8HT6K3'
+;		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap add /ip4/49.51.49.145/tcp/4001/ipfs/QmTBEUexjn5PQfwnTFccREdXdnh7qB1qvx2To2ESE8UJ5T'
 		nsExec::Exec '"$INSTDIR\ipfs\ipfs.exe" bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5'
 	${EndIf}
 FunctionEnd

@@ -51,8 +51,8 @@ echo ------------------------------------------
 echo begin to upload "%file_dir%" to ipfs ......
 
 set IP[0]=122.112.243.44
-set IP[1]=49.51.49.145
-set IP[2]=49.51.49.192
+set IP[1]=49.51.49.192
+set IP[2]=18.223.4.215
 
 set /a index=%random%%%3
 set first_idx=%index%
