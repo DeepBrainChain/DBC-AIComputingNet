@@ -47,7 +47,7 @@ namespace ai
             task_stopped = 8,
             task_succefully_closed = 16,
             task_abnormally_closed = 32,
-            task_overdue_close     = 64
+            task_overdue_closed     = 64
         };
 
         //__BEGIN_DECLS
