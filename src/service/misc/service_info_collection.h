@@ -36,7 +36,7 @@ namespace service
             void init(std::string );
             void add(std::string id, node_service_info s);
             void add(service_info_map);
-            service_info_map get(std::string filter);
+            std::shared_ptr<service_info_map> get(std::string filter);
             void update_own_node_time_stamp(std::string own_node_id);
             void remove_unlived_nodes(int32_t time_in_second);
 

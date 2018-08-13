@@ -239,6 +239,7 @@ namespace service
             if (req->op == ai::dbc::OP_SHOW_SERVICE_LIST)
             {
                 cmd_resp->filter = req->filter;
+                cmd_resp->sort = req->sort;
                 cmd_resp->op = req->op;
                 cmd_resp->id_2_services = m_service_info_collection.get(cmd_resp->filter);
 
@@ -249,6 +250,15 @@ namespace service
             }
             else if (req->op == ai::dbc::OP_SHOW_NODE_INFO)
             {
+                if (id_generator().check_node_id(req->d_node_id) != true)
+                {
+                    auto cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
+                    cmd_resp->error("invalid node id: " + req->d_node_id);
+
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_show_resp).name(), cmd_resp);
+                    return E_DEFAULT;
+                }
+
                 if(req->d_node_id == req->o_node_id)
                 {
                     auto cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();

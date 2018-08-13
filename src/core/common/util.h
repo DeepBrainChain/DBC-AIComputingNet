@@ -185,20 +185,20 @@ namespace matrix
 
             static std::string remove_leading_zero(std::string str)
             {
-                if (str.empty())
+                bool is_input_str_empty = str.empty();
+                if (is_input_str_empty)
                 {
                     return str;
                 }
 
-                auto t = str;
-                t.erase(0, str.find_first_not_of('0'));
+                str.erase(0, str.find_first_not_of('0'));
 
-                if(t.empty() && !str.empty())
+                if(str.empty() && !is_input_str_empty)
                 {
-                    t = std::string("0");
+                    str = std::string("0");
                 }
 
-                return t;
+                return str;
             }
 
         };
