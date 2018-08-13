@@ -650,7 +650,7 @@ namespace ai
                     return E_DEFAULT;
                 }
 
-                LOG_INFO << "stop training, task_status: " << sp_task->status << endl;
+                LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
                 auto first_task = m_queueing_tasks.front();
                 if (first_task->task_id == sp_task->task_id)
                 {                     
@@ -1144,7 +1144,7 @@ namespace ai
                 else
                 {
                     LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
-                    stop_task(task, task_overdue_close);
+                    stop_task(task, task_overdue_closed);
                     m_queueing_tasks.pop_front();
                 }
             }
@@ -1174,7 +1174,7 @@ namespace ai
                 else
                 {
                     LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
-                    stop_task(task, task_overdue_close);
+                    stop_task(task, task_overdue_closed);
                     m_queueing_tasks.pop_front();
                     return E_SUCCESS;
                 }
@@ -1538,7 +1538,7 @@ namespace ai
                     if (E_SUCCESS != ret)
                     {
                         LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
-                        stop_task(task, task_overdue_close);
+                        stop_task(task, task_overdue_closed);
                         m_queueing_tasks.pop_front();
                         return E_SUCCESS;
                     }
