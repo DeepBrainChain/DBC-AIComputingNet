@@ -355,11 +355,35 @@ namespace ai
             std::vector<std::string> keys;
             int32_t op;
             std::string filter;
+            std::string sort;
 
         public:
-            cmd_show_req(): op(OP_SHOW_UNKNOWN)
+            cmd_show_req(): op(OP_SHOW_UNKNOWN),
+                            sort("gpu")
             {
 
+            }
+
+            void set_sort(std::string f)
+            {
+
+                const char* fields[] = {
+                "gpu",
+                "name",
+                "version",
+                "state",
+                "timestamp",
+                "service"
+                };
+
+                int n = sizeof(fields)/sizeof(char*);
+                bool found = false;
+                for (int i=0; (i < n && !found) ; i++ )
+                {
+                    if ( f == std::string(fields[i]) ) found = true;
+                }
+
+                sort = found ? f : "gpu";
             }
         };
 
@@ -369,17 +393,20 @@ namespace ai
             std::string o_node_id;
             std::string d_node_id;
             std::map<std::string,std::string> kvs;
-            std::map<std::string, node_service_info> id_2_services;
+            std::shared_ptr< std::map<std::string, node_service_info> > id_2_services;
 
             int32_t op;
             std::string err;
 
             std::string filter;
+            std::string sort;
+
 
         public:
 
             cmd_show_resp(): op(OP_SHOW_UNKNOWN),
-                             err("")
+                             err(""),
+                             sort("gpu")
             {
 
             }
@@ -404,6 +431,7 @@ namespace ai
                 return out;
             }
 
+
             void format_service_list()
             {
                 console_printer printer;
@@ -411,14 +439,40 @@ namespace ai
 
                 printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
 
-                for (auto &it : id_2_services)
+
+                // order by indicated filed
+                std::map<std::string, node_service_info> s_in_order;
+                for (auto &it : *id_2_services)
+                {
+                    std::string k;
+                    if (sort == "name" )
+                    {
+                        k = it.second.name;
+                    }
+                    else if (sort == "timestamp")
+                    {
+                        k = it.second.time_stamp;
+                    }
+                    else
+                    {
+                        k = it.second.kvs[sort];
+                    }
+
+                    auto v = it.second;
+                    v.kvs["id"]=it.first;
+                    s_in_order[k + it.first] = v;  // "k + id" is unique
+                }
+
+
+                for (auto &it : s_in_order)
                 {
                     std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
 
                     printer << matrix::core::init
-                            << it.first
+                            << it.second.kvs["id"]
                             << it.second.name
                             << ver
+                            //<< it.second.kvs["gpu"]
                             << string_util::rtrim(it.second.kvs["gpu"],'\n')
                             << it.second.kvs["state"]
                             << to_string(it.second.service_list)

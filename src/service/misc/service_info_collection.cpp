@@ -77,7 +77,7 @@ namespace service
          * return service info from cache
          * @return
          */
-        service_info_map service_info_collection::get(std::string filter)
+        std::shared_ptr<service_info_map> service_info_collection::get(std::string filter)
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -87,7 +87,7 @@ namespace service
             int i = 0;
             const int MAX_NODES_TO_BE_SHOWN = 100;
 
-            service_info_map result;
+            auto result = std::make_shared<service_info_map>();
 
             for (auto &it : m_id_2_info)
             {
@@ -95,7 +95,7 @@ namespace service
 
                 if (++i > MAX_NODES_TO_BE_SHOWN) break;
 
-                result[it.first] = it.second;
+                (*result)[it.first] = it.second;
             }
 
             return result;

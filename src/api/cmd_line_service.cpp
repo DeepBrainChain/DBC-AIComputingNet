@@ -21,6 +21,10 @@
 
 #include "log.h"
 #include "filter/simple_expression.h"
+#include <chrono>
+#include <thread>
+#include <future>
+#include <ctime>
 
 static void cmd_line_task()
 {
@@ -38,6 +42,12 @@ namespace ai
 {
     namespace dbc
     {
+        std::string get_line_from_cin() {
+            std::string line;
+            std::getline(std::cin, line);
+            return line;
+        }
+
         static void print_cmd_usage()
         {
             cout << "we support commands: " << endl;
@@ -444,7 +454,8 @@ namespace ai
                     ("help,h", "get task running logs")
                     ("tail", bpo::value<std::string>(), "get log from tail")
                     ("head", bpo::value<std::string>(), "get log from head")
-                    ("task,t", bpo::value<std::string>(), "task id");
+                    ("task,t", bpo::value<std::string>(), "task id")
+                    ("interval,i", bpo::value<int>(), "time interval in seconds, will refresh log periodically, click 'q' to end");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -496,15 +507,56 @@ namespace ai
                         req->number_of_lines = (uint16_t)lines;
                     }
 
-                    std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
-                    if (nullptr == resp)
+                    int interval = 0;
+                    if (vm.count("interval") || vm.count("i"))
                     {
-                        cout << endl << "command time out" << endl;
+                        interval = vm["interval"].as<int>();
+
+                        if (interval < 5)
+                        {
+                            interval = 5;
+                        }
                     }
-                    else
+
+
+                    bool loop = (interval > 0);
+
+                    //loop ...
+                    std::future<std::string> future;
+                    if (loop)
                     {
-                        format_output(resp);
+                        future = std::async(std::launch::async, get_line_from_cin);
                     }
+
+                    do
+                    {
+                        {
+                            std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
+                            if (nullptr == resp)
+                            {
+                                cout << endl << "command time out" << endl;
+                            }
+                            else
+                            {
+                                format_output(resp);
+                            }
+                        }
+
+
+                        if (!loop)
+                        {
+                            return;
+                        }
+
+
+                        if (future.wait_for(std::chrono::seconds(interval)) == std::future_status::ready)
+                        {
+                            auto line = future.get();
+                            if (line == std::string("q")) return;
+
+                            future = std::async(std::launch::async, get_line_from_cin);
+                        }
+                    }while(true);
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
@@ -633,6 +685,7 @@ namespace ai
             }
         }
 
+
         void cmd_line_service::show(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -645,7 +698,9 @@ namespace ai
                         ("node,n", bpo::value<std::string>(), "print node's hardware info of indicated node id")
                         ("keys,k", bpo::value<std::vector<std::string>>(), "if -n is specified, only print the value of indicated attribute.")
                         ("service,s", "print nodes' service info in the network")
-                        ("filter,f", bpo::value<std::vector<std::string>>(), "if -s is specified, only print node matchs the filter.");
+                        ("filter,f", bpo::value<std::vector<std::string>>(), "if -s is specified, only print node matchs the filter.")
+                        ("order,o", bpo::value<std::string>(), "if -s is specified, print node order by specific field.")
+                        ("interval,i", bpo::value<int>(), "time interval in seconds, if -s is specified, refresh service info periodically, click 'q' to end");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -708,6 +763,12 @@ namespace ai
                             return;
                         }
                     }
+
+                    if (vm.count("order") || vm.count("o"))
+                    {
+                        req->set_sort(vm["order"].as<std::string>());
+                    }
+
                 }
 
                 if(OP_SHOW_UNKNOWN == req->op)
@@ -717,17 +778,73 @@ namespace ai
                     return;
                 }
 
-                std::shared_ptr<cmd_show_resp> resp = m_handler.invoke<cmd_show_req, cmd_show_resp>(req);
-                if (nullptr == resp)
+
+                int interval = 0;
+                if (vm.count("interval") || vm.count("i"))
                 {
-                    cout << endl << "command time out" << endl;
-                    return;
+                    interval = vm["interval"].as<int>();
+
+                    if (interval < 5)
+                    {
+                        interval = 5;
+                    }
                 }
-                else
+
+
+                bool loop = (interval > 0);
+
+                //loop ...
+                std::future<std::string> future;
+                if (loop)
                 {
-                    LOG_DEBUG << "cmd_show_resp received!";
-                    format_output(resp);
+                    future = std::async(std::launch::async, get_line_from_cin);
                 }
+
+                do
+                {
+                    if (loop)
+                    {
+                        #if  defined(__linux__) || defined(MAC_OSX)
+                            system("clear");
+                        #elif defined(WIN32)
+                            system("cls");
+                        #endif
+
+                        const time_t t = time(0);
+                        std::cout << asctime(localtime(&t)) << std::endl;
+                    }
+
+                    // display service list
+                    {
+                        std::shared_ptr<cmd_show_resp> resp = m_handler.invoke<cmd_show_req, cmd_show_resp>(req);
+
+
+                        if (nullptr == resp)
+                        {
+                            cout << endl << "command time out" << endl;
+                        }
+                        else
+                        {
+                            LOG_DEBUG << "cmd_show_resp received!";
+                            format_output(resp);
+                        }
+                    }
+
+                    if(!loop)
+                    {
+                        return;
+                    }
+
+
+                    if (future.wait_for(std::chrono::seconds(interval)) == std::future_status::ready)
+                    {
+                        auto line = future.get();
+                        if ( line == std::string("q") ) return;
+
+                        future = std::async(std::launch::async, get_line_from_cin);
+                    }
+
+                }while(loop);
 
             }
             catch (...)
