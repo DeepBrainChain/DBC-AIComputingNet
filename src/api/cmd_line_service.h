@@ -72,6 +72,9 @@ namespace ai
             void clear(int argc, char* argv[]);
             void ps(int argc, char* argv[]);
 
+            void result(int argc, char* argv[]);
+            void system_cmd(int argc, char* argv[]);
+
         protected:
 
             template<typename resp_type>

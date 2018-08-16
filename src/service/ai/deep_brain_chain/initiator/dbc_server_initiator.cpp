@@ -252,7 +252,8 @@ namespace ai
                 ("ai_training,a", "run as ai training service provider")
                 ("name,n", bpo::value<std::string>(), "node name")
                 ("max_connect", bpo::value<int32_t>(), "")
-                ("path", bpo::value<std::string>(), "path of dbc exe file");
+                ("path", bpo::value<std::string>(), "path of dbc exe file")
+                ("id", "get local node id");
 
             try
             {
@@ -271,6 +272,7 @@ namespace ai
                 {
                     std::string ver = STR_VER(CORE_VERSION);
                     cout << ver.substr(2, 2) << "." << ver.substr(4, 2) << "." << ver.substr(6, 2) << "." << ver.substr(8, 2);
+                    cout << "\n";
                     return E_EXIT_PARSE_COMMAND_LINE;
                 }
                 else if (vm.count("init"))
@@ -280,6 +282,31 @@ namespace ai
                 else if (vm.count("daemon") || vm.count("d"))
                 {
                     return on_daemon();
+                }
+                else if (vm.count("id"))
+                {
+                    bpo::variables_map vm;
+
+                    std::shared_ptr<matrix::core::module> mdl(nullptr);
+                    mdl = std::dynamic_pointer_cast<module>(std::make_shared<env_manager>());
+                    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+                    auto ret = mdl->init(vm);
+                    if (E_SUCCESS != ret)
+                    {
+                        return ret;
+                    }
+
+                    mdl = std::dynamic_pointer_cast<module>(std::make_shared<conf_manager>());
+                    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+                    ret = mdl->init(vm);
+                    if (E_SUCCESS != ret)
+                    {
+                        return ret;
+                    }
+
+                    cout << CONF_MANAGER->get_node_id();
+                    cout << "\n";
+                    return E_EXIT_PARSE_COMMAND_LINE;
                 }
                 //ignore
                 else

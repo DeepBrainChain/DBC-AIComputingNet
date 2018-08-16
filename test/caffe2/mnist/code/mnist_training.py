@@ -64,7 +64,7 @@ def check_val():
 
 
 if __name__=="__main__":
-    raw_train = np.loadtxt('./data/train.csv',delimiter=',')
+    raw_train = np.loadtxt('../data/train.csv',delimiter=',')
 
     train,val = np.split(raw_train,[int(0.8*raw_train.shape[0])])
     print train.shape,val.shape
