@@ -61,8 +61,19 @@ fi
 echo "end to init ipfs"
 sleep $sleep_time
 
-
 cp ./swarm.key $ipfs_path/
+
+#config gateway port
+port=8080
+while true ; do
+    if netstat -na | grep $port | grep LISTEN ; then
+        port=$(($port +1))
+    else
+        break
+    fi
+done
+ipfs config Addresses.Gateway "/ip4/127.0.0.1/tcp/$port"
+echo "config ipfs gateway port as $port"
 
 #start ipfs
 #echo "======================================================="

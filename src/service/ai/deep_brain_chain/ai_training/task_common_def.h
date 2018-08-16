@@ -34,6 +34,8 @@
 #define MAX_ENTRY_FILE_NAME_LEN                                 128
 #define MAX_ENGINE_IMGE_NAME_LEN                                128
 
+#define LOG_AUTO_FLUSH_INTERVAL_IN_SECONDS                    5
+
 namespace ai
 {
     namespace dbc

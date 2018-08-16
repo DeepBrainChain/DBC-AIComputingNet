@@ -21,7 +21,9 @@ function get {
     "gpu")
         if ! which nvidia-smi>/dev/null; then echo "N/A";
         else
-            nvidia-smi -L | awk -F "(" '{print $1}' | awk -F ":" '{print $2}' | uniq -c | awk '{out=$1" * "; for(i=2;i<=NF;i++){out=out$i}; print out}' | tr '\n' ' '
+            #nvidia-smi -L | awk -F "(" '{print $1}' | awk -F ":" '{print $2}' | uniq -c | awk '{out=$1" * "; for(i=2;i<=NF;i++){out=out$i}; print out}' | tr '\n' ' '
+            v=$(for i in `ls /proc/driver/nvidia/gpus`; do cat /proc/driver/nvidia/gpus/$i/information | grep Model | awk '{out=""; for(i=2;i<=NF;i++){out=out$i}; print out}' ;done)
+            echo $v | tr " " "\n" | uniq -c | awk '{print $1" * "$2}' | tr '\n' ' '
         fi
     ;;
 
@@ -32,7 +34,7 @@ function get {
     "gpu_usage")
         if ! which nvidia-smi>/dev/null; then echo "N/A";
         else
-            nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv | grep -v "utilization" | awk -F "," '{print "gpu: "$1 "\nmem:"$2}'
+            nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv | grep -v "uti   lization" | awk -F "," '{print "gpu: "$1 "\nmem:"$2}'
         fi
     ;;
 

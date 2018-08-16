@@ -7,10 +7,10 @@ cp -f /home/dbc_utils/dbc_task_imp.sh /
 cp -f /home/dbc_utils/swarm.key /
 cp -f /home/dbc_utils/install_ipfs.sh /
 
-cp /home/dbc_utils/upload.sh /usr/bin/
+cp /home/dbc_utils/dbc_upload /usr/bin/
 cp /home/dbc_utils/dos2unix /usr/bin/
 
-chmod +x /usr/bin/upload.sh
+chmod +x /usr/bin/dbc_upload
 chmod +x /usr/bin/dos2unix
 
 cd /
