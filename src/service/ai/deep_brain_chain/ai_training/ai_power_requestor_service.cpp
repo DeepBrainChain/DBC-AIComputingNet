@@ -593,7 +593,8 @@ namespace ai
             for (auto info : vec_task_infos)
             {
                 //add unclosed task to request
-                if (info.status & (task_unknown | task_queueing | task_running))
+                //if (info.status & (task_unknown | task_queueing | task_running))
+                if (info.status < task_stopped)
                 {                    
                     //case: more than MAX_TASK_SHOWN_ON_LIST
                     if (vec_task_infos_to_show->size() < MAX_TASK_SHOWN_ON_LIST)
@@ -769,7 +770,8 @@ namespace ai
                 if ((it != task_ids->end()))
                 {
                     info.status = it->second;
-                    if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                    //if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                    if (info.status >= task_stopped)
                     {
                         write_task_info_to_db(info);
                     }
@@ -844,7 +846,8 @@ namespace ai
                         cts.status = it->second;
                         //update to db
                         info.status = it->second;
-                        if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                        //if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                        if (info.status >= task_stopped)
                         {
                             write_task_info_to_db(info); 
                         }
