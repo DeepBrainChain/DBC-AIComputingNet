@@ -41,11 +41,11 @@ using namespace matrix::core;
 using namespace matrix::service_core;
 using namespace ai::dbc;
 
-
 namespace ai
 {
     namespace dbc
     {
+        
 
         ai_power_provider_service::ai_power_provider_service()
             : m_prov_training_task_db()
@@ -243,6 +243,7 @@ namespace ai
                 ("cpus", bpo::value<double>()->default_value(0), "")
                 ("shm_size", bpo::value<int64_t>()->default_value(0), "")
                 ("host_volum_dir", bpo::value<std::string>()->default_value(""), "")
+                ("auto_pull_image", bpo::value<bool>()->default_value(true), "")
                 ("engine_reg", bpo::value<std::string>()->default_value(""), "");
 
             try
@@ -279,8 +280,7 @@ namespace ai
                 {
                     return ret;
                 }
-
-                //std::string engine_reg = "(^dbctraining/.*-(cpu|gpu):v[0-9]\.[0-9]\.[0-9])";
+                m_auto_pull_image = m_container_args["auto_pull_image"].as<bool>();
                 set_task_engine(m_container_args["engine_reg"].as<std::string>());
             }
             catch (const boost::exception & e)
@@ -355,7 +355,6 @@ namespace ai
 
             //task queue size query
             SUBSCRIBE_BUS_MESSAGE(typeid(service::get_task_queue_size_req_msg).name());
-
         }
 
         void ai_power_provider_service::init_invoker()
@@ -435,6 +434,7 @@ namespace ai
         {
             m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
             m_timer_invokers[AI_AUTH_TASK_TIMER] = std::bind(&ai_power_provider_service::on_auth_task_timer, this, std::placeholders::_1);
+            m_timer_invokers[AI_PULLING_IMAGE_TIMER] = std::bind(&ai_power_provider_service::on_pull_image_timer, this, std::placeholders::_1);
             m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, AI_TRAINING_TASK_TIMER_INTERVAL);
             assert(INVALID_TIMER_ID != m_training_task_timer_id);
         }
@@ -581,8 +581,25 @@ namespace ai
             write_task_to_db(task);
             LOG_INFO << "ai power provider service flush task to db: " << req->body.task_id;
 
-            //add to task queue
-            m_queueing_tasks.push_back(task);
+            //add to task queue, if first task is task_pulling, then add the task to the head of the task queue
+            if (! m_queueing_tasks.empty())
+            {
+                auto f_task = m_queueing_tasks.front();
+                if (task_pulling_image == f_task->status)
+                {
+                    LOG_INFO << "first task is task_pulling_image. add task to the head";
+                    m_queueing_tasks.push_front(task);
+                }
+                else
+                {
+                    m_queueing_tasks.push_back(task);
+                }
+            }
+            else
+            {
+                m_queueing_tasks.push_back(task);
+            }
+
             m_training_tasks[task->task_id] = task;
             LOG_INFO << "ai power provider service task(" << req->body.task_id << ") is in task_queueing";
 
@@ -662,6 +679,7 @@ namespace ai
                 }
                 
                 stop_task(sp_task, task_stopped);
+                detach_pull_map(sp_task->training_engine, sp_task->task_id);
 
                 auth_task(sp_task);
 
@@ -1098,8 +1116,18 @@ namespace ai
             req->task_id = task->task_id;
 
             req->start_time = boost::str(boost::format("%d") % task->start_time);
-            
-            req->task_state = to_training_task_status_string(task->status==task_queueing ? task_running:task->status);
+            int8_t status = task->status;
+            if (task_queueing == status || task_pulling_image == status)
+            {
+                status = task_running;
+            }
+
+            if (status >= task_abnormally_closed)
+            {
+                status = task_abnormally_closed;
+            }
+
+            req->task_state = to_training_task_status_string(status);
             req->sign_type = ECDSA;
 
             req->end_time = boost::str(boost::format("%d") % task->end_time);
@@ -1145,6 +1173,7 @@ namespace ai
                 {
                     LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
                     stop_task(task, task_overdue_closed);
+                    detach_pull_map(task->training_engine, task->task_id);
                     m_queueing_tasks.pop_front();
                 }
             }
@@ -1152,14 +1181,38 @@ namespace ai
             return E_SUCCESS;
         }
 
+        //wait pull image too long, stop pull.
+        int32_t ai_power_provider_service::on_pull_image_timer(std::shared_ptr<core_timer> timer)
+        {
+            LOG_DEBUG << "pull image cost time too long";
+            if (m_queueing_tasks.empty())
+            {
+                LOG_DEBUG << "task queueing is empty";
+                return E_SUCCESS;
+            }
+
+            std::string engine_name = timer->get_session_id();
+            //check again
+            if (m_container_client->exist_docker_image(engine_name) != E_SUCCESS)
+            {
+                LOG_DEBUG << "pull image cost time too long. no image pulled";
+                detach_pull_map(engine_name, PULLING_ERROR);
+                return E_SUCCESS;
+            }
+
+            detach_pull_map(engine_name, PULLING_SUCCESS);
+
+            return E_SUCCESS;
+        }
+
         int32_t ai_power_provider_service::on_training_task_timer(std::shared_ptr<core_timer> timer)
         {
+            check_all_pull_image_state();
             if (0 == m_queueing_tasks.size())
             {
                 LOG_DEBUG << "training queuing task is empty";
                 return E_SUCCESS;
             }
-
             //check first task in queue
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
             if (task_queueing == task->status)
@@ -1178,7 +1231,11 @@ namespace ai
                     m_queueing_tasks.pop_front();
                     return E_SUCCESS;
                 }
-                ///////////////////////////////////////////////
+            }
+
+            if (task_pulling_image == task->status)
+            {
+                return start_exec_training_task(task);
             }
             else if (task_running == task->status)
             {
@@ -1426,15 +1483,27 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if (0 == task->error_times || task_pulling_image == task->status)
+            {
+                if (pull_image(task) != E_SUCCESS)
+                {
+                    return E_DEFAULT;
+                }                
+            }
+
             //first time or contain id empty -> create container
             if (0 == task->error_times || task->container_id.empty())
             {
+                if (task_pulling_image == task->status)
+                {
+                    return E_SUCCESS;
+                }
+
                 //container config
                 std::shared_ptr<container_config> config = get_container_config(task);
                 if (nullptr == config)
                 {
                     LOG_ERROR << "ai power provider service get container config error";
-
                     task->error_times++;
                     write_task_to_db(task);
                     return E_DEFAULT;
@@ -1640,7 +1709,7 @@ namespace ai
                     LOG_DEBUG << "ai power provider service insert ai training task to task map, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << task->status;
 
                     //go next
-                    if (task_running == task->status || task_queueing == task->status)
+                    if (task_running == task->status || task_queueing == task->status || task_pulling_image == task->status)
                     {
                         //add to queue
                         m_queueing_tasks.push_back(task);
@@ -1700,7 +1769,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t ai_power_provider_service::stop_task(std::shared_ptr<ai_training_task> task, training_task_status status)
+        int32_t ai_power_provider_service::stop_task(std::shared_ptr<ai_training_task> task, training_task_status status, bool auth_req)
         {
             if (task_running == task->status)
             {
@@ -1710,10 +1779,215 @@ namespace ai
                     LOG_ERROR << "ai power provider service stop container error, container id: " << task->container_id;
                 }
             }
-            
+
             task->__set_end_time(time_util::get_time_stamp_ms());
             task->__set_status(status);
             write_task_to_db(task);
+
+            if (auth_req)
+            {
+                if (INVALID_TIMER_ID != m_auth_task_timer_id)
+                {
+                    remove_timer(m_auth_task_timer_id);
+                    m_auth_task_timer_id = INVALID_TIMER_ID;
+                }
+                auth_task(task);
+                //m_queueing_tasks.pop_front();
+                LOG_INFO << "before drop task. task queue len " << m_queueing_tasks.size();
+                m_queueing_tasks.remove(task);
+                //m_queueing_tasks.remove_if();
+                LOG_INFO << "after drop task. task queue len " << m_queueing_tasks.size();
+            }
+            
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::pull_image(std::shared_ptr<ai_training_task> task)
+        {
+            if (E_SUCCESS == m_container_client->exist_docker_image(task->training_engine))
+            {
+                return E_SUCCESS;
+            }
+
+            //if do not allow auto pull image, then pop task directly
+            if (! m_auto_pull_image)
+            {
+                LOG_ERROR << "docker image do not exist, should config auto_pull_image=true, or pull image manually. task req image:" << task->training_engine;
+                stop_task(task, task_noimage_closed, NEED_AUTH);
+                return E_DEFAULT;
+            }
+
+            //create pull process
+            if (nullptr == m_pull_image_map[task->training_engine])
+            {
+                if (m_docker_root_dir.empty())
+                {
+                    std::shared_ptr<docker_info> docker_info_ptr = m_container_client->get_docker_info();
+                    if (!docker_info_ptr)
+                    {
+                        LOG_ERROR << "docker get docker info faild. drop task" << task->task_id;
+                        stop_task(task, task_abnormally_closed, NEED_AUTH);
+                        return E_DEFAULT;
+                    }
+                    m_docker_root_dir = docker_info_ptr->root_dir;
+                }
+
+                //if the partion do not have enough space, stop task
+                if (get_disk_free(m_docker_root_dir) < m_min_disk_free)
+                {
+                    LOG_ERROR << "docker get docker info faild. the disk have no enough space. the space: " << get_disk_free(m_docker_root_dir) << "MB";
+                    stop_task(task, task_nospace_closed, NEED_AUTH);
+                    return E_DEFAULT;
+                }
+
+                std::shared_ptr<image_manager> image_mng = std::make_shared<image_manager>();
+                if (!image_mng || image_mng->start_pull(task->training_engine) != E_SUCCESS)
+                {
+                    LOG_DEBUG << "start docker pulling image failed. status" << to_training_task_status_string(task->status);
+                    stop_task(task, task_noimage_closed, NEED_AUTH);
+                    return E_DEFAULT;
+                }
+
+                LOG_DEBUG << "docker pulling image. now status " << to_training_task_status_string(task->status);
+                uint32_t pulling_timer = this->add_timer(AI_PULLING_IMAGE_TIMER, AI_PULLING_IMAGE_TIMER_INTERVAL, 1, task->training_engine);
+                LOG_DEBUG << "docker pulling image. add timer. engine name: " << to_training_task_status_string(task->status) << " timer: " << pulling_timer;
+                if (INVALID_TIMER_ID == pulling_timer)
+                {
+                    image_mng->terminate_pull();
+                    LOG_ERROR << "start timer error. pull image failed. image: " << to_training_task_status_string(task->status);
+                    stop_task(task, task_noimage_closed, NEED_AUTH);
+                    return E_DEFAULT;
+                }
+                //cache the timer
+                image_mng->set_timer_id(pulling_timer);
+                m_pull_image_map[task->training_engine] = image_mng;
+                image_mng->add_task(task->task_id);
+            }
+
+            if (task_queueing == task->status)
+            {
+                task->error_times++;
+                task->__set_status(task_pulling_image);
+                LOG_DEBUG << "docker pulling image. change status " << to_training_task_status_string(task->status);
+                write_task_to_db(task);
+                auto image_mng = m_pull_image_map[task->training_engine];
+                image_mng->add_task(task->task_id);
+            }
+
+            m_queueing_tasks.pop_front();
+            m_queueing_tasks.push_back(task);
+            LOG_INFO << "task state is pulling image. Now move it to queuen back. task is:" << task->task_id;
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::check_pull_image(std::string  & training_engine)
+        {
+            auto image_mng = m_pull_image_map[training_engine];
+            if (image_mng != nullptr)
+            {                
+                if (PULLING == image_mng->check_pull_state())
+                {
+                    //if task is pulling state, then move to the queue back
+                    LOG_DEBUG << "pulling: docker pull " << training_engine;
+                    return E_PULLING_IMAGE;
+                }
+                else
+                {
+                    //should remove timer
+                    remove_timer(image_mng->get_timer_id());
+                    if (m_container_client->exist_docker_image(training_engine) != E_SUCCESS)
+                    {
+                        LOG_DEBUG << "docker pull image fail. engine: " << training_engine;
+                        LOG_WARNING << "ai power provider service pull image failed";
+                        detach_pull_map(training_engine, PULLING_ERROR);
+                        return E_DEFAULT;
+                    }
+                    LOG_DEBUG << "docker pull image success. engine: " << training_engine;
+                    detach_pull_map(training_engine, PULLING_SUCCESS);
+                }
+            }
+            
+            return E_SUCCESS;
+        }
+
+        //when task is stopped, need detach the task from the pull map
+        int32_t ai_power_provider_service::detach_pull_map(std::string & training_engine, const std::string & task_id)
+        {
+            auto image_mng = m_pull_image_map[training_engine];
+            if (! image_mng)
+            {
+                return E_SUCCESS;
+            }
+            LOG_INFO << "before detach task from engine pull." << " task id:" << task_id << " engine:" << training_engine << "task count" << image_mng->get_task_count();
+            image_mng->rm_task(task_id);
+            LOG_INFO << "after detach task from engine pull." << " task id:" << task_id << " engine:" << training_engine << "task count" << image_mng->get_task_count();
+            
+            if (image_mng->get_task_count() < 1)
+            {
+                LOG_INFO << "pull engine image:" << training_engine << "task count:" << image_mng->get_task_count() << " terminate pull";
+                image_mng->terminate_pull();
+                m_pull_image_map.erase(training_engine);
+            }
+            return E_SUCCESS;
+        }
+
+        //when pull is over, need detach the engine from the map
+        int32_t ai_power_provider_service::detach_pull_map(std::string & training_engine, pull_state finished)
+        {
+            auto image_mng = m_pull_image_map[training_engine];
+            //if pull image have beed finished, then delete the map relation 
+            if (PULLING_SUCCESS == finished || PULLING_ERROR == finished)
+            {
+                if (nullptr != image_mng)
+                {
+                    image_mng->terminate_pull();
+                    image_mng = nullptr;
+                    LOG_INFO << "before erase training engine" << training_engine << "map len:" << m_pull_image_map.size();
+                    m_pull_image_map.erase(training_engine);
+                    LOG_INFO << "after erase training engine" << training_engine << "map len:" << m_pull_image_map.size();
+                }
+            }
+            //if pulling error, the stop all relative task.
+            //for (auto s_task : m_queueing_tasks)
+            for (auto it = m_queueing_tasks.begin(); it != m_queueing_tasks.end(); )
+            {
+                if ((*it)->training_engine == training_engine)
+                {
+                    if (PULLING_SUCCESS == finished)
+                    {
+                        //PULLING SUCCESS, chang task state to task_queueing, wait training
+                        LOG_INFO << "set state to task_quueing." << (*it)->task_id;
+                        (*it)->__set_status(task_queueing);                        
+                    }
+                    else
+                    {
+                        //PULLING error, chang task state to error, stop training
+                        LOG_ERROR << "pull image error, stop task. task_id" << (*it)->task_id << " engine:" << (*it)->training_engine;
+                        auto s_task = *it;
+                        it = ++it;
+                        stop_task(s_task, task_noimage_closed, NEED_AUTH);
+                        continue;
+                    }
+                    it++;
+                }
+            }
+            return E_SUCCESS;
+        }
+
+        //check pull image state
+        int32_t ai_power_provider_service::check_all_pull_image_state()
+        {
+            for (auto it = m_pull_image_map.begin(); it != m_pull_image_map.end(); it++)
+            {
+               std::string training_engine = it->first;
+               LOG_INFO << "check pull image " << training_engine;
+               if (check_pull_image(training_engine) != E_PULLING_IMAGE)
+               {
+                   return E_SUCCESS;
+               }
+            }
+
             return E_SUCCESS;
         }
     }
