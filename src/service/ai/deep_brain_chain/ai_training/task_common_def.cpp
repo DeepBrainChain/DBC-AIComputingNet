@@ -34,6 +34,12 @@ namespace ai
                 return "task_abnormally_closed";
             case task_overdue_closed:
                 return "task_overdue_closed";
+            case task_pulling_image:
+                return "task_pulling_image";
+            case task_noimage_closed:
+                return "task_noimage_closed";
+            case task_nospace_closed:
+                return "task_nospace_closed";
             default:
                 return DEFAULT_STRING;
             }

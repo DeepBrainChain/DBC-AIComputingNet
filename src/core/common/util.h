@@ -33,6 +33,7 @@
 #elif defined(__linux__)
 #include <limits.h>
 #include <sys/sysinfo.h>
+#include <sys/vfs.h> 
 #ifdef _POSIX_C_SOURCE
 #undef _POSIX_C_SOURCE
 #endif
@@ -434,9 +435,36 @@ namespace matrix
                 mem = s_info.totalram;
                 mem_swap = mem + s_info.totalswap;
             }
-
 #endif
+        }
 
+        inline uint32_t get_disk_free(const std::string & disk_path)
+        {
+#if defined(__linux__)
+            struct statfs diskInfo;
+            statfs(disk_path.c_str(), &diskInfo);
+            uint64_t b_size = diskInfo.f_bsize;
+
+            uint64_t free = b_size * diskInfo.f_bfree;
+            //MB
+            free = free >> 20;
+            return free;
+#endif
+            return 0;
+        }
+
+        inline uint32_t get_disk_total(const std::string & disk_path)
+        {
+#if defined(__linux__)
+            struct statfs diskInfo;
+            statfs(disk_path.c_str(), &diskInfo);
+            uint64_t b_size = diskInfo.f_bsize;
+            uint64_t totalSize = b_size * diskInfo.f_blocks;
+
+            uint32_t total = totalSize >> 20;
+            return total;
+#endif
+            return 0;
         }
 
     }
