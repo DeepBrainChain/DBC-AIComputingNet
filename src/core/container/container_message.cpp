@@ -313,6 +313,37 @@ namespace matrix
 
         }
 
+        void docker_info::from_string(const std::string & buf)
+        {
+            try
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(buf.c_str());              //left to later not all fields set
+                if (doc.Parse<0>(buf.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse container_inspect_response file error:" << GetParseError_En(doc.GetParseError());
+                    return;
+                }
+                //message
+                if (!doc.HasMember("DockerRootDir"))
+                {
+                    LOG_ERROR << "container client inspect container resp has no id state";
+                    return;
+                }
+
+                rapidjson::Value &root_dir = doc["DockerRootDir"];
+                if (root_dir.GetType() == rapidjson::kStringType)
+                {
+                    this->root_dir = root_dir.GetString();
+                }
+
+            }
+            catch (...)
+            {
+                LOG_ERROR << "container client get docker info exception";
+            }
+        }
+
     }
 
 }
