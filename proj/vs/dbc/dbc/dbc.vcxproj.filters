@@ -439,6 +439,9 @@
     <ClCompile Include="..\..\..\..\src\core\network\flow_ctrl.cpp">
       <Filter>src\core\network</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\image_manager.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\alarm\alarm_def.h">
@@ -1358,6 +1361,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\network\flow_ctrl.h">
       <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\image_manager.h">
+      <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
