@@ -41,11 +41,11 @@ using namespace matrix::core;
 using namespace matrix::service_core;
 using namespace ai::dbc;
 
-
 namespace ai
 {
     namespace dbc
     {
+        
 
         ai_power_provider_service::ai_power_provider_service()
             : m_prov_training_task_db()
@@ -54,7 +54,6 @@ namespace ai
             , m_container_client(std::make_shared<container_client>(m_container_ip, m_container_port))
             , m_nvidia_client(std::make_shared<container_client>(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT))
             , m_training_task_timer_id(INVALID_TIMER_ID)
-            , m_auth_task_timer_id(INVALID_TIMER_ID)
             , m_nv_config(nullptr)
         {
 
@@ -243,6 +242,7 @@ namespace ai
                 ("cpus", bpo::value<double>()->default_value(0), "")
                 ("shm_size", bpo::value<int64_t>()->default_value(0), "")
                 ("host_volum_dir", bpo::value<std::string>()->default_value(""), "")
+                ("auto_pull_image", bpo::value<bool>()->default_value(true), "")
                 ("engine_reg", bpo::value<std::string>()->default_value(""), "");
 
             try
@@ -279,8 +279,7 @@ namespace ai
                 {
                     return ret;
                 }
-
-                //std::string engine_reg = "(^dbctraining/.*-(cpu|gpu):v[0-9]\.[0-9]\.[0-9])";
+                m_auto_pull_image = m_container_args["auto_pull_image"].as<bool>();
                 set_task_engine(m_container_args["engine_reg"].as<std::string>());
             }
             catch (const boost::exception & e)
@@ -332,10 +331,6 @@ namespace ai
         int32_t ai_power_provider_service::service_exit()
         {
             remove_timer(m_training_task_timer_id);
-            if (INVALID_TIMER_ID != m_auth_task_timer_id)
-            {
-                remove_timer(m_auth_task_timer_id);
-            }
             return E_SUCCESS;
         }
 
@@ -355,7 +350,6 @@ namespace ai
 
             //task queue size query
             SUBSCRIBE_BUS_MESSAGE(typeid(service::get_task_queue_size_req_msg).name());
-
         }
 
         void ai_power_provider_service::init_invoker()
@@ -434,7 +428,6 @@ namespace ai
         void ai_power_provider_service::init_timer()
         {
             m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
-            m_timer_invokers[AI_AUTH_TASK_TIMER] = std::bind(&ai_power_provider_service::on_auth_task_timer, this, std::placeholders::_1);
             m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, AI_TRAINING_TASK_TIMER_INTERVAL);
             assert(INVALID_TIMER_ID != m_training_task_timer_id);
         }
@@ -580,8 +573,6 @@ namespace ai
             //flush to db
             write_task_to_db(task);
             LOG_INFO << "ai power provider service flush task to db: " << req->body.task_id;
-
-            //add to task queue
             m_queueing_tasks.push_back(task);
             m_training_tasks[task->task_id] = task;
             LOG_INFO << "ai power provider service task(" << req->body.task_id << ") is in task_queueing";
@@ -649,24 +640,9 @@ namespace ai
                     LOG_ERROR << "bad user try to stop task" << endl;
                     return E_DEFAULT;
                 }
-
-                LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
-                auto first_task = m_queueing_tasks.front();
-                if (first_task->task_id == sp_task->task_id)
-                {                     
-                    if (INVALID_TIMER_ID != m_auth_task_timer_id)
-                    {
-                        remove_timer(m_auth_task_timer_id);
-                        m_auth_task_timer_id = INVALID_TIMER_ID;
-                    }
-                }
-                
+                LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;                
                 stop_task(sp_task, task_stopped);
-
-                auth_task(sp_task);
-
-                //remove from queue
-                m_queueing_tasks.erase(it);
+                auth_task(sp_task);               
             }
             else
             {
@@ -884,10 +860,18 @@ namespace ai
             {
                 log_content = "log info query only valid when status is running or closed";
             }
+            else if (it->second->status == task_pulling_image)
+            {
+                if (m_pull_image_mng!=nullptr)
+                {
+                    log_content = m_pull_image_mng->get_out_log(it->second->training_engine);
+                }
+            }
             else
             {
                 log_content = "task abnormal. get log content error";
             }
+
 
             //response content
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
@@ -917,7 +901,6 @@ namespace ai
                 }
 
             }
-
 
             rsp_content->body.__set_log(log);
 
@@ -999,13 +982,14 @@ namespace ai
             return formatted_str;
         }
         
-        int32_t ai_power_provider_service::auth_task(std::shared_ptr<ai_training_task> task, bool is_report_cycle)
+        int32_t ai_power_provider_service::auth_task(std::shared_ptr<ai_training_task> task)
         {
-            //if task have been authed before running and is not timer trigger the auth, then return directly 
-            if (task->start_time > 0 && task->status == task_queueing && !is_report_cycle)
+            if (false ==task_need_auth(task))
             {
                 return E_SUCCESS;
             }
+            
+            LOG_INFO << "auth task:" << task->task_id;
 
             if (0 == task->start_time)
             {
@@ -1031,32 +1015,23 @@ namespace ai
                 LOG_DEBUG << "sign error";
                 return E_DEFAULT;
             }
-            
+            //m_task_timer_map.clear();
+            m_auth_time_interval =  DEFAULT_AUTH_REPORT_CYTLE * 60 * 1000;
             if (m_bill_client != nullptr)
             {
                 std::shared_ptr<auth_task_resp> resp = m_bill_client->post_auth_task(task_req);
                 if (nullptr == resp)
                 {
                     LOG_WARNING << "bill system can not arrive." << " Next auth time:" <<  DEFAULT_AUTH_REPORT_CYTLE << "m";
-                    m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, DEFAULT_AUTH_REPORT_CYTLE*60*1000, 1, task->task_id);
-                    if (INVALID_TIMER_ID == m_auth_task_timer_id)
-                    {
-                        LOG_WARNING << "invalid timer id";
-                        return E_SUCCESS;
-                    }
                     return E_SUCCESS;
                 }
 
                 if (AUTH_SUCCESS == resp->status  && resp->contract_state == "Active" 
-                    && (task->status ==task_queueing || task->status ==task_running ))
+                    && (task->status < task_stopped))
                 {
                     LOG_INFO << "auth success " << " next auth time:" << resp->report_cycle << "m";
-                    m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, resp->report_cycle*60*1000, 1,task->task_id);
-                    if (INVALID_TIMER_ID == m_auth_task_timer_id)
-                    {
-                        LOG_WARNING << "invalid timer id";
-                        return E_SUCCESS;
-                    }
+                    //m_task_timer_map[task->task_id] = resp->report_cycle * 60 * 1000;
+                    m_auth_time_interval = resp->report_cycle * 60 * 1000;
                     return E_SUCCESS;
                 }
 
@@ -1068,12 +1043,6 @@ namespace ai
                 //if status=-1, means the rsp message is not real auth_resp
                 if (AUTH_NET_ERROR == resp->status)
                 {
-                    m_auth_task_timer_id = this->add_timer(AI_AUTH_TASK_TIMER, DEFAULT_AUTH_REPORT_CYTLE*60*1000, 1, task->task_id);
-                    if (INVALID_TIMER_ID == m_auth_task_timer_id)
-                    {
-                        LOG_WARNING << "invalid timer id";
-                        return E_SUCCESS;
-                    }
                     LOG_WARNING << "bill system can not arrive." << " Next auth time:" <<  DEFAULT_AUTH_REPORT_CYTLE << "m";
                     return E_SUCCESS;
                 }
@@ -1098,8 +1067,18 @@ namespace ai
             req->task_id = task->task_id;
 
             req->start_time = boost::str(boost::format("%d") % task->start_time);
-            
-            req->task_state = to_training_task_status_string(task->status==task_queueing ? task_running:task->status);
+            int8_t status = task->status;
+            if (task_queueing == status || task_pulling_image == status)
+            {
+                status = task_running;
+            }
+
+            if (status >= task_abnormally_closed)
+            {
+                status = task_abnormally_closed;
+            }
+
+            req->task_state = to_training_task_status_string(status);
             req->sign_type = ECDSA;
 
             req->end_time = boost::str(boost::format("%d") % task->end_time);
@@ -1111,47 +1090,6 @@ namespace ai
             return req;
         }
 
-        int32_t ai_power_provider_service::on_auth_task_timer(std::shared_ptr<core_timer> timer)
-        {
-            m_auth_task_timer_id = INVALID_TIMER_ID;
-            if (m_queueing_tasks.empty())
-            {
-                LOG_DEBUG << "task queueing is empty";
-                return E_SUCCESS;
-            }
-
-            std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
-            std::string task_id = timer->get_session_id();
-            if (task_id != task->task_id)
-            {
-                LOG_DEBUG << "task id different,  front_task:" << task->task_id << " timer_task: " << task_id;
-                return E_SUCCESS;
-            }
-
-            LOG_DEBUG <<"on_auth_task_timer" << " task is:" << task->task_id;
-            if (task_running == task->status || task_queueing == task->status)
-            {
-                ////////////auth_task to ocs/////////////////
-                int32_t ret = auth_task(task, true);
-
-                if (E_SUCCESS == ret)
-                {
-                    LOG_DEBUG << "continue training: " << task->task_id << " status: " << to_training_task_status_string(task->status);
-                    
-                    return ret;
-                }
-                
-                else
-                {
-                    LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
-                    stop_task(task, task_overdue_closed);
-                    m_queueing_tasks.pop_front();
-                }
-            }
-
-            return E_SUCCESS;
-        }
-
         int32_t ai_power_provider_service::on_training_task_timer(std::shared_ptr<core_timer> timer)
         {
             if (0 == m_queueing_tasks.size())
@@ -1159,26 +1097,17 @@ namespace ai
                 LOG_DEBUG << "training queuing task is empty";
                 return E_SUCCESS;
             }
-
             //check first task in queue
             std::shared_ptr<ai_training_task> task = m_queueing_tasks.front();
             if (task_queueing == task->status)
+            {  
+                start_exec_training_task(task);
+                return E_SUCCESS;
+            }
+            else if (task_pulling_image == task->status)
             {
-                ////////////auth_task -> ocs/////////////////
-                int32_t ret = auth_task(task);
-                if (E_SUCCESS == ret)
-                {                    
-                    LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
-                    return ret = start_exec_training_task(task);
-                }
-                else
-                {
-                    LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
-                    stop_task(task, task_overdue_closed);
-                    m_queueing_tasks.pop_front();
-                    return E_SUCCESS;
-                }
-                ///////////////////////////////////////////////
+                check_pull_image_state(task);
+                return E_SUCCESS;
             }
             else if (task_running == task->status)
             {
@@ -1334,19 +1263,10 @@ namespace ai
                 config->host_config.binds.push_back(mount_dbc_utils_dir);
             }
 
-            if (std::string::npos != (config->image).find("gpu"))
+            std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
+            if (nv_config != nullptr)
             {
-                //nv config
-                std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
-                if (nullptr == nv_config)
-                {
-                    LOG_ERROR << "ai power provider service get nv config error";
-                    return nullptr;
-                }
-
-                //env
-                //config->env.push_back(AI_TRAINING_ENV_PATH);
-                //config->env.push_back(AI_TRAINING_LD_LIBRARY_PATH);
+                //use nvidia-docker
                 config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
                 config->env.push_back(AI_TRAINING_NVIDIA_DRIVER_CAPABILITIES);
                 //config->env.push_back(AI_TRAINING_LIBRARY_PATH);
@@ -1394,8 +1314,6 @@ namespace ai
                 nv_mount.propagation = DEFAULT_STRING;
 
                 config->host_config.mounts.push_back(nv_mount);*/
-
-                return config;
             }
             return config;
         }
@@ -1404,15 +1322,21 @@ namespace ai
         {
             assert(nullptr != task);
 
+            m_auth_time_interval = 0;            
+            if (E_SUCCESS == auth_task(task))
+            {                    
+                LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+            }
+            else
+            {
+                LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
+                stop_task(task, task_overdue_closed);
+                return E_SUCCESS;
+            }
+
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
-                if (INVALID_TIMER_ID != m_auth_task_timer_id)
-                {
-                    remove_timer(m_auth_task_timer_id);
-                    m_auth_task_timer_id = INVALID_TIMER_ID;
-                }
-
                 task->__set_status(task_abnormally_closed);                
                 auth_task(task);
 
@@ -1426,6 +1350,24 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            int32_t check_ret = m_container_client->exist_docker_image(task->training_engine);
+
+            if (E_SUCCESS != check_ret)
+            {
+                if (E_IMAGE_NOT_FOUND == check_ret)
+                {
+                    pull_image(task);
+                    return E_SUCCESS;
+                }
+                else
+                {
+                    LOG_ERROR << "check docker image error. image:" << task->training_engine;
+                    stop_task(task, task_abnormally_closed);
+                    auth_task(task);
+                    return E_DEFAULT;
+                }
+            }
+
             //first time or contain id empty -> create container
             if (0 == task->error_times || task->container_id.empty())
             {
@@ -1434,7 +1376,6 @@ namespace ai
                 if (nullptr == config)
                 {
                     LOG_ERROR << "ai power provider service get container config error";
-
                     task->error_times++;
                     write_task_to_db(task);
                     return E_DEFAULT;
@@ -1496,14 +1437,8 @@ namespace ai
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
-                if (INVALID_TIMER_ID != m_auth_task_timer_id)
-                {
-                    remove_timer(m_auth_task_timer_id);
-                    m_auth_task_timer_id = INVALID_TIMER_ID;
-                }
-
                 task->__set_status(task_abnormally_closed);
-   
+                LOG_ERROR<<"task abnormal close, report to bill system." << " task:" << task->task_id;
                 //report task state
                 auth_task(task);
                 //flush to db
@@ -1531,17 +1466,14 @@ namespace ai
             {
                 LOG_DEBUG << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
 
-                //dbc maybe restart and the task is  running state, at this time, dbc should send auth req
-                if (INVALID_TIMER_ID == m_auth_task_timer_id)
+                int32_t ret =  auth_task(task);
+                    
+                if (E_SUCCESS != ret)
                 {
-                    int32_t ret = auth_task(task);
-                    if (E_SUCCESS != ret)
-                    {
-                        LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
-                        stop_task(task, task_overdue_closed);
-                        m_queueing_tasks.pop_front();
-                        return E_SUCCESS;
-                    }
+                    LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
+                    stop_task(task, task_overdue_closed);
+                    //m_queueing_tasks.pop_front();
+                    return E_SUCCESS;
                 }
                     
                 return E_SUCCESS;
@@ -1550,15 +1482,10 @@ namespace ai
             else if (0 != resp->state.exit_code)
             {
                 LOG_DEBUG << "ai power provider service restart container while inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
-                if (INVALID_TIMER_ID != m_auth_task_timer_id)
-                {
-                    remove_timer(m_auth_task_timer_id);
-                    m_auth_task_timer_id = INVALID_TIMER_ID;
-                }
 
                 task->__set_status(task_abnormally_closed);
-
                 task->error_times++;
+                LOG_ERROR<<"task abnormal close, report to bill system." << " task:" << task->task_id;
                 auth_task(task);
                 write_task_to_db(task);
                 m_queueing_tasks.pop_front();
@@ -1569,13 +1496,9 @@ namespace ai
             }
             else
             {
-                if (INVALID_TIMER_ID != m_auth_task_timer_id)
-                {
-                    remove_timer(m_auth_task_timer_id);
-                    m_auth_task_timer_id = INVALID_TIMER_ID;
-                }
                 task->__set_status(task_succefully_closed);
                 LOG_INFO << "ai power provider service inspect container closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_ERROR<<"task success close, report to bill system." << " task:" << task->task_id;
 
                 int32_t ret = auth_task(task);
                 //flush to db
@@ -1640,7 +1563,7 @@ namespace ai
                     LOG_DEBUG << "ai power provider service insert ai training task to task map, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << task->status;
 
                     //go next
-                    if (task_running == task->status || task_queueing == task->status)
+                    if (task_running == task->status || task_queueing == task->status || task_pulling_image == task->status)
                     {
                         //add to queue
                         m_queueing_tasks.push_back(task);
@@ -1702,6 +1625,14 @@ namespace ai
 
         int32_t ai_power_provider_service::stop_task(std::shared_ptr<ai_training_task> task, training_task_status status)
         {
+            m_queueing_tasks.remove(task);
+            
+            //task have been stopped
+            if (task->status >= task_stopped)
+            {
+                return E_SUCCESS;
+            }
+            
             if (task_running == task->status)
             {
                 int32_t ret = m_container_client->stop_container(task->container_id);
@@ -1710,11 +1641,219 @@ namespace ai
                     LOG_ERROR << "ai power provider service stop container error, container id: " << task->container_id;
                 }
             }
-            
+
+            if (task_pulling_image == task->status)
+            {
+                end_pull(task);
+            }
+
             task->__set_end_time(time_util::get_time_stamp_ms());
             task->__set_status(status);
             write_task_to_db(task);
+                        
             return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::pull_image(std::shared_ptr<ai_training_task> task)
+        {
+            //if do not allow auto pull image, then pop task directly
+            if (! m_auto_pull_image)
+            {
+                LOG_ERROR << "docker image do not exist, should config auto_pull_image=true, or pull image manually. task req image:" << task->training_engine;
+                stop_task(task, task_noimage_closed);
+                auth_task(task);
+                return E_DEFAULT;
+            }
+
+            //create pull process
+            if (m_docker_root_dir.empty())
+            {
+                std::shared_ptr<docker_info> docker_info_ptr = m_container_client->get_docker_info();
+                if (!docker_info_ptr)
+                {
+                    LOG_ERROR << "docker get docker info faild. drop task" << task->task_id;
+                    stop_task(task, task_abnormally_closed);
+                    auth_task(task);
+                    return E_DEFAULT;
+                }
+                m_docker_root_dir = docker_info_ptr->root_dir;
+            }
+
+            //if the partion do not have enough space, stop task
+            if (get_disk_free(m_docker_root_dir) < m_min_disk_free)
+            {
+                LOG_ERROR << "docker get docker info faild. the disk have no enough space. the space: " << get_disk_free(m_docker_root_dir) << "MB";
+                stop_task(task, task_nospace_closed);
+                auth_task(task);
+                return E_DEFAULT;
+            }
+
+            if (nullptr == m_pull_image_mng)
+            {
+                m_pull_image_mng = std::make_shared<image_manager>();
+            }
+
+            if (PULLING == m_pull_image_mng->check_pull_state())
+            {
+                if (m_pull_image_mng->get_pull_image_name() == task->training_engine )
+                {
+                    return E_SUCCESS;
+                }
+                else
+                {
+                    //if pulling image is other task triggered, then terminate the pulling.
+                    m_pull_image_mng->terminate_pull();
+                }
+            }
+
+            if (!m_pull_image_mng || m_pull_image_mng->start_pull(task->training_engine) != E_SUCCESS)
+            {
+                LOG_DEBUG << "start docker pulling image failed. status" << to_training_task_status_string(task->status)
+                          << " task id:" << task->task_id << " image engine:" << task->training_engine;
+                stop_task(task, task_noimage_closed);
+                auth_task(task);
+                return E_DEFAULT;
+            }
+
+            //cache the time
+            m_pull_image_mng->set_start_time(time_util::get_time_stamp_ms());
+
+            if (task_queueing == task->status)
+            {
+                task->__set_status(task_pulling_image);
+                LOG_DEBUG << "docker pulling image. change status to" << to_training_task_status_string(task->status) 
+                          << " task id:" << task->task_id << " image engine:" << task->training_engine;
+                write_task_to_db(task);
+            }
+
+            return E_PULLING_IMAGE;
+        }
+
+        int32_t ai_power_provider_service::check_pull_image(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == m_pull_image_mng)
+            {
+                return E_DEFAULT;
+            }
+
+            if (m_pull_image_mng->get_pull_image_name() != task->training_engine)
+            {
+                return E_DEFAULT;
+            }
+
+            if (PULLING == m_pull_image_mng->check_pull_state())
+            {
+                LOG_DEBUG << "pulling: docker pull " << task->training_engine;
+                return E_SUCCESS;
+            }
+            else
+            {
+                if (m_container_client->exist_docker_image(task->training_engine) != E_SUCCESS)
+                {
+                    LOG_DEBUG << "docker pull image fail. engine: " << task->training_engine;
+                    LOG_WARNING << "ai power provider service pull image failed";
+                    return E_DEFAULT;
+                }
+                LOG_DEBUG << "docker pull image success. engine: " << task->training_engine;
+                task->__set_status(task_queueing);
+                LOG_DEBUG << "change task status to " << to_training_task_status_string(task->status) << " task id:" << task->task_id;
+            }
+            
+            return E_SUCCESS;
+        }
+
+        //when pull is over, need detach the engine from the map
+        int32_t ai_power_provider_service::end_pull(std::shared_ptr<ai_training_task> task)
+        {
+            if (! m_pull_image_mng)
+            {
+                return E_SUCCESS;
+            }
+
+            if (task->training_engine != m_pull_image_mng->get_pull_image_name())
+            {
+                LOG_ERROR << "pull image is not " << task->training_engine;
+                return E_SUCCESS;
+            }
+
+            if (nullptr != m_pull_image_mng)
+            {
+                m_pull_image_mng->terminate_pull();
+            }
+            
+            return E_SUCCESS;
+        }
+
+        //check pull image state
+        int32_t ai_power_provider_service::check_pull_image_state(std::shared_ptr<ai_training_task> task)
+        {
+            if (task->status != task_pulling_image)
+            {
+                LOG_ERROR << "task state is not task_pulling_image. task id:" << task->task_id;
+                return E_DEFAULT;
+            }
+            
+            if (m_pull_image_mng != nullptr && m_pull_image_mng->get_pull_image_name() == task->training_engine)
+            {
+                if ((time_util::get_time_stamp_ms() - m_pull_image_mng->get_start_time()) >= AI_PULLING_IMAGE_TIMER_INTERVAL)
+                {
+                    //pull error
+                    LOG_ERROR << "pull image too long." << " engine image:" << task->training_engine;
+                    stop_task(task, task_noimage_closed);
+                    
+                }
+                else
+                {
+                    if (check_pull_image(task) != E_SUCCESS)
+                    {
+                        stop_task(task, task_noimage_closed);
+                    }
+                }
+
+                int32_t ret = auth_task(task);
+                
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
+                    stop_task(task, task_overdue_closed);
+                    return E_SUCCESS;
+                }
+            }
+            else
+            {
+               //task state is pulling, but image is not pulling. so dbc may be restarted. 
+                task->__set_status(task_queueing);
+            }
+
+            return E_SUCCESS;
+        }
+        
+        bool ai_power_provider_service::task_need_auth(std::shared_ptr<ai_training_task> task)
+        {
+            if (task->status < task_stopped)
+            {
+                ////dbc maybe restart and the task is  running state, at this time, dbc should send auth req
+                if (0 == m_auth_time_interval)
+                {
+                    return true;
+                }
+
+                int64_t interval = time_util::get_time_stamp_ms() - task->end_time;
+                if (interval >= m_auth_time_interval)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            //final state should report
+            if (task->status >= task_stopped)
+            {
+                return true;
+            }
+            
+            return false;
         }
     }
 
