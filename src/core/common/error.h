@@ -23,6 +23,9 @@
 #define E_EXISTED                                           -9                  //dest already exist
 #define E_INACTIVE_CHANNEL                                   -10                 //broadcast error, no active channel
 #define E_NONCE                                             -11                  // nonce error
+#define E_IMAGE_NOT_FOUND                                   -12                  // docker image not found
+#define E_PULLING_IMAGE                                     -13
+
 
 
 #endif
