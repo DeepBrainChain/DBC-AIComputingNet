@@ -31,7 +31,6 @@ extern const int32_t DEFAULT_MAX_CONNECTION_NUM;
 extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
 extern const int32_t DEFAULT_SPEED;
-
 extern const std::string conf_manager_name;
 
 namespace matrix

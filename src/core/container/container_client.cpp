@@ -506,6 +506,82 @@ namespace matrix
             m_remote_port = remote_port;
         }
 
+        int32_t container_client::exist_docker_image(const std::string & image_name)
+        {
+            std::string endpoint = "/images/";
+            if (image_name.empty())
+            {
+                return E_DEFAULT;
+            }
+
+            endpoint += image_name;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect image error: " << e.what();
+                return E_DEFAULT;
+            }
+
+            LOG_DEBUG << "inspect image resp:" << resp.body;
+
+            if (200 == resp.status)
+            {
+                return E_SUCCESS;
+            }
+
+            if (404 == resp.status)
+            {
+                return E_IMAGE_NOT_FOUND;
+            }
+
+            return ret;
+        }
+
+        std::shared_ptr<docker_info> container_client::get_docker_info()
+        {
+            std::string endpoint = "/info";
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client get docker info error: " << e.what();
+                return nullptr;
+            }
+
+            if (E_SUCCESS != ret)
+            {
+                LOG_DEBUG << "get docker info failed: " << resp.body;
+                return nullptr;
+            }
+
+            LOG_DEBUG << "get docker info: " << resp.body;
+
+            //parse resp
+            std::shared_ptr<docker_info> docker_ptr = std::make_shared<docker_info>();
+            docker_ptr->from_string(resp.body);
+
+            return docker_ptr;
+        }
+
     }
 
 }
