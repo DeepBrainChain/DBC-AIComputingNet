@@ -25,8 +25,8 @@ namespace matrix
             AUTH_SUCCESS =    0
         } ;
 
-        const int32_t DEFAULT_AUTH_REPORT_CYTLE = 60;
-        const int32_t MAX_AUTH_REPORT_CYTLE = 3* DEFAULT_AUTH_REPORT_CYTLE;
+        const int64_t DEFAULT_AUTH_REPORT_CYTLE = 60;
+        const int64_t MAX_AUTH_REPORT_CYTLE = 3* DEFAULT_AUTH_REPORT_CYTLE;
         class auth_task_req : public json_io_buf
         {
         public:
@@ -58,7 +58,7 @@ namespace matrix
 
             std::string contract_state;
 
-            int32_t report_cycle = DEFAULT_AUTH_REPORT_CYTLE;
+            int64_t report_cycle = DEFAULT_AUTH_REPORT_CYTLE;
             void from_string(const std::string & buf);
         };
     }

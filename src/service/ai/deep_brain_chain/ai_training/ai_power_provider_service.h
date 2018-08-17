@@ -19,15 +19,19 @@
 #include "prettywriter.h"
 #include "document.h"
 #include "bill_client.h"
-
+#include <boost/filesystem.hpp>
+#include <boost/process.hpp>
+#include "image_manager.h"
 
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
 
 #define AI_TRAINING_TASK_TIMER                                      "training_task"
-#define AI_AUTH_TASK_TIMER                                          "auth_task"
+//#define AI_AUTH_TASK_TIMER                                          "auth_task"
+//#define AI_PULLING_IMAGE_TIMER                                          "ai_pulling_image"
 #define AI_TRAINING_TASK_TIMER_INTERVAL                 (30 * 1000)                                                 //30s timer
+#define AI_PULLING_IMAGE_TIMER_INTERVAL                 (5*3600* 1000)                                                 //5h timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                  4
 #define AI_TRAINING_MAX_TASK_COUNT                                    3
 
@@ -49,8 +53,10 @@ using namespace boost::asio::ip;
 
 #define DEFAULT_SPLIT_COUNT                                                         2
 #define DEFAULT_NVIDIA_DOCKER_PORT                                                3476
+const bool NEED_AUTH = true;
 
 namespace image_rj = rapidjson;
+namespace bp = boost::process;
 namespace ai
 {
 	namespace dbc
@@ -132,8 +138,6 @@ namespace ai
 
             int32_t on_training_task_timer(std::shared_ptr<core_timer> timer);
 
-            int32_t on_auth_task_timer(std::shared_ptr<core_timer> timer);
-
             int32_t start_exec_training_task(std::shared_ptr<ai_training_task> task);
 
             int32_t check_training_task_status(std::shared_ptr<ai_training_task> task);
@@ -147,8 +151,16 @@ namespace ai
 
             int32_t check_cpu_config(const double & cpu_info);
             int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
+            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status status, bool auth_req=false);
 
-            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status status);
+            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
+            int32_t auth_task(std::shared_ptr<ai_training_task> task);
+            int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
+            int32_t pull_image(std::shared_ptr<ai_training_task> task);
+            int32_t check_pull_image(std::shared_ptr<ai_training_task> task);
+            int32_t end_pull(std::shared_ptr<ai_training_task> task, pull_state finished = PULLING_SUCCESS);
+            int32_t check_pull_image_state(std::shared_ptr<ai_training_task> task);
+
 
         protected:
 
@@ -157,8 +169,6 @@ namespace ai
             std::string m_container_ip;
 
             uint16_t m_container_port;
-
-            //std::string m_container_image;
 
             std::shared_ptr<container_client> m_container_client;
 
@@ -171,7 +181,7 @@ namespace ai
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
 
             uint32_t m_training_task_timer_id;
-            uint32_t m_auth_task_timer_id;
+            //uint32_t m_auth_task_timer_id;
 
             std::shared_ptr<nvidia_config> m_nv_config;
             variables_map m_container_args;
@@ -179,12 +189,16 @@ namespace ai
             const int64_t m_nano_cpu = 1000000000;
             const int64_t m_g_bytes = 1073741824;
 
-            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
-            int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_report_cycle=false);
-            int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
+            //min disk_free 1024MB
+            const uint32_t m_min_disk_free = 1024;
+  
+            std::string m_docker_root_dir = "";
+            std::unordered_map<std::string, std::shared_ptr<image_manager>> m_pull_image_map;
+            bool m_auto_pull_image = true;
+            std::unordered_map<std::string, int64_t> m_task_timer_map;
         };
 
-	}
+    }
 
 }
 

@@ -372,6 +372,14 @@ namespace matrix
             std::string content;
         };
 
+        class docker_info
+        {
+        public:
+            std::string id = "";
+            std::string root_dir = "";
+            void from_string(const std::string & buf);
+        };
+
     }
 
 }
