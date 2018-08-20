@@ -51,12 +51,43 @@ namespace ai
             // timestamp pattern: 2018-08-14T13:
             if (s.length() > TIMESTAMP_STR_LENGTH && (s[0] == '2' && s[4] == '-' && s[7] == '-'))
             {
-                return s.substr(0, 30);
+                return s.substr(0, TIMESTAMP_STR_LENGTH);
             }
             else
             {
                 return "";
             }
+        }
+
+
+        /**
+         *
+         * @param s, one line of log text
+         * @return true if it is a image download hash, otherwise return false
+         */
+        bool cmd_logs_resp::is_image_download_str(std::string &s)
+        {
+            // image download prefix
+            // c6c4b840310b: Verifying Checksum
+            // c6c4b840310b: Download complete
+            if (s.length() > IMAGE_HASH_STR_MAX_LENGTH || s.length() <= IMAGE_HASH_STR_PREFIX_LENGTH)
+            {
+                return false;
+            }
+
+            if (s[IMAGE_HASH_STR_PREFIX_LENGTH] != ':')
+            {
+                return false;
+            }
+
+
+            auto t = s.substr(0, IMAGE_HASH_STR_PREFIX_LENGTH);
+            if (!std::all_of(t.begin(), t.end(), ::isxdigit))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /**
@@ -141,51 +172,69 @@ namespace ai
 
             LOG_DEBUG << "recv: " << result_info;
 
+
+            // support logs from one ai training node
             auto it = peer_node_logs.begin();
+            if (it == peer_node_logs.end())
+            {
+                return;
+            }
+
             std::string date;
             std::string task_completed="end to exec dbc_task.sh";
 
-            for (; it != peer_node_logs.end(); it++)
+            std::string s;
+            const char *p = (it->log_content).c_str();
+            size_t size = (it->log_content).size();
+
+            for (size_t i = 0; i < size; i++, p++)
             {
-                std::string s;
-                const char *p = (it->log_content).c_str();
-                size_t size = (it->log_content).size();
-
-                for (size_t i = 0; i < size; i++, p++)
+                if (char_filter.find(*p) == char_filter.end())
                 {
-                    if (char_filter.find(*p) == char_filter.end())
-                    {
-                        continue;
-                    }
-
-                    s.append(1, *p);
-                    if (*p == '\n')
-                    {
-                        // skip duplicate lines
-                        date = get_log_date(s);
-                        if (!date.empty() && m_series.last_log_date.compare(date) < 0)
-                        {
-                            cout << s;
-                        }
-
-                        // check if task completed
-                        if ( s.find(task_completed) != std::string::npos)
-                        {
-                            m_series.enable = false;
-                        }
-
-                        s.clear();
-                    }
+                    continue;
                 }
 
-                if (!s.empty())
+                s.append(1, *p);
+                if (*p == '\n')
                 {
-                    // in case no "\n" at the end. for example, progress bar.
-                    cout << s << "\n";
+                    // skip duplicate lines
+                    date = get_log_date(s);
+                    if (!date.empty())
+                    {
+                        if (m_series.last_log_date.compare(date) < 0)
+                            cout << s;
+                    }
+                    else if (is_image_download_str(s))
+                    {
+                        // print image download log that has no timestamp info
+                        if (m_series.image_download_logs.size() < MAX_NUM_IMAGE_HASH_LOG )
+                        {
+                            if (m_series.image_download_logs.find(s) == m_series.image_download_logs.end())
+                            {
+                                cout << s;
+                                m_series.image_download_logs.insert(s);
+                            }
+                        }
+                    }
+
+                    // check if task completed
+                    if ( s.find(task_completed) != std::string::npos)
+                    {
+                        m_series.enable = false;
+                    }
 
                     s.clear();
                 }
             }
+
+            if (!s.empty())
+            {
+                // in case no "\n" at the end. for example, progress bar.
+                cout << s << "\n";
+
+                s.clear();
+            }
+
 
             if (!date.empty())
             {

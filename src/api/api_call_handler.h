@@ -283,14 +283,6 @@ namespace ai
             std::string sub_op;
             std::string dest_folder;
 
-            // for duplicate log hiding
-            //bool no_duplicate;
-            //
-            //cmd_logs_req()
-            //{
-            //    no_duplicate = false;
-            //}
-
         };
 
         class cmd_peer_node_log
@@ -331,7 +323,11 @@ namespace ai
             // for duplicate log hiding
             // each log start with date info, like 2018-08-14T06:53:19.274586607Z
             enum {
-                TIMESTAMP_STR_LENGTH = 30
+                TIMESTAMP_STR_LENGTH = 30,
+                IMAGE_HASH_STR_PREFIX_LENGTH = 12,
+                IMAGE_HASH_STR_MAX_LENGTH = 64,
+                MAX_NUM_IMAGE_HASH_LOG = 512
+
             };
             //bool no_duplicate;
 
@@ -339,13 +335,12 @@ namespace ai
             public:
                 std::string last_log_date;
                 bool enable;
+                std::set<std::string> image_download_logs;
             };
 
             static series m_series;
 
         public:
-
-            //cmd_logs_resp();
 
             void format_output();
 
@@ -359,6 +354,8 @@ namespace ai
             std::string get_log_date(std::string& s);
 
             std::string get_training_result_hash_from_log(std::string & s);
+
+            bool is_image_download_str(std::string &s);
 
         };
 

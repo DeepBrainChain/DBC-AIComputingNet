@@ -23,7 +23,7 @@
 #include "port_validator.h"
 #include "api_call.h"
 #include "id_generator.h"
-#include "version.h"
+#include "common/version.h"
 #include "tcp_socket_channel.h"
 #include "timer_def.h"
 #include "peer_seeds.h"

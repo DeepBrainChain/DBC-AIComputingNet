@@ -40,11 +40,15 @@
 #define _POSIX_C_SOURCE 200112L
 #include <sys/stat.h>
 #include <sys/resource.h>
+#elif defined(MAC_OSX)
+#include <libproc.h>
 #endif
-
 
 #include <algorithm>
 #include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
 
 
 namespace bf = boost::filesystem;
@@ -320,8 +324,8 @@ namespace matrix
             static bf::path get_exe_dir()
             {
                 bf::path exe_dir;// = bf::current_path();
-                
-#if defined(WIN32)   
+
+#if defined(WIN32)
                 char szFilePath[MAX_PATH + 1] = { 0 };
                 if (GetModuleFileNameA(NULL, szFilePath, MAX_PATH))
                 {
@@ -341,8 +345,16 @@ namespace matrix
                     exe_dir = szFilePath;
                     exe_dir.remove_filename();
                 }
-//#elif defined(MAC_OSX)
-                //TODO ...
+#elif defined(MAC_OSX)
+                char szFilePath[PROC_PIDPATHINFO_MAXSIZE] = { 0 };
+
+                pid_t pid = getpid();
+                int ret = proc_pidpath (pid, szFilePath, sizeof(szFilePath));
+                if ( ret > 0 )
+                {
+                    exe_dir = szFilePath;
+                    exe_dir.remove_filename();
+                }
 #endif
                 return exe_dir;
             }

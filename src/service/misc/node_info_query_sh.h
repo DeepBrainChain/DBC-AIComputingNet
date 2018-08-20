@@ -41,7 +41,7 @@ function get {
     "gpu_driver")
         if ! which nvidia-smi>/dev/null; then echo "N/A";
         else
-            nvidia-smi --query-gpu=driver_version --format=csv | tr '\n' ' '
+            nvidia-smi --query-gpu=driver_version --format=csv | uniq | tr '\n' ' '
         fi
     ;;
 

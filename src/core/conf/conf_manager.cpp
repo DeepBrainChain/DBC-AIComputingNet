@@ -32,7 +32,6 @@ namespace matrix
         conf_manager::conf_manager() 
             : m_net_params(std::make_shared<net_type_params>())
             , m_log_level(1)
-            , m_dbc_path("")
         {
 
         }
@@ -67,23 +66,6 @@ namespace matrix
 
             //update log level
             log::set_filter_level((boost::log::trivial::severity_level) m_log_level);
-
-
-            if (options.count("path"))
-            {
-                auto path = options["path"].as<std::string>();
-                if(path.length() > 256)
-                {
-                    LOG_ERROR << "conf manager init params error and exit: path is too long";
-                    return E_DEFAULT;
-                }
-                else
-                {
-                    m_dbc_path = path;
-                    LOG_INFO<<"dbc_path " << m_dbc_path;
-                }
-            }
-
 
             return E_SUCCESS;
         }
@@ -207,7 +189,7 @@ namespace matrix
             if (!fs::exists(node_dat_path) || fs::is_empty(node_dat_path))
             {
                 //std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
-                LOG_ERROR << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." ;
+                LOG_ERROR << "Parse node.dat error. Please try dbc --init command to init node id if node id not inited." ;
                 return E_DEFAULT;
             }
 
@@ -222,7 +204,7 @@ namespace matrix
             catch (const boost::exception & e)
             {
                 //std::cout << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." << std::endl;
-                LOG_ERROR << "Parse node.dat error. Please try ./dbc --init command to init node id if node id not inited." ;
+                LOG_ERROR << "Parse node.dat error. Please try dbc --init command to init node id if node id not inited." ;
 
                 LOG_ERROR << "conf manager parse node.dat error: " << diagnostic_information(e);
                 return E_DEFAULT;

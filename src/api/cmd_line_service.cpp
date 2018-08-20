@@ -523,6 +523,7 @@ namespace ai
 
                         cmd_logs_resp::m_series.enable = true;
                         cmd_logs_resp::m_series.last_log_date = "";
+                        cmd_logs_resp::m_series.image_download_logs.clear();
                     }
                     else
                     {
@@ -565,6 +566,8 @@ namespace ai
                     }while(cmd_logs_resp::m_series.enable);
 
                     cout << endl << "task exec completed, press enter to continue" << endl;
+                    cmd_logs_resp::m_series.last_log_date = "";
+                    cmd_logs_resp::m_series.image_download_logs.clear();
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {

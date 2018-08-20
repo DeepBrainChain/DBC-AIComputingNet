@@ -22,7 +22,7 @@
 #include "connection_manager.h"
 #include "env_manager.h"
 #include "topic_manager.h"
-#include "version.h"
+#include "common/version.h"
 #include "p2p_net_service.h"
 #include "ai_power_requestor_service.h"
 #include "ai_power_provider_service.h"
@@ -246,13 +246,12 @@ namespace ai
             opts.add_options()
                 ("help,h", "get dbc core help info")
                 ("version,v", "get core version info")
-                ("init,i", "init node id")
-                ("daemon,d", "run as daemon process on Linux or Mac os")
+                ("init", "init node id")
+                ("daemon,d", "run as daemon process on Linux")
                 ("peer", bpo::value<std::vector<std::string>>(), "")
                 ("ai_training,a", "run as ai training service provider")
                 ("name,n", bpo::value<std::string>(), "node name")
                 ("max_connect", bpo::value<int32_t>(), "")
-                ("path", bpo::value<std::string>(), "path of dbc exe file")
                 ("id", "get local node id");
 
             try
@@ -277,7 +276,17 @@ namespace ai
                 }
                 else if (vm.count("init"))
                 {
-                    return on_cmd_init();
+                    std::string in_;
+                    cout << "Warning: the node id will be reset. Do you want to continue [yes/no]?  ";
+                    cin >> in_;
+                    if (in_ == std::string("yes") || in_ == std::string("y"))
+                    {
+                        return on_cmd_init();
+                    }
+                    else
+                    {
+                        cout<< "exit"<<endl;
+                    }
                 }
                 else if (vm.count("daemon") || vm.count("d"))
                 {
