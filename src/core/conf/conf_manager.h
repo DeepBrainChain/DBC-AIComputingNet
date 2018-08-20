@@ -111,8 +111,6 @@ namespace matrix
                 return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
             }
 
-            std::string get_dbc_path() { return m_dbc_path;}
-
         protected:
 
             int32_t parse_local_conf();
@@ -147,8 +145,6 @@ namespace matrix
 
             //params relative with net type
             std::shared_ptr<net_type_params> m_net_params;
-
-            std::string m_dbc_path;
         };
 
     }

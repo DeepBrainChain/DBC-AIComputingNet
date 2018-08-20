@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #set -x
 
 ###############################################
@@ -58,7 +58,10 @@ sleep 1
 
 UNAME=`uname -s`
 
-LOG_FILE=./stopapp.log
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+LOG_FILE=$DIR/stopapp.log
+
 if [ !  -f  $LOG_FILE ]; then
 rm -rf LOG_FILE > /dev/null 2>&1
 cat >$LOG_FILE<<! 

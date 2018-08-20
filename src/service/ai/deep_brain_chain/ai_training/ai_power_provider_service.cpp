@@ -858,7 +858,7 @@ namespace ai
             }
             else if (it->second->status == task_queueing)
             {
-                log_content = "log info query only valid when status is running or closed";
+                log_content = "task is waiting for schedule";
             }
             else if (it->second->status == task_pulling_image)
             {
@@ -1254,7 +1254,7 @@ namespace ai
                 config->host_config.binds.push_back(mount_dbc_data_dir);
             }
 
-            std::string mount_dbc_utils_dir = CONF_MANAGER->get_dbc_path();
+            std::string mount_dbc_utils_dir = env_manager::get_home_path().generic_string();
 
             if (!mount_dbc_utils_dir.empty())
             {
