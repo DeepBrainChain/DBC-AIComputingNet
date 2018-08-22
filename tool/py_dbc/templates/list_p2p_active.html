@@ -1,0 +1,17 @@
+$def with (posts)
+<h1>p2p acitve info</h1>
+<table border="1">
+    <tr>
+        <th>node_id</th>
+        <th>node_host</th>
+        <th>node_port</th>
+        <th>start_time</th>
+    </tr>
+    $for post in posts:
+        <tr>
+            <td>$post.node_id</td>
+            <td>$post.host</td>
+            <td>$post.port</td>
+            <td>$time_tool.stamp_to_localtime(post.start_time)</td>
+        </tr>
+</table>
