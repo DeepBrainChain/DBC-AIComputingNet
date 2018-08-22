@@ -1322,18 +1322,6 @@ namespace ai
         {
             assert(nullptr != task);
 
-            m_auth_time_interval = 0;            
-            if (E_SUCCESS == auth_task(task))
-            {                    
-                LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
-            }
-            else
-            {
-                LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
-                stop_task(task, task_overdue_closed);
-                return E_SUCCESS;
-            }
-
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
@@ -1348,6 +1336,18 @@ namespace ai
 
                 LOG_WARNING << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
+            }
+
+            m_auth_time_interval = 0;            
+            if (E_SUCCESS == auth_task(task))
+            {                    
+                LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+            }
+            else
+            {
+                LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
+                stop_task(task, task_overdue_closed);
+                return E_SUCCESS;
             }
 
             int32_t check_ret = m_container_client->exist_docker_image(task->training_engine);
@@ -1644,6 +1644,7 @@ namespace ai
 
             if (task_pulling_image == task->status)
             {
+                LOG_INFO <<"task is pulling image. terminate pull " << task->training_engine;
                 end_pull(task);
             }
 
@@ -1778,6 +1779,7 @@ namespace ai
 
             if (nullptr != m_pull_image_mng)
             {
+                LOG_INFO << "terminate pull " << task->training_engine;
                 m_pull_image_mng->terminate_pull();
             }
             
