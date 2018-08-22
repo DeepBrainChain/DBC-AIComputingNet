@@ -46,9 +46,11 @@
 
 #include <algorithm>
 #include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#if ! defined(WIN32)
+#include <unistd.h>
+#endif
 
 
 namespace bf = boost::filesystem;
