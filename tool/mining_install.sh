@@ -79,6 +79,7 @@ sudo systemctl start docker
 if [ $? -ne 0 ]; then
     exit
 fi
+sudo newgrp - docker
 
 gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
