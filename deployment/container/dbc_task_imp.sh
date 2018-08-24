@@ -198,12 +198,12 @@ download()
 
         if [ $? -ne 0 ]; then
             echo "fail to extract $i "
-            rm -f $2/$i
+            rm -f $i
 
             return 1
         fi
 
-        rm -f $2/$i
+        rm -f $i
     done
 
     return 0
