@@ -463,7 +463,9 @@ namespace matrix
             statfs(disk_path.c_str(), &diskInfo);
             uint64_t b_size = diskInfo.f_bsize;
 
-            uint64_t free = b_size * diskInfo.f_bfree;
+            //uint64_t free = b_size * diskInfo.f_bfree;
+            // general user can available
+            uint64_t free = b_size * diskInfo.f_bavail;
             //MB
             free = free >> 20;
             return free;
@@ -477,7 +479,7 @@ namespace matrix
             struct statfs diskInfo;
             statfs(disk_path.c_str(), &diskInfo);
             uint64_t b_size = diskInfo.f_bsize;
-            uint64_t totalSize = b_size * diskInfo.f_blocks;
+            uint64_t totalSize = b_size * (diskInfo.f_blocks - diskInfo.f_bfree + diskInfo.f_bavail);
 
             uint32_t total = totalSize >> 20;
             return total;
