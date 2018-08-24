@@ -1683,7 +1683,7 @@ namespace ai
             //if the partion do not have enough space, stop task
             if (get_disk_free(m_docker_root_dir) < m_min_disk_free)
             {
-                LOG_ERROR << "docker get docker info faild. the disk have no enough space. the space: " << get_disk_free(m_docker_root_dir) << "MB";
+                LOG_ERROR << "docker get docker info faild. the disk have no enough space. the free space: " << get_disk_free(m_docker_root_dir) << "MB";
                 stop_task(task, task_nospace_closed);
                 auth_task(task);
                 return E_DEFAULT;
@@ -1722,7 +1722,7 @@ namespace ai
             if (task_queueing == task->status)
             {
                 task->__set_status(task_pulling_image);
-                LOG_DEBUG << "docker pulling image. change status to" << to_training_task_status_string(task->status) 
+                LOG_DEBUG << "docker pulling image. change status to " << to_training_task_status_string(task->status) 
                           << " task id:" << task->task_id << " image engine:" << task->training_engine;
                 write_task_to_db(task);
             }

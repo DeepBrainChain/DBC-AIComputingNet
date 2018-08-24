@@ -42,22 +42,30 @@ namespace ai
             try
             {
                 m_image_name = image_name;
-                bp::ipstream err_stream;
+                //bp::ipstream err_stream;
                 std::string pull_cmd = "docker pull " + image_name;
                 //m_c_pull_image = std::make_shared<bp::child>(pull_cmd, bp::std_out > "/dev/null", bp::std_err > err_stream);
+
                 std::string file_name = "/tmp/" + EncodeBase64(m_image_name);
-                m_c_pull_image = std::make_shared<bp::child>(pull_cmd, bp::std_out > file_name, bp::std_err > err_stream);
+                m_c_pull_image = std::make_shared<bp::child>(pull_cmd, bp::std_out > file_name, bp::std_err > m_err_stream);
+
                 if (nullptr == m_c_pull_image || !m_c_pull_image->running())
                 {
-                    std::string err_info;
-                    std::getline(err_stream, err_info);
+                    LOG_ERROR << "start pulling image failed." << " image:" << image_name;
+                    std::string err_info = "";
+                    std::string line;
+                    while (m_err_stream && std::getline(m_err_stream, line) && !line.empty())
+                    {
+                        err_info += line;
+                    }
+
                     if (!err_info.empty())
                     {
-                        LOG_ERROR << "pull error. " << err_info << " image:" << image_name;
+                        LOG_ERROR << "docker pull image failed. image:" << m_image_name << "error info:" << err_info;
                     }
                     return E_DEFAULT;
                 }
-                LOG_INFO << "start pull engine image:" << image_name;
+                LOG_INFO << "start pull engine image:" << image_name << " pull image process pid:" << m_c_pull_image->id();
                 return E_SUCCESS;
             }
             catch (const boost::exception & e)
@@ -65,13 +73,38 @@ namespace ai
                 LOG_ERROR << "pull image error: " << diagnostic_information(e) << " image:" << image_name;
                 return E_DEFAULT;
             }
+            catch (...)
+            {
+                LOG_ERROR << "pull image error: " <<  " image:" << image_name;
+                return E_DEFAULT;
+            }
         }
 
         int32_t image_manager::terminate_pull()
         {
-            if (m_c_pull_image->running())
+            try
             {
-                m_c_pull_image->terminate();
+                if (nullptr == m_c_pull_image)
+                {
+                    return E_SUCCESS;
+                }
+
+                if (m_c_pull_image->running())
+                {
+                    m_c_pull_image->terminate();
+                }
+
+                m_c_pull_image = nullptr;
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "terminate pull image error: " << diagnostic_information(e) << " image:" << m_image_name;
+                return E_DEFAULT;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "terminate pull image error: " << " image:" << m_image_name;
+                return E_DEFAULT;
             }
             return E_SUCCESS;
         }
@@ -88,12 +121,28 @@ namespace ai
                 return PULLING;
             }
 
-            LOG_INFO << "exit docker pull " << " exit code:" << m_c_pull_image->exit_code();
+            LOG_INFO << "exit docker pull. " << " exit code:" << m_c_pull_image->exit_code();
             if (0 == m_c_pull_image->exit_code())
             {
-                LOG_DEBUG << "docker pull success";
+                LOG_DEBUG << "docker pull success.image:" << m_image_name;
+                m_c_pull_image = nullptr;
                 return PULLING_SUCCESS;
             }
+            else
+            {
+                std::string err_info = "";
+                std::string line;
+                while (m_err_stream && std::getline(m_err_stream, line) && !line.empty())
+                {
+                    err_info += line;
+                }
+
+                if (!err_info.empty())
+                {
+                    LOG_ERROR << "docker pull image failed. image:" << m_image_name << "error info:" << err_info;
+                }
+            }
+            m_c_pull_image = nullptr;
             return PULLING_ERROR;
         }
     }
