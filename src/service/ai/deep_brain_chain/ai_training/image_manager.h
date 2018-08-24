@@ -49,7 +49,6 @@ namespace ai
             std::shared_ptr<bp::child> m_c_pull_image;
             int64_t m_start_time = 0;
             std::set<std::string> m_pulling_tasks;
-            bp::ipstream out_stream;
             std::string m_image_name="";
         };
     }
