@@ -711,7 +711,7 @@ namespace ai
                         ("service,s", "print nodes' service info in the network")
                         ("filter,f", bpo::value<std::vector<std::string>>(), "if -s is specified, only print node matchs the filter.")
                         ("order,o", bpo::value<std::string>(), "if -s is specified, print node order by specific field.")
-                        ("interval,i", bpo::value<int>(), "time interval in seconds, if -s is specified, refresh service info periodically. Press 'q' to exit");
+                        ("interval,i", bpo::value<int>(), "time interval in seconds, refresh info periodically. Press 'q' to exit");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -744,8 +744,7 @@ namespace ai
                         req->keys.push_back("all");
                     }
                 }
-
-                if (vm.count("service") || vm.count("s"))
+                else if (vm.count("service") || vm.count("s"))
                 {
                     req->op = OP_SHOW_SERVICE_LIST;
 

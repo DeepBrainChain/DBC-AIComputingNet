@@ -122,9 +122,12 @@ namespace service
                 kvs_plus["gpu_type"] = gpu_type;
             }
 
-            std::string text = (node_id + " " + s_info.name
-                                + " " + to_string(s_info.service_list)
-                                + " " + s_info.kvs["state"] + " " + gpu_info);
+            std::string text = node_id + " " + s_info.name
+                                       + " " + to_string(s_info.service_list);
+            for (auto const & e: s_info.kvs)
+            {
+                text += " " + e.second;
+            }
 
             bool is_matched = e.evaluate(kvs_plus, text);
 

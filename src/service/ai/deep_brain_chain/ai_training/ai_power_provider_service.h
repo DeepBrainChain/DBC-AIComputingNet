@@ -53,6 +53,7 @@ using namespace boost::asio::ip;
 
 #define DEFAULT_SPLIT_COUNT                                                         2
 #define DEFAULT_NVIDIA_DOCKER_PORT                                                3476
+
 const bool NEED_AUTH = true;
 
 namespace image_rj = rapidjson;
@@ -67,6 +68,13 @@ namespace ai
             container_unknown = 0,
             container_running,
             container_closed
+        };
+
+        enum nvidia_docker_version
+        {
+            NVIDIA_DOCKER_ONE = 1,
+            NVIDIA_DOCKER_TWO = 2,
+            NVIDIA_DOCKER_UNKNOWN = 0xff,
         };
 
         struct task_time_stamp_comparator

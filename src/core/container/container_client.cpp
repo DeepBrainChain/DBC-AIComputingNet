@@ -27,6 +27,7 @@ namespace matrix
             : m_http_client(remote_ip, remote_port)
             , m_remote_ip(remote_ip)
             , m_remote_port(remote_port)
+            , m_docker_info_ptr(nullptr)
         {
 
         }
@@ -550,6 +551,8 @@ namespace matrix
 
         std::shared_ptr<docker_info> container_client::get_docker_info()
         {
+            if (m_docker_info_ptr) return m_docker_info_ptr;
+
             std::string endpoint = "/info";
             //headers, resp
             kvs headers;
@@ -579,6 +582,7 @@ namespace matrix
             std::shared_ptr<docker_info> docker_ptr = std::make_shared<docker_info>();
             docker_ptr->from_string(resp.body);
 
+            m_docker_info_ptr = docker_ptr;
             return docker_ptr;
         }
 

@@ -407,6 +407,7 @@ namespace matrix
         void p2p_net_service::init_timer()
         {          
             m_timer_invokers[TIMER_NAME_CHECK_PEER_CANDIDATES] = std::bind(&p2p_net_service::on_timer_check_peer_candidates, this, std::placeholders::_1);
+            add_timer(TIMER_NAME_CHECK_PEER_CANDIDATES, 1 * 5 * 1000, 1);
             m_timer_check_peer_candidates = add_timer(TIMER_NAME_CHECK_PEER_CANDIDATES, 1 *60 * 1000);
             assert(m_timer_check_peer_candidates != INVALID_TIMER_ID);
 
@@ -454,7 +455,7 @@ namespace matrix
 
         int32_t p2p_net_service::on_timer_check_peer_candidates(std::shared_ptr<matrix::core::core_timer> timer)
         {
-            assert(timer->get_timer_id() == m_timer_check_peer_candidates);
+//            assert(timer->get_timer_id() == m_timer_check_peer_candidates);
 
             //clear ns failed status candidates
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); )

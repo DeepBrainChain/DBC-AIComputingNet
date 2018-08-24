@@ -1263,58 +1263,99 @@ namespace ai
                 config->host_config.binds.push_back(mount_dbc_utils_dir);
             }
 
+
+            nvidia_docker_version nv_docker_version = NVIDIA_DOCKER_UNKNOWN;
+            std::shared_ptr<docker_info> docker_info_ptr = nullptr;
+
             std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
             if (nv_config != nullptr)
             {
-                //use nvidia-docker
+                // nvidia-docker 1.x added a plug-in on runc.
+                nv_docker_version = NVIDIA_DOCKER_ONE;
+            }
+            else
+            {
+                // nvidia-docker 2.x add a new docker runtime named nvidia. Check if nvidia runtime exists.
+                docker_info_ptr = m_container_client->get_docker_info();
+                if (docker_info_ptr && docker_info_ptr->runtimes.count(RUNTIME_NVIDIA))
+                {
+                    nv_docker_version = NVIDIA_DOCKER_TWO;
+                }
+            }
+
+            if (nv_docker_version != NVIDIA_DOCKER_UNKNOWN)
+            {
+                LOG_DEBUG << "get common attributes of nvidia docker";
                 config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
                 config->env.push_back(AI_TRAINING_NVIDIA_DRIVER_CAPABILITIES);
-                //config->env.push_back(AI_TRAINING_LIBRARY_PATH);
                 config->host_config.share_memory = m_container_args["shm_size"].as<int64_t>() * m_g_bytes;
                 config->host_config.ulimits.push_back(container_ulimits("memlock", -1, -1));
-                //binds
-                config->host_config.binds.push_back(nv_config->volume);
-
-                //devices
-                for (auto it = nv_config->devices.begin(); it != nv_config->devices.end(); it++)
-                {
-                    container_device dev;
-
-                    dev.path_on_host = *it;
-                    dev.path_in_container = *it;
-                    dev.cgroup_permissions = AI_TRAINING_CGROUP_PERMISSIONS;
-
-                    config->host_config.devices.push_back(dev);
-                }
-
-                //VolumeDriver
-                config->host_config.volume_driver = nv_config->driver_name;
-
-                //Mounts
-                /*container_mount nv_mount;
-                nv_mount.type = "volume";
-
-                std::vector<std::string> vec;
-                string_util::split(nv_config->driver_name, ":", vec);
-                if (vec.size() > 0)
-                {
-                nv_mount.name = vec[0];
-                }
-                else
-                {
-                LOG_ERROR << "container config get mounts name from nv_config error";
-                return nullptr;
-                }
-
-                nv_mount.source = AI_TRAINING_MOUNTS_SOURCE;
-                nv_mount.destination = AI_TRAINING_MOUNTS_DESTINATION;
-                nv_mount.driver = nv_config->driver_name;
-                nv_mount.mode = AI_TRAINING_MOUNTS_MODE;
-                nv_mount.rw = false;
-                nv_mount.propagation = DEFAULT_STRING;
-
-                config->host_config.mounts.push_back(nv_mount);*/
             }
+
+            switch (nv_docker_version)
+            {
+                case NVIDIA_DOCKER_ONE:
+                {
+                    if (!nv_config) break;
+
+                    LOG_INFO << "nvidia docker 1.x";
+
+                    //binds
+                    config->host_config.binds.push_back(nv_config->volume);
+
+                    //devices
+                    for (auto it = nv_config->devices.begin(); it != nv_config->devices.end(); it++)
+                    {
+                        container_device dev;
+
+                        dev.path_on_host = *it;
+                        dev.path_in_container = *it;
+                        dev.cgroup_permissions = AI_TRAINING_CGROUP_PERMISSIONS;
+
+                        config->host_config.devices.push_back(dev);
+                    }
+
+                    //VolumeDriver
+                    config->host_config.volume_driver = nv_config->driver_name;
+
+                    //Mounts
+                    /*container_mount nv_mount;
+                    nv_mount.type = "volume";
+
+                    std::vector<std::string> vec;
+                    string_util::split(nv_config->driver_name, ":", vec);
+                    if (vec.size() > 0)
+                    {
+                    nv_mount.name = vec[0];
+                    }
+                    else
+                    {
+                    LOG_ERROR << "container config get mounts name from nv_config error";
+                    return nullptr;
+                    }
+
+                    nv_mount.source = AI_TRAINING_MOUNTS_SOURCE;
+                    nv_mount.destination = AI_TRAINING_MOUNTS_DESTINATION;
+                    nv_mount.driver = nv_config->driver_name;
+                    nv_mount.mode = AI_TRAINING_MOUNTS_MODE;
+                    nv_mount.rw = false;
+                    nv_mount.propagation = DEFAULT_STRING;
+
+                    config->host_config.mounts.push_back(nv_mount);*/
+                    break;
+                }
+                case NVIDIA_DOCKER_TWO:
+                {
+                    LOG_INFO << "nvidia docker 2.x";
+                    config->host_config.runtime = RUNTIME_NVIDIA;
+                    break;
+                }
+                default:
+                {
+                    LOG_INFO << "not find nvidia docker";
+                }
+            }
+
             return config;
         }
 
