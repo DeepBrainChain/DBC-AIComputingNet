@@ -199,6 +199,10 @@ namespace matrix
 
             json_host_config.AddMember("ShmSize", host_config.share_memory, allocator);
 
+            if(!host_config.runtime.empty())
+            {
+                json_host_config.AddMember("Runtime",  STRING_REF(host_config.runtime), allocator);
+            }
 
             rapidjson::Value json_ulimts(rapidjson::kArrayType);
             for (auto it = host_config.ulimits.begin(); it != host_config.ulimits.end(); it++)
@@ -335,6 +339,16 @@ namespace matrix
                 if (root_dir.GetType() == rapidjson::kStringType)
                 {
                     this->root_dir = root_dir.GetString();
+                }
+
+                //runtimes
+                if (doc.HasMember("Runtimes"))
+                {
+                    rapidjson::Value &json_runtimes = doc["Runtimes"];
+                    if (json_runtimes.HasMember("nvidia"))
+                    {
+                        runtimes["nvidia"] ="nvidia";
+                    }
                 }
 
             }

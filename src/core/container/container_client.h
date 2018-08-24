@@ -81,6 +81,7 @@ namespace matrix
 
             uint16_t m_remote_port;
 
+            std::shared_ptr<docker_info> m_docker_info_ptr;
         };
 
     }

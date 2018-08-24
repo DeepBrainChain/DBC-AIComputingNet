@@ -183,6 +183,9 @@ namespace matrix
             int64_t share_memory;
             
             std::list<container_ulimits> ulimits;
+
+            //nvidia docker 2.0
+            std::string runtime;
         };
 
         class container_config : public json_io_buf
@@ -377,6 +380,8 @@ namespace matrix
         public:
             std::string id = "";
             std::string root_dir = "";
+            std::map<std::string, std::string> runtimes;
+
             void from_string(const std::string & buf);
         };
 
