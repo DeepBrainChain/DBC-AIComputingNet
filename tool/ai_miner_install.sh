@@ -25,6 +25,14 @@ cd ./../
 echo "mining_install.sh execution finished"
 echo -e
 
+echo "add nvidia-persistenced.service"
+wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.4.0/nvidia-persistenced.service
+sudo cp ./nvidia-persistenced.service /lib/systemd/system/
+sudo rm nvidia-persistenced.service
+sudo systemctl daemon-reload
+sudo systemctl enable nvidia-persistenced.service
+sudo systemctl start nvidia-persistenced.service
+
 
 echo "begin to configure the DBC program container.conf item :host_volum_dir"
 echo "below is your computer disk utilization:"
