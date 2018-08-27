@@ -1,11 +1,13 @@
 ; 安装程序初始定义常量
 !define PRODUCT_NAME "DBC for AI"
-!define PRODUCT_VERSION "0.3.3.1"
+!define PRODUCT_VERSION "0.3.4.0"
 !define PRODUCT_PUBLISHER "Deep Brain Chain, Inc."
 !define PRODUCT_WEB_SITE "https://www.deepbrainchain.org"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !define IPFS_CONFIG_PATH "$PROFILE\.ipfs"
+!define PATH_KEY "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+
 
 SetCompressor lzma
 
@@ -46,7 +48,7 @@ SetCompressor lzma
 ; ------ MUI 现代界面定义结束 ------
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "dbc_win_setup.exe"
+OutFile "dbc_win_v${PRODUCT_VERSION}.exe"
 InstallDir "C:\DBC"
 ShowInstDetails show
 ShowUnInstDetails show
@@ -56,9 +58,8 @@ Var boolInstallSuccess
 
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
-  SetOverwrite on
   SetOverwrite ifdiff
-  File /r "dbc-win10-0.3.3.1\*.*"
+  File /r "dbc-win10-0.3.4.0_install\*.*"
   CreateShortCut "$DESKTOP\dbc.lnk" "$INSTDIR\dbc.exe"  "" "$INSTDIR\dbc.ico" 0
   CreateShortCut "$SMSTARTUP\startup dbc.lnk" "$INSTDIR\dbc.exe"  "" "$INSTDIR\dbc.ico" 0
 SectionEnd
@@ -79,6 +80,12 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+  ; add dbc and ipfs to PATH
+	Var /GLOBAL vPath
+  ReadRegStr $vPath HKLM "${PATH_KEY}" "Path"
+  strcpy $vPath "$vPath;$INSTDIR"
+  strcpy $vPath "$vPath;$INSTDIR\ipfs"
+  WriteRegStr HKLM "${PATH_KEY}" "Path" "$vPath"
 SectionEnd
 
 /******************************
@@ -86,15 +93,21 @@ SectionEnd
  ******************************/
 
 Section Uninstall
-  Delete "$INSTDIR\${PRODUCT_NAME}.url"
-  Delete "$INSTDIR\uninst.exe"
-
   Delete "$SMPROGRAMS\DBC for AI\Uninstall.lnk"
   Delete "$SMPROGRAMS\DBC for AI\Website.lnk"
-  Delete "$DESKTOP.lnk"
-  
-  RMDir /r "$INSTDIR"
   RMDir /r "$SMPROGRAMS\DBC for AI"
+  Delete "$DESKTOP\dbc.lnk"
+  
+  RMDir /r "$INSTDIR\conf"
+  RMDir /r "$INSTDIR\examples"
+  RMDir /r "$INSTDIR\ipfs"
+  RMDir /r "$INSTDIR\logs"
+  RMDir /r "$INSTDIR\tool"
+  Delete   "$INSTDIR\dbc.exe"
+  Delete   "$INSTDIR\dbc.ico"
+  Delete   "$INSTDIR\*.dll"
+  Delete   "$INSTDIR\${PRODUCT_NAME}.url"
+  Delete   "$INSTDIR\uninst.exe"
   
   RMDir /r "${IPFS_CONFIG_PATH}"
 
