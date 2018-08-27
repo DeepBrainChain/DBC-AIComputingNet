@@ -1,15 +1,16 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.3.1
+release_version=0.3.4.0
 
 echo "begin to wget DBC release package"
-wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/dbc-linux-mining-0.3.3.1.tar.gz
+wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.4.0/dbc-linux-mining-0.3.4.0.tar.gz
 if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
 fi
-tar -zxvf dbc-linux-mining-0.3.3.1.tar.gz
+tar -zxvf dbc-linux-mining-0.3.4.0.tar.gz
+rm -rf dbc-linux-mining-0.3.4.0.tar.gz
 echo "wget DBC release package finished"
 echo -e
 
@@ -83,13 +84,24 @@ fi
 echo "configure the container.conf item :host_volum_dir finished"
 echo -e
 
+echo "add dbc executable path to ENV PATH"
+echo "export DBC_PATH=$current_directory/dbc_repo" >> ~/.bashrc
+echo 'export PATH=$PATH:$DBC_PATH' >> ~/.bashrc
+echo "export DBC_TOOL_PATH=$current_directory/dbc_repo/tool" >> ~/.bashrc 
+echo 'export PATH=$PATH:$DBC_TOOL_PATH' >> ~/.bashrc
+echo "source .bashrc" >> ~/.bash_profile
+
+echo "begin to set dbc startapp auto-start when reboot/restart"
+sudo chmod +x /etc/rc.local
+sudo bash -c "echo 'cd $current_directory/dbc_repo/' >> /etc/rc.local"
+sudo bash -c "echo './dbc --ai --daemon' >> /etc/rc.local"
+echo -e
 
 echo "begin to start DBC ai-server program"
-
 cd ./dbc_repo/
-./startapp
-sleep 3s
-./p
+./dbc --ai --daemon
 cd ./../
 echo "start DBC ai-server program finished"
-echo -e
+
+echo "dbc ai user linux install finished,DBC AI server has already run as daemon mode"
+echo "run source ~/.bashrc to make DBC ENV effective"
