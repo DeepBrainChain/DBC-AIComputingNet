@@ -92,9 +92,9 @@ echo 'export PATH=$PATH:$DBC_TOOL_PATH' >> ~/.bashrc
 echo "source .bashrc" >> ~/.bash_profile
 
 echo "begin to set dbc startapp auto-start when reboot/restart"
-sudo chmod +x /etc/rc.local
-sudo bash -c "echo 'cd $current_directory/dbc_repo/' >> /etc/rc.local"
-sudo bash -c "echo 'su dbc -c "./dbc --ai --daemon"' >> /etc/rc.local"
+sudo chmod 777 /etc/rc.local
+sudo echo "cd $current_directory/dbc_repo/" >> /etc/rc.local
+sudo echo 'su dbc -c "./dbc --ai --daemon"' >> /etc/rc.local
 echo -e
 
 echo "begin to start DBC ai-server program"
