@@ -34,6 +34,8 @@
 #define MAX_ENTRY_FILE_NAME_LEN                                 128
 #define MAX_ENGINE_IMGE_NAME_LEN                                128
 
+#define LOG_AUTO_FLUSH_INTERVAL_IN_SECONDS                    5
+
 namespace ai
 {
     namespace dbc
@@ -41,13 +43,18 @@ namespace ai
 
         enum training_task_status
         {
-            task_unknown = 1,
-            task_queueing = 2,
+            task_unknown =       1,
+            task_queueing =      2,
+            task_pulling_image = 3,
             task_running = 4,
+
+            ///////////termianl state///////////////////////
             task_stopped = 8,
             task_succefully_closed = 16,
             task_abnormally_closed = 32,
-            task_overdue_closed     = 64
+            task_overdue_closed     = 64,
+            task_noimage_closed     = 65,
+            task_nospace_closed     = 66
         };
 
         //__BEGIN_DECLS

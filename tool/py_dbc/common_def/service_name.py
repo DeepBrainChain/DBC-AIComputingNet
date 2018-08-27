@@ -1,0 +1,12 @@
+default_name = "";
+module_manager_name = "module_manager";
+conf_manager_name = "core_conf_manager";
+env_manager_name = "env_manager";
+topic_manager_name = "topic_manager";
+connection_manager_name = "connection_manager";
+p2p_service_name = "p2p_net_service";
+ai_power_requestor_service_name = "ai_power_requestor_service";
+ai_power_provider_service_name = "ai_power_provider_service";
+common_service_name = "common_service";
+timer_manager_name = "connection_manager";
+ai_mining_device_manager_name = "ai_mining_device_service";

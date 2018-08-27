@@ -238,6 +238,7 @@ namespace service
             m_kvs["cpu_usage"] = query("cpu_usage");
             m_kvs["mem_usage"] = query("mem_usage");
             m_kvs["image"] = query("image");
+            m_kvs["disk"] = query("disk");
 
             //async invoke
             auto req = std::make_shared<service::get_task_queue_size_req_msg>();

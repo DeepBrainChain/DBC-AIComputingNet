@@ -1,3 +1,10 @@
 #!/bin/bash
 
-./dbc --daemon
+if [ -z "$1" ]; then
+    dbc --ai --daemon --path `pwd`
+else
+# use specified node name
+    dbc --ai --daemon -n "$1" --path `pwd`
+fi
+
+

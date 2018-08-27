@@ -593,7 +593,8 @@ namespace ai
             for (auto info : vec_task_infos)
             {
                 //add unclosed task to request
-                if (info.status & (task_unknown | task_queueing | task_running))
+                //if (info.status & (task_unknown | task_queueing | task_running))
+                if (info.status < task_stopped)
                 {                    
                     //case: more than MAX_TASK_SHOWN_ON_LIST
                     if (vec_task_infos_to_show->size() < MAX_TASK_SHOWN_ON_LIST)
@@ -769,7 +770,8 @@ namespace ai
                 if ((it != task_ids->end()))
                 {
                     info.status = it->second;
-                    if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                    //if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                    if (info.status >= task_stopped)
                     {
                         write_task_info_to_db(info);
                     }
@@ -844,7 +846,8 @@ namespace ai
                         cts.status = it->second;
                         //update to db
                         info.status = it->second;
-                        if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                        //if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                        if (info.status >= task_stopped)
                         {
                             write_task_info_to_db(info); 
                         }
@@ -1277,6 +1280,18 @@ namespace ai
             val.value() = req_msg;
             session->get_context().add("req_msg", val);
 
+            // sub operation support: download training result or display training log
+            if (cmd_req->sub_op == "result")
+            {
+                variable_value v1;
+                v1.value() = std::string("result");
+                session->get_context().add("sub_op", v1);
+
+                variable_value v2;
+                v2.value() = cmd_req->dest_folder;
+                session->get_context().add("dest_folder", v2);
+            }
+
             if (!CONNECTION_MANAGER->have_active_channel())
             {
                 cmd_resp->result = E_INACTIVE_CHANNEL;
@@ -1360,6 +1375,22 @@ namespace ai
 
 
             cmd_resp->peer_node_logs.push_back(std::move(log));
+
+            // support sub_operation: download training result
+            {
+                auto vm = session->get_context().get_args();
+                if (vm.count("sub_op"))
+                {
+                    auto op = vm["sub_op"].as<std::string>();
+                    cmd_resp->sub_op = op;
+                }
+
+                if (vm.count("dest_folder"))
+                {
+                    auto df = vm["dest_folder"].as<std::string>();
+                    cmd_resp->dest_folder = df;
+                }
+            }
 
             //return cmd resp
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);

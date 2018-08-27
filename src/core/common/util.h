@@ -33,17 +33,24 @@
 #elif defined(__linux__)
 #include <limits.h>
 #include <sys/sysinfo.h>
+#include <sys/vfs.h> 
 #ifdef _POSIX_C_SOURCE
 #undef _POSIX_C_SOURCE
 #endif
 #define _POSIX_C_SOURCE 200112L
 #include <sys/stat.h>
 #include <sys/resource.h>
+#elif defined(MAC_OSX)
+#include <libproc.h>
 #endif
-
 
 #include <algorithm>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <errno.h>
+#if ! defined(WIN32)
+#include <unistd.h>
+#endif
 
 
 namespace bf = boost::filesystem;
@@ -193,12 +200,7 @@ namespace matrix
 
                 str.erase(0, str.find_first_not_of('0'));
 
-                if(str.empty() && !is_input_str_empty)
-                {
-                    str = std::string("0");
-                }
-
-                return str;
+                return str.empty() ? "0" : str;
             }
 
         };
@@ -209,6 +211,8 @@ namespace matrix
             //u can provide a std::string to file_name directly
             static bool write_file(const bf::path file_name, const std::string &str, std::ios_base::openmode mode = std::ios_base::out)
             {
+                //create or open
+                bf::ofstream ofs;
                 try
                 {
                     if (!file_name.has_filename())
@@ -219,22 +223,22 @@ namespace matrix
                         if (bf::is_other(file_name))
                             return false;
                     }
-
-                    //create or open
-                    bf::ofstream ofs;
+                    
                     ofs.open(file_name, mode);
                     ofs.write(str.c_str(), str.size());
                     ofs.close();
 
                     return true;
                 }
-                catch (bf::filesystem_error &e)
-                {
-                    //cout << e.what() << endl;
-                    return false;
-                }
                 catch (...)
                 {
+                    try
+                    {
+                        ofs.close();
+                    }
+                    catch (...)
+                    {
+                    }
                     return false;
                 }
             }
@@ -247,35 +251,37 @@ namespace matrix
                 }
                 //clean str
                 str.clear();
-
+                bf::ifstream ifs(file_name, mode);
                 try
                 {
-                    bf::ifstream ifs(file_name, mode);
                     if (ifs)
                     {
                         ifs.seekg(0, ifs.end);
-                        int filesize = (int) ifs.tellg();                        
-                        ifs.seekg(0, ifs.beg);
+                        int filesize = (int) ifs.tellg();
+                        
                         if (filesize > 0)
-                        {
-                            str.reserve(filesize);
-                            while (!ifs.eof())
-                            {
-                                str += ifs.get();//TODO ...
-                            }
+                        { 
+                            ifs.seekg(0, ifs.beg);
+                            str.resize(filesize, 0x00);
+                            ifs.read(&str[0], filesize);
                         }
+
+                        ifs.close();
+                        return true;
                     }
                     ifs.close();
-
-                    return true;
-                }
-                catch (bf::filesystem_error &e)
-                {
-                    //cout << e.what() << endl;
                     return false;
                 }
                 catch (...)
                 {
+                    //cout << e.what() << endl;
+                    try
+                    {
+                        ifs.close();
+                    }
+                    catch (...)
+                    {
+                    }
                     return false;
                 }
             }
@@ -320,8 +326,8 @@ namespace matrix
             static bf::path get_exe_dir()
             {
                 bf::path exe_dir;// = bf::current_path();
-                
-#if defined(WIN32)   
+
+#if defined(WIN32)
                 char szFilePath[MAX_PATH + 1] = { 0 };
                 if (GetModuleFileNameA(NULL, szFilePath, MAX_PATH))
                 {
@@ -341,8 +347,16 @@ namespace matrix
                     exe_dir = szFilePath;
                     exe_dir.remove_filename();
                 }
-//#elif defined(MAC_OSX)
-                //TODO ...
+#elif defined(MAC_OSX)
+                char szFilePath[PROC_PIDPATHINFO_MAXSIZE] = { 0 };
+
+                pid_t pid = getpid();
+                int ret = proc_pidpath (pid, szFilePath, sizeof(szFilePath));
+                if ( ret > 0 )
+                {
+                    exe_dir = szFilePath;
+                    exe_dir.remove_filename();
+                }
 #endif
                 return exe_dir;
             }
@@ -439,9 +453,38 @@ namespace matrix
                 mem = s_info.totalram;
                 mem_swap = mem + s_info.totalswap;
             }
-
 #endif
+        }
 
+        inline uint32_t get_disk_free(const std::string & disk_path)
+        {
+#if defined(__linux__)
+            struct statfs diskInfo;
+            statfs(disk_path.c_str(), &diskInfo);
+            uint64_t b_size = diskInfo.f_bsize;
+
+            //uint64_t free = b_size * diskInfo.f_bfree;
+            // general user can available
+            uint64_t free = b_size * diskInfo.f_bavail;
+            //MB
+            free = free >> 20;
+            return free;
+#endif
+            return 0;
+        }
+
+        inline uint32_t get_disk_total(const std::string & disk_path)
+        {
+#if defined(__linux__)
+            struct statfs diskInfo;
+            statfs(disk_path.c_str(), &diskInfo);
+            uint64_t b_size = diskInfo.f_bsize;
+            uint64_t totalSize = b_size * (diskInfo.f_blocks - diskInfo.f_bfree + diskInfo.f_bavail);
+
+            uint32_t total = totalSize >> 20;
+            return total;
+#endif
+            return 0;
         }
 
     }

@@ -61,8 +61,19 @@ fi
 echo "end to init ipfs"
 sleep $sleep_time
 
-
 cp ./swarm.key $ipfs_path/
+
+#config gateway port
+port=8080
+while true ; do
+    if netstat -na | grep $port | grep LISTEN |grep tcp ; then
+        port=$(($port +1))
+    else
+        break
+    fi
+done
+ipfs config Addresses.Gateway "/ip4/127.0.0.1/tcp/$port"
+echo "config ipfs gateway port as $port"
 
 #start ipfs
 #echo "======================================================="
@@ -87,7 +98,8 @@ ipfs bootstrap add /ip4/49.51.49.192/tcp/4001/ipfs/QmRVgowTGwm2FYhAciCgA5AHqFLWG
 ipfs bootstrap add /ip4/49.51.49.145/tcp/4001/ipfs/QmPgyhBk3s4aC4648aCXXGigxqyR5zKnzXtteSkx8HT6K3
 ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5
 
-wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/bootstrap_nodes
+#wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/bootstrap_nodes
+curl -O -L https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/bootstrap_nodes
 cat ./bootstrap_nodes| while read line
 do
   ipfs bootstrap add $line

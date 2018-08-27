@@ -55,12 +55,14 @@ namespace ai
             cout << "start:         start training" << endl;
             cout << "stop:          stop training" << endl;
             cout << "start_multi:   start multi training tasks" << endl;
+            cout << "result:        download training result" <<endl;
             cout << "list:          list training tasks" << endl;
             cout << "peers:         get information of peers" << endl;
             cout << "logs:          get logs of task" << endl;
             cout << "show:          get attributes from taget node" <<endl;
             cout << "ps:            print ai request task cache info" << endl;
             cout << "clear:         clean screen" << endl;
+            cout << "system:        invoke system command" << endl;
             cout << "quit / exit:   exit program" << endl;
             cout << "-----------------------------------------" << endl;
         }
@@ -89,10 +91,12 @@ namespace ai
             m_invokers["start_multi"] = std::bind(&cmd_line_service::start_multi_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["list"] = std::bind(&cmd_line_service::list_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["peers"] = std::bind(&cmd_line_service::get_peers, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["result"] = std::bind(&cmd_line_service::result, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["logs"] = std::bind(&cmd_line_service::logs, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["show"] = std::bind(&cmd_line_service::show, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["clear"] = std::bind(&cmd_line_service::clear, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["system"] = std::bind(&cmd_line_service::system_cmd, this, std::placeholders::_1, std::placeholders::_2);
         }
         
         void cmd_line_service::on_usr_cmd()
@@ -455,7 +459,7 @@ namespace ai
                     ("tail", bpo::value<std::string>(), "get log from tail")
                     ("head", bpo::value<std::string>(), "get log from head")
                     ("task,t", bpo::value<std::string>(), "task id")
-                    ("interval,i", bpo::value<int>(), "time interval in seconds, will refresh log periodically, click 'q' to end");
+                    ("flush,f", "flush log periodically, click 'q' to end");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -508,20 +512,25 @@ namespace ai
                     }
 
                     int interval = 0;
-                    if (vm.count("interval") || vm.count("i"))
+                    bool loop = false;
+                    if (vm.count("flush") || vm.count("f"))
                     {
-                        interval = vm["interval"].as<int>();
+                        interval = LOG_AUTO_FLUSH_INTERVAL_IN_SECONDS;
+                        loop = true;
 
-                        if (interval < 5)
-                        {
-                            interval = 5;
-                        }
+                        req->head_or_tail = GET_LOG_TAIL;
+                        req->number_of_lines = DEFAULT_NUMBER_OF_LINES;
+
+                        cmd_logs_resp::m_series.enable = true;
+                        cmd_logs_resp::m_series.last_log_date = "";
+                        cmd_logs_resp::m_series.image_download_logs.clear();
+                    }
+                    else
+                    {
+                        cmd_logs_resp::m_series.enable = false;
                     }
 
-
-                    bool loop = (interval > 0);
-
-                    //loop ...
+                    // loop is true if log auto flush is enabled.
                     std::future<std::string> future;
                     if (loop)
                     {
@@ -530,33 +539,35 @@ namespace ai
 
                     do
                     {
+                        // fetch log from remote ai training node
+                        std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
+                        if (nullptr == resp)
                         {
-                            std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
-                            if (nullptr == resp)
-                            {
-                                cout << endl << "command time out" << endl;
-                            }
-                            else
-                            {
-                                format_output(resp);
-                            }
+                            cout << endl << "command time out" << endl;
                         }
-
+                        else
+                        {
+                            format_output(resp);
+                        }
 
                         if (!loop)
                         {
                             return;
                         }
 
-
+                        // repeat fetch log action after a certain time; or exit immediatelly if quit by operator.
                         if (future.wait_for(std::chrono::seconds(interval)) == std::future_status::ready)
                         {
-                            auto line = future.get();
-                            if (line == std::string("q")) return;
+                            if (future.get() == std::string("q")) return;
 
                             future = std::async(std::launch::async, get_line_from_cin);
                         }
-                    }while(true);
+
+                    }while(cmd_logs_resp::m_series.enable);
+
+                    cout << endl << "task exec completed, press enter to continue" << endl;
+                    cmd_logs_resp::m_series.last_log_date = "";
+                    cmd_logs_resp::m_series.image_download_logs.clear();
                 }
                 else if (vm.count("help") || vm.count("h"))
                 {
@@ -700,7 +711,7 @@ namespace ai
                         ("service,s", "print nodes' service info in the network")
                         ("filter,f", bpo::value<std::vector<std::string>>(), "if -s is specified, only print node matchs the filter.")
                         ("order,o", bpo::value<std::string>(), "if -s is specified, print node order by specific field.")
-                        ("interval,i", bpo::value<int>(), "time interval in seconds, if -s is specified, refresh service info periodically, click 'q' to end");
+                        ("interval,i", bpo::value<int>(), "time interval in seconds, refresh info periodically. Press 'q' to exit");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -733,8 +744,7 @@ namespace ai
                         req->keys.push_back("all");
                     }
                 }
-
-                if (vm.count("service") || vm.count("s"))
+                else if (vm.count("service") || vm.count("s"))
                 {
                     req->op = OP_SHOW_SERVICE_LIST;
 
@@ -835,6 +845,7 @@ namespace ai
                         return;
                     }
 
+                    std::cout << "Press q and then enter to exit " << std::endl;
 
                     if (future.wait_for(std::chrono::seconds(interval)) == std::future_status::ready)
                     {
@@ -851,6 +862,109 @@ namespace ai
             {
                 cout << argv[0] << " invalid option" << endl;
                 cout << opts;
+            }
+        }
+
+
+        void cmd_line_service::result(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("result options");
+
+            try
+            {
+                opts.add_options()
+                ("help,h", "download training result")
+                ("task,t", bpo::value<std::string>(), "task id")
+                ("output,o", bpo::value<std::string>(), "target folder to save the training result, /tmp by default");
+
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                if (vm.count("task") || vm.count("t"))
+                {
+                    std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
+                    req->task_id = vm["task"].as<std::string>();
+
+                    std::string number_of_lines;
+
+                    req->head_or_tail = GET_LOG_TAIL;
+
+                    req->number_of_lines = 20;
+
+                    req->sub_op = "result";
+
+#if  defined(__linux__) || defined(MAC_OSX)
+                    req->dest_folder = "/tmp";
+#elif defined(WIN32)
+                    req->dest_folder = "%TMP%";
+#endif
+
+                    if (vm.count("output") || vm.count("o"))
+                    {
+                        req->dest_folder = vm["output"].as<std::string>();
+                    }
+
+
+                    {
+                        std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
+                        if (nullptr == resp)
+                        {
+                            cout << endl << "command time out" << endl;
+                        }
+                        else
+                        {
+                            format_output(resp);
+                        }
+                    }
+
+
+                }
+                else if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                }
+                else
+                {
+                    cout << argv[0] << " invalid option" << endl;
+                    cout << opts;
+                }
+
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
+
+        }
+
+        void cmd_line_service::system_cmd(int argc, char* argv[])
+        {
+            try
+            {
+                std::string cmd;
+                for(int i=1; i<argc; i++)
+                {
+                    cmd += argv[i];
+                    cmd += " ";
+                }
+
+                //cout << "system: " << cmd <<endl;
+                if ( cmd.empty())
+                {
+                    cout << "system [cmd], e.g. system ls -l" <<endl;
+                }
+                else
+                {
+                    system(cmd.c_str());
+                }
+
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
             }
         }
 

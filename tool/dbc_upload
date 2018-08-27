@@ -1,0 +1,155 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+        echo "no dir path param, please input upload dir path"
+        exit
+fi
+
+if [ ! -d $1 ]; then
+  echo -n "dir not exist and eixt: "
+  echo $1
+  exit 1
+fi
+
+
+DIR=$1
+format=$2
+
+echo "dbc_upload | input $DIR"
+
+if [ -z "$format" ]; then
+    format="tar"
+fi
+
+if [ "$format" = "raw" ]; then
+
+    echo "dbc_upload | add to local repo"
+
+    DIR_HASH=`ipfs add -r $DIR | tail -n 1 | awk '{print $2}'`
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+        echo -n "ipfs add error and exit:"
+        echo $1
+        exit 1
+    fi
+
+elif [ "$format" = "tar" ]; then
+    echo "dbc_upload | add to local repo"
+
+    prefix=$(echo "${DIR//.}" | tr / _)
+    tmp_dir="./tmp$prefix"
+
+    rm -rf $tmp_dir
+    mkdir $tmp_dir
+
+    filename="$tmp_dir/$prefix.ipfs.upload.tar"
+
+    tar cvf $filename -C $DIR . > /dev/null 2>&1
+
+    if [ $? -ne 0 ]; then
+        echo "fail to tar $DIR"
+        rm -rf $tmp_dir
+        exit 1
+    fi
+
+    DIR_HASH=`ipfs add  -r $tmp_dir | tail -n 1 | awk '{print $2}'`
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        echo -n "ipfs add error and exit:"
+        echo $1
+        rm -rf $tmp_dir
+        exit 1
+    fi
+
+    rm -rf $tmp_dir
+
+else
+    echo "unknown format $format"
+    exit 1
+fi
+
+
+echo "dbc_upload | publish content"
+
+# check if content has already been stored in ipfs network: more than one node can provide the content
+stat_file=/tmp/$prefix.stat
+ipfs dht findprovs -n 2 $DIR_HASH > $stat_file 2>&1 &
+pid=$!
+
+max_wait_time=5
+rtn=1
+for i in `seq 1 $max_wait_time`; do
+    peers=$(cat $stat_file | wc -l)
+    if [ $peers -eq  2 ]; then
+        rtn=0
+        break
+    fi
+
+    error=$(cat $stat_file | grep -i error)
+    if [ -n "$error" ]; then
+        rtn=2
+        break;
+    fi
+
+    sleep 1
+done
+
+if [ $rtn -eq 0 ]; then
+
+    echo "dbc_upload | content already exist in storage network"
+    echo "DIR_HASH:$DIR_HASH"
+    echo "dbc_upload | upload complete"
+
+    if [ "$format" = "tar" ]; then
+        rm -rf $tmp_dir
+    fi
+
+    exit 0
+elif [ $rtn -eq 1 ]; then
+    kill $pid > /dev/null 2>&1
+    wait $pid > /dev/null
+else
+    echo "$error"
+    echo "dbc_upload | ipfs daemon abnormal,please check ipfs daemon status"
+
+    if [ "$format" = "tar" ]; then
+        rm -rf $tmp_dir
+    fi
+
+    exit 1
+fi
+
+
+# publish content to ipfs network
+
+server_list=(122.112.243.44  49.51.49.145  49.51.49.192)
+len=${#server_list[@]}
+
+p=$((RANDOM % $len))
+ok=1
+
+for i in `seq 0 $(($len-1))` ; do
+
+    server=${server_list[$(( ($p+i) % $len))]}
+    echo "dbc_upload | upload content to $server"
+
+    curl --connect-timeout 3 http://$server:5001/api/v0/get?arg=/ipfs/$DIR_HASH > /dev/null
+    if [ $? -eq 0 ]; then
+        ok=0
+        break
+    else
+        echo
+        echo "dbc_upload | fail to upload content to $server"
+    fi
+done
+
+if [ $ok -eq 0 ]; then
+    echo "DIR_HASH:$DIR_HASH"
+    echo "dbc_upload | content upload completed"
+    exit 0
+else
+    echo "dbc_upload | fail to upload content to ipfs network"
+    exit 1
+fi
+

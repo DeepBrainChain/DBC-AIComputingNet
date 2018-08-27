@@ -69,6 +69,10 @@ namespace matrix
 
             void set_address(std::string remote_ip, uint16_t remote_port);
 
+            int32_t exist_docker_image(const std::string & image_name);
+
+            std::shared_ptr<docker_info> get_docker_info();
+
         protected:
 
             http_client m_http_client;
@@ -77,6 +81,7 @@ namespace matrix
 
             uint16_t m_remote_port;
 
+            std::shared_ptr<docker_info> m_docker_info_ptr;
         };
 
     }

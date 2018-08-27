@@ -278,6 +278,11 @@ namespace ai
             uint8_t head_or_tail;
 
             uint16_t number_of_lines;
+
+            // for download training result
+            std::string sub_op;
+            std::string dest_folder;
+
         };
 
         class cmd_peer_node_log
@@ -289,6 +294,8 @@ namespace ai
             std::string log_content;
 
         };
+
+        //static std::string cmd_logs_resp::last_log_date="";
 
         class cmd_logs_resp : public matrix::core::msg_base, public outputter
         {
@@ -308,34 +315,48 @@ namespace ai
                 ,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77
                 ,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f
             };
-            void format_output()
-            {
-                if (E_SUCCESS != result)
-                {
-                    cout << result_info << endl;
-                    return;
-                }
 
-                LOG_DEBUG << "recv: " << result_info;
+            // for download training result
+            std::string sub_op;
+            std::string dest_folder;
 
-                auto it = peer_node_logs.begin();
-                for (; it != peer_node_logs.end(); it++)
-                {
-                    cout << "****************************************************************************************************" << endl;
-                    cout << "node id: " << it->peer_node_id << endl;
-                    const char *p = (it->log_content).c_str();
-                    size_t size = (it->log_content).size();
-                    for (size_t i = 0; i < size; i++)
-                    {
-                        if (char_filter.find(*p) != char_filter.end())
-                        {
-                            cout << *p;
-                        }
-                        p++;
-                    }
-                }
-                cout << "\n";
-            }
+            // for duplicate log hiding
+            // each log start with date info, like 2018-08-14T06:53:19.274586607Z
+            enum {
+                TIMESTAMP_STR_LENGTH = 30,
+                IMAGE_HASH_STR_PREFIX_LENGTH = 12,
+                IMAGE_HASH_STR_MAX_LENGTH = 64,
+                MAX_NUM_IMAGE_HASH_LOG = 512
+
+            };
+            //bool no_duplicate;
+
+            class series{
+            public:
+                std::string last_log_date;
+                bool enable;
+                std::set<std::string> image_download_logs;
+            };
+
+            static series m_series;
+
+        public:
+
+            void format_output();
+
+        private:
+            void format_output_segment();
+
+            void format_output_series();
+
+            void download_training_result();
+
+            std::string get_log_date(std::string& s);
+
+            std::string get_training_result_hash_from_log(std::string & s);
+
+            bool is_image_download_str(std::string &s);
+
         };
 
 
@@ -404,133 +425,18 @@ namespace ai
 
         public:
 
-            cmd_show_resp(): op(OP_SHOW_UNKNOWN),
-                             err(""),
-                             sort("gpu")
-            {
+            cmd_show_resp();
 
-            }
+            void error(std::string err_);
 
-            void error(std::string err_)
-            {
-                err = err_;
-            }
+            std::string to_string(std::vector<std::string> in);
 
-            std::string to_string(std::vector<std::string> in)
-            {
-                std::string out="";
-                for(auto& item: in)
-                {
-                    if(out.length())
-                    {
-                        out += " , ";
-                    }
-                    out += item ;
-                }
+            void format_service_list();
 
-                return out;
-            }
+            void format_node_info();
 
+            void format_output();
 
-            void format_service_list()
-            {
-                console_printer printer;
-                printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 16)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
-
-                printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
-
-
-                // order by indicated filed
-                std::map<std::string, node_service_info> s_in_order;
-                for (auto &it : *id_2_services)
-                {
-                    std::string k;
-                    if (sort == "name" )
-                    {
-                        k = it.second.name;
-                    }
-                    else if (sort == "timestamp")
-                    {
-                        k = it.second.time_stamp;
-                    }
-                    else
-                    {
-                        k = it.second.kvs[sort];
-                    }
-
-                    auto v = it.second;
-                    v.kvs["id"]=it.first;
-                    s_in_order[k + it.first] = v;  // "k + id" is unique
-                }
-
-
-                for (auto &it : s_in_order)
-                {
-                    std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
-
-                    printer << matrix::core::init
-                            << it.second.kvs["id"]
-                            << it.second.name
-                            << ver
-                            //<< it.second.kvs["gpu"]
-                            << string_util::rtrim(it.second.kvs["gpu"],'\n')
-                            << it.second.kvs["state"]
-                            << to_string(it.second.service_list)
-                            << time_util::time_2_str(it.second.time_stamp)
-                            << matrix::core::endl;
-                }
-                printer << matrix::core::endl;
-
-            }
-
-
-            void format_node_info()
-            {
-
-                auto it = kvs.begin();
-                //cout << "node id: " << o_node_id << endl;
-
-                auto count = kvs.size();
-                for (; it != kvs.end(); it++)
-                {
-                    //cout << "******************************************************\n";
-                    cout << "------------------------------------------------------\n";
-                    if (count)
-                    {
-                        cout << it->first << ":\n";
-                    }
-                    cout << it->second << "\n";
-                    cout << "------------------------------------------------------\n";
-                    //cout << "******************************************************\n";
-                }
-                cout << "\n";
-
-            }
-
-            void format_output()
-            {
-                if (err != "")
-                {
-                    cout << err << endl;
-                    return;
-                }
-
-                if (op == OP_SHOW_SERVICE_LIST)
-                {
-                    format_service_list();
-                    return;
-                }
-                else if (op == OP_SHOW_NODE_INFO)
-                {
-                    format_node_info();
-                    return;
-                }
-                else
-                {
-
-                    LOG_ERROR << "unknown op " << op;
-                }
-            }
         };
 
         /*class cmd_clear_req : public matrix::core::msg_base

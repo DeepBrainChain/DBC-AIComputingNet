@@ -22,7 +22,7 @@
 #include "connection_manager.h"
 #include "env_manager.h"
 #include "topic_manager.h"
-#include "version.h"
+#include "common/version.h"
 #include "p2p_net_service.h"
 #include "ai_power_requestor_service.h"
 #include "ai_power_provider_service.h"
@@ -246,13 +246,13 @@ namespace ai
             opts.add_options()
                 ("help,h", "get dbc core help info")
                 ("version,v", "get core version info")
-                ("init,i", "init node id")
-                ("daemon,d", "run as daemon process on Linux or Mac os")
+                ("init", "init node id")
+                ("daemon,d", "run as daemon process on Linux")
                 ("peer", bpo::value<std::vector<std::string>>(), "")
                 ("ai_training,a", "run as ai training service provider")
                 ("name,n", bpo::value<std::string>(), "node name")
                 ("max_connect", bpo::value<int32_t>(), "")
-                ("path", bpo::value<std::string>(), "path of dbc exe file");
+                ("id", "get local node id");
 
             try
             {
@@ -271,15 +271,51 @@ namespace ai
                 {
                     std::string ver = STR_VER(CORE_VERSION);
                     cout << ver.substr(2, 2) << "." << ver.substr(4, 2) << "." << ver.substr(6, 2) << "." << ver.substr(8, 2);
+                    cout << "\n";
                     return E_EXIT_PARSE_COMMAND_LINE;
                 }
                 else if (vm.count("init"))
                 {
-                    return on_cmd_init();
+                    std::string in_;
+                    cout << "Warning: the node id will be reset. Do you want to continue [yes/no]?  ";
+                    cin >> in_;
+                    if (in_ == std::string("yes") || in_ == std::string("y"))
+                    {
+                        return on_cmd_init();
+                    }
+                    else
+                    {
+                        cout<< "exit"<<endl;
+                    }
                 }
                 else if (vm.count("daemon") || vm.count("d"))
                 {
                     return on_daemon();
+                }
+                else if (vm.count("id"))
+                {
+                    bpo::variables_map vm;
+
+                    std::shared_ptr<matrix::core::module> mdl(nullptr);
+                    mdl = std::dynamic_pointer_cast<module>(std::make_shared<env_manager>());
+                    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+                    auto ret = mdl->init(vm);
+                    if (E_SUCCESS != ret)
+                    {
+                        return ret;
+                    }
+
+                    mdl = std::dynamic_pointer_cast<module>(std::make_shared<conf_manager>());
+                    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+                    ret = mdl->init(vm);
+                    if (E_SUCCESS != ret)
+                    {
+                        return ret;
+                    }
+
+                    cout << CONF_MANAGER->get_node_id();
+                    cout << "\n";
+                    return E_EXIT_PARSE_COMMAND_LINE;
                 }
                 //ignore
                 else

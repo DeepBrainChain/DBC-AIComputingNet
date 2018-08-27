@@ -15,14 +15,14 @@ echo_help()
     echo "plog xxcmd       : you can use other file batch cmd to show the latest dbc log"
 }
 
-
-logpath=`pwd`/logs
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+logpath=$DIR/logs
 
 if [ ! -d $logpath ] ; then
     echo "logs is not exist. pls check dbc running status and dbc logs folder"
     exit
 fi
-cd ./logs
+cd $logpath
 loglatest=`ls -t|head -1`
 
 if [[ $# = 0 ]];then

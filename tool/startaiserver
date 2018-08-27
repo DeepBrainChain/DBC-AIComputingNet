@@ -1,10 +1,10 @@
 #!/bin/bash
 
 if [ -z "$1" ]; then
-    ./dbc --ai --daemon --path `pwd`
+    dbc --ai --daemon
 else
 # use specified node name
-    ./dbc --ai --daemon -n "$1" --path `pwd`
+    dbc --ai --daemon -n "$1"
 fi
 
 

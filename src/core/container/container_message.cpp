@@ -199,6 +199,10 @@ namespace matrix
 
             json_host_config.AddMember("ShmSize", host_config.share_memory, allocator);
 
+            if(!host_config.runtime.empty())
+            {
+                json_host_config.AddMember("Runtime",  STRING_REF(host_config.runtime), allocator);
+            }
 
             rapidjson::Value json_ulimts(rapidjson::kArrayType);
             for (auto it = host_config.ulimits.begin(); it != host_config.ulimits.end(); it++)
@@ -311,6 +315,47 @@ namespace matrix
                 LOG_ERROR << "container client inspect container resp exception";
             }
 
+        }
+
+        void docker_info::from_string(const std::string & buf)
+        {
+            try
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(buf.c_str());              //left to later not all fields set
+                if (doc.Parse<0>(buf.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse container_inspect_response file error:" << GetParseError_En(doc.GetParseError());
+                    return;
+                }
+                //message
+                if (!doc.HasMember("DockerRootDir"))
+                {
+                    LOG_ERROR << "container client inspect container resp has no id state";
+                    return;
+                }
+
+                rapidjson::Value &root_dir = doc["DockerRootDir"];
+                if (root_dir.GetType() == rapidjson::kStringType)
+                {
+                    this->root_dir = root_dir.GetString();
+                }
+
+                //runtimes
+                if (doc.HasMember("Runtimes"))
+                {
+                    rapidjson::Value &json_runtimes = doc["Runtimes"];
+                    if (json_runtimes.HasMember(RUNTIME_NVIDIA))
+                    {
+                        runtimes[RUNTIME_NVIDIA] = RUNTIME_NVIDIA;
+                    }
+                }
+
+            }
+            catch (...)
+            {
+                LOG_ERROR << "container client get docker info exception";
+            }
         }
 
     }

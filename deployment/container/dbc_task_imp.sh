@@ -45,10 +45,12 @@ upload_result_file()
         exit
     fi
 
-    upload.sh /$home_dir/output
+    dbc_upload /$home_dir/output raw
 
     echo " please check the training result, e.g."
     echo "     ipfs cat /ipfs/[DIR_HASH]/training_result_file"
+    echo " or download the training result, e.g."
+    echo "     dbc>>> result -t [task_id] -o [dir]"
 }
 
 stop_ipfs()
@@ -170,7 +172,7 @@ download_run_once()
 
 download()
 {
-    max_retry=5
+    max_retry=10
     ok=1
 
     for i in `seq 1 $max_retry`;
@@ -187,6 +189,22 @@ download()
         echo "error | fail to download "
         return 1
     fi
+
+    # extract tar file
+    f_array=$(ls $2/*.ipfs.upload.tar 2>/dev/null)
+    for i in ${f_array[@]}; do
+        echo "extract tar file $i"
+        tar xf $i -C $2 > /dev/null 2>&1
+
+        if [ $? -ne 0 ]; then
+            echo "fail to extract $i "
+            rm -f $i
+
+            return 1
+        fi
+
+        rm -f $i
+    done
 
     return 0
 }
@@ -226,6 +244,7 @@ download $code_dir_hash ./code
 
 if [ $? -ne 0 ]; then
         echo "download code dir failed and dbc_task.sh exit"
+        stop_ipfs
         exit
 fi
 
@@ -256,9 +275,6 @@ if [ -n "$data_dir_hash" ]; then
 
     echo -n "end to download data dir: "
     echo $data_dir_hash
-
-    # add link from code_dir to data dir
-    cp -rs $home_dir/data/* $home_dir/code/ > /dev/null 2>&1
 
     sleep $sleep_time
 fi
