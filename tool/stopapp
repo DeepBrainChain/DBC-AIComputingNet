@@ -8,6 +8,7 @@
 #
 
 USERID=`id -u`
+LOGNAME=`whoami`
 
 GetProcArgv()
 {

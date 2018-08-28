@@ -4,6 +4,7 @@
 
 SYSTEM=`uname -s`
 USERID=`id -u`
+LOGNAME=`whoami`
 
 myecho()
 {

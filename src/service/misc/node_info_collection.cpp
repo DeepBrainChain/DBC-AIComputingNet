@@ -44,7 +44,7 @@ namespace service
             m_enable = true;
             m_honest = true;
 
-            m_query_sh_file_name = ".node_info_query.sh";
+            m_query_sh_file_name = env_manager::get_home_path().generic_string() + "/.node_info_query.sh";
             m_sh_file_hash = std::hash<std::string> {} (node_info_query_sh_str);
 
             m_node_2_services.clear();
