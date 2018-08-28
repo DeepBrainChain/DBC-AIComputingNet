@@ -31,7 +31,9 @@ sudo cp ./nvidia-persistenced.service /lib/systemd/system/
 sudo rm nvidia-persistenced.service
 sudo systemctl daemon-reload
 sudo systemctl enable nvidia-persistenced.service
+sudo systemctl stop nvidia-persistenced.service
 sudo systemctl start nvidia-persistenced.service
+sudo systemctl restart nvidia-persistenced.service
 
 
 echo "begin to configure the DBC program container.conf item :host_volum_dir"
