@@ -140,7 +140,7 @@ namespace ai
 
             //ai power provider service
 
-            std::shared_ptr<nvidia_config> get_nividia_config_from_cli();
+            std::shared_ptr<nvidia_config> get_nvidia_config_from_cli();
 
             std::shared_ptr<container_config> get_container_config(std::shared_ptr<ai_training_task> task);
 
@@ -170,6 +170,7 @@ namespace ai
             int32_t check_pull_image_state(std::shared_ptr<ai_training_task> task);
             bool    task_need_auth(std::shared_ptr<ai_training_task> task);
 
+            nvidia_docker_version get_nv_docker_version();
 
         protected:
 
@@ -205,6 +206,8 @@ namespace ai
             std::shared_ptr<image_manager> m_pull_image_mng = nullptr;
             bool m_auto_pull_image = true;
             int64_t m_auth_time_interval = 0;
+
+            nvidia_docker_version m_nv_docker_version;
         };
 
     }
