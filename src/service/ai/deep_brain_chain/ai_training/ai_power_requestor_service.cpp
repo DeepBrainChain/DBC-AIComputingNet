@@ -133,11 +133,10 @@ namespace ai
 
                 task_db_path /= fs::path("req_training_task.db");
                 LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
-
+                
                 //open db
                 leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
-
-
+                
                 if (false == status.ok())
                 {
                     LOG_ERROR << "ai power requestor service init training task db error: " << status.ToString();
@@ -146,6 +145,7 @@ namespace ai
 
                 //smart point auto close db
                 m_req_training_task_db.reset(db);
+                LOG_INFO << "ai power requestor training db path:" << task_db_path;
             }
             catch (const std::exception & e)
             {
@@ -1061,7 +1061,7 @@ namespace ai
                 return false;
             }
 
-            LOG_ERROR << "ai power requestor service write task to db, task id: " << task_info.task_id;
+            LOG_INFO << "ai power requestor service write task to db, task id: " << task_info.task_id;
             return true;
         }
 
