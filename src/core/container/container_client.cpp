@@ -467,7 +467,7 @@ namespace matrix
             }
         }
 
-        std::shared_ptr<nvidia_config_resp> container_client::get_nividia_config()
+        std::shared_ptr<nvidia_config_resp> container_client::get_nvidia_config()
         {
             //endpoint
             std::string endpoint = "/docker/cli";

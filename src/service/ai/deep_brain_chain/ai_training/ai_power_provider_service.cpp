@@ -55,7 +55,8 @@ namespace ai
             , m_nvidia_client(std::make_shared<container_client>(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT))
             , m_training_task_timer_id(INVALID_TIMER_ID)
             , m_nv_config(nullptr)
-        {
+            , m_nv_docker_version(NVIDIA_DOCKER_UNKNOWN)
+    {
 
         }
 
@@ -1128,7 +1129,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        std::shared_ptr<nvidia_config> ai_power_provider_service::get_nividia_config_from_cli()
+        std::shared_ptr<nvidia_config> ai_power_provider_service::get_nvidia_config_from_cli()
         {
             //already have
             if (nullptr != m_nv_config)
@@ -1142,7 +1143,7 @@ namespace ai
                 return nullptr;
             }
 
-            std::shared_ptr<nvidia_config_resp> resp = m_nvidia_client->get_nividia_config();
+            std::shared_ptr<nvidia_config_resp> resp = m_nvidia_client->get_nvidia_config();
             if (nullptr == resp)
             {
                 LOG_ERROR << "nvidia client get nvidia config error";
@@ -1266,26 +1267,9 @@ namespace ai
             }
 
 
-            nvidia_docker_version nv_docker_version = NVIDIA_DOCKER_UNKNOWN;
-            std::shared_ptr<docker_info> docker_info_ptr = nullptr;
+            auto nv_docker_ver = get_nv_docker_version();
 
-            std::shared_ptr<nvidia_config> nv_config = get_nividia_config_from_cli();
-            if (nv_config != nullptr)
-            {
-                // nvidia-docker 1.x added a plug-in on runc.
-                nv_docker_version = NVIDIA_DOCKER_ONE;
-            }
-            else
-            {
-                // nvidia-docker 2.x add a new docker runtime named nvidia. Check if nvidia runtime exists.
-                docker_info_ptr = m_container_client->get_docker_info();
-                if (docker_info_ptr && docker_info_ptr->runtimes.count(RUNTIME_NVIDIA))
-                {
-                    nv_docker_version = NVIDIA_DOCKER_TWO;
-                }
-            }
-
-            if (nv_docker_version != NVIDIA_DOCKER_UNKNOWN)
+            if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
             {
                 LOG_DEBUG << "get common attributes of nvidia docker";
                 config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
@@ -1294,10 +1278,12 @@ namespace ai
                 config->host_config.ulimits.push_back(container_ulimits("memlock", -1, -1));
             }
 
-            switch (nv_docker_version)
+            switch (nv_docker_ver)
             {
                 case NVIDIA_DOCKER_ONE:
                 {
+                    std::shared_ptr<nvidia_config> nv_config = get_nvidia_config_from_cli();
+
                     if (!nv_config) break;
 
                     LOG_INFO << "nvidia docker 1.x";
@@ -1899,6 +1885,35 @@ namespace ai
             }
             
             return false;
+        }
+
+        /**
+         *
+         * @return nvidia docker version in the host
+         */
+        nvidia_docker_version ai_power_provider_service::get_nv_docker_version()
+        {
+            if (m_nv_docker_version != NVIDIA_DOCKER_UNKNOWN)
+            {
+                return m_nv_docker_version;
+            }
+
+            if (get_nvidia_config_from_cli() != nullptr)
+            {
+                // nvidia-docker 1.x added a plug-in on runc.
+                m_nv_docker_version = NVIDIA_DOCKER_ONE;
+            }
+            else
+            {
+                // nvidia-docker 2.x add a new docker runtime named nvidia. Check if nvidia runtime exists.
+                auto docker_info_ptr = m_container_client->get_docker_info();
+                if (docker_info_ptr && docker_info_ptr->runtimes.count(RUNTIME_NVIDIA))
+                {
+                    m_nv_docker_version = NVIDIA_DOCKER_TWO;
+                }
+            }
+
+            return m_nv_docker_version;
         }
     }
 
