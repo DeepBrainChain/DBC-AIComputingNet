@@ -21,6 +21,7 @@ add_executable(db_show
         src/parse_peer_db.cpp
         src/parse_pro_db.cpp
         src/parse_req_db.cpp
+        src/repair_db.cpp
         src/peers_db_types.cpp
         src/peers_db_types.h
         src/protocol.cpp
