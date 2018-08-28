@@ -32,7 +32,7 @@ sudo rm nvidia-persistenced.service
 sudo systemctl daemon-reload
 sudo systemctl enable nvidia-persistenced.service
 sudo systemctl stop nvidia-persistenced.service
-sudo systemctl start nvidia-persistenced.service
+#sudo systemctl start nvidia-persistenced.service
 sudo systemctl restart nvidia-persistenced.service
 
 
