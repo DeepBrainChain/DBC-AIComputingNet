@@ -410,6 +410,8 @@ namespace ai
 
                 //load task
                 load_task_from_db();
+                
+                LOG_INFO << "ai power provider training db path:" << task_db_path;
             }
             catch (const std::exception & e)
             {

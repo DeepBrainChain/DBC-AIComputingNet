@@ -102,7 +102,6 @@ namespace ai
         protected:
 
             std::shared_ptr<leveldb::DB> m_req_training_task_db;
-
         };
 
     }
