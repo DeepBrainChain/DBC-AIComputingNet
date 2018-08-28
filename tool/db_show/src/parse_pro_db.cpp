@@ -7,6 +7,7 @@ void parse_provide_db(const char *path)
     leveldb::Options  options;
 
     options.create_if_missing = false;
+    options.reuse_logs = true;
     std::shared_ptr<leveldb::DB> m_prov_training_task_db;
 
     try
@@ -17,10 +18,14 @@ void parse_provide_db(const char *path)
         {
             exit(0);
         }
+
+        leveldb::ReadOptions r_options;
+        r_options.snapshot = db->GetSnapshot();
+
         m_prov_training_task_db.reset(db);
 
         std::unique_ptr<leveldb::Iterator> it;
-        it.reset(m_prov_training_task_db->NewIterator(leveldb::ReadOptions()));
+        it.reset(m_prov_training_task_db->NewIterator(r_options));
 
         //std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;
         for (it->SeekToFirst(); it->Valid(); it->Next())
@@ -56,6 +61,7 @@ void parse_provide_db(const char *path)
 
 
         }
+        db->ReleaseSnapshot(r_options.snapshot);
     }
     catch (const std::exception & e)
     {

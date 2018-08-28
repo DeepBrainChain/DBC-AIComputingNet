@@ -9,6 +9,7 @@ void parse_peer_db(const char *path)
     leveldb::Options  options;
 
     options.create_if_missing = false;
+    options.reuse_logs = true;
     std::shared_ptr<leveldb::DB> m_peer_db;
 
     try
@@ -20,9 +21,10 @@ void parse_peer_db(const char *path)
             exit(0);
         }
         m_peer_db.reset(db);
-
+        leveldb::ReadOptions r_options;
+        r_options.snapshot = db->GetSnapshot();
         std::unique_ptr<leveldb::Iterator> it;
-        it.reset(m_peer_db->NewIterator(leveldb::ReadOptions()));
+        it.reset(m_peer_db->NewIterator(r_options));
         for (it->SeekToFirst(); it->Valid(); it->Next())
         {
             //deserialization
@@ -44,6 +46,7 @@ void parse_peer_db(const char *path)
                 << " last_conn_tm:" << db_candidate.last_conn_tm << " score:" << db_candidate.score << " node_id:" << db_candidate.node_id << " node_type:"
                 << to_node_type_string(db_candidate.node_type) << endl;
         }
+        db->ReleaseSnapshot(r_options.snapshot);
     }
     catch (const std::exception & e)
     {
