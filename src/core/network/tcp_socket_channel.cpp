@@ -62,6 +62,8 @@ namespace matrix
             //callback handler
             m_socket_handler->on_before_msg_receive();
 
+            m_state = CHANNEL_ACTIVE; 
+
             return this->read();
         }
 
