@@ -7,7 +7,7 @@
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !define IPFS_CONFIG_PATH "$PROFILE\.ipfs"
 !define PATH_KEY "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-
+!define CU_PATH_KEY "Environment"
 
 SetCompressor lzma
 
@@ -15,6 +15,8 @@ SetCompressor lzma
 !include "MUI.nsh"
 !include "LogicLib.nsh"
 ;!include "UsefulLib.nsh"
+!include "WordFunc.nsh"
+
 
 !addplugindir "${NSISDIR}\Plugins"
 
@@ -36,6 +38,10 @@ SetCompressor lzma
 !define MUI_FINISHPAGE_RUN_PARAMETERS ""
 #!define MUI_FINISHPAGE_SHOWREADME "init dbc"
 !insertmacro MUI_PAGE_FINISH
+
+; 开始菜单设置页面
+; Var ICONS_GROUP
+
 
 ; 安装卸载过程页面
 !insertmacro MUI_UNPAGE_INSTFILES
@@ -82,6 +88,11 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
   ; add dbc and ipfs to PATH
 	Var /GLOBAL vPath
+  ReadRegStr $vPath HKCU "${CU_PATH_KEY}" "Path"
+  strcpy $vPath "$vPath;$INSTDIR"
+  strcpy $vPath "$vPath;$INSTDIR\ipfs"
+  WriteRegStr HKCU "${CU_PATH_KEY}" "Path" "$vPath"
+  
   ReadRegStr $vPath HKLM "${PATH_KEY}" "Path"
   strcpy $vPath "$vPath;$INSTDIR"
   strcpy $vPath "$vPath;$INSTDIR\ipfs"
@@ -110,6 +121,37 @@ Section Uninstall
   Delete   "$INSTDIR\uninst.exe"
   
   RMDir /r "${IPFS_CONFIG_PATH}"
+
+	; rm dbc path from user env variable Path
+	Var /GLOBAL envPath
+	ReadRegStr $envPath HKCU "${CU_PATH_KEY}" "Path"
+ 	${WordReplace} $envPath ";$INSTDIR\ipfs\ipfs.exe" "" "+" $envPath
+	${WordReplace} $envPath ";$INSTDIR\ipfs" "" "+" $envPath
+	${WordReplace} $envPath "$INSTDIR\ipfs\ipfs.exe" "" "+" $envPath
+	${WordReplace} $envPath "$INSTDIR\ipfs" "" "+" $envPath
+	;MessageBox MB_OK '$envPath - $INSTDIR'
+	${WordReplace} $envPath ";$INSTDIR\dbc.exe" "" "+" $envPath
+	${WordReplace} $envPath ";$INSTDIR" "" "+" $envPath
+	${WordReplace} $envPath "$INSTDIR\dbc.exe" "" "+" $envPath
+	${WordReplace} $envPath "$INSTDIR" "" "+" $envPath
+	;MessageBox MB_OK '$envPath - $INSTDIR'
+	WriteRegExpandStr HKCU "${CU_PATH_KEY}" "Path" "$envPath"
+
+	; rm dbc path from sys env variable Path
+	Var /GLOBAL sysEnvPath
+	ReadRegStr $sysEnvPath HKLM "${PATH_KEY}" "Path"
+ 	${WordReplace} $sysEnvPath ";$INSTDIR\ipfs\ipfs.exe" "" "+" $sysEnvPath
+	${WordReplace} $sysEnvPath ";$INSTDIR\ipfs" "" "+" $sysEnvPath
+	${WordReplace} $sysEnvPath "$INSTDIR\ipfs\ipfs.exe" "" "+" $sysEnvPath
+	${WordReplace} $sysEnvPath "$INSTDIR\ipfs" "" "+" $sysEnvPath
+	;MessageBox MB_OK '$sysEnvPath - $INSTDIR'
+	${WordReplace} $sysEnvPath ";$INSTDIR\dbc.exe" "" "+" $sysEnvPath
+	${WordReplace} $sysEnvPath ";$INSTDIR" "" "+" $sysEnvPath
+	${WordReplace} $sysEnvPath "$INSTDIR\dbc.exe" "" "+" $sysEnvPath
+	${WordReplace} $sysEnvPath "$INSTDIR" "" "+" $sysEnvPath
+	;MessageBox MB_OK '$sysEnvPath - $INSTDIR'
+	WriteRegExpandStr HKLM "${PATH_KEY}" "Path" "$sysEnvPath"
+
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   SetAutoClose true
