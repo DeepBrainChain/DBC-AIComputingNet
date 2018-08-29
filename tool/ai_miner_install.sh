@@ -32,7 +32,7 @@ sudo rm nvidia-persistenced.service
 sudo systemctl daemon-reload
 sudo systemctl enable nvidia-persistenced.service
 sudo systemctl stop nvidia-persistenced.service
-#sudo systemctl start nvidia-persistenced.service
+sudo systemctl start nvidia-persistenced.service
 sudo systemctl restart nvidia-persistenced.service
 
 
@@ -107,11 +107,5 @@ sudo echo "cd $current_directory/dbc_repo/" >> /etc/rc.local
 sudo echo 'su dbc -c "./dbc --ai --daemon"' >> /etc/rc.local
 echo -e
 
-echo "begin to start DBC ai-server program"
-cd ./dbc_repo/
-./dbc --ai --daemon
-cd ./../
-echo "start DBC ai-server program finished"
-
-echo "dbc ai user linux install finished,DBC AI server has already run as daemon mode"
-echo "run source ~/.bashrc to make DBC ENV effective"
+echo "dbc ai user linux install finished"
+echo "run newgrp - docker and source ~/.bashrc to make DBC ENV effective"
