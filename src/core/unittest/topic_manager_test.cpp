@@ -1,12 +1,13 @@
+
+#include "topic_manager.h"
+#include <string>
+
 // The following two lines indicates boost test with Shared Library mode
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 
 using namespace boost::unit_test;
-
-#include "topic_manager.h"
-#include <string>
 
 BOOST_AUTO_TEST_CASE(service_bus_test) {
 

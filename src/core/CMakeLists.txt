@@ -47,9 +47,6 @@ endforeach()
 # remove test files from dbc build
 #list(REMOVE_ITEM CORE_MATH_SRCS ${SRC_PATH}/core/math/os_math_test.cpp)
 
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-
-
 add_library(dbc_core STATIC
         ${SRC_LIST}
         ./network/socket_channel_handler.h
