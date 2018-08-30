@@ -45,6 +45,7 @@ include_directories(
         ${SRC_PATH}/service_core
 
         ${SRC_PATH}/service/misc
+        ${SRC_PATH}/service/topic
 
 )
 
@@ -58,7 +59,7 @@ add_executable(dbc_service_test
         ${SRC_PATH}/service/misc/service_info_collection.cpp
         )
 
-set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
+set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if(APPLE)
     TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 )

@@ -47,10 +47,10 @@ fi
 # run
 #
 echo "run dbc core test"
-./src/core/unittest/dbc_core_test  -r detailed ${@:1}
+../../output/dbc_core_test  -r detailed ${@:1}
 
 echo "run dbc service core test"
-./src/service_core/unittest/dbc_service_core_test  -r detailed -l all ${@:1}
+../../output/dbc_service_core_test  -r detailed -l all ${@:1}
 
 echo "run dbc service test"
-./src/service/unittest/dbc_service_test  -r detailed -l all ${@:1}
+../../output/dbc_service_test  -r detailed -l all ${@:1}

@@ -1,14 +1,13 @@
 // The following two lines indicates boost test with Shared Library mode
+
+#include "rw_lock.h"
+
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 
 using namespace boost::unit_test;
 using namespace std;
-
-
-
-
 
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -44,8 +43,6 @@ BOOST_AUTO_TEST_CASE(boost_rwlock_test) {
 }
 
 
-
-#include "rw_lock.h"
 
 BOOST_AUTO_TEST_CASE(rwlock2_test) {
     matrix::core::rw_lock lock;
