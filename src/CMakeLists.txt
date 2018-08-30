@@ -142,7 +142,7 @@ set(LIBRARIES)
 
 #set(dbclib ${SRC_PATH}/core/lib/libdbc_core.a ${SRC_PATH}/service_core/lib/libdbc_service_core.a)
 
-set(dbclib ${SRC_PATH}/service_core/lib/libdbc_service_core.a ${SRC_PATH}/core/lib/libdbc_core.a)
+set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 
 if (LINUX)

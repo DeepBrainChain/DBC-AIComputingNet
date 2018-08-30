@@ -18,7 +18,15 @@ set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 include(cmake/compiler_option.cmake)
 include(cmake/find_external_lib.cmake)
 
+SET(HOME_PATH ${CMAKE_SOURCE_DIR})
 
+if ($ENV{DBC_OUTPUT})
+    SET(EXECUTABLE_OUTPUT_PATH $ENV{DBC_OUTPUT}/output)
+    SET(LIBRARY_OUTPUT_PATH $ENV{DBC_OUTPUT}/output)
+else ()
+    SET(EXECUTABLE_OUTPUT_PATH ${HOME_PATH}/output)
+    SET(LIBRARY_OUTPUT_PATH ${HOME_PATH}/output)
+endif ()
 # dbc executable
 add_subdirectory("src")
 

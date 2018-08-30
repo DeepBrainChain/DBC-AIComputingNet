@@ -52,10 +52,10 @@ add_executable(dbc_core_test
         util_test.cpp
         )
 
-set(dbclib  ${SRC_PATH}/core/lib/libdbc_core.a)
+set(dbclib  ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1)
+    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lgmp)
 elseif (LINUX)
     TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lboost_thread -lcrypto -lssl -lsecp256k1 -pthread -ldl)
 endif()
