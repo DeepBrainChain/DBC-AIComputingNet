@@ -503,7 +503,7 @@ namespace ai
                         //req->number_of_lines = lines > MAX_NUMBER_OF_LINES ? MAX_NUMBER_OF_LINES : lines;
                         if (lines > MAX_NUMBER_OF_LINES)
                         {
-                            cout << argv[0] << " tail number_of_lines must < " << MAX_NUMBER_OF_LINES << endl;
+                            cout << argv[0] << "number_of_lines must < " << MAX_NUMBER_OF_LINES << endl;
                             cout << opts;
                             return;
                         }
