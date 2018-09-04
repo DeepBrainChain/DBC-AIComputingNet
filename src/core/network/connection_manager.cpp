@@ -28,9 +28,9 @@ namespace matrix
     {
         connection_manager::connection_manager() 
             : m_channel_recycle_timer(INVALID_TIMER_ID)
-            , m_worker_group(new nio_loop_group())
-            , m_acceptor_group(new nio_loop_group())
-            , m_connector_group(new nio_loop_group())
+            , m_worker_group(std::make_shared<nio_loop_group>())
+            , m_acceptor_group(std::make_shared<nio_loop_group>())
+            , m_connector_group(std::make_shared<nio_loop_group>())
         {
         }
 
@@ -330,7 +330,7 @@ namespace matrix
             try
             {
                 std::weak_ptr<io_service> ios(m_acceptor_group->get_io_service());
-                std::shared_ptr<tcp_acceptor> acceptor(new tcp_acceptor(ios, m_worker_group, ep, func));
+                std::shared_ptr<tcp_acceptor> acceptor = std::make_shared<tcp_acceptor>(ios, m_worker_group, ep, func);
                 assert(acceptor != nullptr);
 
                 int32_t ret = acceptor->start();

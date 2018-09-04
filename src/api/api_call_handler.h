@@ -491,7 +491,7 @@ namespace ai
         {
         public:
 
-            api_call_handler() : m_wait(new callback_wait<>)
+            api_call_handler() : m_wait(std::make_shared<callback_wait<>>())
             {
                 init_subscription();
             }

@@ -1548,7 +1548,7 @@ namespace ai
             assert(nullptr != m_prov_training_task_db && nullptr != task);
 
             //serialization
-            std::shared_ptr<byte_buf> out_buf(new byte_buf);
+            std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
             binary_protocol proto(out_buf.get());
             task->write(&proto);
 
@@ -1576,7 +1576,7 @@ namespace ai
                     task = std::make_shared<ai_training_task>();
 
                     //deserialization
-                    std::shared_ptr<byte_buf> task_buf(new byte_buf);
+                    std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
                     task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());            //may exception
                     binary_protocol proto(task_buf.get());
                     task->read(&proto);             //may exception

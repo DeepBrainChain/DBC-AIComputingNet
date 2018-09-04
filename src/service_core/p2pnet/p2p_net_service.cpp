@@ -1513,7 +1513,7 @@ namespace matrix
                     db_candidate = std::make_shared<db_peer_candidate>();
 
                     //deserialization
-                    std::shared_ptr<byte_buf> peer_candidate_buf(new byte_buf);
+                    std::shared_ptr<byte_buf> peer_candidate_buf = std::make_shared<byte_buf>();
                     peer_candidate_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());            //may exception
 
                     binary_protocol proto(peer_candidate_buf.get());
@@ -1596,7 +1596,7 @@ namespace matrix
                     db_candidate->__set_node_type(it->node_type);
 
                     //serialization
-                    std::shared_ptr<byte_buf> out_buf(new byte_buf);
+                    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
                     binary_protocol proto(out_buf.get());
                     db_candidate->write(&proto);
 
