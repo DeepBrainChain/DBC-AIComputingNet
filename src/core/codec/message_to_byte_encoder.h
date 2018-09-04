@@ -24,7 +24,7 @@ namespace matrix
 
             virtual encode_status encode(channel_handler_context &ctx, message & msg, byte_buf &out)
             {
-                std::shared_ptr<binary_protocol> proto(new binary_protocol(&out));
+                std::shared_ptr<binary_protocol> proto = std::make_shared<binary_protocol>(&out);
 
                 try
                 {

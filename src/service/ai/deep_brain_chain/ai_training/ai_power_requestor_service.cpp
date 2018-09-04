@@ -1045,7 +1045,7 @@ namespace ai
             }
 
             //serialization
-            std::shared_ptr<byte_buf> out_buf(new byte_buf);
+            std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
             binary_protocol proto(out_buf.get());
             task_info.write(&proto);
 
@@ -1082,7 +1082,7 @@ namespace ai
                 for (it->SeekToFirst(); it->Valid(); it->Next())
                 {
                     //deserialization
-                    std::shared_ptr<byte_buf> buf(new byte_buf);
+                    std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
                     buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
                     binary_protocol proto(buf.get());
                     ai::dbc::cmd_task_info t_info;
@@ -1130,7 +1130,7 @@ namespace ai
                 }
 
                 //deserialization
-                std::shared_ptr<byte_buf> buf(new byte_buf);
+                std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
                 buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
                 binary_protocol proto(buf.get());
                 ai::dbc::cmd_task_info t_info;
@@ -1162,7 +1162,7 @@ namespace ai
                 }
 
                 //deserialization
-                std::shared_ptr<byte_buf> buf(new byte_buf);
+                std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
                 buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
                 binary_protocol proto(buf.get());
                 task_info.read(&proto);

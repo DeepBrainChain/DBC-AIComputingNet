@@ -147,7 +147,7 @@ namespace matrix
         
         std::shared_ptr<socket_channel_handler> matrix_client_socket_channel_handler::create(std::shared_ptr<channel> ch)
         {
-            shared_ptr<socket_channel_handler> handler(new matrix_client_socket_channel_handler(ch));
+            shared_ptr<socket_channel_handler> handler = std::make_shared<matrix_client_socket_channel_handler>(ch);
             return handler->shared_from_this();
         }
 

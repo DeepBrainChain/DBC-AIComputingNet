@@ -35,7 +35,7 @@ namespace matrix
         service_module::service_module()
             : m_exited(false),
             m_module_task(module_task),
-            m_timer_manager(new timer_manager(this))
+            m_timer_manager(std::make_shared<timer_manager>(this))
         {
 
         }

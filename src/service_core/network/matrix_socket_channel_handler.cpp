@@ -21,8 +21,8 @@ namespace matrix
 
         matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<channel> ch)
             : m_stopped(false)
-            , m_coder(new matrix_coder())
-            , m_decoder(new matrix_coder())
+            , m_coder(std::make_shared<matrix_coder>())
+            , m_decoder(std::make_shared<matrix_coder>())
             , m_channel(ch)
             , m_shake_hand_timer(*(ch->get_io_service()))
             , m_has_message(false)
