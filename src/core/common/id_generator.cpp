@@ -128,7 +128,12 @@ namespace matrix
                return false;
            }
 
-           secp256k1_context *ctx_sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+           //secp256k1_context *ctx_sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+           secp256k1_context *ctx_sign = static_cast<secp256k1_context*> (get_context_sign());
+           if (!ctx_sign)
+           {
+               return false;
+           }
            const int32_t key_len = 32;
            unsigned char privkey_data[key_len];
            if (1 != ec_privkey_import_der(ctx_sign, privkey_data, vch.data(), vch.size()))
@@ -208,7 +213,12 @@ namespace matrix
            CPrivKey prikey;
            prikey.insert(prikey.end(), vch.begin(), vch.end());
 
-           secp256k1_context *ctx_sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+           //secp256k1_context *ctx_sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+           secp256k1_context *ctx_sign = static_cast<secp256k1_context*>(get_context_sign());
+           if (! ctx_sign)
+           {
+               return false;
+           }
            const int32_t key_len = 32;
            unsigned char privkey2[key_len];
            if (1 != ec_privkey_import_der(ctx_sign, privkey2, prikey.data(), prikey.size()))
