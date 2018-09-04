@@ -29,7 +29,7 @@
  * CPrivKey is a serialized private key, with all parameters included (279 bytes)
  */
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CPrivKey;
-
+void * get_context_sign();
 /** An encapsulated private key. */
 class CKey
 {
