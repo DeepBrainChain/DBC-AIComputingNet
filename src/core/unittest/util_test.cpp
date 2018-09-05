@@ -35,3 +35,34 @@ BOOST_AUTO_TEST_CASE(test_rtrim_empty) {
     auto t=string_util::rtrim(s, '\n');
     BOOST_TEST(t=="");
 }
+
+BOOST_AUTO_TEST_CASE(test_split_delim_empty) {
+
+    std::string s = "abcd";
+    std::string delim = "";
+    std::vector<std::string> vec;
+    string_util::split(s, delim, vec);
+
+    BOOST_TEST(vec[0] == "abcd");
+}
+
+BOOST_AUTO_TEST_CASE(test_split_string_one) {
+
+    std::string s = "";
+    std::string delim = "";
+    std::vector<std::string> vec;
+    string_util::split(s, delim, vec);
+
+    BOOST_TEST(vec.size() == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_split_char_one) {
+
+    char s[] = "abaca";
+    char delim = 'a';
+    int argc = 5;
+    char* argv[5];
+    string_util::split(&s[0], delim, argc, &argv[0]);
+
+    BOOST_TEST(argc == 2);
+}

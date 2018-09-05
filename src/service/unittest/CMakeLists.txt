@@ -45,6 +45,7 @@ include_directories(
         ${SRC_PATH}/service_core
 
         ${SRC_PATH}/service/misc
+        ${SRC_PATH}/service/topic
 
 )
 

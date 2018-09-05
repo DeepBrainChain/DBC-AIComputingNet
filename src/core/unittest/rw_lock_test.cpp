@@ -2,56 +2,68 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
+#include "rw_lock.h"
+#include <thread>
 
-using namespace boost::unit_test;
-using namespace std;
+using namespace matrix::core;
 
+class counter
+{
+  public:
+    counter() : value_(0) {}
+    ~counter() = default;
 
-
-
-
-#include <boost/thread/locks.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/strict_lock.hpp>
-
-BOOST_AUTO_TEST_CASE(boost_rwlock_test) {
-
-    boost::shared_mutex _access;
-
+    size_t get()
     {
-        boost::strict_lock<boost::shared_mutex> x(_access);
-        //auto y = x ; //new boost::strict_lock<boost::shared_mutex>(_access);
-
+      read_lock_guard<rw_lock> lock(m_locker);
+      return value_;
     }
 
+    void increase()
     {
-        boost::shared_lock<boost::shared_mutex> lock1(_access);
-        boost::shared_lock<boost::shared_mutex> lock2(_access);
+      write_lock_guard<rw_lock> lock(m_locker);
+      value_++;
     }
 
+    void reset()
     {
-        boost::shared_lock<boost::shared_mutex> lock1(_access);
-//        boost::unique_lock< boost::shared_mutex > lock2(_access);
-//        boost::unique_lock< boost::shared_mutex > lock3(_access);
+      write_lock_guard<rw_lock> lock(m_locker);
+      value_ = 0;
     }
 
-    {
-        boost::upgrade_lock<boost::shared_mutex> lock(_access);                 // shared ownership
-        //...
-        boost::upgrade_to_unique_lock<boost::shared_mutex> unique_lock(lock);   // upgrade to exclusive ownership
-    }
+private:
+  matrix::core::rw_lock m_locker;
+  size_t value_;
+};
 
+void worker(std::shared_ptr<counter> data)
+{
+  for (int i = 0; i < 3; i++) {
+    data->increase();
+    size_t value = data->get();
+    (void) value;
+  }
 }
 
+BOOST_AUTO_TEST_CASE(rw_lock_test)
+{
+  constexpr uint32_t thead_num = 1000;
+  std::thread ts[thead_num];
 
+  std::shared_ptr<counter> data = std::make_shared<counter>();
 
-#include "rw_lock.h"
+  for(uint32_t i = 0; i < thead_num; i++)
+  {
+    ts[i] = std::thread(worker, data);
+  }
 
-BOOST_AUTO_TEST_CASE(rwlock2_test) {
-    matrix::core::rw_lock lock;
-    lock.read_lock();
-    lock.read_lock();
+  // delay 1s
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-    // write lock will be blocked if any read lock exists.
-    //lock.write_lock();
+  for(uint32_t i = 0; i < thead_num; i++)
+  {
+    ts[i].join();
+  }
+
+  BOOST_TEST(data->get() == (thead_num * 3));
 }
