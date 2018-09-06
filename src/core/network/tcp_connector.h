@@ -67,6 +67,8 @@ namespace matrix
             //modify by regulus: fix connect crash
             void reconnect(const std::string errorinfo);
 
+            void on_reconnect_timer_expired(const boost::system::error_code& error);
+
         protected:
 
             socket_id m_sid;
@@ -86,8 +88,6 @@ namespace matrix
             handler_create_functor m_handler_create_func;
 
             steady_timer m_reconnect_timer;
-
-            std::function<timer_handler_type> m_reconnect_timer_handler;
         };
 
     }
