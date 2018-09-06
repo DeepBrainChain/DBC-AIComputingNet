@@ -7,7 +7,6 @@
 #include <boost/test/unit_test.hpp>
 
 using namespace matrix::core;
->>>>>>> ut
 
 class counter
 {
@@ -54,7 +53,6 @@ BOOST_AUTO_TEST_CASE(rw_lock_test)
 
   std::shared_ptr<counter> data = std::make_shared<counter>();
 
-
   for(uint32_t i = 0; i < thead_num; i++)
   {
     ts[i] = std::thread(worker, data);
@@ -67,7 +65,6 @@ BOOST_AUTO_TEST_CASE(rw_lock_test)
   {
     ts[i].join();
   }
-
 
   BOOST_TEST(data->get() == (thead_num * 3));
 }
