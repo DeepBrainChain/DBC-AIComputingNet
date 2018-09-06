@@ -46,31 +46,6 @@ namespace matrix
             
             m_req_reconnect_times = retry;
 
-            auto self(shared_from_this());
-            m_reconnect_timer_handler = [this, self](const boost::system::error_code & error)
-            {
-                if (error)
-                {
-                    //aborted, maybe cancel triggered
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        LOG_DEBUG << "tcp_connector reconnect timer aborted.";
-                        return;
-                    }
-
-                    LOG_ERROR << "tcp_connector reconnect timer error: " << error.value() << " " << error.message() << m_sid.to_string();
-                    return;
-                }
-
-                if (self)
-                {
-                    const tcp::endpoint &ep = self->get_connect_addr();
-                    LOG_DEBUG << "tcp_connector reconnect to " << ep.address().to_string() << ":" << ep.port();
-                }
-                
-                async_connect();
-            };
-
             //create tcp socket channel and async connect
             m_client_channel = std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), m_sid, m_handler_create_func, DEFAULT_BUF_LEN);
 
@@ -82,7 +57,6 @@ namespace matrix
         {
             if (true == m_connected)
             {
-                m_reconnect_timer_handler = nullptr;
                 LOG_DEBUG << "tcp connector stop: has connected to remote server; sid: " << m_sid.to_string() << "; no need to stop more.";
                 return E_SUCCESS;
             }
@@ -95,7 +69,6 @@ namespace matrix
             {
                 LOG_ERROR << "tcp connector connect timer cancel error: " << error;
             }
-            m_reconnect_timer_handler = nullptr;
 
             //cancel
             std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel)->get_socket().cancel(error);
@@ -125,12 +98,6 @@ namespace matrix
         {
             if (m_reconnect_times < m_req_reconnect_times)
             {
-                if (!m_reconnect_timer_handler)
-                {
-                    LOG_ERROR << "no timer handler for reconnect.";
-                    return;
-                }
-                
                 m_reconnect_times++;
                 //try again
                 int32_t interval = RECONNECT_INTERVAL << m_reconnect_times;
@@ -141,9 +108,9 @@ namespace matrix
                     << errorinfo
                     << m_sid.to_string();                
 
-                assert(nullptr != m_reconnect_timer_handler);
                 m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
-                m_reconnect_timer.async_wait(m_reconnect_timer_handler);
+                m_reconnect_timer.async_wait(boost::bind(&tcp_connector::on_reconnect_timer_expired,
+                        shared_from_this(), boost::asio::placeholders::error));
             }
             else
             {
@@ -228,6 +195,29 @@ namespace matrix
 
             //notify this to service layer
             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), send_msg);
+        }
+
+
+        void tcp_connector::on_reconnect_timer_expired(const boost::system::error_code& error)
+        {
+            if (error)
+            {
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "tcp_connector reconnect timer aborted.";
+                    return;
+                }
+
+                LOG_ERROR << "tcp_connector reconnect timer error: " << error.value() << " " << error.message() << m_sid.to_string();
+                return;
+            }
+
+
+            const tcp::endpoint &ep = get_connect_addr();
+            LOG_DEBUG << "tcp_connector reconnect to " << ep.address().to_string() << ":" << ep.port();
+
+            async_connect();
         }
 
     }
