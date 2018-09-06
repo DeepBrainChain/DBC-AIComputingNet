@@ -36,7 +36,7 @@ namespace matrix
             if (repeat_times < 1 || period < DEFAULT_TIMER_INTERVAL)
             {
                 LOG_ERROR << "timer manager add timer error: repeat times or period";
-                return E_DEFAULT;
+                return INVALID_TIMER_ID;
             }
 
             std::shared_ptr<core_timer> timer(new core_timer(name, period, repeat_times, session_id));
