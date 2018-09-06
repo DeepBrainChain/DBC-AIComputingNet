@@ -19,6 +19,8 @@
 
 
 #define INVALID_TIMER_ID                        0
+#define MAX_TIMER_ID                        0xFFFFFFFF
+
 
 
 namespace matrix
