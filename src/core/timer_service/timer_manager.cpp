@@ -36,10 +36,17 @@ namespace matrix
             if (repeat_times < 1 || period < DEFAULT_TIMER_INTERVAL)
             {
                 LOG_ERROR << "timer manager add timer error: repeat times or period";
-                return E_DEFAULT;
+                return INVALID_TIMER_ID;
             }
 
             std::shared_ptr<core_timer> timer(new core_timer(name, period, repeat_times, session_id));
+
+            if (MAX_TIMER_ID == m_timer_alloc_id)
+            {
+                LOG_ERROR << "can not allocate new timer id. timer_alloc_id arrive" <<MAX_TIMER_ID;
+                return INVALID_TIMER_ID;
+            }
+            
             timer->set_timer_id(++m_timer_alloc_id);                //timer id begins from 1, 0 is invalid timer id
             m_timer_queue.push_back(timer);
 
