@@ -50,6 +50,14 @@ add_executable(dbc_core_test
         filter_test.cpp
         connection_manager_test.cpp
         util_test.cpp
+        protocol_test.cpp
+        codec_test.cpp
+        callback_wait_test.cpp
+        id_generator_test.cpp
+        conf_manager_test.cpp
+        container_message_test.cpp
+        pc_service_module_test.cpp
+        timer_service_test.cpp
         )
 
 set(dbclib  ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
