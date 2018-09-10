@@ -34,7 +34,7 @@ function get {
     "gpu_usage")
         if ! which nvidia-smi>/dev/null; then echo "N/A";
         else
-            nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv | grep -v "uti   lization" | awk -F "," '{print "gpu: "$1 "\nmem:"$2}'
+            nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv | grep -v "utilization" | awk -F "," '{print "gpu: "$1 "\nmem:"$2}'
         fi
     ;;
 
