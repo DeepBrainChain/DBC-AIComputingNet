@@ -36,7 +36,6 @@ message(STATUS "DBC_3RD_LIB_ROOT_PATH ${DBC_3RD_LIB_ROOT_PATH}" )
 link_directories(../lib)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
 
 add_executable(dbc_core_test
         test_main.cpp
@@ -49,6 +48,7 @@ add_executable(dbc_core_test
         crypto_test.cpp
         log_test.cpp
         filter_test.cpp
+        connection_manager_test.cpp
         util_test.cpp
         protocol_test.cpp
         codec_test.cpp
@@ -58,8 +58,6 @@ add_executable(dbc_core_test
         container_message_test.cpp
         pc_service_module_test.cpp
         timer_service_test.cpp
-        ip_validator_test.cpp
-        port_validator_test.cpp
         )
 
 set(dbclib  ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
