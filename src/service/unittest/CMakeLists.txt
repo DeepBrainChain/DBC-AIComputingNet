@@ -24,6 +24,7 @@ include_directories(
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
         ${SRC_PATH}/core
+        ${SRC_PATH}
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/db/
@@ -52,7 +53,9 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
 add_executable(dbc_service_test
         test_main.cpp
         service_info_collection_test.cpp
+        node_info_collection_test.cpp
         ${SRC_PATH}/service/misc/service_info_collection.cpp
+        ${SRC_PATH}/service/misc/node_info_collection.cpp
         )
 
 set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
