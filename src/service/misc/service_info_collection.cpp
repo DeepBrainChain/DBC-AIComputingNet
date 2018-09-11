@@ -53,7 +53,7 @@ namespace service
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
 
-            if (std::find(s.service_list.begin(), s.service_list.end(), SERVICE_NAME_AI_TRAINING) != s.service_list.end())
+//            if (std::find(s.service_list.begin(), s.service_list.end(), SERVICE_NAME_AI_TRAINING) != s.service_list.end())
             {
                 if ( 0 == m_id_2_info.count(id))
                 {
