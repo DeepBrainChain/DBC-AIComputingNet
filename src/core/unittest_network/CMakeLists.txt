@@ -23,9 +23,9 @@ INCLUDE_DIRECTORIES(
 
 # all sub folders under core/
 set(CORE_FOLDER_LIST alarm codec common conf conf/validataor
-        crypto container env
-        initiator log math memory module mutex
-        network service_bus service_module
+        crypto container data_structure env
+        initiator log math memory module monitor mutex
+        network sem service_bus service_module
         service_module/pc storage timer_service filter)
 
 foreach(f ${CORE_FOLDER_LIST})
@@ -38,34 +38,17 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
 
-add_executable(dbc_core_test
+add_executable(dbc_core_network_test
         test_main.cpp
-        os_math_test.cpp
-        module_manager_test.cpp
-        topic_manager_test.cpp
-        rw_lock_test.cpp
-        tcp_socket_test.cpp
-        byte_buf_test.cpp
-        crypto_test.cpp
-        log_test.cpp
-        filter_test.cpp
-        util_test.cpp
-        protocol_test.cpp
-        codec_test.cpp
-        callback_wait_test.cpp
-        id_generator_test.cpp
-        conf_manager_test.cpp
-        container_message_test.cpp
-        pc_service_module_test.cpp
-        timer_service_test.cpp
-        ip_validator_test.cpp
-        port_validator_test.cpp
+        connection_manager_test.cpp
+        http_client_test.cpp
         )
 
 set(dbclib  ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lgmp)
+    TARGET_LINK_LIBRARIES(dbc_core_network_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lgmp  -pthread -ldl -levent -levent_core -levent_openssl -levent_pthreads)
 elseif (LINUX)
-    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lboost_thread -lcrypto -lssl -lsecp256k1 -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_core_network_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -pthread -ldl -levent -levent_core -levent_openssl -levent_pthreads)
 endif()
+
