@@ -1,56 +1,74 @@
 #!/bin/bash
-
-if [ ! -d ./cmake-build-debug ]
-then
-    mkdir ./cmake-build-debug
-fi
-
-cd ./cmake-build-debug;
-
-echo "cmake "
-cmake DEBUG_MODE=ON  --build ../.. > ../build_cmake.log 2>&1
-
-if [ $? -ne 0 ]
-then
-    echo "fail: see build_cmake.log for more details"
-    exit 1
-fi
-
+#---------------------------------------------------
 #
-# make
-#
+#          DeepBrainChain Unit Test
+#   
+#-------------------------------------------------
 
-echo "make dbc ut "
-#make -j 4 dbc_core_test VERBOSE=1 2>&1 | tee  ../build_dbc_ut1.log
-make -j 4 dbc_core_test 2>&1 | tee  ../build_dbc_ut.log
-if [ ${PIPESTATUS[0]} -ne 0 ]
-then
-    echo "fail: see build_dbc_ut.log for more details"
-    exit 1
-fi
+BUILD_ROOT=./cmake-build-debug
+OUTPUT_DIR=../../output
 
-make -j 4 dbc_service_core_test 2>&1 | tee ../build_dbc_ut.log
-if [ ${PIPESTATUS[0]} -ne 0 ]
-then
-    echo "fail: see build_dbc_ut.log for more details"
-    exit 1
-fi
+function pre_env(){
+	 [ ! -d "$BUILD_ROOT" ] && mkdir $BUILD_ROOT
+	 cd $BUILD_ROOT
 
-make -j 4 dbc_service_test 2>&1 | tee ../build_dbc_ut.log
-if [ ${PIPESTATUS[0]} -ne 0 ]
-then
-    echo "fail: see build_dbc_ut.log for more details"
-    exit 1
-fi
+	 echo "cmake"
+	 cmake DEBUG_MODE=ON  --build ../.. > ../build_cmake.log 2>&1
+	 if [ $? -ne 0 ]
+	 then
+    		echo "fail: see build_cmake.log for more details"
+    		exit 1
+	 fi
 
-#
-# run
-#
-echo "run dbc core test"
-../../output/dbc_core_test  -r detailed ${@:1}
+	 echo "-----------------------------------------------------"
+	 echo "[make dbc unit test]"
+	 echo "-----------------------------------------------------"
+}
 
-echo "run dbc service core test"
-../../output/dbc_service_core_test  -r detailed -l all ${@:1}
+function build_unit_test(){
+	app=$1
+	logfile="build_${app}_ut.log"
+	echo "make -j 6 $app 2>&1 | tee  ../$logfile"
+	make -j 6 $app 2>&1 | tee  ../$logfile
+	if [ ${PIPESTATUS[0]} -ne 0 ]
+	then
+    		echo "fail: see ${logfile} for more details"
+    		exit 1
+	fi
+}	
 
-echo "run dbc service test"
-../../output/dbc_service_test  -r detailed -l all ${@:1}
+
+function run_unit_test(){
+	app=$1
+	app_path="${OUTPUT_DIR}/${app}"
+	#app=${app_path##*/}
+	
+	echo "________________________________________________"
+	echo "$app_path  -r detailed -l all ${@:1}"
+	echo "_______________________________________________"
+
+	$app_path  -r detailed -l all ${@:1}
+}	
+
+function main(){
+	pre_env
+	
+	build_unit_test  dbc_core_test
+	build_unit_test  dbc_core_network_test
+	build_unit_test  dbc_service_core_test
+	build_unit_test  dbc_service_test
+
+	
+	echo
+	echo "================================== run ====================================="
+	echo 
+
+	run_unit_test dbc_core_test
+	run_unit_test dbc_core_network_test
+	run_unit_test dbc_service_core_test
+	run_unit_test dbc_service_test
+
+}
+
+
+main
