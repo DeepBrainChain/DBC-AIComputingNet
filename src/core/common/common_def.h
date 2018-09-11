@@ -32,19 +32,6 @@ extern std::string DEFAULT_IP_V6;
 extern std::string DEFAULT_LOCAL_IP;
 extern std::vector<std::string> DEFAULT_VECTOR;
 
-
-#ifdef  USE_FULL_ASSERT
-
-#ifdef __RTX
-__BEGIN_DECLS
-extern void assert_failed(uint8_t* file, uint32_t line);
-__END_DECLS;
-#define ASSERT(expr)           ((expr) ? (void)0 : assert_failed((uint8_t *)__FILE__, __LINE__))
-#endif
-
-#endif
-
-
 //here is migrated from bitcoin linux platform and will be removed later!!!
 
 #ifdef __linux__

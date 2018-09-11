@@ -15,15 +15,7 @@
 #include "dbc_server_initiator.h"
 #include "server_initiator_factory.h"
 
-
-#ifdef __RTX
-int main(void)
-{
-    os_sys_init_user(main_task, 1, (void *)&stk_main, sizeof(stk_main));
-}
-
-#elif defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
-
+#if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
 using namespace std::chrono;
 using namespace ai::dbc;
@@ -34,7 +26,7 @@ high_resolution_clock::time_point server_start_time;
 
 //define how to create initiator
 server_initiator * create_initiator()
-{                  
+{
     return new dbc_server_initiator();
 }
 
@@ -65,7 +57,7 @@ int main(int argc, char* argv[])
     {
         return ret;
     }
-    
+
     return main_task(argc, argv);
 }
 

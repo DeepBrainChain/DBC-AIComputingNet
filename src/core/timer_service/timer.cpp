@@ -10,10 +10,6 @@
 #include "timer.h"
 #include "timer_matrix_manager.h"
 
-#ifdef __RTX
-#include "os_time.h"
-#endif
-
 namespace matrix
 {
     namespace core
@@ -53,25 +49,6 @@ namespace matrix
             m_timer_id = timer_id;
         }
 
-#ifdef __RTX
-        uint32_t core_timer::get_time_out_tick()
-        {
-            return m_time_out_tick;
-        }
-
-        void core_timer::cal_time_out_tick()
-        {
-            if (true == m_is_first_start && 0 != m_delay)
-            {
-                m_time_out_tick = OSTime::get_sys_tick_up_tme() + m_delay;
-            }
-            else
-            {
-                m_time_out_tick = OSTime::get_sys_tick_up_tme() + m_period;
-            }
-        }
-
-#else
         uint64_t core_timer::get_time_out_tick() const 
         {
             return m_time_out_tick;
@@ -81,8 +58,6 @@ namespace matrix
         {
             m_time_out_tick += m_period_as_tick;
         }
-#endif
-
     }
 
 }

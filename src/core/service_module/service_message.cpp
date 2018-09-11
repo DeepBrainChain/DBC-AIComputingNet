@@ -8,12 +8,3 @@
 * author            :   Bruce Feng
 **********************************************************************************/
 #include "service_message.h"
-
-#ifdef __RTX
-
-//定义总线消息
-TOPIC_DEFINE(/service_bus/, message, message_t, "");
-
-#endif
-
-

@@ -10,9 +10,6 @@
 #include "timer_manager.h"
 #include "time_tick_notification.h"
 #include "timer_matrix_manager.h"
-#ifdef __RTX
-#include "os_time.h"
-#endif
 
 namespace matrix
 {

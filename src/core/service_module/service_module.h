@@ -11,13 +11,7 @@
 #ifndef _SERVICE_MODULE_H_
 #define _SERVICE_MODULE_H_
 
-
-#ifdef __RTX
-#include "rtx_service_node.h"
-#else
 #include "pc_service_module.h"
-#endif
-
 
 #endif
 

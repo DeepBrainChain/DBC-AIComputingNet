@@ -56,7 +56,7 @@ namespace matrix
             void write_unlock()
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
-                (--m_write_count == 0) ? m_read_cond.notify_all() : m_write_cond.notify_one();                
+                (--m_write_count == 0) ? m_read_cond.notify_all() : m_write_cond.notify_one();
                 m_is_writing_status = false;
             }
 
