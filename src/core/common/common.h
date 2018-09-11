@@ -21,11 +21,6 @@
 
 #endif
 
-#ifdef __RTX
-#include "rtl.h"
-#include "cs_string.h"
-#endif
-
 #include "error.h"
 #include "std_types.h"
 #include "visibility.h"

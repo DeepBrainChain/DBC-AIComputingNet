@@ -23,9 +23,9 @@ INCLUDE_DIRECTORIES(
 
 # all sub folders under core/
 set(CORE_FOLDER_LIST alarm codec common conf conf/validataor
-        crypto container data_structure env
-        initiator log math memory module monitor mutex
-        network sem service_bus service_module
+        crypto container env
+        initiator log math memory module mutex
+        network service_bus service_module
         service_module/pc storage timer_service filter)
 
 foreach(f ${CORE_FOLDER_LIST})

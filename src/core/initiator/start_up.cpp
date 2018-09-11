@@ -12,19 +12,7 @@
 #include "server.h"
 
 
-#ifdef __RTX
-
-volatile U64 stk_main[1024 / 8];
-
-__task void main_task()
-{
-    
-    g_server->init();           //init server
-
-    while(true);
-}
-
-#elif defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
+#if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
 
 int main_task(int argc, char* argv[])

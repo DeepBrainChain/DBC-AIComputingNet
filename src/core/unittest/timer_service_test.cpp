@@ -137,11 +137,11 @@ BOOST_AUTO_TEST_CASE(test_timer_service_10ms)
   ret = service_module_ptr->init(options);
   // period < 100
   uint32_t timer_ret = service_module_ptr->set_timer_invokers(10, ULLONG_MAX, "");
-  BOOST_TEST(timer_ret == (uint32_t)E_DEFAULT);
+  BOOST_TEST(timer_ret == (uint32_t)INVALID_TIMER_ID);
 
   // repeat time < 1
   timer_ret = service_module_ptr->set_timer_invokers(100, 0, "");
-  BOOST_TEST(timer_ret == (uint32_t)E_DEFAULT);
+  BOOST_TEST(timer_ret == (uint32_t)INVALID_TIMER_ID);
 
   ret = service_module_ptr->stop();
   ret |= service_module_ptr->exit();

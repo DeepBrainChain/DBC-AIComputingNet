@@ -12,20 +12,6 @@
 
 #include "common.h"
 
-#ifdef __RTX
-extern volatile U64 stk_main[1024 / 8];             //1K stack size
-
-__BEGIN_DECLS
-extern __task void main_task();
-__END_DECLS
-
-#else
-
 __BEGIN_DECLS
 extern int main_task(int argc, char* argv[]);
 __END_DECLS
-
-#endif
-
-
-

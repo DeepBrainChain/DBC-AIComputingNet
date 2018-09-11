@@ -4,24 +4,20 @@ message(STATUS "service code unit test")
 SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
 include_directories(
-        ${SRC_PATH}/core/alarm
         ${SRC_PATH}/core/codec
         ${SRC_PATH}/core/common
         ${SRC_PATH}/core/conf
         ${SRC_PATH}/core/conf/validator
         ${SRC_PATH}/core/container
         ${SRC_PATH}/core/crypto
-        ${SRC_PATH}/core/data_structure
         ${SRC_PATH}/core/env
         ${SRC_PATH}/core/initiator
         ${SRC_PATH}/core/log
         ${SRC_PATH}/core/math
         ${SRC_PATH}/core/memory
         ${SRC_PATH}/core/module
-        ${SRC_PATH}/core/monitor
         ${SRC_PATH}/core/mutex
         ${SRC_PATH}/core/network
-        ${SRC_PATH}/core/sem
         ${SRC_PATH}/core/service_bus
         ${SRC_PATH}/core/service_module
         ${SRC_PATH}/core/service_module/pc

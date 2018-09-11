@@ -10,7 +10,6 @@
 #if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
 #include <cassert>
-#include "service_bus.h"
 #include "service_module.h"
 #include "service_message_id.h"
 #include "timer_matrix_manager.h"

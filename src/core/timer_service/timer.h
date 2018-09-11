@@ -38,11 +38,8 @@ namespace matrix
             void set_timer_id(uint32_t timer_id);
 
             //time out point
-#ifdef __RTX
-            uint32_t get_time_out_tick();
-#else
+
             uint64_t get_time_out_tick() const;
-#endif
 
             void cal_time_out_tick();
 
@@ -64,11 +61,7 @@ namespace matrix
 
             uint32_t m_timer_id;                        //timer id
 
-#ifdef __RTX
-            uint32_t m_time_out_tick;                   //超时tick, 1 ms / 1 tick
-#else
             uint64_t m_time_out_tick;                   //DEFAULT_TIMER_INTERVAL ms / 1 tick
-#endif
 
             uint32_t m_period_as_tick;
 

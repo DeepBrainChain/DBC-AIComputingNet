@@ -11,7 +11,6 @@
 #define _SERVICE_MESSAGE_H_
 
 #include "common.h"
-#include "service_bus.h"
 #include "protocol.h"
 #include "socket_id.h"
 
@@ -28,27 +27,6 @@ typedef void * MESSAGE_PTR;
 * 
 
 *****************************************************************************/
-
-#ifdef __RTX
-
-#define DEFAULT_MESSAGE_BODY_BYTES_LEN       256
-
-struct message_header_t
-{
-    uint32_t message_id;
-};
-
-struct message_t
-{
-    message_header_t header;
-    uint8_t body_bytes[DEFAULT_MESSAGE_BODY_BYTES_LEN];
-};
-
-//声明总线消息
-TOPIC_DECLARE(message);
-
-#else
-
 namespace matrix
 {
     namespace core
@@ -94,8 +72,3 @@ namespace matrix
 }
 
 #endif
-
-
-#endif
-
-

@@ -10,58 +10,6 @@
 #ifndef _TOPIC_MANAGER_H_
 #define _TOPIC_MANAGER_H_
 
-#ifdef __RTX
-
-#include "common.h"
-#include "mutex.h"
-#include "service_bus.h"
-
-#include "topic_entry.h"
-#include "topic_registry.h"
-
-
-//  频繁地注册/注销发布者和订阅者，需要考虑多任务和多线程并发
-
-class __PRIVATE topic_manager
-{
-public:
-
-    topic_manager() {}
-
-    ~topic_manager() {m_instance = NULL;}
-
-    static topic_manager *get_instance() {if (NULL == m_instance) {m_instance = new topic_manager(); m_instance->init();} return m_instance;}
-
-    int32_t init();
-
-    PUBLISHER_HANDLE register_topic(const topic_meta_data *meta);
-
-    int32_t publish_topic_data(PUBLISHER_HANDLE handle, const void *topic_data);
-
-    SUBSCRIBER_HANDLE subscribe_topic(const topic_meta_data *meta);
-
-    int32_t unsubscribe_topic(SUBSCRIBER_HANDLE handle);            //谨慎使用unsubscribe，避免并发访问
-    
-    int32_t check_topic(SUBSCRIBER_HANDLE handle, bool &updated);
-
-    bool exists_topic(const topic_meta_data *meta);
-
-    int32_t copy_topic_data(const topic_meta_data *meta, SUBSCRIBER_HANDLE handle, void *buffer);
-
-    int32_t set_subscriber(SUBSCRIBER_HANDLE handle, const subscriber_meta_data *meta);
-
-protected:
-
-    Mutex m_mutex;
-    
-    topic_registry m_registry;
-
-    static topic_manager *m_instance;
-    
-};
-
-#else
-
 #include <string>
 #include <boost/asio.hpp>
 #include "module.h"
@@ -185,8 +133,4 @@ namespace matrix
 
 }
 
-#endif
-
 #endif 
-
-

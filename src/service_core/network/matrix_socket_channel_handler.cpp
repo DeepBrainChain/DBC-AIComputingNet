@@ -9,7 +9,6 @@
 **********************************************************************************/
 #include "matrix_socket_channel_handler.h"
 #include "p2p_net_service.h"
-#include "server.h"
 #include "tcp_socket_channel.h"
 #include "service_proto_filter.h"
 
