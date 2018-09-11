@@ -27,7 +27,6 @@ else ()
     SET(EXECUTABLE_OUTPUT_PATH ${HOME_PATH}/output)
     SET(LIBRARY_OUTPUT_PATH ${HOME_PATH}/output)
 endif ()
-
 # dbc executable
 add_subdirectory("src")
 
@@ -37,9 +36,7 @@ add_subdirectory("src/service_core")
 
 # unit test
 add_subdirectory("src/core/unittest")
-add_subdirectory("src/core/unittest_network")
 add_subdirectory("src/service_core/unittest")
-
 add_subdirectory("src/service/unittest")
 
 # dependency: ensure libraries build before dbc does
