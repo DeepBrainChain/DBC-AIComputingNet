@@ -395,7 +395,7 @@ namespace matrix
                 }
                 std::string host;
                 std::string path;
-                const char * query = nullptr;
+                //const char * query = nullptr;
 
                 m_scheme = evhttp_uri_get_scheme(http_uri.get());
                 m_remote_ip = evhttp_uri_get_host(http_uri.get());
@@ -409,16 +409,17 @@ namespace matrix
                 {
                     m_remote_port = port;
                     path = evhttp_uri_get_path(http_uri.get());
-                    query = evhttp_uri_get_query(http_uri.get());
-
-                    if (query == nullptr)
+                    //query = evhttp_uri_get_query(http_uri.get());
+                    m_uri = boost::str(boost::format("%s") % path);
+                    /*if (query == nullptr)
                     {
                         m_uri = boost::str(boost::format("%s") % path);
-                    }
+                    }*/
+                    /*
                     else
                     {
                         m_uri = boost::str(boost::format("%s?%s") % path % query);
-                    }
+                    }*/
                 }
                 catch (const std::exception & e)
                 {

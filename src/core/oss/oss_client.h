@@ -13,7 +13,9 @@
 #include <memory>
 #include <string>
 #include "http_client.h"
-#include "bill_message.h"
+#include "bill/bill_message.h"
+#include "idle_task/idle_task_message.h"
+
 
 
 using namespace std;
@@ -23,16 +25,18 @@ namespace matrix
 {
     namespace core
     { 
-        class bill_client
+        class oss_client
         {
         public:
-            bill_client(const std::string & url, const std::string &crt);
+            oss_client(const std::string & url, const std::string &crt);
 
             //auth_task
             std::shared_ptr<auth_task_resp> post_auth_task(std::shared_ptr<auth_task_req> req);
 
-            ~bill_client() = default;
+            //idle_task
+            std::shared_ptr<idle_task_resp> post_idle_task(std::shared_ptr<idle_task_req> req);
 
+            ~oss_client() = default;
         protected:
 
             http_client m_http_client;

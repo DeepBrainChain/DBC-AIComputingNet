@@ -36,7 +36,7 @@ ${SRC_PATH}/core/common
 ${SRC_PATH}/core/conf 
 ${SRC_PATH}/core/conf/validator
 ${SRC_PATH}/core/container
-${SRC_PATH}/core/bill
+${SRC_PATH}/core/oss
 ${SRC_PATH}/core/crypto
 ${SRC_PATH}/core/env 
 ${SRC_PATH}/core/initiator 

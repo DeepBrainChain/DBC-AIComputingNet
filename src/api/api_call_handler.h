@@ -437,6 +437,8 @@ namespace ai
 
             void format_output();
 
+            std::string to_time_str(time_t t);
+
         };
 
         /*class cmd_clear_req : public matrix::core::msg_base

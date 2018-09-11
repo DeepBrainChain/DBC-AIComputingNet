@@ -14,7 +14,6 @@
 #include "common.h"
 #include "conf_validator.h"
 #include "http_client.h"
-using namespace boost::xpressive;
 
 namespace matrix
 {

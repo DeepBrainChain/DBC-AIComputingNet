@@ -333,13 +333,61 @@ namespace ai
             return out;
         }
 
+        /**
+         * return the time in second to human readable format
+         * @param t time in second
+         * @return  <day>:<hour>.<minute>
+         */
+        std::string cmd_show_resp::to_time_str(time_t t)
+        {
+            if (t == 0)
+            {
+                return "N/A";
+            }
+
+
+            time_t now = time(nullptr);
+            auto d_day = 0;
+            auto d_hour = 0;
+            auto d_minute = 0;
+
+            if ( now <= t)
+            {
+                return "N/A";
+            }
+
+
+            time_t d = now - t;
+            if (d < 60 )
+            {
+                d_minute = 1;
+            }
+            else
+            {
+                d_day = d / (3600 * 24);
+                d = d % (3600 * 24);
+
+                d_hour = d / 3600;
+                d = d % 3600;
+
+                d_minute = d / 60;
+            }
+
+            char buf[56]={0};
+            std::snprintf(buf, sizeof(buf), "%d:%02d.%02d", d_day, d_hour, d_minute);
+
+            const char* p = buf;
+            return std::string(p);
+        }
 
         void cmd_show_resp::format_service_list()
         {
             console_printer printer;
-            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 16)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
+//            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
+//            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
 
-            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
+            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 12)(LEFT_ALIGN, 18);
+            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" << "GPU_USAGE" << "STATE" << "TIME" << matrix::core::endl;
 
 
             // order by indicated filed
@@ -377,14 +425,33 @@ namespace ai
                     gpu = gpu.substr(0,31);
                 }
 
+                std::string gpu_usage = it.second.kvs.count("gpu_usage")? it.second.kvs["gpu_usage"] : "N/A";
+
+
+                std::string online_time = "N/A";
+                if(it.second.kvs.count("startup_time"))
+                {
+                    std::string s_time = it.second.kvs["startup_time"];
+                    try
+                    {
+                        time_t t = std::stoi(s_time);
+                        online_time = to_time_str(t);
+                    }
+                    catch (...)
+                    {
+                        //
+                    }
+                }
+
                 printer << matrix::core::init
                         << it.second.kvs["id"]
                         << it.second.name
                         << ver
                         << gpu
+                        << gpu_usage
                         << it.second.kvs["state"]
-                        << to_string(it.second.service_list)
-                        << time_util::time_2_str(it.second.time_stamp)
+//                        << to_string(it.second.service_list)
+                        << online_time
                         << matrix::core::endl;
             }
             printer << matrix::core::endl;

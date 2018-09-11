@@ -32,6 +32,7 @@ extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
 extern const int32_t DEFAULT_SPEED;
 extern const std::string conf_manager_name;
+extern const bool DEFAULT_ALLOW_TASK;
 
 namespace matrix
 {
@@ -111,6 +112,8 @@ namespace matrix
                 return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
             }
 
+            const bool & get_allow_idle_task() { return m_args.count("allow_idle_task") > 0 ? m_args["allow_idle_task"].as<bool>() : DEFAULT_ALLOW_TASK; }
+            const bool & get_allow_auth_task() { return m_args.count("allow_auth_task") > 0 ? m_args["allow_auth_task"].as<bool>() : DEFAULT_ALLOW_TASK; }
         protected:
 
             int32_t parse_local_conf();
