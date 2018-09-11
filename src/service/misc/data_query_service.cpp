@@ -65,6 +65,7 @@ namespace service
             }
 
 
+            m_node_info_collection.set_query_sh();
             auto rtn = m_node_info_collection.init(enable_node_info_collection);
             if ( rtn != E_SUCCESS )
             {
@@ -156,6 +157,10 @@ namespace service
             //add version
             v = m_node_info_collection.get("version");
             kvs["version"]=v;
+
+            //add gpu usage
+            v = m_node_info_collection.get("gpu_usage");
+            kvs["gpu_usage"]="N/A";
 
             info.__set_kvs(kvs);
 
@@ -512,7 +517,7 @@ namespace service
                 return E_SUCCESS;
             }
 
-            // update service_info_collection
+            // update service_info_collection of own node
             std::string v = m_node_info_collection.get("gpu");
             m_service_info_collection.update(m_own_node_id,"gpu", v);
 
@@ -521,6 +526,9 @@ namespace service
 
             v = m_node_info_collection.get("version");
             m_service_info_collection.update(m_own_node_id,"version", v);
+
+            v = m_node_info_collection.get_gpu_usage_in_total();
+            m_service_info_collection.update(m_own_node_id,"gpu_usage", v);
 
             //if(m_node_info_collection.is_honest_node())
             m_service_info_collection.update_own_node_time_stamp(m_own_node_id);
@@ -632,8 +640,8 @@ namespace service
                 return E_NULL_POINTER;
             }
 
-            LOG_DEBUG << "on_get_task_queue_size_resp: task_queue_size=" << resp->get();
-            m_node_info_collection.set("state", resp->get());
+            LOG_DEBUG << "on_get_task_queue_size_resp: task_queue_size=" << std::to_string(resp->get());
+            m_node_info_collection.set("state", std::to_string(resp->get()));
 
             return E_SUCCESS;
         }

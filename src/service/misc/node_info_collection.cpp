@@ -44,12 +44,24 @@ namespace service
             m_enable = true;
             m_honest = true;
 
-            m_query_sh_file_name = env_manager::get_home_path().generic_string() + "/.node_info_query.sh";
+            m_query_sh_file_name = "" ; //env_manager::get_home_path().generic_string() + "/.node_info_query.sh";
             m_sh_file_hash = std::hash<std::string> {} (node_info_query_sh_str);
 
             m_node_2_services.clear();
 
             reset_node_info();
+        }
+
+        void node_info_collection::set_query_sh(std::string fn)
+        {
+            if (fn.empty())
+            {
+                m_query_sh_file_name = env_manager::get_home_path().generic_string() + "/.node_info_query.sh";
+            }
+            else
+            {
+                m_query_sh_file_name = fn;
+            }
         }
 
         void node_info_collection::reset_node_info()
@@ -319,15 +331,70 @@ namespace service
             return get_one(k);
         }
 
+
+        std::string node_info_collection::get_gpu_usage_in_total()
+        {
+            //example,
+            //gpu_usage:
+            //gpu: 10 %
+            //mem: 1 %
+
+            // 'kvs': {   u'gpu_usage': u'gpu: 10 %\nmem: 1 %\ngpu: 0 %\nmem: 0 %\n'}
+
+            std::string v = get_one("gpu_usage");
+            std::vector<std::string> vec;
+            string_util::split(v, "\n", vec);
+
+            std::string start_delim = "gpu: ";
+            std::string stop_delim = " %";
+            int a = 0;
+            int n = 0;
+
+            for (auto& s : vec)
+            {
+                size_t pos1 = 0;
+                size_t pos2 = 0;
+
+                pos1 = s.find(start_delim);
+                if (pos1 == std::string::npos) continue;
+
+                pos1 += start_delim.length();
+
+                pos2 = s.find(" %");
+                if (pos2 == std::string::npos) continue;
+
+                if (pos1 >= pos2) continue;
+
+                std::string u = s.substr(pos1, pos2-pos1);
+
+                try
+                {
+                    a += std::stoi(u);
+                    n++;
+                }
+                catch (...)
+                {
+                    //skip line with invalid digit
+                }
+            }
+
+            if (n)
+            {
+                return std::to_string(a/n) + " %";
+            }
+
+            return "0 %";
+        }
+
         /**
          * set k,v
          * @param k
          * @param v
          */
-        void node_info_collection::set(std::string k, uint32_t v)
+        void node_info_collection::set(std::string k, std::string v)
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
-            m_kvs[k] = std::to_string(v);
+            m_kvs[k] = v;
         }
 
 

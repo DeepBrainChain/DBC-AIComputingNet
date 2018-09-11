@@ -29,13 +29,16 @@ namespace service
         public:
             node_info_collection();
             std::string get(std::string);
-            void set(std::string k, uint32_t v);
+            void set(std::string k, std::string v);
 
             void refresh();
             int32_t init(bool enable=true);
 
             std::vector<std::string> get_keys();
             bool is_honest_node();
+
+            std::string get_gpu_usage_in_total();
+            void set_query_sh(std::string fn="");
 
         private:
             bool generate_query_sh_file(std::string text);

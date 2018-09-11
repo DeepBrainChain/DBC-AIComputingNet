@@ -338,9 +338,11 @@ namespace ai
         void cmd_show_resp::format_service_list()
         {
             console_printer printer;
-            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 16)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
+//            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
+//            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
 
-            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
+            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 12);
+            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" << "GPU_USAGE" << "STATE" << matrix::core::endl;
 
 
             // order by indicated filed
@@ -378,14 +380,17 @@ namespace ai
                     gpu = gpu.substr(0,31);
                 }
 
+                std::string gpu_usage = it.second.kvs.count("gpu_usage")? it.second.kvs["gpu_usage"] : "N/A";
+
                 printer << matrix::core::init
                         << it.second.kvs["id"]
                         << it.second.name
                         << ver
                         << gpu
+                        << gpu_usage
                         << it.second.kvs["state"]
-                        << to_string(it.second.service_list)
-                        << time_util::time_2_str(it.second.time_stamp)
+//                        << to_string(it.second.service_list)
+//                        << time_util::time_2_str(it.second.time_stamp)
                         << matrix::core::endl;
             }
             printer << matrix::core::endl;
