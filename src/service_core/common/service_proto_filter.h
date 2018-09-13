@@ -2,13 +2,11 @@
 #include <map>
 #include <boost/serialization/singleton.hpp>
 #include "rw_lock.h"
-#include "service_message.h"
-#include "matrix_types.h"
-#include "timer_def.h"
-#include <boost/pointer_cast.hpp>
 
 #define TIME_OUT_SEC                        180
 #define MAX_NONCE_COUNT             1000000
+
+using namespace matrix::core;
 
 namespace matrix
 {

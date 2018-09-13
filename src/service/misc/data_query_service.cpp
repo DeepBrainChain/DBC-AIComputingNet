@@ -14,7 +14,6 @@
 #include "api_call_handler.h"
 
 #include "service_message_id.h"
-#include "service_message_def.h"
 #include "matrix_types.h"
 
 #include "node_info_query_req_msg.h"

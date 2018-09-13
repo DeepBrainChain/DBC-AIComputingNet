@@ -17,15 +17,13 @@
 #include "byte_buf.h"
 #include "server.h"
 #include "service_message.h"
-#include "service_message_def.h"
 
 #include "socket_channel_handler.h"
-#include "channel_handler_context.h"
 
 
 using namespace std;
 using namespace boost::asio;
-using namespace boost::asio::ip;
+// using namespace boost::asio::ip;
 
 #define DEFAULT_TCP_SOCKET_SEND_BUF_LEN                  (32 * 1024)
 #define DEFAULT_TCP_SOCKET_RECV_BUF_LEN                  (32 * 1024)

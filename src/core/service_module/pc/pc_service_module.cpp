@@ -15,8 +15,6 @@
 #include "timer_matrix_manager.h"
 #include "server.h"
 #include "time_tick_notification.h"
-#include "timer_def.h"
-//#include "service_proto_filter.h"
 
 namespace matrix
 {

@@ -15,7 +15,6 @@
 #include "tcp_socket_channel.h"
 #include "socket_channel_handler.h"
 #include "matrix_coder.h"
-#include "matrix_types.h"
 #include "server.h"
 #include "service_message_id.h"
 #include "flow_ctrl.h"

@@ -20,17 +20,11 @@
     <Filter Include="src\3rd">
       <UniqueIdentifier>{eada37b1-14fc-4510-afc5-eb292a607347}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\alarm">
-      <UniqueIdentifier>{1ac2fb1e-31f4-4817-9eaa-4124ad73c9b4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\common">
       <UniqueIdentifier>{22c37fd3-4d0c-467e-a772-18b96bbb8133}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\conf">
       <UniqueIdentifier>{4ba572f2-67c0-429e-b76d-ab1209fb8d09}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\data_structure">
-      <UniqueIdentifier>{3ecdd4cc-43dc-4a16-a00e-8ba301624c21}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\initiator">
       <UniqueIdentifier>{b2cbff5e-a2d6-40bf-8255-9a4bfe9b8f94}</UniqueIdentifier>
@@ -38,14 +32,8 @@
     <Filter Include="src\core\math">
       <UniqueIdentifier>{da14787c-9887-4df2-8d2b-859d1b880333}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\monitor">
-      <UniqueIdentifier>{f41ec75b-80e4-415c-981d-47e4c0a68335}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\mutex">
       <UniqueIdentifier>{b8fd8f20-8ba3-4f7d-b484-9c97bf8f189d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\sem">
-      <UniqueIdentifier>{0e153562-5b58-4298-a70d-3d7381579fe1}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\service_bus">
       <UniqueIdentifier>{5031677d-4f41-4595-9ea0-48ab3f1017cb}</UniqueIdentifier>
@@ -56,23 +44,14 @@
     <Filter Include="src\core\network">
       <UniqueIdentifier>{91170a5e-9410-4e4b-8ad5-f7e4a1f35a5a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\storage">
-      <UniqueIdentifier>{bdf2014b-6025-4d01-8a04-40ba0b4bf149}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\module">
       <UniqueIdentifier>{6b73c76c-ed42-433e-8d43-aa2afb1f6b72}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\service_module">
       <UniqueIdentifier>{a00fd614-61e6-4e05-876a-c4ffc601ecc3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\service_module\rtx">
-      <UniqueIdentifier>{68a68f1f-d32c-47ee-a8c9-c6c9c0c1a9c9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\service_module\pc">
       <UniqueIdentifier>{936eeca9-9d3a-4995-a4f3-f8d85cb48fd8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\sem\rtx">
-      <UniqueIdentifier>{0505d832-012b-4736-bcab-2563dddd2ece}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\codec">
       <UniqueIdentifier>{d80118db-cc88-4bdb-acc4-b130b56b6fe1}</UniqueIdentifier>
@@ -207,9 +186,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\service_module\pc\pc_service_module.cpp">
       <Filter>src\core\service_module\pc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\core\service_module\service_message.cpp">
-      <Filter>src\core\service_module</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp">
       <Filter>src\core\network</Filter>

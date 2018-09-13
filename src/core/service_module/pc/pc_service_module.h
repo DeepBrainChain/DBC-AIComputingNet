@@ -12,7 +12,6 @@
 #include <thread>
 #include <queue>
 #include <unordered_map>
-#include <limits>
 #include "module.h"
 #include "timer.h"
 #include "common.h"

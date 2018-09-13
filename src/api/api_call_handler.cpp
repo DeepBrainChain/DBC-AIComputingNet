@@ -10,7 +10,6 @@
 
 #include "matrix_coder.h"
 #include "api_call_handler.h"
-#include "matrix_coder.h"
 #include "service_message_id.h"
 
 

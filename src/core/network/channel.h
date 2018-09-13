@@ -10,7 +10,6 @@
 #pragma once
 
 #include <memory>
-#include <boost/noncopyable.hpp>
 #include <boost/asio.hpp>
 #include "service_message.h"
 
