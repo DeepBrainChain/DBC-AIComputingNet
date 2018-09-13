@@ -13,6 +13,7 @@
 #include "image_manager.h"
 #include "util.h"
 #include "utilstrencodings.h"
+
 using namespace matrix::core;
 namespace ai
 {

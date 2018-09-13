@@ -15,12 +15,11 @@
 #include "nio_loop_group.h"
 #include "channel.h"
 #include "log.h"
-#include "socket_id.h"
 #include "handler_create_functor.h"
 
 
 using namespace boost::asio;
-using namespace boost::asio::ip;
+// using namespace boost::asio::ip;
 
 
 #define DEFAULT_LISTEN_BACKLOG                          8                               //default listen backlog

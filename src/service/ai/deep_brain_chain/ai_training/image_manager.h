@@ -12,8 +12,6 @@
 
 #include <memory>
 #include <string>
-#include "ai_db_types.h"
-#include <boost/filesystem.hpp>
 #include <boost/process.hpp>
 #include <set>
 

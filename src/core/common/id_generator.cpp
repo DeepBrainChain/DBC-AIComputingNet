@@ -3,7 +3,7 @@
 #include "common.h"
 #include "utilstrencodings.h"
 #include "secp256k1.h"
-#include "secp256k1_recovery.h"
+
 #include "lax_der_privatekey_parsing.h"
 namespace matrix
 {

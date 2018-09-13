@@ -15,8 +15,6 @@
 #include "service_message_id.h"
 #include "server.h"
 
-
-
 namespace matrix
 {
     namespace core

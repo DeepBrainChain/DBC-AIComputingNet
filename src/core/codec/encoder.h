@@ -9,8 +9,6 @@
 **********************************************************************************/
 #pragma once
 
-
-#include <memory>
 #include "service_message.h"
 #include "channel_handler_context.h"
 

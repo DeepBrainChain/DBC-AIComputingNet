@@ -9,7 +9,6 @@
 **********************************************************************************/
 
 #include "callback_wait.h"
-#include "log.h"
 
 namespace matrix
 {

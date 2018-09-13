@@ -11,29 +11,18 @@
 #include "server.h"
 #include "api_call_handler.h"
 #include "conf_manager.h"
-#include "tcp_acceptor.h"
 #include "service_message_id.h"
-#include "service_message_def.h"
+
 #include "matrix_types.h"
 #include "matrix_coder.h"
-#include "matrix_client_socket_channel_handler.h"
-#include "matrix_server_socket_channel_handler.h"
-#include "handler_create_functor.h"
-#include "channel.h"
 #include "ip_validator.h"
-#include "port_validator.h"
 #include <boost/exception/all.hpp>
-#include <iostream>
 #include "ai_power_requestor_service.h"
 #include "id_generator.h"
 #include "task_common_def.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
-#include "base58.h"
-#include "utilstrencodings.h"
-
 
 using namespace std;
-using namespace boost::asio::ip;
 using namespace matrix::core;
 using namespace ai::dbc;
 

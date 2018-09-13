@@ -11,7 +11,6 @@
 #define _TOPIC_MANAGER_H_
 
 #include <string>
-#include <boost/asio.hpp>
 #include "module.h"
 #include "rw_lock.h"
 #include "function_traits.h"

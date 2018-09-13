@@ -9,8 +9,6 @@
 **********************************************************************************/
 #pragma once
 
-
-#include <iostream>
 #include <boost/filesystem.hpp>
 #include "module.h"
 

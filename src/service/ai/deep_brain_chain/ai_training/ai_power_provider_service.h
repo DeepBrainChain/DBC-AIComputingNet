@@ -16,15 +16,12 @@
 #include "ai_db_types.h"
 #include "container_client.h"
 #include "task_common_def.h"
-#include "prettywriter.h"
 #include "document.h"
 #include "bill_client.h"
-#include <boost/filesystem.hpp>
 #include <boost/process.hpp>
 #include "image_manager.h"
 
 using namespace matrix::core;
-using namespace boost::asio::ip;
 
 
 #define AI_TRAINING_TASK_TIMER                                      "training_task"

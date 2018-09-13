@@ -9,12 +9,10 @@
 **********************************************************************************/
 #include "conf_manager.h"
 #include "env_manager.h"
-#include <iostream> 
 #include <fstream> 
 #include <boost/exception/all.hpp>
 #include <vector>
 #include "common/util.h"
-#include "utilstrencodings.h"
 #include "utilstrencodings.h"
 #include <boost/format.hpp>
 

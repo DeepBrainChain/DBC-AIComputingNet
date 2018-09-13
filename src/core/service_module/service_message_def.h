@@ -9,9 +9,7 @@
 **********************************************************************************/
 #pragma once
 
-#include "common.h"
 #include "service_message.h"
-#include "socket_id.h"
 #include <boost/asio.hpp>
 
 using namespace boost::asio::ip;

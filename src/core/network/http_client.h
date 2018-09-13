@@ -13,8 +13,6 @@
 
 #include <utility>
 #include "common.h"
-#include <stringbuffer.h>
-#include <document.h>
 #include <prettywriter.h>
 #include <event2/event.h>
 #include <event2/http.h>
