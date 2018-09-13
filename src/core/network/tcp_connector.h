@@ -16,7 +16,6 @@
 #include "common.h"
 #include "channel.h"
 #include "socket_id.h"
-#include "channel.h"
 #include "handler_create_functor.h"
 #include "service_message_def.h"
 

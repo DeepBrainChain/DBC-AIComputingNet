@@ -15,7 +15,6 @@
 #include "common.h"
 #include "server.h"
 #include "timer_def.h"
-#include "server.h"
 #include "common/util.h"
 #include <algorithm>
 

@@ -8,8 +8,6 @@
 * author            Bruce Feng
 **********************************************************************************/
 #include "log.h"
-#include "common.h"
-
 
 const char * get_short_file_name(const char * file_path)
 {

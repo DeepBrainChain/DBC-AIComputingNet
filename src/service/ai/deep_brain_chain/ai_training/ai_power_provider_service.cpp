@@ -9,12 +9,10 @@
 **********************************************************************************/
 #include <cassert>
 #include <boost/exception/all.hpp>
-#include <iostream>
 #include "server.h"
 #include "api_call_handler.h"
 #include "conf_manager.h"
 #include "ai_power_provider_service.h"
-#include "peer_node.h"
 #include "service_message_id.h"
 #include "matrix_types.h"
 #include "matrix_coder.h"
@@ -22,21 +20,15 @@
 #include "port_validator.h"
 #include "task_common_def.h"
 #include "util.h"
-#include "utilstrencodings.h"
-#include "base58.h"
 
-#include "error/en.h"
 #include <boost/thread/thread.hpp>
-#include "utilstrencodings.h"
 #include "service_topic.h"
 #include <ctime>
-#include <iostream>
 #include <boost/format.hpp>
 #include "url_validator.h"
 #include "time_util.h"
 
 using namespace std;
-using namespace boost::asio::ip;
 using namespace matrix::core;
 using namespace matrix::service_core;
 using namespace ai::dbc;

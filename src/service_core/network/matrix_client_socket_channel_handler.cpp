@@ -8,7 +8,6 @@
 * author            :   Bruce Feng
 **********************************************************************************/
 #include "matrix_client_socket_channel_handler.h"
-#include "topic_manager.h"
 
 namespace matrix
 {

@@ -10,10 +10,6 @@
 
 #pragma once
 
-
-#include "common.h"
-
-
 namespace matrix
 {
     namespace core

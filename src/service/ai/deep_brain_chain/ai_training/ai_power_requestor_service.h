@@ -9,17 +9,13 @@
 **********************************************************************************/
 #pragma once
 
-
-#include <boost/asio.hpp>
 #include <leveldb/db.h>
 #include "ai_db_types.h"
 #include <string>
-#include "task_common_def.h"
 #include "service_module.h"
 
 
 using namespace matrix::core;
-using namespace boost::asio::ip;
 
 namespace fs = boost::filesystem;
 

@@ -13,7 +13,6 @@
 
 #include <boost/asio.hpp>
 #include <string>
-#include <unordered_map>
 #include "service_module.h"
 #include "handler_create_functor.h"
 #include "node_info_query_req_msg.h"
