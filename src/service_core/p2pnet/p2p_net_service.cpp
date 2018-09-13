@@ -17,7 +17,7 @@
 #include "matrix_types.h"
 #include "matrix_client_socket_channel_handler.h"
 #include "matrix_server_socket_channel_handler.h"
-#include "handler_create_functor.h"
+
 #include "channel.h"
 #include "ip_validator.h"
 #include "port_validator.h"
@@ -31,7 +31,6 @@
 #include <leveldb/write_batch.h>
 
 using namespace std;
-using namespace boost::asio::ip;
 using namespace matrix::core;
 
 const uint32_t max_reconnect_times = 1;

@@ -8,9 +8,7 @@
 * author            Bruce Feng
 **********************************************************************************/
 #include "matrix_coder.h"
-#include "service_message_id.h"
-
-
+ 
 namespace matrix
 {
     namespace service_core

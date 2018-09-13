@@ -10,17 +10,12 @@
 #pragma once
 
 #include <string>
-#include <list>
 #include "peer_node.h"
-#include "error.h"
 #include "document.h"
 #include "prettywriter.h"
-#include "stringbuffer.h"
-#include "util.h"
-#include "error/en.h"
+
 #include "ip_validator.h"
 #include "port_validator.h"
-#include "base58.h"
 #include "utilstrencodings.h"
 #include "service_common_def.h"
 
@@ -30,7 +25,6 @@ using namespace std;
 using namespace stdext;
 #endif
 using namespace matrix::core;
-using namespace boost::asio::ip;
 namespace bf = boost::filesystem;
 namespace rj = rapidjson;
 

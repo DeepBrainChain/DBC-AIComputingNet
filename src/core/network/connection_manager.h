@@ -14,7 +14,6 @@
 #include "tcp_acceptor.h"
 #include "tcp_connector.h"
 #include "rw_lock.h"
-#include "socket_channel_handler.h"
 #include "channel.h"
 
 using namespace std;

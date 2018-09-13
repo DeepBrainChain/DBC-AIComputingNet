@@ -223,7 +223,6 @@
     <ClCompile Include="..\..\..\..\src\core\network\tcp_connector.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_socket_channel.cpp" />
     <ClCompile Include="..\..\..\..\src\core\service_module\pc\pc_service_module.cpp" />
-    <ClCompile Include="..\..\..\..\src\core\service_module\service_message.cpp" />
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer.cpp" />
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\timer_service\timer_matrix_manager.cpp" />

@@ -9,13 +9,8 @@
 **********************************************************************************/
 #pragma once
 
-
-#include <map>
 #include <atomic>
-#include <mutex>
-#include <memory>
 #include <boost/serialization/singleton.hpp>
-#include "common.h"
 
 
 using namespace boost::serialization;

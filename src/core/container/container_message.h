@@ -11,7 +11,6 @@
 #pragma once
 
 #include "common.h"
-#include <stringbuffer.h>
 
 
 #define STRING_REF(VAR)                        rapidjson::StringRef(VAR.c_str(), VAR.length())

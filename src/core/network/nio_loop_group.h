@@ -11,7 +11,6 @@
 
 
 #include <thread>
-#include <functional>
 #include <vector>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>

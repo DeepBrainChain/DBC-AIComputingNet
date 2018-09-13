@@ -10,7 +10,6 @@
 #include <iostream>
 #include <limits>
 #include <cstdint>
-//#include <unistd.h>
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
@@ -22,7 +21,6 @@
 #include "log.h"
 #include "filter/simple_expression.h"
 #include <chrono>
-#include <thread>
 #include <future>
 #include <ctime>
 
