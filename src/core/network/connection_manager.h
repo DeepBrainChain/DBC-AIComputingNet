@@ -15,6 +15,7 @@
 #include "tcp_connector.h"
 #include "rw_lock.h"
 #include "channel.h"
+#include "compress/matrix_capacity.h"
 
 using namespace std;
 
@@ -95,6 +96,8 @@ namespace matrix
             shared_ptr<channel> find_fast_path(std::vector<std::string>& path);
 
             bool have_active_channel();
+
+            void set_proto_capacity(socket_id sid, std::string c);
 
         protected:
 

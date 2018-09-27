@@ -35,6 +35,7 @@ include_directories(
         ${SRC_PATH}/3rd/network/rapidjson
         ${SRC_PATH}/3rd/network/rapidjson/internal
         ${SRC_PATH}/3rd/network/rapidjson/error
+        ${SRC_PATH}/3rd/snappy
 
         ${SRC_PATH}/service_core/codec
         ${SRC_PATH}/service_core/codec/thrift
@@ -45,17 +46,17 @@ include_directories(
 link_directories(${SRC_PATH}/core/lib)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/snappy)
 
 
 add_executable(dbc_service_core_test
         test_main.cpp
-        matrix_codec_test.cpp
-        )
+        matrix_codec_test.cpp )
 
 set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if(APPLE)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lgmp )
+    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lgmp -lsnappy)
 elseif(LINUX)
-    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_service_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lsnappy -lboost_thread -pthread -ldl)
 endif()

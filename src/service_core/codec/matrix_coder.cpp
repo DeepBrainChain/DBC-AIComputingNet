@@ -8,6 +8,7 @@
 * author            Bruce Feng
 **********************************************************************************/
 #include "matrix_coder.h"
+#include "compress/matrix_compress.h"
  
 namespace matrix
 {
@@ -101,27 +102,43 @@ namespace matrix
 
         decode_status matrix_coder::decode_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg)
         {
+            byte_buf out;
+            byte_buf& input = out;
+
+            int ret = matrix_compress::uncompress(in, out);
+            switch (ret)
+            {
+                case matrix_compress::UNCOMPRESS_SKIP:
+                    input = in;
+                    break;
+                case matrix_compress::UNCOMPRESS_OK:
+                    input = out;
+                    break;
+                default:
+                    return DECODE_ERROR;
+            }
+
             try
             {
-                int32_t before_decode_len = in.get_valid_read_len();
+                int32_t before_decode_len = input.get_valid_read_len();
 
                 //packet header
                 matrix_packet_header packet_header;
-                decode_packet_header(in, packet_header);
+                decode_packet_header(input, packet_header);
                 //get decode protocol
-                std::shared_ptr<protocol> proto = get_protocol(packet_header.packet_type);
+                std::shared_ptr<protocol> proto = get_protocol(packet_header.packet_type & 0xff);
                 if (nullptr == proto)
                 {
                     return DECODE_ERROR;
                 }
                 else
                 {
-                    proto->init_buf(&in);
+                    proto->init_buf(&input);
                 }
-                decode_status decodeRet = decode_service_frame(ctx, in, msg, proto);
+                decode_status decodeRet = decode_service_frame(ctx, input, msg, proto);
                 if (E_SUCCESS == decodeRet)
                 {
-                    int32_t framelen = before_decode_len - in.get_valid_read_len();
+                    int32_t framelen = before_decode_len - input.get_valid_read_len();
                     if (packet_header.packet_len != framelen)
                     {
                         LOG_ERROR << "matrix msg_len error. msg_len in code frame is: " << packet_header.packet_len << "frame len is:" << framelen;
@@ -133,12 +150,12 @@ namespace matrix
             }
             catch (std::exception &e)
             {
-                LOG_ERROR << "matrix decode exception: " << e.what() << " " << in.to_string();
+                LOG_ERROR << "matrix decode exception: " << e.what() << " " << input.to_string();
                 return DECODE_ERROR;
             }
             catch (...)
             {
-                LOG_ERROR << "matrix decode exception: " << in.to_string();
+                LOG_ERROR << "matrix decode exception: " << input.to_string();
                 return DECODE_ERROR;
             }
 
@@ -227,10 +244,13 @@ namespace matrix
                 auto invoker = it->second;
                 invoker(ctx, proto, msg, out);
 
-                //get msg length and net endian and fill in
+                //set msg len
                 uint32_t msg_len = out.get_valid_read_len();
                 msg_len = byte_order::hton32(msg_len);
                 memcpy(out.get_read_ptr(), &msg_len, sizeof(msg_len));
+
+//                matrix_compress::compress(out);
+
             }
             catch (std::exception &e)
             {
@@ -261,7 +281,7 @@ namespace matrix
             {
                 if (m_recv_messages.empty() || m_recv_messages.back().complete())
                 {
-                    m_recv_messages.push_back(std::move(net_message(DEFAULT_BUF_LEN)));
+                    m_recv_messages.push_back(net_message(DEFAULT_BUF_LEN));
                 }
 
                 net_message & msg = m_recv_messages.back();

@@ -474,7 +474,27 @@ namespace ai
                 {
                     cout << it->first << ":\n";
                 }
-                cout << it->second << "\n";
+
+                if (it->first == std::string("startup_time"))
+                {
+                    std::string s_time = it->second;
+                    try
+                    {
+                        time_t t = std::stoi(s_time);
+                        cout << std::ctime(&t) << endl;
+
+                    }
+                    catch (...)
+                    {
+                        //
+                        cout << "N/A \n";
+                    }
+                }
+                else
+                {
+                    cout << it->second << "\n";
+                }
+
                 cout << "------------------------------------------------------\n";
                 //cout << "******************************************************\n";
             }

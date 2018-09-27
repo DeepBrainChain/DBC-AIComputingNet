@@ -19,6 +19,7 @@
 #include "service_message.h"
 
 #include "socket_channel_handler.h"
+#include "compress/matrix_capacity.h"
 
 
 using namespace std;
@@ -76,6 +77,9 @@ namespace matrix
             void set_remote_node_id(std::string node_id) {m_remote_node_id = node_id;}
             std::string get_remote_node_id() {return m_remote_node_id;}
 
+            void set_proto_capacity(std::string c);
+            matrix_capacity& get_proto_capacity();
+
         protected:
 
             void init_option();
@@ -117,6 +121,8 @@ namespace matrix
             handler_create_functor m_handler_functor;
 
             std::string m_remote_node_id; //used for efficient query response transport
+
+            matrix_capacity m_proto_capacity; //for protocol selection
 
         };
 

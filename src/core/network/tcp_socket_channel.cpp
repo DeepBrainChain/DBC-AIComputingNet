@@ -475,6 +475,16 @@ namespace matrix
             return true;
         }
 
+        void tcp_socket_channel::set_proto_capacity(std::string c)
+        {
+            m_proto_capacity.add(c);
+        }
+
+        matrix_capacity& tcp_socket_channel::get_proto_capacity()
+        {
+            return m_proto_capacity;
+        }
+
     }
 
 }

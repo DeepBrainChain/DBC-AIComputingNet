@@ -11,7 +11,29 @@ namespace utf = boost::unit_test;
 
 using namespace matrix::service_core;
 
-//BOOST_AUTO_TEST_SUITE(suite_codec, * utf::enabled())
+BOOST_AUTO_TEST_CASE(test_encode_shake_hand){
+
+    message msg;
+    channel_handler_context ctx;
+    byte_buf buf;
+
+    matrix_coder coder;
+
+    msg.header.msg_name = SHAKE_HAND_REQ;
+    msg.header.msg_priority = 0;
+
+    auto req_content = std::make_shared<shake_hand_req>();
+    req_content->header.__set_magic(TEST_NET);
+    req_content->header.__set_msg_name(SHAKE_HAND_REQ);
+    req_content->header.__set_nonce("12345");
+
+    msg.set_content(req_content);
+
+    auto r = coder.encode(ctx, msg, buf);
+
+    std::cout<<"buf: "<< buf.to_string()<<std::endl;
+    BOOST_TEST(r==ENCODE_SUCCESS);
+}
 
     BOOST_AUTO_TEST_CASE(test_encode){
 
@@ -44,7 +66,7 @@ using namespace matrix::service_core;
 
         auto r = coder.encode(ctx, msg, buf);
 
-//        std::cout<<"buf: "<< buf.to_string()<<std::endl;
+        std::cout<<"compress: "<< buf.to_string()<<std::endl;
         BOOST_TEST(r==ENCODE_SUCCESS);
 
     }

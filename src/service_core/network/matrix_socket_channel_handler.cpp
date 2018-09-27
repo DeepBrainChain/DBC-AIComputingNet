@@ -11,6 +11,7 @@
 #include "p2p_net_service.h"
 #include "tcp_socket_channel.h"
 #include "service_proto_filter.h"
+#include "compress/matrix_compress.h"
 
 
 namespace matrix
@@ -155,6 +156,19 @@ namespace matrix
             LOG_DEBUG << "socket channel handler send msg: " << msg.get_name() << m_sid.to_string();
 
             encode_status status = m_coder->encode(ctx, msg, buf);
+
+            if (auto ch_ = m_channel.lock())
+            {
+                shared_ptr<tcp_socket_channel> ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch_);
+                if (nullptr != ch)
+                {
+                    if (ch->get_proto_capacity().snappy_raw() && CONF_MANAGER->get_proto_capacity().snappy_raw())
+                    {
+                        matrix_compress::compress(buf);
+                    }
+                }
+            }
+
             if (ENCODE_SUCCESS == status)
             {
                 if (msg.get_name() != SHAKE_HAND_REQ
