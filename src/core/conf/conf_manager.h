@@ -14,6 +14,7 @@
 #include "module.h"
 #include "id_generator.h"
 #include "net_type_params.h"
+#include "compress/matrix_capacity.h"
 
 
 using namespace boost::program_options;
@@ -111,6 +112,12 @@ namespace matrix
                 return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
             }
 
+            const matrix_capacity & get_proto_capacity()
+            {
+                return m_proto_capacity;
+            }
+
+
         protected:
 
             int32_t parse_local_conf();
@@ -145,6 +152,9 @@ namespace matrix
 
             //params relative with net type
             std::shared_ptr<net_type_params> m_net_params;
+
+            //protocol capacity
+            matrix_capacity m_proto_capacity;
         };
 
     }

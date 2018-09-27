@@ -859,6 +859,28 @@ namespace matrix
                 m_channel_recycle_timer = INVALID_TIMER_ID;
             }
         }
+
+        void connection_manager::set_proto_capacity(socket_id sid, std::string c)
+        {
+            write_lock_guard<rw_lock> lock(m_lock_chnl);
+
+            //get tcp socket channel
+            auto it = m_channels.find(sid);
+            if (it == m_channels.end())
+            {
+                LOG_ERROR << "connection manager on tcp channel error but not found" << sid.to_string();
+                return;
+            }
+
+            shared_ptr<tcp_socket_channel> ch = std::dynamic_pointer_cast<tcp_socket_channel>(it->second);
+            if (nullptr == ch)
+            {
+                return;
+            }
+
+            ch->set_proto_capacity(c);
+
+        }
     
     }
 

@@ -35,6 +35,7 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/network/rapidjson
         ${SRC_PATH}/3rd/network/rapidjson/internal
         ${SRC_PATH}/3rd/network/rapidjson/error
+        ${SRC_PATH}/3rd/snappy
 )
 
 

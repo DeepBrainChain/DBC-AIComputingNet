@@ -19,6 +19,8 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/network/rapidjson
         ${SRC_PATH}/3rd/network/rapidjson/internal
         ${SRC_PATH}/3rd/network/rapidjson/error
+        ${SRC_PATH}/3rd/snappy
+        ${SRC_PATH}/3rd
         ${SRC_PATH}/core
 )
 
@@ -28,7 +30,7 @@ set(SRC_FOLDER_LIST codec common conf conf/validataor
         crypto container bill env
         initiator log math memory module monitor mutex
         network service_bus service_module
-        service_module/pc storage timer_service filter)
+        service_module/pc storage timer_service filter compress)
 
 set(SRC_LIST)
 

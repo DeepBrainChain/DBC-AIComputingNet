@@ -834,6 +834,14 @@ namespace matrix
                 return E_DEFAULT;
             }
 
+            if (req_content->header.exten_info.count("capacity"))
+            {
+                LOG_DEBUG << "save remote peer's capacity " << req_content->header.exten_info["capacity"];
+                CONNECTION_MANAGER->set_proto_capacity(msg->header.src_sid,
+                                                       req_content->header.exten_info["capacity"]);
+            }
+
+
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
 
@@ -841,6 +849,11 @@ namespace matrix
             resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             resp_content->header.__set_msg_name(VER_RESP);
             resp_content->header.__set_nonce(id_generator().generate_nonce());
+
+            //capacity
+            std::map<std::string, std::string> exten_info;
+            exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
+            resp_content->header.__set_exten_info(exten_info);
 
             //body
             resp_content->body.__set_node_id(CONF_MANAGER->get_node_id());
@@ -930,6 +943,13 @@ namespace matrix
                 candidate->reconn_cnt = 0;
             }
 
+            if (resp_content->header.exten_info.count("capacity"))
+            {
+                LOG_DEBUG << "save remote peer's capacity " << resp_content->header.exten_info["capacity"];
+                CONNECTION_MANAGER->set_proto_capacity(msg->header.src_sid,
+                                                       resp_content->header.exten_info["capacity"]);
+            }
+
             tcp::endpoint local_ep = tcp_ch->get_local_addr();
             advertise_local(local_ep, msg->header.src_sid);            //advertise local self address to neighbor peer node
 
@@ -1015,6 +1035,11 @@ namespace matrix
                 req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
                 req_content->header.__set_msg_name(VER_REQ);
                 req_content->header.__set_nonce(id_generator().generate_nonce());
+
+                //capacity
+                std::map<std::string, std::string> exten_info;
+                exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
+                req_content->header.__set_exten_info(exten_info);
 
                 //body
                 req_content->body.__set_node_id(CONF_MANAGER->get_node_id());

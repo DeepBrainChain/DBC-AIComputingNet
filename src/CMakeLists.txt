@@ -79,6 +79,7 @@ ${SRC_PATH}/3rd/network/rapidjson
 ${SRC_PATH}/3rd/network/rapidjson/internal
 ${SRC_PATH}/3rd/network/rapidjson/error
 ${SRC_PATH}/3rd/cli
+${SRC_PATH}/3rd/snappy
 
 ${SRC_PATH}/api
 )
@@ -93,12 +94,12 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/conf SERVICE_DBC_CO
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/initiator SERVICE_DBC_INITIATOR_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training SERVICE_DBC_TRAINING_SRCS)
 
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/db/leveldb THIRD_LEVEL_DB_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson THIRD_RAPIDJSON_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/internal THIRD_RAPIDJSON_INTERNAL_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/error THIRD_RAPIDJSON_ERROR_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent THIRD_LIBEVENT_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent/event2 THIRD_LIBEVENT_EVENT2_SRCS)
+#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/db/leveldb THIRD_LEVEL_DB_SRCS)
+#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson THIRD_RAPIDJSON_SRCS)
+#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/internal THIRD_RAPIDJSON_INTERNAL_SRCS)
+#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/error THIRD_RAPIDJSON_ERROR_SRCS)
+#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent THIRD_LIBEVENT_SRCS)
+#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent/event2 THIRD_LIBEVENT_EVENT2_SRCS)
 
 ############################################################################
 
@@ -115,6 +116,7 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/leveldb)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/readline)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/snappy)
 
 #add target source
 ADD_EXECUTABLE(dbc
@@ -123,13 +125,13 @@ ${API_SRCS}
 ${SERVICE_DBC_CONF_SRCS} 
 ${SERVICE_DBC_INITIATOR_SRCS}
 ${SERVICE_DBC_TRAINING_SRCS}
-${SERVICE_MISC_SRCS}
-${THIRD_LEVEL_DB_SRCS}
-${THIRD_RAPIDJSON_SRCS}
-${THIRD_RAPIDJSON_INTERNAL_SRCS}
-${THIRD_RAPIDJSON_ERROR_SRCS}
-${THIRD_LIBEVENT_SRCS}
-${THIRD_LIBEVENT_EVENT2_SRCS})
+${SERVICE_MISC_SRCS})
+#${THIRD_LEVEL_DB_SRCS}
+#${THIRD_RAPIDJSON_SRCS}
+#${THIRD_RAPIDJSON_INTERNAL_SRCS}
+#${THIRD_RAPIDJSON_ERROR_SRCS}
+#${THIRD_LIBEVENT_SRCS}
+#${THIRD_LIBEVENT_EVENT2_SRCS})
 
 ############################################################################
 
@@ -142,12 +144,12 @@ set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/l
 
 
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -pie -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl)
 #    TARGET_LINK_LIBRARIES(dbc -ltinfo)
 endif()
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -pie -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -levent -lleveldb -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -ldl)
     TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
 endif()
 
