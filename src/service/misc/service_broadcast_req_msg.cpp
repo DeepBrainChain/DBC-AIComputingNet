@@ -120,15 +120,15 @@ namespace service
                 }
 
 
-                auto now = std::time(nullptr);
-                if ( now != (std::time_t)(-1))
-                {
-                    if (kv.second.time_stamp > (now + MAX_TIMESTAMP_DRIFT_IN_SECOND))
-                    {
-                        LOG_WARNING << "timestamp drift out of range" ;
-                        return false;
-                    }
-                }
+//                auto now = std::time(nullptr);
+//                if ( now != (std::time_t)(-1))
+//                {
+//                    if (kv.second.time_stamp > (now + MAX_TIMESTAMP_DRIFT_IN_SECOND))
+//                    {
+//                        LOG_WARNING << "timestamp drift out of range" ;
+//                        return false;
+//                    }
+//                }
 
                 if ( kv.second.kvs.size() > MAX_NDOE_INFO_KVS_SIZE)
                 {

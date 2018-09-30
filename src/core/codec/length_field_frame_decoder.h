@@ -101,7 +101,7 @@ namespace matrix
                     return DECODE_ERROR;
                 }
 
-                //msg_len offset is 6 bytes and size is 4 bytes
+                //msg_len offset is 4 bytes and size is 4 bytes
                 uint64_t frame_len = get_unadjusted_frame_length(net_msg.get_message_stream(), 0, 4);
                 if (frame_len > m_max_frame_len)
                 {

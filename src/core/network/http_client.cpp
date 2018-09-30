@@ -83,8 +83,8 @@ namespace matrix
 
         http_client::http_client(const std::string &url, const std::string & crt)
             : m_uri("")
-            , m_crt(crt)
             , m_scheme("http")
+            , m_crt(crt)
         {
             parse_url(url);
             init_ssl_ctx();

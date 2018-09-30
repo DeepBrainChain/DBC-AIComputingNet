@@ -116,8 +116,8 @@ namespace matrix
 
             tcp::endpoint m_remote_addr;
 
-			tcp::endpoint m_local_addr;
-			
+            tcp::endpoint m_local_addr;
+
             handler_create_functor m_handler_functor;
 
             std::string m_remote_node_id; //used for efficient query response transport
