@@ -24,6 +24,8 @@ namespace ai
 
             dbc_server_initiator() : m_daemon(false) {}
 
+            virtual ~dbc_server_initiator() = default;
+
             virtual int32_t init(int argc, char* argv[]);
 
             virtual int32_t exit();

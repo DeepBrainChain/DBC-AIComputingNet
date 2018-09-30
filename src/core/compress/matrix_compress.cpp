@@ -69,50 +69,72 @@ namespace matrix{
 
     /**
      *
-     * @param in,   input compressed data, preceed a packet header
-     * @param out,  uncompressed data
+     * @param in
+     * @return
      */
-    int matrix_compress::uncompress(byte_buf& in, byte_buf& out)
+    bool matrix_compress::has_compress_flag(byte_buf& in)
     {
-        std::string text;
         char *p = in.get_read_ptr();
-        size_t len = in.get_valid_read_len();
 
         uint32_t proto_type = *((uint32_t*)(p + PACKET_LEN_FIELD_OFFSET));
         proto_type = byte_order::ntoh32(proto_type);
 
-        bool is_compressed = (proto_type>>8) & 0x01;
+        return (proto_type>>8) & 0x01;
 
-        if (!is_compressed)
+    }
+
+    /**
+     *
+     * @param in,   input compressed data, preceed a packet header
+     * @param out,  uncompressed data
+     * @return true if uncompress complete, otherwise return false
+     */
+    bool matrix_compress::uncompress(byte_buf& in, byte_buf& out)
+    {
+        LOG_DEBUG << "uncompress";
+
+        if(!has_compress_flag(in))
         {
-            return UNCOMPRESS_SKIP;
+            LOG_ERROR << "try to uncompress a packet without compress flag";
+            return false;
         }
 
-        //remove compress flag
-        proto_type &= 0xFFFF00FF;
-        proto_type = byte_order::hton32(proto_type);
+        std::string text;
+        char *p = in.get_read_ptr();
+        size_t len = in.get_valid_read_len();
 
-        // uint32_t msg_len = byte_order::ntoh32(*((uint32_t*)p))
-        // assert(len == msg_len)
+        //check if the packet is valid
+        uint32_t packet_len = byte_order::ntoh32(*((uint32_t*)p));
+        if (len != packet_len)
+        {
+            LOG_ERROR << "input buf size "<< len << " != packet.len " << packet_len;
+            return false;
+        }
 
+        //step 1: invoke snappy uncompress
         if (!snappy::Uncompress(p + PACKET_HEADER_LEN, len - PACKET_HEADER_LEN, &text))
         {
             LOG_ERROR << "uncompress failed";
-            return UNCOMPRESS_NOK;
+            return false;
         }
 
-        // set new msg len
+        //step 2: set packet len
         uint32_t msg_len = PACKET_HEADER_LEN + text.length();
         msg_len = byte_order::hton32(msg_len);
         out.write_to_byte_buf((char *) &msg_len, sizeof(msg_len));
 
-        // cp protocol type
+        //step 3: set proto type: remove compress flag
+        uint32_t proto_type = *((uint32_t*)(p + PACKET_LEN_FIELD_OFFSET));
+        proto_type = byte_order::ntoh32(proto_type);
+        proto_type &= 0xFFFF00FF;
+        proto_type = byte_order::hton32(proto_type);
+
         out.write_to_byte_buf((char*)&proto_type, PACKET_PROTO_TYPE_FIELD_SIZE);
 
-        // cp uncompressed text
+        //step 4: cp uncompressed text into output buf
         out.write_to_byte_buf(text.c_str(), text.length());
 
-        return UNCOMPRESS_OK;
+        return true;
     }
 
     }

@@ -31,9 +31,6 @@ using namespace std::placeholders;
 #define BIND_ENCODE_INVOKER(MSG_TYPE)       invoker = std::bind(&matrix_coder::encode_invoke<MSG_TYPE>, this, _1, _2, _3, _4); \
                                                                                                 m_binary_encode_invokers[#MSG_TYPE] = invoker;
 
-#define THRIFT_BINARY_PROTO                                0
-
-
 namespace matrix
 {
     namespace service_core
@@ -89,6 +86,10 @@ namespace matrix
 
             template<typename msg_type>
             void encode_invoke(channel_handler_context &ctx, std::shared_ptr<protocol> &proto, message & msg, byte_buf &out);
+
+            bool get_compress_enabled(channel_handler_context &ctx);
+
+            int get_thrift_proto(channel_handler_context &ctx);
 
         protected:            
 
