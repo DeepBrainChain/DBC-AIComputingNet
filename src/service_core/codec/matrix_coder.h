@@ -31,9 +31,6 @@ using namespace std::placeholders;
 #define BIND_ENCODE_INVOKER(MSG_TYPE)       invoker = std::bind(&matrix_coder::encode_invoke<MSG_TYPE>, this, _1, _2, _3, _4); \
                                                                                                 m_binary_encode_invokers[#MSG_TYPE] = invoker;
 
-#define THRIFT_BINARY_PROTO                                0
-
-
 namespace matrix
 {
     namespace service_core
@@ -43,6 +40,11 @@ namespace matrix
         class matrix_packet_header
         {
         public:
+            matrix_packet_header();
+
+            void read(byte_buf &in);
+            void update(byte_buf &out);
+            void write(byte_buf &out);
 
             int32_t packet_len;
             int32_t packet_type;
@@ -77,11 +79,6 @@ namespace matrix
 
             std::shared_ptr<protocol> get_protocol(int32_t type);
 
-            //decode packet header
-            void decode_packet_header(byte_buf &in, matrix_packet_header &packet_header);
-
-            void encode_packet_header(matrix_packet_header &packet_header, byte_buf &out);
-
             decode_status decode_service_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg, std::shared_ptr<protocol> proto);
 
             template<typename msg_type>
@@ -89,6 +86,10 @@ namespace matrix
 
             template<typename msg_type>
             void encode_invoke(channel_handler_context &ctx, std::shared_ptr<protocol> &proto, message & msg, byte_buf &out);
+
+            bool get_compress_enabled(channel_handler_context &ctx);
+
+            int get_thrift_proto(channel_handler_context &ctx);
 
         protected:            
 

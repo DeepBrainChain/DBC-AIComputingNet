@@ -19,7 +19,7 @@ endif ()
 
 
 if(APPLE)
-    set(CXX_FLAGS "-std=c++11 -Wno-inconsistent-missing-override")
+    set(CXX_FLAGS "-std=c++11 -Wno-inconsistent-missing-override -Wno-expansion-to-defined")
     set(CXX_PREPROCESS_FLAGS "-DMAC_OSX -D_DARWIN_C_SOURCE -DEVENT__HAVE_OPENSSL")
 endif()
 

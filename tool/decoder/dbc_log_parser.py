@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import mt
+import mt_plus
 import re
 import sys
 
@@ -19,12 +19,15 @@ def parse(f):
             t=m.match(s)
 
             if t:
-                print s
-                mt.decode(t.group(2))
-                print
+                # print s
+                p = mt_plus.DBCPacket(t.group(2))
+                p.decode()
+                print p
             else:
                 print s
     except KeyboardInterrupt:
+        exit(1)
+    except Exception:
         exit(1)
 
 if __name__=="__main__":
