@@ -18,7 +18,7 @@
 #include <event2/buffer.h>
 // #include <event2/keyvalq_struct.h>
 #include "error/en.h"
-
+#include "oss_common_def.h"
 namespace matrix
 {
     namespace core
@@ -380,7 +380,7 @@ namespace matrix
                 }
 
                 std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
-
+                
                 //message
                 if (!doc.HasMember("State"))
                 {
@@ -403,6 +403,11 @@ namespace matrix
                     inspect_resp->state.exit_code = exit_code.GetInt();
                 }                
                 
+                if (E_SUCCESS != parse_item_string(doc, "Id", inspect_resp->id))
+                {
+                    return nullptr;
+                }
+
                 return inspect_resp;
             }
         }

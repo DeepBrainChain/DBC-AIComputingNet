@@ -2,8 +2,8 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   container_client.cpp
-* description    :   container client for definition
+* file name        :   image_manager.cpp
+* description    :   image_manager for implementation
 * date                  :   2018.08.15
 * author            :   Regulus
 **********************************************************************************/
