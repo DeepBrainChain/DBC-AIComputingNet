@@ -183,7 +183,6 @@ namespace ai
             mdl->start();
             LOG_INFO << "init data query service successfully";
 
-
             //connection_manager
             LOG_INFO << "begin to init connection manager";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<connection_manager>());
