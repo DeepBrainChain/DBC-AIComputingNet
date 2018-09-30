@@ -29,18 +29,14 @@ namespace matrix {
             };
 
             enum {
-                MIN_MSG_LEN_TO_COMPRESS = 512
-            };
-
-            enum {
-                UNCOMPRESS_NOK = -1,
-                UNCOMPRESS_SKIP = 0,
-                UNCOMPRESS_OK   = 1
+                MIN_MSG_LEN_TO_COMPRESS = 128
             };
 
             static void compress(core::byte_buf &inout, bool force = false);
 
-            static int uncompress(core::byte_buf &in, core::byte_buf &out);
+            static bool uncompress(core::byte_buf &in, core::byte_buf &out);
+
+            static bool has_compress_flag(byte_buf& in);
         };
     }
 }

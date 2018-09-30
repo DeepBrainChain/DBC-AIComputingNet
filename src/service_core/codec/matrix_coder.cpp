@@ -27,6 +27,7 @@ namespace matrix
         void matrix_coder::init_decode_proto()
         {
             m_decode_protos[THRIFT_BINARY_PROTO] = make_shared<binary_protocol>();
+            m_decode_protos[THRIFT_COMPACT_PROTO] = make_shared<compact_protocol>();
         }
 
         void matrix_coder::init_decode_invoker()
@@ -102,29 +103,29 @@ namespace matrix
 
         decode_status matrix_coder::decode_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg)
         {
-            byte_buf out;
-            byte_buf& input = out;
 
-            int ret = matrix_compress::uncompress(in, out);
-            switch (ret)
+            // step 1: optional, uncompress packet
+            byte_buf uncompress_out;
+            byte_buf& decode_in = in;
+
+            if(matrix_compress::has_compress_flag(in))
             {
-                case matrix_compress::UNCOMPRESS_SKIP:
-                    input = in;
-                    break;
-                case matrix_compress::UNCOMPRESS_OK:
-                    input = out;
-                    break;
-                default:
+                if(!matrix_compress::uncompress(in, uncompress_out))
+                {
                     return DECODE_ERROR;
+                }
+
+                decode_in = uncompress_out;
             }
 
+            // step 2: decode packet
             try
             {
-                int32_t before_decode_len = input.get_valid_read_len();
+                int32_t before_decode_len = decode_in.get_valid_read_len();
 
                 //packet header
                 matrix_packet_header packet_header;
-                decode_packet_header(input, packet_header);
+                decode_packet_header(decode_in, packet_header);
                 //get decode protocol
                 std::shared_ptr<protocol> proto = get_protocol(packet_header.packet_type & 0xff);
                 if (nullptr == proto)
@@ -133,12 +134,12 @@ namespace matrix
                 }
                 else
                 {
-                    proto->init_buf(&input);
+                    proto->init_buf(&decode_in);
                 }
-                decode_status decodeRet = decode_service_frame(ctx, input, msg, proto);
+                decode_status decodeRet = decode_service_frame(ctx, decode_in, msg, proto);
                 if (E_SUCCESS == decodeRet)
                 {
-                    int32_t framelen = before_decode_len - input.get_valid_read_len();
+                    int32_t framelen = before_decode_len - decode_in.get_valid_read_len();
                     if (packet_header.packet_len != framelen)
                     {
                         LOG_ERROR << "matrix msg_len error. msg_len in code frame is: " << packet_header.packet_len << "frame len is:" << framelen;
@@ -150,12 +151,12 @@ namespace matrix
             }
             catch (std::exception &e)
             {
-                LOG_ERROR << "matrix decode exception: " << e.what() << " " << input.to_string();
+                LOG_ERROR << "matrix decode exception: " << e.what() << " " << decode_in.to_string();
                 return DECODE_ERROR;
             }
             catch (...)
             {
-                LOG_ERROR << "matrix decode exception: " << input.to_string();
+                LOG_ERROR << "matrix decode exception: " << decode_in.to_string();
                 return DECODE_ERROR;
             }
 
@@ -236,8 +237,17 @@ namespace matrix
                     return ENCODE_ERROR;
                 }
 
-                std::shared_ptr<protocol> proto = get_protocol(THRIFT_BINARY_PROTO);
-                assert(proto != nullptr);
+                bool enable_compress = get_compress_enabled(ctx);
+                uint32_t thrift_proto = get_thrift_proto(ctx);
+
+                std::shared_ptr<protocol> proto = get_protocol(thrift_proto);
+
+                if(proto == nullptr)
+                {
+                    LOG_ERROR << "matrix encoder unknown protocol value: " << thrift_proto;
+                    return ENCODE_ERROR;
+                }
+
                 proto->init_buf(&out);
 
                 //body invoker
@@ -249,7 +259,15 @@ namespace matrix
                 msg_len = byte_order::hton32(msg_len);
                 memcpy(out.get_read_ptr(), &msg_len, sizeof(msg_len));
 
-//                matrix_compress::compress(out);
+                //set proto
+                thrift_proto = byte_order::hton32(thrift_proto);
+                memcpy(out.get_read_ptr() + sizeof(thrift_proto), &thrift_proto, sizeof(thrift_proto));
+
+                // compress
+                if(enable_compress)
+                {
+                    matrix_compress::compress(out);
+                }
 
             }
             catch (std::exception &e)
@@ -308,6 +326,52 @@ namespace matrix
                 }
             }
             return DECODE_SUCCESS;
+        }
+
+
+        bool matrix_coder::get_compress_enabled(channel_handler_context &ctx)
+        {
+            bool rtn = false;
+
+            variables_map& vm = ctx.get_args();
+            try
+            {
+                if (vm.count("ENABLE_COMPRESS"))
+                {
+                    if (vm["ENABLE_COMPRESS"].as<bool>())
+                    {
+                        LOG_DEBUG << "matrix encoder with compress enabled";
+                        rtn = true;
+                    }
+                }
+
+            }
+            catch (...)
+            {
+
+            }
+
+            return rtn;
+        }
+
+        int matrix_coder::get_thrift_proto(channel_handler_context &ctx)
+        {
+            int rtn = THRIFT_BINARY_PROTO;
+
+            variables_map& vm = ctx.get_args();
+            try
+            {
+                if (vm.count("THRIFT_PROTO"))
+                {
+                    rtn = vm["THRIFT_PROTO"].as<int>();
+                }
+            }
+            catch (...)
+            {
+
+            }
+
+            return rtn;
         }
 
 
