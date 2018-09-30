@@ -4,29 +4,23 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        container_message.h
 * description    container message definition
-* date                  2018.04.07
-* author            Bruce Feng
+* date                  2018.07.07
+* author            Regulus
 **********************************************************************************/
 
 #pragma once
 
 #include "common.h"
 #include "container_message.h"
-
+#include "oss_common_def.h"
 
 namespace matrix
 {
     namespace core
     {
-        enum AUTH_ERROR
-        {
-            AUTH_NET_ERROR = -1,
-            AUTH_SUCCESS =    0
-        } ;
-
         const int64_t DEFAULT_AUTH_REPORT_CYTLE = 60;
         const int64_t MAX_AUTH_REPORT_CYTLE = 3* DEFAULT_AUTH_REPORT_CYTLE;
-        class auth_task_req : public json_io_buf
+        class auth_task_req
         {
         public:
 
@@ -49,11 +43,11 @@ namespace matrix
             std::string to_string();
         };
 
-        class auth_task_resp : public json_io_buf
+        class auth_task_resp
         {
         public:
 
-            int64_t status = AUTH_NET_ERROR;
+            int64_t status = OSS_SUCCESS;
 
             std::string contract_state;
 
