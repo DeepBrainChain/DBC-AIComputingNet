@@ -13,7 +13,7 @@
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include "error/en.h"
-
+#include "oss_common_def.h"
 namespace matrix
 {
     namespace core
@@ -287,6 +287,12 @@ namespace matrix
                     LOG_ERROR << "parse container_inspect_response file error:" << GetParseError_En(doc.GetParseError());
                     return;
                 }
+
+                if (E_SUCCESS != parse_item_string(doc, "Id", this->id))
+                {
+                    return;
+                }
+
                 //message
                 if (!doc.HasMember("State"))
                 {

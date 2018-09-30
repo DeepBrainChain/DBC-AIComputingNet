@@ -22,6 +22,8 @@ const int32_t DEFAULT_MAX_CONNECTION_NUM = 128;
 const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
 const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
 const int32_t DEFAULT_SPEED = 0;
+const bool DEFAULT_ENABLE = true;
+const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
 namespace matrix
 {
     namespace core
@@ -86,9 +88,12 @@ namespace matrix
                 ("max_connect", bpo::value<int32_t>()->default_value(128), "")
                 ("timer_service_broadcast_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND), "")
                 ("magic_num", bpo::value<std::string>()->default_value("0XE1D1A098"), "")
-                ("bill_url", bpo::value<std::string>()->default_value(""), "")
-                ("bill_crt", bpo::value<std::string>()->default_value(""), "")
+                ("oss_url", bpo::value<std::string>()->default_value(""), "")
+                ("oss_crt", bpo::value<std::string>()->default_value(""), "")
                 ("max_recv_speed", bpo::value<int32_t>()->default_value(0), "")
+                ("enable_idle_task", bpo::value<bool>()->default_value(true), "")
+                ("enable_billing", bpo::value<bool>()->default_value(true), "")
+                ("update_idle_task_cycle", bpo::value<int32_t>()->default_value(DEFAULT_UPDATE_IDLE_TASK_CYCLE), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "");
 
             //peer opt description
@@ -301,7 +306,6 @@ namespace matrix
                     LOG_DEBUG << "use magic num:" << boost::str(boost::format("0x%0x") % m_net_flag);
                     return;
                 }
-                
             }
             else
             {
