@@ -90,14 +90,14 @@ dbc_package()
 
     cp -R $base_dir/conf         $dbc_repo_dir/
 
-    # handle bill related config
+    # handle oss related config
     if [ $type == 'mining' ]; then
-        # enable bill related config
-        sed -i -e 's/^#bill_/bill_/g'  $dbc_repo_dir/conf/core.conf
+        # enable oss related config
+        sed -i -e 's/^#oss_/oss_/g'  $dbc_repo_dir/conf/core.conf
         sed -i -e '/^$/d'  $dbc_repo_dir/conf/core.conf
     else
-        # remove bill related config
-        sed -i -e '/^#bill_/d'  $dbc_repo_dir/conf/core.conf
+        # remove oss related config
+        sed -i -e '/^#oss_/d'  $dbc_repo_dir/conf/core.conf
         sed -i -e '/^$/d'  $dbc_repo_dir/conf/core.conf
     fi
 

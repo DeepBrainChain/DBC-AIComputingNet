@@ -33,6 +33,7 @@ extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
 extern const int32_t DEFAULT_SPEED;
 extern const std::string conf_manager_name;
+extern const bool DEFAULT_ENABLE;
 
 namespace matrix
 {
@@ -97,14 +98,14 @@ namespace matrix
 
             static int32_t serialize_node_info(const node_info &info);
 
-            const std::string & get_bill_url() 
+            const std::string & get_oss_url() 
             {
-                return  m_args.count("bill_url") > 0 ?  m_args["bill_url"].as<std::string>():DEFAULT_STRING;
+                return  m_args.count("oss_url") > 0 ?  m_args["oss_url"].as<std::string>():DEFAULT_STRING;
             }
 
-            const std::string & get_bill_crt()
+            const std::string & get_oss_crt()
             {
-                return m_args.count("bill_crt") > 0 ? m_args["bill_crt"].as<std::string>() : DEFAULT_STRING;
+                return m_args.count("oss_crt") > 0 ? m_args["oss_crt"].as<std::string>() : DEFAULT_STRING;
             }
 
             const int32_t & get_max_recv_speed()
@@ -112,12 +113,12 @@ namespace matrix
                 return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
             }
 
+            const bool & get_enable_idle_task() { return m_args.count("enable_idle_task") > 0 ? m_args["enable_idle_task"].as<bool>() : DEFAULT_ENABLE; }
+            const bool & get_enable_billing() { return m_args.count("enable_billing") > 0 ? m_args["enable_billing"].as<bool>() : DEFAULT_ENABLE; }
             const matrix_capacity & get_proto_capacity()
             {
                 return m_proto_capacity;
             }
-
-
         protected:
 
             int32_t parse_local_conf();
