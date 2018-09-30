@@ -17,9 +17,11 @@
 #include "container_client.h"
 #include "task_common_def.h"
 #include "document.h"
-#include "bill_client.h"
+#include "oss_client.h"
 #include <boost/process.hpp>
 #include "image_manager.h"
+#include "oss_task_manager.h"
+#include "idle_task_scheduling.h"
 
 using namespace matrix::core;
 
@@ -134,9 +136,7 @@ namespace ai
             int32_t on_get_task_queue_size_req(std::shared_ptr<message> &msg);
 
         protected:
-
             //ai power provider service
-
             std::shared_ptr<nvidia_config> get_nvidia_config_from_cli();
 
             std::shared_ptr<container_config> get_container_config(std::shared_ptr<ai_training_task> task);
@@ -152,20 +152,17 @@ namespace ai
             int32_t load_task_from_db();
 
             int32_t load_container();
-            int32_t load_bill_config();
 
             int32_t check_cpu_config(const double & cpu_info);
             int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
             int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status status);
 
-            std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
-            int32_t auth_task(std::shared_ptr<ai_training_task> task);
+
             int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
             int32_t pull_image(std::shared_ptr<ai_training_task> task);
             int32_t check_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t end_pull(std::shared_ptr<ai_training_task> task);
             int32_t check_pull_image_state(std::shared_ptr<ai_training_task> task);
-            bool    task_need_auth(std::shared_ptr<ai_training_task> task);
 
             nvidia_docker_version get_nv_docker_version();
 
@@ -181,14 +178,13 @@ namespace ai
 
             std::shared_ptr<container_client> m_nvidia_client;
 
-            std::shared_ptr<bill_client> m_bill_client;
+            std::shared_ptr<oss_client> m_oss_client;
 
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;             //ai power provider cached training task in memory
 
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
 
             uint32_t m_training_task_timer_id;
-            //uint32_t m_auth_task_timer_id;
 
             std::shared_ptr<nvidia_config> m_nv_config;
             variables_map m_container_args;
@@ -202,9 +198,12 @@ namespace ai
             std::string m_docker_root_dir = "";
             std::shared_ptr<image_manager> m_pull_image_mng = nullptr;
             bool m_auto_pull_image = true;
-            int64_t m_auth_time_interval = 0;
 
             nvidia_docker_version m_nv_docker_version;
+
+            /////////////allow dbc to exec idle task, when dbc is not running ai user's task////////////////////////
+            std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
+            std::shared_ptr<idle_task_scheduling> m_idle_task_ptr = nullptr;
         };
 
     }

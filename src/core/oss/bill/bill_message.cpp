@@ -18,7 +18,6 @@ namespace matrix
 {
     namespace core
     {
-
         std::string auth_task_req::to_string()
         {
             rapidjson::Document document;
@@ -56,7 +55,7 @@ namespace matrix
                 //message
                 if (!doc.HasMember("status"))
                 {
-                    this->status = AUTH_NET_ERROR;
+                    this->status = OSS_NET_ERROR;
                     LOG_ERROR << "parse bill_resp file error. Do not have status";
                     return;
                 }
@@ -65,7 +64,7 @@ namespace matrix
                 auto  ret_type = status.GetType();
                 if (ret_type != rapidjson::kNumberType)
                 {
-                    this->status = AUTH_NET_ERROR;
+                    this->status = OSS_NET_ERROR;
                     return;
                 }
 
@@ -79,14 +78,14 @@ namespace matrix
                 if (!doc.HasMember("contract_state"))
                 {
                     LOG_ERROR << "parse bill_resp file error. Do not have status";
-                    this->status = AUTH_NET_ERROR;
+                    this->status = OSS_NET_ERROR;
                     return;
                 }
                 rapidjson::Value &contract_state = doc["contract_state"];
                 ret_type = contract_state.GetType();
                 if (ret_type != rapidjson::kStringType)
                 {
-                    this->status = AUTH_NET_ERROR;
+                    this->status = OSS_NET_ERROR;
                     return;
                 }
                 this->contract_state = contract_state.GetString();
@@ -100,14 +99,14 @@ namespace matrix
                     ret_type = report_cycle.GetType();
                     if (ret_type != rapidjson::kNumberType)
                     {
-                        this->status = AUTH_NET_ERROR;
+                        this->status = OSS_NET_ERROR;
                         return;
                     }
                     
                     this->report_cycle = report_cycle.GetInt();
                     if (this->report_cycle < 0)
                     {
-                        this->status = AUTH_NET_ERROR;
+                        this->status = OSS_NET_ERROR;
                         return;
                     }
 
