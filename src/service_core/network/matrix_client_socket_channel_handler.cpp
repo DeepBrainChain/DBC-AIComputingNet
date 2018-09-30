@@ -17,8 +17,8 @@ namespace matrix
         matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(std::shared_ptr<channel> ch)
             : matrix_socket_channel_handler(ch)
             , m_lost_shake_hand_count(0)
-            , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
             , m_wait_ver_resp_timer(*(ch->get_io_service()))
+            , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
         {
  
         }

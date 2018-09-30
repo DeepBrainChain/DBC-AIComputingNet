@@ -11,6 +11,7 @@ namespace matrix
         public:
             matrix_capacity();
             bool thrift_binary() const;
+            bool thrift_compact() const;
             bool snappy_raw() const;
 
             void add(std::string c);
@@ -27,6 +28,13 @@ namespace matrix
             bool m_thrift_compact;
             bool m_snappy_raw;
 
+        };
+
+        class matrix_capacity_helper
+        {
+        public:
+            static int get_thrift_proto(matrix_capacity& a, matrix_capacity& b);
+            static bool get_compress_enabled(matrix_capacity& a, matrix_capacity& b);
         };
     }
 }

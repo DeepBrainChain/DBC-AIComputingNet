@@ -7,7 +7,6 @@ namespace cpp matrix.service_core
 //  2: required string msg_name,
 //  3: optional string nonce,
 //  4: optional string session_id,
-//  5: optional list<string> path,
 //  255: optional map<string,string> exten_info
 //}
 

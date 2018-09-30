@@ -187,7 +187,7 @@ namespace service
         {
             m_change.clear();
 
-            int max_change_set_size = m_id_list.size() < 32 ? m_id_list.size():32;
+            int max_change_set_size = m_id_list.size() < 48 ? m_id_list.size():48;
 
             for(int i = 0; i < max_change_set_size; i++)
             {
