@@ -44,7 +44,8 @@
 #include <stddef.h>
 #endif  // HAVE_STDDEF_H
 
-#if 1  // HAVE_SYS_UIO_H
+//#if 1  // HAVE_SYS_UIO_H
+#ifndef WIN32
 #include <sys/uio.h>
 #endif  // HAVE_SYS_UIO_H
 
@@ -80,8 +81,10 @@ typedef unsigned long long uint64;
 
 typedef std::string string;
 
-#if !1  // !HAVE_SYS_UIO_H
-// Windows does not have an iovec type, yet the concept is universally useful.
+//#if !1  // !HAVE_SYS_UIO_H
+#ifdef WIN32
+// Windows does not have an
+// iovec type, yet the concept is universally useful.
 // It is simple to define it ourselves, so we put it inside our own namespace.
 struct iovec {
 	void* iov_base;

@@ -149,6 +149,12 @@
     <Filter Include="src\core\bill">
       <UniqueIdentifier>{473baf53-88a3-4f95-b83d-0ff606942c7d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\3rd\snappy">
+      <UniqueIdentifier>{bed5b05c-e723-4a79-9253-4ad08d583b21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\compress">
+      <UniqueIdentifier>{b26a140b-f7cd-4733-be13-8c72842afa79}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -387,6 +393,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\image_manager.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\compress\matrix_capacity.cpp">
+      <Filter>src\core\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\compress\matrix_compress.cpp">
+      <Filter>src\core\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\codec\thrift_compact.cpp">
+      <Filter>src\core\codec</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1253,6 +1268,39 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\image_manager.h">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy.h">
+      <Filter>src\3rd\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy-c.h">
+      <Filter>src\3rd\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy-internal.h">
+      <Filter>src\3rd\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy-sinksource.h">
+      <Filter>src\3rd\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy-stubs-internal.h">
+      <Filter>src\3rd\snappy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\compress\._matrix_compress.h">
+      <Filter>src\core\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\compress\matrix_capacity.h">
+      <Filter>src\core\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\compress\matrix_compress.h">
+      <Filter>src\core\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\protocol_def.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\thrift_binary.h">
+      <Filter>src\core\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\codec\thrift_compact.h">
+      <Filter>src\core\codec</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

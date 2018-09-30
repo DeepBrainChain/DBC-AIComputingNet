@@ -150,24 +150,38 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        int32_t matrix_socket_channel_handler::on_write(channel_handler_context &ctx, message &msg, byte_buf &buf)
+        void matrix_socket_channel_handler::set_encode_context(channel_handler_context &ctx)
         {
-
-            LOG_DEBUG << "socket channel handler send msg: " << msg.get_name() << m_sid.to_string();
-
-            encode_status status = m_coder->encode(ctx, msg, buf);
-
             if (auto ch_ = m_channel.lock())
             {
                 shared_ptr<tcp_socket_channel> ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch_);
                 if (nullptr != ch)
                 {
-                    if (ch->get_proto_capacity().snappy_raw() && CONF_MANAGER->get_proto_capacity().snappy_raw())
-                    {
-                        matrix_compress::compress(buf);
-                    }
+                    auto a = ch->get_proto_capacity();
+                    auto b = CONF_MANAGER->get_proto_capacity();
+
+                    bool compress_enabled = matrix_capacity_helper::get_compress_enabled(a , b);
+                    int  thrift_proto = matrix_capacity_helper::get_thrift_proto(a , b);
+
+                    variable_value v1;
+                    v1.value() = compress_enabled;
+                    ctx.add("ENABLE_COMPRESS", v1);
+
+                    variable_value v2;
+                    v2.value() = thrift_proto;
+                    ctx.add("THRIFT_PROTO", v2);
                 }
             }
+
+        }
+
+        int32_t matrix_socket_channel_handler::on_write(channel_handler_context &ctx, message &msg, byte_buf &buf)
+        {
+            LOG_DEBUG << "socket channel handler send msg: " << msg.get_name() << m_sid.to_string();
+
+            set_encode_context(ctx);
+
+            encode_status status = m_coder->encode(ctx, msg, buf);
 
             if (ENCODE_SUCCESS == status)
             {

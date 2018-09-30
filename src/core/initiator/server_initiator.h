@@ -23,7 +23,6 @@ namespace matrix
             virtual int32_t init(int argc, char* argv[]) = 0;
 
             virtual int32_t exit() = 0;
-
         };
 
     }

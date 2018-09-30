@@ -99,3 +99,22 @@ BOOST_AUTO_TEST_CASE(test_protocol_write)
   
   BOOST_TEST(header->msg_name == "shake_hand_resp");
 }
+
+
+BOOST_AUTO_TEST_CASE(test_protocol_compact_write)
+{
+  // magic
+  std::shared_ptr<base_header> header = std::make_shared<base_header>();
+  header->__set_magic(0xE1D1A097);
+
+  header->__set_msg_name("shake_hand_resp");
+
+  std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
+  binary_protocol proto(buf.get());
+
+  header->write(&proto);
+
+  std::cout << buf->to_string() <<std::endl;
+
+  BOOST_TEST(header->msg_name == "shake_hand_resp");
+}

@@ -28,10 +28,11 @@ namespace matrix
     {
 
         conf_manager::conf_manager() 
-            : m_net_params(std::make_shared<net_type_params>())
-            , m_log_level(1)
+            : m_log_level(1)
+            , m_net_params(std::make_shared<net_type_params>())
         {
             m_proto_capacity.add(matrix_capacity::THRIFT_BINARY_C_NAME);
+            m_proto_capacity.add(matrix_capacity::THRIFT_COMPACT_C_NAME);
             m_proto_capacity.add(matrix_capacity::SNAPPY_RAW_C_NAME);
         }
 

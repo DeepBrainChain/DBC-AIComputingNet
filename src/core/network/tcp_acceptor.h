@@ -42,6 +42,8 @@ namespace matrix
             //tcp_acceptor(ios_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
             tcp_acceptor(ios_weak_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
 
+            virtual ~tcp_acceptor() = default;
+
             virtual int32_t start();
 
             virtual int32_t stop();

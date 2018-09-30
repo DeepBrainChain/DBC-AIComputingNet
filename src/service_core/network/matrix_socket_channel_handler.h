@@ -86,6 +86,8 @@ namespace matrix
 
             void reset_has_message() { m_has_message = false; }
 
+            void set_encode_context(channel_handler_context &ctx);
+
         protected:
 
             bool m_stopped;
@@ -94,8 +96,8 @@ namespace matrix
             //fix coding and decoding conflict when p2p communication
             std::shared_ptr<matrix_coder> m_decoder;
 
-            std::weak_ptr<channel> m_channel;
 
+            std::weak_ptr<channel> m_channel;
             steady_timer m_shake_hand_timer;
 
             //std::function<timer_handler_type> m_shake_hand_timer_handler;
