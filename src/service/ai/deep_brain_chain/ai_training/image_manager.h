@@ -2,8 +2,8 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   container_client.h
-* description    :   container client for definition
+* file name        :   image_manager.h
+* description    :   image_manager for definition
 * date                  :   2018.9.15
 * author            :   Regulus
 **********************************************************************************/
