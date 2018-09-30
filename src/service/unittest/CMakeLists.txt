@@ -24,6 +24,7 @@ include_directories(
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
         ${SRC_PATH}/core
+        ${SRC_PATH}/core/oss
         ${SRC_PATH}
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include
@@ -43,12 +44,15 @@ include_directories(
 
         ${SRC_PATH}/service/misc
         ${SRC_PATH}/service/topic
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
 
 )
 
 link_directories(${SRC_PATH}/core/lib)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/leveldb)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
 
 add_executable(dbc_service_test
         test_main.cpp
@@ -56,6 +60,10 @@ add_executable(dbc_service_test
         node_info_collection_test.cpp
         ${SRC_PATH}/service/misc/service_info_collection.cpp
         ${SRC_PATH}/service/misc/node_info_collection.cpp
+        ${SRC_PATH}/service/misc/node_info_collection.cpp
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/oss_task_manager.cpp
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/ai_db_types.cpp
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_common_def.cpp
         )
 
 set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
@@ -63,5 +71,5 @@ set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/l
 if(APPLE)
     TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 )
 elseif(LINUX)
-    TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -lleveldb -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -ldl)
 endif()
