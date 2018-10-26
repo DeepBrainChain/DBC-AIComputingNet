@@ -161,6 +161,9 @@
     <Filter Include="src\core\compress">
       <UniqueIdentifier>{b26a140b-f7cd-4733-be13-8c72842afa79}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\service\deep_brain_chain\ai_training\task_scheduling">
+      <UniqueIdentifier>{9df5f27e-e42b-4862-a04a-a5323c7b4452}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\main.cpp">
@@ -415,8 +418,17 @@
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\oss_task_manager.cpp">
       <Filter>src\service\deep_brain_chain\ai_training</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\idle_task_scheduling.cpp">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\container_worker.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\idle_task_scheduling.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\task_scheduling.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\user_task_scheduling.cpp">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1326,8 +1338,17 @@
     <ClInclude Include="..\..\..\..\src\core\codec\thrift_compact.h">
       <Filter>src\core\codec</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\idle_task_scheduling.h">
-      <Filter>src\service\deep_brain_chain\ai_training</Filter>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\container_worker.h">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\idle_task_scheduling.h">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\task_scheduling.h">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\user_task_scheduling.h">
+      <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
