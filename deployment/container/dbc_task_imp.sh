@@ -23,8 +23,15 @@ data_dir_hash=$1
 code_dir_hash=$2
 ipfs_get_task_pid=12345
 
+ipfs_install_path=/dbc/.ipfs
+ipfs_tgz=go-ipfs_v0.4.15_linux-amd64.tar.gz
+export IPFS_PATH=$ipfs_install_path
+
+
 task=$3
 opts="${@:4}"
+
+ipfs_started=0
 
 myecho()
 {
@@ -75,7 +82,9 @@ end_ai_training()
 {
     echo -n "end to exec task: "
     echo $home_dir/code/$task
-
+    if [ $ipfs_started -ne 1 ];then
+        install_ipfs_repo
+    fi
     upload_result_file
     myecho "\n\n"
     stop_ipfs
@@ -210,19 +219,142 @@ download()
 }
 
 
+#mkdir $ipfs_install_path
+# install ipfs repo to indicated directory, e.g. /dbc/
+install_ipfs_repo()
+{
+    if [ -d /dbc/.ipfs ]; then
+	      echo "reuse ipfs cache"
+	      cp -f $ipfs_tgz /tmp
+	      cd /tmp
+	      tar xvzf $ipfs_tgz >/dev/null
+	      cd /tmp/go-ipfs
+	      cp /tmp/go-ipfs/ipfs /usr/local/bin/
+	      ipfs daemon --enable-gc &
+	      sleep 30
+	      #add ipfs bootstrap node
+	      ipfs bootstrap rm --all
+	  
+	      #ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
+	      ipfs bootstrap add /ip4/49.51.49.192/tcp/4001/ipfs/QmRVgowTGwm2FYhAciCgA5AHqFLWG4AvkFxv9bQcVB7m8c
+	      ipfs bootstrap add /ip4/49.51.49.145/tcp/4001/ipfs/QmPgyhBk3s4aC4648aCXXGigxqyR5zKnzXtteSkx8HT6K3
+    	  ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5
+
+	      wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.3.1/bootstrap_nodes
+	      if [ -e ./bootstrap_nodes ];then
+	  		    cat ./bootstrap_nodes| while read line
+     	      do
+	            ipfs bootstrap add $line
+	          done
+	          rm ./bootstrap_nodes
+	      fi
+
+	      #set ipfs repo
+	      ipfs config Datastore.StorageMax 100GB
+
+	      cd /
+    else
+        cp -f /home/dbc_utils/$ipfs_tgz /
+	      mkdir $ipfs_install_path
+	      bash ./install_ipfs.sh ./$ipfs_tgz
+
+	      #set ipfs repo
+	      ipfs config Datastore.StorageMax 100GB
+    fi
+  
+    ipfs_started=1
+}
+
+start_down_code_dir()
+{
+    #download code_dir
+    echo "======================================================="
+    if [ -z "$code_dir_hash" ]; then
+        echo -n "code_dir is empty.pls check"
+        exit
+    fi
+    echo -n "begin to download code dir: "
+    echo $code_dir_hash
+
+    download $code_dir_hash ./codetmp
+    #ipfs get $code_dir_hash -o ./code
+
+    if [ $? -ne 0 ]; then
+        echo "download code dir failed and dbc_task.sh exit"
+        stop_ipfs
+        exit
+    fi
+    mv ./codetmp ./code
+    if [ ! -e "$home_dir/code/$task" ]; then
+        echo "task not exist. quit now"
+        rm -rf $home_dir/code
+        stop_ipfs
+        exit
+    fi
+
+    echo -n "end to download code dir: "
+    echo $code_dir_hash
+}
+
+start_down_data_dir()
+{
+	  echo -n "begin to download data dir: "
+    echo $data_dir_hash
+
+    #ipfs get $data_dir_hash -o ./data
+    download $data_dir_hash ./datatmp
+
+    if [ $? -ne 0 ]; then
+        echo "download data dir failed and dbc_task.sh exit"
+        stop_ipfs
+        exit
+    fi
+    mv ./datatmp ./data
+    echo -n "end to download data dir: "
+    echo $data_dir_hash
+}
+
+exec_task()
+{
+	 cd $home_dir/code
+   dos2unix $task
+   chmod +x  $task
+   /bin/bash $task $opts | tee $home_dir/output/training_result_file
+   
+    if [ $? -ne 0 ]; then
+        echo "exec task failed and dbc_task.sh exit"
+        end_ai_training
+        exit
+    fi
+    end_ai_training
+}
 
 echo "======================================================="
 echo "begin to exec dbc_task_imp.sh"
 
+#Task may have been existed in container. When container was restarted
+if [ -e "$home_dir/code/$task" ]; then
+    if [[ -n "$data_dir_hash" && ! -d "$home_dir/data" ]]; then
+        install_ipfs_repo
+        start_down_data_dir
+        sleep $sleep_time
+    fi
+
+    exec_task
+    exit
+fi
+
+#new task
+
+install_ipfs_repo
 
 #create dir
 echo "======================================================="
 if [ ! -d $home_dir ]; then
-        mkdir $home_dir
+    mkdir $home_dir
 fi
 
 rm -rf $home_dir/*
-
 
 mkdir $home_dir/output
 
@@ -230,52 +362,12 @@ echo -n "cd "
 echo $home_dir
 cd $home_dir
 
-#download code_dir
-echo "======================================================="
-if [ -z "$code_dir_hash" ]; then
-          echo -n "code_dir is empty.pls check"
-          exit
-fi
-echo -n "begin to download code dir: "
-echo $code_dir_hash
-
-download $code_dir_hash ./code
-#ipfs get $code_dir_hash -o ./code
-
-if [ $? -ne 0 ]; then
-        echo "download code dir failed and dbc_task.sh exit"
-        stop_ipfs
-        exit
-fi
-
-if [ ! -e "$home_dir/code/$task" ]; then
-   echo "task not exist. quit now"
-   rm -rf $home_dir/code
-   stop_ipfs
-   exit
-fi
-
-echo -n "end to download code dir: "
-echo $code_dir_hash
+start_down_code_dir
 
 #download data_dir
 echo "======================================================="
 if [ -n "$data_dir_hash" ]; then
-    echo -n "begin to download data dir: "
-    echo $data_dir_hash
-
-#    ipfs get $data_dir_hash -o ./data
-    download $data_dir_hash ./data
-
-    if [ $? -ne 0 ]; then
-        echo "download data dir failed and dbc_task.sh exit"
-        stop_ipfs
-        exit
-    fi
-
-    echo -n "end to download data dir: "
-    echo $data_dir_hash
-
+    start_down_data_dir
     sleep $sleep_time
 fi
 
@@ -287,19 +379,5 @@ sleep $sleep_time
 echo "======================================================="
 echo -n "begin to exec task: "
 echo "$home_dir/code/$task"
-#python $home_dir/$code_dir_hash/$task
-
-cd $home_dir/code
-dos2unix $task
-chmod +x  $task
-/bin/bash $task $opts | tee $home_dir/output/training_result_file
-
-if [ $? -ne 0 ]; then
-    echo "exec task failed and dbc_task.sh exit"
-    end_ai_training
-    exit
-fi
-
-
-end_ai_training
+exec_task
             
