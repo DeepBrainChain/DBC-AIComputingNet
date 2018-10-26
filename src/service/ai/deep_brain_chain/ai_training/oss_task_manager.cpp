@@ -21,11 +21,6 @@ namespace ai
 {
     namespace dbc
     {
-        oss_task_manager::oss_task_manager(std::shared_ptr<idle_task_scheduling> & idle_task_ptr)
-        {
-            m_idle_task_ptr = idle_task_ptr;
-        }
-
         int32_t  oss_task_manager::init()
         {
             if (E_SUCCESS != load_oss_config())
@@ -77,33 +72,18 @@ namespace ai
                 }
             }
 
-            m_get_idle_task_cycle = CONF_MANAGER->get_update_idle_task_cycle();
-            m_get_idle_task_cycle = m_get_idle_task_cycle * 60 * 1000;
+            m_get_idle_task_cycle = CONF_MANAGER->get_update_idle_task_cycle()*60*1000;
             if (m_get_idle_task_cycle < UPDATE_IDLE_TASK_MIN_CYCLE)
             {
                 m_get_idle_task_cycle = UPDATE_IDLE_TASK_MIN_CYCLE;
             }
-            LOG_DEBUG << "update idle task cycle:" << m_get_idle_task_cycle << "ms";
             return E_SUCCESS;
         }
 
-        //1. m_next_update_interval=0, when dbc is booted. At this time, ai ai_power_provider_service.on_training_task_timer call update_idle_task, will fetch idle task
-        //2. if fetch success, then dbc will try call fetch_idle_task after 24h
-        //3. if fetch failed, then dbc will try call fetch_idle_task after 5min
-        int32_t oss_task_manager::update_idle_task()
-        {
-            if (!m_enable_idle_task || nullptr == m_oss_client)
-            {
-                return E_SUCCESS;
-            }
-            if (time_util::get_time_stamp_ms() >= m_next_update_interval)
-            {
-                fetch_idle_task();
-            }
-            return E_SUCCESS;
-        }
-
-        int32_t oss_task_manager::fetch_idle_task()
+        //1. m_next_update_interval=0, when dbc is booted. At this time, call update_idle_task immediately
+        //2. if fetch success, then dbc will try call fetch_idle_task after m_get_idle_task_cycle
+        //3. if fetch failed, then dbc will try call fetch_idle_task after DEFAULT_UPDATE_IDLE_TASK_CYCLE
+        std::shared_ptr<idle_task_resp> oss_task_manager::fetch_idle_task()
         {
             LOG_DEBUG << "fetch idle task from oss";
             if (nullptr == m_oss_client)
@@ -112,9 +92,9 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (nullptr == m_idle_task_ptr)
+            if (time_util::get_time_stamp_ms() < m_next_update_interval)
             {
-                return E_DEFAULT;
+                return nullptr;
             }
 
             std::shared_ptr<idle_task_req> req = std::make_shared<idle_task_req>();
@@ -128,16 +108,13 @@ namespace ai
             
             if (nullptr == resp || resp->status != OSS_SUCCESS)
             {
-                //try fetch, after 10min
-                m_next_update_interval = time_util::get_time_stamp_ms() + UPDATE_IDLE_TASK_MIN_CYCLE;
-                return E_DEFAULT;
+                //try fetch, after 5min
+                m_next_update_interval = time_util::get_time_stamp_ms() + DEFAULT_UPDATE_IDLE_TASK_CYCLE;
+                return nullptr;
             }
-            
-            m_idle_task_ptr->set_task(resp);
-
-            //try update idle task, after m_get_idle_task_cycle
+           
             m_next_update_interval = time_util::get_time_stamp_ms() + m_get_idle_task_cycle;
-            return E_SUCCESS;
+            return resp;
         }
 
         std::shared_ptr<auth_task_req> oss_task_manager::create_auth_task_req(std::shared_ptr<ai_training_task> task)
@@ -189,7 +166,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            LOG_INFO << "auth task:" << task->task_id;
+            LOG_DEBUG << "auth task:" << task->task_id;
 
             if (0 == task->start_time)
             {
@@ -216,7 +193,16 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            m_auth_time_interval = DEFAULT_AUTH_REPORT_CYTLE * 60 * 1000;
+            if (task->status >= task_stopped)
+            {
+                //reset to 0 for next task
+                m_auth_time_interval = 0;
+            }
+            else
+            {
+                m_auth_time_interval = DEFAULT_AUTH_REPORT_CYTLE * 60 * 1000;
+            }
+
             if (m_oss_client != nullptr)
             {
                 std::shared_ptr<auth_task_resp> resp = m_oss_client->post_auth_task(task_req);
@@ -289,7 +275,5 @@ namespace ai
 
             return false;
         }
-
     }
-
 }
