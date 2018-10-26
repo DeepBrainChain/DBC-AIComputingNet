@@ -16,8 +16,6 @@ SYSTEM=`uname -s`
 #define variable
 exit_code=0
 sleep_time=5s
-wait_ipfs_init_time=10s
-wait_ipfs_daemon_time=30s
 home_dir=/dbc
 data_dir_hash=$1
 code_dir_hash=$2
@@ -209,11 +207,8 @@ download()
     return 0
 }
 
-
-
 echo "======================================================="
 echo "begin to exec dbc_task_imp.sh"
-
 
 #create dir
 echo "======================================================="
@@ -222,7 +217,6 @@ if [ ! -d $home_dir ]; then
 fi
 
 rm -rf $home_dir/*
-
 
 mkdir $home_dir/output
 
@@ -300,6 +294,4 @@ if [ $? -ne 0 ]; then
     exit
 fi
 
-
 end_ai_training
-            
