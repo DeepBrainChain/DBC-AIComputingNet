@@ -29,7 +29,7 @@ namespace matrix {
             };
 
             enum {
-                MIN_MSG_LEN_TO_COMPRESS = 128
+                MIN_MSG_LEN_TO_COMPRESS = 256
             };
 
             static bool compress(core::byte_buf &inout);
