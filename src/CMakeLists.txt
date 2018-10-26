@@ -66,6 +66,7 @@ ${SRC_PATH}/service/topic
 ${SRC_PATH}/service/ai/deep_brain_chain/conf
 ${SRC_PATH}/service/ai/deep_brain_chain/initiator
 ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
+${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_scheduling
 
 ${SRC_PATH}/3rd/crypto/secp256k1/include
 ${SRC_PATH}/3rd/crypto/secp256k1/contrib
@@ -93,6 +94,7 @@ AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/misc SERVICE_MISC_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/conf SERVICE_DBC_CONF_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/initiator SERVICE_DBC_INITIATOR_SRCS)
 AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training SERVICE_DBC_TRAINING_SRCS)
+AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_scheduling SERVICE_DBC_TRAINING_TASK_SRCS)
 
 #AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/db/leveldb THIRD_LEVEL_DB_SRCS)
 #AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson THIRD_RAPIDJSON_SRCS)
@@ -124,6 +126,7 @@ ${DIR_SRCS}
 ${API_SRCS}
 ${SERVICE_DBC_CONF_SRCS} 
 ${SERVICE_DBC_INITIATOR_SRCS}
+${SERVICE_DBC_TRAINING_TASK_SRCS}
 ${SERVICE_DBC_TRAINING_SRCS}
 ${SERVICE_MISC_SRCS})
 #${THIRD_LEVEL_DB_SRCS}
