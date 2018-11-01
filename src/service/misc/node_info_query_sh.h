@@ -65,7 +65,11 @@ function get {
     ;;
 
     "disk")
-        df -l -h -x tmpfs | grep "/dev/\|Filesystem" |grep -v "loop"
+        DIR=$(cd $( dirname "${BASH_SOURCE[0]}" ) >/dev/null && pwd)
+        dbc_container_path=$(grep "host_volum_dir" $DIR/conf/container.conf | grep -v "#")
+        if [ -z $dbc_container_path ]; then dbc_container_path="/"; else dbc_container_path=$(echo $dbc_container_path | awk -F '=' '{print $2}'); fi
+        dbc_container_mp=$(stat -c %m $dbc_container_path)
+        df -l -h | awk '{if($NF=="'$dbc_container_mp'") print $0}'
     ;;
 
     "image")
