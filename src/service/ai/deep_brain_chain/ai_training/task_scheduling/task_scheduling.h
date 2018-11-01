@@ -38,10 +38,10 @@ namespace ai
     { 
         enum TASK_STATE
         {
-            TASK_RUNNING,
-            TASK_NULL,
-            TASK_NOEXIST,
-            TASK_STOPPED
+            DBC_TASK_RUNNING,
+            DBC_TASK_NULL,
+            DBC_TASK_NOEXIST,
+            DBC_TASK_STOPPED
         };
 
         struct task_time_stamp_comparator

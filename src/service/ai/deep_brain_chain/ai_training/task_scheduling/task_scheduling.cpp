@@ -134,7 +134,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (TASK_RUNNING == get_task_state(task))
+            if (DBC_TASK_RUNNING == get_task_state(task))
             {
                 LOG_DEBUG << "idle task have been running, do not need to start. Idle task id:" << task->task_id;
                 return E_SUCCESS;
@@ -193,7 +193,7 @@ namespace ai
 
             try
             {
-                if (TASK_RUNNING == get_task_state(task))
+                if (DBC_TASK_RUNNING == get_task_state(task))
                 {
                     stop_task(task);
                 }
@@ -218,14 +218,14 @@ namespace ai
         {
             if (nullptr == task || task->task_id.empty())
             {
-                return TASK_NULL;
+                return DBC_TASK_NULL;
             }
             //inspect container
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->task_id);
             if (nullptr == resp)
             {
                 task->__set_container_id("");
-                return TASK_NOEXIST;
+                return DBC_TASK_NOEXIST;
             }
             
             //local db may be deleted, but idle_task is running, then container_id is empty.
@@ -236,10 +236,10 @@ namespace ai
 
             if (true == resp->state.running)
             {
-                return TASK_RUNNING;
+                return DBC_TASK_RUNNING;
             }
 
-            return TASK_STOPPED;
+            return DBC_TASK_STOPPED;
         }
 
         int32_t task_scheduling::start_pull_image(std::shared_ptr<ai_training_task> task)
