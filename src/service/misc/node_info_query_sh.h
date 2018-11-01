@@ -65,7 +65,16 @@ function get {
     ;;
 
     "disk")
-        df -l -h -x tmpfs | grep "/dev/\|Filesystem" |grep -v "loop"
+        DIR=$(cd $( dirname "${BASH_SOURCE[0]}" ) >/dev/null && pwd)
+        dbc_container_path=$(grep "host_volum_dir" $DIR/conf/container.conf | grep -v "#")
+
+        if [ -z $dbc_container_path ]; then
+            dbc_container_path=$(docker info 2>1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
+        else
+            dbc_container_path=$(echo $dbc_container_path | awk -F '=' '{print $2}')
+        fi
+
+        df -l -h $dbc_container_path
     ;;
 
     "image")
