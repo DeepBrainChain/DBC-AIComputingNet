@@ -85,7 +85,6 @@ namespace ai
         //3. if fetch failed, then dbc will try call fetch_idle_task after DEFAULT_UPDATE_IDLE_TASK_CYCLE
         std::shared_ptr<idle_task_resp> oss_task_manager::fetch_idle_task()
         {
-            LOG_DEBUG << "fetch idle task from oss";
             if (nullptr == m_oss_client)
             {
                 LOG_DEBUG << "oss client is null. pls check oss_url in core.conf";
@@ -97,6 +96,7 @@ namespace ai
                 return nullptr;
             }
 
+            LOG_DEBUG << "fetch idle task from oss";
             std::shared_ptr<idle_task_req> req = std::make_shared<idle_task_req>();
             req->mining_node_id = CONF_MANAGER->get_node_id();
             req->time_stamp = boost::str(boost::format("%d") % time_util::get_time_stamp_ms());
