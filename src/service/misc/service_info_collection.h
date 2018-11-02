@@ -48,7 +48,7 @@ namespace service
             void set_query_sh(std::string fn);
 
         private:
-            bool check(expression& e, std::string filter, std::string node_id, node_service_info& s_info);
+            bool check(expression& e, std::string node_id, node_service_info& s_info);
             std::string get_gpu_type(std::string s);
             std::string get_gpu_num(std::string s);
             std::string to_string(std::vector<std::string> in);

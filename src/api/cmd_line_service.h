@@ -74,6 +74,10 @@ namespace ai
 
             void result(int argc, char* argv[]);
             void system_cmd(int argc, char* argv[]);
+            void task(int argc, char* argv[]);
+            void node(int argc, char* argv[]);
+
+            void task_clean(int argc, char* argv[]);
 
         protected:
 
@@ -89,6 +93,8 @@ namespace ai
             char m_cmd_line_buf[MAX_CMD_LINE_BUF_LEN];
 
             std::vector<std::string> m_argvs;
+
+            std::string m_last_task_id;
 
         };
 

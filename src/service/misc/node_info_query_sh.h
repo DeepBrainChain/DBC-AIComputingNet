@@ -72,6 +72,9 @@ function get {
             dbc_container_path=$(docker info 2>1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
         else
             dbc_container_path=$(echo $dbc_container_path | awk -F '=' '{print $2}')
+            if [ -z $dbc_container_path ]; then
+               dbc_container_path=$(docker info 2>1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
+            fi
         fi
 
         df -l -h $dbc_container_path
