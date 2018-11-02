@@ -193,14 +193,10 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (task->status >= task_stopped)
+            if (task->status < task_stopped)
             {
-                //reset to 0 for next task
-                m_auth_time_interval = 0;
-            }
-            else
-            {
-                m_auth_time_interval = DEFAULT_AUTH_REPORT_CYTLE * 60 * 1000;
+                //if oss is abnormal, the value of m_auth_time_interval is default value.
+                m_auth_time_interval = DEFAULT_AUTH_REPORT_INTERVAL;
             }
 
             if (m_oss_client != nullptr)
@@ -233,7 +229,6 @@ namespace ai
                 }
 
                 LOG_ERROR << "auth failed. auth_status:" << resp->status << " contract_state:" << resp->contract_state;
-
             }
             else
             {
@@ -254,6 +249,11 @@ namespace ai
             {
                 ////dbc maybe restart and the task is  running state, at this time, dbc should send auth req
                 if (0 == m_auth_time_interval)
+                {
+                    return true;
+                }
+
+                if (task_queueing == task->status)
                 {
                     return true;
                 }

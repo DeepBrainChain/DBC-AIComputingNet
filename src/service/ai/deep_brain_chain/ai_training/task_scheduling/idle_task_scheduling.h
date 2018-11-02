@@ -44,6 +44,7 @@ namespace ai
             void update_idle_task();
             void set_task(std::shared_ptr<idle_task_resp> task);
             void set_fetch_handler(fetch_task_handler handler) { m_fetch_task_handler = handler; }
+            int8_t get_status();
 
         private:
             std::shared_ptr<ai_training_task> m_idle_task = nullptr;
@@ -54,7 +55,7 @@ namespace ai
             //if need to exec idle task, then dbc change the m_idle_state_begin to the current time,
             //then after m_max_idle_state_interval, dbc try to exec idle task.
             int64_t m_idle_state_begin = 0;    
-            const int64_t  m_max_idle_state_interval = 3 * 60 * 1000; //3 min.180,000ms    
+            const int64_t  m_max_idle_state_interval = 3 * 60 * 1000; //3 min.180,000ms
         };
     }
 }
