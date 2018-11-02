@@ -34,7 +34,7 @@ using namespace matrix::core;
 using namespace matrix::service_core;
 
 
-#define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(30000)                    //unit: ms
+#define DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS                 std::chrono::milliseconds(10000)                    //unit: ms
 
 #define LIST_ALL_TASKS                                                                        0
 #define LIST_SPECIFIC_TASKS                                                              1
@@ -102,6 +102,30 @@ namespace ai
                 }
 
                 cout << "stopping training task......" << endl;
+            }
+        };
+        
+        class cmd_task_clean_req : public matrix::core::msg_base
+        {
+        public:
+            std::string task_id;
+        };
+        
+        class cmd_task_clean_resp : public matrix::core::msg_base, public outputter
+        {
+        public:
+            int32_t result;
+            std::string result_info;
+            
+            void format_output()
+            {
+                if (E_SUCCESS != result)
+                {
+                    cout << result_info << endl;
+                    return;
+                }
+                
+                cout << "clean abnormal training task......" << result_info << endl;
             }
         };
 

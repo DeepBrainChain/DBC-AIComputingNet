@@ -24,10 +24,10 @@ class get_task_queue_size_resp_msg : public matrix::core::message
     {
     public:
         get_task_queue_size_resp_msg (): m_qsize(0) {set_name(typeid(get_task_queue_size_resp_msg).name());}
-        uint32_t get() { return m_qsize;}
-        void set(uint32_t n) { m_qsize = n;}
+        int32_t get() { return m_qsize;}
+        void set(int32_t n) { m_qsize = n;}
     private:
-        uint32_t m_qsize;
+        int32_t m_qsize;
     };
 
 }

@@ -660,7 +660,14 @@ namespace ai
 
             auto resp = std::make_shared<service::get_task_queue_size_resp_msg>();
 
-            resp->set(m_user_task_ptr->get_user_cur_task_size());
+            auto task_num = m_user_task_ptr->get_user_cur_task_size();
+
+            if (m_idle_task_ptr && m_idle_task_ptr->get_status() == task_running)
+            {
+                task_num = -1; // task_num(-1) means idle task is running.
+            }
+
+            resp->set(task_num);
 
             auto resp_msg = std::dynamic_pointer_cast<message>(resp);
 

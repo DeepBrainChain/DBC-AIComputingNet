@@ -91,7 +91,10 @@ namespace service
 
             for (auto &it : m_id_2_info)
             {
-                if (!check(e, filter, it.first, it.second)) continue;
+                if (!filter.empty())
+                {
+                    if (!check(e, it.first, it.second)) continue;
+                }
 
                 if (++i > MAX_NODES_TO_BE_SHOWN) break;
 
@@ -102,13 +105,8 @@ namespace service
         }
 
 
-        bool service_info_collection::check(expression& e, std::string filter, std::string node_id, node_service_info& s_info)
+        bool service_info_collection::check(expression& e, std::string node_id, node_service_info& s_info)
         {
-            if (filter.length() == 0)
-            {
-                return true;
-            }
-
             auto gpu_info = string_util::rtrim(s_info.kvs["gpu"],'\n');
             string_util::trim(gpu_info);
 
