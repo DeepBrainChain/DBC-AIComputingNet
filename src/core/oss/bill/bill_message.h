@@ -19,6 +19,7 @@ namespace matrix
     namespace core
     {
         const int64_t DEFAULT_AUTH_REPORT_CYTLE = 60;
+        const int64_t DEFAULT_AUTH_REPORT_INTERVAL = DEFAULT_AUTH_REPORT_CYTLE * 60 * 1000;
         const int64_t MAX_AUTH_REPORT_CYTLE = 3* DEFAULT_AUTH_REPORT_CYTLE;
         class auth_task_req
         {

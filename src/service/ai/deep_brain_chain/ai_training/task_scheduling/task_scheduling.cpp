@@ -310,11 +310,8 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (nullptr != m_pull_image_mng)
-            {
-                LOG_INFO << "terminate pull " << task->training_engine;
-                m_pull_image_mng->terminate_pull();
-            }
+            LOG_INFO << "terminate pull " << task->training_engine;
+            m_pull_image_mng->terminate_pull();
 
             return E_SUCCESS;
         }
