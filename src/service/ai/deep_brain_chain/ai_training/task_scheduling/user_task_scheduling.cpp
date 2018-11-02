@@ -139,6 +139,11 @@ namespace ai
 
         int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
         {
+            if (m_queueing_tasks.empty())
+            {
+                return E_SUCCESS;
+            }
+
             m_queueing_tasks.remove(task);
             if (task->status >= task_stopped)
             {
@@ -161,13 +166,13 @@ namespace ai
             task->__set_end_time(time_util::get_time_stamp_ms());
             task->__set_status(end_status);
             write_task_to_db(task);
+            
             if (end_status != task_overdue_closed)
             {
                 LOG_INFO << "dbc close task, report the event to oss system." << " task:" << task->task_id << " status:" << to_training_task_status_string(end_status);
                 return auth_task(task);
             }
 
-            
             return E_SUCCESS;
         }
 
@@ -274,7 +279,7 @@ namespace ai
         {
             auto ret = m_auth_task_handler != nullptr ? m_auth_task_handler(task) : E_SUCCESS;
 
-            if (E_SUCCESS != ret)
+            if (E_SUCCESS != ret && task->status < task_stopped)
             {
                 LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
                 stop_task(task, task_overdue_closed);
