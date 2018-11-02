@@ -341,6 +341,10 @@ namespace service
                     {
                         v = "idle";
                     }
+                    else if ( v == "-1" )
+                    {
+                        v = "idle(*)";
+                    }
                     else
                     {
                         v = "busy("+v+")";

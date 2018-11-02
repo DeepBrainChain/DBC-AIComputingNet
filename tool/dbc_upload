@@ -12,6 +12,19 @@ if [ ! -d $1 ]; then
 fi
 
 
+# start ipfs daemon if it is down
+USERID=`id -u`
+PROC_NAME="ipfs"
+ps_="ps -e -o uid -o pid -o command"
+ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+if [[ -z "$ipfs_pid" ]]; then
+    echo "ipfs daemon is starting"
+    sudo nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
+    sleep 5
+    echo "ipfs daemon is started"
+fi
+
+
 DIR=$1
 format=$2
 

@@ -72,6 +72,7 @@ namespace ai
             //SUBSCRIBE_BUS_MESSAGE(typeid(cmd_clear_req).name());
             
             SUBSCRIBE_BUS_MESSAGE(typeid(cmd_ps_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(cmd_task_clean_req).name());
             //list training resp
             SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_RESP);
 
@@ -91,6 +92,7 @@ namespace ai
 
             //BIND_MESSAGE_INVOKER(typeid(cmd_clear_req).name(), &ai_power_requestor_service::on_cmd_clear);
             BIND_MESSAGE_INVOKER(typeid(cmd_ps_req).name(), &ai_power_requestor_service::on_cmd_ps);
+            BIND_MESSAGE_INVOKER(typeid(cmd_task_clean_req).name(), &ai_power_requestor_service::on_cmd_task_clean);
 
             BIND_MESSAGE_INVOKER(LIST_TRAINING_RESP, &ai_power_requestor_service::on_list_training_resp);
             BIND_MESSAGE_INVOKER(LOGS_RESP, &ai_power_requestor_service::on_logs_resp);
@@ -763,6 +765,18 @@ namespace ai
                     if (info.status >= task_stopped)
                     {
                         write_task_info_to_db(info);
+                    }
+                    else
+                    {
+                        // fetch old status value from db
+                        ai::dbc::cmd_task_info task_info_in_db;
+                        if(read_task_info_from_db(info.task_id, task_info_in_db))
+                        {
+                            if(task_info_in_db.status != info.status && info.status != task_unknown)
+                            {
+                                write_task_info_to_db(info);
+                            }
+                        }
                     }
                 }
                 
@@ -1485,6 +1499,60 @@ namespace ai
             cmd_resp->task_infos = task_infos;
             //return cmd resp
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_ps_resp).name(), cmd_resp);
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_requestor_service::on_cmd_task_clean(const std::shared_ptr<message> &msg)
+        {
+            auto cmd_req_content = std::dynamic_pointer_cast<cmd_task_clean_req>(msg->get_content());
+            assert(nullptr != cmd_req_content);
+            if (!cmd_req_content)
+            {
+                LOG_ERROR << "cmd_req_content is null";
+                return E_NULL_POINTER;
+            }
+
+            std::vector<ai::dbc::cmd_task_info> vec_task_infos;
+            if (!read_task_info_from_db(vec_task_infos))
+            {
+                LOG_ERROR << "failed to load all task info from db.";
+            }
+
+            auto cmd_resp = std::make_shared<ai::dbc::cmd_task_clean_resp>();
+
+            //task list is empty
+            if (vec_task_infos.empty())
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "task list is empty";
+
+                //return cmd resp
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_task_clean_resp).name(), cmd_resp);
+                return E_SUCCESS;
+            }
+
+            cmd_resp->result_info = "\n";
+            for(auto& task: vec_task_infos)
+            {
+                try
+                {
+                    if (task.status == task_unknown)
+                    {
+                        LOG_INFO << "delete task " << task.task_id;
+                        m_req_training_task_db->Delete(leveldb::WriteOptions(), task.task_id);
+
+                        cmd_resp->result_info += "\t" + task.task_id + "\n";
+                    }
+                }
+                catch(...)
+                {
+                    LOG_ERROR << "failed to delete task info from db; task_id:= " << task.task_id;
+                }
+            }
+
+            cmd_resp->result = E_SUCCESS;
+            TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_task_clean_resp).name(), cmd_resp);
 
             return E_SUCCESS;
         }

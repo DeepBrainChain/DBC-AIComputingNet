@@ -87,8 +87,8 @@ namespace matrix
 
                 if (kvs.count(k) ==0 )
                 {
-                    std::cout<<"error: invalid condition "<<c.to_string()<<std::endl;
-                    return false;
+                    // bypass unknown condition
+                    continue;
                 }
 
                 auto v = kvs[k];
@@ -160,14 +160,10 @@ namespace matrix
             std::string a = "";
             std::string b = "";
 
+            string_util::trim(s);
             for(uint32_t i=0; i<s.length(); i++)
             {
                 auto c = s[i];
-
-                if (c == ' ')
-                {
-                    continue;
-                }
 
                 if (m_op == UNKNOWN_OP)
                 {
@@ -230,8 +226,7 @@ namespace matrix
                 return false;
             }
 
-            //v_type t = type(k);
-
+            string_util::trim(v);
             if (m_op == EQ)
             {
                 return v == m_r;
