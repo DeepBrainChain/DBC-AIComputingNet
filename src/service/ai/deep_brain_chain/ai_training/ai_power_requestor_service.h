@@ -73,6 +73,7 @@ namespace ai
 
             int32_t on_list_training_timer(std::shared_ptr<core_timer> timer);
             int32_t on_logs_timer(std::shared_ptr<core_timer> timer);
+            int32_t on_cmd_task_clean(const std::shared_ptr<message> &msg);
 
         protected:
 

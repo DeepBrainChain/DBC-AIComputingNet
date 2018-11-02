@@ -50,18 +50,30 @@ namespace ai
         {
             cout << "we support commands: " << endl;
             cout << "help:          print out usage information" << endl;
+            cout << "peers:         get information of peers" << endl;
+            cout << "task:          manipulate ai training task" << endl;
+            cout << "node:          query ai node status" << endl;
+            cout << "clear:         clean screen" << endl;
+            cout << "system / sys:  invoke system command" << endl;
+            cout << "quit / exit:   exit program" << endl;
+            cout << "-----------------------------------------" << endl;
+        }
+
+        static void print_cmd_node_usage()
+        {
+            cout << "show:          get attributes from taget node" <<endl;
+            cout << "-----------------------------------------" << endl;
+        }
+
+        static void print_cmd_task_usage()
+        {
             cout << "start:         start training" << endl;
             cout << "stop:          stop training" << endl;
             cout << "start_multi:   start multi training tasks" << endl;
             cout << "result:        download training result" <<endl;
             cout << "list:          list training tasks" << endl;
-            cout << "peers:         get information of peers" << endl;
             cout << "logs:          get logs of task" << endl;
-            cout << "show:          get attributes from taget node" <<endl;
             cout << "ps:            print ai request task cache info" << endl;
-            cout << "clear:         clean screen" << endl;
-            cout << "system:        invoke system command" << endl;
-            cout << "quit / exit:   exit program" << endl;
             cout << "-----------------------------------------" << endl;
         }
 
@@ -95,6 +107,24 @@ namespace ai
             m_invokers["clear"] = std::bind(&cmd_line_service::clear, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["system"] = std::bind(&cmd_line_service::system_cmd, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["sys"] = m_invokers["system"];
+
+            
+            m_invokers["task"] = std::bind(&cmd_line_service::task, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["task_clean"] = std::bind(&cmd_line_service::task_clean, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["task_list"] = m_invokers["list"];
+            m_invokers["task_start"] = m_invokers["start"];
+            m_invokers["task_stop"] = m_invokers["stop"];
+            m_invokers["task_result"] = m_invokers["result"];
+            m_invokers["task_logs"] = m_invokers["logs"];
+            m_invokers["task_start_multi"] = m_invokers["start_multi"];
+            m_invokers["task_ps"] = m_invokers["ps"];
+
+
+            m_invokers["node"] = std::bind(&cmd_line_service::node, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["node_show"] = m_invokers["show"];
+
+
         }
         
         void cmd_line_service::on_usr_cmd()
@@ -197,24 +227,57 @@ namespace ai
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
 
-                if (vm.count("config") || vm.count("c"))
-                {
-                    std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
-                    req->task_file_path = vm["config"].as<std::string>();
-
-                    std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
-                    if (nullptr == resp)
-                    {
-                        cout << endl << "command time out" << endl;
-                    }
-                    else
-                    {
-                        format_output(resp);
-                    }
-                }
-                else if (vm.count("help") || vm.count("h"))
+                if (vm.count("help") || vm.count("h"))
                 {
                     cout << opts;
+                    return;
+                }
+
+                if (vm.count("config") || vm.count("c"))
+                {
+
+                    std::string task_id;
+                    {
+                        std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
+                        req->task_file_path = vm["config"].as<std::string>();
+
+                        std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(
+                                req);
+                        if (nullptr == resp)
+                        {
+                            cout << endl << "command time out" << endl;
+                            return;
+                        }
+                        else
+                        {
+                            task_id = resp->task_info.task_id;
+
+                            format_output(resp);
+
+                            m_last_task_id = task_id;
+                        }
+                    }
+
+                    sleep(1);  // wait a second to avoid race condition between start_training_req and list_training_req in network.
+
+                    // fetch task status from network
+                    {
+                        std::shared_ptr<cmd_list_training_req> req(new cmd_list_training_req);
+                        req->list_type = LIST_SPECIFIC_TASKS;
+                        std::vector<std::string> task_vector;
+                        task_vector.push_back(task_id);
+                        std::copy(std::make_move_iterator(task_vector.begin()),
+                                  std::make_move_iterator(task_vector.end()), std::back_inserter(req->task_list));
+                        task_vector.clear();
+
+                        std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(
+                                req);
+                        if (nullptr == resp)
+                        {
+                            cout << endl << "warning: fail to fetch task status; please check if the target ai node is alive." << endl;
+                        }
+
+                    }
                 }
                 else
                 {
@@ -238,16 +301,46 @@ namespace ai
             {
                 opts.add_options()
                     ("help,h", "stop task")
-                    ("task,t", bpo::value<std::string>(), "task id");
+                    ("task,t", bpo::value<std::string>()->default_value(m_last_task_id), "task id")
+                        ("force,f", bpo::value<bool>()->default_value(false));
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
 
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+                bool force = false;
+                if(vm.count("force"))
+                {
+                    force = vm["force"].as<bool>();
+                }
+
                 if (vm.count("task") || vm.count("t"))
                 {
                     std::shared_ptr<cmd_stop_training_req> req = std::make_shared<cmd_stop_training_req>();
                     req->task_id = vm["task"].as<std::string>();
+                    if(req->task_id.empty())
+                    {
+                        cout << opts;
+                        return;
+                    }
+                    m_last_task_id = req->task_id;
+
+                    if (!force)
+                    {
+                        cout << "stop task: " << req->task_id << ": [y/n] ";
+                        std::string answer;
+                        cin >> answer;
+                        if (answer != std::string("y") && answer != std::string("Y"))
+                        {
+                            return;
+                        }
+                    }
 
                     std::shared_ptr<cmd_stop_training_resp> resp = m_handler.invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
                     if (nullptr == resp)
@@ -258,10 +351,6 @@ namespace ai
                     {
                         format_output(resp);
                     }
-                }
-                else if (vm.count("help") || vm.count("h"))
-                {
-                    cout << opts;
                 }
                 else
                 {
@@ -333,11 +422,17 @@ namespace ai
                 opts.add_options()
                     ("help,h", "list task")
                     ("all,a", "list all task")
-                    ("task,t", bpo::value<std::vector<std::string>>(), "list a task");
+                    ("task,t", bpo::value<std::string>()->default_value(m_last_task_id), "list a task");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
 
                 if (vm.count("all") || vm.count("a"))
                 {
@@ -356,11 +451,19 @@ namespace ai
                 }
                 else if (vm.count("task") || vm.count("t"))
                 {
+                    std::string task_id = vm["task"].as<std::string>();
+                    if (task_id.empty())
+                    {
+                        cout << opts;
+                        return;
+                    }
+
+
+                    m_last_task_id = task_id;
+
                     std::shared_ptr<cmd_list_training_req> req(new cmd_list_training_req);
                     req->list_type = LIST_SPECIFIC_TASKS;
-                    std::vector<std::string> task_vector = vm["task"].as<std::vector<std::string>>();
-                    std::copy(std::make_move_iterator(task_vector.begin()), std::make_move_iterator(task_vector.end()), std::back_inserter(req->task_list));
-                    task_vector.clear();
+                    req->task_list.push_back(task_id);
 
                     std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                     if (nullptr == resp)
@@ -371,10 +474,6 @@ namespace ai
                     {
                         format_output(resp);
                     }
-                }
-                else if (vm.count("help") || vm.count("h"))
-                {
-                    cout << opts;
                 }
                 else
                 {
@@ -456,17 +555,31 @@ namespace ai
                     ("help,h", "get task running logs")
                     ("tail", bpo::value<std::string>(), "get log from tail")
                     ("head", bpo::value<std::string>(), "get log from head")
-                    ("task,t", bpo::value<std::string>(), "task id")
+                    ("task,t", bpo::value<std::string>()->default_value(m_last_task_id), "task id")
                     ("flush,f", "flush log periodically, click 'q' to end");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
 
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
                 if (vm.count("task") || vm.count("t"))
                 {
                     std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
                     req->task_id = vm["task"].as<std::string>();
+
+                    if(req->task_id.empty())
+                    {
+                        cout << opts;
+                        return;
+                    }
+
+                    m_last_task_id = req->task_id;
 
                     std::string number_of_lines;
 
@@ -566,10 +679,6 @@ namespace ai
                     cout << endl << "task exec completed, press enter to continue" << endl;
                     cmd_logs_resp::m_series.last_log_date = "";
                     cmd_logs_resp::m_series.image_download_logs.clear();
-                }
-                else if (vm.count("help") || vm.count("h"))
-                {
-                    cout << opts;
                 }
                 else
                 {
@@ -873,7 +982,7 @@ namespace ai
             {
                 opts.add_options()
                 ("help,h", "download training result")
-                ("task,t", bpo::value<std::string>(), "task id")
+                ("task,t", bpo::value<std::string>()->default_value(m_last_task_id), "task id")
                 ("output,o", bpo::value<std::string>(), "target folder to save the training result, /tmp by default");
 
                 //parse
@@ -884,6 +993,13 @@ namespace ai
                 {
                     std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
                     req->task_id = vm["task"].as<std::string>();
+
+                    if(req->task_id.empty())
+                    {
+                        cout << opts;
+                        return;
+                    }
+                    m_last_task_id = req->task_id;
 
                     std::string number_of_lines;
 
@@ -952,7 +1068,7 @@ namespace ai
                 //cout << "system: " << cmd <<endl;
                 if ( cmd.empty())
                 {
-                    cout << "system [cmd], e.g. system ls -l" <<endl;
+                    cout << "system [cmd], e.g. system date" <<endl;
                 }
                 else
                 {
@@ -964,6 +1080,92 @@ namespace ai
             {
                 cout << argv[0] << " invalid option" << endl;
             }
+        }
+        
+        
+        void cmd_line_service::task_clean(int argc, char* argv[])
+        {
+            std::shared_ptr<cmd_task_clean_req> req= std::make_shared<cmd_task_clean_req>();
+
+
+            auto resp = m_handler.invoke<cmd_task_clean_req, cmd_task_clean_resp>(req);
+            if (nullptr == resp)
+            {
+                cout << endl << "command time out" << endl;
+            }
+            else
+            {
+                format_output(resp);
+            }
+            
+        }
+
+        void cmd_line_service::task(int argc, char* argv[])
+        {
+            if(argc == 1)
+            {
+                print_cmd_task_usage();
+                return;
+            }
+
+            try
+            {
+                if (argc > 1)
+                {
+                    std::string cmd = std::string(argv[0]) + "_" + std::string(argv[1]);
+                    auto it = m_invokers.find(cmd);
+                    if (it == m_invokers.end())
+                    {
+                        cout << "unknown command " << argv[1] << endl;
+                        return;
+                    }
+                    
+                    //call handler function
+                    auto func = it->second;
+                    
+                    func(argc-1, argv+1);
+                    
+                }
+            }
+            catch (...)
+            {
+
+            }
+
+        }
+
+        void cmd_line_service::node(int argc, char* argv[])
+        {
+            if(argc == 1)
+            {
+                print_cmd_node_usage();
+                return;
+            }
+
+            try
+            {
+                if (argc > 1)
+                {
+                    std::string cmd = std::string(argv[0]) + "_" + std::string(argv[1]);
+                    auto it = m_invokers.find(cmd);
+                    if (it == m_invokers.end())
+                    {
+                        cout << "unknown command " << argv[1] << endl;
+                        return;
+                    }
+
+                    //call handler function
+                    auto func = it->second;
+
+                    func(argc-1, argv+1);
+
+                }
+            }
+            catch (...)
+            {
+
+            }
+
         }
 
     }

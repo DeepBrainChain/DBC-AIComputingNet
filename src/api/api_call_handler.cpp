@@ -29,6 +29,7 @@ namespace ai
             TOPIC_MANAGER->subscribe(typeid(cmd_show_resp).name(), [this](std::shared_ptr<cmd_show_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             //TOPIC_MANAGER->subscribe(typeid(cmd_clear_resp).name(), [this](std::shared_ptr<cmd_clear_resp> &rsp) {m_resp = rsp; m_wait->set(); });
             TOPIC_MANAGER->subscribe(typeid(cmd_ps_resp).name(), [this](std::shared_ptr<cmd_ps_resp> &rsp) {m_resp = rsp; m_wait->set(); });
+            TOPIC_MANAGER->subscribe(typeid(cmd_task_clean_resp).name(), [this](std::shared_ptr<cmd_task_clean_resp> &rsp) {m_resp = rsp; m_wait->set(); });
         }
 
 

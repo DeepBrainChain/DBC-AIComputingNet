@@ -21,7 +21,7 @@ fi
 echo "make dbc"
 SECONDS=0
 #make -j 4 dbc VERBOSE=1 2>&1 |tee ../build_dbc.log
-make -j 4 dbc $1  2>&1 |tee ../build_dbc.log
+make -j 4 dbc $1  2>&1 |tee ../build_dbc.log | grep -v "ld: warning: direct access"
 if [ ${PIPESTATUS[0]} -ne 0 ]
 then
     echo "fail: see build_dbc.log for more details"
