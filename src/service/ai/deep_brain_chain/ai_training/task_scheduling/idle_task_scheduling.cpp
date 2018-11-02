@@ -57,7 +57,7 @@ namespace ai
                     {
                         start_pull_image(m_idle_task);
                     }
-
+                    m_idle_task->__set_status(task_stopped);
                     break;
                 }                
             }
@@ -94,7 +94,7 @@ namespace ai
         int32_t idle_task_scheduling::stop_task()
         {
             m_idle_state_begin = 0;
-
+            m_idle_task->__set_status(task_stopped);
             return task_scheduling::stop_task(m_idle_task);
         }
 
@@ -142,6 +142,21 @@ namespace ai
         void idle_task_scheduling::update_idle_task()
         {
             set_task(m_fetch_task_handler());
+        }
+
+        int8_t idle_task_scheduling::task_status()
+        {   //if task is running=4, return task_running; else return task_stopped=8
+            if (nullptr == m_idle_task)
+            {
+                return task_stopped;
+            }
+
+            if (m_idle_task->status != task_running)
+            {
+                return task_stopped;
+            }
+
+            return task_stopped;
         }
     }
 

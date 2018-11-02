@@ -139,6 +139,11 @@ namespace ai
 
         int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
         {
+            if (m_queueing_tasks.empty())
+            {
+                return E_SUCCESS;
+            }
+            auto top_task = m_queueing_tasks.front();
             m_queueing_tasks.remove(task);
             if (task->status >= task_stopped)
             {
@@ -150,8 +155,9 @@ namespace ai
                 int32_t ret = task_scheduling::stop_task(task);
                 if (E_SUCCESS != ret)
                 {
-                    LOG_ERROR << "stop container error, container id: " << task->container_id;
+                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
                 }
+                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
             }
 
             if (task_pulling_image == task->status)
@@ -161,13 +167,20 @@ namespace ai
             task->__set_end_time(time_util::get_time_stamp_ms());
             task->__set_status(end_status);
             write_task_to_db(task);
+            
             if (end_status != task_overdue_closed)
             {
+                //if task is not the top task, means the task is have never been scheduled. 
+                //At this time, the task is not needed to report task status to oss..
+                if (task->task_id != top_task->task_id)
+                {
+                    LOG_DEBUG << "task is not the top task, do not need report status to oss. task is: " << task->task_id;
+                    return E_SUCCESS;
+                }
                 LOG_INFO << "dbc close task, report the event to oss system." << " task:" << task->task_id << " status:" << to_training_task_status_string(end_status);
                 return auth_task(task);
             }
 
-            
             return E_SUCCESS;
         }
 
@@ -274,7 +287,7 @@ namespace ai
         {
             auto ret = m_auth_task_handler != nullptr ? m_auth_task_handler(task) : E_SUCCESS;
 
-            if (E_SUCCESS != ret)
+            if (E_SUCCESS != ret && task->status < task_stopped)
             {
                 LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
                 stop_task(task, task_overdue_closed);
