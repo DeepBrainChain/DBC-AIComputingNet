@@ -136,6 +136,11 @@ namespace ai
 
             if (DBC_TASK_RUNNING == get_task_state(task))
             {
+                if (task->status != task_running)
+                {
+                    task->status = task_running;
+                    write_task_to_db(task);
+                }
                 LOG_DEBUG << "idle task have been running, do not need to start. Idle task id:" << task->task_id;
                 return E_SUCCESS;
             }
