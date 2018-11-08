@@ -228,7 +228,7 @@ namespace ai
             //prepare broadcast req
             //std::shared_ptr<message> req_msg = std::make_shared<message>();
             //ai::dbc::cmd_task_info  task_info;
-            auto req_msg = create_task_msg_from_file(req->task_file_path, task_config_opts, cmd_resp->task_info);
+            auto req_msg = create_task_msg_from_file(req->task_file_path, task_config_opts, cmd_resp->task_info, &req->parameters);
             if (nullptr == req_msg)
             {
                 cmd_resp->result = E_DEFAULT;
@@ -902,7 +902,8 @@ namespace ai
                 ("hyper_parameters", bpo::value<std::string>()->default_value(""), "");
         }
 
-        std::shared_ptr<message> ai_power_requestor_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts, ai::dbc::cmd_task_info & task_info)
+        std::shared_ptr<message> ai_power_requestor_service::create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts,
+                ai::dbc::cmd_task_info & task_info, std::map<std::string, std::string>* params)
         {
             bpo::variables_map vm;
             
@@ -951,19 +952,33 @@ namespace ai
                 return nullptr;
             }
 
-            if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::vector<std::string>>().empty())
+
+
+            std::vector<std::string> nodes;
+            if (params && params->count("node"))
             {
-                task_info.result = "ai training task config file's option peer_nodes_list is empty";
-                return nullptr;
+                nodes.push_back((*params)["node"]);
+            }
+            else
+            {
+                if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::vector<std::string>>().empty())
+                {
+                    task_info.result = "ai training task config file's option peer_nodes_list is empty";
+                    return nullptr;
+                }
+                else
+                {
+                    nodes = vm["peer_nodes_list"].as<std::vector<std::string>>();
+                }
             }
 
-            const std::vector<std::string> & peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
+//            const std::vector<std::string> & peer_nodes_list = vm["peer_nodes_list"].as<std::vector<std::string>>();
 
-            for (auto &node_id : peer_nodes_list)
+            for (auto &node_id : nodes)
             {
                 if (false == id_generator().check_base58_id(node_id))
                 {
-                    task_info.result = "node_list does not match the Base58 code format";
+                    task_info.result = "node value does not match the Base58 code format";
                     return nullptr;
                 }
             }
@@ -1001,7 +1016,7 @@ namespace ai
                 req_content->body.__set_task_id(id_generator().generate_task_id());
                 req_content->body.__set_select_mode(vm["select_mode"].as<int8_t>());
                 req_content->body.__set_master(vm["master"].as<std::string>());
-                req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
+                req_content->body.__set_peer_nodes_list(nodes);
                 req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
                 req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
                 req_content->body.__set_training_engine(vm["training_engine"].as<std::string>());

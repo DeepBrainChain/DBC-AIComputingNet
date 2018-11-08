@@ -56,6 +56,7 @@ const char *character_names[] = {
         "result",
         "logs",
         "ps",
+        "parameter",
         NULL
 };
 
@@ -278,7 +279,8 @@ namespace ai
             {
                 opts.add_options()
                     ("help,h", "start task")
-                    ("config,c", bpo::value<std::string>(), "task config file path");
+                    ("config,c", bpo::value<std::string>(), "task config file path")
+                    ("node,n", bpo::value< std::string >(), "the target ai training node, overwite the peer_nodes_list field in the config file if present.");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -290,16 +292,23 @@ namespace ai
                     return;
                 }
 
+
+                // read other param from cmd line
+                std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
+                if (vm.count("node"))
+                {
+                    req->parameters["node"] = vm["node"].as<std::string>();
+
+                }
+
                 if (vm.count("config") || vm.count("c"))
                 {
 
                     std::string task_id;
                     {
-                        std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
                         req->task_file_path = vm["config"].as<std::string>();
 
-                        std::shared_ptr<cmd_start_training_resp> resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(
-                                req);
+                        auto resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
                         if (nullptr == resp)
                         {
                             cout << endl << "command time out" << endl;
@@ -332,8 +341,7 @@ namespace ai
                                   std::make_move_iterator(task_vector.end()), std::back_inserter(req->task_list));
                         task_vector.clear();
 
-                        std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(
-                                req);
+                        auto resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                         if (nullptr == resp)
                         {
                             cout << endl << "warning: fail to fetch task status; please check if the target ai node is alive." << endl;
