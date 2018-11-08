@@ -247,6 +247,7 @@ namespace service
                 return;
             }
 
+            m_kvs["gpu"] = query("gpu");
             m_kvs["gpu_usage"] = query("gpu_usage");
             m_kvs["cpu_usage"] = query("cpu_usage");
             m_kvs["mem_usage"] = query("mem_usage");

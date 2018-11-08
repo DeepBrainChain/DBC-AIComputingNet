@@ -59,6 +59,9 @@ namespace ai
         {
         public:
             std::string task_file_path;
+
+            std::map<std::string,std::string> parameters;
+
         };
 
         class cmd_start_training_resp : public matrix::core::msg_base, public outputter
