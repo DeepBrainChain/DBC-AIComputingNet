@@ -48,7 +48,7 @@ sudo add-apt-repository \
        $(lsb_release -cs) \
        stable"
 sudo apt-get update
-echo y | sudo apt-get -y install docker-ce
+echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu
 if [ $? -ne 0 ]; then
     echo "install docker-ce failed"
     exit
@@ -66,7 +66,7 @@ fi
 echo "***add user to docker group success***"
 
 #sudo echo 'DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://127.0.0.1:31107"' >> /etc/default/docker
-sudo sed -i '13c ExecStart=/usr/bin/dockerd -H fd:// -Htcp://127.0.0.1:31107 -Hunix:///var/run/docker.sock' /lib/systemd/system/docker.service
+sudo sed -i 's$ExecStart=.*$ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:31107 -H unix:///var/run/docker.sock$g' /lib/systemd/system/docker.service
 sudo systemctl stop docker
 if [ $? -ne 0 ]; then
     exit
