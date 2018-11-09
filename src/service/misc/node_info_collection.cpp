@@ -18,6 +18,7 @@
 #include "error.h"
 #include "service_topic.h"
 #include "server.h"
+#include "core/common/util.h"
 
 namespace service
 {
@@ -188,6 +189,7 @@ namespace service
                     result += line;
                 pclose(proc);
 
+                matrix::core::string_util::trim(result);
                 return result;
             }
 #endif

@@ -28,7 +28,10 @@ function get {
     ;;
 
     "cpu")
+        echo -n "Sockets "
+        cat /proc/cpuinfo | grep -i "physical id" | sort | uniq | wc -l
         cat /proc/cpuinfo |grep "model name" | awk -F ":" '{print $2}' | uniq -c
+        #lscpu | grep "Model name\|Socket\|^CPU(s):"
     ;;
 
     "gpu_usage")
