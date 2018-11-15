@@ -511,6 +511,7 @@ namespace matrix
         {
             m_remote_ip = remote_ip;
             m_remote_port = remote_port;
+            m_http_client.set_address(remote_ip, remote_port);
         }
 
         int32_t container_client::exist_docker_image(const std::string & image_name)

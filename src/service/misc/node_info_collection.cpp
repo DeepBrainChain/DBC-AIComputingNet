@@ -18,7 +18,7 @@
 #include "error.h"
 #include "service_topic.h"
 #include "server.h"
-#include "core/common/util.h"
+#include "common/util.h"
 
 namespace service
 {
