@@ -23,7 +23,8 @@
 #include <chrono>
 #include <future>
 #include <ctime>
-
+#include <thread>
+#include <chrono>
 static void cmd_line_task()
 {
    static ai::dbc::cmd_line_service *service = (ai::dbc::cmd_line_service *)(g_server->get_module_manager()->get(CMD_LINE_API_MODULE).get());
@@ -329,7 +330,7 @@ namespace ai
                         }
                     }
 
-                    sleep(1);  // wait a second to avoid race condition between start_training_req and list_training_req in network.
+                    std::this_thread::sleep_for(std::chrono::seconds(1));  // wait a second to avoid race condition between start_training_req and list_training_req in network.
 
                     // fetch task status from network
                     {

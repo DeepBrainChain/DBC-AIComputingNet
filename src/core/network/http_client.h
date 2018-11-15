@@ -154,6 +154,8 @@ namespace matrix
             std::string get_uri() { return m_uri; }
             std::string  get_remote_host();
 
+            void set_address(std::string remote_ip, uint16_t remote_port);
+
         protected:
             bool init_ssl_ctx();
             bool clear_ssl_ctx();
