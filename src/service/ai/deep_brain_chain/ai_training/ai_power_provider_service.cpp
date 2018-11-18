@@ -255,7 +255,19 @@ namespace ai
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
 
             task->__set_error_times(0);
-            task->__set_container_id("");
+
+            // reuse container where container name is specificed in training requester msg.
+            //      As we know, dbc names a container with the task id value when create the container.
+            //      So the input container name also refer to a task id.
+            std::string ref_container_id="";
+            auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
+            if (ref_task != nullptr)
+            {
+                ref_container_id = ref_task->container_id;
+            }
+
+            task->__set_container_id(ref_container_id);
+
             task->__set_received_time_stamp(std::time(nullptr));
             task->__set_status(task_queueing);
             

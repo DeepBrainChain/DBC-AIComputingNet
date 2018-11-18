@@ -1832,6 +1832,11 @@ void start_training_req_body::__set_hyper_parameters(const std::string& val) {
   this->hyper_parameters = val;
 __isset.hyper_parameters = true;
 }
+
+void start_training_req_body::__set_container_name(const std::string& val) {
+  this->container_name = val;
+__isset.container_name = true;
+}
 std::ostream& operator<<(std::ostream& out, const start_training_req_body& obj)
 {
   obj.printTo(out);
@@ -1976,6 +1981,14 @@ uint32_t start_training_req_body::read(::apache::thrift::protocol::TProtocol* ip
           xfer += iprot->skip(ftype);
         }
         break;
+      case 13:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->container_name);
+          this->__isset.container_name = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -2069,6 +2082,11 @@ uint32_t start_training_req_body::write(::apache::thrift::protocol::TProtocol* o
     xfer += oprot->writeString(this->hyper_parameters);
     xfer += oprot->writeFieldEnd();
   }
+  if (this->__isset.container_name) {
+    xfer += oprot->writeFieldBegin("container_name", ::apache::thrift::protocol::T_STRING, 13);
+    xfer += oprot->writeString(this->container_name);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -2088,6 +2106,7 @@ void swap(start_training_req_body &a, start_training_req_body &b) {
   swap(a.data_dir, b.data_dir);
   swap(a.checkpoint_dir, b.checkpoint_dir);
   swap(a.hyper_parameters, b.hyper_parameters);
+  swap(a.container_name, b.container_name);
   swap(a.__isset, b.__isset);
 }
 
@@ -2104,6 +2123,7 @@ start_training_req_body::start_training_req_body(const start_training_req_body& 
   data_dir = other54.data_dir;
   checkpoint_dir = other54.checkpoint_dir;
   hyper_parameters = other54.hyper_parameters;
+  container_name = other54.container_name;
   __isset = other54.__isset;
 }
 start_training_req_body& start_training_req_body::operator=(const start_training_req_body& other55) {
@@ -2119,6 +2139,7 @@ start_training_req_body& start_training_req_body::operator=(const start_training
   data_dir = other55.data_dir;
   checkpoint_dir = other55.checkpoint_dir;
   hyper_parameters = other55.hyper_parameters;
+  container_name = other55.container_name;
   __isset = other55.__isset;
   return *this;
 }
@@ -2137,6 +2158,7 @@ void start_training_req_body::printTo(std::ostream& out) const {
   out << ", " << "data_dir=" << to_string(data_dir);
   out << ", " << "checkpoint_dir=" << to_string(checkpoint_dir);
   out << ", " << "hyper_parameters="; (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
+  out << ", " << "container_name="; (__isset.container_name ? (out << to_string(container_name)) : (out << "<null>"));
   out << ")";
 }
 

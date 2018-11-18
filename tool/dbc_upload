@@ -135,16 +135,32 @@ fi
 
 
 # publish content to ipfs network
+server_list=()
+v=$(curl -Ls --connect-timeout 3 https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes 2>&1 | awk -F "/" '{print $3}')
 
-server_list=(122.112.243.44  49.51.49.145  49.51.49.192)
+for i in ${v[@]}; do
+if [[ $i =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    server_list+=($i)
+fi
+done
+
 len=${#server_list[@]}
+if [ $len -eq 0 ]; then
+    echo "error: no ipfs node found"
+    exit 1
+fi
 
-p=$((RANDOM % $len))
+s_list=($(echo ${server_list[@]} | tr ' ' '\n' | sort | uniq))
+
+len=${#s_list[@]}
+
+
+p=$(($RANDOM % $len))
 ok=1
 
 for i in `seq 0 $(($len-1))` ; do
 
-    server=${server_list[$(( ($p+i) % $len))]}
+    server=${s_list[$(( ($p+i) % $len))]}
     echo "dbc_upload | upload content to $server"
 
     curl --connect-timeout 3 -Y 5120 -y 30  http://$server:5001/api/v0/get?arg=/ipfs/$DIR_HASH > /dev/null

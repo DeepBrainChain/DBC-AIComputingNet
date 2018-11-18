@@ -354,6 +354,18 @@ namespace service
                     }
                 }
             }
+            else if (k == std::string("nvidia-smi"))
+            {
+                v = query(k);
+            }
+            else if (k == std::string("docker ps"))
+            {
+                v = query(k);
+            }
+            else
+            {
+                v = "unknown keyword";
+            }
 
             return v;
         }
