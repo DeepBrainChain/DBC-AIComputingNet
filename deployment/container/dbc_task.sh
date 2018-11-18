@@ -1,6 +1,25 @@
 #!/bin/bash
 #set -x
 
+config_ipfs()
+{
+    #add ipfs bootstrap node
+    ipfs bootstrap rm --all
+
+    ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5
+    ipfs boosstrap add /ip4/18.223.4.215/tcp/4001/ipfs/QmeZR4HygPvdBvheovYR4oVTvaA4tWxDPTgskkPWqbjkGy
+
+    wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes
+    cat ./bootstrap_nodes| while read line
+    do
+        ipfs bootstrap add $line
+    done
+    rm ./bootstrap_nodes
+
+    #set ipfs repo
+    ipfs config Datastore.StorageMax 100GB
+}
+
 # cp utility
 cp -f /home/dbc_utils/dbc_task.sh /
 cp -f /home/dbc_utils/dbc_task_imp.sh /
@@ -47,6 +66,7 @@ if [ ! -d /dbc ]; then
     mkdir /dbc
 fi
 
+wait_ipfs_daemon_ready=30s
 export IPFS_PATH=$ipfs_install_path
 
 if [ ! `which ipfs` ]; then
@@ -60,25 +80,9 @@ if [ ! `which ipfs` ]; then
         cd /tmp/go-ipfs
         cp /tmp/go-ipfs/ipfs /usr/local/bin/
         ipfs daemon --enable-gc &
-        sleep 30
-        #add ipfs bootstrap node
-        ipfs bootstrap rm --all
-  
-        #ipfs bootstrap add /ip4/114.116.19.45/tcp/4001/ipfs/QmPEDDvtGBzLWWrx2qpUfetFEFpaZFMCH9jgws5FwS8n1H
-        ipfs bootstrap add /ip4/49.51.49.192/tcp/4001/ipfs/QmRVgowTGwm2FYhAciCgA5AHqFLWG4AvkFxv9bQcVB7m8c
-        ipfs bootstrap add /ip4/49.51.49.145/tcp/4001/ipfs/QmPgyhBk3s4aC4648aCXXGigxqyR5zKnzXtteSkx8HT6K3
-        ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5
 
-        wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes
-        cat ./bootstrap_nodes| while read line
-        do
-            ipfs bootstrap add $line
-        done
-        rm ./bootstrap_nodes
-
-        #set ipfs repo
-        ipfs config Datastore.StorageMax 100GB
-
+        sleep $wait_ipfs_daemon_ready
+        config_ipfs
         cd /
     else
         mkdir $ipfs_install_path
@@ -89,10 +93,25 @@ if [ ! `which ipfs` ]; then
     fi
 else
     ipfs daemon --enable-gc &
+
+    sleep $wait_ipfs_daemon_ready
+    config_ipfs
+    cd /
 fi
 
 
 
+code_dir=$2
+task_id=""
+if [ -f /home/dbc_utils/parameters ]; then
+    source /home/dbc_utils/parameters
+fi
+
+
+echo "task start: $task_id"
+
 # run ai-training task
-/bin/bash /dbc_task_imp.sh "$1" "$2" $3
+/bin/bash /dbc_task_imp.sh "$1" "$code_dir" $3
+
+echo "task completed: $task_id"
 

@@ -750,11 +750,12 @@ void swap(peer_nodes_broadcast_req &a, peer_nodes_broadcast_req &b);
 std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req& obj);
 
 typedef struct _start_training_req_body__isset {
-  _start_training_req_body__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false) {}
+  _start_training_req_body__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), container_name(false) {}
   bool master :1;
   bool server_specification :1;
   bool server_count :1;
   bool hyper_parameters :1;
+  bool container_name :1;
 } _start_training_req_body__isset;
 
 class start_training_req_body : public virtual ::apache::thrift::TBase {
@@ -762,7 +763,7 @@ class start_training_req_body : public virtual ::apache::thrift::TBase {
 
   start_training_req_body(const start_training_req_body&);
   start_training_req_body& operator=(const start_training_req_body&);
-  start_training_req_body() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters() {
+  start_training_req_body() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), container_name() {
   }
 
   virtual ~start_training_req_body() throw();
@@ -778,6 +779,7 @@ class start_training_req_body : public virtual ::apache::thrift::TBase {
   std::string data_dir;
   std::string checkpoint_dir;
   std::string hyper_parameters;
+  std::string container_name;
 
   _start_training_req_body__isset __isset;
 
@@ -804,6 +806,8 @@ class start_training_req_body : public virtual ::apache::thrift::TBase {
   void __set_checkpoint_dir(const std::string& val);
 
   void __set_hyper_parameters(const std::string& val);
+
+  void __set_container_name(const std::string& val);
 
   bool operator == (const start_training_req_body & rhs) const
   {
@@ -838,6 +842,10 @@ class start_training_req_body : public virtual ::apache::thrift::TBase {
     if (__isset.hyper_parameters != rhs.__isset.hyper_parameters)
       return false;
     else if (__isset.hyper_parameters && !(hyper_parameters == rhs.hyper_parameters))
+      return false;
+    if (__isset.container_name != rhs.__isset.container_name)
+      return false;
+    else if (__isset.container_name && !(container_name == rhs.container_name))
       return false;
     return true;
   }

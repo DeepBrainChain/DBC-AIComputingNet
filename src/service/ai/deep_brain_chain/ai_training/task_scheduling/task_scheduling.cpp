@@ -55,7 +55,7 @@ namespace ai
                 leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
                 if (false == status.ok())
                 {
-                    LOG_ERROR << "init idle task db error: " << status.ToString();
+                    LOG_ERROR << "init task db error: " << status.ToString();
                     return E_DEFAULT;
                 }
 
@@ -65,16 +65,16 @@ namespace ai
                 //load task
                 load_task();
 
-                LOG_INFO << "idle task db path:" << task_db_path;
+                LOG_INFO << "task db path:" << task_db_path;
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "create idle task db error: " << e.what();
+                LOG_ERROR << "create task db error: " << e.what();
                 return E_DEFAULT;
             }
             catch (const boost::exception & e)
             {
-                LOG_ERROR << "create idle task db error" << diagnostic_information(e);
+                LOG_ERROR << "create task db error" << diagnostic_information(e);
                 return E_DEFAULT;
             }
 
@@ -107,7 +107,7 @@ namespace ai
 
             if (task->entry_file.empty() || task->code_dir.empty() || task->task_id.empty())
             {
-                LOG_DEBUG << "idle task config error.";
+                LOG_DEBUG << "task config error.";
                 return E_DEFAULT;
             }
 
@@ -116,13 +116,13 @@ namespace ai
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);
-                LOG_DEBUG << "create idle task success. idle task id:" << task->task_id << " container id:" << task->container_id;
+                LOG_DEBUG << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
 
                 return E_SUCCESS;
             }
             else
             {
-                LOG_ERROR << "create idle task failed. idle task id:" << task->task_id;
+                LOG_ERROR << "create task failed. task id:" << task->task_id;
             }
             return E_DEFAULT;
         }
@@ -134,14 +134,16 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (DBC_TASK_RUNNING == get_task_state(task))
+
+            auto state = get_task_state(task);
+            if (DBC_TASK_RUNNING == state)
             {
                 if (task->status != task_running)
                 {
                     task->status = task_running;
                     write_task_to_db(task);
                 }
-                LOG_DEBUG << "idle task have been running, do not need to start. Idle task id:" << task->task_id;
+                LOG_DEBUG << "task have been running, do not need to start. task id:" << task->task_id;
                 return E_SUCCESS;
             }
 
@@ -151,15 +153,35 @@ namespace ai
                 return start_pull_image(task);
             }
 
-            if (task->container_id.empty())
+            bool is_container_existed = (!task->container_id.empty());
+            if (!is_container_existed)
             {
                 //if container_id does not exist, means dbc need to create container
                 if (E_SUCCESS != create_task(task))
                 {
-                    LOG_ERROR << "create idle task error";
+                    LOG_ERROR << "create task error";
                     return E_DEFAULT;
                 }
             }
+
+
+            // update container's parameter if
+            std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";
+            std::string text = "task_id=" + task->task_id + "\n";
+            if (is_container_existed)
+            {
+                // server_specification indicates the container to be reused for this task
+                // needs to indicate container run with different parameters
+                text += ("code_dir=" + task->code_dir + "\n");
+            }
+
+            if (!file_util::write_file(path, text))
+            {
+                LOG_ERROR << "fail to refresh task's code_dir before reusing existing container for new task "
+                          << task->task_id;
+                return E_DEFAULT;
+            }
+
 
             int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);
 
@@ -183,7 +205,7 @@ namespace ai
             {
                 return E_SUCCESS;
             }
-            LOG_INFO << "stop idle task " << task->task_id;
+            LOG_INFO << "stop task " << task->task_id;
             task->__set_end_time(time_util::get_time_stamp_ms());
             write_task_to_db(task);
             return CONTAINER_WORKER_IF->stop_container(task->container_id);
@@ -225,16 +247,26 @@ namespace ai
             {
                 return DBC_TASK_NULL;
             }
-            //inspect container
-            std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->task_id);
+
+            // inspect container
+            std::string container_id = task->task_id;
+
+            // container can be started again by task delivered latter,
+            // in that case, the container's id and name keeps the original value, then new task's id and container's name does not equal any more.
+            if(!task->container_id.empty())
+            {
+                container_id = task->container_id;
+            }
+
+            std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(container_id);
             if (nullptr == resp)
             {
                 task->__set_container_id("");
                 return DBC_TASK_NOEXIST;
             }
             
-            //local db may be deleted, but idle_task is running, then container_id is empty.
-            if (!resp->id.empty() && task->container_id.empty())
+            //local db may be deleted, but task is running, then container_id is empty.
+            if (!resp->id.empty() && ( task->container_id.empty() || resp->id != task->container_id))
             {
                 task->__set_container_id(resp->id);
             }
@@ -266,7 +298,7 @@ namespace ai
                 m_pull_image_mng = std::make_shared<image_manager>();
             }
 
-            //if the idle task pulling image is not the idle task need image.  
+            //if the task pulling image is not the task need image.
             if (!m_pull_image_mng->get_pull_image_name().empty()
                 && m_pull_image_mng->get_pull_image_name() != task->training_engine)
             {
@@ -285,7 +317,7 @@ namespace ai
             //start pulling
             if (E_SUCCESS != m_pull_image_mng->start_pull(task->training_engine))
             {
-                LOG_ERROR << "idle task engine pull fail. engine:" << task->training_engine;
+                LOG_ERROR << "task engine pull fail. engine:" << task->training_engine;
                 return E_PULLING_IMAGE;
             }
 
