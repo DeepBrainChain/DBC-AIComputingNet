@@ -152,6 +152,9 @@ namespace matrix
             //signal(SIGHUP, SIG_IGN);  // dbc in daemon process alwasy ignore SIGHUP; and dbc client in normal process should terminate with SIGHUP.
 			//signal(SIGTTIN, SIG_IGN);
 			//signal(SIGTTOU, SIG_IGN);
+
+			signal(SIGTSTP, SIG_IGN);  // ignore job control signal, e.g. Ctrl-z
+
             register_signal_function(SIGUSR1, signal_usr1_handler);
 #endif
         }

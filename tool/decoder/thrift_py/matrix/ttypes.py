@@ -1098,10 +1098,11 @@ class start_training_req_body(object):
      - data_dir
      - checkpoint_dir
      - hyper_parameters
+     - container_name
     """
 
 
-    def __init__(self, task_id=None, select_mode=None, master=None, peer_nodes_list=None, server_specification=None, server_count=None, training_engine=None, code_dir=None, entry_file=None, data_dir=None, checkpoint_dir=None, hyper_parameters=None,):
+    def __init__(self, task_id=None, select_mode=None, master=None, peer_nodes_list=None, server_specification=None, server_count=None, training_engine=None, code_dir=None, entry_file=None, data_dir=None, checkpoint_dir=None, hyper_parameters=None, container_name=None,):
         self.task_id = task_id
         self.select_mode = select_mode
         self.master = master
@@ -1114,6 +1115,7 @@ class start_training_req_body(object):
         self.data_dir = data_dir
         self.checkpoint_dir = checkpoint_dir
         self.hyper_parameters = hyper_parameters
+        self.container_name = container_name
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -1189,6 +1191,11 @@ class start_training_req_body(object):
                     self.hyper_parameters = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 13:
+                if ftype == TType.STRING:
+                    self.container_name = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -1249,6 +1256,10 @@ class start_training_req_body(object):
         if self.hyper_parameters is not None:
             oprot.writeFieldBegin('hyper_parameters', TType.STRING, 12)
             oprot.writeString(self.hyper_parameters.encode('utf-8') if sys.version_info[0] == 2 else self.hyper_parameters)
+            oprot.writeFieldEnd()
+        if self.container_name is not None:
+            oprot.writeFieldBegin('container_name', TType.STRING, 13)
+            oprot.writeString(self.container_name.encode('utf-8') if sys.version_info[0] == 2 else self.container_name)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -2688,6 +2699,7 @@ start_training_req_body.thrift_spec = (
     (10, TType.STRING, 'data_dir', 'UTF8', None, ),  # 10
     (11, TType.STRING, 'checkpoint_dir', 'UTF8', None, ),  # 11
     (12, TType.STRING, 'hyper_parameters', 'UTF8', None, ),  # 12
+    (13, TType.STRING, 'container_name', 'UTF8', None, ),  # 13
 )
 all_structs.append(start_training_req)
 start_training_req.thrift_spec = (

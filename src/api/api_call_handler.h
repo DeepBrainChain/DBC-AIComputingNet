@@ -62,6 +62,7 @@ namespace ai
 
             std::map<std::string,std::string> parameters;
 
+            bpo::variables_map vm;
         };
 
         class cmd_start_training_resp : public matrix::core::msg_base, public outputter
@@ -112,6 +113,7 @@ namespace ai
         {
         public:
             std::string task_id;
+            bool clean_all;
         };
         
         class cmd_task_clean_resp : public matrix::core::msg_base, public outputter
@@ -128,7 +130,7 @@ namespace ai
                     return;
                 }
                 
-                cout << "clean abnormal training task......" << result_info << endl;
+                cout << "clean up training task......" << result_info << endl;
             }
         };
 
@@ -136,6 +138,9 @@ namespace ai
         {
         public:
             std::string mulit_task_file_path;
+
+            bpo::options_description single_task_config_opts;
+            bpo::options_description multi_tasks_config_opts;
         };
 
         class cmd_start_multi_training_resp : public matrix::core::msg_base, public outputter
@@ -164,7 +169,7 @@ namespace ai
                     else
                     {
                         cout << "task id: " << it->task_id << "     create_time: " << time_util::time_2_str(it->create_time)
-                            << "result: " << it->result << endl;
+                            << " result: " << it->result << endl;
                     }                    
                 }
             }
@@ -346,6 +351,9 @@ namespace ai
             // for download training result
             std::string sub_op;
             std::string dest_folder;
+
+            // for log content check
+            std::string task_id;
 
             // for duplicate log hiding
             // each log start with date info, like 2018-08-14T06:53:19.274586607Z

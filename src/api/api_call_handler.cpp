@@ -18,6 +18,10 @@ namespace ai
     namespace dbc
     {
 
+        //static            std::string task_start_str = "task start: ";
+        static std::string task_end_str = "task completed: ";
+        static std::string task_sh_end_str = "end to exec dbc_task.sh";
+
         void api_call_handler::init_subscription()
         {
             TOPIC_MANAGER->subscribe(typeid(cmd_start_training_resp).name(), [this](std::shared_ptr<cmd_start_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
@@ -99,14 +103,14 @@ namespace ai
         {
 
             // check if task exec end
-            std::string task_completed="end to exec dbc_task.sh";
-            if ( s.find(task_completed) == std::string::npos)
+
+            if ( s.find(task_end_str + task_id) != std::string::npos
+                && s.find(task_sh_end_str) == std::string::npos )
             {
-                std::cout << "task exec does not complete yet" << std::endl;
+                std::cout << "task had not complete yet" << std::endl;
 
                 return "";
             }
-
 
             //
             std::string prefix = "DIR_HASH:";
@@ -181,7 +185,6 @@ namespace ai
             }
 
             std::string date;
-            std::string task_completed="end to exec dbc_task.sh";
 
             std::string s;
             const char *p = (it->log_content).c_str();
@@ -218,10 +221,34 @@ namespace ai
                     }
 
                     // check if task completed
-                    if ( s.find(task_completed) != std::string::npos)
+                    //    two patterns :
+                    //          1) old style:
+                    //                  end to exec dbc_task.sh and ready to say goodbye! :-)
+                    //
+                    //          2 new style:
+                    //                  task start: <task_id>
+                    //                  ...
+                    //                  end to exec dbc_task.sh and ready to say goodbye! :-)
+                    //                  task complete: <task_id>
+                    if(s.find(task_end_str + task_id) != std::string::npos)
                     {
+                        //new style
                         m_series.enable = false;
                     }
+                    else
+                    {
+                        //old style
+                        std::size_t p1 = s.find(task_sh_end_str);
+                        if ( p1 != std::string::npos )
+                        {
+                            std::size_t p2 = s.find(task_end_str, p1 );
+                            if ( p2 == std::string::npos)
+                            {
+                                m_series.enable = false;
+                            }
+                        }
+                    }
+
 
                     s.clear();
                 }

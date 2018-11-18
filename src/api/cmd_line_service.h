@@ -75,9 +75,11 @@ namespace ai
             void result(int argc, char* argv[]);
             void system_cmd(int argc, char* argv[]);
             void task(int argc, char* argv[]);
-            void node(int argc, char* argv[]);
 
             void task_clean(int argc, char* argv[]);
+
+            std::shared_ptr<cmd_start_training_resp> start_training_task_helper(std::shared_ptr<cmd_start_training_req> req);
+
 
         protected:
 
@@ -95,6 +97,8 @@ namespace ai
             std::vector<std::string> m_argvs;
 
             std::string m_last_task_id;
+
+            std::string m_rl_history_fn;
 
         };
 
