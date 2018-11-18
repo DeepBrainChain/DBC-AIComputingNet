@@ -72,11 +72,11 @@ function get {
         dbc_container_path=$(grep "host_volum_dir" $DIR/conf/container.conf | grep -v "#")
 
         if [ -z $dbc_container_path ]; then
-            dbc_container_path=$(docker info 2>1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
+            dbc_container_path=$(docker info 2>&1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
         else
             dbc_container_path=$(echo $dbc_container_path | awk -F '=' '{print $2}')
             if [ -z $dbc_container_path ]; then
-               dbc_container_path=$(docker info 2>1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
+               dbc_container_path=$(docker info 2>&1| grep "Docker Root Dir" | awk -F ":" '{print $2}')
             fi
         fi
 
@@ -89,18 +89,22 @@ function get {
             docker image list | grep dbctraining | grep -v none | awk '{print $1":"$2}'
         fi
     ;;
+
+    "nvidia-smi")
+        nvidia-smi
+    ;;
+
+    "docker")
+        docker $2
+    ;;
+
     *)
     echo "N/A"
     ;;
     esac
 }
 
-for var in "$@"
-do
-#echo "[$var]"
-get $var
-done
-
+get $@
 if [ -z "$1" ]; then
         echo "$0 <attr>, e.g. $0 gpu"
 fi

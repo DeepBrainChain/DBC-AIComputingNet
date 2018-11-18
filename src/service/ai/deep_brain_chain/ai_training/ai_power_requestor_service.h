@@ -67,7 +67,7 @@ namespace ai
             int32_t on_cmd_logs_req(const std::shared_ptr<message> &msg);
             int32_t on_logs_resp(std::shared_ptr<message> &msg);
 
-            int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm);
+            int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm, std::string& error);
             int32_t validate_ipfs_path(const std::string &path_arg);
             int32_t validate_entry_file_name(const std::string &entry_file_name);
 
@@ -77,10 +77,9 @@ namespace ai
 
         protected:
 
-            void add_task_config_opts(bpo::options_description &opts) const;
+            std::shared_ptr<message> create_task_msg(const std::string &task_file, const bpo::options_description &opts, ai::dbc::cmd_task_info & task_info);
 
-            std::shared_ptr<message> create_task_msg_from_file(const std::string &task_file, const bpo::options_description &opts,
-                    ai::dbc::cmd_task_info & task_info, std::map<std::string, std::string>* params=NULL);
+            std::shared_ptr<message> create_task_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info);
 
             bool write_task_info_to_db(ai::dbc::cmd_task_info &task_info);
 
