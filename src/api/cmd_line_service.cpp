@@ -105,32 +105,26 @@ namespace ai
         static void print_cmd_usage()
         {
             cout << "we support commands: " << endl;
-            cout << "help:          print out usage information" << endl;
-            cout << "peers:         get information of peers" << endl;
-            cout << "task:          manipulate ai training task" << endl;
-            cout << "node:          query ai node status" << endl;
-            cout << "clear:         clean screen" << endl;
+            cout << "peers:         get information of network nodes" << endl;
+            cout << "show:          get information of compute nodes" << endl;
+            cout << "clear:         clear the screen" << endl;
+            cout << "task:          task operations" << endl;
             cout << "system / sys:  invoke system command" << endl;
             cout << "quit / exit:   exit program" << endl;
             cout << "-----------------------------------------" << endl;
         }
 
-        static void print_cmd_node_usage()
-        {
-            cout << "show:          get attributes from taget node" <<endl;
-            cout << "-----------------------------------------" << endl;
-        }
 
         static void print_cmd_task_usage()
         {
-            cout << "start:         start training" << endl;
-            cout << "stop:          stop training" << endl;
+            cout << "start:         start a task" << endl;
+            cout << "stop:          stop a task" << endl;
+            cout << "result:        download task exec result" <<endl;
+            cout << "logs:          log" << endl;
+            cout << "list:          get task status" << endl;
+//            cout << "ps:            get task status in cache" << endl;
+            cout << "clear:         remove task record from local db" << endl;
             cout << "start_multi:   start multi training tasks" << endl;
-            cout << "result:        download training result" <<endl;
-            cout << "list:          list training tasks" << endl;
-            cout << "logs:          get logs of task" << endl;
-            cout << "ps:            print ai request task cache info" << endl;
-            cout << "clear:         remove abnormal task" << endl;
             cout << "-----------------------------------------" << endl;
         }
 
@@ -145,7 +139,20 @@ namespace ai
         int32_t cmd_line_service::init(bpo::variables_map &options)
         { 
             cout << "Welcome to DeepBrain Chain Decentralized AI world!" << std::endl;
+
+            std::string ver = STR_VER(CORE_VERSION);
+            auto s = matrix::core::string_util::remove_leading_zero(ver.substr(2, 2)) + "."
+                     + matrix::core::string_util::remove_leading_zero(ver.substr(4, 2)) + "."
+                     + matrix::core::string_util::remove_leading_zero(ver.substr(6, 2)) + "."
+                     + matrix::core::string_util::remove_leading_zero(ver.substr(8, 2));
+
+            cout << "Version " << s << std::endl;
             cout << std::endl;
+
+#ifndef WIN32
+            m_rl_history_fn = env_manager::get_home_path().generic_string() + "/.history";
+            read_history(m_rl_history_fn.c_str());
+#endif
 
             g_server->bind_idle_task(&cmd_line_task);
             return E_SUCCESS;
@@ -162,7 +169,7 @@ namespace ai
             m_invokers["logs"] = std::bind(&cmd_line_service::logs, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["show"] = std::bind(&cmd_line_service::show, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["clear"] = std::bind(&cmd_line_service::clear, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
+//            m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["system"] = std::bind(&cmd_line_service::system_cmd, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["sys"] = m_invokers["system"];
 
@@ -175,12 +182,7 @@ namespace ai
             m_invokers["task_result"] = m_invokers["result"];
             m_invokers["task_logs"] = m_invokers["logs"];
             m_invokers["task_start_multi"] = m_invokers["start_multi"];
-            m_invokers["task_ps"] = m_invokers["ps"];
-
-
-            m_invokers["node"] = std::bind(&cmd_line_service::node, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["node_show"] = m_invokers["show"];
-
+//            m_invokers["task_ps"] = m_invokers["ps"];
 
         }
         
@@ -250,6 +252,13 @@ namespace ai
             else if (cmd.compare("quit") == 0 || cmd.compare("exit") == 0)
             {
                 g_server->set_exited(true);
+
+#ifndef WIN32
+                if(!m_rl_history_fn.empty())
+                {
+                    write_history(m_rl_history_fn.c_str());
+                }
+#endif
                 return;
             }
 
@@ -271,6 +280,176 @@ namespace ai
             delete []argv;
         }
 
+
+        void set_single_task_config_opts(bpo::options_description &opts)
+        {
+            opts.add_options()
+                    ("task_id", bpo::value<std::string>(), "")
+                    ("select_mode", bpo::value<int8_t>()->default_value(0), "")
+                    ("master", bpo::value<std::string>()->default_value(""), "")
+                    ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
+                    ("server_specification", bpo::value<std::string>()->default_value(""), "")
+                    ("server_count", bpo::value<int32_t>()->default_value(0), "")
+                    ("training_engine", bpo::value<std::string>(), "")
+                    ("code_dir", bpo::value<std::string>(), "")
+                    ("entry_file", bpo::value<std::string>(), "")
+                    ("data_dir", bpo::value<std::string>()->default_value(""), "")
+                    ("checkpoint_dir", bpo::value<std::string>()->default_value(""), "")
+                    ("hyper_parameters", bpo::value<std::string>()->default_value(""), "")
+                    ("container_name", bpo::value<std::string>()->default_value(""), "");
+        }
+
+
+        void set_multi_tasks_config_opts(bpo::options_description &opts)
+        {
+            opts.add_options()
+                ("training_file", bpo::value<std::vector<std::string>>(), "");
+        }
+
+#if defined(__linux__) || defined(MAC_OSX)
+        bool is_a_dir(std::string& path)
+        {
+            if(path.length()>2 && path.substr(0,2) == std::string("./"))
+            {
+                auto home_path = env_manager::get_home_path().generic_string();
+
+                path = home_path + path.substr(1);
+            }
+
+            struct stat s;
+            if( stat(path.c_str(),&s) == 0 )
+            {
+                if (s.st_mode & S_IFDIR)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+
+        }
+
+
+        std::string upload(std::string path)
+        {
+
+            std::string cmd = env_manager::get_home_path().generic_string() + "/tool/dbc_upload " + path +
+                              " raw | grep \"DIR_HASH:\" | awk -F \":\" '{print $2}'";
+            FILE *proc = popen(cmd.c_str(), "r");
+            if (proc != NULL)
+            {
+                const int LINE_SIZE = 1024;
+                char line[LINE_SIZE];
+                std::string result;
+
+                while (fgets(line, LINE_SIZE, proc))
+                    result += line;
+                pclose(proc);
+
+                matrix::core::string_util::trim(result);
+
+                //remove '\n' at the end
+                if(result.length() > 1)
+                    return result.substr(0,result.length()-1);
+
+            }
+
+            return "";
+        }
+
+#endif
+
+        std::shared_ptr<cmd_start_training_resp> cmd_line_service::start_training_task_helper( std::shared_ptr<cmd_start_training_req> req)
+        {
+            std::shared_ptr<cmd_start_training_resp> resp = std::make_shared<cmd_start_training_resp>();
+            bpo::variables_map& vm = req->vm;
+
+            fs::path task_file_path = fs::system_complete(fs::path(req->task_file_path.c_str()));
+            try
+            {
+                if (false == fs::exists(task_file_path) || false == fs::is_regular_file(task_file_path))
+                {
+                    resp->result = E_DEFAULT;
+                    resp->result_info = "training task file does not exist";
+
+                    return resp;
+                }
+            }
+            catch (const std::exception &e)
+            {
+                // what():  boost::filesystem::status: Permission denied
+                LOG_ERROR << "read file error: " << e.what();
+                resp->result = E_DEFAULT;
+                resp->result_info = e.what();
+                return resp;
+            }
+
+
+            //parse task config file
+            bpo::options_description task_config_opts("task config file options");
+            set_single_task_config_opts(task_config_opts);
+
+
+            try
+            {
+                std::ifstream conf_task(req->task_file_path);
+                bpo::store(bpo::parse_config_file(conf_task, task_config_opts), vm);
+                bpo::notify(vm);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "task config parse local conf error: " << e.what();
+
+                resp->result = E_DEFAULT;
+                resp->result_info = std::string("parse ai training task error: ") + std::string(e.what());
+
+                return resp;
+            }
+
+            // if user indicates node id from cmd line, use it as task's node instead
+            if (req->parameters.count("node"))
+            {
+                std::vector<std::string> v;
+                v.push_back(req->parameters["node"]);
+                vm.at("peer_nodes_list").value() = v;
+                bpo::notify(vm);
+            }
+
+            if (req->parameters.count("base"))
+            {
+                vm.at("container_name").value() = req->parameters["base"];
+                cout << "ref container_name " << vm["container_name"].as<std::string>() << endl;
+                bpo::notify(vm);
+            }
+
+            // if code_dir is an folder, try upload it to ipfs net first, then start training task with the returned hash value.
+#if defined(__linux__) || defined(MAC_OSX)
+            if(vm.count("code_dir"))
+            {
+                std::string path = vm["code_dir"].as<std::string>();
+                if (!path.empty() && is_a_dir(path))
+                {
+                    cout << endl << "upload code " << path << endl;
+                    std::string hash = upload(path);
+                    cout << "code hash " << hash << endl;
+
+                    if (hash.empty())
+                    {
+                        resp->result = E_DEFAULT;
+                        resp->result_info = std::string("fail to upload code");
+                        return resp;
+                    }
+
+                    vm.at("code_dir").value() = hash; //remove '\n' at the end.
+                    bpo::notify(vm);
+                }
+
+            }
+#endif
+            return m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
+
+        }
+
         void cmd_line_service::start_training(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -281,6 +460,7 @@ namespace ai
                 opts.add_options()
                     ("help,h", "start task")
                     ("config,c", bpo::value<std::string>(), "task config file path")
+                    ("base,b", bpo::value<std::string>(), "reference task id, the new task will run upon the same context of referred one")
                     ("node,n", bpo::value< std::string >(), "the target ai training node, ignore the peer_nodes_list field in the config file if present.");
 
                 //parse
@@ -299,7 +479,11 @@ namespace ai
                 if (vm.count("node"))
                 {
                     req->parameters["node"] = vm["node"].as<std::string>();
+                }
 
+                if (vm.count("base"))
+                {
+                    req->parameters["base"] = vm["base"].as<std::string>();
                 }
 
                 if (vm.count("config") || vm.count("c"))
@@ -309,7 +493,7 @@ namespace ai
                     {
                         req->task_file_path = vm["config"].as<std::string>();
 
-                        auto resp = m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
+                        auto resp = start_training_task_helper(req);
                         if (nullptr == resp)
                         {
                             cout << endl << "command time out" << endl;
@@ -455,6 +639,9 @@ namespace ai
                 {
                     std::shared_ptr<cmd_start_multi_training_req> req = std::make_shared<cmd_start_multi_training_req>();
                     req->mulit_task_file_path = vm["config"].as<std::string>();
+
+                    set_multi_tasks_config_opts(req->multi_tasks_config_opts);
+                    set_single_task_config_opts(req->single_task_config_opts);
 
                     std::shared_ptr<cmd_start_multi_training_resp> resp = m_handler.invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
                     if (nullptr == resp)
@@ -644,8 +831,9 @@ namespace ai
                 if (vm.count("task") || vm.count("t"))
                 {
                     std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
-                    req->task_id = vm["task"].as<std::string>();
+                    req->sub_op = "log";
 
+                    req->task_id = vm["task"].as<std::string>();
                     if(req->task_id.empty())
                     {
                         cout << opts;
@@ -854,7 +1042,7 @@ namespace ai
                 if (vm.count("task") || vm.count("t"))
                 {
                     std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
-                    req->task_id = vm["task"].as<std::string>();;
+                    req->task_id = vm["task"].as<std::string>();
                     std::shared_ptr<cmd_ps_resp> resp = m_handler.invoke<cmd_ps_req, cmd_ps_resp>(req);
                     format_output(resp);
                     return;
@@ -880,7 +1068,7 @@ namespace ai
         void cmd_line_service::show(int argc, char* argv[])
         {
             bpo::variables_map vm;
-            options_description opts("show node info options");
+            options_description opts("show compute node info options");
 
             try
             {
@@ -1062,6 +1250,12 @@ namespace ai
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
 
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
                 if (vm.count("task") || vm.count("t"))
                 {
                     std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
@@ -1138,10 +1332,10 @@ namespace ai
                     cmd += " ";
                 }
 
-                //cout << "system: " << cmd <<endl;
-                if ( cmd.empty())
+                if ( cmd.empty() || cmd == std::string("-h "))
                 {
-                    cout << "system [cmd], e.g. system date" <<endl;
+                    cout << "invoke all kinds of external tool" << endl;
+                    cout << "    e.g. system date" <<endl;
                 }
                 else
                 {
@@ -1158,24 +1352,68 @@ namespace ai
         
         void cmd_line_service::task_clean(int argc, char* argv[])
         {
+            bpo::variables_map vm;
+            options_description opts("task clean options");
             std::shared_ptr<cmd_task_clean_req> req= std::make_shared<cmd_task_clean_req>();
 
+            try
+            {
+                opts.add_options()
+                        ("help,h", "clear task; clear abnormal tasks if no option specified")
+                        ("task,t", bpo::value<std::string>(), "task id")
+                        ("all,a", "clean up all tasks from local db");
 
-            auto resp = m_handler.invoke<cmd_task_clean_req, cmd_task_clean_resp>(req);
-            if (nullptr == resp)
-            {
-                cout << endl << "command time out" << endl;
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+                if (vm.count("all"))
+                {
+                    cout << "clean up all tasks from db: [y/n] ";
+                    std::string answer;
+                    cin >> answer;
+                    if (answer != std::string("y") && answer != std::string("Y"))
+                    {
+                        return;
+                    }
+                    req->clean_all = true;
+                }
+
+                if (vm.count("task"))
+                {
+                    req->task_id=vm["task"].as<std::string>();
+                }
+
+                auto resp = m_handler.invoke<cmd_task_clean_req, cmd_task_clean_resp>(req);
+                if (nullptr == resp)
+                {
+                    cout << endl << "command time out" << endl;
+                }
+                else
+                {
+                    format_output(resp);
+                }
+
             }
-            else
+            catch (...)
             {
-                format_output(resp);
+                cout << argv[0] << " invalid option" << endl;
             }
-            
+
         }
 
         void cmd_line_service::task(int argc, char* argv[])
         {
-            if(argc == 1)
+            if(argc == 1
+                || (argc == 2 && std::string("-h") == argv[1])
+                )
             {
                 print_cmd_task_usage();
                 return;
@@ -1206,41 +1444,6 @@ namespace ai
             }
 
         }
-
-        void cmd_line_service::node(int argc, char* argv[])
-        {
-            if(argc == 1)
-            {
-                print_cmd_node_usage();
-                return;
-            }
-
-            try
-            {
-                if (argc > 1)
-                {
-                    std::string cmd = std::string(argv[0]) + "_" + std::string(argv[1]);
-                    auto it = m_invokers.find(cmd);
-                    if (it == m_invokers.end())
-                    {
-                        cout << "unknown command " << argv[1] << endl;
-                        return;
-                    }
-
-                    //call handler function
-                    auto func = it->second;
-
-                    func(argc-1, argv+1);
-
-                }
-            }
-            catch (...)
-            {
-
-            }
-
-        }
-
     }
 
 }

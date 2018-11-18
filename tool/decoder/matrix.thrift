@@ -111,8 +111,9 @@ struct start_training_req_body {
   8: required string code_dir,
   9: required string entry_file,
   10: required string data_dir,
-  11: required string checkpoint_dir
-  12: optional string hyper_parameters
+  11: required string checkpoint_dir,
+  12: optional string hyper_parameters,
+  13: optional string container_name
 }
 
 struct start_training_req {
