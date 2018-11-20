@@ -117,7 +117,9 @@
 
 /* Define if we have pthreads on this system */
 /* #undef EVENT__HAVE_PTHREADS */
-
+#ifndef WIN32
+#define EVENT__HAVE_PTHREADS 1
+#endif
 /* Define to 1 if the system has the type `sa_family_t'. */
 /* #undef EVENT__HAVE_SA_FAMILY_T */
 
