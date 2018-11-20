@@ -430,6 +430,12 @@
     <ClCompile Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\user_task_scheduling.cpp">
       <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\api\http_server_service.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\network\http_server.cpp">
+      <Filter>src\core\network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\common\common_def.h">
@@ -1349,6 +1355,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\ai\deep_brain_chain\ai_training\task_scheduling\user_task_scheduling.h">
       <Filter>src\service\deep_brain_chain\ai_training\task_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\api\http_server_service.h">
+      <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\network\http_server.h">
+      <Filter>src\core\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\common\rpc_error.h">
+      <Filter>src\core\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
