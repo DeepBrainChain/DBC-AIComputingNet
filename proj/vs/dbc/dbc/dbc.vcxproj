@@ -175,6 +175,7 @@
     <ClCompile Include="..\..\..\..\src\api\api_call_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\api\cmd_line_service.cpp" />
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp" />
+    <ClCompile Include="..\..\..\..\src\api\http_server_service.cpp" />
     <ClCompile Include="..\..\..\..\src\core\codec\protocol.cpp" />
     <ClCompile Include="..\..\..\..\src\core\codec\thrift_compact.cpp" />
     <ClCompile Include="..\..\..\..\src\core\common\callback_wait.cpp" />
@@ -218,6 +219,7 @@
     <ClCompile Include="..\..\..\..\src\core\network\connection_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\flow_ctrl.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\http_client.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\network\http_server.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\net_address.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\nio_loop_group.cpp" />
     <ClCompile Include="..\..\..\..\src\core\network\tcp_acceptor.cpp" />
@@ -435,6 +437,7 @@
     <ClInclude Include="..\..\..\..\src\api\api_call_handler.h" />
     <ClInclude Include="..\..\..\..\src\api\cmd_line_service.h" />
     <ClInclude Include="..\..\..\..\src\api\console_printer.h" />
+    <ClInclude Include="..\..\..\..\src\api\http_server_service.h" />
     <ClInclude Include="..\..\..\..\src\core\codec\protocol.h" />
     <ClInclude Include="..\..\..\..\src\core\codec\decoder.h" />
     <ClInclude Include="..\..\..\..\src\core\codec\encoder.h" />
@@ -450,6 +453,7 @@
     <ClInclude Include="..\..\..\..\src\core\common\error.h" />
     <ClInclude Include="..\..\..\..\src\core\common\function_traits.h" />
     <ClInclude Include="..\..\..\..\src\core\common\id_generator.h" />
+    <ClInclude Include="..\..\..\..\src\core\common\rpc_error.h" />
     <ClInclude Include="..\..\..\..\src\core\common\std_types.h" />
     <ClInclude Include="..\..\..\..\src\core\common\time_util.h" />
     <ClInclude Include="..\..\..\..\src\core\common\util.h" />
@@ -509,6 +513,7 @@
     <ClInclude Include="..\..\..\..\src\core\network\flow_ctrl.h" />
     <ClInclude Include="..\..\..\..\src\core\network\handler_create_functor.h" />
     <ClInclude Include="..\..\..\..\src\core\network\http_client.h" />
+    <ClInclude Include="..\..\..\..\src\core\network\http_server.h" />
     <ClInclude Include="..\..\..\..\src\core\network\io_service_wrapper.h" />
     <ClInclude Include="..\..\..\..\src\core\network\net_address.h" />
     <ClInclude Include="..\..\..\..\src\core\network\nio_loop_group.h" />
