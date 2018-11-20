@@ -58,30 +58,30 @@ namespace matrix
              */
             std::pair<bool, std::string> get_header(const std::string& hdr);
 
-		    /**
-		     * Read request body.
-		     *
-		     * @note As this consumes the underlying buffer, call this only once.
-		     * Repeated calls will return an empty string.
-		     */
-    		std::string read_body();
+            /**
+             * Read request body.
+             *
+             * @note As this consumes the underlying buffer, call this only once.
+             * Repeated calls will return an empty string.
+             */
+            std::string read_body();
 
-		    /**
-		     * Write output header.
-		     *
-		     * @note call this before calling WriteErrorReply or Reply.
-		     */
-		    void write_header(const std::string& hdr, const std::string& value);
+            /**
+             * Write output header.
+             *
+             * @note call this before calling WriteErrorReply or Reply.
+             */
+            void write_header(const std::string& hdr, const std::string& value);
 
-		    /**
-		     * Write HTTP reply.
-		     * nStatus is the HTTP status code to send.
-		     * strReply is the body of the reply. Keep it empty to send a standard message.
-		     *
-		     * @note Can be called only once. As this will give the request back to the
-		     * main thread, do not call any other HTTPRequest methods after calling this.
-		     */
-    		void write_reply(int status, const std::string& reply = "");
+            /**
+             * Write HTTP reply.
+             * nStatus is the HTTP status code to send.
+             * strReply is the body of the reply. Keep it empty to send a standard message.
+             *
+             * @note Can be called only once. As this will give the request back to the
+             * main thread, do not call any other HTTPRequest methods after calling this.
+             */
+            void write_reply(int status, const std::string& reply = "");
 
             /** HTTP request method as string - use for logging only */
             std::string request_method_string(REQUEST_METHOD method);

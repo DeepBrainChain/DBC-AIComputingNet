@@ -82,10 +82,10 @@ namespace matrix
             std::vector<http_path_handler>& get_http_path_handler() { return path_handlers; }
 
         private:
-        	bool init_http_server();
-        	void start_http_server();
-        	void interrupt_http_server();
-        	void stop_http_server();
+            bool init_http_server();
+            void start_http_server();
+            void interrupt_http_server();
+            void stop_http_server();
 
             int32_t load_rest_config(bpo::variables_map &options);
 
