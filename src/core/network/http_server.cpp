@@ -28,14 +28,14 @@ namespace matrix
 {
     namespace core
     {
-        http_request::http_request(struct evhttp_request* req_, struct event_base* event_base_) : req(req_),
-            reply_sent(false), event_base_ptr(event_base_)
+        http_request::http_request(struct evhttp_request* req_, struct event_base* event_base_) : m_req(req_),
+            m_reply_sent(false), m_event_base_ptr(event_base_)
         {
         }
 
         http_request::~http_request()
         {
-            if (!reply_sent) {
+            if (!m_reply_sent) {
                 // Keep track of whether reply was sent to avoid request leaks
                 LOG_DEBUG <<  "Unhandled request";
                 reply_comm_rest_err(HTTP_INTERNAL, RPC_INTERNAL_ERROR, "Unhandled request");
@@ -45,12 +45,12 @@ namespace matrix
 
         std::string http_request::get_uri()
         {
-            return evhttp_request_get_uri(req);
+            return evhttp_request_get_uri(m_req);
         }
 
         endpoint_address http_request::get_peer()
         {
-            evhttp_connection* con = evhttp_request_get_connection(req);
+            evhttp_connection* con = evhttp_request_get_connection(m_req);
 
             const char* address = "";
             uint16_t port = 0;
@@ -63,7 +63,7 @@ namespace matrix
 
         http_request::REQUEST_METHOD http_request::get_request_method()
         {
-            switch (evhttp_request_get_command(req)) {
+            switch (evhttp_request_get_command(m_req)) {
                 case EVHTTP_REQ_GET:
                     return GET;
                     break;
@@ -84,7 +84,7 @@ namespace matrix
 
         std::pair<bool, std::string> http_request::get_header(const std::string& hdr)
         {
-            const struct evkeyvalq* headers = evhttp_request_get_input_headers(req);
+            const struct evkeyvalq* headers = evhttp_request_get_input_headers(m_req);
             assert(headers);
             const char* val = evhttp_find_header(headers, hdr.c_str());
             if (val)
@@ -95,7 +95,7 @@ namespace matrix
 
         std::string http_request::read_body()
         {
-            struct evbuffer* buf = evhttp_request_get_input_buffer(req);
+            struct evbuffer* buf = evhttp_request_get_input_buffer(m_req);
             if (!buf)
                 return "";
             size_t size = evbuffer_get_length(buf);
@@ -115,7 +115,7 @@ namespace matrix
 
         void http_request::write_header(const std::string& hdr, const std::string& value)
         {
-            struct evkeyvalq* headers = evhttp_request_get_output_headers(req);
+            struct evkeyvalq* headers = evhttp_request_get_output_headers(m_req);
             assert(headers);
             evhttp_add_header(headers, hdr.c_str(), value.c_str());
         }
@@ -127,14 +127,14 @@ namespace matrix
          */
         void http_request::write_reply(int status, const std::string& reply)
         {
-            assert(!reply_sent && req);
+            assert(!m_reply_sent && m_req);
             // Send event to main http thread twrite_replyo send reply message
-            struct evbuffer* evb = evhttp_request_get_output_buffer(req);
+            struct evbuffer* evb = evhttp_request_get_output_buffer(m_req);
             assert(evb);
             evbuffer_add(evb, reply.data(), reply.size());
-            auto req_copy = req;
+            auto req_copy = m_req;
             //  http_event release in http event callback function
-            http_event* ev = new http_event(event_base_ptr, true, [req_copy, status]{
+            http_event* ev = new http_event(m_event_base_ptr, true, [req_copy, status]{
                 evhttp_send_reply(req_copy, status, nullptr, nullptr);
                 // Re-enable reading from the socket. This is the second part of the libevent
                 // workaround above.
@@ -149,8 +149,8 @@ namespace matrix
                 }
             });
             ev->trigger(nullptr);
-            reply_sent = true;
-            req = nullptr; // transferred back to main thread
+            m_reply_sent = true;
+            m_req = nullptr; // transferred back to main thread
         }
 
         // response http request comm err
@@ -195,31 +195,31 @@ namespace matrix
         }
 
         http_event::http_event(struct event_base* base, bool delete_when_triggered_, const std::function<void(void)>& handler_):
-            delete_when_triggered(delete_when_triggered_), handler(handler_)
+            m_delete_when_triggered(delete_when_triggered_), m_handler(handler_)
         {
-            ev = event_new(base, -1, 0, http_event::httpevent_callback_fn, this);
-            assert(ev);
+            m_ev = event_new(base, -1, 0, http_event::httpevent_callback_fn, this);
+            assert(m_ev);
         }
 
         http_event::~http_event()
         {
-            event_free(ev);
+            event_free(m_ev);
         }
 
         void http_event::trigger(struct timeval* tv)
         {
             if (tv == nullptr)
-                event_active(ev, 0, 0);  // immediately trigger event in main thread
+                event_active(m_ev, 0, 0);  // immediately trigger event in main thread
             else
-                evtimer_add(ev, tv);  // trigger after timeval passed
+                evtimer_add(m_ev, tv);  // trigger after timeval passed
         }
 
         void http_event::httpevent_callback_fn(evutil_socket_t /**/, short /**/, void* data)
         {
             // Static handler: simply call inner handler
             http_event *self = static_cast<http_event*>(data);
-            self->handler();
-            if (self->delete_when_triggered)
+            self->m_handler();
+            if (self->m_delete_when_triggered)
                 delete self;
         }
 

@@ -58,7 +58,7 @@ namespace matrix
             static const fs::path & get_dat_path() { return m_dat_path; }
 
             static const fs::path & get_db_path() { return m_db_path; }
-            
+
             static const fs::path & get_peer_path() { return m_peer_path; }
 
             static const fs::path & get_container_path() { return m_container_path; }
@@ -76,11 +76,17 @@ namespace matrix
 
             void init_signal();
 
-            void init_locale();            
+            void init_locale();
 
             void register_signal_function(int signal, void(*handler)(int));
 
-            static void init_endian_type();
+			void init_libevent_config();
+
+			void update_http_server_logging(bool enable);
+
+			static void init_endian_type();
+
+			static void libevent_log_cb(int severity, const char *msg);
 
         protected:
 

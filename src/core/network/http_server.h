@@ -23,9 +23,9 @@ namespace matrix
         class http_request
         {
             private:
-                struct evhttp_request* req;
-                bool reply_sent;
-                struct event_base* event_base_ptr;
+                struct evhttp_request* m_req;
+                bool m_reply_sent;
+                struct event_base* m_event_base_ptr;
 
             public:
                 explicit http_request(struct evhttp_request* req_, struct event_base* event_base_);
@@ -109,11 +109,11 @@ namespace matrix
             static void httpevent_callback_fn(evutil_socket_t /**/, short /**/, void* data);
 
         public:
-            bool delete_when_triggered;
-            std::function<void(void)> handler;
+            bool m_delete_when_triggered;
+            std::function<void(void)> m_handler;
 
         private:
-            struct event* ev;
+            struct event* m_ev;
         };
 
         typedef std::function<bool(http_request* req, const std::string &)> http_request_handler;
@@ -122,12 +122,12 @@ namespace matrix
         {
             http_path_handler() {}
             http_path_handler(std::string prefix_, bool exact_match_, http_request_handler handler_):
-                prefix(prefix_), exact_match(exact_match_), handler(handler_)
+                m_prefix(prefix_), m_exact_match(exact_match_), m_handler(handler_)
             {
             }
-            std::string prefix;
-            bool exact_match;
-            http_request_handler handler;
+            std::string m_prefix;
+            bool m_exact_match;
+            http_request_handler m_handler;
         };
 
     }  // namespce core

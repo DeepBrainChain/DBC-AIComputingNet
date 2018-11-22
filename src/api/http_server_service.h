@@ -75,11 +75,11 @@ namespace matrix
             /** Unregister handler for prefix */
             void unregister_http_handler(const std::string &prefix, bool exact_match);
 
-            work_queue<http_closure>* get_work_queue_ptr() { return work_queue_ptr; }
+            work_queue<http_closure>* get_work_queue_ptr() { return m_work_queue_ptr; }
 
-            struct event_base* get_event_base_ptr() { return event_base_ptr; }
+            struct event_base* get_event_base_ptr() { return m_event_base_ptr; }
 
-            std::vector<http_path_handler>& get_http_path_handler() { return path_handlers; }
+            std::vector<http_path_handler>& get_http_path_handler() { return m_path_handlers; }
 
         private:
             bool init_http_server();
@@ -89,16 +89,11 @@ namespace matrix
 
             int32_t load_rest_config(bpo::variables_map &options);
 
-            bool is_prohibit_rest() { return rest_port == 0; }
+            bool is_prohibit_rest() { return m_rest_port == 0; }
 
             /** Bind HTTP server to specified addresses */
             bool http_bind_addresses(struct evhttp* http);
 
-            /** Change logging level for libevent. */
-            void update_http_server_logging(bool enable);
-
-            /** libevent event log callback */
-            static void libevent_log_cb(int severity, const char *msg);
             /** HTTP request callback */
             static void http_request_cb(struct evhttp_request* req, void* arg);
             /** Callback to reject HTTP requests after shutdown. */
@@ -111,22 +106,22 @@ namespace matrix
             static void rename_thread(const char* name);
 
         private:
-            std::string rest_ip = DEFAULT_LOOPBACK_IP;
-            uint16_t rest_port = 0;
+            std::string m_rest_ip = DEFAULT_LOOPBACK_IP;
+            uint16_t m_rest_port = 0;
 
-            std::vector<evhttp_bound_socket *> bound_sockets;
-            work_queue<http_closure>* work_queue_ptr = nullptr;
+            std::vector<evhttp_bound_socket *> m_bound_sockets;
+            work_queue<http_closure>* m_work_queue_ptr = nullptr;
 
             // libevent event loop
-            struct event_base* event_base_ptr = nullptr;
+            struct event_base* m_event_base_ptr = nullptr;
             // HTTP server
-            struct evhttp* event_http_ptr = nullptr;
+            struct evhttp* m_event_http_ptr = nullptr;
             // Handlers for (sub)paths
-            std::vector<http_path_handler> path_handlers;
+            std::vector<http_path_handler> m_path_handlers;
 
-            std::thread thread_http;
-            std::future<bool> thread_result;
-            std::vector<std::thread> thread_http_workers;
+            std::thread m_thread_http;
+            std::future<bool> m_thread_result;
+            std::vector<std::thread> m_thread_http_workers;
         };
 
         /** Event handler closure.
@@ -143,19 +138,19 @@ namespace matrix
         {
         public:
             http_work_item(std::unique_ptr<http_request> _req, const std::string &_path, const http_request_handler& _func):
-                req(std::move(_req)), path(_path), func(_func)
+                m_req(std::move(_req)), m_path(_path), m_func(_func)
             {
             }
             void operator()() override
             {
-                func(req.get(), path);
+                m_func(m_req.get(), m_path);
             }
 
-            std::unique_ptr<http_request> req;
+            std::unique_ptr<http_request> m_req;
 
         private:
-            std::string path;
-            http_request_handler func;
+            std::string m_path;
+            http_request_handler m_func;
         };
 
         /** Simple work queue for distributing work over multiple threads.
@@ -165,8 +160,8 @@ namespace matrix
         class work_queue
         {
         public:
-            explicit work_queue(size_t max_depth_) : running(true),
-                                max_depth(max_depth_)
+            explicit work_queue(size_t max_depth_) : m_running(true),
+                                m_max_depth(max_depth_)
             {
             }
             /** Precondition: worker threads have all stopped (they have been joined).
@@ -177,12 +172,12 @@ namespace matrix
             /** Enqueue a work item */
             bool enqueue(work_item* item)
             {
-                std::unique_lock<std::mutex> lock(cs);
-                if (queue.size() >= max_depth) {
+                std::unique_lock<std::mutex> lock(m_cs);
+                if (m_queue.size() >= m_max_depth) {
                     return false;
                 }
-                queue.emplace_back(std::unique_ptr<work_item>(item));
-                cond.notify_one();
+                m_queue.emplace_back(std::unique_ptr<work_item>(item));
+                m_cond.notify_one();
                 return true;
             }
 
@@ -192,13 +187,13 @@ namespace matrix
                 while (true) {
                     std::unique_ptr<work_item> i;
                     {
-                        std::unique_lock<std::mutex> lock(cs);
-                        while (running && queue.empty())
-                            cond.wait(lock);
-                        if (!running)
+                        std::unique_lock<std::mutex> lock(m_cs);
+                        while (m_running && m_queue.empty())
+                            m_cond.wait(lock);
+                        if (!m_running)
                             break;
-                        i = std::move(queue.front());
-                        queue.pop_front();
+                        i = std::move(m_queue.front());
+                        m_queue.pop_front();
                     }
                     (*i)();
                 }
@@ -207,18 +202,18 @@ namespace matrix
             /** Interrupt and exit loops */
             void interrupt()
             {
-                std::unique_lock<std::mutex> lock(cs);
-                running = false;
-                cond.notify_all();
+                std::unique_lock<std::mutex> lock(m_cs);
+                m_running = false;
+                m_cond.notify_all();
             }
 
         private:
             /** Mutex protects entire object */
-            std::mutex cs;
-            std::condition_variable cond;
-            std::deque<std::unique_ptr<work_item>> queue;
-            bool running;
-            size_t max_depth;
+            std::mutex m_cs;
+            std::condition_variable m_cond;
+            std::deque<std::unique_ptr<work_item>> m_queue;
+            bool m_running;
+            size_t m_max_depth;
         };
 
     }  // namespace core
