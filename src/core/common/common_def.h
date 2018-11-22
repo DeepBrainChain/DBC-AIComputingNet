@@ -28,6 +28,7 @@ extern std::string DEFAULT_STRING;
 extern std::string DEFAULT_IP_V4;
 extern std::string DEFAULT_IP_V6;
 extern std::string DEFAULT_LOCAL_IP;
+extern std::string DEFAULT_LOOPBACK_IP;
 extern std::vector<std::string> DEFAULT_VECTOR;
 
 //here is migrated from bitcoin linux platform and will be removed later!!!

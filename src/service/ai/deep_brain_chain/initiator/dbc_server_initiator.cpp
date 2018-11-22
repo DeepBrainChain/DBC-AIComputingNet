@@ -32,6 +32,7 @@
 #include "crypto_service.h"
 #include "timer_matrix_manager.h"
 #include "data_query_service.h"
+#include "http_server_service.h"
 #include <boost/exception/all.hpp>
 
 using namespace std::chrono;
@@ -225,6 +226,18 @@ namespace ai
                 LOG_INFO << "init command line service successfully";
             }
 
+            // http server service
+            LOG_INFO << "begin to init http server service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<http_server_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
+            mdl->start();
+            LOG_INFO << "init http server service successfully";
+
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
             auto time_span_ms = duration_cast<milliseconds>(init_end_time - server_start_time);
@@ -251,7 +264,9 @@ namespace ai
                 ("ai_training,a", "run as ai training service provider")
                 ("name,n", bpo::value<std::string>(), "node name")
                 ("max_connect", bpo::value<int32_t>(), "")
-                ("id", "get local node id");
+                ("id", "get local node id")
+                ("rest_ip", bpo::value<std::string>(), "http server ip address")
+                ("rest_port", bpo::value<std::string>(), "prohibit http server if rest port is 0");
 
             try
             {

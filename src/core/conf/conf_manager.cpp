@@ -17,6 +17,7 @@
 #include <boost/format.hpp>
 
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
+std::string DEFAULT_REST_PORT("41107");
 std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
 const int32_t DEFAULT_MAX_CONNECTION_NUM = 128;
 const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
@@ -94,7 +95,9 @@ namespace matrix
                 ("enable_idle_task", bpo::value<bool>()->default_value(true), "")
                 ("enable_billing", bpo::value<bool>()->default_value(true), "")
                 ("update_idle_task_cycle", bpo::value<int32_t>()->default_value(DEFAULT_UPDATE_IDLE_TASK_CYCLE), "")
-                ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "");
+                ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "")
+                ("rest_ip", bpo::value<std::string>()->default_value(DEFAULT_LOOPBACK_IP), "http server ip address")
+                ("rest_port", bpo::value<std::string>()->default_value(DEFAULT_REST_PORT), "0 prohibit http server");
 
             //peer opt description
             bpo::options_description peer_opts("peer options");
