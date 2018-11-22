@@ -16,18 +16,14 @@
 #include "net_type_params.h"
 #include "compress/matrix_capacity.h"
 
-
 using namespace boost::program_options;
 
-
-
-#define NODE_FILE_NAME                                                   "node.dat"
+#define NODE_FILE_NAME                               "node.dat"
 #define DEFAULT_MAIN_NET_LISTEN_PORT                 "11107"
-#define DEFAULT_TEST_NET_LISTEN_PORT                  "21107"
-
+#define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
 
 extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
-extern std::string DEFAULT_CONTAINER_IMAGE_NAME;      
+extern std::string DEFAULT_CONTAINER_IMAGE_NAME;
 extern const int32_t DEFAULT_MAX_CONNECTION_NUM;
 extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
@@ -35,6 +31,7 @@ extern const int32_t DEFAULT_SPEED;
 extern const std::string conf_manager_name;
 extern const bool DEFAULT_ENABLE;
 extern const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE;
+extern std::string DEFAULT_REST_PORT;
 
 
 namespace matrix
@@ -57,7 +54,7 @@ namespace matrix
 
             virtual int32_t exit() { m_args.clear(); return E_SUCCESS; }
 
-        public:       
+        public:
 
             int32_t get_log_level() { return m_log_level; }
 
@@ -113,6 +110,16 @@ namespace matrix
             const int32_t & get_max_recv_speed()
             {
                 return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
+            }
+
+            const std::string& get_rest_ip()
+            {
+                return m_args.count("rest_ip") ? m_args["rest_ip"].as<std::string>() : DEFAULT_LOOPBACK_IP;
+            }
+
+            const std::string& get_rest_port()
+            {
+                return m_args.count("rest_port") ? m_args["rest_port"].as<std::string>() : DEFAULT_REST_PORT;
             }
 
             const bool & get_enable_idle_task() { return m_args.count("enable_idle_task") > 0 ? m_args["enable_idle_task"].as<bool>() : DEFAULT_ENABLE; }
