@@ -195,31 +195,31 @@ namespace matrix
         }
 
         http_event::http_event(struct event_base* base, bool delete_when_triggered_, const std::function<void(void)>& handler_):
-            delete_when_triggered(delete_when_triggered_), handler(handler_)
+            m_delete_when_triggered(delete_when_triggered_), m_handler(handler_)
         {
-            ev = event_new(base, -1, 0, http_event::httpevent_callback_fn, this);
-            assert(ev);
+            m_ev = event_new(base, -1, 0, http_event::httpevent_callback_fn, this);
+            assert(m_ev);
         }
 
         http_event::~http_event()
         {
-            event_free(ev);
+            event_free(m_ev);
         }
 
         void http_event::trigger(struct timeval* tv)
         {
             if (tv == nullptr)
-                event_active(ev, 0, 0);  // immediately trigger event in main thread
+                event_active(m_ev, 0, 0);  // immediately trigger event in main thread
             else
-                evtimer_add(ev, tv);  // trigger after timeval passed
+                evtimer_add(m_ev, tv);  // trigger after timeval passed
         }
 
         void http_event::httpevent_callback_fn(evutil_socket_t /**/, short /**/, void* data)
         {
             // Static handler: simply call inner handler
             http_event *self = static_cast<http_event*>(data);
-            self->handler();
-            if (self->delete_when_triggered)
+            self->m_handler();
+            if (self->m_delete_when_triggered)
                 delete self;
         }
 

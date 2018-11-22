@@ -11,6 +11,11 @@
 #include "env_manager.h"
 #include "server.h"
 #include "common/util.h"
+
+#include <event2/thread.h>
+#include <event2/event.h>
+#include <event2/http.h>
+
 #ifdef WIN32
 #include<tchar.h>
 #include <atlstr.h>
@@ -79,6 +84,9 @@ namespace matrix
             //init path env
             init_core_path();
             LOG_DEBUG << "init env: core path environment";
+
+            // init global libevent config
+            init_libevent_config();
 
             return E_SUCCESS;
         }
@@ -182,6 +190,48 @@ namespace matrix
 #endif
         }
 
-    }
+        void env_manager::init_libevent_config()
+        {
+            // Redirect libevent's logging to our own log
+            event_set_log_callback(&env_manager::libevent_log_cb);
+            // Update libevent's log handling. Returns false if our version of
+            // libevent doesn't support debug logging, in which case we should
+            // clear the BCLog::LIBEVENT flag.
+            // default libevent log close,libevent log open if debug mode
+            update_http_server_logging(1);
+        #ifdef WIN32
+            evthread_use_windows_threads();
+        #else
+            evthread_use_pthreads();
+        #endif
+        }
 
+        void env_manager::libevent_log_cb(int severity, const char *msg)
+        {
+        #ifndef EVENT_LOG_WARN
+        // EVENT_LOG_WARN was added in 2.0.19; but before then _EVENT_LOG_WARN existed.
+        # define EVENT_LOG_WARN _EVENT_LOG_WARN
+        #endif
+            if (severity >= EVENT_LOG_WARN) {  // Log warn messages and higher without debug category
+                std::string  tmp_msg = "libevent: " + std::string(msg);
+                LOG_DEBUG << tmp_msg;
+            }
+        }
+
+        void env_manager::update_http_server_logging(bool enable)
+        {
+        #if LIBEVENT_VERSION_NUMBER >= 0x02010100
+            if (enable) {
+                event_enable_debug_logging(EVENT_DBG_ALL);
+            } else {
+                event_enable_debug_logging(EVENT_DBG_NONE);
+            }
+            return;
+        #else
+            // Can't update libevent logging if version < 02010100
+            return;
+        #endif
+        }
+
+    }
 }
