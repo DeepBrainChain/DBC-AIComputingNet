@@ -145,18 +145,6 @@ namespace ai
             mdl->start();
             LOG_INFO << "init common service successfully";
 
-            // http server service, init in the first because init global libevent 
-            LOG_INFO << "begin to init http server service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<http_server_service>());
-            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
-            ret = mdl->init(vm);
-            if (E_SUCCESS != ret)
-            {
-                return ret;
-            }
-            mdl->start();
-            LOG_INFO << "init http server service successfully";
-
             //ai power requestor service
             LOG_INFO << "begin to init ai power requestor service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<ai_power_requestor_service>());
@@ -237,6 +225,18 @@ namespace ai
                 mdl->start();
                 LOG_INFO << "init command line service successfully";
             }
+
+            // http server service
+            LOG_INFO << "begin to init http server service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<http_server_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
+            mdl->start();
+            LOG_INFO << "init http server service successfully";
 
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
