@@ -9,17 +9,7 @@
 **********************************************************************************/
 
 #include <assert.h>
-
-#include <event2/buffer.h>
-#include <event2/bufferevent.h>
-#include <event2/event.h>
-#include <event2/http.h>
-
-#include "document.h"
-#include "prettywriter.h"
-#include "stringbuffer.h"
 #include "container_message.h"
-
 #include "log.h"
 #include "rpc_error.h"
 #include "http_server.h"
@@ -29,29 +19,29 @@ namespace matrix
     namespace core
     {
         http_request::http_request(struct evhttp_request* req_, struct event_base* event_base_) : m_req(req_),
-            m_reply_sent(false), m_event_base_ptr(event_base_)
+                                                                                                  m_reply_sent(false), m_event_base_ptr(event_base_)
         {
         }
-
+        
         http_request::~http_request()
         {
             if (!m_reply_sent) {
                 // Keep track of whether reply was sent to avoid request leaks
                 LOG_DEBUG <<  "Unhandled request";
-                reply_comm_rest_err(HTTP_INTERNAL, RPC_INTERNAL_ERROR, "Unhandled request");
+                reply_comm_rest_err(HTTP_INTERNAL, RPC_RESPONSE_ERROR, "Unhandled request");
             }
             // evhttpd cleans up the request, as long as a reply was sent.
         }
-
+        
         std::string http_request::get_uri()
         {
             return evhttp_request_get_uri(m_req);
         }
-
+        
         endpoint_address http_request::get_peer()
         {
             evhttp_connection* con = evhttp_request_get_connection(m_req);
-
+            
             const char* address = "";
             uint16_t port = 0;
             if (con) {
@@ -60,7 +50,7 @@ namespace matrix
             }
             return endpoint_address(address, port);
         }
-
+        
         http_request::REQUEST_METHOD http_request::get_request_method()
         {
             switch (evhttp_request_get_command(m_req)) {
@@ -81,7 +71,7 @@ namespace matrix
                     break;
             }
         }
-
+        
         std::pair<bool, std::string> http_request::get_header(const std::string& hdr)
         {
             const struct evkeyvalq* headers = evhttp_request_get_input_headers(m_req);
@@ -92,7 +82,7 @@ namespace matrix
             else
                 return std::make_pair(false, "");
         }
-
+        
         std::string http_request::read_body()
         {
             struct evbuffer* buf = evhttp_request_get_input_buffer(m_req);
@@ -110,16 +100,16 @@ namespace matrix
                 return "";
             std::string rv(data, size);
             evbuffer_drain(buf, size);
-           return rv;
+            return rv;
         }
-
+        
         void http_request::write_header(const std::string& hdr, const std::string& value)
         {
             struct evkeyvalq* headers = evhttp_request_get_output_headers(m_req);
             assert(headers);
             evhttp_add_header(headers, hdr.c_str(), value.c_str());
         }
-
+        
         /** Closure sent to main thread to request a reply to be sent to
          * a HTTP request.
          * Replies must be sent in the main loop in the main http thread,
@@ -137,7 +127,7 @@ namespace matrix
             http_event* ev = new http_event(m_event_base_ptr, true, [req_copy, status]{
                 evhttp_send_reply(req_copy, status, nullptr, nullptr);
                 LOG_DEBUG << "send response: " << evhttp_request_get_uri(req_copy) << ", status: " << status;
-
+                
                 // Re-enable reading from the socket. This is the second part of the libevent
                 // workaround above.
                 if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
@@ -154,7 +144,7 @@ namespace matrix
             m_reply_sent = true;
             m_req = nullptr; // transferred back to main thread
         }
-
+        
         // response http request comm err
         // status:genernal http status code, internal_error: dbc define error code
         // message:response error content
@@ -163,19 +153,50 @@ namespace matrix
             //  construct body
             rapidjson::Document document;
             rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-
+            
             rapidjson::Value root(rapidjson::kObjectType);
             root.AddMember("error_code", internal_error, allocator);
             root.AddMember("error_message", STRING_REF(message), allocator);
-
+            
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
-
+            
+            std::string strJSON(buffer->GetString());
+            LOG_ERROR <<  "response error=> "<<strJSON;
+            
             write_header("Content-Type", "application/json");
-            write_reply(status, std::string(buffer->GetString()) + "\r\n");
+            write_reply(status, strJSON + "\r\n");
+            
+            
         }
-
+        
+        
+        void http_request::reply_comm_rest_succ( rapidjson::Value &data)
+        {
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
+            
+            rapidjson::Value root(rapidjson::kObjectType);
+            root.AddMember("error_code", RPC_RESPONSE_SUCCESS, allocator);
+            root.AddMember("data", data, allocator);
+            
+            std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+            root.Accept(writer);
+            
+            std::string strJSON(buffer->GetString());
+            
+            if( strJSON.size() < SHORT_JSON_STRING_SIZE){
+                LOG_INFO <<  "response ok=> "<<strJSON;
+            }
+            
+            write_header("Content-Type", "application/json");
+            write_reply(HTTP_OK, strJSON + "\r\n");
+            
+        }
+        
+        
         std::string http_request::request_method_string(REQUEST_METHOD method)
         {
             switch (method) {
@@ -195,19 +216,19 @@ namespace matrix
                     return "unknown";
             }
         }
-
+        
         http_event::http_event(struct event_base* base, bool delete_when_triggered_, const std::function<void(void)>& handler_):
-            m_delete_when_triggered(delete_when_triggered_), m_handler(handler_)
+                m_delete_when_triggered(delete_when_triggered_), m_handler(handler_)
         {
             m_ev = event_new(base, -1, 0, http_event::httpevent_callback_fn, this);
             assert(m_ev);
         }
-
+        
         http_event::~http_event()
         {
             event_free(m_ev);
         }
-
+        
         void http_event::trigger(struct timeval* tv)
         {
             if (tv == nullptr)
@@ -215,7 +236,7 @@ namespace matrix
             else
                 evtimer_add(m_ev, tv);  // trigger after timeval passed
         }
-
+        
         void http_event::httpevent_callback_fn(evutil_socket_t /**/, short /**/, void* data)
         {
             // Static handler: simply call inner handler
@@ -224,6 +245,6 @@ namespace matrix
             if (self->m_delete_when_triggered)
                 delete self;
         }
-
+        
     }  // namespace core
 }  // namespace matrix

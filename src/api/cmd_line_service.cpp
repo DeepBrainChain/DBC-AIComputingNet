@@ -446,7 +446,7 @@ namespace ai
 
             }
 #endif
-            return m_handler.invoke<cmd_start_training_req, cmd_start_training_resp>(req);
+            return  g_api_call_handler->invoke<cmd_start_training_req, cmd_start_training_resp>(req);
 
         }
 
@@ -526,7 +526,7 @@ namespace ai
                                   std::make_move_iterator(task_vector.end()), std::back_inserter(req->task_list));
                         task_vector.clear();
 
-                        auto resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
+                        auto resp =  g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                         if (nullptr == resp)
                         {
                             cout << endl << "warning: fail to fetch task status; please check if the target ai node is alive." << endl;
@@ -597,7 +597,7 @@ namespace ai
                         }
                     }
 
-                    std::shared_ptr<cmd_stop_training_resp> resp = m_handler.invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
+                    std::shared_ptr<cmd_stop_training_resp> resp =  g_api_call_handler->invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
                     if (nullptr == resp)
                     {
                         cout << endl << "command time out" << endl;
@@ -643,7 +643,7 @@ namespace ai
                     set_multi_tasks_config_opts(req->multi_tasks_config_opts);
                     set_single_task_config_opts(req->single_task_config_opts);
 
-                    std::shared_ptr<cmd_start_multi_training_resp> resp = m_handler.invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
+                    std::shared_ptr<cmd_start_multi_training_resp> resp =  g_api_call_handler->invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
                     if (nullptr == resp)
                     {
                         cout << endl << "command time out" << endl;
@@ -697,7 +697,7 @@ namespace ai
                     std::shared_ptr<cmd_list_training_req> req= std::make_shared<cmd_list_training_req>();
                     req->list_type = LIST_ALL_TASKS;
 
-                    std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
+                    std::shared_ptr<cmd_list_training_resp> resp =  g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                     if (nullptr == resp)
                     {
                         cout << endl << "command time out" << endl;
@@ -721,7 +721,7 @@ namespace ai
                     req->list_type = LIST_SPECIFIC_TASKS;
                     req->task_list.push_back(task_id);
 
-                    std::shared_ptr<cmd_list_training_resp> resp = m_handler.invoke<cmd_list_training_req, cmd_list_training_resp>(req);
+                    std::shared_ptr<cmd_list_training_resp> resp =  g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                     if (nullptr == resp)
                     {
                         cout << endl << "command time out" << endl;
@@ -776,7 +776,7 @@ namespace ai
                         req->flag = matrix::service_core::flag_global;
                     }
 
-                    std::shared_ptr<cmd_get_peer_nodes_resp> resp = m_handler.invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
+                    std::shared_ptr<cmd_get_peer_nodes_resp> resp =  g_api_call_handler->invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
                     if (nullptr == resp)
                     {
                         cout << endl << "command time out" << endl;
@@ -912,7 +912,7 @@ namespace ai
                     do
                     {
                         // fetch log from remote ai training node
-                        std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
+                        std::shared_ptr<cmd_logs_resp> resp =  g_api_call_handler->invoke<cmd_logs_req, cmd_logs_resp>(req);
                         if (nullptr == resp)
                         {
                             cout << endl << "command time out" << endl;
@@ -1003,7 +1003,7 @@ namespace ai
                /* if (vm.count("all") || vm.count("a"))
                 {
                     std::shared_ptr<cmd_clear_req> req = std::make_shared<cmd_clear_req>();
-                    std::shared_ptr<cmd_clear_resp> resp = m_handler.invoke<cmd_clear_req, cmd_clear_resp>(req);
+                    std::shared_ptr<cmd_clear_resp> resp =  g_api_call_handler->invoke<cmd_clear_req, cmd_clear_resp>(req);
                     system("cls");
                     return;
                 }*/
@@ -1043,7 +1043,7 @@ namespace ai
                 {
                     std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
                     req->task_id = vm["task"].as<std::string>();
-                    std::shared_ptr<cmd_ps_resp> resp = m_handler.invoke<cmd_ps_req, cmd_ps_resp>(req);
+                    std::shared_ptr<cmd_ps_resp> resp =  g_api_call_handler->invoke<cmd_ps_req, cmd_ps_resp>(req);
                     format_output(resp);
                     return;
                 }
@@ -1052,7 +1052,7 @@ namespace ai
                 {
                     std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
                     req->task_id = "all";;
-                    std::shared_ptr<cmd_ps_resp> resp = m_handler.invoke<cmd_ps_req, cmd_ps_resp>(req);
+                    std::shared_ptr<cmd_ps_resp> resp =  g_api_call_handler->invoke<cmd_ps_req, cmd_ps_resp>(req);
                     format_output(resp);
                     return;
                 }
@@ -1194,7 +1194,7 @@ namespace ai
 
                     // display service list
                     {
-                        std::shared_ptr<cmd_show_resp> resp = m_handler.invoke<cmd_show_req, cmd_show_resp>(req);
+                        std::shared_ptr<cmd_show_resp> resp =  g_api_call_handler->invoke<cmd_show_req, cmd_show_resp>(req);
 
 
                         if (nullptr == resp)
@@ -1289,7 +1289,7 @@ namespace ai
 
 
                     {
-                        std::shared_ptr<cmd_logs_resp> resp = m_handler.invoke<cmd_logs_req, cmd_logs_resp>(req);
+                        std::shared_ptr<cmd_logs_resp> resp =  g_api_call_handler->invoke<cmd_logs_req, cmd_logs_resp>(req);
                         if (nullptr == resp)
                         {
                             cout << endl << "command time out" << endl;
@@ -1391,7 +1391,7 @@ namespace ai
                     req->task_id=vm["task"].as<std::string>();
                 }
 
-                auto resp = m_handler.invoke<cmd_task_clean_req, cmd_task_clean_resp>(req);
+                auto resp =  g_api_call_handler->invoke<cmd_task_clean_req, cmd_task_clean_resp>(req);
                 if (nullptr == resp)
                 {
                     cout << endl << "command time out" << endl;
