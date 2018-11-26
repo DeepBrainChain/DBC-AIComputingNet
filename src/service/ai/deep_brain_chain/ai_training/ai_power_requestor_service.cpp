@@ -910,7 +910,7 @@ namespace ai
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             req_content->header.__set_msg_name(AI_TRAINING_NOTIFICATION_REQ);
             req_content->header.__set_nonce(id_generator().generate_nonce());
-
+ 
             try
             {
                 req_content->body.__set_task_id(id_generator().generate_task_id());
