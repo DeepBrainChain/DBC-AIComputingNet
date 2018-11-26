@@ -50,7 +50,7 @@ namespace ai
 		//This module outputs the following constants
 		//
 
-		static const std::string REST_API_VERSION="v1.0.0.3";
+		static const std::string REST_API_VERSION="v1.0.0.4";
 		static const std::string REST_API_URI="/api/v1";
 		
 		static const http_path_handler uri_prefixes[] = {
