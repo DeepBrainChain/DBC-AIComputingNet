@@ -378,6 +378,8 @@ namespace ai
         public:
 
             void format_output();
+    
+            std::string get_training_result_hash_from_log(std::string & s);
 
         private:
             void format_output_segment();
@@ -388,7 +390,7 @@ namespace ai
 
             std::string get_log_date(std::string& s);
 
-            std::string get_training_result_hash_from_log(std::string & s);
+          
 
             bool is_image_download_str(std::string &s);
 
@@ -522,34 +524,39 @@ namespace ai
             }
 
         };
-
-
+    
         class api_call_handler
         {
         public:
-
+        
             api_call_handler() : m_wait(std::make_shared<callback_wait<>>())
             {
-                init_subscription();
+//                init_subscription();
             }
-
+        
             ~api_call_handler() = default;
-
+        
             void init_subscription();
-
+        
             template<typename req_type, typename resp_type>
             std::shared_ptr<resp_type> invoke(std::shared_ptr<req_type> req)
             {
+            
+                // m_mutex
+                //This is a global lock that affects concurrent performance and will be optimized in the next release
+                //
+                std::unique_lock<std::mutex> lock(m_mutex);
+            
                 //construct message
                 std::shared_ptr<message> msg = std::make_shared<message>();
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(req);
-
+            
                 m_wait->reset();
-
+            
                 //publish
                 TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-                
+            
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
                 if (true == m_wait->flag())
@@ -561,18 +568,20 @@ namespace ai
                     LOG_DEBUG << "api_call_handler time out: " << msg->get_name();
                     return nullptr;
                 }
-
-            }   
-
+            
+            }
+    
         private:
-
-            //std::mutex m_mutex;           currently no need. 
-
+        
+            std::mutex m_mutex;    //       currently no need.
+        
             std::shared_ptr<matrix::core::base> m_resp;
-
+        
             std::shared_ptr<callback_wait<>> m_wait;
-
+        
         };
+    
+        extern std::unique_ptr<api_call_handler> g_api_call_handler;
 
     }
 

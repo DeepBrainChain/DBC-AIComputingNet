@@ -17,7 +17,9 @@ namespace ai
 {
     namespace dbc
     {
-
+    
+        std::unique_ptr<api_call_handler> g_api_call_handler(new api_call_handler());
+        
         //static            std::string task_start_str = "task start: ";
         static std::string task_end_str = "task completed: ";
         static std::string task_sh_end_str = "end to exec dbc_task.sh";

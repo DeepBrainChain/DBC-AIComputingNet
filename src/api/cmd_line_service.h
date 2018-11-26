@@ -88,7 +88,7 @@ namespace ai
 
         protected:
 
-            api_call_handler m_handler;
+            //api_call_handler m_handler;
 
             cmd_invokers m_invokers;
 
