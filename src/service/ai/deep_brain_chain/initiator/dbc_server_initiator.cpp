@@ -33,6 +33,7 @@
 #include "timer_matrix_manager.h"
 #include "data_query_service.h"
 #include "http_server_service.h"
+#include "api_call_handler.h"
 #include <boost/exception/all.hpp>
 
 using namespace std::chrono;
@@ -237,7 +238,10 @@ namespace ai
             }
             mdl->start();
             LOG_INFO << "init http server service successfully";
-
+    
+            g_api_call_handler->init_subscription();
+            
+            
             //log cost time
             high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
             auto time_span_ms = duration_cast<milliseconds>(init_end_time - server_start_time);

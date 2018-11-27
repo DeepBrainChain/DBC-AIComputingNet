@@ -28,7 +28,7 @@ namespace matrix
         {
             LEFT_ALIGN = 0,
             //MIDDLE_ALIGN,
-            RIGHT_ALIGN
+                    RIGHT_ALIGN
         };
 
         struct field_formatter
@@ -48,14 +48,16 @@ namespace matrix
         public:
 
             console_printer() = default;
+
             virtual ~console_printer() = default;
 
-            console_printer & operator() (ALIGN_TYPE align, int16_t field_len);
+            console_printer &operator()(ALIGN_TYPE align, int16_t field_len);
 
-            console_printer & operator<< (console_printer & (*manipulator)(console_printer &));
+            console_printer &operator<<(console_printer &(*manipulator)(console_printer &));
 
-            template<typename arg_type> inline
-            console_printer & operator<<(arg_type val)
+            template<typename arg_type>
+            inline
+            console_printer &operator<<(arg_type val)
             {
                 if (m_it != m_formatter.end())
                 {
@@ -72,9 +74,10 @@ namespace matrix
                 return *this;
             }
 
-            void reset_it() { m_it = m_formatter.begin(); }
+            void reset_it()
+            { m_it = m_formatter.begin(); }
 
-            std::ios_base::fmtflags  get_fmt_flags(ALIGN_TYPE type);
+            std::ios_base::fmtflags get_fmt_flags(ALIGN_TYPE type);
 
         protected:
 
@@ -84,9 +87,9 @@ namespace matrix
 
         };
 
-        console_printer & init(console_printer & printer);
+        console_printer &init(console_printer &printer);
 
-        console_printer & endl(console_printer & printer);
+        console_printer &endl(console_printer &printer);
 
     }
 
