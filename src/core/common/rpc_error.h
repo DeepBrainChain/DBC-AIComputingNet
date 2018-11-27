@@ -15,29 +15,29 @@ namespace matrix
 {
     namespace core
     {
-        
+
         //DBC RPC error codes
         enum rpc_error_code
         {
-            
+
             //No errors occurred.
-            
-            RPC_RESPONSE_SUCCESS=0,
-            
+
+            RPC_RESPONSE_SUCCESS = 0,
+
             //Error code before a request is processed
-            
+
             RPC_INVALID_REQUEST = -32600,//The inspection request is illegal.
             RPC_METHOD_NOT_FOUND = -32601,//Check that the requested method does not exist
-            RPC_REQUEST_INTERRUPTED= -32602,//Request is interrupted.Try again later.
-            
-            
+            RPC_REQUEST_INTERRUPTED = -32602,//Request is interrupted.Try again later.
+
+
             //Error code during waiting for response
-            
-            RPC_RESPONSE_TIMEOUT=-32700, //call timeout
+
+            RPC_RESPONSE_TIMEOUT = -32700, //call timeout
             RPC_RESPONSE_ERROR = -32701,// response error
-            
-            
-  
+
+
+
             RPC_MISC_ERROR = -1,  //!< std::exception thrown in command handling
             RPC_TYPE_ERROR = -3,  //!< Unexpected type was passed as parameter
             RPC_INVALID_ADDRESS_OR_KEY = -5,  //!< Invalid address or key
@@ -48,13 +48,13 @@ namespace matrix
             RPC_VERIFY_REJECTED = -15, //!< Transaction or block was rejected by network rules
             RPC_VERIFY_ALREADY_IN_CHAIN = -17, //!< Transaction already in chain
             RPC_IN_WARMUP = -19, //!< Client still warming up
-            RPC_SYSTEM_BUSYING=-21,//!<Work queue depth exceeded
+            RPC_SYSTEM_BUSYING = -21,//!<Work queue depth exceeded
             RPC_METHOD_DEPRECATED = -23, //!< RPC method is deprecated
             RPC_INVALID_PARAMS = -25, //!<
-            
-            
+
+
         };
-        
+
     }  // namespce core
 }  // namespace matrix
 

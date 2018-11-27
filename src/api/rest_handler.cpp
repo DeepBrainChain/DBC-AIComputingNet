@@ -29,11 +29,11 @@ namespace ai
 {
     namespace dbc
     {
-        
+
         //
         // Populate the formatted string into the json structure
         //
-        
+
         inline void fill_json_filed_string(rapidjson::Value &data,
                                            rapidjson::Document::AllocatorType &allocator,
                                            const std::string key,
@@ -46,12 +46,12 @@ namespace ai
             std::string tmp_val(val);
             tmp_val = string_util::rtrim(tmp_val, '\n');
             string_util::trim(tmp_val);
-            
+
             data.AddMember(STRING_DUP(key), STRING_DUP(tmp_val), allocator);
-            
+
         }
-        
-        
+
+
         /*
          * GET /api/v1/peers/{option}
 
@@ -61,11 +61,11 @@ namespace ai
          * */
         bool rest_peers(http_request *httpReq, const std::string &path)
         {
-            
+
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
-            
+
+
             if (path_list.size() != 1)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -73,11 +73,11 @@ namespace ai
                             "No option count specified. Use /api/v1/peers/{option}");
                 return false;
             }
-            
+
             const std::string &option = path_list[0];
             std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
             req->flag = matrix::service_core::flag_active;
-            
+
             if (option == "active")
             {
                 req->flag = matrix::service_core::flag_active;
@@ -92,28 +92,28 @@ namespace ai
                             RPC_INVALID_PARAMS,
                             "Invalid option. The option is active or global.");
                 return false;
-                
-                
+
+
             }
-            
-            
+
+
             std::shared_ptr<cmd_get_peer_nodes_resp> resp;
             resp = g_api_call_handler->invoke<cmd_get_peer_nodes_req, cmd_get_peer_nodes_resp>(req);
             if (nullptr == resp)
             {
-                
+
                 ERROR_REPLY(HTTP_INTERNAL,
                             RPC_RESPONSE_TIMEOUT,
                             "Internal call timeout.");
                 return false;
-                
+
             }
-            
+
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             rapidjson::Value data(rapidjson::kObjectType);
-            
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -121,40 +121,40 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
-            
+
+
             rapidjson::Value peer_nodes_list(rapidjson::kArrayType);
             for (auto it = resp->peer_nodes_list.begin(); it != resp->peer_nodes_list.end(); it++)
             {
                 rapidjson::Value cmd_peer_node_info(rapidjson::kObjectType);
-                
+
                 cmd_peer_node_info.AddMember("peer_node_id", STRING_REF(it->peer_node_id), allocator);
                 cmd_peer_node_info.AddMember("live_time_stamp", it->live_time_stamp, allocator);
-                
-                
+
+
                 cmd_peer_node_info.AddMember("net_st", STRING_DUP(net_state_2_string(it->net_st)), allocator);
                 cmd_peer_node_info.AddMember("ip", STRING_DUP(string_util::fuzz_ip(it->addr.ip)), allocator);
                 cmd_peer_node_info.AddMember("port", it->addr.port, allocator);
                 cmd_peer_node_info.AddMember("node_type", STRING_DUP(node_type_2_string(it->node_type)), allocator);
-                
+
                 rapidjson::Value service_list(rapidjson::kArrayType);
                 for (auto s = it->service_list.begin(); s != it->service_list.end(); s++)
                 {
                     service_list.PushBack(rapidjson::StringRef(s->c_str(), s->length()), allocator);
                 }
                 cmd_peer_node_info.AddMember("service_list", service_list, allocator);
-                
+
                 peer_nodes_list.PushBack(cmd_peer_node_info, allocator);
             }
-            
+
             data.AddMember("peer_nodes_list", peer_nodes_list, allocator);
-            
+
             SUCC_REPLY(data);
             return true;
-            
+
         }
-        
-        
+
+
         /*
          *
          GET /api/v1/mining_nodes/{nodeid}
@@ -164,18 +164,18 @@ namespace ai
          GET /api/v1/mining_nodes
                This interface is equivalent to the functionality of the command show-s
          * */
-        
+
         void reply_show_nodeinfo(const std::shared_ptr<cmd_show_resp> &resp, rapidjson::Value &data,
                                  rapidjson::Document::AllocatorType &allocator);
-        
+
         void reply_show_service(const std::shared_ptr<cmd_show_resp> &resp, rapidjson::Value &data,
                                 rapidjson::Document::AllocatorType &allocator);
-        
+
         bool rest_mining_nodes(http_request *httpReq, const std::string &path)
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() > 1)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -183,16 +183,16 @@ namespace ai
                             "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}");
                 return false;
             }
-            
+
             std::string nodeid;
             if (path_list.size() >= 1)
             {
                 nodeid = path_list[0];
             }
-            
+
             std::shared_ptr<cmd_show_req> req = std::make_shared<cmd_show_req>();
             req->op = OP_SHOW_UNKNOWN;
-            
+
             if (!nodeid.empty())
             {
                 req->o_node_id = CONF_MANAGER->get_node_id();
@@ -204,8 +204,8 @@ namespace ai
             {
                 req->op = OP_SHOW_SERVICE_LIST;
             }
-            
-            
+
+
             std::shared_ptr<cmd_show_resp> resp = g_api_call_handler->invoke<cmd_show_req, cmd_show_resp>(req);
             if (nullptr == resp)
             {
@@ -213,10 +213,10 @@ namespace ai
                             RPC_RESPONSE_TIMEOUT,
                             "Internal call timeout.");
                 return false;
-                
+
             }
-            
-            
+
+
             if (resp->err != "")
             {
                 ERROR_REPLY(HTTP_OK,
@@ -224,12 +224,12 @@ namespace ai
                             resp->err);
                 return false;
             }
-            
-            
+
+
             rapidjson::Value data(rapidjson::kObjectType);
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             if (req->op == OP_SHOW_SERVICE_LIST)
             {
                 reply_show_service(resp, data, allocator);
@@ -238,18 +238,18 @@ namespace ai
             {
                 reply_show_nodeinfo(resp, data, allocator);
             }
-            
-            
+
+
             SUCC_REPLY(data);
             return true;
-            
+
         }
-        
-        
+
+
         void reply_show_nodeinfo(const std::shared_ptr<cmd_show_resp> &resp, rapidjson::Value &data,
                                  rapidjson::Document::AllocatorType &allocator)
         {
-            
+
             std::string cpu_info = resp->kvs["cpu"];
             string_util::trim(cpu_info);
             int pos = cpu_info.find_first_of(' ');
@@ -271,19 +271,19 @@ namespace ai
             {
                 data.AddMember("cpu_num", -1, allocator);
             }
-            
-            
+
+
             fill_json_filed_string(data, allocator, "cpu", cpu_info);
             fill_json_filed_string(data, allocator, "cpu_usage", resp->kvs["cpu_usage"]);
-            
+
             fill_json_filed_string(data, allocator, "gpu", resp->kvs["gpu"]);
             fill_json_filed_string(data, allocator, "gpu_driver", resp->kvs["gpu_driver"]);
-            
+
             fill_json_filed_string(data, allocator, "mem_usage", resp->kvs["mem_usage"]);
             fill_json_filed_string(data, allocator, "startup_time", resp->kvs["startup_time"]);
             fill_json_filed_string(data, allocator, "state", resp->kvs["state"]);
             fill_json_filed_string(data, allocator, "version", resp->kvs["version"]);
-            
+
             //   gpu_usage_str:
             //"gpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\n"
             //
@@ -291,29 +291,29 @@ namespace ai
             rapidjson::Value gpu_usage(rapidjson::kArrayType);
             std::vector<std::string> gpu_usage_list;
             string_util::split(gpu_usage_str, "\n", gpu_usage_list);
-            
+
             if (gpu_usage_list.size() % 2 == 0)
             {
                 for (auto i = 0; i < gpu_usage_list.size(); i += 2)
                 {
                     std::string gpu;
                     misc_util::get_value_from_string(gpu_usage_list[i], "gpu", gpu);
-                    
+
                     std::string mem;
                     misc_util::get_value_from_string(gpu_usage_list[i + 1], "mem", mem);
-                    
+
                     rapidjson::Value g(rapidjson::kObjectType);
                     g.AddMember("gpu", STRING_DUP(gpu), allocator);
                     g.AddMember("mem", STRING_DUP(mem), allocator);
-                    
+
                     gpu_usage.PushBack(g, allocator);
-                    
+
                 }
             }
-            
+
             data.AddMember("gpu_usage", gpu_usage, allocator);
-            
-            
+
+
             /*
              Text:
 
@@ -339,7 +339,7 @@ namespace ai
             std::string disk_str = resp->kvs["disk"];
             std::vector<std::string> disk_line_list;
             string_util::split(disk_str, "\n", disk_line_list);
-            
+
             for (auto &disk_line : disk_line_list)
             {
                 std::vector<std::string> item_list;
@@ -357,8 +357,8 @@ namespace ai
                 }
             }
             data.AddMember("disks", disks, allocator);
-            
-            
+
+
             /*
               "images": [
                   "dbctraining/cuda9.0-mining-gpu:v1",
@@ -366,7 +366,7 @@ namespace ai
 
                 ],
              */
-            
+
             rapidjson::Value images(rapidjson::kArrayType);
             std::vector<std::string> image_list;
             string_util::split(resp->kvs["image"], "\n", image_list);
@@ -374,10 +374,10 @@ namespace ai
             {
                 images.PushBack(STRING_DUP(img), allocator);
             }
-            
+
             data.AddMember("images", images, allocator);
-            
-            
+
+
             /*
             "mem": {
                   "total": "251G",
@@ -387,38 +387,38 @@ namespace ai
             rapidjson::Value mem(rapidjson::kObjectType);
             std::string mem_total;
             misc_util::get_value_from_string(resp->kvs["mem"], "total", mem_total);
-            
+
             std::string mem_free;
             misc_util::get_value_from_string(resp->kvs["mem"], "free", mem_free);
-            
+
             mem.AddMember("total", STRING_DUP(mem_total), allocator);
             mem.AddMember("free", STRING_DUP(mem_free), allocator);
-            
+
             data.AddMember("mem", mem, allocator);
-            
+
         }
-        
+
         void reply_show_service(const std::shared_ptr<cmd_show_resp> &resp, rapidjson::Value &data,
                                 rapidjson::Document::AllocatorType &allocator)
         {
-            
+
             std::map<std::string, node_service_info> s_in_order;
             for (auto &it : *(resp->id_2_services))
             {
                 std::string k;
                 k = it.second.name;// or time_stamp ,or ..
-                
+
                 auto v = it.second;
                 v.kvs["id"] = it.first;
                 s_in_order[k + it.first] = v;  // "k + id" is unique
             }
-            
+
             rapidjson::Value mining_nodes(rapidjson::kArrayType);
-            
-            
+
+
             for (auto &it : s_in_order)
             {
-                
+
                 rapidjson::Value node_info(rapidjson::kObjectType);
                 std::string nid = string_util::rtrim(it.second.kvs["id"], '\n');
                 std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
@@ -428,10 +428,10 @@ namespace ai
                 {
                     gpu = gpu.substr(0, 31);
                 }
-                
+
                 std::string gpu_usage = it.second.kvs.count("gpu_usage") ? it.second.kvs["gpu_usage"] : "N/A";
-                
-                
+
+
                 std::string online_time = "N/A";
                 if (it.second.kvs.count("startup_time"))
                 {
@@ -446,10 +446,10 @@ namespace ai
                         LOG_ERROR << "std::stoi(s_time);caught exception.";
                     }
                 }
-                
+
                 std::string service_list = resp->to_string(it.second.service_list);
                 node_info.AddMember("service_list", STRING_DUP(service_list), allocator);
-                
+
                 node_info.AddMember("nodeid", STRING_DUP(nid), allocator);
                 node_info.AddMember("name", STRING_DUP(it.second.name), allocator);
                 node_info.AddMember("time_stamp", STRING_DUP(online_time), allocator);
@@ -459,11 +459,11 @@ namespace ai
                 node_info.AddMember("state", STRING_DUP(it.second.kvs["state"]), allocator);
                 mining_nodes.PushBack(node_info, allocator);
             }
-            
+
             data.AddMember("mining_nodes", mining_nodes, allocator);
         }
-        
-        
+
+
         /*
          * {"/api/v1/tasks", rest_task},
          * This is a unified interface.
@@ -471,32 +471,32 @@ namespace ai
          *
          *
      * */
-        
-        
+
+
         bool rest_task(http_request *httpReq, const std::string &path)
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() == 0)
             {
                 return rest_task_list(httpReq, path);
             }
-            
+
             if (path_list.size() == 1)
             {
-                
+
                 const std::string &first_param = path_list[0];
                 if (first_param == "start")
                 {
                     return rest_task_start(httpReq, path);
                 }
-                
+
                 return rest_task_info(httpReq, path);
-                
+
             }
-            
-            
+
+
             if (path_list.size() == 2)
             {
                 const std::string &second_param = path_list[1];
@@ -504,18 +504,18 @@ namespace ai
                 {
                     return rest_task_stop(httpReq, path);
                 }
-                
+
                 if (second_param == "result")
                 {
                     return rest_task_result(httpReq, path);
                 }
-                
+
                 if (second_param == "trace")
                 {
                     return rest_log(httpReq, path);
                 }
             }
-            
+
             ERROR_REPLY(HTTP_BADREQUEST,
                         RPC_INVALID_REQUEST,
                         "Invalid requests. "
@@ -527,7 +527,7 @@ namespace ai
                         "or GET /api/v1/tasks/{task_id}");
             return false;
         }
-        
+
         /*
          * GET /api/v1/tasks
 
@@ -536,7 +536,7 @@ namespace ai
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() != 0)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -544,11 +544,11 @@ namespace ai
                             "Invalid path_list. GET /api/v1/tasks");
                 return false;
             }
-            
-            
+
+
             std::shared_ptr<cmd_list_training_req> req = std::make_shared<cmd_list_training_req>();
             req->list_type = LIST_ALL_TASKS;
-            
+
             std::shared_ptr<cmd_list_training_resp> resp;
             resp = g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
             if (nullptr == resp)
@@ -558,7 +558,7 @@ namespace ai
                             "Internal call timeout.");
                 return false;
             }
-            
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -566,30 +566,30 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
-            
+
+
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             rapidjson::Value data(rapidjson::kObjectType);
             rapidjson::Value task_status_list(rapidjson::kArrayType);
             for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++)
             {
                 rapidjson::Value st(rapidjson::kObjectType);
-                
+
                 st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
                 st.AddMember("create_time", (int64_t) it->create_time, allocator);
                 st.AddMember("status", STRING_DUP(to_training_task_status_string(it->status)),
                              allocator);
-                
+
                 task_status_list.PushBack(st, allocator);
             }
             data.AddMember("task_status_list", task_status_list, allocator);
             SUCC_REPLY(data);
             return true;
         }
-        
-        
+
+
         /*
          *
          * GET /api/v1/tasks/{task_id}
@@ -598,7 +598,7 @@ namespace ai
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() != 1)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -606,21 +606,21 @@ namespace ai
                             "Invalid path_list. GET /api/v1/tasks/{task_id}");
                 return false;
             }
-            
+
             const std::string task_id = path_list[0];
-            
-            
+
+
             std::shared_ptr<cmd_list_training_req> req = std::make_shared<cmd_list_training_req>();
-            
+
             req->list_type = LIST_SPECIFIC_TASKS;
             std::vector<std::string> task_vector;
             task_vector.push_back(task_id);
-            
+
             std::copy(std::make_move_iterator(task_vector.begin()),
                       std::make_move_iterator(task_vector.end()),
                       std::back_inserter(req->task_list));
-            
-            
+
+
             std::shared_ptr<cmd_list_training_resp> resp;
             resp = g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
             if (nullptr == resp)
@@ -630,7 +630,7 @@ namespace ai
                             "Internal call timeout.");
                 return false;
             }
-            
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -638,7 +638,7 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
+
             if (resp->task_status_list.size() != 1)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -646,35 +646,35 @@ namespace ai
                             "The task is not found");
                 return false;
             }
-            
-            
+
+
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             rapidjson::Value data(rapidjson::kObjectType);
-            
-            
+
+
             auto it = resp->task_status_list.begin();
-            
+
             data.AddMember("task_id", STRING_REF(it->task_id), allocator);
             data.AddMember("create_time", (int64_t) it->create_time, allocator);
             data.AddMember("status", STRING_DUP(to_training_task_status_string(it->status)),
                            allocator);
-            
+
             SUCC_REPLY(data);
             return true;
         }
-        
-        
+
+
         //
         //POST /api/v1/tasks/<task_id>/stop
         //
-        
+
         bool rest_task_stop(http_request *httpReq, const std::string &path)
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() != 2)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -682,13 +682,13 @@ namespace ai
                             "Invalid path_list. POST /api/v1/tasks/<task_id>/stop");
                 return false;
             }
-            
-            
+
+
             const std::string &task_id = path_list[0];
-            
+
             std::shared_ptr<cmd_stop_training_req> req = std::make_shared<cmd_stop_training_req>();
             req->task_id = task_id;
-            
+
             std::shared_ptr<cmd_stop_training_resp> resp = g_api_call_handler->invoke<cmd_stop_training_req, cmd_stop_training_resp>(
                     req);
             if (nullptr == resp)
@@ -697,13 +697,13 @@ namespace ai
                             RPC_RESPONSE_TIMEOUT,
                             "Internal call timeout.");
                 return false;
-                
+
             }
-            
+
             rapidjson::Document document;
             rapidjson::Value data(rapidjson::kObjectType);
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -711,12 +711,12 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
-            
+
+
             SUCC_REPLY(data);
             return true;
         }
-        
+
         /*
          *
 
@@ -742,20 +742,20 @@ namespace ai
          * */
         bool rest_task_start(http_request *httpReq, const std::string &path)
         {
-            
+
             if (httpReq->get_request_method() != http_request::POST)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
                             RPC_INVALID_REQUEST,
                             "Only support POST requests. POST /api/v1/tasks/start");
                 return false;
-                
-                
+
+
             }
-            
+
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() != 1)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -763,8 +763,8 @@ namespace ai
                             "Invalid api. Use /api/v1/tasks/start");
                 return false;
             }
-            
-            
+
+
             std::string body = httpReq->read_body();
             if (body.empty())
             {
@@ -773,7 +773,7 @@ namespace ai
                             "Invalid body. Use /api/v1/tasks/start");
                 return false;
             }
-            
+
             rapidjson::Document document;
             try
             {
@@ -793,8 +793,8 @@ namespace ai
                             "Parse JSON Error. Use /api/v1/tasks/start");
                 return false;
             }
-            
-            
+
+
             std::string data_dir;
             std::string hyper_parameters;
             std::string entry_file;
@@ -807,8 +807,8 @@ namespace ai
             int32_t server_count = 0;
             int8_t select_mode = 0;
             std::vector<std::string> peer_nodes_list;
-            
-            
+
+
             JSON_PARSE_STRING(document, "code_dir", code_dir);
             JSON_PARSE_STRING(document, "data_dir", data_dir);
             JSON_PARSE_STRING(document, "hyper_parameters", hyper_parameters);
@@ -820,8 +820,8 @@ namespace ai
             JSON_PARSE_STRING(document, "container_name", container_name);
             JSON_PARSE_UINT(document, "select_mode", select_mode);
             JSON_PARSE_UINT(document, "server_count", server_count);
-            
-            
+
+
             if (document.HasMember("peer_nodes_list"))
             {
                 if (document["peer_nodes_list"].IsArray())
@@ -833,11 +833,11 @@ namespace ai
                     }
                 }
             }
-            
-            
+
+
             std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
             bpo::variables_map &vm = req->vm;
-            
+
             INSERT_VARIABLE(vm, peer_nodes_list);
             INSERT_VARIABLE(vm, code_dir);
             INSERT_VARIABLE(vm, data_dir);
@@ -850,10 +850,10 @@ namespace ai
             INSERT_VARIABLE(vm, container_name);
             INSERT_VARIABLE(vm, select_mode);
             INSERT_VARIABLE(vm, server_count);
-            
+
             bpo::notify(vm);
-            
-            
+
+
             std::shared_ptr<cmd_start_training_resp> resp = g_api_call_handler->invoke<cmd_start_training_req, cmd_start_training_resp>(
                     req);
             if (nullptr == resp)
@@ -863,7 +863,7 @@ namespace ai
                             "Internal call timeout.");
                 return false;
             }
-            
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -871,28 +871,28 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
+
             cmd_task_info &task_info = resp->task_info;
-            
-            
+
+
             rapidjson::Value data(rapidjson::kObjectType);
-            
+
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             data.AddMember("task_id", STRING_REF(task_info.task_id), allocator);
             data.AddMember("create_time", task_info.create_time, allocator);
-            
+
             data.AddMember("status", STRING_DUP(to_training_task_status_string(task_info.status)),
                            allocator);
-            
-            
+
+
             SUCC_REPLY(data);
             return true;
-            
-            
+
+
         }
-        
-        
+
+
         /*
          *  GET /api/v1/tasks/<task_id>/result
          *
@@ -901,7 +901,7 @@ namespace ai
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() != 2)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -909,18 +909,18 @@ namespace ai
                             "Invalid path_list. GET /api/v1/tasks/<task_id>/result");
                 return false;
             }
-            
-            
+
+
             const std::string &task_id = path_list[0];
-            
-            
+
+
             std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
             req->task_id = task_id;
-            
+
             req->head_or_tail = GET_LOG_TAIL;
-            
+
             req->number_of_lines = 100;
-            
+
             req->sub_op = "result";
 
 #if  defined(__linux__) || defined(MAC_OSX)
@@ -928,19 +928,19 @@ namespace ai
 #elif defined(WIN32)
             req->dest_folder = "%TMP%";
 #endif
-            
+
             std::shared_ptr<cmd_logs_resp> resp = g_api_call_handler->invoke<cmd_logs_req, cmd_logs_resp>(req);
-            
+
             if (nullptr == resp)
             {
                 ERROR_REPLY(HTTP_INTERNAL,
                             RPC_RESPONSE_TIMEOUT,
                             "Internal call timeout.");
                 return false;
-                
+
             }
-            
-            
+
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -948,57 +948,57 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
-            
+
+
             auto n = resp->peer_node_logs.size();
-            
+
             if (n == 0)
             {
-                
+
                 ERROR_REPLY(HTTP_OK,
                             RPC_RESPONSE_ERROR,
                             "training result is empty");
                 return false;
             }
-            
+
             if (n != 1)
             {
-                
+
                 ERROR_REPLY(HTTP_OK,
                             RPC_RESPONSE_ERROR,
                             "training result is invalid");
                 return false;
             }
-            
+
             auto hash = resp->get_training_result_hash_from_log(resp->peer_node_logs[0].log_content);
-            
+
             if (hash.empty())
             {
-                
+
                 ERROR_REPLY(HTTP_OK,
                             RPC_RESPONSE_ERROR,
                             "not find training result hash");
                 return false;
             }
-            
-            
+
+
             rapidjson::Document document;
             rapidjson::Value data(rapidjson::kObjectType);
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             data.AddMember("training_result_file", STRING_REF(hash), allocator);
-            
+
             SUCC_REPLY(data);
             return true;
         }
-        
-        
+
+
         //GET /api/v1/tasks/{task_id}/trace?flag=tail&line_num=100
         bool rest_log(http_request *httpReq, const std::string &path)
         {
             std::vector<std::string> path_list;
             misc_util::split_path(path, path_list);
-            
+
             if (path_list.size() != 2)
             {
                 ERROR_REPLY(HTTP_BADREQUEST,
@@ -1006,16 +1006,16 @@ namespace ai
                             "Invalid path_list. GET /api/v1/tasks/{task_id}/trace?flag=tail&line_num=100");
                 return false;
             }
-            
+
             const std::string &task_id = path_list[0];
-            
+
             std::map<std::string, std::string> query_table;
             misc_util::split_path_into_kvs(path, query_table);
-            
-            
+
+
             std::string head_or_tail = query_table["flag"];
             std::string number_of_lines = query_table["line_num"];
-            
+
             if (head_or_tail.empty())
             {
                 head_or_tail = "tail";
@@ -1035,19 +1035,19 @@ namespace ai
                             "Invalid path_list.GET /api/v1/tasks/{task_id}/trace?flag=tail&line_num=100");
                 return false;
             }
-            
-            
+
+
             std::shared_ptr<cmd_logs_req> req = std::make_shared<cmd_logs_req>();
             req->task_id = task_id;
-            
+
             uint64_t lines = (uint64_t) std::stoull(number_of_lines);
             if (lines > MAX_NUMBER_OF_LINES)
             {
                 lines = MAX_NUMBER_OF_LINES - 1;
             }
             req->number_of_lines = (uint16_t) lines;
-            
-            
+
+
             //tail or head
             if (head_or_tail == "tail")
             {
@@ -1057,8 +1057,8 @@ namespace ai
             {
                 req->head_or_tail = GET_LOG_HEAD;
             }
-            
-            
+
+
             std::shared_ptr<cmd_logs_resp> resp = g_api_call_handler->invoke<cmd_logs_req, cmd_logs_resp>(req);
             if (nullptr == resp)
             {
@@ -1067,8 +1067,8 @@ namespace ai
                             "Internal call timeout.");
                 return false;
             }
-            
-            
+
+
             if (resp->result != 0)
             {
                 ERROR_REPLY(HTTP_OK,
@@ -1076,13 +1076,13 @@ namespace ai
                             resp->result_info);
                 return false;
             }
-            
-            
+
+
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             rapidjson::Value data(rapidjson::kObjectType);
-            
+
             rapidjson::Value peer_node_logs(rapidjson::kArrayType);
             for (
                     auto s = resp->peer_node_logs.begin();
@@ -1094,35 +1094,35 @@ namespace ai
                               STRING_REF(s->peer_node_id), allocator);
                 log.AddMember("log_content",
                               STRING_REF(s->log_content), allocator);
-                
+
                 peer_node_logs.
                         PushBack(log, allocator
                 );
             }
             data.AddMember("peer_node_logs", peer_node_logs, allocator);
-            
+
             SUCC_REPLY(data);
             return true;
-            
-            
+
+
         }
-        
-        
+
+
         bool rest_api_version(http_request *httpReq, const std::string &path)
         {
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-            
+
             rapidjson::Value data(rapidjson::kObjectType);
-            
-            
+
+
             data.AddMember("version", STRING_REF(REST_API_VERSION), allocator);
-            
+
             SUCC_REPLY(data);
             return true;
         }
-        
-        
+
+
     }
 }
 
