@@ -13,6 +13,9 @@
 #include "service_message_id.h"
 
 
+#define SUBSCRIBE_RESP_MSG(cmd)  TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){m_resp = rsp;m_wait->set();});
+
+
 namespace ai
 {
     namespace dbc
@@ -26,49 +29,15 @@ namespace ai
 
         void api_call_handler::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_training_resp).name(),
-                                     [this](std::shared_ptr<cmd_start_training_resp> &rsp) {
-                                         m_resp = rsp;
-                                         m_wait->set();
-                                     });
-            TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_resp).name(),
-                                     [this](std::shared_ptr<cmd_stop_training_resp> &rsp) {
-                                         m_resp = rsp;
-                                         m_wait->set();
-                                     });
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_resp).name(),
-                                     [this](std::shared_ptr<cmd_start_multi_training_resp> &rsp) {
-                                         m_resp = rsp;
-                                         m_wait->set();
-                                     });
-            TOPIC_MANAGER->subscribe(typeid(cmd_list_training_resp).name(),
-                                     [this](std::shared_ptr<cmd_list_training_resp> &rsp) {
-                                         m_resp = rsp;
-                                         m_wait->set();
-                                     });
-            TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_resp).name(),
-                                     [this](std::shared_ptr<cmd_get_peer_nodes_resp> &rsp) {
-                                         m_resp = rsp;
-                                         m_wait->set();
-                                     });
-            TOPIC_MANAGER->subscribe(typeid(cmd_logs_resp).name(), [this](std::shared_ptr<cmd_logs_resp> &rsp) {
-                m_resp = rsp;
-                m_wait->set();
-            });
-            TOPIC_MANAGER->subscribe(typeid(cmd_show_resp).name(), [this](std::shared_ptr<cmd_show_resp> &rsp) {
-                m_resp = rsp;
-                m_wait->set();
-            });
-            //TOPIC_MANAGER->subscribe(typeid(cmd_clear_resp).name(), [this](std::shared_ptr<cmd_clear_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_ps_resp).name(), [this](std::shared_ptr<cmd_ps_resp> &rsp) {
-                m_resp = rsp;
-                m_wait->set();
-            });
-            TOPIC_MANAGER->subscribe(typeid(cmd_task_clean_resp).name(),
-                                     [this](std::shared_ptr<cmd_task_clean_resp> &rsp) {
-                                         m_resp = rsp;
-                                         m_wait->set();
-                                     });
+            SUBSCRIBE_RESP_MSG(cmd_start_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_stop_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_start_multi_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_list_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_resp);
+            SUBSCRIBE_RESP_MSG(cmd_logs_resp);
+            SUBSCRIBE_RESP_MSG(cmd_show_resp);
+            SUBSCRIBE_RESP_MSG(cmd_ps_resp);
+            SUBSCRIBE_RESP_MSG(cmd_task_clean_resp);
         }
 
 
