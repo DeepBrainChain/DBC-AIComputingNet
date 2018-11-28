@@ -13,8 +13,13 @@
 
 #include <event2/util.h>
 #include <event2/event.h>
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
+#include <event2/http.h>
 
 #include "endpoint_address.h"
+#include "json_util.h"
+
 
 namespace matrix
 {
@@ -22,22 +27,19 @@ namespace matrix
     {
         class http_request
         {
-            private:
-                struct evhttp_request* m_req;
-                bool m_reply_sent;
-                struct event_base* m_event_base_ptr;
+        private:
+            struct evhttp_request* m_req;
+            bool m_reply_sent;
+            struct event_base* m_event_base_ptr;
 
-            public:
-                explicit http_request(struct evhttp_request* req_, struct event_base* event_base_);
-                ~http_request();
+        public:
+            explicit http_request(struct evhttp_request* req_, struct event_base* event_base_);
+
+            ~http_request();
 
             enum REQUEST_METHOD
             {
-                UNKNOWN,
-                GET,
-                POST,
-                HEAD,
-                PUT
+                UNKNOWN, GET, POST, HEAD, PUT
             };
 
             /** Get requested URI.
@@ -87,6 +89,8 @@ namespace matrix
             std::string request_method_string(REQUEST_METHOD method);
 
             void reply_comm_rest_err(uint32_t status, int32_t internal_error, std::string message);
+
+            void reply_comm_rest_succ(rapidjson::Value& data);
         };
 
         /** Event class. This can be used either as a cross-thread trigger or as a timer.
@@ -99,6 +103,7 @@ namespace matrix
              * handler is the handler to call when the event is triggered.
              */
             http_event(struct event_base* base, bool delete_when_triggered_, const std::function<void(void)>& handler_);
+
             ~http_event();
 
             /** Trigger the event. If tv is 0, trigger it immediately. Otherwise trigger it after
@@ -116,15 +121,19 @@ namespace matrix
             struct event* m_ev;
         };
 
-        typedef std::function<bool(http_request* req, const std::string &)> http_request_handler;
+        typedef std::function<void(http_request* req, const std::string&)> http_request_handler;
 
         struct http_path_handler
         {
-            http_path_handler() {}
-            http_path_handler(std::string prefix_, bool exact_match_, http_request_handler handler_):
-                m_prefix(prefix_), m_exact_match(exact_match_), m_handler(handler_)
+            http_path_handler()
             {
             }
+
+            http_path_handler(std::string prefix_, bool exact_match_, http_request_handler handler_):
+                    m_prefix(prefix_), m_exact_match(exact_match_), m_handler(handler_)
+            {
+            }
+
             std::string m_prefix;
             bool m_exact_match;
             http_request_handler m_handler;
