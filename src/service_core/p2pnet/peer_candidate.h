@@ -107,5 +107,21 @@ namespace matrix
             }
         }
 
+
+        static std::string node_type_2_string(int8_t nt)
+        {
+            switch((node_net_type) nt)
+            {
+                case nnt_normal_node:
+                    return "nnt_normal_node";
+                case nnt_public_node:
+                    return "nnt_public_node";
+                case nnt_super_node:
+                    return "nnt_super_node";
+                default:
+                    return "";
+            }
+        }
+
     }
 }
