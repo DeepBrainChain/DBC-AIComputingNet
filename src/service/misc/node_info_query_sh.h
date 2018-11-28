@@ -81,6 +81,9 @@ function get {
         fi
 
         df -l -h $dbc_container_path
+
+        device=$(df -l -h $dbc_container_path | grep -v Filesystem | awk '{print $1}' | awk -F"/" '{print $3}')
+        lsblk -o name,rota | grep $device | awk '{if($1=="1")print "HDD"; else print "SSD"}'
     ;;
 
     "image")
