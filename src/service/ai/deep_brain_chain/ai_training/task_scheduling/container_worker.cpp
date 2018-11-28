@@ -83,9 +83,9 @@ namespace ai
             bpo::options_description container_opts("container file options");
 
             container_opts.add_options()
-                ("memory", bpo::value<int64_t>()->default_value(0), "")
-                ("memory_swap", bpo::value<int64_t>()->default_value(-1), "")
-                ("cpus", bpo::value<double>()->default_value(0), "")
+                ("memory", bpo::value<double>()->default_value(0.9), "")
+                ("memory_swap", bpo::value<double>()->default_value(0.9), "")
+                ("cpus", bpo::value<double>()->default_value(0.9), "")
                 ("shm_size", bpo::value<int64_t>()->default_value(0), "")
                 ("host_volum_dir", bpo::value<std::string>()->default_value(""), "")
                 ("auto_pull_image", bpo::value<bool>()->default_value(true), "")
@@ -119,7 +119,7 @@ namespace ai
                     return ret;
                 }
 
-                ret = check_memory_config(m_container_args["memory"].as<int64_t>(), m_container_args["memory_swap"].as<int64_t>(), m_container_args["shm_size"].as<int64_t>());
+                ret = check_memory_config(m_container_args["memory"].as<double>(), m_container_args["memory_swap"].as<double>(), m_container_args["shm_size"].as<int64_t>());
                 if (ret != E_SUCCESS)
                 {
                     return ret;
@@ -149,24 +149,17 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t container_worker::check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size)
+        int32_t container_worker::check_memory_config(const double & memory, const double & memory_swap, int64_t shm_size)
         {
-            if (memory < 0)
+            if (memory < 0 || memory > 1)
             {
-                LOG_ERROR << "memory config error. memeory was smaller than 0";
+                LOG_ERROR << "memory config error. memeory value is in [0,1]";
                 return E_DEFAULT;
             }
 
-            if (memory_swap < -1)
+            if (memory_swap < 0 || memory_swap > 1)
             {
-                LOG_ERROR << "memory_swap config error.memory_swap was smaller than -1";
-                return E_DEFAULT;
-            }
-
-            if (((memory_swap != 0) && (memory_swap != -1))
-                && (memory > memory_swap))
-            {
-                LOG_ERROR << "config error:memory > memory_swap";
+                LOG_ERROR << "memory_swap config error. memory_swap value is in [0,1]";
                 return E_DEFAULT;
             }
 
@@ -179,35 +172,28 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (((memory != 0) && (memory * m_g_bytes) > sys_mem)
-                || (memory != 0 && shm_size > memory))
-            {
-                LOG_ERROR << "check memory failed.";
-                return E_DEFAULT;
-            }
-
-
-            if (((memory_swap != 0) || (memory_swap != -1))
-                && (memory_swap * m_g_bytes) > sys_swap)
-            {
-                LOG_ERROR << "check memory_swap failed.";
-                return E_DEFAULT;
-            }
-
-            if (memory != 0 && shm_size > memory)
-            {
-                LOG_ERROR << "check shm_size failed.";
-                return E_DEFAULT;
-            }
-
             if (shm_size * m_g_bytes > sys_mem)
             {
                 LOG_ERROR << "check shm_size failed.";
                 return E_DEFAULT;
             }
 
-            m_memory = m_container_args["memory"].as<int64_t>()* m_g_bytes;
-            m_memory_swap = m_container_args["memory_swap"].as<int64_t>()  * m_g_bytes;
+            m_memory = memory * sys_mem;
+            m_memory_swap = memory_swap * sys_swap;
+
+            if (m_memory_swap !=0 && m_memory > m_memory_swap)
+            {
+                LOG_ERROR << "memory is bigger than memory_swap. system memory=" << sys_mem << " sys_swap=" << sys_swap;
+                return E_DEFAULT;
+            }
+
+            if (memory != 0 && shm_size > m_memory)
+            {
+                LOG_ERROR << "check shm_size failed. shm_size is bigger than memory";
+                return E_DEFAULT;
+            }
+
+            LOG_DEBUG << "container memory:" << m_memory << " container swap memory" << m_memory_swap;
 
             return E_SUCCESS;
         }

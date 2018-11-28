@@ -96,7 +96,7 @@ namespace ai
         private:
             int32_t load_container_config();
             int32_t check_cpu_config(const double & cpu_info);
-            int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
+            int32_t check_memory_config(const double & memory, const double & memory_swap, int64_t shm_size);
 
         private:
             variables_map m_container_args;
