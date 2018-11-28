@@ -22,10 +22,12 @@
 
 #define HTTP_SERVER_SERVICE_MODULE                             "http_server_service_module"
 
+
 namespace matrix
 {
     namespace core
     {
+        constexpr int MIN_INIT_HTTP_SERVER_TIME = 5000;//ms
         constexpr int DEFAULT_HTTP_SERVER_TIMEOUT = 30;
         constexpr int DEFAULT_HTTP_THREADS = 4;
         constexpr int DEFAULT_HTTP_WORKQUEUE = 16;
@@ -34,74 +36,107 @@ namespace matrix
         // max http body size
         constexpr unsigned int MAX_BODY_SIZE = 0x02000000;
 
-        template <typename work_item> class work_queue;
+        template<typename work_item> class work_queue;
+
         class http_closure;
 
-        class http_server_service : public module
+        class http_server_service:public module
         {
         public:
-            http_server_service() {}
+            http_server_service()
+            {
+            }
 
             ~http_server_service() = default;
 
         public:
-            std::string module_name() const override { return HTTP_SERVER_SERVICE_MODULE; }
+            std::string module_name() const override
+            {
+                return HTTP_SERVER_SERVICE_MODULE;
+            }
 
-            int32_t init(bpo::variables_map &options) override;
+            int32_t init(bpo::variables_map& options) override;
 
             int32_t start() override
             {
-                if (!is_prohibit_rest())
+                if(!is_prohibit_rest())
+                {
                     start_http_server();
+                }
                 return E_SUCCESS;
             }
 
             int32_t stop() override
             {
-                if (!is_prohibit_rest())
+                if(!is_prohibit_rest())
+                {
                     interrupt_http_server();
+                }
                 return E_SUCCESS;
             }
 
             int32_t exit() override
             {
-                if (!is_prohibit_rest())
+                if(!is_prohibit_rest())
+                {
                     stop_http_server();
+                }
                 return E_SUCCESS;
             }
 
             /** register handler for prefix */
-            void register_http_handler(const std::string &prefix, bool exact_match, const http_request_handler &handler);
+            void register_http_handler(const std::string& prefix, bool exact_match,
+                    const http_request_handler& handler);
+
             /** Unregister handler for prefix */
-            void unregister_http_handler(const std::string &prefix, bool exact_match);
+            void unregister_http_handler(const std::string& prefix, bool exact_match);
 
-            work_queue<http_closure>* get_work_queue_ptr() { return m_work_queue_ptr; }
+            work_queue<http_closure>* get_work_queue_ptr()
+            {
+                return m_work_queue_ptr;
+            }
 
-            struct event_base* get_event_base_ptr() { return m_event_base_ptr; }
+            struct event_base* get_event_base_ptr()
+            {
+                return m_event_base_ptr;
+            }
 
-            std::vector<http_path_handler>& get_http_path_handler() { return m_path_handlers; }
+            std::vector<http_path_handler>& get_http_path_handler()
+            {
+                return m_path_handlers;
+            }
 
         private:
             bool init_http_server();
+
             void start_http_server();
+
             void interrupt_http_server();
+
             void stop_http_server();
 
-            int32_t load_rest_config(bpo::variables_map &options);
+            int32_t load_rest_config(bpo::variables_map& options);
 
-            bool is_prohibit_rest() { return m_rest_port == 0; }
+            bool is_prohibit_rest()
+            {
+                return m_rest_port == 0;
+            }
 
             /** Bind HTTP server to specified addresses */
             bool http_bind_addresses(struct evhttp* http);
 
             /** HTTP request callback */
             static void http_request_cb(struct evhttp_request* req, void* arg);
+
             /** Callback to reject HTTP requests after shutdown. */
             static void http_reject_request_cb(struct evhttp_request* req, void*);
+
             /** Event dispatcher thread */
             static bool thread_http_fun(struct event_base* base, struct evhttp* http);
+
             /** Simple wrapper to set thread name and run work queue */
             static void http_workqueue_run(work_queue<http_closure>* queue);
+
             /*modify thead name*/
             static void rename_thread(const char* name);
 
@@ -109,7 +144,7 @@ namespace matrix
             std::string m_rest_ip = DEFAULT_LOOPBACK_IP;
             uint16_t m_rest_port = 0;
 
-            std::vector<evhttp_bound_socket *> m_bound_sockets;
+            std::vector<evhttp_bound_socket*> m_bound_sockets;
             work_queue<http_closure>* m_work_queue_ptr = nullptr;
 
             // libevent event loop
@@ -130,17 +165,22 @@ namespace matrix
         {
         public:
             virtual void operator()() = 0;
-            virtual ~http_closure() {}
+
+            virtual ~http_closure()
+            {
+            }
         };
 
         /** HTTP request work item */
-        class http_work_item final : public http_closure
+        class http_work_item final:public http_closure
         {
         public:
-            http_work_item(std::unique_ptr<http_request> _req, const std::string &_path, const http_request_handler& _func):
-                m_req(std::move(_req)), m_path(_path), m_func(_func)
+            http_work_item(std::unique_ptr<http_request> _req, const std::string& _path,
+                    const http_request_handler& _func):
+                    m_req(std::move(_req)), m_path(_path), m_func(_func)
             {
             }
+
             void operator()() override
             {
                 m_func(m_req.get(), m_path);
@@ -156,24 +196,26 @@ namespace matrix
         /** Simple work queue for distributing work over multiple threads.
          * Work items are simply callable objects.
          */
-        template <typename work_item>
-        class work_queue
+        template<typename work_item> class work_queue
         {
         public:
-            explicit work_queue(size_t max_depth_) : m_running(true),
-                                m_max_depth(max_depth_)
+            explicit work_queue(size_t max_depth_):
+                    m_running(true), m_max_depth(max_depth_)
             {
             }
+
             /** Precondition: worker threads have all stopped (they have been joined).
              */
             ~work_queue()
             {
             }
+
             /** Enqueue a work item */
             bool enqueue(work_item* item)
             {
                 std::unique_lock<std::mutex> lock(m_cs);
-                if (m_queue.size() >= m_max_depth) {
+                if(m_queue.size() >= m_max_depth)
+                {
                     return false;
                 }
                 m_queue.emplace_back(std::unique_ptr<work_item>(item));
@@ -184,14 +226,19 @@ namespace matrix
             /** Thread function */
             void run()
             {
-                while (true) {
+                while(true)
+                {
                     std::unique_ptr<work_item> i;
                     {
                         std::unique_lock<std::mutex> lock(m_cs);
-                        while (m_running && m_queue.empty())
+                        while(m_running && m_queue.empty())
+                        {
                             m_cond.wait(lock);
-                        if (!m_running)
+                        }
+                        if(!m_running)
+                        {
                             break;
+                        }
                         i = std::move(m_queue.front());
                         m_queue.pop_front();
                     }
