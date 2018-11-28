@@ -96,14 +96,14 @@ namespace ai
         private:
             int32_t load_container_config();
             int32_t check_cpu_config(const double & cpu_info);
-            int32_t check_memory_config(int64_t memory, int64_t memory_swap, int64_t shm_size);
+            int32_t check_memory_config(const double & memory, const double & memory_swap, int64_t shm_size);
 
         private:
             variables_map m_container_args;
             const int64_t m_nano_cpu = 1000000000;
             const int64_t m_g_bytes = 1073741824;
 
-            bool m_auto_pull_image = true;            
+            bool m_auto_pull_image = true;
             nvidia_docker_version m_nv_docker_version;
 
             std::string m_container_ip;
