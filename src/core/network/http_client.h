@@ -21,7 +21,7 @@
 #include <openssl/rand.h>
 #include <event2/bufferevent_ssl.h>
 
-#define DEFAULT_HTTP_TIME_OUT                 3
+#define DEFAULT_HTTP_TIME_OUT                 10
 
 using kvs = typename std::list<std::pair<std::string, std::string>>;
 
@@ -130,6 +130,12 @@ namespace matrix
             int status;
             int error;          //evhttp_request_error
             std::string body;
+        };
+
+        struct http_response_wrapper
+        {
+            http_response* http_resp;
+            event_base* ev_base;
         };
 
         class http_client
