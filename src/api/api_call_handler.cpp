@@ -13,10 +13,15 @@
 #include "service_message_id.h"
 
 
+#define SUBSCRIBE_RESP_MSG(cmd)  TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){m_resp = rsp;m_wait->set();});
+
+
 namespace ai
 {
     namespace dbc
     {
+
+        std::unique_ptr<api_call_handler> g_api_call_handler(new api_call_handler());
 
         //static            std::string task_start_str = "task start: ";
         static std::string task_end_str = "task completed: ";
@@ -24,16 +29,15 @@ namespace ai
 
         void api_call_handler::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_training_resp).name(), [this](std::shared_ptr<cmd_start_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_stop_training_resp).name(), [this](std::shared_ptr<cmd_stop_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_start_multi_training_resp).name(), [this](std::shared_ptr<cmd_start_multi_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_list_training_resp).name(), [this](std::shared_ptr<cmd_list_training_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_resp).name(), [this](std::shared_ptr<cmd_get_peer_nodes_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_logs_resp).name(), [this](std::shared_ptr<cmd_logs_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_show_resp).name(), [this](std::shared_ptr<cmd_show_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            //TOPIC_MANAGER->subscribe(typeid(cmd_clear_resp).name(), [this](std::shared_ptr<cmd_clear_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_ps_resp).name(), [this](std::shared_ptr<cmd_ps_resp> &rsp) {m_resp = rsp; m_wait->set(); });
-            TOPIC_MANAGER->subscribe(typeid(cmd_task_clean_resp).name(), [this](std::shared_ptr<cmd_task_clean_resp> &rsp) {m_resp = rsp; m_wait->set(); });
+            SUBSCRIBE_RESP_MSG(cmd_start_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_stop_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_start_multi_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_list_training_resp);
+            SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_resp);
+            SUBSCRIBE_RESP_MSG(cmd_logs_resp);
+            SUBSCRIBE_RESP_MSG(cmd_show_resp);
+            SUBSCRIBE_RESP_MSG(cmd_ps_resp);
+            SUBSCRIBE_RESP_MSG(cmd_task_clean_resp);
         }
 
 
@@ -50,10 +54,10 @@ namespace ai
          * @param s, one line of log text
          * @return timestamp in string or empty string if no valid timestamp found
          */
-        std::string cmd_logs_resp::get_log_date(std::string &s)
+        std::string cmd_logs_resp::get_log_date(std::string& s)
         {
             // timestamp pattern: 2018-08-14T13:
-            if (s.length() > TIMESTAMP_STR_LENGTH && (s[0] == '2' && s[4] == '-' && s[7] == '-'))
+            if(s.length() > TIMESTAMP_STR_LENGTH && (s[0] == '2' && s[4] == '-' && s[7] == '-'))
             {
                 return s.substr(0, TIMESTAMP_STR_LENGTH);
             }
@@ -69,24 +73,24 @@ namespace ai
          * @param s, one line of log text
          * @return true if it is a image download hash, otherwise return false
          */
-        bool cmd_logs_resp::is_image_download_str(std::string &s)
+        bool cmd_logs_resp::is_image_download_str(std::string& s)
         {
             // image download prefix
             // c6c4b840310b: Verifying Checksum
             // c6c4b840310b: Download complete
-            if (s.length() > IMAGE_HASH_STR_MAX_LENGTH || s.length() <= IMAGE_HASH_STR_PREFIX_LENGTH)
+            if(s.length() > IMAGE_HASH_STR_MAX_LENGTH || s.length() <= IMAGE_HASH_STR_PREFIX_LENGTH)
             {
                 return false;
             }
 
-            if (s[IMAGE_HASH_STR_PREFIX_LENGTH] != ':')
+            if(s[IMAGE_HASH_STR_PREFIX_LENGTH] != ':')
             {
                 return false;
             }
 
 
             auto t = s.substr(0, IMAGE_HASH_STR_PREFIX_LENGTH);
-            if (!std::all_of(t.begin(), t.end(), ::isxdigit))
+            if(!std::all_of(t.begin(), t.end(), ::isxdigit))
             {
                 return false;
             }
@@ -99,13 +103,12 @@ namespace ai
          * @param s logs text
          * @return  hash value or empty string if no hash found
          */
-        std::string cmd_logs_resp::get_training_result_hash_from_log(std::string &s)
+        std::string cmd_logs_resp::get_training_result_hash_from_log(std::string& s)
         {
 
             // check if task exec end
 
-            if ( s.find(task_end_str + task_id) != std::string::npos
-                && s.find(task_sh_end_str) == std::string::npos )
+            if(s.find(task_end_str + task_id) != std::string::npos && s.find(task_sh_end_str) == std::string::npos)
             {
                 std::cout << "task had not complete yet" << std::endl;
 
@@ -116,13 +119,13 @@ namespace ai
             std::string prefix = "DIR_HASH:";
 
             size_t start = s.find(prefix);
-            if (start == std::string::npos)
+            if(start == std::string::npos)
             {
                 return "";
             }
 
             size_t end = s.find("\n", start);
-            if (end != std::string::npos)
+            if(end != std::string::npos)
             {
                 auto hash = s.substr(start + prefix.length(), end - start - prefix.length());
 
@@ -137,7 +140,7 @@ namespace ai
 
         void cmd_logs_resp::format_output_segment()
         {
-            if (E_SUCCESS != result)
+            if(E_SUCCESS != result)
             {
                 cout << result_info << endl;
                 return;
@@ -146,17 +149,15 @@ namespace ai
             LOG_DEBUG << "recv: " << result_info;
 
             auto it = peer_node_logs.begin();
-            for (; it != peer_node_logs.end(); it++)
+            for(; it != peer_node_logs.end(); it++)
             {
-                cout
-                << "****************************************************************************************************"
-                << endl;
+                cout << "****************************************************************************************************" << endl;
                 cout << "node id: " << it->peer_node_id << endl;
                 const char *p = (it->log_content).c_str();
                 size_t size = (it->log_content).size();
-                for (size_t i = 0; i < size; i++)
+                for(size_t i = 0; i < size; i++)
                 {
-                    if (char_filter.find(*p) != char_filter.end())
+                    if(char_filter.find(*p) != char_filter.end())
                     {
                         cout << *p;
                     }
@@ -168,7 +169,7 @@ namespace ai
 
         void cmd_logs_resp::format_output_series()
         {
-            if (E_SUCCESS != result)
+            if(E_SUCCESS != result)
             {
                 cout << result_info << endl;
                 return;
@@ -179,7 +180,7 @@ namespace ai
 
             // support logs from one ai training node
             auto it = peer_node_logs.begin();
-            if (it == peer_node_logs.end())
+            if(it == peer_node_logs.end())
             {
                 return;
             }
@@ -190,29 +191,31 @@ namespace ai
             const char *p = (it->log_content).c_str();
             size_t size = (it->log_content).size();
 
-            for (size_t i = 0; i < size; i++, p++)
+            for(size_t i = 0; i < size; i++, p++)
             {
-                if (char_filter.find(*p) == char_filter.end())
+                if(char_filter.find(*p) == char_filter.end())
                 {
                     continue;
                 }
 
                 s.append(1, *p);
-                if (*p == '\n')
+                if(*p == '\n')
                 {
                     // skip duplicate lines
                     date = get_log_date(s);
-                    if (!date.empty())
+                    if(!date.empty())
                     {
-                        if (m_series.last_log_date.compare(date) < 0)
+                        if(m_series.last_log_date.compare(date) < 0)
+                        {
                             cout << s;
+                        }
                     }
-                    else if (is_image_download_str(s))
+                    else if(is_image_download_str(s))
                     {
                         // print image download log that has no timestamp info
-                        if (m_series.image_download_logs.size() < MAX_NUM_IMAGE_HASH_LOG )
+                        if(m_series.image_download_logs.size() < MAX_NUM_IMAGE_HASH_LOG)
                         {
-                            if (m_series.image_download_logs.find(s) == m_series.image_download_logs.end())
+                            if(m_series.image_download_logs.find(s) == m_series.image_download_logs.end())
                             {
                                 cout << s;
                                 m_series.image_download_logs.insert(s);
@@ -239,10 +242,10 @@ namespace ai
                     {
                         //old style
                         std::size_t p1 = s.find(task_sh_end_str);
-                        if ( p1 != std::string::npos )
+                        if(p1 != std::string::npos)
                         {
-                            std::size_t p2 = s.find(task_end_str, p1 );
-                            if ( p2 == std::string::npos)
+                            std::size_t p2 = s.find(task_end_str, p1);
+                            if(p2 == std::string::npos)
                             {
                                 m_series.enable = false;
                             }
@@ -254,7 +257,7 @@ namespace ai
                 }
             }
 
-            if (!s.empty())
+            if(!s.empty())
             {
                 // in case no "\n" at the end. for example, progress bar.
                 cout << s << "\n";
@@ -263,7 +266,7 @@ namespace ai
             }
 
 
-            if (!date.empty())
+            if(!date.empty())
             {
                 m_series.last_log_date = date;
             }
@@ -272,14 +275,14 @@ namespace ai
         void cmd_logs_resp::format_output()
         {
             // download taining result
-            if (sub_op == std::string("result"))
+            if(sub_op == std::string("result"))
             {
                 download_training_result();
                 return;
             }
 
             // logs auto flush
-            if (m_series.enable)
+            if(m_series.enable)
             {
                 format_output_series();
             }
@@ -296,12 +299,12 @@ namespace ai
         {
             auto n = peer_node_logs.size();
 
-            if ( n == 0 )
+            if(n == 0)
             {
                 cout << " training result is empty" << endl;
                 return;
             }
-            else if ( n != 1 )
+            else if(n != 1)
             {
                 cout << " training result is invalid " << endl;
                 return;
@@ -309,7 +312,7 @@ namespace ai
 
             auto hash = get_training_result_hash_from_log(peer_node_logs[0].log_content);
 
-            if (hash.empty())
+            if(hash.empty())
             {
                 cout << " not find training result hash " << endl;
                 return;
@@ -318,7 +321,7 @@ namespace ai
             cout << "  download training result: " << dest_folder << "/training_result_file" << endl;
 
             std::string cmd_;
-            if (dest_folder.empty())
+            if(dest_folder.empty())
             {
                 cmd_ = "ipfs get " + hash;
             }
@@ -332,11 +335,7 @@ namespace ai
         }
 
 
-
-
-        cmd_show_resp::cmd_show_resp(): op(OP_SHOW_UNKNOWN),
-                         err(""),
-                         sort("gpu")
+        cmd_show_resp::cmd_show_resp():op(OP_SHOW_UNKNOWN), err(""), sort("gpu")
         {
 
         }
@@ -348,14 +347,14 @@ namespace ai
 
         std::string cmd_show_resp::to_string(std::vector<std::string> in)
         {
-            std::string out="";
+            std::string out = "";
             for(auto& item: in)
             {
                 if(out.length())
                 {
                     out += " , ";
                 }
-                out += item ;
+                out += item;
             }
 
             return out;
@@ -368,7 +367,7 @@ namespace ai
          */
         std::string cmd_show_resp::to_time_str(time_t t)
         {
-            if (t == 0)
+            if(t == 0)
             {
                 return "N/A";
             }
@@ -379,14 +378,14 @@ namespace ai
             auto d_hour = 0;
             auto d_minute = 0;
 
-            if ( now <= t)
+            if(now <= t)
             {
                 return "N/A";
             }
 
 
             time_t d = now - t;
-            if (d < 60 )
+            if(d < 60)
             {
                 d_minute = 1;
             }
@@ -401,10 +400,10 @@ namespace ai
                 d_minute = d / 60;
             }
 
-            char buf[56]={0};
+            char buf[56] = {0};
             std::snprintf(buf, sizeof(buf), "%d:%02d.%02d", d_day, d_hour, d_minute);
 
-            const char* p = buf;
+            const char *p = buf;
             return std::string(p);
         }
 
@@ -420,14 +419,14 @@ namespace ai
 
             // order by indicated filed
             std::map<std::string, node_service_info> s_in_order;
-            for (auto &it : *id_2_services)
+            for(auto& it : *id_2_services)
             {
                 std::string k;
-                if (sort == "name" )
+                if(sort == "name")
                 {
                     k = it.second.name;
                 }
-                else if (sort == "timestamp")
+                else if(sort == "timestamp")
                 {
                     k = it.second.time_stamp;
                 }
@@ -437,23 +436,23 @@ namespace ai
                 }
 
                 auto v = it.second;
-                v.kvs["id"]=it.first;
+                v.kvs["id"] = it.first;
                 s_in_order[k + it.first] = v;  // "k + id" is unique
             }
 
 
-            for (auto &it : s_in_order)
+            for(auto& it : s_in_order)
             {
-                std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
+                std::string ver = it.second.kvs.count("version")?it.second.kvs["version"]:"N/A";
 
-                std::string gpu = string_util::rtrim(it.second.kvs["gpu"],'\n');
+                std::string gpu = string_util::rtrim(it.second.kvs["gpu"], '\n');
 
-                if (gpu.length() > 31)
+                if(gpu.length() > 31)
                 {
-                    gpu = gpu.substr(0,31);
+                    gpu = gpu.substr(0, 31);
                 }
 
-                std::string gpu_usage = it.second.kvs.count("gpu_usage")? it.second.kvs["gpu_usage"] : "N/A";
+                std::string gpu_usage = it.second.kvs.count("gpu_usage")?it.second.kvs["gpu_usage"]:"N/A";
 
 
                 std::string online_time = "N/A";
@@ -465,22 +464,15 @@ namespace ai
                         time_t t = std::stoi(s_time);
                         online_time = to_time_str(t);
                     }
-                    catch (...)
+                    catch(...)
                     {
                         //
                     }
                 }
 
-                printer << matrix::core::init
-                        << it.second.kvs["id"]
-                        << it.second.name
-                        << ver
-                        << gpu
-                        << gpu_usage
-                        << it.second.kvs["state"]
-//                        << to_string(it.second.service_list)
-                        << online_time
-                        << matrix::core::endl;
+                printer << matrix::core::init << it.second.kvs["id"] << it.second.name << ver << gpu << gpu_usage << it.second.kvs["state"]
+                        //                        << to_string(it.second.service_list)
+                        << online_time << matrix::core::endl;
             }
             printer << matrix::core::endl;
 
@@ -494,16 +486,16 @@ namespace ai
             //cout << "node id: " << o_node_id << endl;
 
             auto count = kvs.size();
-            for (; it != kvs.end(); it++)
+            for(; it != kvs.end(); it++)
             {
                 //cout << "******************************************************\n";
                 cout << "------------------------------------------------------\n";
-                if (count)
+                if(count)
                 {
                     cout << it->first << ":\n";
                 }
 
-                if (it->first == std::string("startup_time"))
+                if(it->first == std::string("startup_time"))
                 {
                     std::string s_time = it->second;
                     try
@@ -512,7 +504,7 @@ namespace ai
                         cout << std::ctime(&t) << endl;
 
                     }
-                    catch (...)
+                    catch(...)
                     {
                         //
                         cout << "N/A \n";
@@ -532,18 +524,18 @@ namespace ai
 
         void cmd_show_resp::format_output()
         {
-            if (err != "")
+            if(err != "")
             {
                 cout << err << endl;
                 return;
             }
 
-            if (op == OP_SHOW_SERVICE_LIST)
+            if(op == OP_SHOW_SERVICE_LIST)
             {
                 format_service_list();
                 return;
             }
-            else if (op == OP_SHOW_NODE_INFO)
+            else if(op == OP_SHOW_NODE_INFO)
             {
                 format_node_info();
                 return;

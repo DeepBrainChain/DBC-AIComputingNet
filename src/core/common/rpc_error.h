@@ -19,29 +19,40 @@ namespace matrix
         //DBC RPC error codes
         enum rpc_error_code
         {
-            // Standard JSON-RPC errors
-            // RPC_INVALID_REQUEST is internally mapped to HTTP_BAD_REQUEST (400).
-            // It should not be used for application-layer errors.
-            RPC_INVALID_REQUEST  = -32600,
-            // RPC_METHOD_NOT_FOUND is internally mapped to HTTP_NOT_FOUND (404).
-            // It should not be used for application-layer errors.
-            RPC_METHOD_NOT_FOUND = -32601,
-            RPC_INVALID_PARAMS   = -32602,
-            // RPC_INTERNAL_ERROR should only be used for genuine errors in dbc
-            // (for example datadir corruption).
-            RPC_INTERNAL_ERROR   = -32603,
-            RPC_PARSE_ERROR      = -32604,
-            RPC_OUT_OF_MEMORY    = -32605,
 
-            // General application defined errors
-            RPC_TYPE_ERROR                  = -1,   // Unexpected type was passed as parameter
-            RPC_INVALID_PARAMETER           = -2,   // Invalid, missing or duplicate parameter
-            RPC_METHOD_DEPRECATED           = -3,   // RPC method is deprecated
+            //No errors occurred.
 
-            // P2P client errors
-            RPC_CLIENT_NOT_CONNECTED        = -10,   // client is not connected
+            RPC_RESPONSE_SUCCESS = 0,
 
-            // Wallet errors
+            //Error code before a request is processed
+
+            RPC_INVALID_REQUEST = -32600,//The inspection request is illegal.
+            RPC_METHOD_NOT_FOUND = -32601,//Check that the requested method does not exist
+            RPC_REQUEST_INTERRUPTED = -32602,//Request is interrupted.Try again later.
+
+
+            //Error code during waiting for response
+
+            RPC_RESPONSE_TIMEOUT = -32700, //call timeout
+            RPC_RESPONSE_ERROR = -32701,// response error
+
+
+
+            RPC_MISC_ERROR = -1,  //!< std::exception thrown in command handling
+            RPC_TYPE_ERROR = -3,  //!< Unexpected type was passed as parameter
+            RPC_INVALID_ADDRESS_OR_KEY = -5,  //!< Invalid address or key
+            RPC_OUT_OF_MEMORY = -7,  //!< Ran out of memory during operation
+            RPC_DATABASE_ERROR = -9, //!< Database error
+            RPC_DESERIALIZATION_ERROR = -11, //!< Error parsing or validating structure in raw format
+            RPC_VERIFY_ERROR = -13, //!< General error during transaction or block submission
+            RPC_VERIFY_REJECTED = -15, //!< Transaction or block was rejected by network rules
+            RPC_VERIFY_ALREADY_IN_CHAIN = -17, //!< Transaction already in chain
+            RPC_IN_WARMUP = -19, //!< Client still warming up
+            RPC_SYSTEM_BUSYING = -21,//!<Work queue depth exceeded
+            RPC_METHOD_DEPRECATED = -23, //!< RPC method is deprecated
+            RPC_INVALID_PARAMS = -25, //!<
+
+
         };
 
     }  // namespce core
