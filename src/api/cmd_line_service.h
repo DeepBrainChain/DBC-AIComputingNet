@@ -25,16 +25,15 @@ using namespace matrix::core;
 #define CMD_LINE_API_MODULE                             "cmd_line_api_module"
 
 
-
 namespace ai
 {
     namespace dbc
     {
 
-        class cmd_line_service : public  module
+        class cmd_line_service:public module
         {
-            
-            using invoker_type = typename std::function<void (int, char* [] )>;
+
+            using invoker_type = typename std::function<void(int, char* [])>;
 
             typedef std::map<std::string, invoker_type> cmd_invokers;
 
@@ -44,9 +43,12 @@ namespace ai
 
             ~cmd_line_service() = default;
 
-            std::string module_name() const { return CMD_LINE_API_MODULE; }
+            std::string module_name() const
+            {
+                return CMD_LINE_API_MODULE;
+            }
 
-            int32_t init(bpo::variables_map &options);
+            int32_t init(bpo::variables_map& options);
 
             void on_usr_cmd();
 
@@ -69,26 +71,30 @@ namespace ai
             void logs(int argc, char* argv[]);
 
             void show(int argc, char* argv[]);
+
             void clear(int argc, char* argv[]);
+
             void ps(int argc, char* argv[]);
 
             void result(int argc, char* argv[]);
+
             void system_cmd(int argc, char* argv[]);
+
             void task(int argc, char* argv[]);
 
             void task_clean(int argc, char* argv[]);
 
-            std::shared_ptr<cmd_start_training_resp> start_training_task_helper(std::shared_ptr<cmd_start_training_req> req);
+            std::shared_ptr<cmd_start_training_resp> start_training_task_helper(
+                    std::shared_ptr<cmd_start_training_req> req);
 
 
         protected:
 
-            template<typename resp_type>
-            void format_output(std::shared_ptr<resp_type> resp);
+            template<typename resp_type> void format_output(std::shared_ptr<resp_type> resp);
 
         protected:
 
-            api_call_handler m_handler;
+            //api_call_handler m_handler;
 
             cmd_invokers m_invokers;
 
