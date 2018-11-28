@@ -6,179 +6,276 @@ if [ $# -lt 1 ]; then
 fi
 
 if [ ! -d $1 ]; then
-  echo -n "dir not exist and eixt: "
+  echo -n "error: dir $1 not exist and eixt: "
   echo $1
   exit 1
 fi
 
-
-# start ipfs daemon if it is down
-USERID=`id -u`
-PROC_NAME="ipfs"
-ps_="ps -e -o uid -o pid -o command"
-ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
-if [[ -z "$ipfs_pid" ]]; then
-    echo "ipfs daemon is starting"
-    sudo nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
-    sleep 5
-    echo "ipfs daemon is started"
-fi
-
-
 DIR=$1
 format=$2
 
-echo "dbc_upload | input $DIR"
 
+# set "tar" by default
 if [ -z "$format" ]; then
     format="tar"
 fi
 
-if [ "$format" = "raw" ]; then
-
-    echo "dbc_upload | add to local repo"
-
-    DIR_HASH=`ipfs add -r $DIR | tail -n 1 | awk '{print $2}'`
-
-    if [ ${PIPESTATUS[0]} -ne 0 ]
-    then
-        echo -n "ipfs add error and exit:"
-        echo $1
-        exit 1
-    fi
-
-elif [ "$format" = "tar" ]; then
-    echo "dbc_upload | add to local repo"
-
-    prefix=$(echo "${DIR//.}" | tr / _)
-    tmp_dir="./tmp$prefix"
-
-    rm -rf $tmp_dir
-    mkdir $tmp_dir
-
-    filename="$tmp_dir/$prefix.ipfs.upload.tar"
-
-    tar cvf $filename -C $DIR . > /dev/null 2>&1
-
-    if [ $? -ne 0 ]; then
-        echo "fail to tar $DIR"
-        rm -rf $tmp_dir
-        exit 1
-    fi
-
-    DIR_HASH=`ipfs add  -r $tmp_dir | tail -n 1 | awk '{print $2}'`
-
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then
-        echo -n "ipfs add error and exit:"
-        echo $1
-        rm -rf $tmp_dir
-        exit 1
-    fi
-
-    rm -rf $tmp_dir
-
-else
-    echo "unknown format $format"
-    exit 1
-fi
-
-
-echo "dbc_upload | publish content"
-
-# check if content has already been stored in ipfs network: more than one node can provide the content
-stat_file=/tmp/$prefix.stat
-ipfs dht findprovs -n 2 $DIR_HASH > $stat_file 2>&1 &
-pid=$!
-
-max_wait_time=5
-rtn=1
-for i in `seq 1 $max_wait_time`; do
-    peers=$(cat $stat_file | wc -l)
-    if [ $peers -eq  2 ]; then
-        rtn=0
-        break
-    fi
-
-    error=$(cat $stat_file | grep -i error)
-    if [ -n "$error" ]; then
-        rtn=2
-        break;
-    fi
-
-    sleep 1
-done
-
-if [ $rtn -eq 0 ]; then
-
-    echo "dbc_upload | content already exist in storage network"
-    echo "DIR_HASH:$DIR_HASH"
-    echo "dbc_upload | upload complete"
-
-    if [ "$format" = "tar" ]; then
-        rm -rf $tmp_dir
-    fi
-
-    exit 0
-elif [ $rtn -eq 1 ]; then
-    kill $pid > /dev/null 2>&1
-    wait $pid > /dev/null
-else
-    echo "$error"
-    echo "dbc_upload | ipfs daemon abnormal,please check ipfs daemon status"
-
-    if [ "$format" = "tar" ]; then
-        rm -rf $tmp_dir
-    fi
-
-    exit 1
-fi
-
-
-# publish content to ipfs network
-server_list=()
-v=$(curl -Ls --connect-timeout 3 https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes 2>&1 | awk -F "/" '{print $3}')
-
-for i in ${v[@]}; do
-if [[ $i =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    server_list+=($i)
-fi
-done
-
-len=${#server_list[@]}
-if [ $len -eq 0 ]; then
-    echo "error: no ipfs node found"
-    exit 1
-fi
-
-s_list=($(echo ${server_list[@]} | tr ' ' '\n' | sort | uniq))
-
-len=${#s_list[@]}
-
-
-p=$(($RANDOM % $len))
-ok=1
-
-for i in `seq 0 $(($len-1))` ; do
-
-    server=${s_list[$(( ($p+i) % $len))]}
-    echo "dbc_upload | upload content to $server"
-
-    curl --connect-timeout 3 -Y 5120 -y 30  http://$server:5001/api/v0/get?arg=/ipfs/$DIR_HASH > /dev/null
-    if [ $? -eq 0 ]; then
-        ok=0
-        break
+# start ipfs daemon if it is down
+start_ipfs_daemon()
+{
+    USERID=`id -u`
+    PROC_NAME="ipfs"
+    ps_="ps -e -o uid -o pid -o command"
+    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+    if [ -z "$ipfs_pid" ]; then
+        echo "ipfs daemon is starting"
+        nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
     else
-        echo
-        echo "dbc_upload | fail to upload content to $server"
+        # ipfs is running
+        return 0
     fi
-done
 
-if [ $ok -eq 0 ]; then
-    echo "DIR_HASH:$DIR_HASH"
-    echo "dbc_upload | content upload completed"
+    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+    if [ -z "$ipfs_pid" ]; then
+        echo "error: fail to start ipfs daemon"
+        return 1
+    else
+        # loop until ipfs daemon is ready for use
+        for i in {1..30}; do
+            echo -n "."
+            if ipfs swarm peers &>/dev/null; then
+                echo
+                echo "ipfs is started"
+                return 0
+            fi
+            sleep 1
+        done
+    fi
+
+    echo
+    echo "error: fail to start ipfs daemon"
+    return 1
+}
+
+add_to_local_ipfs_repo()
+{
+    src_size=$(du -sm $DIR | awk '{print $1}')
+
+    if [ "$format" = "tar" ] && [ $src_size -lt 100 ]; then
+        echo "dbc_upload | upload in raw (file < 100M)"
+        format="raw"
+    fi
+
+    if [ "$format" = "raw" ]; then
+
+        echo "dbc_upload | add to local repo"
+
+        DIR_HASH=`ipfs add -r $DIR | tail -n 1 | awk '{print $2}'`
+
+        if [ ${PIPESTATUS[0]} -ne 0 ]
+        then
+            echo -n "error: ipfs add error and exit:"
+            echo $1
+            return 1
+        else
+            return 0
+        fi
+
+    elif [ "$format" = "tar" ]; then
+        echo "dbc_upload | add to local repo"
+
+        # check disk space available for tmp tar file
+        #src_size=$(du -sm $DIR | awk '{print $1}')
+        dst_size=$(df -m . | grep -v File | awk '{print $4}')
+
+        if [ $dst_size -lt $src_size ]; then
+            echo "error: no enough disk space to store the tmp tar file: require $src_size M but $dst_size M availabe"
+            return 1
+        fi
+
+        #echo "require $src_size M but $dst_size M availabe"
+
+        prefix=$(echo "${DIR//.}" | tr / _)
+        tmp_dir="./tmp$prefix"
+
+        rm -rf $tmp_dir
+        mkdir $tmp_dir
+
+        filename="$tmp_dir/$prefix.ipfs.upload.tar"
+
+    #    tar cvf $filename -C $DIR . > /dev/null 2>&1
+        r=$(tar cvf $filename -C $DIR .  2>&1)
+
+        if [ $? -ne 0 ]; then
+            echo "error: fail to tar $DIR"
+            echo "$r"
+            rm -rf $tmp_dir
+            return 1
+        fi
+
+        DIR_HASH=`ipfs add  -r $tmp_dir | tail -n 1 | awk '{print $2}'`
+
+        if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo -n "error: ipfs add error and exit:"
+            echo $1
+            rm -rf $tmp_dir
+            return 1
+
+        else
+            rm -rf $tmp_dir
+            return 0
+        fi
+
+    else
+        echo "unknown format $format"
+        return 1
+    fi
+}
+
+
+check_content_duplicate_or_not()
+{
+    # check if content has already been stored in ipfs network: more than one node can provide the content
+    stat_file=/tmp/$prefix.stat
+    ipfs dht findprovs -n 2 $DIR_HASH > $stat_file 2>&1 &
+    pid=$!
+
+    max_wait_time=5
+    rtn=1
+    for i in `seq 1 $max_wait_time`; do
+        peers=$(cat $stat_file | wc -l)
+        if [ $peers -eq  2 ]; then
+            rtn=0
+            break
+        fi
+
+        error=$(cat $stat_file | grep -i error)
+        if [ -n "$error" ]; then
+            rtn=2
+            break;
+        fi
+
+        sleep 1
+    done
+
+    if [ $rtn -eq 0 ]; then
+        # more than one nodes can provide the content
+        echo "dbc_upload | duplicate content"
+        echo "DIR_HASH:$DIR_HASH"
+        echo "dbc_upload | upload complete"
+
+        if [ "$format" = "tar" ]; then
+            rm -rf $tmp_dir
+        fi
+
+        return 0
+
+    elif [ $rtn -eq 1 ]; then
+        # no response in time, treate it as not duplicate case
+        kill $pid > /dev/null 2>&1
+        wait $pid > /dev/null
+
+        return 1
+    else
+        # error happened, shall exit the program
+        echo "$error"
+        echo "dbc_upload | ipfs daemon abnormal,please check ipfs daemon status"
+
+        if [ "$format" = "tar" ]; then
+            rm -rf $tmp_dir
+        fi
+
+        exit 1
+    fi
+}
+
+set_server_list()
+{
+    default_server_list=(122.112.243.44 18.223.4.215)
+
+    echo "dbc_upload | get ipfs node list"
+    v=$(curl -Ls --connect-timeout 3 https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes 2>&1 | awk -F "/" '{print $3}')
+
+    tmp_server_list=()
+    for i in ${v[@]}; do
+    if [[ $i =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        tmp_server_list+=($i)
+    fi
+    done
+
+    len=${#tmp_server_list[@]}
+    if [ $len -eq 0 ]; then
+        echo "warning: fail to download node list from dbc web"
+        tmp_server_list=( "${default_server_list[@]}" )
+    fi
+
+    server_list=($(echo ${tmp_server_list[@]} | tr ' ' '\n' | sort | uniq))
+}
+
+
+publish_to_ipfs_network()
+{
+    echo "dbc_upload | publish content"
+
+    len=${#server_list[@]}
+    if [ $len -eq 0 ]; then
+        echo "error: server list is empty"
+        return 1
+    fi
+
+    p=$RANDOM
+    for i in `seq 0 $(($len-1))` ; do
+        n=$(($p+$i))
+        index=$(($n%$len))
+        server=${server_list[$index]}
+        echo "dbc_upload | upload content to $server"
+
+
+
+        curl --connect-timeout 3 -Y 5120 -y 30  http://$server:5001/api/v0/get?arg=/ipfs/$DIR_HASH > /dev/null
+        if [ $? -eq 0 ]; then
+            echo "DIR_HASH:$DIR_HASH"
+            echo "dbc_upload | content upload completed"
+            return 0
+        else
+            echo
+            echo "dbc_upload | fail to upload content to $server"
+        fi
+    done
+
+    return 1
+}
+
+
+#
+# main
+#
+
+echo "dbc_upload | input $DIR"
+
+if ! start_ipfs_daemon; then
+    exit 1
+fi
+
+
+if ! add_to_local_ipfs_repo; then
+    exit 1
+fi
+
+
+if check_content_duplicate_or_not; then
     exit 0
+fi
+
+# set ipfs server list
+server_list=()
+set_server_list
+
+# publish content
+if publish_to_ipfs_network; then
+    echo
 else
+    echo "error"
     echo "dbc_upload | fail to upload content to ipfs network"
     exit 1
 fi
-
