@@ -50,49 +50,52 @@ echo %hash_code%
 echo ------------------------------------------
 echo begin to upload "%file_dir%" to ipfs ......
 
-set IP[0]=122.112.243.44
-set IP[1]=49.51.49.192
-set IP[2]=18.223.4.215
+::set IP[0]=122.112.243.44
+::set IP[1]=18.223.4.215
+::download bootstrap_nodes
+::echo "%temp%\bootstrap_nodes"
+"%parent_path%/tool/curl.exe" -o "bootstrap_nodes" -L "https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes"
 
-set /a index=%random%%%3
+set /a n=0
+for /f "tokens=2 delims=/" %%i in (bootstrap_nodes) do (	
+	::echo !n!, %%i	
+	set IP[!n!]=%%i
+	set /a n=!n!+1
+	)
+del "bootstrap_nodes"
+echo count of IPs: %n%
+::check if got IPs
+if %n% EQU 0 (
+	echo "no ipfs peer address"
+	pause > nul
+	exit
+	)
+	
+set /a index=%random%%%%n%
 set first_idx=%index%
 if defined hash_code (
 	:checkIP
-	ping !IP[%index%]! > nul
-	::echo %errorlevel%	
+	"%cd%/curl.exe" --connect-timeout 5 http://!IP[%index%]!:5001/api/v0/get?arg=/ipfs/%hash_code% --output nul
 	if errorlevel 1 (
-		:nextIP
+		echo !IP[%index%]! is not available.
 		set /a tmp_index=!index!+1
-		set /a index=!tmp_index!%%3
-		if %first_idx% equ %index% (
+		set /a index=!tmp_index!%%%n%
+		echo next ip: !index!
+		if !first_idx! equ !index! (
 			echo "no available ipfs peers"
+			echo failed to add "%file_dir%"
 			pause > nul
 			exit
-			)
-		goto checkIP
 		)
-
-	"%cd%/curl.exe" http://!IP[%index%]!:5001/api/v0/get?arg=/ipfs/%hash_code% --output nul
-
-	::echo %errorlevel%
-	REM for /f %%i in (%cd%/output.txt) do (
-		REM echo %%i | findstr "Failed" > nul
-		REM echo %errorlevel%
-		REM if errorlevel 1 (
-			REM echo "failed to add %file_dir%"			
-			REM pause>nul
-			REM goto err_exit
-			REM )
-		REM )
-	if errorlevel 1 (
-		echo failed to add "%file_dir%"
-		echo !IP[%index%]! is not available.
-		goto nextIP
-		)
+		goto checkIP	
 	) else (
+		goto succ
+	)
+) else (
 	echo "add to ipfs failed, restart ipfs may fix it."
 	goto err_exit
 )
+:succ
 echo upload "%file_dir%" finished, hash_code=%hash_code%.
 echo ------------------------------------------
 
@@ -100,5 +103,3 @@ echo ------------------------------------------
 pause
 set file_dir=
 goto start
-::del output.txt
-::exit
