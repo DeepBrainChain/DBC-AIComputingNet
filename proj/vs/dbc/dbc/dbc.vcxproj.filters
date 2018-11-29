@@ -436,6 +436,9 @@
     <ClCompile Include="..\..\..\..\src\core\network\http_server.cpp">
       <Filter>src\core\network</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\api\rest_handler.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\common\common_def.h">
@@ -1364,6 +1367,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\core\common\rpc_error.h">
       <Filter>src\core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\api\rest_handler.h">
+      <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
