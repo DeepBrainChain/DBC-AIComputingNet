@@ -529,7 +529,7 @@ namespace ai
                         auto resp = g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                         if (nullptr == resp)
                         {
-                            cout << endl << "warning: fail to fetch task status; please check if the target ai node is alive." << endl;
+                            cout << endl << "warning: fail to fetch the task status" << endl;
                         }
 
                     }
