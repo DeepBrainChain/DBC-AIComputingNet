@@ -43,9 +43,12 @@ namespace matrix
 
         static void http_request_done(struct evhttp_request *req, void *ctx)
         {
-            http_response *reply = static_cast<http_response*>(ctx);
+            http_response_wrapper *wrapper = static_cast<http_response_wrapper*>(ctx);
+//            http_response *reply = static_cast<http_response*>(ctx);
+            http_response *reply = wrapper->http_resp;
+            event_base *base = wrapper->ev_base;
 
-            if (req == nullptr) 
+            if (req == nullptr || reply == nullptr)
             {
                 /* If req is nullptr, it means an error occurred while connecting: the
                 * error code will have been passed to http_error_cb.
@@ -65,11 +68,21 @@ namespace matrix
                     reply->body = std::string(data, size);
                 evbuffer_drain(buf, size);
             }
+
+            // terminate event_base_dispatch()
+            if(base)
+            {
+                event_base_loopbreak(base);
+            }
         }
 
         static void http_error_cb(enum evhttp_request_error err, void *ctx)
         {
-            http_response *reply = static_cast<http_response*>(ctx);
+//            http_response *reply = static_cast<http_response*>(ctx);
+            http_response_wrapper *wrapper = static_cast<http_response_wrapper*>(ctx);
+//            http_response *reply = static_cast<http_response*>(ctx);
+            http_response *reply = wrapper->http_resp;
+            event_base *base = wrapper->ev_base;
             reply->error = err;
         }
 
@@ -121,7 +134,10 @@ namespace matrix
                 evhttp_connection_set_timeout(evcon.get(), DEFAULT_HTTP_TIME_OUT);
 
                 //http request
-                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&resp);
+                http_response_wrapper wrapper = {&resp, base.get()};
+
+//                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&resp);
+                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
                 if (nullptr == req)
                 {
                     return E_DEFAULT;
@@ -198,7 +214,8 @@ namespace matrix
                 evhttp_connection_set_timeout(evcon.get(), DEFAULT_HTTP_TIME_OUT);
 
                 //http request
-                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&resp);
+                http_response_wrapper wrapper = {&resp, base.get()};
+                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
                 if (nullptr == req)
                 {
                     return E_DEFAULT;

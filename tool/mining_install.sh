@@ -80,7 +80,7 @@ if [ $? -ne 0 ]; then
     exit
 fi
 
-#newgrp - docker
+#newgrp - dockerc
 
 gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
