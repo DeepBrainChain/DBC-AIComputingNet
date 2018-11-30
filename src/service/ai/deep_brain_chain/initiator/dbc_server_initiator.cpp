@@ -34,6 +34,7 @@
 #include "data_query_service.h"
 #include "http_server_service.h"
 #include "api_call_handler.h"
+#include "rest_api_service.h"
 #include <boost/exception/all.hpp>
 
 using namespace std::chrono;
@@ -229,9 +230,22 @@ namespace ai
                 LOG_INFO << "init command line service successfully";
             }
 
-            // http server service
+
+            LOG_INFO << "begin to init rest api service";
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<rest_api_service>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
+            mdl->start();
+
+            std::shared_ptr<http_request_event> hreq_event = std::dynamic_pointer_cast<http_request_event>(mdl);
+
+
             LOG_INFO << "begin to init http server service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<http_server_service>());
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<http_server_service>(hreq_event));
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)
