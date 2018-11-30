@@ -545,6 +545,8 @@ namespace ai
                 std::unique_lock<std::mutex> lock(m_mutex);
 
                 //construct message
+                m_session_id = id_generator().generate_session_id();
+                req->header.__set_session_id(m_session_id);
                 std::shared_ptr<message> msg = std::make_shared<message>();
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(req);
@@ -556,12 +558,9 @@ namespace ai
 
                 //synchronous wait for resp
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
-                if(true == m_wait->flag())
-                {
+                if (true == m_wait->flag()) {
                     return std::dynamic_pointer_cast<resp_type>(m_resp);
-                }
-                else
-                {
+                } else {
                     LOG_DEBUG << "api_call_handler time out: " << msg->get_name();
                     return nullptr;
                 }
@@ -570,11 +569,13 @@ namespace ai
 
         private:
 
-            std::mutex m_mutex;    //       currently no need.
+            std::mutex m_mutex;
 
             std::shared_ptr<matrix::core::base> m_resp;
 
             std::shared_ptr<callback_wait<>> m_wait;
+
+            std::string m_session_id;
 
         };
 

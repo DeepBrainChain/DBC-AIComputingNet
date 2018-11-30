@@ -13,7 +13,12 @@
 #include "service_message_id.h"
 
 
-#define SUBSCRIBE_RESP_MSG( cmd )  TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){m_resp = rsp;m_wait->set();});
+//
+//the session id of the request and response must match,then wait_event can be set()
+//
+#define SUBSCRIBE_RESP_MSG(cmd)  TOPIC_MANAGER->subscribe(typeid(cmd).name(),\
+[this](std::shared_ptr<cmd> &rsp){if(rsp->header.session_id == m_session_id){m_resp = rsp;m_wait->set();}});\
+\
 
 
 namespace ai
