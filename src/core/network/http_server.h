@@ -19,6 +19,8 @@
 
 #include "endpoint_address.h"
 #include "json_util.h"
+#include "service_message.h"
+
 
 
 namespace matrix
@@ -27,19 +29,22 @@ namespace matrix
     {
         class http_request
         {
-        private:
+         private:
             struct evhttp_request* m_req;
             bool m_reply_sent;
             struct event_base* m_event_base_ptr;
 
-        public:
+         public:
             explicit http_request(struct evhttp_request* req_, struct event_base* event_base_);
-
             ~http_request();
 
             enum REQUEST_METHOD
             {
-                UNKNOWN, GET, POST, HEAD, PUT
+                UNKNOWN,
+                GET,
+                POST,
+                HEAD,
+                PUT
             };
 
             /** Get requested URI.
@@ -90,20 +95,19 @@ namespace matrix
 
             void reply_comm_rest_err(uint32_t status, int32_t internal_error, std::string message);
 
-            void reply_comm_rest_succ(rapidjson::Value& data);
+            void reply_comm_rest_succ( rapidjson::Value &data);
         };
 
         /** Event class. This can be used either as a cross-thread trigger or as a timer.
          */
         class http_event
         {
-        public:
+         public:
             /** Create a new event.
              * deleteWhenTriggered deletes this event object after the event is triggered (and the handler called)
              * handler is the handler to call when the event is triggered.
              */
             http_event(struct event_base* base, bool delete_when_triggered_, const std::function<void(void)>& handler_);
-
             ~http_event();
 
             /** Trigger the event. If tv is 0, trigger it immediately. Otherwise trigger it after
@@ -113,31 +117,66 @@ namespace matrix
 
             static void httpevent_callback_fn(evutil_socket_t /**/, short /**/, void* data);
 
-        public:
+         public:
             bool m_delete_when_triggered;
             std::function<void(void)> m_handler;
 
-        private:
+         private:
             struct event* m_ev;
         };
 
-        typedef std::function<void(http_request* req, const std::string&)> http_request_handler;
+
+        //
+        //Record requests for a channel for easy storage in session
+        //
+        //
+
+        struct http_request_context
+        {
+            std::shared_ptr<http_request> m_hreq;
+            std::shared_ptr<message> m_req_msg;
+
+            http_request_context()
+            {
+            }
+        };
+
+        typedef std::shared_ptr<http_request>  HTTP_REQUEST_PTR;
+        typedef std::shared_ptr<http_request_context> HTTP_REQ_CTX_PTR;
+
+
+        typedef std::function<std::shared_ptr<message>(HTTP_REQUEST_PTR  ,const std::string& )> http_request_handler;
+        typedef std::function<int32_t(HTTP_REQ_CTX_PTR,  std::shared_ptr<message>& )> response_call_handler;
+
+
 
         struct http_path_handler
         {
-            http_path_handler()
-            {
-            }
-
+            http_path_handler() {}
             http_path_handler(std::string prefix_, bool exact_match_, http_request_handler handler_):
-                    m_prefix(prefix_), m_exact_match(exact_match_), m_handler(handler_)
+                m_prefix(prefix_), m_exact_match(exact_match_), m_handler(handler_)
             {
             }
-
             std::string m_prefix;
             bool m_exact_match;
             http_request_handler m_handler;
         };
+
+
+        struct response_msg_handler
+        {
+            response_msg_handler()
+            {}
+
+            response_msg_handler(std::string name_, response_call_handler handler_) :
+                name(name_), handler(handler_)
+            {
+            }
+
+            std::string name;
+            response_call_handler handler;
+        };
+
 
     }  // namespce core
 }  // namespace matrix

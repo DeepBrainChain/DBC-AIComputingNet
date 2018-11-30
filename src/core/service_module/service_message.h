@@ -16,7 +16,7 @@
 
 
 typedef void * MESSAGE_PTR;
-
+#define COPY_MSG_HEADER(req,resp)       resp->header.__set_session_id( req->header.session_id  );
 
 /*****************************************************************************
 
