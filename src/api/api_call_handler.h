@@ -545,6 +545,7 @@ namespace ai
                 std::unique_lock<std::mutex> lock(m_mutex);
 
                 //construct message
+                req->header.__set_session_id(id_generator().generate_session_id());
                 std::shared_ptr<message> msg = std::make_shared<message>();
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(req);

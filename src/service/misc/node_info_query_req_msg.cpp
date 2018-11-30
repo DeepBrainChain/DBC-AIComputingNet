@@ -45,7 +45,7 @@ namespace service
         * @param d_node_id the id of target node
         * @param k the name of the attributes
         */
-        void node_info_query_req_msg::prepare(std::string o_node_id, std::string d_node_id, std::vector<std::string> keys)
+        void node_info_query_req_msg::prepare(std::string session_id,std::string o_node_id, std::string d_node_id, std::vector<std::string> keys)
         {
             auto msg = std::make_shared<message>();
             auto content = std::make_shared<matrix::service_core::show_req>();
@@ -54,7 +54,7 @@ namespace service
             content->header.__set_magic(CONF_MANAGER->get_net_flag());
             content->header.__set_msg_name(SHOW_REQ);
             content->header.__set_nonce(id_generator().generate_nonce());
-            content->header.__set_session_id(id_generator().generate_session_id());
+            content->header.__set_session_id(session_id);
 
             //body
             content->body.__set_o_node_id(o_node_id);
