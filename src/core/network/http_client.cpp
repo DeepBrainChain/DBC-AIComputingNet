@@ -135,8 +135,6 @@ namespace matrix
 
                 //http request
                 http_response_wrapper wrapper = {&resp, base.get()};
-
-//                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&resp);
                 raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
                 if (nullptr == req)
                 {
@@ -286,7 +284,8 @@ namespace matrix
                 evhttp_connection_set_timeout(evcon.get(), DEFAULT_HTTP_TIME_OUT);
 
                 //http request
-                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&resp);
+                http_response_wrapper wrapper = {&resp, base.get()};
+                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
                 if (nullptr == req)
                 {
                     return E_DEFAULT;
