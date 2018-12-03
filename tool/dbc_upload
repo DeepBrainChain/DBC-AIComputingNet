@@ -14,6 +14,13 @@ fi
 DIR=$1
 format=$2
 
+# need to kill ipfs daemon on exit if ipfs daemon is started by dbc_upload:
+#    dbc may invoke dbc_upload, and then ipfs will inherit all fd of dbc as a subprocess.
+#    finally, it prevent dbc restart, because port occupied by ipfs.
+#
+trap "exit" INT TERM
+trap "kill 0" EXIT
+
 
 # set "tar" by default
 if [ -z "$format" ]; then
@@ -29,28 +36,27 @@ start_ipfs_daemon()
     ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
     if [ -z "$ipfs_pid" ]; then
         echo "ipfs daemon is starting"
-        nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
-    else
-        # ipfs is running
-        return 0
+        ipfs daemon --enable-gc >/dev/null 2>&1 &
+        sleep 1
+
+        ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+        if [ -z "$ipfs_pid" ]; then
+            echo "error: fail to start ipfs daemon"
+            return 1
+        fi
     fi
 
-    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
-    if [ -z "$ipfs_pid" ]; then
-        echo "error: fail to start ipfs daemon"
-        return 1
-    else
-        # loop until ipfs daemon is ready for use
-        for i in {1..30}; do
-            echo -n "."
-            if ipfs swarm peers &>/dev/null; then
-                echo
-                echo "ipfs is started"
-                return 0
-            fi
-            sleep 1
-        done
-    fi
+    # wait ipfs daemon ready for use
+    echo "check ipfs daemon status"
+    for i in {1..30}; do
+        echo -n "."
+        if ipfs swarm peers &>/dev/null; then
+            echo
+            echo "ipfs daemon is ready"
+            return 0
+        fi
+        sleep 1
+    done
 
     echo
     echo "error: fail to start ipfs daemon"

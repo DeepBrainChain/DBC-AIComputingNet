@@ -56,7 +56,6 @@ const char *character_names[] = {
         "peers",
         "result",
         "logs",
-        "ps",
         "parameter",
         NULL
 };
@@ -529,7 +528,19 @@ namespace ai
                         auto resp = g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
                         if (nullptr == resp)
                         {
-                            cout << endl << "warning: fail to fetch the task status" << endl;
+                            cout << "warning: fail to fetch the task status" << endl;
+                        }
+                        else if (resp->task_status_list.size() == 1)
+                        {
+                            auto it = resp->task_status_list.begin();
+                            if (it->status==task_unknown)
+                            {
+                                cout << "warning: fail to fetch the task status" << endl;
+                            }
+                            else
+                            {
+                                cout << "task status: " << to_training_task_status_string(it->status)<< endl;
+                            }
                         }
 
                     }
