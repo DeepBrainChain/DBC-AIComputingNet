@@ -23,7 +23,6 @@ namespace ai
     {
         idle_task_scheduling::idle_task_scheduling(std::shared_ptr<container_worker> & container_worker_ptr) :task_scheduling(container_worker_ptr)
         {
-            init();
         }
 
         int32_t idle_task_scheduling::init()
