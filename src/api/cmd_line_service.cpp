@@ -110,6 +110,9 @@ namespace ai
             cout << "task:          task operations" << endl;
             cout << "system / sys:  invoke system command" << endl;
             cout << "quit / exit:   exit program" << endl;
+#ifndef WIN32
+            cout << "key:           shortcuts" << endl;
+#endif
             cout << "-----------------------------------------" << endl;
         }
 
@@ -125,6 +128,26 @@ namespace ai
             cout << "clear:         remove task record from local db" << endl;
             cout << "start_multi:   start multi training tasks" << endl;
             cout << "-----------------------------------------" << endl;
+        }
+
+        static void print_key_usage()
+        {
+            cout << "Arrow up, Arrow down:  navigate command history" << endl;
+            cout << "Ctrl-r:                search from command history" << endl;
+            cout << "Table:                 auto complete" << endl;
+
+            cout << "Ctrl-a:                move to line start" << endl;
+            cout << "Ctrl-e:                move to line end" << endl;
+
+            cout << "Alt-f:                 move forward one word" << endl;
+            cout << "Alt-b:                 move backward one word" << endl;
+
+            cout << "Alt-d:                 kill forward to the end of the current word" << endl;
+            cout << "Alt-Delete:            kill backward to start of the current word" << endl;
+
+            cout << "Ctrl-k:                kill forward to end of the line" << endl;
+            cout << "Ctrl-w:                kill backward to start of the line" << endl;
+            cout << "Ctrl-u:                kill line" << endl;
         }
 
         cmd_line_service::cmd_line_service()
@@ -182,6 +205,10 @@ namespace ai
             m_invokers["task_logs"] = m_invokers["logs"];
             m_invokers["task_start_multi"] = m_invokers["start_multi"];
 //            m_invokers["task_ps"] = m_invokers["ps"];
+
+#ifndef WIN32
+            m_invokers["key"] = std::bind(&cmd_line_service::cmd_key, this, std::placeholders::_1, std::placeholders::_2);
+#endif
 
         }
         
@@ -1454,6 +1481,17 @@ namespace ai
 
             }
 
+        }
+
+        void cmd_line_service::cmd_key(int argc, char* argv[])
+        {
+            if (argc == 1
+                || (argc == 2 && std::string("-h") == argv[1])
+                    )
+            {
+                print_key_usage();
+                return;
+            }
         }
     }
 

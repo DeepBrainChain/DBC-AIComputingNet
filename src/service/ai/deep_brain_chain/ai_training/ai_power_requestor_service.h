@@ -20,7 +20,6 @@ using namespace matrix::core;
 namespace fs = boost::filesystem;
 
 
-#define DEFAULT_SERVICE_TIMER_INTERVAL                     (8 * 1000)                                         //8s
 #define LIST_TRAINING_TIMER                                         "list_training_timer"
 #define TASK_LOGS_TIMER                                                  "task_logs_timer"
 

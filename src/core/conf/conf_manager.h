@@ -33,6 +33,8 @@ extern const bool DEFAULT_ENABLE;
 extern const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE;
 extern std::string DEFAULT_REST_PORT;
 
+extern const int32_t DEFAULT_TIMER_DBC_REQUEST_IN_SECOND;
+
 
 namespace matrix
 {
@@ -80,12 +82,19 @@ namespace matrix
 
             const int32_t & get_max_connect() {return m_args.count("max_connect") ? m_args["max_connect"].as<int32_t>() : DEFAULT_MAX_CONNECTION_NUM;}
 
-            const int32_t & get_timer_service_broadcast_in_second() {
+            const int32_t get_timer_service_broadcast_in_second() {
                 return m_args.count("timer_service_broadcast_in_second") ? m_args["timer_service_broadcast_in_second"].as<int32_t>() : DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
             }
 
-            const int32_t & get_timer_service_list_expired_in_second() {
+            const int32_t get_timer_service_list_expired_in_second() {
                 return m_args.count("timer_service_list_expired_in_second") ? m_args["timer_service_list_expired_in_second"].as<int32_t>() : DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
+            }
+
+            const int32_t  get_timer_dbc_request_in_millisecond() {
+                if( m_args.count("timer_dbc_request_in_second"))
+                    return (m_args["timer_dbc_request_in_second"].as<int32_t>()) * 1000;
+                else
+                    return DEFAULT_TIMER_DBC_REQUEST_IN_SECOND * 1000;
             }
 
 

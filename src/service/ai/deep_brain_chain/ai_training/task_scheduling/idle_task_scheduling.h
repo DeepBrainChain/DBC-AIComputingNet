@@ -45,6 +45,7 @@ namespace ai
             void set_task(std::shared_ptr<idle_task_resp> task);
             void set_fetch_handler(fetch_task_handler handler) { m_fetch_task_handler = handler; }
             int8_t get_status();
+            std::string get_task_id();
 
         private:
             std::shared_ptr<ai_training_task> m_idle_task = nullptr;

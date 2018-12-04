@@ -27,7 +27,7 @@ namespace service
     {
 
 #define MAX_NODE_INFO_KEYS_NUM 15
-#define MAX_NODE_INFO_VALUE_LEN 3000
+#define MAX_NODE_INFO_VALUE_LEN 8192
 
 
         node_info_query_resp_msg::node_info_query_resp_msg():
