@@ -637,11 +637,21 @@ namespace ai
                 return E_SUCCESS;
             }
 
+            if (!CONNECTION_MANAGER->have_active_channel())
+            {
+                // early false response to avoid timer/session operations
+                cmd_resp->result = E_INACTIVE_CHANNEL;
+                cmd_resp->result_info = "dbc node do not connect to network, pls check.";
+                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+
             req_msg->set_content(req_content);
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer
-            uint32_t timer_id = add_timer(LIST_TRAINING_TIMER, DEFAULT_SERVICE_TIMER_INTERVAL, ONLY_ONE_TIME, req_content->header.session_id);
+            uint32_t timer_id = add_timer(LIST_TRAINING_TIMER, CONF_MANAGER->get_timer_dbc_request_in_millisecond(), ONLY_ONE_TIME, req_content->header.session_id);
             assert(INVALID_TIMER_ID != timer_id);
 
             //service session
@@ -658,14 +668,6 @@ namespace ai
             variable_value task_ids;
             task_ids.value() = std::make_shared<std::unordered_map<std::string, int8_t>>();
             session->get_context().add("task_ids", task_ids);
-
-            if (!CONNECTION_MANAGER->have_active_channel())
-            {
-                cmd_resp->result = E_INACTIVE_CHANNEL;
-                cmd_resp->result_info = "dbc node do not connect to network, pls check.";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_list_training_resp).name(), cmd_resp);
-                return E_DEFAULT;
-            }
 
             //add to session
             int32_t ret = this->add_session(session->get_session_id(), session);
@@ -1215,7 +1217,7 @@ namespace ai
             req_msg->set_name(req_content->header.msg_name);
 
             //add to timer
-            uint32_t timer_id = add_timer(TASK_LOGS_TIMER, DEFAULT_SERVICE_TIMER_INTERVAL, ONLY_ONE_TIME, req_content->header.session_id);
+            uint32_t timer_id = add_timer(TASK_LOGS_TIMER, CONF_MANAGER->get_timer_dbc_request_in_millisecond(), ONLY_ONE_TIME, req_content->header.session_id);
             assert(INVALID_TIMER_ID != timer_id);
 
             //service session

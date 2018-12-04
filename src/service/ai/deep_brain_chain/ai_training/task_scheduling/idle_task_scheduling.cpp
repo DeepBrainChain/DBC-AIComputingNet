@@ -157,6 +157,18 @@ namespace ai
 
             return task_running;
         }
+
+        std::string idle_task_scheduling::get_task_id()
+        {
+            if (nullptr == m_idle_task)
+            {
+                return "";
+            }
+
+            return m_idle_task->task_id;
+        }
+
+
     }
 
 }
