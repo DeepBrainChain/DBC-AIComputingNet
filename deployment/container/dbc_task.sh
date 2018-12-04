@@ -85,17 +85,17 @@ fi
 # install necessary tool
 if [ ! `which curl` ] || [ ! `which wget` ]; then
     echo "apt update"
-    apt-get update
+    apt-get update >/dev/null
 fi
 
 if [ ! `which curl` ]; then
     echo "install curl"
-    apt-get install --yes curl
+    apt-get install --yes curl >/dev/null
 fi
 
 if [ ! `which wget` ]; then
     echo "install wget"
-    apt-get install --yes wget
+    apt-get install --yes wget >/dev/null
 fi
 
 

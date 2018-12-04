@@ -87,6 +87,8 @@ namespace ai
             std::shared_ptr<cmd_start_training_resp> start_training_task_helper(
                     std::shared_ptr<cmd_start_training_req> req );
 
+            void cmd_key(int argc, char* argv[]);
+
 
         protected:
 

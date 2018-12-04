@@ -35,7 +35,6 @@ namespace service
     namespace misc
     {
 
-        #define DEFAULT_SERVICE_TIMER_INTERVAL              (5 * 1000)
         #define NODE_INFO_QUERY_TIMER                       "node_info_query_timer"
         #define TIMER_INTERVAL_NODE_INFO_COLLECTION           (5*1000)
 
@@ -399,7 +398,7 @@ namespace service
         int32_t data_query_service::create_data_query_session(std::string session_id, std::shared_ptr<node_info_query_req_msg> q)
         {
             //guard timer
-            uint32_t timer_id = add_timer(NODE_INFO_QUERY_TIMER, DEFAULT_SERVICE_TIMER_INTERVAL,
+            uint32_t timer_id = add_timer(NODE_INFO_QUERY_TIMER, CONF_MANAGER->get_timer_dbc_request_in_millisecond(),
                                           ONLY_ONE_TIME, session_id);
 
             if (INVALID_TIMER_ID == timer_id)

@@ -35,7 +35,7 @@ namespace service
         }
 
         enum {
-            LINE_SIZE = 1024,
+            LINE_SIZE = 2048,
             MAX_KEY_LEN = 128
         };
 
