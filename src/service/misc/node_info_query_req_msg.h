@@ -29,7 +29,8 @@ namespace service
             node_info_query_req_msg();
             node_info_query_req_msg(std::shared_ptr<message> msg);
             int32_t send();
-            void prepare(std::string o_node_id, std::string d_node_id, std::vector<std::string> key);
+            void prepare(std::string o_node_id, std::string d_node_id, std::vector<std::string> key,std::string
+            session_id);
             std::string get_session_id();
 
             bool validate();

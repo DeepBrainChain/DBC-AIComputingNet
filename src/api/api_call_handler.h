@@ -512,10 +512,10 @@ namespace ai
 
         class api_call_handler
         {
-        public:
+         public:
 
             api_call_handler():
-                    m_wait(std::make_shared<callback_wait<>>())
+                m_wait(std::make_shared<callback_wait<>>())
             {
 //                init_subscription();
             }
@@ -534,6 +534,8 @@ namespace ai
                 std::unique_lock<std::mutex> lock(m_mutex);
 
                 //construct message
+                m_session_id = id_generator().generate_session_id();
+                req->header.__set_session_id(m_session_id);
                 std::shared_ptr<message> msg = std::make_shared<message>();
                 msg->set_name(typeid(req_type).name());
                 msg->set_content(req);
@@ -545,26 +547,26 @@ namespace ai
 
                 //synchronous wait for resp
                 std::chrono::milliseconds DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS = std::chrono::milliseconds(CONF_MANAGER->get_timer_dbc_request_in_millisecond()*12/10);
+
                 m_wait->wait_for(DEFAULT_CMD_LINE_WAIT_MILLI_SECONDS);
-                if(true == m_wait->flag())
-                {
+                if (true == m_wait->flag()) {
                     return std::dynamic_pointer_cast<resp_type>(m_resp);
-                }
-                else
-                {
+                } else {
                     LOG_DEBUG << "api_call_handler time out: " << msg->get_name();
                     return nullptr;
                 }
 
             }
 
-        private:
+         private:
 
-            std::mutex m_mutex;    //       currently no need.
+            std::mutex m_mutex;
 
             std::shared_ptr<matrix::core::base> m_resp;
 
             std::shared_ptr<callback_wait<>> m_wait;
+
+            std::string m_session_id;
 
         };
 

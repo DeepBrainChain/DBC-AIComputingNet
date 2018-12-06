@@ -230,6 +230,7 @@ namespace service
             auto cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
             auto content = msg->get_content();
             auto req = std::dynamic_pointer_cast<ai::dbc::cmd_show_req>(content);
+            COPY_MSG_HEADER(req,cmd_resp);
 
             if (!req || !content)
             {
@@ -255,7 +256,7 @@ namespace service
             {
                 if (id_generator().check_node_id(req->d_node_id) != true)
                 {
-                    auto cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
+
                     cmd_resp->error("invalid node id: " + req->d_node_id);
 
                     TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_show_resp).name(), cmd_resp);
@@ -264,7 +265,7 @@ namespace service
 
                 if(req->d_node_id == req->o_node_id)
                 {
-                    auto cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
+
                     cmd_resp->op = ai::dbc::OP_SHOW_NODE_INFO;
 
                     std::map<std::string, std::string> kvs;
@@ -294,21 +295,22 @@ namespace service
                 }
 
                 auto q = std::make_shared<node_info_query_req_msg>();
+                std::string sesssion_id = req->header.session_id;
 
                 if (req->keys.size() == 1 && req->keys[0]=="all")
                 {
                     auto tmp_keys = m_node_info_collection.get_keys();
-                    q->prepare(req->o_node_id, req->d_node_id, tmp_keys);
+                    q->prepare(req->o_node_id, req->d_node_id, tmp_keys,sesssion_id);
                 }
                 else
                 {
-                    q->prepare(req->o_node_id, req->d_node_id, req->keys);
+                    q->prepare(req->o_node_id, req->d_node_id, req->keys,sesssion_id);
                 }
 
                 int32_t rtn = create_data_query_session(q->get_session_id(), q );
                 if( rtn != E_SUCCESS)
                 {
-                    auto cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
+
                     cmd_resp->error("internal error");
 
                     TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_show_resp).name(), cmd_resp);
@@ -463,7 +465,7 @@ namespace service
                 // destination node
                 LOG_DEBUG << "data_query_service::on_net_show_resp destination reached";
                 std::shared_ptr<ai::dbc::cmd_show_resp> cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
-
+                COPY_MSG_HEADER(content,cmd_resp);
                 //get session
                 std::shared_ptr<service_session> session = get_session(content->header.session_id);
                 if (nullptr == session)
@@ -608,6 +610,7 @@ namespace service
             }
 
             cmd_resp = std::make_shared<ai::dbc::cmd_show_resp>();
+            cmd_resp->header.__set_session_id( session_id );
             cmd_resp->error("time out");
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_show_resp).name(), cmd_resp);
 
