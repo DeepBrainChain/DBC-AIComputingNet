@@ -26,6 +26,9 @@ const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
 const int32_t DEFAULT_SPEED = 0;
 const bool DEFAULT_ENABLE = true;
 const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
+const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND = 10;
+const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND = 5;
+
 namespace matrix
 {
     namespace core
@@ -90,6 +93,8 @@ namespace matrix
                 ("max_connect", bpo::value<int32_t>()->default_value(128), "")
                 ("timer_service_broadcast_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND), "")
                 ("timer_dbc_request_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_DBC_REQUEST_IN_SECOND), "")
+                ("timer_ai_training_task_schedule_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND), "")
+                ("timer_log_refresh_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_LOG_REFRESH_IN_SECOND), "")
                 ("magic_num", bpo::value<std::string>()->default_value("0XE1D1A098"), "")
                 ("oss_url", bpo::value<std::string>()->default_value(""), "")
                 ("oss_crt", bpo::value<std::string>()->default_value(""), "")

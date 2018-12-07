@@ -55,15 +55,21 @@ stop_ipfs()
 {
     #stop ipfs
     echo "======================================================="
-    PROC_NAME='ipfs'
-    PROC_ID=`ps -aef | grep ipfs | grep -v grep | awk ' {print $2}'`
-    echo -n "ipfs daemon pid: "
-    echo $PROC_ID
-    kill -TERM $PROC_ID
+    USERID=`id -u`
+    PROC_NAME="ipfs"
+    ps_="ps -e -o uid -o pid -o command"
+
+    pid=$($ps_  | grep [d]aemon |  awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+
+    if [[ -n "$pid" ]]; then
+        echo "ipfs daemon pid: $pid"
+        echo "stop ipfs daemon"
+        ipfs shutdown > /dev/null 2>&1
+        kill -TERM $pid > /dev/null 2>&1
+    fi
 
     cd /
     rm -rf $home_dir/*
-
 
     echo "======================================================="
     echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
@@ -286,7 +292,7 @@ echo "$home_dir/code/$task"
 cd $home_dir/code
 dos2unix $task
 chmod +x  $task
-/bin/bash $task $opts | tee $home_dir/output/training_result_file
+/bin/bash $task $opts 2>&1 | tee $home_dir/output/training_result_file
 
 if [ $? -ne 0 ]; then
     echo "exec task failed and dbc_task.sh exit"

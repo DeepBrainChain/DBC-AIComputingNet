@@ -925,7 +925,7 @@ namespace ai
                     bool loop = false;
                     if (vm.count("flush") || vm.count("f"))
                     {
-                        interval = LOG_AUTO_FLUSH_INTERVAL_IN_SECONDS;
+                        interval = CONF_MANAGER->get_timer_log_refresh_in_second();
                         loop = true;
 
                         req->head_or_tail = GET_LOG_TAIL;

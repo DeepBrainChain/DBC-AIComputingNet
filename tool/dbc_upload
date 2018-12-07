@@ -13,19 +13,22 @@ fi
 
 DIR=$1
 format=$2
+prefix=$(echo "${DIR//.}" | tr / _)
 
 # need to kill ipfs daemon on exit if ipfs daemon is started by dbc_upload:
 #    dbc may invoke dbc_upload, and then ipfs will inherit all fd of dbc as a subprocess.
 #    finally, it prevent dbc restart, because port occupied by ipfs.
 #
 trap "exit" INT TERM
-trap "kill 0" EXIT
+trap "stop_ipfs_daemon" EXIT
 
 
 # set "tar" by default
 if [ -z "$format" ]; then
     format="tar"
 fi
+
+ipfs_pid_raised_by_me=0
 
 # start ipfs daemon if it is down
 start_ipfs_daemon()
@@ -35,13 +38,14 @@ start_ipfs_daemon()
     ps_="ps -e -o uid -o pid -o command"
     ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
     if [ -z "$ipfs_pid" ]; then
-        echo "ipfs daemon is starting"
+        echo "dbc_upload | ipfs daemon is starting"
         ipfs daemon --enable-gc >/dev/null 2>&1 &
+        ipfs_pid_raised_by_me=$!
         sleep 1
 
         ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
         if [ -z "$ipfs_pid" ]; then
-            echo "error: fail to start ipfs daemon"
+            echo "dbc_upload | error: fail to start ipfs daemon"
             return 1
         fi
     fi
@@ -52,7 +56,7 @@ start_ipfs_daemon()
         echo -n "."
         if ipfs swarm peers &>/dev/null; then
             echo
-            echo "ipfs daemon is ready"
+            echo "dbc_upload | ipfs daemon is ready"
             return 0
         fi
         sleep 1
@@ -61,6 +65,15 @@ start_ipfs_daemon()
     echo
     echo "error: fail to start ipfs daemon"
     return 1
+}
+
+stop_ipfs_daemon()
+{
+    if [ $ipfs_pid_raised_by_me -ne 0 ]; then
+        echo "dbc_upload | stop ipfs daemon"
+        ipfs shutdown
+        kill $ipfs_pid
+    fi
 }
 
 add_to_local_ipfs_repo()
@@ -101,7 +114,7 @@ add_to_local_ipfs_repo()
 
         #echo "require $src_size M but $dst_size M availabe"
 
-        prefix=$(echo "${DIR//.}" | tr / _)
+
         tmp_dir="./tmp$prefix"
 
         rm -rf $tmp_dir
@@ -142,46 +155,47 @@ add_to_local_ipfs_repo()
 check_content_duplicate_or_not()
 {
     # check if content has already been stored in ipfs network: more than one node can provide the content
-    stat_file=/tmp/$prefix.stat
-    ipfs dht findprovs -n 2 $DIR_HASH > $stat_file 2>&1 &
+    stat_file=/tmp/$prefix.$$.stat
+    ipfs dht findprovs -n 2 $DIR_HASH  >$stat_file 2>&1 &
     pid=$!
 
     max_wait_time=5
     rtn=1
     for i in `seq 1 $max_wait_time`; do
-        peers=$(cat $stat_file | wc -l)
-        if [ $peers -eq  2 ]; then
+        if ! kill -0 $pid &>/dev/null; then
             rtn=0
             break
-        fi
-
-        error=$(cat $stat_file | grep -i error)
-        if [ -n "$error" ]; then
-            rtn=2
-            break;
         fi
 
         sleep 1
     done
 
-    if [ $rtn -eq 0 ]; then
-        # more than one nodes can provide the content
-        echo "dbc_upload | duplicate content"
-        echo "DIR_HASH:$DIR_HASH"
-        echo "dbc_upload | upload complete"
-
-        if [ "$format" = "tar" ]; then
-            rm -rf $tmp_dir
-        fi
-
-        return 0
-
-    elif [ $rtn -eq 1 ]; then
+    if [ $rtn -eq 1 ]; then
         # no response in time, treate it as not duplicate case
         kill $pid > /dev/null 2>&1
         wait $pid > /dev/null
 
+        rm -f $stat_file
         return 1
+    elif ! grep -i error $stat_file; then
+
+        if [ $(cat $stat_file | wc -l) -gt 1 ]; then
+            # more than one nodes can provide the content
+            echo "dbc_upload | duplicate content"
+            echo "DIR_HASH:$DIR_HASH"
+            echo "dbc_upload | upload complete"
+
+            if [ "$format" = "tar" ]; then
+                rm -rf $tmp_dir
+            fi
+
+            rm -f $stat_file
+            return 0
+        else
+            rm -f $stat_file
+            return 1
+        fi
+
     else
         # error happened, shall exit the program
         echo "$error"
@@ -191,6 +205,7 @@ check_content_duplicate_or_not()
             rm -rf $tmp_dir
         fi
 
+        rm -f $stat_file
         exit 1
     fi
 }

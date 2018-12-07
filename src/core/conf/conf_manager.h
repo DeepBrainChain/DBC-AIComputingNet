@@ -34,6 +34,8 @@ extern const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE;
 extern std::string DEFAULT_REST_PORT;
 
 extern const int32_t DEFAULT_TIMER_DBC_REQUEST_IN_SECOND;
+extern const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND;
+extern const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND;
 
 
 namespace matrix
@@ -95,6 +97,14 @@ namespace matrix
                     return (m_args["timer_dbc_request_in_second"].as<int32_t>()) * 1000;
                 else
                     return DEFAULT_TIMER_DBC_REQUEST_IN_SECOND * 1000;
+            }
+
+            const int32_t get_timer_ai_training_task_schedule_in_second() {
+                return m_args.count("timer_ai_training_task_schedule_in_second") ? m_args["timer_ai_training_task_schedule_in_second"].as<int32_t>() : DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND;
+            }
+
+            const int32_t get_timer_log_refresh_in_second() {
+                return m_args.count("timer_log_refresh_in_second") ? m_args["timer_log_refresh_in_second"].as<int32_t>() : DEFAULT_TIMER_LOG_REFRESH_IN_SECOND;
             }
 
 
