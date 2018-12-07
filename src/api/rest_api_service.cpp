@@ -13,6 +13,8 @@
 #include "rpc_error.h"
 #include "log.h"
 #include "api_call_handler.h"
+#include "service_message_id.h"
+#include "time_tick_notification.h"
 #include <chrono>
 #include <ctime>
 using namespace std::chrono;
@@ -104,7 +106,7 @@ namespace matrix
         {
             std::string str_uri = hreq->get_uri();
             if (check_invalid_http_request(hreq)) {
-                LOG_ERROR << "the request is invalid,so reject it," <<str_uri;
+                LOG_ERROR << "the request is invalid,so reject it," << str_uri;
                 return;
             }
 
@@ -188,8 +190,7 @@ namespace matrix
             std::shared_ptr<service_session> session = nullptr;
 
             do {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                if (m_sessions.size() >= MAX_SESSION_COUNT) {
+                if (get_session_count() >= MAX_SESSION_COUNT) {
 
                     LOG_ERROR << "str_uri:" << str_uri << ";m_sessions.size() exceed size";
 
@@ -253,19 +254,16 @@ namespace matrix
 
                 }
 
-                {
-                    //Locked protection resource from service_module
-                    std::unique_lock<std::mutex> lock(m_mutex);
-                    session = get_session(session_id);
-                    if (nullptr == session) {
+                session = pop_session(session_id);
+                if (nullptr == session) {
 
-                        LOG_ERROR << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
-                        ret_code = E_NULL_POINTER;
-                        break;
-                    }
+                    LOG_ERROR << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
+                    ret_code = E_NULL_POINTER;
+                    break;
                 }
 
                 try {
+                    remove_timer(session->get_timer_id());
                     variables_map& vm = session->get_context().get_args();
 
                     if (0 == vm.count(HTTP_REQUEST_KEY)) {
@@ -303,15 +301,6 @@ namespace matrix
                 }
             } while (0);
 
-            if (nullptr != session) {
-                //Locked protection resource from service_module
-                std::unique_lock<std::mutex> lock(m_mutex);
-                this->remove_timer(session->get_timer_id());
-
-                session->clear();
-                this->remove_session(session->get_session_id());
-            }
-
             return ret_code;
 
         }
@@ -337,15 +326,11 @@ namespace matrix
                     break;
                 }
 
-                {
-                    //Locked protection resource from service_module
-                    std::unique_lock<std::mutex> lock(m_mutex);
-                    session = get_session(session_id);
-                    if (nullptr == session) {
-                        LOG_ERROR << "cannot find  session_id:" << session_id;
-                        ret_code = E_NULL_POINTER;
-                        break;
-                    }
+                session = pop_session(session_id);
+                if (nullptr == session) {
+                    LOG_ERROR << "cannot find  session_id:" << session_id;
+                    ret_code = E_NULL_POINTER;
+                    break;
                 }
 
                 try {
@@ -369,30 +354,82 @@ namespace matrix
 
             } while (0);
 
-            if (nullptr != session) {
-                session->clear();
-
-                //Locked protection resource from service_module
-                std::unique_lock<std::mutex> lock(m_mutex);
-                remove_session(session_id);
-            }
-
             return ret_code;
 
         }
 
-
         int32_t rest_api_service::get_session_count()
         {
-            std::unique_lock<std::mutex> lock(m_mutex);
+            std::unique_lock<std::mutex> lock(m_session_lock);
             return m_sessions.size();
         }
 
-        int32_t  rest_api_service::get_startup_time()
+        int32_t rest_api_service::get_startup_time()
         {
             auto time_span_ms = duration_cast<milliseconds>(high_resolution_clock::now() - server_start_time);
-            int32_t fractional_seconds = (int32_t) ( time_span_ms.count() / 1000);
+            int32_t fractional_seconds = (int32_t) (time_span_ms.count()/1000);
             return fractional_seconds;
+        }
+
+        int32_t rest_api_service::on_invoke(std::shared_ptr<message>& msg)
+        {
+            //timer point notification trigger timer process
+            if (msg->get_name() == TIMER_TICK_NOTIFICATION) {
+                std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
+                assert(nullptr != content);
+
+                std::unique_lock<std::mutex> lock(m_timer_lock);
+                return m_timer_manager->process(content->time_tick);
+
+            } else {
+                return service_msg(msg);
+            }
+        }
+
+        //Thread safe to call add_timer
+        uint32_t rest_api_service::add_timer(std::string name,
+                                             uint32_t period,
+                                             uint64_t repeat_times,
+                                             const std::string& session_id)
+        {
+            std::unique_lock<std::mutex> lock(m_timer_lock);
+            return m_timer_manager->add_timer(name, period, repeat_times, session_id);
+        }
+
+        //Thread safe to call remove_timer
+        void rest_api_service::remove_timer(uint32_t timer_id)
+        {
+            std::unique_lock<std::mutex> lock(m_timer_lock);
+            m_timer_manager->remove_timer(timer_id);
+        }
+
+        //Thread safe to call add_session
+        int32_t rest_api_service::add_session(std::string session_id, std::shared_ptr<service_session> session)
+        {
+            std::unique_lock<std::mutex> lock(m_session_lock);
+            auto it = m_sessions.find(session_id);
+            if (it != m_sessions.end()) {
+                return E_DEFAULT;
+            }
+
+            m_sessions.insert({session_id, session});
+            return E_SUCCESS;
+        }
+
+        //Thread safe to call pop_session
+        std::shared_ptr<service_session> rest_api_service::pop_session(std::string session_id)
+        {
+            std::shared_ptr<service_session> session = nullptr;
+
+            std::unique_lock<std::mutex> lock(m_session_lock);
+            auto it = m_sessions.find(session_id);
+            if (it == m_sessions.end()) {
+                return nullptr;
+            }
+
+            session = it->second;
+            m_sessions.erase(session_id);
+            return session;
         }
     }
 }
