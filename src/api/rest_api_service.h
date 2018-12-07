@@ -45,6 +45,19 @@ namespace matrix
             virtual void init_subscription();
             virtual void init_timer();
 
+            virtual int32_t on_invoke(std::shared_ptr<message>& msg);
+            uint32_t add_timer(std::string name,
+                               uint32_t period,
+                               uint64_t repeat_times = ULLONG_MAX,
+                               const std::string& session_id = DEFAULT_STRING);
+            void remove_timer(uint32_t timer_id);
+
+            int32_t add_session(std::string session_id, std::shared_ptr<service_session> session);
+
+            std::shared_ptr<service_session> pop_session(std::string session_id);
+
+
+
             virtual void on_http_request_event(std::shared_ptr<http_request>& hreq);
 
          private:
@@ -55,7 +68,8 @@ namespace matrix
             int32_t on_http_request_timeout_event(std::shared_ptr<core_timer> timer);
 
          private:
-            std::mutex m_mutex;
+            std::mutex m_timer_lock;
+            std::mutex m_session_lock;
             std::vector<http_path_handler> m_path_handlers;
             std::map<std::string, response_call_handler> m_rsp_handlers;
 
