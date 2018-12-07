@@ -43,7 +43,7 @@ start_ipfs_daemon()
         return 1
     else
         # loop until ipfs daemon is ready for use
-        for i in {1..30}; do
+        for i in {1..40}; do
             echo -n "."
             if ipfs swarm peers &>/dev/null; then
                 echo

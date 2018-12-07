@@ -136,7 +136,7 @@ namespace ai
         void ai_power_provider_service::init_timer()
         {
             m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
-            m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, AI_TRAINING_TASK_TIMER_INTERVAL);
+            m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, CONF_MANAGER->get_timer_ai_training_task_schedule_in_second() * 1000);
             assert(INVALID_TIMER_ID != m_training_task_timer_id);
         }
 
@@ -264,9 +264,17 @@ namespace ai
             LOG_DEBUG << "req container_name: " << req->body.container_name;
             if (ref_task != nullptr)
             {
-                ref_container_id = ref_task->container_id;
                 LOG_DEBUG << "ref task container id: " << ref_task->container_id;
                 LOG_DEBUG << "ref task id: " << ref_task->task_id;
+
+                if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
+                {
+                    ref_container_id = ref_task->container_id;
+                }
+                else
+                {
+                    LOG_WARNING << "forbid reusing container not own";
+                }
             }
 
             task->__set_container_id(ref_container_id);
