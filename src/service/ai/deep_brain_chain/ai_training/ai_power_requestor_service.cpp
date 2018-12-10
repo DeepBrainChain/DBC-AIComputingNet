@@ -625,7 +625,7 @@ namespace ai
                     if (vec_task_infos_to_show->size() >= MAX_TASK_SHOWN_ON_LIST)
                         break;
                     //append some closed task to show on cmd console
-                    if (info.status & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                    if (info.status & (task_stopped | task_successfully_closed | task_abnormally_closed | task_overdue_closed))
                     {
                         vec_task_infos_to_show->push_back(info);
                     }
@@ -793,7 +793,7 @@ namespace ai
                 if ((it != task_ids->end()))
                 {
                     info.status = it->second;
-                    //if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                    //if (it->second & (task_stopped | task_successfully_closed | task_abnormally_closed | task_overdue_closed))
                     if (info.status >= task_stopped)
                     {
                         write_task_info_to_db(info);
@@ -889,7 +889,7 @@ namespace ai
                         cts.status = it->second;
                         //update to db
                         info.status = it->second;
-                        //if (it->second & (task_stopped | task_succefully_closed | task_abnormally_closed | task_overdue_closed))
+                        //if (it->second & (task_stopped | task_successfully_closed | task_abnormally_closed | task_overdue_closed))
                         if (info.status >= task_stopped)
                         {
                             write_task_info_to_db(info);

@@ -28,8 +28,8 @@ namespace ai
                 return "task_running";
             case task_stopped:
                 return "task_stopped";
-            case task_succefully_closed:
-                return "task_succefully_closed";
+            case task_successfully_closed:
+                return "task_successfully_closed";
             case task_abnormally_closed:
                 return "task_abnormally_closed";
             case task_overdue_closed:

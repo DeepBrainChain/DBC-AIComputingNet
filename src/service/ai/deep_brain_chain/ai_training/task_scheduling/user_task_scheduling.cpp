@@ -334,7 +334,7 @@ namespace ai
             else
             {
                 LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
-                stop_task(task, task_succefully_closed);                
+                stop_task(task, task_successfully_closed);
                 return E_SUCCESS;
             }
             return E_SUCCESS;
