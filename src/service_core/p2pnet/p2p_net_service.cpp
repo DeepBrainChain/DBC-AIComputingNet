@@ -1086,6 +1086,7 @@ namespace matrix
             std::shared_ptr<base> content = msg->get_content();
             auto req = std::dynamic_pointer_cast<matrix::service_core::cmd_get_peer_nodes_req>(content);
             assert(nullptr != req && nullptr != content);
+            COPY_MSG_HEADER(req,cmd_resp);
             if (!req || !content)
             {
                 LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";

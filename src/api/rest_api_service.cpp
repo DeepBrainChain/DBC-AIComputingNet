@@ -227,7 +227,7 @@ namespace matrix
                     return;
                 }
 
-                LOG_ERROR << "str_uri:" << str_uri << ";add_session:" << session_id << ";msg_name:"
+                LOG_INFO << "str_uri:" << str_uri << ";add_session:" << session_id << ";msg_name:"
                           << req_msg->get_name();
             } while (0);
 
