@@ -894,6 +894,19 @@ namespace ai
                         {
                             write_task_info_to_db(info);
                         }
+                        else
+                        {
+                            // fetch old status value from db, then update it
+                            ai::dbc::cmd_task_info task_info_in_db;
+                            if(read_task_info_from_db(info.task_id, task_info_in_db))
+                            {
+                                if(task_info_in_db.status != info.status && info.status != task_unknown)
+                                {
+                                    write_task_info_to_db(info);
+                                }
+                            }
+                        }
+
                     }
                     else
                     {
