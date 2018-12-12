@@ -37,13 +37,15 @@ start_ipfs_daemon()
         return 0
     fi
 
+    # wait process ready
+    sleep 1
     ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
     if [ -z "$ipfs_pid" ]; then
         echo "error: fail to start ipfs daemon"
         return 1
     else
         # loop until ipfs daemon is ready for use
-        for i in {1..40}; do
+        for i in {1..60}; do
             echo -n "."
             if ipfs swarm peers &>/dev/null; then
                 echo
@@ -55,7 +57,7 @@ start_ipfs_daemon()
     fi
 
     echo
-    echo "error: fail to start ipfs daemon"
+    echo "error: fail to start ipfs daemon!"
     return 1
 }
 
@@ -117,7 +119,6 @@ fi
 
 rm -rf /dbc/*
 
-wait_ipfs_daemon_ready=30s
 export IPFS_PATH=$ipfs_install_path
 
 if [ ! `which ipfs` ]; then
