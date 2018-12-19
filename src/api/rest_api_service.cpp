@@ -257,7 +257,7 @@ namespace matrix
                 session = pop_session(session_id);
                 if (nullptr == session) {
 
-                    LOG_ERROR << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
+                    LOG_DEBUG << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
                     ret_code = E_NULL_POINTER;
                     break;
                 }
