@@ -552,27 +552,31 @@ namespace matrix
                 LOG_WARNING << "connection manager broadcast message error, no active channel";
                 return E_INACTIVE_CHANNEL;
             }
-            
-			read_lock_guard<rw_lock> lock(m_lock_chnl);
-			auto it = m_channels.begin();
-			for (; it != m_channels.end(); ++it)
-			{
-                if (id.get_id() != 0)
+
+            {
+                read_lock_guard<rw_lock> lock(m_lock_chnl);
+                auto it = m_channels.begin();
+                for (; it != m_channels.end(); ++it)
                 {
-                    if (it->first == id)
+                    if (id.get_id() != 0)
+                    {
+                        if (it->first == id)
+                            continue;
+                    }
+
+                    //not login success or stopped, continue
+                    if (!it->second->is_channel_ready())
+                    {
+                        LOG_DEBUG << "connection manager broadcast message, but peer socket id: " << it->first.get_id()
+                                  << " not logined.";
                         continue;
+                    }
+
+                    LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string()
+                              << ", message name: " << msg->get_name();
+                    it->second->write(msg);
                 }
-                
-                //not login success or stopped, continue
-                if (!it->second->is_channel_ready())
-                {
-                    LOG_DEBUG << "connection manager broadcast message, but peer socket id: " << it->first.get_id() << " not logined.";
-                    continue;
-                }
-                
-				LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string() << ", message name: " << msg->get_name();
-				it->second->write(msg);
-			}
+            }
 
             return E_SUCCESS;
 		}
@@ -651,21 +655,18 @@ namespace matrix
                 return false;
             }
 
-            read_lock_guard<rw_lock> lock(m_lock_chnl);
-
-            auto& path = msg->content->header.path;
-
-            auto c = find_fast_path(path);
-
-            if (c!=nullptr)
             {
-                LOG_DEBUG << "unicast msg " << msg->get_name();
-                c->write(msg);
-            }
-            else
-            {
-                LOG_DEBUG << "broadcast msg " << msg->get_name();
-                broadcast_message(msg,id);
+                read_lock_guard<rw_lock> lock(m_lock_chnl);
+
+                auto &path = msg->content->header.path;
+
+                auto c = find_fast_path(path);
+
+                if (c != nullptr)
+                {
+                    LOG_DEBUG << "unicast msg " << msg->get_name();
+                    c->write(msg);
+                }
             }
 
             return true;
