@@ -664,8 +664,11 @@ namespace matrix
             }
             else
             {
-                LOG_DEBUG << "broadcast msg " << msg->get_name();
-                broadcast_message(msg,id);
+//                LOG_DEBUG << "broadcast msg " << msg->get_name();
+//                broadcast_message(msg,id);
+                LOG_DEBUG << "path is null, drop it. " << msg->get_name();
+                return false;
+
             }
 
             return true;

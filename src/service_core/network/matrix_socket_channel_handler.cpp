@@ -12,6 +12,7 @@
 #include "tcp_socket_channel.h"
 #include "service_proto_filter.h"
 #include "compress/matrix_compress.h"
+#include <algorithm>
 
 
 namespace matrix
@@ -58,6 +59,66 @@ namespace matrix
             }
 
             return E_SUCCESS;
+        }
+
+
+        bool matrix_socket_channel_handler::validate_req_path(std::string msg_name, std::vector<std::string>& path)
+        {
+            if( msg_name != LIST_TRAINING_REQ &&
+                msg_name != STOP_TRAINING_REQ &&
+                msg_name != AI_TRAINING_NOTIFICATION_REQ &&
+                msg_name != LOGS_REQ &&
+                msg_name != SHOW_REQ)
+            {
+                return true;
+            }
+
+
+            int path_len=path.size();
+            if (path_len == 0 || path_len > 20)
+            {
+                LOG_ERROR << "path length invalid "<< path_len << endl;
+                return false;
+            }
+
+
+            auto ch_ = m_channel.lock();
+            if( nullptr == ch_)
+            {
+                return false;
+            }
+
+            shared_ptr<tcp_socket_channel> ch = std::dynamic_pointer_cast<tcp_socket_channel>(ch_);
+            if (nullptr == ch)
+            {
+                return false;
+            }
+
+            std::string peer_id = ch->get_remote_node_id();
+            if (path.back() != peer_id)
+            {
+                LOG_ERROR << "peer id not the last path id";
+                return false;
+            }
+
+            std::string my_id = CONF_MANAGER->get_node_id();
+            if (std::find(path.begin(), path.end(), my_id) != path.end())
+            {
+                LOG_ERROR << "my id already in the path";
+                return false;
+            }
+
+
+            auto it = std::unique (path.begin(), path.end());
+            path.resize( std::distance(path.begin(),it) );
+
+            if(path_len != path.size())
+            {
+                LOG_ERROR << "path has duplicate elements";
+                return false;
+            }
+
+            return true;
         }
 
         int32_t matrix_socket_channel_handler::on_read(channel_handler_context &ctx, byte_buf &in)
@@ -107,6 +168,13 @@ namespace matrix
                                 LOG_ERROR << "decode error, msg is null" << m_sid.to_string();
                                 return DECODE_ERROR;
                             }
+
+                            if ( !validate_req_path(msg->get_name(), msg->content->header.path))
+                            {
+                                LOG_DEBUG << "req's path invalid, drop it";
+                                return E_SUCCESS;
+                            }
+
                             const std::string & nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : DEFAULT_STRING;
                             //check msg duplicated
                             if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
