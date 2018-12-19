@@ -73,14 +73,12 @@ namespace matrix
                 return true;
             }
 
-
             int path_len=path.size();
             if (path_len == 0 || path_len > 20)
             {
                 LOG_ERROR << "path length invalid "<< path_len << endl;
                 return false;
             }
-
 
             auto ch_ = m_channel.lock();
             if( nullptr == ch_)
@@ -97,14 +95,14 @@ namespace matrix
             std::string peer_id = ch->get_remote_node_id();
             if (path.back() != peer_id)
             {
-                LOG_ERROR << "peer id not the last path id";
+                LOG_ERROR << "peer id is not the last path id";
                 return false;
             }
 
             std::string my_id = CONF_MANAGER->get_node_id();
             if (std::find(path.begin(), path.end(), my_id) != path.end())
             {
-                LOG_ERROR << "my id already in the path";
+                LOG_ERROR << "my id is already in the path";
                 return false;
             }
 
@@ -169,7 +167,7 @@ namespace matrix
                                 return DECODE_ERROR;
                             }
 
-                            if ( !validate_req_path(msg->get_name(), msg->content->header.path))
+                            if (!validate_req_path(msg->get_name(), msg->content->header.path))
                             {
                                 LOG_DEBUG << "req's path invalid, drop it";
                                 return E_SUCCESS;
