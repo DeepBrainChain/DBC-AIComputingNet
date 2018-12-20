@@ -1,6 +1,6 @@
 ; 安装程序初始定义常量
 !define PRODUCT_NAME "DBC for AI"
-!define PRODUCT_VERSION "0.3.4.1"
+!define PRODUCT_VERSION "0.3.5.4"
 !define PRODUCT_PUBLISHER "Deep Brain Chain, Inc."
 !define PRODUCT_WEB_SITE "https://www.deepbrainchain.org"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
@@ -65,7 +65,7 @@ Var boolInstallSuccess
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifdiff
-  File /r "dbc-win10-0.3.4.1_install\*.*"
+  File /r "dbc-win10-${PRODUCT_VERSION}_install\*.*"
   CreateShortCut "$DESKTOP\dbc.lnk" "$INSTDIR\dbc.exe"  "" "$INSTDIR\dbc.ico" 0
   CreateShortCut "$SMSTARTUP\startup dbc.lnk" "$INSTDIR\dbc.exe"  "" "$INSTDIR\dbc.ico" 0
 SectionEnd
