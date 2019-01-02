@@ -89,6 +89,8 @@ namespace ai
                 ("shm_size", bpo::value<int64_t>()->default_value(0), "")
                 ("host_volum_dir", bpo::value<std::string>()->default_value(""), "")
                 ("auto_pull_image", bpo::value<bool>()->default_value(true), "")
+                ("prune_container_interval", bpo::value<int16_t>()->default_value(168), "")
+                ("prune_container_freespace_scale", bpo::value<int16_t>()->default_value(50), "")
                 ("engine_reg", bpo::value<std::string>()->default_value(""), "");
 
             try
@@ -126,6 +128,21 @@ namespace ai
                 }
                 m_auto_pull_image = m_container_args["auto_pull_image"].as<bool>();
                 set_task_engine(m_container_args["engine_reg"].as<std::string>());
+                m_prune_container_interval = m_container_args["prune_container_interval"].as<int16_t>();
+                //minmum value is 1 hour, max value is 360 day.
+                if (m_prune_container_interval < 1 || m_prune_container_interval > 8640)
+                {
+                    LOG_ERROR << "prune_container_interval must bigger than 1h and smaller than 8640h";
+                    return E_DEFAULT;
+                }
+
+                m_prune_container_freespace_scale = m_container_args["prune_container_freespace_scale"].as<int16_t>();
+                //minmum value is 1 hour, max value is 360 day.
+                if (m_prune_container_freespace_scale < 1 || m_prune_container_freespace_scale>100)
+                {
+                    LOG_ERROR << "prune_container_freespace_scale must bigger than 1 and smaller than 100";
+                    return E_DEFAULT;
+                }
             }
             catch (const boost::exception & e)
             {
@@ -477,6 +494,34 @@ namespace ai
 
             return E_SUCCESS;
         }
-    }
 
+        int32_t container_worker::prune_container()
+        {
+            int16_t prune_interval = m_prune_container_interval;
+            //get docker root dir
+            if (m_docker_root_dir.empty())
+            {
+                std::shared_ptr<docker_info> docker_info_ptr = m_container_client->get_docker_info();
+                if (!docker_info_ptr)
+                {
+                    LOG_ERROR << "docker get docker info faild.";
+                    return E_DEFAULT;
+                }
+                m_docker_root_dir = docker_info_ptr->root_dir;
+            }
+
+            int32_t freedisk = get_disk_free(m_docker_root_dir);
+            int32_t totaldisk = get_disk_total(m_docker_root_dir);
+            if (freedisk >  (totaldisk * m_prune_container_freespace_scale) / 100)
+            {
+                prune_interval = prune_interval / 2;
+                LOG_INFO << "docker root space is not enough, prune_interval=" << prune_interval;
+            }
+
+            LOG_INFO << "prune docker container";
+
+            m_container_client->prune_container(prune_interval);
+            return E_SUCCESS;
+        }
+    }
 }

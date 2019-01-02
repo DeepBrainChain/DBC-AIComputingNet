@@ -205,6 +205,7 @@
     <ClCompile Include="..\..\..\..\src\core\crypto\uint256.cpp" />
     <ClCompile Include="..\..\..\..\src\core\crypto\utilstrencodings.cpp" />
     <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\filter\bloom.cpp" />
     <ClCompile Include="..\..\..\..\src\core\filter\fulltext.cpp" />
     <ClCompile Include="..\..\..\..\src\core\filter\simple_expression.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
@@ -493,6 +494,7 @@
     <ClInclude Include="..\..\..\..\src\core\crypto\uint256.h" />
     <ClInclude Include="..\..\..\..\src\core\crypto\utilstrencodings.h" />
     <ClInclude Include="..\..\..\..\src\core\env\env_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\filter\bloom.h" />
     <ClInclude Include="..\..\..\..\src\core\filter\fulltext.h" />
     <ClInclude Include="..\..\..\..\src\core\filter\simple_expression.h" />
     <ClInclude Include="..\..\..\..\src\core\initiator\server.h" />

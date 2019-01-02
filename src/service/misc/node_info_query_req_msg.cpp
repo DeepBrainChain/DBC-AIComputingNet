@@ -16,7 +16,7 @@
 #include "id_generator.h"
 #include "service_message_id.h"
 #include "node_info_collection.h"
-
+#include <boost/algorithm/string/join.hpp>
 
 using namespace matrix::service_core;
 
@@ -66,6 +66,16 @@ namespace service
             std::vector<std::string> path;
             path.push_back(o_node_id);
             content->header.__set_path(path);
+
+            std::string sign_msg = content->header.nonce 
+                           + content->header.session_id+d_node_id
+                           +boost::algorithm::join(content->body.keys, "");
+            std::map<std::string, std::string> extern_info;
+            if (E_SUCCESS != extra_sign_info(sign_msg, extern_info))
+            {
+                return;
+            }
+            content->header.__set_exten_info(extern_info);
 
             msg->set_content(content);
             msg->set_name(content->header.msg_name);

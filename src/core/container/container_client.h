@@ -58,6 +58,9 @@ namespace matrix
 
             int32_t remove_container(std::string container_id, bool remove_volumes);
 
+            //prune container
+            int32_t prune_container(int16_t interval);
+
             //inspect
             std::shared_ptr<container_inspect_response> inspect_container(std::string container_id);
 
