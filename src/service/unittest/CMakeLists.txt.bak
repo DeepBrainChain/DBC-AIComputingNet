@@ -70,7 +70,7 @@ add_executable(dbc_service_test
 set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if(APPLE)
-    TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 )
+    TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES}  -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 )
 elseif(LINUX)
     TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lleveldb -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -ldl)
 endif()

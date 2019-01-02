@@ -30,7 +30,7 @@ using namespace std;
 
 #define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)               invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
 #define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                                    TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<message> &msg) {return send(msg);});
-
+#define USE_SIGN_TIME 1548777600
 
 namespace matrix
 {
@@ -40,6 +40,11 @@ namespace matrix
         using invoker_type = typename std::function<int32_t(std::shared_ptr<message> &msg)>;
 
         using timer_invoker_type = typename std::function<int32_t(std::shared_ptr<core_timer> timer)>;
+        const std::string ECDSA = "ecdsa";
+        bool use_sign_verify();
+        int32_t extra_sign_info(std::string &message, std::map<std::string, std::string> & exten_info);
+        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & exten_info);
+        bool verify_sign(std::string &message, std::map<std::string, std::string> & exten_info, std::string origin_node);
 
         class service_module : public module
         {

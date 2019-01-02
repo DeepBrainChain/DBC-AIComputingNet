@@ -172,6 +172,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\api\ansi_win_conv.cpp" />
     <ClCompile Include="..\..\..\..\src\api\api_call_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\api\cmd_line_service.cpp" />
     <ClCompile Include="..\..\..\..\src\api\console_printer.cpp" />
@@ -205,6 +206,7 @@
     <ClCompile Include="..\..\..\..\src\core\crypto\uint256.cpp" />
     <ClCompile Include="..\..\..\..\src\core\crypto\utilstrencodings.cpp" />
     <ClCompile Include="..\..\..\..\src\core\env\env_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\core\filter\bloom.cpp" />
     <ClCompile Include="..\..\..\..\src\core\filter\fulltext.cpp" />
     <ClCompile Include="..\..\..\..\src\core\filter\simple_expression.cpp" />
     <ClCompile Include="..\..\..\..\src\core\initiator\server.cpp" />
@@ -257,6 +259,7 @@
     <ClCompile Include="..\..\..\..\src\service_core\codec\net_message.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\common\common_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\service_core\common\container_resource_mng.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_server_socket_channel_handler.cpp" />
     <ClCompile Include="..\..\..\..\src\service_core\network\matrix_socket_channel_handler.cpp" />
@@ -436,6 +439,7 @@
     <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy-sinksource.h" />
     <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy-stubs-internal.h" />
     <ClInclude Include="..\..\..\..\src\3rd\snappy\snappy.h" />
+    <ClInclude Include="..\..\..\..\src\api\ansi_win_conv.h" />
     <ClInclude Include="..\..\..\..\src\api\api_call_handler.h" />
     <ClInclude Include="..\..\..\..\src\api\cmd_line_service.h" />
     <ClInclude Include="..\..\..\..\src\api\console_printer.h" />
@@ -493,6 +497,7 @@
     <ClInclude Include="..\..\..\..\src\core\crypto\uint256.h" />
     <ClInclude Include="..\..\..\..\src\core\crypto\utilstrencodings.h" />
     <ClInclude Include="..\..\..\..\src\core\env\env_manager.h" />
+    <ClInclude Include="..\..\..\..\src\core\filter\bloom.h" />
     <ClInclude Include="..\..\..\..\src\core\filter\fulltext.h" />
     <ClInclude Include="..\..\..\..\src\core\filter\simple_expression.h" />
     <ClInclude Include="..\..\..\..\src\core\initiator\server.h" />
@@ -567,6 +572,7 @@
     <ClInclude Include="..\..\..\..\src\service_core\codec\net_message.h" />
     <ClInclude Include="..\..\..\..\src\service_core\codec\thrift\matrix_types.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\common_service.h" />
+    <ClInclude Include="..\..\..\..\src\service_core\common\container_resource_mng.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\service_common_def.h" />
     <ClInclude Include="..\..\..\..\src\service_core\common\service_proto_filter.h" />
     <ClInclude Include="..\..\..\..\src\service_core\network\matrix_client_socket_channel_handler.h" />

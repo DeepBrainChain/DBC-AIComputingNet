@@ -27,6 +27,8 @@
 
 #include "service_topic.h"
 #include <ctime>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 using namespace matrix::service_core;
 
@@ -336,7 +338,6 @@ namespace service
          */
         int32_t data_query_service::on_net_show_req(std::shared_ptr<message> &msg)
         {
-
             //LOG_DEBUG << "data_query_service::on_net_show_req";
 
             std::shared_ptr<show_req> content = std::dynamic_pointer_cast<show_req>(msg->get_content());
@@ -350,6 +351,15 @@ namespace service
 
             auto o_node_id = content->body.o_node_id;
             auto d_node_id = content->body.d_node_id;
+
+            std::string sign_msg = content->header.nonce 
+                                     + content->header.session_id
+                                     +d_node_id+boost::algorithm::join(content->body.keys, "");
+            if (! verify_sign(sign_msg, content->header.exten_info,o_node_id))
+            {
+                LOG_ERROR << "fake message. " << o_node_id;
+                return E_DEFAULT;
+            }
 
             if (d_node_id == m_own_node_id)
             {
@@ -459,6 +469,14 @@ namespace service
 
             auto o_node_id = content->body.o_node_id;
             auto d_node_id = content->body.d_node_id;
+
+            std::string sign_msg = content->header.nonce + content->header.session_id+d_node_id 
+                                     + boost::algorithm::join(content->body.kvs | boost::adaptors::map_values, "");
+            if (! verify_sign(sign_msg, content->header.exten_info,o_node_id))
+            {
+                LOG_ERROR << "fake message. " << o_node_id;
+                return E_DEFAULT;
+            }
 
             if (d_node_id == m_own_node_id)
             {

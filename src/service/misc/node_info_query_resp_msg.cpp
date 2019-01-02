@@ -17,7 +17,8 @@
 #include "server.h"
 #include "id_generator.h"
 #include "service_message_id.h"
-
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 using namespace matrix::service_core;
 
@@ -28,7 +29,6 @@ namespace service
 
 #define MAX_NODE_INFO_KEYS_NUM 15
 #define MAX_NODE_INFO_VALUE_LEN 8192
-
 
         node_info_query_resp_msg::node_info_query_resp_msg():
         m_msg(nullptr)
@@ -77,6 +77,15 @@ namespace service
             content->body.__set_o_node_id(o_node_id);
             content->body.__set_d_node_id(d_node_id);
             content->body.__set_kvs(kvs);
+            
+            std::string message = content->header.nonce + content->header.session_id+d_node_id 
+                                     + boost::algorithm::join(kvs | boost::adaptors::map_values, "");
+            std::map<std::string, std::string> exten_info;
+            if (E_SUCCESS != extra_sign_info(message,exten_info))
+            {
+                return E_DEFAULT;
+            }
+            content->header.__set_exten_info(exten_info);
 
             msg->set_content(content);
             msg->set_name(content->header.msg_name);
