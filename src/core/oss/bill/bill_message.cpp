@@ -79,6 +79,7 @@ namespace matrix
                         return;
                     }
                     this->report_cycle = (this->report_cycle > MAX_AUTH_REPORT_CYTLE) ? MAX_AUTH_REPORT_CYTLE : this->report_cycle;
+                    this->report_cycle = (this->report_cycle == 0) ? MIN_AUTH_REPORT_CYTLE : this->report_cycle;
                 }                
             }
             catch (...)

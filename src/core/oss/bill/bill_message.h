@@ -21,6 +21,8 @@ namespace matrix
         const int64_t DEFAULT_AUTH_REPORT_CYTLE = 60;
         const int64_t DEFAULT_AUTH_REPORT_INTERVAL = DEFAULT_AUTH_REPORT_CYTLE * 60 * 1000;
         const int64_t MAX_AUTH_REPORT_CYTLE = 3* DEFAULT_AUTH_REPORT_CYTLE;
+        const int64_t MIN_AUTH_REPORT_CYTLE = 1* 60 * 1000; //1min
+
         class auth_task_req
         {
         public:

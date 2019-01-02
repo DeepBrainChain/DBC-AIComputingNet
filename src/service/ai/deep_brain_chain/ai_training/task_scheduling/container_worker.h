@@ -26,6 +26,9 @@ using namespace matrix::core;
 
 #define AI_TRAINING_TASK_TIMER                                      "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                             (30 * 1000)                                                 //30s timer
+#define AI_PRUNE_TASK_TIMER                                      "prune_task"
+#define AI_PRUNE_TASK_TIMER_INTERVAL                             (10*60*1000)                                                 //10min timer
+
 #define AI_PULLING_IMAGE_TIMER_INTERVAL                             (5*3600* 1000)                                              //5h timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                 1
 #define AI_TRAINING_MAX_TASK_COUNT                                  3
@@ -92,8 +95,10 @@ namespace ai
             nvidia_docker_version get_nv_docker_version();
             std::shared_ptr<container_client> get_worer_if() { return m_container_client;}
             int32_t can_pull_image();
+            int32_t prune_container();
 
         private:
+            int32_t prune_container(int16_t interval);
             int32_t load_container_config();
             int32_t check_cpu_config(const int16_t & cpu_info);
             int32_t check_memory_config(const int16_t & memory, const int16_t & memory_swap, const int64_t & shm_size);
@@ -121,8 +126,8 @@ namespace ai
             int64_t m_memory_swap = 0;
             int64_t m_shm_size = 0;
             int64_t m_nano_cpus = 0;
+            int16_t m_prune_container_interval = 168;
+            int16_t m_prune_container_freespace_scale = 60;
         };
-
     }
-
 }

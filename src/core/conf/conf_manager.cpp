@@ -28,6 +28,8 @@ const bool DEFAULT_ENABLE = true;
 const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
 const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND = 10;
 const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND = 5;
+const int64_t USE_SIGN_DEFAULT_TIME = 1548777600;
+
 
 namespace matrix
 {
@@ -104,6 +106,7 @@ namespace matrix
                 ("update_idle_task_cycle", bpo::value<int32_t>()->default_value(DEFAULT_UPDATE_IDLE_TASK_CYCLE), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "")
                 ("rest_ip", bpo::value<std::string>()->default_value(DEFAULT_LOOPBACK_IP), "http server ip address")
+                ("sign_time", bpo::value<int64_t>()->default_value(USE_SIGN_DEFAULT_TIME), "")
                 ("rest_port", bpo::value<std::string>()->default_value(DEFAULT_REST_PORT), "0 prohibit http server");
 
             //peer opt description

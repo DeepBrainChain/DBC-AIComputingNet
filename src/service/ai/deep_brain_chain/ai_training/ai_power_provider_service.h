@@ -69,11 +69,13 @@ namespace ai
         protected:
             //ai power provider service
             int32_t on_training_task_timer(std::shared_ptr<core_timer> timer);
+            int32_t on_prune_task_container_timer(std::shared_ptr<core_timer> timer);
 
             int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
        
         protected:
             uint32_t m_training_task_timer_id;
+            uint32_t m_prune_task_timer_id;
             /////////////allow dbc to exec idle task, when dbc is not running ai user's task////////////////////////
             std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
             std::shared_ptr<idle_task_scheduling> m_idle_task_ptr = nullptr;
