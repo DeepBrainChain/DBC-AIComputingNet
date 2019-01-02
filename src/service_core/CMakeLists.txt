@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/core/service_module/pc
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
+        ${SRC_PATH}/core/filter
         ${SRC_PATH}/core
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include

@@ -39,7 +39,7 @@ int32_t common_service::service_exit()
 
 int32_t common_service::on_timer_filter_clean(std::shared_ptr<core_timer> timer)
 {
-    service_proto_filter::get_mutable_instance().regular_clean();
+    //service_proto_filter::get_mutable_instance().regular_clean();
 
     return E_SUCCESS;
 }
