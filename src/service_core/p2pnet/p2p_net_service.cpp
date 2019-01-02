@@ -29,6 +29,8 @@
 #include "peer_seeds.h"
 #include "peers_db_types.h"
 #include <leveldb/write_batch.h>
+#include <boost/format.hpp>
+
 
 using namespace std;
 using namespace matrix::core;
@@ -841,6 +843,14 @@ namespace matrix
                                                        req_content->header.exten_info["capacity"]);
             }
 
+            std::string sign_req_msg =  boost::str(boost::format("%s%s%d%d") %req_content->header.nonce %req_content->body.node_id 
+                                                              %req_content->body.core_version %req_content->body.protocol_version);
+            if (! verify_sign(sign_req_msg, req_content->header.exten_info,req_content->body.node_id))
+            {
+                LOG_ERROR << "fake message. " << req_content->body.node_id;
+                return E_DEFAULT;
+            }
+
 
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
             std::shared_ptr<matrix::service_core::ver_resp> resp_content = std::make_shared<matrix::service_core::ver_resp>();
@@ -853,12 +863,19 @@ namespace matrix
             //capacity
             std::map<std::string, std::string> exten_info;
             exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
-            resp_content->header.__set_exten_info(exten_info);
+            
 
             //body
             resp_content->body.__set_node_id(CONF_MANAGER->get_node_id());
             resp_content->body.__set_core_version(CORE_VERSION);
             resp_content->body.__set_protocol_version(PROTOCO_VERSION);
+
+            std::string sign_msg =  boost::str(boost::format("%s%s%d%d") %resp_content->header.nonce %CONF_MANAGER->get_node_id() %CORE_VERSION %PROTOCO_VERSION);
+            if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+            {
+                return E_DEFAULT;
+            }
+            resp_content->header.__set_exten_info(exten_info);
 
             resp_msg->set_content(resp_content);
             resp_msg->set_name(VER_RESP);
@@ -884,11 +901,12 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            //if (!resp_content->__isset.body)
-            //{
-            //    LOG_ERROR << "recv ver_resp, but body of resp_content is not set.";
-            //    return E_DEFAULT;
-            //}
+            std::string sign_msg =  boost::str(boost::format("%s%s%d%d") %resp_content->header.nonce %resp_content->body.node_id %resp_content->body.core_version %resp_content->body.protocol_version);
+            if (! verify_sign(sign_msg, resp_content->header.exten_info, resp_content->body.node_id))
+            {
+                LOG_ERROR << "fake message. " << resp_content->body.node_id;
+                return E_DEFAULT;
+            }
 
             LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id
                 << ", core_ver=" << resp_content->body.core_version
@@ -1039,7 +1057,7 @@ namespace matrix
                 //capacity
                 std::map<std::string, std::string> exten_info;
                 exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
-                req_content->header.__set_exten_info(exten_info);
+                
 
                 //body
                 req_content->body.__set_node_id(CONF_MANAGER->get_node_id());
@@ -1058,6 +1076,12 @@ namespace matrix
                 req_content->body.__set_addr_you(addr_you);
                 req_content->body.__set_start_height(0);              //later
 
+                std::string sign_msg =  boost::str(boost::format("%s%s%d%d") %req_content->header.nonce %CONF_MANAGER->get_node_id() %CORE_VERSION %PROTOCO_VERSION);
+                if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                {
+                    return E_DEFAULT;
+                }
+                req_content->header.__set_exten_info(exten_info);
                 LOG_INFO << "send ver_req to peer, ip: " << addr_you.ip << ", port: " << addr_you.port;
                 
                 req_msg->set_content(req_content);

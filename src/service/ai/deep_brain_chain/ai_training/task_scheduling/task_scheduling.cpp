@@ -241,6 +241,27 @@ namespace ai
             return E_SUCCESS;
         }
 
+        int32_t task_scheduling::delete_task_from_db(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                return E_SUCCESS;
+            }
+
+            try
+            {
+                LOG_INFO << "delete task from db " << task->task_id;
+                m_task_db->Delete(leveldb::WriteOptions(), task->task_id);
+            }
+            catch (...)
+            {
+                LOG_ERROR << "delete task abnormal";
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
+
         TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task || task->task_id.empty())

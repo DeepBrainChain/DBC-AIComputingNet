@@ -28,6 +28,11 @@ namespace ai
         int32_t user_task_scheduling::init()
         {
             init_db("prov_training_task.db");
+            if (CONF_MANAGER->get_prune_task_stop_interval() < 1 || CONF_MANAGER->get_prune_task_stop_interval() > 8760)
+            {
+                return E_DEFAULT;
+            }
+            m_prune_intervel = CONF_MANAGER->get_prune_task_stop_interval();
             return E_SUCCESS;
         }
 
@@ -186,6 +191,12 @@ namespace ai
 
         void user_task_scheduling::add_task(std::shared_ptr<ai_training_task> task)
         {
+            if (m_training_tasks.size() > MAX_TASK_COUNT)
+            {
+                LOG_ERROR << "task is full.";
+                return;
+            }
+            
             //flush to db
             if (E_SUCCESS != write_task_to_db(task))
             {
@@ -368,6 +379,56 @@ namespace ai
                 LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: " << to_training_task_status_string(task->status);
                 return E_DEFAULT;
             }
+            return E_SUCCESS;
+        }
+
+        int32_t user_task_scheduling::prune_task()
+        {
+            prune_task(m_prune_intervel);
+
+            return E_SUCCESS;
+        }
+
+        int32_t user_task_scheduling::prune_task(int16_t interval)
+        {
+            int64_t cur = time_util::get_time_stamp_ms();
+
+            int64_t p_interval = interval* 3600*1000;
+
+            LOG_INFO << "prune docker container." << " interval:" << interval << "h";
+
+            for (auto task_iter = m_training_tasks.begin(); task_iter != m_training_tasks.end();)
+            {
+                if (task_iter->second->status < task_stopped)
+                {
+                    task_iter++;
+                    continue;
+                }
+
+                //1. if task have been stop too long
+                //2. if task have been stopped , and  container_id is empty means task have never been exectue
+                if ((cur - task_iter->second->end_time) > p_interval
+                    ||task_iter->second->container_id.empty())
+                {
+                    delete_task_from_db(task_iter->second);
+                    m_training_tasks.erase(task_iter++);
+                }
+                else
+                {
+                    task_iter++;
+                }
+            }
+
+            if (0 == interval)
+            {
+                return E_SUCCESS;
+            }
+
+            if (m_training_tasks.size() > MAX_PRUNE_TASK_COUNT)
+            {
+                prune_task(interval / 2);
+            }
+
             return E_SUCCESS;
         }
     }

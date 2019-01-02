@@ -442,6 +442,15 @@
     <ClCompile Include="..\..\..\..\src\api\rest_api_service.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\core\filter\bloom.cpp">
+      <Filter>src\core\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service_core\common\container_resource_mng.cpp">
+      <Filter>src\service_core\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\api\ansi_win_conv.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\core\common\common_def.h">
@@ -1375,6 +1384,15 @@
       <Filter>src\api</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\api\rest_api_service.h">
+      <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\core\filter\bloom.h">
+      <Filter>src\core\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service_core\common\container_resource_mng.h">
+      <Filter>src\service_core\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\api\ansi_win_conv.h">
       <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>

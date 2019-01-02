@@ -25,18 +25,18 @@
 #include <ctime>
 #include <thread>
 #include <chrono>
+
 static void cmd_line_task()
 {
    static ai::dbc::cmd_line_service *service = (ai::dbc::cmd_line_service *)(g_server->get_module_manager()->get(CMD_LINE_API_MODULE).get());
     if (nullptr != service)
-    {        
+    {      
         service->on_usr_cmd();
     }    
 }
 
 using namespace std;
 using namespace matrix::core;
-
 
 // readline auto complete function
 #ifndef WIN32
@@ -90,6 +90,7 @@ character_name_generator(const char *text, int state)
     return NULL;
 }
 #endif
+
 
 namespace ai
 {
@@ -177,6 +178,10 @@ namespace ai
 #endif
 
             g_server->bind_idle_task(&cmd_line_task);
+
+#ifdef _WIN64
+            m_ansi_conv.load_dll();
+#endif
             return E_SUCCESS;
         }
 

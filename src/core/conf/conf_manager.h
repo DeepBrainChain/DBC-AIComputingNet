@@ -36,6 +36,11 @@ extern std::string DEFAULT_REST_PORT;
 extern const int32_t DEFAULT_TIMER_DBC_REQUEST_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND;
 extern const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND;
+extern const int64_t DEFAULT_USE_SIGN_TIME;
+extern const int16_t DEFAULT_PRUNE_CONTAINER_INTERVAL;
+extern const int16_t DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO;
+extern const int16_t DEFAULT_PRUNE_TASK_INTERVAL;
+
 
 
 namespace matrix
@@ -148,6 +153,12 @@ namespace matrix
             {
                 return m_proto_capacity;
             }
+
+            const int64_t & get_use_sign_time() { return m_args.count("use_sign_time") > 0 ? m_args["use_sign_time"].as<int64_t>() : DEFAULT_USE_SIGN_TIME;}
+            const int16_t & get_prune_container_stop_interval() {return m_args.count("prune_container_stop_interval") > 0 ? m_args["prune_container_stop_interval"].as<int16_t>() : DEFAULT_PRUNE_CONTAINER_INTERVAL;}
+            const int16_t & get_prune_docker_root_use_ratio() {return m_args.count("prune_docker_root_use_ratio") > 0 ? m_args["prune_docker_root_use_ratio"].as<int16_t>() : DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO;}
+            const int16_t & get_prune_task_stop_interval() {return m_args.count("prune_task_stop_interval") > 0 ? m_args["prune_task_stop_interval"].as<int16_t>() : DEFAULT_PRUNE_TASK_INTERVAL;}
+
         protected:
 
             int32_t parse_local_conf();

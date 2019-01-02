@@ -21,7 +21,7 @@
 
 
 /*--------------------timer interval----------------------*/
-#define TIMER_INTERV_SEC_FILTER_CLEAN               120
+//#define TIMER_INTERV_SEC_FILTER_CLEAN               120
 #define TIMER_INTERV_MIN_P2P_PEER_INFO_EXCHANGE         3
 #define TIMER_INTERV_MIN_P2P_CONNECT_NEW_PEER           1
 #define TIMER_INTERV_MIN_P2P_ONE_MINUTE                 1

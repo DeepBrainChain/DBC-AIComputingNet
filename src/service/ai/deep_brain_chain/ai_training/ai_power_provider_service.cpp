@@ -27,7 +27,7 @@
 #include <boost/format.hpp>
 #include "url_validator.h"
 #include "time_util.h"
-
+#include <boost/algorithm/string/join.hpp>
 using namespace std;
 using namespace matrix::core;
 using namespace matrix::service_core;
@@ -39,6 +39,7 @@ namespace ai
     {
         ai_power_provider_service::ai_power_provider_service()
             : m_training_task_timer_id(INVALID_TIMER_ID)
+            ,m_prune_task_timer_id(INVALID_TIMER_ID)
         {
 
         }
@@ -69,22 +70,18 @@ namespace ai
             }
             
             m_user_task_ptr->set_auth_handler(std::bind(&oss_task_manager::auth_task, m_oss_task_mng, std::placeholders::_1));
-            
-            if (m_oss_task_mng->can_exec_idle_task())
+            m_idle_task_ptr = std::make_shared<idle_task_scheduling>(m_container_worker);
+            if (E_SUCCESS != m_idle_task_ptr->init())
             {
-                m_idle_task_ptr = std::make_shared<idle_task_scheduling>(m_container_worker);
-                if (E_SUCCESS != m_idle_task_ptr->init())
-                {
-                    return E_DEFAULT;
-                }
-
-                m_idle_task_ptr->set_fetch_handler(std::bind(&oss_task_manager::fetch_idle_task, m_oss_task_mng));
-                //user_task_scheduling is repo for all ai user tasks's schedling
-                //before task running, task should auth by oss
-                //after auth success, dbc can exec task. Before exec task, dbc should stop idle task.
-                //set_stop_idle_task_handler is used to reg stop_idle_task_hadler.
-                m_user_task_ptr->set_stop_idle_task_handler(std::bind(&idle_task_scheduling::stop_task, m_idle_task_ptr));
+                return E_DEFAULT;
             }
+
+            m_idle_task_ptr->set_fetch_handler(std::bind(&oss_task_manager::fetch_idle_task, m_oss_task_mng));
+            //user_task_scheduling is repo for all ai user tasks's schedling
+            //before task running, task should auth by oss
+            //after auth success, dbc can exec task. Before exec task, dbc should stop idle task.
+            //set_stop_idle_task_handler is used to reg stop_idle_task_hadler.
+            m_user_task_ptr->set_stop_idle_task_handler(std::bind(&idle_task_scheduling::stop_task, m_idle_task_ptr));
 
             return E_SUCCESS;
         }
@@ -92,6 +89,7 @@ namespace ai
         int32_t ai_power_provider_service::service_exit()
         {
             remove_timer(m_training_task_timer_id);
+            remove_timer(m_prune_task_timer_id);
             return E_SUCCESS;
         }
 
@@ -137,7 +135,11 @@ namespace ai
         {
             m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&ai_power_provider_service::on_training_task_timer, this, std::placeholders::_1);
             m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, CONF_MANAGER->get_timer_ai_training_task_schedule_in_second() * 1000);
+
+            m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&ai_power_provider_service::on_prune_task_timer, this, std::placeholders::_1);
+            m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL);
             assert(INVALID_TIMER_ID != m_training_task_timer_id);
+            assert(INVALID_TIMER_ID != m_prune_task_timer_id);
         }
 
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
@@ -181,16 +183,17 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            std::string message = req->body.task_id + req->body.code_dir + req->header.nonce;
+            std::string sign_msg = req->body.task_id + req->body.code_dir + req->header.nonce;
             if (req->header.exten_info.size()<3)
             {
                 LOG_ERROR << "exten info error.";
                 return E_DEFAULT;
             }
 
-            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
+            if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
+                && (! verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])))
             {
-                LOG_ERROR << "sign error.";
+                LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
                 return E_DEFAULT;
             }
 
@@ -303,15 +306,17 @@ namespace ai
                 LOG_ERROR << "ai power provider service on_stop_training_req task_id error ";
                 return E_DEFAULT;
             }
-            std::string message = req->body.task_id  + req->header.nonce;
+            std::string sign_msg = req->body.task_id  + req->header.nonce;
             if (req->header.exten_info.size()<3)
             {
                 LOG_ERROR << "exten info error.";
                 return E_DEFAULT;
             }
-            if (E_SUCCESS != check_sign(message, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
+
+            if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
+                && (! verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])) ) 
             {
-                LOG_ERROR << "sign error.";
+                LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
                 return E_DEFAULT;
             }
 
@@ -380,7 +385,13 @@ namespace ai
                     LOG_ERROR << "ai power provider service taskid error: " << *it;
                     return E_DEFAULT;
                 }
-                
+            }
+
+            std::string sign_msg = boost::algorithm::join(req_content->body.task_list, "") + req_content->header.nonce + req_content->header.session_id;
+            if (! verify_sign(sign_msg, req_content->header.exten_info, req_content->header.exten_info["origin_id"]))
+            {
+                LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
+                return E_DEFAULT;
             }
 
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
@@ -406,8 +417,15 @@ namespace ai
 
                 matrix::service_core::task_status ts;
                 ts.task_id = task->task_id;
-                
-                
+
+                if (use_sign_verify())
+                {
+                    if (task->ai_user_node_id != req_content->header.exten_info["origin_id"])
+                    {
+                        return E_DEFAULT;
+                    }
+                }
+
                 ts.status = task->status;
                 status_list.push_back(ts);
                 LOG_DEBUG << "on_list_training_req task: " << ts.task_id << "--" << to_training_task_status_string(ts.status);
@@ -424,8 +442,23 @@ namespace ai
                     rsp_content->header.__set_path(req_content->header.path); // for efficient resp msg transport
 
                     rsp_content->body.task_status_list.swap(status_list);
-                    status_list.clear(); 
+                    std::string task_status_msg="";
+                    for (auto t : rsp_content->body.task_status_list)
+                    {
+                        task_status_msg = task_status_msg + t.task_id + boost::str(boost::format("%d") % t.status);
+                    }
 
+                    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
+                    std::map<std::string, std::string> exten_info;
+                    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                    if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                    {
+                        return E_DEFAULT;
+                    }
+                    rsp_content->header.__set_exten_info(exten_info);
+
+                    status_list.clear(); 
+                    
                     //resp msg
                     std::shared_ptr<message> resp_msg = std::make_shared<message>();
                     resp_msg->set_name(LIST_TRAINING_RESP);
@@ -448,6 +481,20 @@ namespace ai
                 rsp_content->header.__set_path(req_content->header.path); // for efficient resp msg transport
 
                 rsp_content->body.task_status_list.swap(status_list);
+
+                std::string task_status_msg="";
+                for (auto t : rsp_content->body.task_status_list)
+                {
+                    task_status_msg = task_status_msg + t.task_id + boost::str(boost::format("%d") % t.status);
+                }
+                std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id+task_status_msg;
+                std::map<std::string, std::string> exten_info;
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                {
+                    return E_DEFAULT;
+                }
+                rsp_content->header.__set_exten_info(exten_info);
 
                 //resp msg
                 std::shared_ptr<message> resp_msg = std::make_shared<message>();
@@ -503,6 +550,15 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            //add sign
+            std::string sign_req_msg = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id;
+            if (! verify_sign(sign_req_msg, req_content->header.exten_info, req_content->header.exten_info["origin_id"]))
+            {
+                LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
+                return E_DEFAULT;
+            }
+            
+
             //check task id and get container
             auto task = m_user_task_ptr->find_task(task_id);
             if (nullptr == task)
@@ -516,6 +572,15 @@ namespace ai
 
                 return E_SUCCESS;
             }
+
+            if (use_sign_verify())
+            {
+                if (task->ai_user_node_id != req_content->header.exten_info["origin_id"])
+                {
+                    return E_DEFAULT;
+                }
+            }
+            
 
             //get container logs
             const std::string &container_id = task->container_id;
@@ -534,7 +599,12 @@ namespace ai
                 if (nullptr == container_resp)
                 {
                     LOG_ERROR << "ai power provider service get container logs error: " << task_id;
-                    log_content = "get log content error";
+                    log_content = "get log content error.";
+                    time_t cur = time_util::get_time_stamp_ms();
+                    if (task->status >= task_stopped && cur - task->end_time > CONF_MANAGER->get_prune_container_stop_interval())
+                    {
+                        log_content += " the task may have been cleared";
+                    }
                 }
             }
             else if (task->status == task_queueing)
@@ -578,6 +648,15 @@ namespace ai
             }
 
             rsp_content->body.__set_log(log);
+
+            //add sign
+            std::string sign_msg = CONF_MANAGER->get_node_id()+rsp_content->header.nonce + rsp_content->header.session_id + rsp_content->body.log.log_content;
+            std::map<std::string, std::string> exten_info;
+            if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+            {
+                return E_DEFAULT;
+            }
+            rsp_content->header.__set_exten_info(exten_info);
 
             //resp msg
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
@@ -658,14 +737,16 @@ namespace ai
 
         int32_t ai_power_provider_service::on_training_task_timer(std::shared_ptr<core_timer> timer)
         {
-            if (m_idle_task_ptr != nullptr)
+            assert(nullptr != m_idle_task_ptr);
+            if (m_oss_task_mng->can_exec_idle_task())
             {
                 m_idle_task_ptr->update_idle_task();
             }
+            
             assert(nullptr != m_user_task_ptr);
             if (0 == m_user_task_ptr->get_user_cur_task_size())
             {
-                if (nullptr != m_idle_task_ptr)
+                if (m_oss_task_mng->can_exec_idle_task())
                 {
                     m_idle_task_ptr->exec_task();
                 }
@@ -722,6 +803,13 @@ namespace ai
 
             return E_SUCCESS;
         }
-    }
 
+        //prune the task container that have been stopped.
+        int32_t ai_power_provider_service::on_prune_task_timer(std::shared_ptr<core_timer> timer)
+        {
+            LOG_DEBUG << "prune task.";
+            assert(m_user_task_ptr);
+            return m_user_task_ptr->prune_task();
+        }
+    }
 }

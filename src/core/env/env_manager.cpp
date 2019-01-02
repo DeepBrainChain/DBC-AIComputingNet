@@ -64,6 +64,7 @@ namespace matrix
         fs::path env_manager::m_container_path;
 
         fs::path env_manager::m_home_path;
+        fs::path env_manager::m_tool_path;
 
         endian_type env_manager::m_endian_type = unknown_endian;
 
@@ -124,6 +125,9 @@ namespace matrix
             m_container_path = m_home_path;
             m_container_path /= fs::path(CONF_DIR_NAME);
             m_container_path /= fs::path(CONTAINER_FILE_NAME);
+
+            m_tool_path  = m_home_path;
+            m_tool_path /= fs::path(TOOL_DIR_NAME);
         }
 
 #if 0
