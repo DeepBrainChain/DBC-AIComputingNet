@@ -26,6 +26,9 @@
 using namespace std;
 using namespace matrix::core;
 
+#define MAX_TASK_COUNT 200000
+#define MAX_PRUNE_TASK_COUNT 160000
+
 //used to interactive with remote system
 namespace ai
 {
@@ -61,8 +64,11 @@ namespace ai
             void set_stop_idle_task_handler(stop_idle_task_handler handler) { m_stop_idle_task_handler = handler; }
 
             int32_t process_task();
+            int32_t prune_task();
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task);
+            int32_t prune_task(int16_t interval);
+
         protected:
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
         private:
@@ -70,6 +76,7 @@ namespace ai
             stop_idle_task_handler m_stop_idle_task_handler;
             //std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;
+            int16_t m_prune_intervel = 0;
         };
     }
 }

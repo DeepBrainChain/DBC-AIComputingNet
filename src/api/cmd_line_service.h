@@ -17,6 +17,10 @@
 #include <vector>
 #include <string>
 
+#ifdef _WIN64
+#include "ansi_win_conv.h"
+#endif
+
 
 using namespace matrix::core;
 
@@ -107,7 +111,9 @@ namespace ai
             std::string m_last_task_id;
 
             std::string m_rl_history_fn;
-
+#ifdef _WIN64
+            ansi_win_conv m_ansi_conv;
+#endif
         };
 
     }

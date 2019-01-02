@@ -24,8 +24,6 @@ using namespace std;
 using namespace matrix::core;
 #define DEFAULT_STOP_CONTAINER_TIME                                  2                                                          //stop time out
 
-#define AI_TRAINING_TASK_TIMER                                      "training_task"
-//#define AI_TRAINING_TASK_TIMER_INTERVAL                             (30 * 1000)                                                 //30s timer
 #define AI_PULLING_IMAGE_TIMER_INTERVAL                             (5*3600* 1000)                                              //5h timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                 1
 #define AI_TRAINING_MAX_TASK_COUNT                                  3
@@ -122,7 +120,5 @@ namespace ai
             int64_t m_shm_size = 0;
             int64_t m_nano_cpus = 0;
         };
-
     }
-
 }

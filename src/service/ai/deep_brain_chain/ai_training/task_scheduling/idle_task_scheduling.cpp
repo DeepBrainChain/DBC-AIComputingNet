@@ -93,6 +93,11 @@ namespace ai
         int32_t idle_task_scheduling::stop_task()
         {
             m_idle_state_begin = 0;
+            if (nullptr == m_idle_task)
+            {
+                return E_SUCCESS;
+            }
+            
             m_idle_task->__set_status(task_stopped);
             return task_scheduling::stop_task(m_idle_task);
         }
@@ -138,6 +143,7 @@ namespace ai
                 write_task_to_db(m_idle_task);
             }
         }
+        
         void idle_task_scheduling::update_idle_task()
         {
             set_task(m_fetch_task_handler());
@@ -167,8 +173,6 @@ namespace ai
 
             return m_idle_task->task_id;
         }
-
-
     }
 
 }

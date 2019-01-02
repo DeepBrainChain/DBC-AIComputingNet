@@ -70,6 +70,7 @@ namespace ai
             int32_t start_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t stop_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t delete_task(std::shared_ptr<ai_training_task> task);
+            int32_t delete_task_from_db(std::shared_ptr<ai_training_task> task);
         private:
             int32_t create_task(std::shared_ptr<ai_training_task> task);
         protected:

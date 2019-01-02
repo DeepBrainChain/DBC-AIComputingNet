@@ -62,7 +62,6 @@ namespace ai
         extern std::string to_training_task_status_string(int8_t status);
         extern bool check_task_engine(std::string engine);
         extern void set_task_engine(std::string engine);
-        const std::string ECDSA = "ecdsa";
         //__END_DECLS;
 
     }

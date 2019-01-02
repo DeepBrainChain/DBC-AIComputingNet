@@ -28,6 +28,11 @@ const bool DEFAULT_ENABLE = true;
 const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
 const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND = 10;
 const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND = 5;
+const int64_t DEFAULT_USE_SIGN_TIME = 0x7FFFFFFFFFFFFFFF;
+const int16_t DEFAULT_PRUNE_CONTAINER_INTERVAL=720; //30 days
+const int16_t DEFAULT_PRUNE_TASK_INTERVAL=2400;     //100 days
+const int16_t DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO=80;
+
 
 namespace matrix
 {
@@ -104,6 +109,10 @@ namespace matrix
                 ("update_idle_task_cycle", bpo::value<int32_t>()->default_value(DEFAULT_UPDATE_IDLE_TASK_CYCLE), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "")
                 ("rest_ip", bpo::value<std::string>()->default_value(DEFAULT_LOOPBACK_IP), "http server ip address")
+                ("use_sign_time", bpo::value<int64_t>()->default_value(DEFAULT_USE_SIGN_TIME), "")
+                ("prune_container_stop_interval", bpo::value<int16_t>()->default_value(DEFAULT_PRUNE_CONTAINER_INTERVAL), "")
+                ("prune_docker_root_use_ratio", bpo::value<int16_t>()->default_value(DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO), "")
+                ("prune_task_stop_interval", bpo::value<int16_t>()->default_value(DEFAULT_PRUNE_TASK_INTERVAL), "")
                 ("rest_port", bpo::value<std::string>()->default_value(DEFAULT_REST_PORT), "0 prohibit http server");
 
             //peer opt description

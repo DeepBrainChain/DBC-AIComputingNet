@@ -85,10 +85,15 @@ namespace ai
         //3. if fetch failed, then dbc will try call fetch_idle_task after DEFAULT_UPDATE_IDLE_TASK_CYCLE
         std::shared_ptr<idle_task_resp> oss_task_manager::fetch_idle_task()
         {
+            if (!m_enable_idle_task)
+            {
+                return nullptr;
+            }
+            
             if (nullptr == m_oss_client)
             {
                 LOG_DEBUG << "oss client is null. pls check oss_url in core.conf";
-                return E_SUCCESS;
+                return nullptr;
             }
 
             if (time_util::get_time_stamp_ms() < m_next_update_interval)

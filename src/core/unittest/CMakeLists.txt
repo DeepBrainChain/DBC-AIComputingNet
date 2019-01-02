@@ -24,7 +24,7 @@ INCLUDE_DIRECTORIES(
 
 # all sub folders under core/
 set(CORE_FOLDER_LIST alarm codec common conf conf/validataor
-        crypto container env
+        crypto container env filter
         initiator log math memory module mutex
         network service_bus service_module
         service_module/pc storage timer_service filter)
@@ -63,12 +63,13 @@ add_executable(dbc_core_test
         ip_validator_test.cpp
         port_validator_test.cpp
         matrix_compress_test.cpp
+        bloom_test.cpp
         )
 
 set(dbclib  ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lcrypto -lssl -lsecp256k1 -lgmp -lsnappy)
+    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lgmp -lsnappy)
 elseif (LINUX)
-    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -lboost_thread -lcrypto -lssl -lsecp256k1 -lsnappy -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc_core_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lboost_thread -lcrypto -lssl -lsecp256k1 -lsnappy -pthread -ldl)
 endif()

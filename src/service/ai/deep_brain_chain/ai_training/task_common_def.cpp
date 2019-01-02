@@ -25,13 +25,23 @@ namespace ai
             case task_queueing:
                 return "task_queueing";
             case task_running:
+            {
+                //std::string task_state = { 0x1b,0x5b,0x33,0x32,0x6d};  //green
+                //task_state += "task_running";
+                //task_state += {0x1b,0x5b,0x30,0x6d};
                 return "task_running";
+            }
             case task_stopped:
                 return "task_stopped";
             case task_successfully_closed:
                 return "task_successfully_closed";
             case task_abnormally_closed:
+            {
+                //std::string task_state = { 0x1b,0x5b,0x33,0x31,0x6d }; //red
+                //task_state += "task_abnormally_closed";
+                //task_state += {0x1b, 0x5b, 0x30, 0x6d};
                 return "task_abnormally_closed";
+            }
             case task_overdue_closed:
                 return "task_overdue_closed";
             case task_pulling_image:

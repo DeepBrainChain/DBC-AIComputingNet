@@ -12,7 +12,6 @@
 #include "api_call_handler.h"
 #include "conf_manager.h"
 #include "service_message_id.h"
-
 #include "matrix_types.h"
 #include "matrix_coder.h"
 #include "ip_validator.h"
@@ -21,6 +20,8 @@
 #include "id_generator.h"
 #include "task_common_def.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/format.hpp>
 
 using namespace std;
 using namespace matrix::core;
@@ -504,22 +505,37 @@ namespace ai
 
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-
-            std::string message = req_content->body.task_id + req_content->header.nonce;
-            std::string sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
-            if (sign.empty())
+            
+            std::string sign_msg = req_content->body.task_id + req_content->header.nonce;
+            if (!use_sign_verify())
             {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "sign error. pls check node key or task property";
-                TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
-                return E_DEFAULT;
+                std::string sign = id_generator().sign(sign_msg, CONF_MANAGER->get_node_private_key());
+                if (sign.empty())
+                {
+                    cmd_resp->result = E_DEFAULT;
+                    cmd_resp->result_info = "sign error. pls check node key or task property";
+                    TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
+                    return E_DEFAULT;
+                }
+                std::map<std::string, std::string> exten_info;
+                exten_info["sign"] = sign;
+                exten_info["sign_algo"] = ECDSA;
+                exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                req_content->header.__set_exten_info(exten_info);
+            }
+            
+            if (use_sign_verify())
+            {
+                std::map<std::string, std::string> exten_info;
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                {
+                    return E_DEFAULT;
+                }
+                req_content->header.__set_exten_info(exten_info);
             }
 
-            std::map<std::string, std::string> extern_info;
-            extern_info["sign"] = sign;
-            extern_info["sign_algo"] = ECDSA;
-            extern_info["origin_id"] = CONF_MANAGER->get_node_id();
-            req_content->header.__set_exten_info(extern_info);
 
             if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
             {
@@ -685,6 +701,15 @@ namespace ai
             task_ids.value() = std::make_shared<std::unordered_map<std::string, int8_t>>();
             session->get_context().add("task_ids", task_ids);
 
+            std::string message = boost::algorithm::join(req_content->body.task_list, "") + req_content->header.nonce + req_content->header.session_id;
+            std::map<std::string, std::string> exten_info;
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            if (E_SUCCESS != extra_sign_info(message,exten_info))
+            {
+                return E_DEFAULT;
+            }
+            req_content->header.__set_exten_info(exten_info);
+
             //add to session
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
@@ -712,7 +737,6 @@ namespace ai
 
         int32_t ai_power_requestor_service::on_list_training_resp(std::shared_ptr<message> &msg)
         {
-
             if (!msg)
             {
                 LOG_ERROR << "recv list_training_resp but msg is nullptr";
@@ -740,6 +764,19 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if (use_sign_verify())
+            {
+                std::string task_status_msg="";
+                for (auto t : rsp_content->body.task_status_list)
+                {
+                    task_status_msg = task_status_msg + t.task_id + boost::str(boost::format("%d") % t.status);
+                }
+                std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
+                if (! verify_sign(sign_msg, rsp_content->header.exten_info, rsp_content->header.exten_info["origin_id"]))
+                {
+                    return E_DEFAULT;
+                }
+            }
 
             //get session
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
@@ -984,22 +1021,36 @@ FINAL_PROC:
 
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
             req_msg->set_content(req_content);
-
+            task_info.task_id = req_content->body.task_id;
             std::string message = req_content->body.task_id + req_content->body.code_dir + req_content->header.nonce;
-            std::string sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
-            if (sign.empty())
+            if (!use_sign_verify())
             {
-                task_info.result = "sign error.pls check node key or task property";
-                return nullptr;
+                std::string sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
+                if (sign.empty())
+                {
+                    task_info.result = "sign error.pls check node key or task property";
+                    return nullptr;
+                }
+
+                std::map<std::string, std::string> exten_info;
+                exten_info["sign"] = sign;
+                exten_info["sign_algo"] = ECDSA;
+                exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                req_content->header.__set_exten_info(exten_info);
             }
 
-            task_info.task_id = req_content->body.task_id;
-
-            std::map<std::string, std::string> extern_info;
-            extern_info["sign"] = sign;
-            extern_info["sign_algo"] = ECDSA;
-            extern_info["origin_id"] = CONF_MANAGER->get_node_id();
-            req_content->header.__set_exten_info(extern_info);
+            if (use_sign_verify())
+            {
+                std::map<std::string, std::string> exten_info;
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                if (E_SUCCESS != extra_sign_info(message,exten_info))
+                {
+                    task_info.result = "sign error.pls check node key or task property";
+                    return nullptr;
+                }
+                req_content->header.__set_exten_info(exten_info);
+            }
 
             return req_msg;
         }
@@ -1307,6 +1358,16 @@ FINAL_PROC:
                 return E_DEFAULT;
             }
 
+            std::string message = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id;
+            std::map<std::string, std::string> exten_info;
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            if (E_SUCCESS != extra_sign_info(message,exten_info))
+            {
+                return E_DEFAULT;
+            }
+
+            req_content->header.__set_exten_info(exten_info);
+
             //add to session
             int32_t ret = this->add_session(session->get_session_id(), session);
             if (E_SUCCESS != ret)
@@ -1358,6 +1419,13 @@ FINAL_PROC:
                 LOG_DEBUG << "ai power requster service on_logs_resp. session_id error ";
                 return E_DEFAULT;
             }
+            
+            std::string sign_msg = rsp_content->body.log.peer_node_id + rsp_content->header.nonce + rsp_content->header.session_id + rsp_content->body.log.log_content;
+            if (! verify_sign(sign_msg, rsp_content->header.exten_info, rsp_content->body.log.peer_node_id))
+            {
+                LOG_ERROR << "fake message. " << rsp_content->header.exten_info["origin_id"];
+                return E_DEFAULT;
+            }
 
             //get session
             std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
@@ -1370,8 +1438,6 @@ FINAL_PROC:
 
                 return E_SUCCESS;
             }
-
-
 
             std::shared_ptr<ai::dbc::cmd_logs_resp> cmd_resp = std::make_shared<ai::dbc::cmd_logs_resp>();
             COPY_MSG_HEADER(rsp_content,cmd_resp);
