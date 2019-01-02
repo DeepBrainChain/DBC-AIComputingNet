@@ -2,10 +2,13 @@
 #include <map>
 #include <boost/serialization/singleton.hpp>
 #include "rw_lock.h"
+#include "bloom.h"
 
 #define TIME_OUT_SEC                        180
-#define MAX_NONCE_COUNT             1000000
+//#define MAX_NONCE_COUNT             1000000
 
+#define NONCE_ELEMENTS 120000
+#define NONCE_FALSE_POSITIVE 0.000001
 using namespace matrix::core;
 
 namespace matrix
@@ -15,6 +18,10 @@ namespace matrix
         class service_proto_filter : public boost::serialization::singleton<service_proto_filter>
         {
         public:
+            service_proto_filter()
+            {
+                m_filter_proto_tm = std::make_shared<CRollingBloomFilter>(NONCE_ELEMENTS, NONCE_FALSE_POSITIVE);
+            }
 
             bool insert_nonce(const std::string & nonce)
             {
@@ -24,10 +31,14 @@ namespace matrix
                     return false;
                 }
 
-                time_t cur = time(nullptr);
                 write_lock_guard<rw_lock> lock(m_locker);
-
-                m_map_proto_tm[nonce] = cur;
+                if (m_nonce_count > MAX_NONCE_COUNT)
+                {
+                    m_nonce_count = 0;
+                    m_filter_proto_tm->reset();
+                }
+                m_filter_proto_tm->insert(nonce);
+                m_nonce_count++;
                 return true;
             }
 
@@ -39,59 +50,25 @@ namespace matrix
                     return false;
                 }
 
-                time_t cur = time(nullptr);
-                write_lock_guard<rw_lock> lock(m_locker);
-
-                auto it = m_map_proto_tm.find(nonce);
-                if (it != m_map_proto_tm.end())
+                if (m_filter_proto_tm->contains(nonce))
                 {
-                    if (it->second < cur - TIME_OUT_SEC)        //TIME_OUT_SEC before
-                    {
-                        it->second = cur;
-                        return false;
-                    }
-                    else
-                    {
-                        it->second = cur;
-                        return true;
-                    }
+                    return true;
                 }
                 else
                 {
-                    //ddos attack?
-                    if (m_map_proto_tm.size() >= MAX_NONCE_COUNT)
-                    {
-                        LOG_ERROR << "message nonce is too many, nonce: " << nonce;
-                        return true;
-                    }
-
-                    m_map_proto_tm[nonce] = cur;
+                    insert_nonce(nonce);
+                    return false;
                 }
-                
+
                 return false;
             }
 
-            void regular_clean()
-            {
-                write_lock_guard<rw_lock> lock(m_locker);
-                for (auto it = m_map_proto_tm.begin(); it != m_map_proto_tm.end(); )
-                {
-                    if (it->second < time(nullptr) - TIME_OUT_SEC)
-                    {
-                        m_map_proto_tm.erase(it++);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-                }
-            }
-
         private:
-            std::map<std::string, time_t> m_map_proto_tm;
+            std::shared_ptr<CRollingBloomFilter> m_filter_proto_tm;
             matrix::core::rw_lock m_locker;
+            uint64_t m_nonce_count = 0;
+            const uint64_t MAX_NONCE_COUNT = NONCE_ELEMENTS*1000;
         };
-
     }
 }
 

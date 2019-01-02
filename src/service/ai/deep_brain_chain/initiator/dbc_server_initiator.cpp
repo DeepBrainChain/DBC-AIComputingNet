@@ -135,17 +135,17 @@ namespace ai
             LOG_INFO << "init timer matrix manager successfully";
 
             //common service
-            LOG_INFO << "begin to init common service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<common_service>());
-            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
-            ret = mdl->init(vm);
-            if (E_SUCCESS != ret)
-            {
-                //logging
-                return ret;
-            }
-            mdl->start();
-            LOG_INFO << "init common service successfully";
+            //LOG_INFO << "begin to init common service";
+            //mdl = std::dynamic_pointer_cast<module>(std::make_shared<common_service>());
+            //g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            //ret = mdl->init(vm);
+            //if (E_SUCCESS != ret)
+            //{
+            //    //logging
+            //    return ret;
+            //}
+            //mdl->start();
+            //LOG_INFO << "init common service successfully";
 
             //ai power requestor service
             LOG_INFO << "begin to init ai power requestor service";

@@ -15,7 +15,8 @@
 #include "timer_matrix_manager.h"
 #include "server.h"
 #include "time_tick_notification.h"
-
+#include <ctime>
+#include <boost/format.hpp>
 namespace matrix
 {
     namespace core
@@ -27,6 +28,64 @@ namespace matrix
 
             service_module *module = (service_module *)argv;
             module->run();
+        }
+
+        //use it for update. can delete it at next version
+        bool use_sign_verify()
+        {
+            time_t cur = std::time(nullptr);
+            if (cur > CONF_MANAGER->get_use_sign_time())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        int32_t extra_sign_info(std::string & message, std::map<std::string, std::string> & extern_info)
+        {
+            time_t cur = std::time(nullptr);
+            std::string sign_message = boost::str(boost::format("%s%d") % message %cur);
+            std::string sign = id_generator().sign(sign_message, CONF_MANAGER->get_node_private_key());
+            if (sign.empty())
+            {
+                return E_DEFAULT;
+            }
+
+            extern_info["sign"] = sign;
+            extern_info["sign_algo"] = ECDSA;
+            extern_info["sign_at"]= boost::str(boost::format("%d") %cur);
+            return E_SUCCESS;
+        }
+
+        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & extern_info)
+        {
+            if (extern_info["sign"].empty() ||extern_info["sign_algo"].empty() || extern_info["sign_at"].empty())
+            {
+                return "";
+            }
+            
+            std::string sign_message = boost::str(boost::format("%s%s") % message %extern_info["sign_at"]);
+            std::string derive_node_id;
+
+            id_generator().derive_node_id_by_sign(sign_message, extern_info["sign"], derive_node_id);
+
+            return derive_node_id;
+        }
+
+        bool verify_sign(std::string &message, std::map<std::string, std::string> & extern_info, std::string origin_node)
+        {
+            if (use_sign_verify())
+            {
+                if (origin_node.empty())
+                {
+                    return false;
+                }
+
+                return (origin_node == derive_nodeid_bysign(message, extern_info));
+            }
+
+            return true;
         }
 
         service_module::service_module()

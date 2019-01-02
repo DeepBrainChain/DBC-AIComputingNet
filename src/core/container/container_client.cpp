@@ -19,6 +19,7 @@
 // #include <event2/keyvalq_struct.h>
 #include "error/en.h"
 #include "oss_common_def.h"
+#include <boost/format.hpp>
 namespace matrix
 {
     namespace core
@@ -593,6 +594,35 @@ namespace matrix
             return docker_ptr;
         }
 
+        int32_t container_client::prune_container(int16_t interval)
+        {
+            //endpoint
+            std::string endpoint = "/containers/prune";
+
+            if (interval > 0)
+            {
+                endpoint += "?until=";
+                endpoint += boost::str(boost::format("%dh") % interval);
+            }
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, "",resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "prun container error: " << e.what();
+                return E_DEFAULT;
+            }
+
+            return ret;
+        }
     }
 
 }
