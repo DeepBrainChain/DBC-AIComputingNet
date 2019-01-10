@@ -211,6 +211,8 @@ namespace ai
             m_invokers["task_start_multi"] = m_invokers["start_multi"];
 //            m_invokers["task_ps"] = m_invokers["ps"];
 
+            m_invokers["reboot"] = std::bind(&cmd_line_service::reboot, this, std::placeholders::_1, std::placeholders::_2);
+
 #ifndef WIN32
             m_invokers["key"] = std::bind(&cmd_line_service::cmd_key, this, std::placeholders::_1, std::placeholders::_2);
 #endif
@@ -806,7 +808,6 @@ namespace ai
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
                 bpo::notify(vm);
-
                 if (vm.count("active") || vm.count("a") || vm.count("global") || vm.count("g"))
                 {
                     std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
@@ -1008,6 +1009,99 @@ namespace ai
 
             //format output
             resp->format_output();
+        }
+
+
+#define INSERT_VARIABLE(vm, k) variable_value k##_;k##_.value() = k;vm.insert({ #k, k##_ });
+        void cmd_line_service::reboot(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("reboot remote node");
+
+            try
+            {
+                opts.add_options()
+                        ("help,h", "reboot remote node")
+                        ("node,n", bpo::value< std::string >(), "target ai training node");
+
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+
+                // read other param from cmd line
+                std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
+                bpo::variables_map& vm_r = req->vm;
+                if (vm.count("node"))
+                {
+                    auto node = vm["node"].as<std::string>();
+
+                    std::vector<std::string> peer_nodes_list;
+                    peer_nodes_list.push_back(node);
+
+                    std::string code_dir = "reboot";
+                    std::string data_dir = "reboot";
+                    std::string hyper_parameters = "";
+                    std::string entry_file = "dummy";
+                    std::string training_engine = "dummy";
+                    std::string master = "";
+                    std::string checkpoint_dir = "";
+                    std::string server_specification = "";
+                    std::string container_name = "dummy";
+                    int8_t select_mode = 0;
+                    int32_t server_count = 0;
+
+
+                    INSERT_VARIABLE(vm_r, peer_nodes_list);
+                    INSERT_VARIABLE(vm_r, code_dir);
+                    INSERT_VARIABLE(vm_r, data_dir);
+                    INSERT_VARIABLE(vm_r, hyper_parameters);
+                    INSERT_VARIABLE(vm_r, entry_file);
+                    INSERT_VARIABLE(vm_r, training_engine);
+                    INSERT_VARIABLE(vm_r, master);
+                    INSERT_VARIABLE(vm_r, checkpoint_dir);
+                    INSERT_VARIABLE(vm_r, server_specification);
+                    INSERT_VARIABLE(vm_r, container_name);
+                    INSERT_VARIABLE(vm_r, select_mode);
+                    INSERT_VARIABLE(vm_r, server_count);
+
+
+                    std::shared_ptr<cmd_start_training_resp> resp = g_api_call_handler->invoke<cmd_start_training_req, cmd_start_training_resp >(req);
+
+                    if (nullptr == resp)
+                    {
+                        cout << endl << "command time out" << endl;
+                    }
+                    else
+                    {
+                        if (resp->result == E_DEFAULT)
+                            format_output(resp);
+                    }
+
+                }
+                else
+                {
+                    cout << argv[0] << " invalid option" << endl;
+                    cout << opts;
+                }
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
+
+            #if  defined(__linux__)
+
+
+
+            #endif
+
         }
 
         void cmd_line_service::clear(int argc, char* argv[])

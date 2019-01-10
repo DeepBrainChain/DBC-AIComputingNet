@@ -93,32 +93,50 @@ namespace matrix
 
         int32_t tcp_socket_channel::stop()
         {
-            LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string() << "---" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
 
-            m_state = CHANNEL_STOPPED;           //notify nio call back function, now i'm stopped and should exit ASAP
-
-            boost::system::error_code error;
-
-            if (m_socket_handler)
+            try
             {
-                //stop handler
-                m_socket_handler->stop();
+                auto self(shared_from_this());
+                m_ios->post([this, self]() {
+
+                    // boost asio thread safe design principle:
+                    //      all io object (e.g. socket) related operation shall only be run within handler.
+                    // for each io_context, dbc network calls io_context::run() from only one thread. And the io_context gurantee the handlers are invoked in sequence
+
+                    LOG_DEBUG << "tcp_socket_channel stop: " << m_sid.to_string() << "---"
+                              << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
+
+                    boost::system::error_code error;
+
+                    if (m_socket_handler)
+                    {
+                        //stop handler
+                        m_socket_handler->stop();
+                    }
+
+                    //cancel
+                    LOG_DEBUG << "tcp socket channel cancel socket: " << m_sid.to_string();
+                    m_socket.cancel(error);
+                    if (error)
+                    {
+                        LOG_ERROR << "tcp socket channel cancel error: " << error << m_sid.to_string();
+                    }
+
+                    //close
+                    LOG_DEBUG << "tcp socket channel close socket: " << m_sid.to_string();
+                    m_socket.close(error);
+                    if (error)
+                    {
+                        LOG_ERROR << "tcp socket channel close error: " << error << m_sid.to_string();
+                    }
+
+                    m_state = CHANNEL_STOPPED;
+                });
             }
-
-            //cancel
-            LOG_DEBUG << "tcp socket channel cancel socket: " << m_sid.to_string();
-            m_socket.cancel(error);
-            if (error)
+            catch (...)
             {
-                LOG_ERROR << "tcp socket channel cancel error: " << error << m_sid.to_string();
-            }
+                LOG_ERROR << "io_context post socket close, but failed";
 
-            //close
-            LOG_DEBUG << "tcp socket channel close socket: " << m_sid.to_string();
-            m_socket.close(error);
-            if (error)
-            {
-                LOG_ERROR << "tcp socket channel close error: " << error << m_sid.to_string();
             }
 
             return E_SUCCESS;

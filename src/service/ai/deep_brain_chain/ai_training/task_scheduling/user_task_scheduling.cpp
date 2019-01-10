@@ -17,6 +17,8 @@
 #include "time_util.h"
 #include "url_validator.h"
 
+#include <stdlib.h>
+
 namespace ai
 {
     namespace dbc
@@ -196,7 +198,7 @@ namespace ai
                 LOG_ERROR << "task is full.";
                 return;
             }
-            
+
             //flush to db
             if (E_SUCCESS != write_task_to_db(task))
             {
@@ -431,5 +433,32 @@ namespace ai
 
             return E_SUCCESS;
         }
+
+        int32_t user_task_scheduling::process_urgent_task(std::shared_ptr<ai_training_task> task)
+        {
+
+            if (!task)
+                return E_DEFAULT;
+
+            if (task->code_dir == "reboot")
+            {
+                if (E_SUCCESS != auth_task(task))
+                {
+                    LOG_INFO << "auth fail for node reboot";
+                    return E_DEFAULT;
+                }
+
+                // reboot node
+                LOG_WARNING << "node reboot now";
+                system("wall \"System will reboot by dbc in one minute!\"");
+                system("sudo /sbin/shutdown -r +1");
+                return E_SUCCESS;
+
+            }
+
+            return E_SUCCESS;
+        }
+
+
     }
 }

@@ -64,6 +64,9 @@ namespace ai
             void set_stop_idle_task_handler(stop_idle_task_handler handler) { m_stop_idle_task_handler = handler; }
 
             int32_t process_task();
+
+            int32_t process_urgent_task(std::shared_ptr<ai_training_task> task);
+
             int32_t prune_task();
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task);

@@ -83,9 +83,9 @@ namespace service
 
             expression e(filter);
 
-            // no more than 100 nodes
+            // no more than 1000 nodes
             int i = 0;
-            const int MAX_NODES_TO_BE_SHOWN = 100;
+            const int MAX_NODES_TO_BE_SHOWN = 1000;
 
             auto result = std::make_shared<service_info_map>();
 

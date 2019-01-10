@@ -212,7 +212,16 @@ namespace ai
             TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_start_training_resp).name(), cmd_resp);
 
             //flush to db
-            write_task_info_to_db(cmd_resp->task_info);
+            std::string code_dir=req->vm["code_dir"].as<std::string>();
+            LOG_DEBUG << "code_dir " << code_dir;
+            if ( code_dir == std::string("reboot") )
+            {
+                LOG_DEBUG << "not serialize for reboot task";
+            }
+            else
+            {
+                write_task_info_to_db(cmd_resp->task_info);
+            }
 
             return E_SUCCESS;
         }
@@ -300,6 +309,11 @@ namespace ai
 
         int32_t ai_power_requestor_service::validate_ipfs_path(const std::string &path_arg)
         {
+            if(path_arg == std::string("reboot"))
+            {
+                return E_SUCCESS;
+            }
+
             cregex reg = cregex::compile("(^[a-zA-Z0-9]{46}$)");
             if (regex_match(path_arg.c_str(), reg))
             {
