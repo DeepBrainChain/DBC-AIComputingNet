@@ -432,9 +432,9 @@ namespace ai
 //            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
 //            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
 
-            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 12)(
+            printer(LEFT_ALIGN,6)(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 12)(
                     LEFT_ALIGN, 18);
-            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" << "GPU_USAGE" << "STATE" << "TIME" << matrix::core::endl;
+            printer << matrix::core::init << "No" << "ID" << "NAME" << "VERSION" << "GPU" << "GPU_USAGE" << "STATE" << "TIME" << matrix::core::endl;
 
 
             // order by indicated filed
@@ -461,6 +461,7 @@ namespace ai
             }
 
 
+            int count = 0;
             for( auto& it : s_in_order )
             {
                 std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
@@ -490,7 +491,7 @@ namespace ai
                     }
                 }
 
-                printer << matrix::core::init << it.second.kvs["id"] << it.second.name << ver << gpu << gpu_usage << it.second.kvs["state"]
+                printer << matrix::core::init << ++count << it.second.kvs["id"] << it.second.name << ver << gpu << gpu_usage << it.second.kvs["state"]
                         //                        << to_string(it.second.service_list)
                         << online_time << matrix::core::endl;
             }

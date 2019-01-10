@@ -27,6 +27,9 @@
 #include <boost/format.hpp>
 #include "url_validator.h"
 #include "time_util.h"
+
+#include <stdlib.h>
+
 #include <boost/algorithm/string/join.hpp>
 using namespace std;
 using namespace matrix::core;
@@ -229,20 +232,33 @@ namespace ai
                 return E_SUCCESS;//not find self, return
             }
 
-            if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
+
+            // reboot node
+            bool is_urgent_task = (req->body.code_dir == std::string("reboot"));
+
+            if(!is_urgent_task)
             {
-                LOG_ERROR << "ai power provider service on start training too many tasks, task id: " << req->body.task_id;
-                return E_DEFAULT;
+
+
+                if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
+                {
+                    LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
+                              << req->body.task_id;
+                    return E_DEFAULT;
+                }
+
+                if (m_user_task_ptr->find_task(req->body.task_id))
+                {
+                    LOG_ERROR << "ai power provider service on start training already has task: " << req->body.task_id;
+                    return E_DEFAULT;
+                }
             }
 
-            if (m_user_task_ptr->find_task(req->body.task_id))
-            {
-                LOG_ERROR << "ai power provider service on start training already has task: " << req->body.task_id;
-                return E_DEFAULT;
-            }
             std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
-            assert(nullptr != task);
-
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
             task->__set_task_id(req->body.task_id);
             task->__set_select_mode(req->body.select_mode);
             task->__set_master(req->body.master);
@@ -284,8 +300,15 @@ namespace ai
 
             task->__set_received_time_stamp(std::time(nullptr));
             task->__set_status(task_queueing);
-            
-            m_user_task_ptr->add_task(task);
+
+            if(!is_urgent_task)
+            {
+                m_user_task_ptr->add_task(task);
+            }
+            else
+            {
+                m_urgent_task = task;
+            }
 
             return E_SUCCESS;
         }
@@ -314,7 +337,7 @@ namespace ai
             }
 
             if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
-                && (! verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])) ) 
+                && (! verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])) )
             {
                 LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
                 return E_DEFAULT;
@@ -457,8 +480,8 @@ namespace ai
                     }
                     rsp_content->header.__set_exten_info(exten_info);
 
-                    status_list.clear(); 
-                    
+                    status_list.clear();
+
                     //resp msg
                     std::shared_ptr<message> resp_msg = std::make_shared<message>();
                     resp_msg->set_name(LIST_TRAINING_RESP);
@@ -557,7 +580,7 @@ namespace ai
                 LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
                 return E_DEFAULT;
             }
-            
+
 
             //check task id and get container
             auto task = m_user_task_ptr->find_task(task_id);
@@ -580,7 +603,7 @@ namespace ai
                     return E_DEFAULT;
                 }
             }
-            
+
 
             //get container logs
             const std::string &container_id = task->container_id;
@@ -737,12 +760,20 @@ namespace ai
 
         int32_t ai_power_provider_service::on_training_task_timer(std::shared_ptr<core_timer> timer)
         {
-            assert(nullptr != m_idle_task_ptr);
-            if (m_oss_task_mng->can_exec_idle_task())
+            if(m_user_task_ptr && m_urgent_task)
+            {
+                m_user_task_ptr->process_urgent_task(m_urgent_task);
+
+                m_urgent_task = nullptr;
+
+                //continue normal task processing
+
+            }
+
+            if (m_idle_task_ptr != nullptr)
             {
                 m_idle_task_ptr->update_idle_task();
             }
-            
             assert(nullptr != m_user_task_ptr);
             if (0 == m_user_task_ptr->get_user_cur_task_size())
             {

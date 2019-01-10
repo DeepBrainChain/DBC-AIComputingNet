@@ -93,6 +93,8 @@ namespace ai
 
             void cmd_key(int argc, char* argv[]);
 
+            void reboot( int argc, char* argv[] );
+
 
         protected:
 

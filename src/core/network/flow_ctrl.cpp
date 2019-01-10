@@ -42,7 +42,7 @@ namespace matrix
                 LOG_DEBUG << "timer matrix manager timer error: aborted";
                 return;
             }
-            LOG_INFO << "m_free_window: " << m_free_window;
+            LOG_DEBUG << "m_free_window: " << m_free_window;
             m_free_window = m_window + m_free_window;
             if (m_free_window > 2* m_max_num)
             {
