@@ -211,7 +211,9 @@ namespace ai
             m_invokers["task_start_multi"] = m_invokers["start_multi"];
 //            m_invokers["task_ps"] = m_invokers["ps"];
 
-            m_invokers["reboot"] = std::bind(&cmd_line_service::reboot, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["reboot"] = std::bind(&cmd_line_service::node_reboot, this, std::placeholders::_1, std::placeholders::_2);
+
+            m_invokers["task_restart"] = std::bind(&cmd_line_service::task_restart, this, std::placeholders::_1, std::placeholders::_2);
 
 #ifndef WIN32
             m_invokers["key"] = std::bind(&cmd_line_service::cmd_key, this, std::placeholders::_1, std::placeholders::_2);
@@ -491,10 +493,11 @@ namespace ai
             try
             {
                 opts.add_options()
-                    ("help,h", "start task")
-                    ("config,c", bpo::value<std::string>(), "task config file path")
-                    ("base,b", bpo::value<std::string>(), "reference task id, the new task will run upon the same context of referred one")
-                    ("node,n", bpo::value< std::string >(), "the target ai training node, ignore the peer_nodes_list field in the config file if present.");
+                        ("help,h", "start task")
+                        ("config,c", bpo::value<std::string>(), "task config file path")
+                        ("base,b", bpo::value<std::string>(), "reference task id, the new task will run upon the same context of referred one")
+                        ("description,d", bpo::value<std::string>(),"task description, help to identify the task purpose")
+                        ("node,n", bpo::value<std::string>(), "the target ai training node, ignore the peer_nodes_list field in the config file if present.");
 
                 //parse
                 bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -518,6 +521,12 @@ namespace ai
                 {
                     req->parameters["base"] = vm["base"].as<std::string>();
                 }
+
+                if (vm.count("description"))
+                {
+                    req->parameters["description"] = vm["description"].as<std::string>();
+                }
+
 
                 if (vm.count("config") || vm.count("c"))
                 {
@@ -1013,7 +1022,172 @@ namespace ai
 
 
 #define INSERT_VARIABLE(vm, k) variable_value k##_;k##_.value() = k;vm.insert({ #k, k##_ });
-        void cmd_line_service::reboot(int argc, char* argv[])
+
+
+        void cmd_line_service::task_restart(int argc, char* argv[])
+        {
+            bpo::variables_map vm;
+            options_description opts("restart task options");
+
+            try
+            {
+                opts.add_options()
+                        ("help,h", "restart task")
+                        ("task_id,t", bpo::value<std::string>(), "task id that to be restarted");
+
+                //parse
+                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+                bpo::notify(vm);
+
+                if (vm.count("help") || vm.count("h"))
+                {
+                    cout << opts;
+                    return;
+                }
+
+                // read other param from cmd line
+                std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
+                bpo::variables_map& vm_r = req->vm;
+
+
+                std::this_thread::sleep_for(std::chrono::seconds(1));  // wait a second to avoid race condition between start_training_req and list_training_req in network.
+
+                // stop task
+                if (vm.count("task_id"))
+                {
+                    std::shared_ptr<cmd_stop_training_req> req = std::make_shared<cmd_stop_training_req>();
+                    req->task_id = vm["task_id"].as<std::string>();
+                    if(req->task_id.empty())
+                    {
+                        cout << opts;
+                        return;
+                    }
+                    m_last_task_id = req->task_id;
+
+
+                    cout << "stop task: " << req->task_id << ": [y/n] ";
+                    std::string answer;
+                    cin >> answer;
+                    if (answer != std::string("y") && answer != std::string("Y"))
+                    {
+                        return;
+                    }
+
+                    std::shared_ptr<cmd_stop_training_resp> resp = g_api_call_handler->invoke<cmd_stop_training_req, cmd_stop_training_resp>(req);
+                    if (nullptr == resp)
+                    {
+                        cout << endl << "command time out" << endl;
+                    }
+                    else
+                    {
+                        format_output(resp);
+                    }
+
+                }
+
+
+
+                if (vm.count("task_id"))
+                {
+                    cout << "start task: " <<  vm["task_id"].as<std::string>() << endl;
+
+                    std::vector<std::string> peer_nodes_list;
+//                    peer_nodes_list.push_back(node);
+
+                    std::string task_id  = vm["task_id"].as<std::string>();
+                    std::string code_dir = TASK_RESTART;
+                    std::string data_dir = TASK_RESTART;
+                    std::string hyper_parameters = "";
+                    std::string entry_file = "dummy";
+                    std::string training_engine = "dummy";
+                    std::string master = "";
+                    std::string checkpoint_dir = "";
+                    std::string server_specification = "";
+                    std::string container_name = "dummy";
+                    int8_t select_mode = 0;
+                    int32_t server_count = 0;
+
+
+                    INSERT_VARIABLE(vm_r, task_id);
+                    INSERT_VARIABLE(vm_r, peer_nodes_list);
+                    INSERT_VARIABLE(vm_r, code_dir);
+                    INSERT_VARIABLE(vm_r, data_dir);
+                    INSERT_VARIABLE(vm_r, hyper_parameters);
+                    INSERT_VARIABLE(vm_r, entry_file);
+                    INSERT_VARIABLE(vm_r, training_engine);
+                    INSERT_VARIABLE(vm_r, master);
+                    INSERT_VARIABLE(vm_r, checkpoint_dir);
+                    INSERT_VARIABLE(vm_r, server_specification);
+                    INSERT_VARIABLE(vm_r, container_name);
+                    INSERT_VARIABLE(vm_r, select_mode);
+                    INSERT_VARIABLE(vm_r, server_count);
+
+
+                    std::shared_ptr<cmd_start_training_resp> resp = g_api_call_handler->invoke<cmd_start_training_req, cmd_start_training_resp >(req);
+
+                    if (nullptr == resp)
+                    {
+                        cout << endl << "command time out" << endl;
+                    }
+                    else
+                    {
+                        if (resp->result == E_DEFAULT)
+                            format_output(resp);
+                    }
+
+
+                    std::this_thread::sleep_for(std::chrono::seconds(1));  // wait a second to avoid race condition between start_training_req and list_training_req in network.
+
+                    // fetch task status from network
+                    {
+                        cout << "fetch task status" <<endl;
+
+                        std::shared_ptr<cmd_list_training_req> req(new cmd_list_training_req);
+                        req->list_type = LIST_SPECIFIC_TASKS;
+                        std::vector<std::string> task_vector;
+                        task_vector.push_back(task_id);
+                        std::copy(std::make_move_iterator(task_vector.begin()),
+                                  std::make_move_iterator(task_vector.end()), std::back_inserter(req->task_list));
+                        task_vector.clear();
+
+                        auto resp = g_api_call_handler->invoke<cmd_list_training_req, cmd_list_training_resp>(req);
+                        if (nullptr == resp)
+                        {
+                            cout << "warning: fail to fetch the task status" << endl;
+                        }
+                        else if (resp->task_status_list.size() == 1)
+                        {
+                            auto it = resp->task_status_list.begin();
+                            if (it->status==task_unknown)
+                            {
+                                cout << "warning: fail to fetch the task status" << endl;
+                            }
+                            else
+                            {
+                                cout << "task status: " << to_training_task_status_string(it->status)<< endl;
+                            }
+                        }
+
+                    }
+
+
+                }
+                else
+                {
+                    cout << argv[0] << " invalid option" << endl;
+                    cout << opts;
+                }
+            }
+            catch (...)
+            {
+                cout << argv[0] << " invalid option" << endl;
+                cout << opts;
+            }
+
+        }
+
+
+        void cmd_line_service::node_reboot(int argc, char* argv[])
         {
             bpo::variables_map vm;
             options_description opts("reboot remote node");
@@ -1044,8 +1218,8 @@ namespace ai
                     std::vector<std::string> peer_nodes_list;
                     peer_nodes_list.push_back(node);
 
-                    std::string code_dir = "reboot";
-                    std::string data_dir = "reboot";
+                    std::string code_dir = NODE_REBOOT;
+                    std::string data_dir = NODE_REBOOT;
                     std::string hyper_parameters = "";
                     std::string entry_file = "dummy";
                     std::string training_engine = "dummy";
@@ -1095,12 +1269,6 @@ namespace ai
                 cout << argv[0] << " invalid option" << endl;
                 cout << opts;
             }
-
-            #if  defined(__linux__)
-
-
-
-            #endif
 
         }
 
@@ -1216,6 +1384,7 @@ namespace ai
                         ("service,s", "print nodes' service info in the network")
                         ("filter,f", bpo::value<std::vector<std::string>>(), "if -s is specified, only print node matchs the filter.")
                         ("order,o", bpo::value<std::string>(), "if -s is specified, print node order by specific field.")
+                        ("line,l", bpo::value<int32_t>(), "if -s is specified, print nodes no more than this value")
                         ("interval,i", bpo::value<int>(), "time interval in seconds, refresh info periodically. Press 'q' to exit");
 
                 //parse
@@ -1253,6 +1422,19 @@ namespace ai
                 {
                     req->op = OP_SHOW_SERVICE_LIST;
 
+                    if (vm.count("line"))
+                    {
+                        req->num_lines = vm["line"].as<int32_t>();
+
+                        if ( req->num_lines <=0 ||  req->num_lines > 10000)
+                        {
+                            req->num_lines = 1000;
+                        }
+                    }
+                    else
+                    {
+                        req->num_lines = 1000;
+                    }
 
                     if (vm.count("filter") || vm.count("f"))
                     {

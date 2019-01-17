@@ -9,7 +9,7 @@ config_ipfs()
     ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5 >/dev/null
     ipfs bootstrap add /ip4/18.223.4.215/tcp/4001/ipfs/QmeZR4HygPvdBvheovYR4oVTvaA4tWxDPTgskkPWqbjkGy >/dev/null
 
-    if wget -quiet https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes &>/dev/null; then
+    if wget --quiet https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes &>/dev/null; then
         echo "add ipfs node from dbc website"
 
         cat ./bootstrap_nodes| while read line
@@ -100,7 +100,7 @@ if [ ! `which wget` ]; then
     apt-get install --yes wget >/dev/null
 fi
 
-
+restart=false
 code_dir=$2
 task_id=""
 if [ -f /home/dbc_utils/parameters ]; then
@@ -117,7 +117,9 @@ if [ ! -d /dbc ]; then
     mkdir /dbc
 fi
 
-rm -rf /dbc/*
+if [ "$restart" != "true" ]; then
+  rm -rf /dbc/*
+fi
 
 export IPFS_PATH=$ipfs_install_path
 
@@ -159,7 +161,11 @@ fi
 
 
 # run ai-training task
-/bin/bash /dbc_task_imp.sh "$1" "$code_dir" $3
+if [ "$restart" == "true" ]; then
+    /bin/bash /dbc_task_imp.sh "$restart" "$code_dir" $3
+else
+    /bin/bash /dbc_task_imp.sh "$1" "$code_dir" $3
+fi
 
 echo "task completed: $task_id"
 

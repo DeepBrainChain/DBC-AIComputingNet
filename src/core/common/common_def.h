@@ -462,6 +462,9 @@ extern std::vector<std::string> DEFAULT_VECTOR;
 #endif
 
 
+#define TASK_RESTART            "task_restart"
+#define NODE_REBOOT             "node_reboot"
+
 #endif /* _COMMON_DEF_H_ */
 
 

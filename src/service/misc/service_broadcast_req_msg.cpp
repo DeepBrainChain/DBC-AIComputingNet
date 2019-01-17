@@ -49,8 +49,8 @@ namespace service
             //body
             content->body.__set_node_service_info_map(m);
 
-            LOG_DEBUG<<content->header;
-            LOG_DEBUG<<content->body;
+//            LOG_DEBUG<<content->header;
+//            LOG_DEBUG<<content->body;
 
             msg->set_content(content);
             msg->set_name(content->header.msg_name);

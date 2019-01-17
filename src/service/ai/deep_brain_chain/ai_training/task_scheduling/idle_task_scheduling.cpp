@@ -92,6 +92,11 @@ namespace ai
 
         int32_t idle_task_scheduling::stop_task()
         {
+            if (nullptr == m_idle_task)
+            {
+                return E_SUCCESS;
+            }
+
             m_idle_state_begin = 0;
             if (nullptr == m_idle_task)
             {

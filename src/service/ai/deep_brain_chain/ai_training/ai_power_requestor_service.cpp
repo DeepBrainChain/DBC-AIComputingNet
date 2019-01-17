@@ -185,7 +185,6 @@ namespace ai
             }
 
 
-
             auto req_msg = create_task_msg(req->vm, cmd_resp->task_info);
             if (nullptr == req_msg)
             {
@@ -197,6 +196,7 @@ namespace ai
             }
 
             LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << req_msg->get_content()->header.nonce;
+
 
             if (CONNECTION_MANAGER->broadcast_message(req_msg) != E_SUCCESS)
             {
@@ -214,13 +214,44 @@ namespace ai
             //flush to db
             std::string code_dir=req->vm["code_dir"].as<std::string>();
             LOG_DEBUG << "code_dir " << code_dir;
-            if ( code_dir == std::string("reboot") )
+            if ( code_dir == std::string(NODE_REBOOT) )
             {
                 LOG_DEBUG << "not serialize for reboot task";
             }
             else
             {
-                write_task_info_to_db(cmd_resp->task_info);
+
+                if ( code_dir == std::string(TASK_RESTART) )
+                {
+                    // keep original task description
+
+                    // reset task status as task_unknown
+                    reset_task_status_to_db(cmd_resp->task_info.task_id);
+
+                }
+                else
+                {
+
+                    std::string task_description;
+                    try
+                    {
+                        std::vector<std::string> nodes = req->vm["peer_nodes_list"].as<std::vector<std::string>>();
+                        std::string node = nodes[0];
+                        task_description = node;
+                        //                    task_description=node.substr(node.length()-8);
+                    }
+                    catch (const std::exception &e)
+                    {
+                        LOG_ERROR << std::string(e.what());
+                    }
+
+
+                    task_description += " : " + req->parameters["description"];
+                    cmd_resp->task_info.__set_description(task_description);
+
+                    write_task_info_to_db(cmd_resp->task_info);
+                }
+
             }
 
             return E_SUCCESS;
@@ -228,6 +259,7 @@ namespace ai
 
         int32_t ai_power_requestor_service::validate_cmd_training_task_conf(const bpo::variables_map &vm, std::string& error)
         {
+
 
             std::string s[]={
                 "training_engine",
@@ -281,8 +313,11 @@ namespace ai
 
             if (0 == vm.count("peer_nodes_list") || vm["peer_nodes_list"].as<std::vector<std::string>>().empty())
             {
-                error = "peer_nodes_list absent";
-                return E_DEFAULT;
+                if(vm["code_dir"].as<std::string>() != std::string(TASK_RESTART))
+                {
+                    error = "peer_nodes_list absent";
+                    return E_DEFAULT;
+                }
             }
             else
             {
@@ -309,7 +344,7 @@ namespace ai
 
         int32_t ai_power_requestor_service::validate_ipfs_path(const std::string &path_arg)
         {
-            if(path_arg == std::string("reboot"))
+            if(path_arg == std::string(NODE_REBOOT) || path_arg == std::string(TASK_RESTART))
             {
                 return E_SUCCESS;
             }
@@ -676,6 +711,7 @@ namespace ai
                     cts.task_id = info.task_id;
                     cts.status = info.status;
                     cts.create_time = info.create_time;
+                    cts.description = info.description;
                     cmd_resp->task_status_list.push_back(std::move(cts));
                 }
 
@@ -867,6 +903,7 @@ namespace ai
                 cts.task_id = info.task_id;
                 cts.status = info.status;
                 cts.create_time = info.create_time;
+                cts.description = info.description;
                 cmd_resp->task_status_list.push_back(std::move(cts));
             }
 
@@ -934,6 +971,7 @@ namespace ai
                     cmd_task_status cts;
                     cts.task_id = info.task_id;
                     cts.create_time = info.create_time;
+                    cts.description = info.description;
                     auto it = task_ids->find(info.task_id);
                     if (it != task_ids->end())
                     {
@@ -1012,10 +1050,37 @@ FINAL_PROC:
 
             try
             {
-                req_content->body.__set_task_id(id_generator().generate_task_id());
+
+                std::string task_id;
+                if(vm.count("task_id"))
+                {
+                    // in case task restart, it will specify the task id in cmd line
+                    task_id = vm["task_id"].as<std::string>();
+
+                    std::string node_id = get_node_id_from_db(task_id);
+
+                    if(node_id.empty())
+                    {
+                        LOG_ERROR << "not found node id of given task from db";
+                        return nullptr;
+                    }
+
+                    std::vector<std::string> v;
+                    v.push_back(node_id);
+                    vm.at("peer_nodes_list").value() = v;
+                }
+
+                if (task_id.empty())
+                {
+                    task_id = id_generator().generate_task_id();
+                }
+
+                req_content->body.__set_task_id(task_id);
                 req_content->body.__set_select_mode(vm["select_mode"].as<int8_t>());
                 req_content->body.__set_master(vm["master"].as<std::string>());
+
                 req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
+
                 req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
                 req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
                 req_content->body.__set_training_engine(vm["training_engine"].as<std::string>());
@@ -1093,6 +1158,29 @@ FINAL_PROC:
             }
 
             return create_task_msg(vm,task_info);
+        }
+
+        void ai_power_requestor_service::reset_task_status_to_db(std::string task_id)
+        {
+            if (!m_req_training_task_db || task_id.empty())
+            {
+                LOG_ERROR << "null ptr or null task_id.";
+                return;
+            }
+
+            ai::dbc::cmd_task_info task_info_in_db;
+            if(read_task_info_from_db(task_id, task_info_in_db))
+            {
+                if(task_info_in_db.status != task_unknown)
+                {
+                    task_info_in_db.__set_status(task_unknown);
+                    write_task_info_to_db(task_info_in_db);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "not exist in task db: " << task_id;
+            }
         }
 
         bool ai_power_requestor_service::write_task_info_to_db(ai::dbc::cmd_task_info &task_info)
@@ -1250,6 +1338,37 @@ FINAL_PROC:
             }
 
             return true;
+        }
+
+        std::string ai_power_requestor_service::get_node_id_from_db(std::string task_id)
+        {
+            if (task_id.empty() || !m_req_training_task_db)
+            {
+                return "";
+            }
+
+            std::string task_value;
+            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+            if (!status.ok() || status.IsNotFound())
+            {
+                return "";
+            }
+
+
+            //deserialization
+            std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
+            buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
+            binary_protocol proto(buf.get());
+            ai::dbc::cmd_task_info t_info;
+            t_info.read(&proto);
+
+
+            std::string s = t_info.description;
+
+            // description format:  "<node id> : ..."
+            std::string delimiter = " : ";
+
+            return s.substr(0, s.find(delimiter));
         }
 
         int32_t ai_power_requestor_service::on_cmd_logs_req(const std::shared_ptr<message> &msg)

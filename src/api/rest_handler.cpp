@@ -895,6 +895,79 @@ namespace ai
             return nullptr;
         }
 
+
+        std::shared_ptr<message> rest_config(HTTP_REQUEST_PTR httpReq, const std::string& path)
+        {
+            std::vector<std::string> path_list;
+            rest_util::split_path(path, path_list);
+
+            if (path_list.size() == 0)
+            {
+
+                std::string body = httpReq->read_body();
+                if (body.empty())
+                {
+                    ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/config");
+                    return nullptr;
+                }
+
+                rapidjson::Document document;
+                try
+                {
+                    document.Parse(body.c_str());
+                    if (!document.IsObject())
+                    {
+                        ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/config");
+                        return nullptr;
+                    }
+                } catch (...)
+                {
+                    ERROR_REPLY(HTTP_BADREQUEST, RPC_MISC_ERROR, "Parse JSON Error. Use /api/v1/config");
+                    return nullptr;
+                }
+
+                std::string log_level;
+
+
+                JSON_PARSE_STRING(document, "log_level", log_level);
+
+                std::map<std::string, uint32_t> log_level_to_int = {
+
+                        {"trace",   0},
+                        {"debug",   1},
+                        {"info",    2},
+                        {"warning", 3},
+                        {"error",   4},
+                        {"fatal",   5}
+                };
+
+                if (log_level_to_int.count(log_level))
+                {
+
+                    LOG_ERROR << "set log level " << log_level;
+                    uint32_t log_level_int = log_level_to_int[log_level];
+                    log::set_filter_level((boost::log::trivial::severity_level)
+                                                  log_level_int);
+                }
+                else
+                {
+                    ERROR_REPLY(HTTP_BADREQUEST, RPC_MISC_ERROR, "illegal log level value");
+                    return nullptr;
+                }
+            }
+
+
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+            rapidjson::Value data(rapidjson::kObjectType);
+
+            data.AddMember("result", "ok", allocator);
+            SUCC_REPLY(data);
+
+            return nullptr;
+        }
+
     }
 }
 

@@ -77,18 +77,17 @@ namespace service
          * return service info from cache
          * @return
          */
-        std::shared_ptr<service_info_map> service_info_collection::get(std::string filter)
+        std::shared_ptr<service_info_map> service_info_collection::get(std::string filter, std::string sort, uint32_t num)
         {
             //std::unique_lock<std::mutex> lock(m_mutex);
 
             expression e(filter);
 
-            // no more than 1000 nodes
-            int i = 0;
-            const int MAX_NODES_TO_BE_SHOWN = 1000;
+//            int i = 0;
+//            const int MAX_NODES_TO_BE_SHOWN = 1000;
 
-            auto result = std::make_shared<service_info_map>();
-
+            // step 1: filter
+            auto result1 = std::make_shared<service_info_map>();
             for (auto &it : m_id_2_info)
             {
                 if (!filter.empty())
@@ -96,9 +95,45 @@ namespace service
                     if (!check(e, it.first, it.second)) continue;
                 }
 
-                if (++i > MAX_NODES_TO_BE_SHOWN) break;
+//                if (++i > num) break;
 
-                (*result)[it.first] = it.second;
+                (*result1)[it.first] = it.second;
+            }
+
+            // step 2: sort
+            service_info_map s_in_order;
+            for( auto& it : *result1 )
+            {
+                std::string k;
+                if( sort == "name" )
+                {
+                    k = it.second.name;
+                }
+                else if( sort == "timestamp" )
+                {
+                    k = it.second.time_stamp;
+                }
+                else
+                {
+                    k = it.second.kvs[sort];
+                }
+
+                auto v = it.second;
+                v.kvs["id"] = it.first;
+                s_in_order[k + it.first] = v;  // "k + id" is unique
+            }
+
+            // step 3: top n
+            auto result = std::make_shared<service_info_map>();
+            uint32_t i = 0;
+
+            for (auto &it : s_in_order)
+            {
+                if (++i > num) break;
+
+                auto id = it.second.kvs["id"];
+                (*result)[id] = it.second;
+
             }
 
             return result;
