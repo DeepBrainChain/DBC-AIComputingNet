@@ -3,7 +3,6 @@
 
 #./dbc_task.sh Qme2UKa6yi9obw6MUcCRbpZBUmqMnGnznti4Rnzba5BQE3 QmbA8ThUawkUNtoV7yjso6V8B1TYeCgpXDhMAfYCekTNkr hello_world.py
 
-
 if [ $# -lt 3 ]; then
         echo "params count less than 3, please check params"
         echo "params: $@"
@@ -17,7 +16,12 @@ SYSTEM=`uname -s`
 exit_code=0
 sleep_time=5s
 home_dir=/dbc
+
+# the first argument is either data_dir_hash or restart flag
 data_dir_hash=$1
+restart=$1
+
+
 code_dir_hash=$2
 ipfs_get_task_pid=12345
 
@@ -69,7 +73,8 @@ stop_ipfs()
     fi
 
     cd /
-    rm -rf $home_dir/*
+    # keep user data and let external data management strategy to handle it
+#    rm -rf $home_dir/*
 
     echo "======================================================="
     echo "end to exec dbc_task.sh and ready to say goodbye! :-)"
@@ -222,61 +227,63 @@ if [ ! -d $home_dir ]; then
         mkdir $home_dir
 fi
 
-rm -rf $home_dir/*
+if [ "$restart" != "true" ]; then
+    rm -rf $home_dir/*
+    mkdir $home_dir/output
 
-mkdir $home_dir/output
+    echo -n "cd "
+    echo $home_dir
+    cd $home_dir
 
-echo -n "cd "
-echo $home_dir
-cd $home_dir
+    #download code_dir
+    echo "======================================================="
+    if [ -z "$code_dir_hash" ]; then
+              echo -n "code_dir is empty.pls check"
+              exit
+    fi
+    echo -n "begin to download code dir: "
+    echo $code_dir_hash
 
-#download code_dir
-echo "======================================================="
-if [ -z "$code_dir_hash" ]; then
-          echo -n "code_dir is empty.pls check"
-          exit
-fi
-echo -n "begin to download code dir: "
-echo $code_dir_hash
-
-download $code_dir_hash ./code
-#ipfs get $code_dir_hash -o ./code
-
-if [ $? -ne 0 ]; then
-        echo "download code dir failed and dbc_task.sh exit"
-        stop_ipfs
-        exit
-fi
-
-if [ ! -e "$home_dir/code/$task" ]; then
-   echo "task not exist. quit now"
-   rm -rf $home_dir/code
-   stop_ipfs
-   exit
-fi
-
-echo -n "end to download code dir: "
-echo $code_dir_hash
-
-#download data_dir
-echo "======================================================="
-if [ -n "$data_dir_hash" ]; then
-    echo -n "begin to download data dir: "
-    echo $data_dir_hash
-
-#    ipfs get $data_dir_hash -o ./data
-    download $data_dir_hash ./data
+    download $code_dir_hash ./code
+    #ipfs get $code_dir_hash -o ./code
 
     if [ $? -ne 0 ]; then
-        echo "download data dir failed and dbc_task.sh exit"
-        stop_ipfs
-        exit
+            echo "download code dir failed and dbc_task.sh exit"
+            stop_ipfs
+            exit
     fi
 
-    echo -n "end to download data dir: "
-    echo $data_dir_hash
+    if [ ! -e "$home_dir/code/$task" ]; then
+       echo "task not exist. quit now"
+       rm -rf $home_dir/code
+       stop_ipfs
+       exit
+    fi
 
-    sleep $sleep_time
+    echo -n "end to download code dir: "
+    echo $code_dir_hash
+
+    #download data_dir
+    echo "======================================================="
+    if [ -n "$data_dir_hash" ]; then
+        echo -n "begin to download data dir: "
+        echo $data_dir_hash
+
+    #    ipfs get $data_dir_hash -o ./data
+        download $data_dir_hash ./data
+
+        if [ $? -ne 0 ]; then
+            echo "download data dir failed and dbc_task.sh exit"
+            stop_ipfs
+            exit
+        fi
+
+        echo -n "end to download data dir: "
+        echo $data_dir_hash
+
+        sleep $sleep_time
+    fi
+
 fi
 
 myecho "\n\n"

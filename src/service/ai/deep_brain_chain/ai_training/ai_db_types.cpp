@@ -557,6 +557,11 @@ void cmd_task_info::__set_result(const std::string& val) {
 void cmd_task_info::__set_status(const int8_t val) {
   this->status = val;
 }
+
+void cmd_task_info::__set_description(const std::string& val) {
+  this->description = val;
+__isset.description = true;
+}
 std::ostream& operator<<(std::ostream& out, const cmd_task_info& obj)
 {
   obj.printTo(out);
@@ -621,6 +626,14 @@ uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->description);
+          this->__isset.description = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -662,6 +675,11 @@ uint32_t cmd_task_info::write(::apache::thrift::protocol::TProtocol* oprot) cons
   xfer += oprot->writeByte(this->status);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.description) {
+    xfer += oprot->writeFieldBegin("description", ::apache::thrift::protocol::T_STRING, 5);
+    xfer += oprot->writeString(this->description);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -673,6 +691,8 @@ void swap(cmd_task_info &a, cmd_task_info &b) {
   swap(a.create_time, b.create_time);
   swap(a.result, b.result);
   swap(a.status, b.status);
+  swap(a.description, b.description);
+  swap(a.__isset, b.__isset);
 }
 
 cmd_task_info::cmd_task_info(const cmd_task_info& other8) {
@@ -680,12 +700,16 @@ cmd_task_info::cmd_task_info(const cmd_task_info& other8) {
   create_time = other8.create_time;
   result = other8.result;
   status = other8.status;
+  description = other8.description;
+  __isset = other8.__isset;
 }
 cmd_task_info& cmd_task_info::operator=(const cmd_task_info& other9) {
   task_id = other9.task_id;
   create_time = other9.create_time;
   result = other9.result;
   status = other9.status;
+  description = other9.description;
+  __isset = other9.__isset;
   return *this;
 }
 void cmd_task_info::printTo(std::ostream& out) const {
@@ -695,6 +719,7 @@ void cmd_task_info::printTo(std::ostream& out) const {
   out << ", " << "create_time=" << to_string(create_time);
   out << ", " << "result=" << to_string(result);
   out << ", " << "status=" << to_string(status);
+  out << ", " << "description="; (__isset.description ? (out << to_string(description)) : (out << "<null>"));
   out << ")";
 }
 

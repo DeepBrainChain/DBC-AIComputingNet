@@ -440,7 +440,7 @@ namespace ai
             if (!task)
                 return E_DEFAULT;
 
-            if (task->code_dir == "reboot")
+            if (task->code_dir == NODE_REBOOT)
             {
                 if (E_SUCCESS != auth_task(task))
                 {

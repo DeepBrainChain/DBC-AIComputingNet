@@ -93,6 +93,10 @@ namespace ai
             //int32_t on_cmd_clear(const std::shared_ptr<message> &msg);
             int32_t on_cmd_ps(const std::shared_ptr<message> &msg);
 
+            std::string get_node_id_from_db(std::string task_id);
+
+            void reset_task_status_to_db(std::string task_id);
+
 
         protected:
 

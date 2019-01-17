@@ -429,12 +429,10 @@ namespace ai
         void cmd_show_resp::format_service_list()
         {
             console_printer printer;
-//            printer(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24);
-//            printer << matrix::core::init << "ID" << "NAME" << "VERSION" << "GPU" <<"STATE" << "SERVICE" << "TIMESTAMP" << matrix::core::endl;
 
             printer(LEFT_ALIGN,6)(LEFT_ALIGN, 48)(LEFT_ALIGN, 17)(LEFT_ALIGN, 12)(LEFT_ALIGN, 32)(LEFT_ALIGN, 12)(LEFT_ALIGN, 12)(
                     LEFT_ALIGN, 18);
-            printer << matrix::core::init << "No" << "ID" << "NAME" << "VERSION" << "GPU" << "GPU_USAGE" << "STATE" << "TIME" << matrix::core::endl;
+            printer << matrix::core::init << "NO" << "ID" << "NAME" << "VERSION" << "GPU" << "GPU_USAGE" << "STATE" << "TIME" << matrix::core::endl;
 
 
             // order by indicated filed

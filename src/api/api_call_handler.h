@@ -197,6 +197,8 @@ namespace ai
             time_t create_time;
 
             int8_t status;
+
+            std::string description;
         };
 
         class cmd_list_training_resp:public matrix::core::msg_base, public outputter
@@ -217,14 +219,33 @@ namespace ai
                 }
 
                 console_printer printer;
-                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 56)(LEFT_ALIGN, 24)(LEFT_ALIGN, 20);
+                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 56)(LEFT_ALIGN, 24)(LEFT_ALIGN, 30)(LEFT_ALIGN,48);
 
-                printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << matrix::core::endl;
+                printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << "description" << matrix::core::endl;
                 int i = 1;
                 for(auto it = task_status_list.begin(); it != task_status_list.end(); ++it, ++i)
                 {
+                    std::string description = it->description;
+                    if (description.empty())
+                    {
+                        description = "N/A";
+                    }
+                    else
+                    {
+                        // todo: only display the last 8 digits of node id
+                        std::string delimiter = " : ";
+                        size_t pos = description.find(delimiter);
+
+                        if (pos != std::string::npos)
+                        {
+                            if (pos > 8)
+                                description = description.substr(pos - 8);
+                        }
+                    }
+
                     printer << matrix::core::init << i << it->task_id << time_util::time_2_str(
-                            it->create_time) << to_training_task_status_string(it->status) << matrix::core::endl;
+                            it->create_time) << to_training_task_status_string(it->status)
+                            << description << matrix::core::endl;
                 }
             }
         };
@@ -402,6 +423,7 @@ namespace ai
             int32_t op;
             std::string filter;
             std::string sort;
+            int32_t num_lines;
 
         public:
             cmd_show_req():
@@ -413,7 +435,7 @@ namespace ai
             void set_sort(std::string f)
             {
 
-                const char* fields[] = {"gpu", "name", "version", "state", "timestamp", "service"};
+                const char* fields[] = {"gpu", "name", "version", "state", "timestamp", "service", "startup_time"};
 
                 int n = sizeof(fields) / sizeof(char*);
                 bool found = false;

@@ -247,7 +247,7 @@ namespace service
                 cmd_resp->filter = req->filter;
                 cmd_resp->sort = req->sort;
                 cmd_resp->op = req->op;
-                cmd_resp->id_2_services = m_service_info_collection.get(cmd_resp->filter);
+                cmd_resp->id_2_services = m_service_info_collection.get(cmd_resp->filter, cmd_resp->sort, req->num_lines);
 
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_show_resp).name(), cmd_resp);
 

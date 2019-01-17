@@ -168,12 +168,22 @@ namespace ai
             // update container's parameter if
             std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";
             std::string text = "task_id=" + task->task_id + "\n";
+
+            LOG_ERROR << " container_id: " << task->container_id << " task_id: " << task->task_id;
+
             if (is_container_existed)
             {
                 // server_specification indicates the container to be reused for this task
                 // needs to indicate container run with different parameters
                 text += ("code_dir=" + task->code_dir + "\n");
+
+                if (task->server_specification == "restart")
+                {
+                    // use case: restart a task
+                    text += ("restart=true\n");
+                }
             }
+
 
             if (!file_util::write_file(path, text))
             {

@@ -54,6 +54,7 @@ namespace ai
 
 
         std::shared_ptr<message> rest_task_clean(HTTP_REQUEST_PTR httpReq, const std::string& path);
+        std::shared_ptr<message> rest_config(HTTP_REQUEST_PTR httpReq, const std::string& path);
         int32_t on_task_clean(HTTP_REQ_CTX_PTR hreq_context, std::shared_ptr<message>& resp_msg);
         //
         //This module outputs the following constants
@@ -67,6 +68,7 @@ namespace ai
             {"/stat", false, rest_stat},
             {"/mining_nodes", false, rest_mining_nodes},
             {"/tasks", false, rest_task},
+            {"/config", false, rest_config},
             { "", true, rest_api_version},
         };
 

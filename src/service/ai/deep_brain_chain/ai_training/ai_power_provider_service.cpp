@@ -145,6 +145,139 @@ namespace ai
             assert(INVALID_TIMER_ID != m_prune_task_timer_id);
         }
 
+
+        int32_t ai_power_provider_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req )
+        {
+            LOG_DEBUG << "restart training " << req->body.task_id << endl;
+
+            auto task = m_user_task_ptr->find_task(req->body.task_id);
+            if (nullptr == task)
+            {
+                LOG_ERROR << "restart training: task absent: " << req->body.task_id;
+                return E_DEFAULT;
+            }
+
+            if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
+            {
+                LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
+                          << req->body.task_id;
+                return E_DEFAULT;
+            }
+
+            task->__set_error_times(0);
+            task->__set_received_time_stamp(std::time(nullptr));
+            task->__set_status(task_queueing);
+
+            // hack: restart task
+            task->__set_server_specification("restart");
+
+            m_user_task_ptr->add_task(task);
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::node_reboot(std::shared_ptr<matrix::service_core::start_training_req> req)
+        {
+            LOG_DEBUG << "reboot node";
+
+            std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
+            task->__set_task_id(req->body.task_id);
+            task->__set_select_mode(req->body.select_mode);
+            task->__set_master(req->body.master);
+            task->__set_peer_nodes_list(req->body.peer_nodes_list);
+            task->__set_server_specification(req->body.server_specification);
+            task->__set_server_count(req->body.server_count);
+            task->__set_training_engine(req->body.training_engine);
+            task->__set_code_dir(req->body.code_dir);
+            task->__set_entry_file(req->body.entry_file);
+            task->__set_data_dir(req->body.data_dir);
+            task->__set_checkpoint_dir(req->body.checkpoint_dir);
+            task->__set_hyper_parameters(req->body.hyper_parameters);
+            task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
+            task->__set_error_times(0);
+            task->__set_container_id("");
+            task->__set_received_time_stamp(std::time(nullptr));
+            task->__set_status(task_queueing);
+
+
+            m_urgent_task = task;
+
+            return E_SUCCESS;
+        }
+
+        int32_t ai_power_provider_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req)
+        {
+            if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
+            {
+                LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
+                          << req->body.task_id;
+                return E_DEFAULT;
+            }
+
+            if (m_user_task_ptr->find_task(req->body.task_id))
+            {
+                LOG_ERROR << "ai power provider service on start training already has task: " << req->body.task_id;
+                return E_DEFAULT;
+            }
+
+            std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
+            task->__set_task_id(req->body.task_id);
+            task->__set_select_mode(req->body.select_mode);
+            task->__set_master(req->body.master);
+            task->__set_peer_nodes_list(req->body.peer_nodes_list);
+            task->__set_server_specification(req->body.server_specification);
+            task->__set_server_count(req->body.server_count);
+            task->__set_training_engine(req->body.training_engine);
+            task->__set_code_dir(req->body.code_dir);
+            task->__set_entry_file(req->body.entry_file);
+            task->__set_data_dir(req->body.data_dir);
+            task->__set_checkpoint_dir(req->body.checkpoint_dir);
+            task->__set_hyper_parameters(req->body.hyper_parameters);
+            task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
+
+            task->__set_error_times(0);
+
+            // reuse container where container name is specificed in training requester msg.
+            //      As we know, dbc names a container with the task id value when create the container.
+            //      So the input container name also refer to a task id.
+            std::string ref_container_id="";
+            auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
+            LOG_DEBUG << "req container_name: " << req->body.container_name;
+            if (ref_task != nullptr)
+            {
+                LOG_DEBUG << "ref task container id: " << ref_task->container_id;
+                LOG_DEBUG << "ref task id: " << ref_task->task_id;
+
+                if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
+                {
+                    ref_container_id = ref_task->container_id;
+                }
+                else
+                {
+                    LOG_WARNING << "forbid reusing container not own";
+                }
+            }
+
+            task->__set_container_id(ref_container_id);
+
+            task->__set_received_time_stamp(std::time(nullptr));
+            task->__set_status(task_queueing);
+
+            m_user_task_ptr->add_task(task);
+
+            return E_SUCCESS;
+        }
+
+
+
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
@@ -234,83 +367,20 @@ namespace ai
 
 
             // reboot node
-            bool is_urgent_task = (req->body.code_dir == std::string("reboot"));
-
-            if(!is_urgent_task)
+            if (req->body.code_dir == std::string(NODE_REBOOT))
             {
-
-
-                if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
-                {
-                    LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
-                              << req->body.task_id;
-                    return E_DEFAULT;
-                }
-
-                if (m_user_task_ptr->find_task(req->body.task_id))
-                {
-                    LOG_ERROR << "ai power provider service on start training already has task: " << req->body.task_id;
-                    return E_DEFAULT;
-                }
+                return node_reboot(req);
             }
 
-            std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
-            if (nullptr == task)
+            // restart a user task
+            if(req->body.code_dir == std::string(TASK_RESTART))
             {
-                return E_DEFAULT;
-            }
-            task->__set_task_id(req->body.task_id);
-            task->__set_select_mode(req->body.select_mode);
-            task->__set_master(req->body.master);
-            task->__set_peer_nodes_list(req->body.peer_nodes_list);
-            task->__set_server_specification(req->body.server_specification);
-            task->__set_server_count(req->body.server_count);
-            task->__set_training_engine(req->body.training_engine);
-            task->__set_code_dir(req->body.code_dir);
-            task->__set_entry_file(req->body.entry_file);
-            task->__set_data_dir(req->body.data_dir);
-            task->__set_checkpoint_dir(req->body.checkpoint_dir);
-            task->__set_hyper_parameters(req->body.hyper_parameters);
-            task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
-
-            task->__set_error_times(0);
-
-            // reuse container where container name is specificed in training requester msg.
-            //      As we know, dbc names a container with the task id value when create the container.
-            //      So the input container name also refer to a task id.
-            std::string ref_container_id="";
-            auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
-            LOG_DEBUG << "req container_name: " << req->body.container_name;
-            if (ref_task != nullptr)
-            {
-                LOG_DEBUG << "ref task container id: " << ref_task->container_id;
-                LOG_DEBUG << "ref task id: " << ref_task->task_id;
-
-                if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
-                {
-                    ref_container_id = ref_task->container_id;
-                }
-                else
-                {
-                    LOG_WARNING << "forbid reusing container not own";
-                }
+                return task_restart(req);
             }
 
-            task->__set_container_id(ref_container_id);
+            // start a normal user task
+            return task_start(req);
 
-            task->__set_received_time_stamp(std::time(nullptr));
-            task->__set_status(task_queueing);
-
-            if(!is_urgent_task)
-            {
-                m_user_task_ptr->add_task(task);
-            }
-            else
-            {
-                m_urgent_task = task;
-            }
-
-            return E_SUCCESS;
         }
 
         int32_t ai_power_provider_service::on_stop_training_req(std::shared_ptr<message> &msg)

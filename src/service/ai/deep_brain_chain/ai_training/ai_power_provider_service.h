@@ -77,6 +77,11 @@ namespace ai
             int32_t on_prune_task_timer(std::shared_ptr<core_timer> timer);
 
             int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id, const std::string & sign_algo);
+
+
+            int32_t task_restart(std::shared_ptr<matrix::service_core::start_training_req> req);
+            int32_t node_reboot(std::shared_ptr<matrix::service_core::start_training_req> req);
+            int32_t task_start(std::shared_ptr<matrix::service_core::start_training_req> req);
        
         protected:
             uint32_t m_training_task_timer_id;

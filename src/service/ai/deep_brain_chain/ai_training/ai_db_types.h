@@ -162,13 +162,17 @@ void swap(ai_training_task &a, ai_training_task &b);
 
 std::ostream& operator<<(std::ostream& out, const ai_training_task& obj);
 
+typedef struct _cmd_task_info__isset {
+  _cmd_task_info__isset() : description(false) {}
+  bool description :1;
+} _cmd_task_info__isset;
 
 class cmd_task_info : public virtual ::apache::thrift::TBase {
  public:
 
   cmd_task_info(const cmd_task_info&);
   cmd_task_info& operator=(const cmd_task_info&);
-  cmd_task_info() : task_id(), create_time(0), result(), status(0) {
+  cmd_task_info() : task_id(), create_time(0), result(), status(0), description() {
   }
 
   virtual ~cmd_task_info() throw();
@@ -176,6 +180,9 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
   int64_t create_time;
   std::string result;
   int8_t status;
+  std::string description;
+
+  _cmd_task_info__isset __isset;
 
   void __set_task_id(const std::string& val);
 
@@ -184,6 +191,8 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
   void __set_result(const std::string& val);
 
   void __set_status(const int8_t val);
+
+  void __set_description(const std::string& val);
 
   bool operator == (const cmd_task_info & rhs) const
   {
@@ -194,6 +203,10 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
     if (!(result == rhs.result))
       return false;
     if (!(status == rhs.status))
+      return false;
+    if (__isset.description != rhs.__isset.description)
+      return false;
+    else if (__isset.description && !(description == rhs.description))
       return false;
     return true;
   }
