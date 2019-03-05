@@ -25,6 +25,7 @@ const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
 const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
 const int32_t DEFAULT_SPEED = 0;
 const bool DEFAULT_ENABLE = true;
+const bool DEFAULT_DISABLE = false;
 const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
 const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND = 10;
 const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND = 5;
@@ -105,6 +106,7 @@ namespace matrix
                 ("oss_crt", bpo::value<std::string>()->default_value(""), "")
                 ("max_recv_speed", bpo::value<int32_t>()->default_value(0), "")
                 ("enable_idle_task", bpo::value<bool>()->default_value(true), "")
+                ("enable_node_reboot", bpo::value<bool>()->default_value(false), "")
                 ("enable_billing", bpo::value<bool>()->default_value(true), "")
                 ("update_idle_task_cycle", bpo::value<int32_t>()->default_value(DEFAULT_UPDATE_IDLE_TASK_CYCLE), "")
                 ("timer_service_list_expired_in_second", bpo::value<int32_t>()->default_value(DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND), "")

@@ -163,7 +163,8 @@ namespace ai
             //dbc is setted to not need authentication
             if (!m_enable_billing)
             {
-                return E_SUCCESS;
+//                return E_SUCCESS;
+                return E_BILL_DISABLE;
             }
 
             if (false == task_need_auth(task))
@@ -210,7 +211,8 @@ namespace ai
                 if (nullptr == resp)
                 {
                     LOG_WARNING << "bill system can not arrive." << " Next auth time:" << DEFAULT_AUTH_REPORT_CYTLE << "m";
-                    return E_SUCCESS;
+//                    return E_SUCCESS;
+                    return E_NETWORK_FAILURE;
                 }
 
                 if (OSS_SUCCESS == resp->status  && resp->contract_state == "Active"
@@ -230,7 +232,8 @@ namespace ai
                 if (OSS_NET_ERROR == resp->status)
                 {
                     LOG_WARNING << "bill system can not arrive." << " Next auth time:" << DEFAULT_AUTH_REPORT_CYTLE << "m";
-                    return E_SUCCESS;
+                    return E_NETWORK_FAILURE;
+//                    return E_SUCCESS;
                 }
 
                 LOG_ERROR << "auth failed. auth_status:" << resp->status << " contract_state:" << resp->contract_state;

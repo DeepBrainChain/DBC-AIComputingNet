@@ -84,18 +84,24 @@ fi
 
 gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
-    wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
-    if [ $? -ne 0 ]; then
-        echo "***wget nvidia-docker deb failed***"
-        exit
-    fi
-    echo "***wget nvidia-docker deb success ***"
-    sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
-    if [ $? -ne 0 ]; then
-        echo "***dpkg nvidia-docker deb failed***"
-        exit
-    fi
-    echo "***install nvidia-docker success ***"
+#    wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
+#    if [ $? -ne 0 ]; then
+#        echo "***wget nvidia-docker deb failed***"
+#        exit
+#    fi
+#    echo "***wget nvidia-docker deb success ***"
+#    sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
+#    if [ $? -ne 0 ]; then
+#        echo "***dpkg nvidia-docker deb failed***"
+#        exit
+#    fi
+#    echo "***install nvidia-docker success ***"
+    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+    sudo apt-get -y update
+    sudo apt-get -y install nvidia-docker2=2.0.3+docker18.06.1-1 nvidia-container-runtime=2.0.0+docker18.06.1-1
+    sudo pkill -SIGHUP dockerd
 fi
 
 #gpu_flag=`lspci |grep -i nvidia`

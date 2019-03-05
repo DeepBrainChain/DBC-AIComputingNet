@@ -69,7 +69,7 @@ namespace ai
 
             int32_t prune_task();
         private:
-            int32_t auth_task(std::shared_ptr<ai_training_task> task);
+            int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
             int32_t prune_task(int16_t interval);
 
         protected:

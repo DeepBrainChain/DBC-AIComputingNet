@@ -78,6 +78,8 @@ namespace ai
 
             void clear( int argc, char* argv[] );
 
+            void history( int argc, char* argv[] );
+
             void ps( int argc, char* argv[] );
 
             void result( int argc, char* argv[] );

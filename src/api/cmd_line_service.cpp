@@ -13,9 +13,14 @@
 #include "cmd_line_service.h"
 #include "util.h"
 #include "server.h"
-#ifndef WIN32
-#include "readline/readline.h"
-#include "readline/history.h"
+
+#if defined (__linux__)
+#include "readline/readline70.h"
+#include "readline/history70.h"
+#endif
+
+#if defined(MAC_OSX)
+#include "readline/readline42.h"
 #endif
 
 #include "log.h"
@@ -57,6 +62,9 @@ const char *character_names[] = {
         "result",
         "logs",
         "parameter",
+        "reboot",
+        "restart",
+        "history",
         NULL
 };
 
@@ -196,6 +204,7 @@ namespace ai
             m_invokers["logs"] = std::bind(&cmd_line_service::logs, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["show"] = std::bind(&cmd_line_service::show, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["clear"] = std::bind(&cmd_line_service::clear, this, std::placeholders::_1, std::placeholders::_2);
+            m_invokers["history"] = std::bind(&cmd_line_service::history, this, std::placeholders::_1, std::placeholders::_2);
 //            m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["system"] = std::bind(&cmd_line_service::system_cmd, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["sys"] = m_invokers["system"];
@@ -242,7 +251,7 @@ namespace ai
                       return;
                 }
 
-                if (line[0]!=0)
+                if (line[0]!=0 && std::string(line).find("history") == std::string::npos)
                 {
                     // save the cmd if it is not empty
                     add_history(line);
@@ -1667,8 +1676,21 @@ namespace ai
                 cout << argv[0] << " invalid option" << endl;
             }
         }
+
+
         
-        
+        void cmd_line_service::history(int argc, char* argv[])
+        {
+            HISTORY_STATE *myhist = history_get_history_state ();
+            HIST_ENTRY **mylist = history_list ();
+
+            int n = std::min(48, myhist->length);
+            for (int i = 0; i < n; i++) {
+                int index = myhist->length - n + i ;
+                printf("%2d  %s \n", index , mylist[index]->line);
+            }
+        }
+
         void cmd_line_service::task_clean(int argc, char* argv[])
         {
             bpo::variables_map vm;

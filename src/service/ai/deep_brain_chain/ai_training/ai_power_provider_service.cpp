@@ -367,7 +367,7 @@ namespace ai
 
 
             // reboot node
-            if (req->body.code_dir == std::string(NODE_REBOOT))
+            if (req->body.code_dir == std::string(NODE_REBOOT) && CONF_MANAGER->get_enable_node_reboot())
             {
                 return node_reboot(req);
             }
