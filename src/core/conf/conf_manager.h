@@ -30,6 +30,7 @@ extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
 extern const int32_t DEFAULT_SPEED;
 extern const std::string conf_manager_name;
 extern const bool DEFAULT_ENABLE;
+extern const bool DEFAULT_DISABLE;
 extern const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE;
 extern std::string DEFAULT_REST_PORT;
 
@@ -147,6 +148,7 @@ namespace matrix
             }
 
             const bool & get_enable_idle_task() { return m_args.count("enable_idle_task") > 0 ? m_args["enable_idle_task"].as<bool>() : DEFAULT_ENABLE; }
+            const bool & get_enable_node_reboot() { return m_args.count("enable_node_reboot") > 0 ? m_args["enable_node_reboot"].as<bool>() : DEFAULT_DISABLE; }
             const bool & get_enable_billing() { return m_args.count("enable_billing") > 0 ? m_args["enable_billing"].as<bool>() : DEFAULT_ENABLE; }
             const int32_t & get_update_idle_task_cycle() { return m_args.count("update_idle_task_cycle") > 0 ? m_args["update_idle_task_cycle"].as<int32_t>() : DEFAULT_UPDATE_IDLE_TASK_CYCLE; }
             const matrix_capacity & get_proto_capacity()

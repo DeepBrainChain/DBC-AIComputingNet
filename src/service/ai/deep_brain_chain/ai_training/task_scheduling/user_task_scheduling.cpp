@@ -296,9 +296,20 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t user_task_scheduling::auth_task(std::shared_ptr<ai_training_task> task)
+        int32_t user_task_scheduling::auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task)
         {
             auto ret = m_auth_task_handler != nullptr ? m_auth_task_handler(task) : E_SUCCESS;
+
+            // let normal user task go if auth disable or network to auth center error.
+            if(ret == E_NETWORK_FAILURE && is_normal_user_task)
+            {
+                ret = E_SUCCESS;
+            }
+
+            if(ret == E_BILL_DISABLE && is_normal_user_task)
+            {
+                ret = E_SUCCESS;
+            }
 
             if (E_SUCCESS != ret && task->status < task_stopped)
             {
@@ -442,7 +453,7 @@ namespace ai
 
             if (task->code_dir == NODE_REBOOT)
             {
-                if (E_SUCCESS != auth_task(task))
+                if (E_SUCCESS != auth_task(task, false))
                 {
                     LOG_INFO << "auth fail for node reboot";
                     return E_DEFAULT;

@@ -26,6 +26,8 @@
 #define E_IMAGE_NOT_FOUND                                   -12                  // docker image not found
 #define E_PULLING_IMAGE                                     -13
 #define E_NO_DISK_SPACE                                     -14
+#define E_NETWORK_FAILURE                                   -15                 //exit because network failure
+#define E_BILL_DISABLE                                      -16                 //exit because network failure
 
 
 
