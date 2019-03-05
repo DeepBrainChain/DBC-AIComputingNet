@@ -6,6 +6,7 @@ Suppose download dbc source code locates into ~/deepbrainchain folder.
 ```
     $ cd ~
     $ git clone https://github.com/DeepBrainChain/deepbrainchain.git
+    $ git checkout dev
     
     $ docker pull dbctraining/dbc_compile:v3
     
@@ -32,6 +33,8 @@ prerequisite
 ```
     $ cd ~
     $ git clone https://github.com/DeepBrainChain/deepbrainchain.git
+    $ git checkout dev
+    
     $ cd ~/deepbrainchain/make
     $ ./clean.sh; ./build.sh
     $ ls ~/deepbrainchain/output/dbc 
