@@ -65,8 +65,57 @@ else
 fi
 echo "***add user to docker group success***"
 
+
+set_docker_data_dir()
+{
+    echo "begin to configure the docker data dir"
+    echo "below is your computer disk utilization:"
+    echo -e
+    df -hl | grep -v loop | grep -v tmpfs
+
+    system_directory=`df -l | grep -v loop | grep -v tmpfs | sort -n -r -k 4 |awk '{print $6}'`
+
+    a=0
+    for line in $system_directory
+    do
+       array[$a]=$line
+       a=$(($a+1))
+    done
+    echo -e
+
+    default_install_directory=`df -l | grep -v loop | grep -v tmpfs | sort -n -r -k 4 |awk 'NR==1{print}'|awk '{print $6}'`
+
+    echo "Please choose your host_volum_dir directory,eg.you can input 0 if you want to set host_volum_dir as ${array[0]},recommend to choose the directory which has Maximal remaining space"
+    echo "***NOTE:if you ENTER directly the host_volum_dir default value is $default_install_directory (Maximal remaining space)"
+    echo "The directory below has already been descending order by remaining space "
+    echo -e
+
+    length=$((${#array[@]}-1))
+    loop=$(($length-1))
+
+    for(( i=0;i<$length;i++)) do
+        echo [$i]:${array[$i]}
+    done
+    echo -e
+
+    read -p "Please input the number from 0 to $loop,can also input ENTER directly to use the default value:" num
+    while [[ $num -lt 0 || $num -gt $loop ]];do
+       read -p "you have input a invalid number,it must be from 0 to $loop,please reinput:" num
+    done
+
+    if [ -z $num ];then
+        t1=$(echo $default_install_directory | sed 's/\/$//')
+    else
+        t1=$(echo ${array[$num]} | sed 's/\/$//')
+    fi
+
+    docker_install_dir="$t1/docker_data"
+}
+
+set_docker_data_dir
+
 #sudo echo 'DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://127.0.0.1:31107"' >> /etc/default/docker
-sudo sed -i 's$ExecStart=.*$ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:31107 -H unix:///var/run/docker.sock$g' /lib/systemd/system/docker.service
+sudo sed -i "s;ExecStart=.*;ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:31107 -H unix:///var/run/docker.sock --data-root=\"$docker_install_dir\" ;g" /lib/systemd/system/docker.service
 sudo systemctl stop docker
 if [ $? -ne 0 ]; then
     exit
