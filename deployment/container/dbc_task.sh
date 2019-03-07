@@ -9,7 +9,8 @@ config_ipfs()
     ipfs bootstrap add /ip4/122.112.243.44/tcp/4001/ipfs/QmPC1D9HWpyP7e9bEYJYbRov3q2LJ35fy5QnH19nb52kd5 >/dev/null
     ipfs bootstrap add /ip4/18.223.4.215/tcp/4001/ipfs/QmeZR4HygPvdBvheovYR4oVTvaA4tWxDPTgskkPWqbjkGy >/dev/null
 
-    if wget --quiet https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes &>/dev/null; then
+#    if wget --quiet https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/bootstrap_nodes &>/dev/null; then
+    if wget --quiet http://116.85.24.172:20444/static/bootstrap_nodes &>/dev/null; then
         echo "add ipfs node from dbc website"
 
         cat ./bootstrap_nodes| while read line

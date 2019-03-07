@@ -1,139 +1,206 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.4.1
+release_version=0.3.5.4
 host=$(hostname)
 
-echo "begin to wget DBC release package"
-wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/dbc-linux-mining-$release_version.tar.gz
-if [ $? -ne 0 ]; then
+
+download_dbc_tar()
+{
+  echo "begin to wget DBC release package"
+  rm -rf dbc-allinone_linux-mining-$release_version.tar.gz
+
+  #wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/dbc-allinone_linux-mining-$release_version.tar.gz
+  wget http://116.85.24.172:20444/static/dbc-allinone-linux-mining-$release_version.tar.gz
+  if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
-fi
-tar -zxvf dbc-linux-mining-$release_version.tar.gz
-rm -rf dbc-linux-mining-$release_version.tar.gz
-echo "wget DBC release package finished"
-echo -e
+  fi
+  #tar -zxvf dbc-linux-mining-$release_version.tar.gz
+  #rm -rf dbc-linux-mining-$release_version.tar.gz
+  echo "wget DBC release package finished"
+  echo -e
+}
 
-cd ./$release_version
-current_directory=`pwd`
-echo "current directory is $current_directory "
+install_dbc()
+{
+  path=$1
+  path="${path}/${release_version}"
+  #cd ./$release_version
+  path_now=`pwd`
+  cd $path
+  current_directory=`pwd`
+  echo "current directory is $current_directory "
 
-echo "Execution script mining_install.sh to install docker,nvidia-docker,pull images(only for miner)"
-cd ./mining_repo/
-/bin/bash ./mining_install.sh
-cd ./../
-echo "mining_install.sh execution finished"
-echo -e
+  echo "Execution script mining_install.sh to install docker,nvidia-docker,pull images(only for miner)"
+  which nvidia-docker
+  if [ $? -ne 0 ]; then
+   cd ./mining_repo/
+   sed -i 's$echo y | sudo apt-get -y install docker-ce.*$echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu$g' ./mining_install.sh
+   /bin/bash ./mining_install.sh
+   cd ./../
+   echo "mining_install.sh execution finished"
+   echo -e
+  else
+   echo "nvidia-docker exists"
+  fi
+  cd $path_now
+}
 
-echo "add nvidia-persistenced.service"
-wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.4.0/nvidia-persistenced.service
-sudo cp ./nvidia-persistenced.service /lib/systemd/system/
-sudo rm nvidia-persistenced.service
-sudo systemctl daemon-reload
-sudo systemctl enable nvidia-persistenced.service
-sudo systemctl restart nvidia-persistenced.service
+uninstall_dbc()
+{
+  echo
+  echo "-- remove nvidia-docker --"
+  docker volume ls -q -f driver=nvidia-docker | xargs -r -I{} -n1 docker ps -q -a -f volume={} | xargs -r docker rm -f
+  sudo rm -rf /var/lib/nvidia-docker
+  sudo apt-get -y purge nvidia-docker
+  sudo apt-get -y purge nvidia-docker2
+
+  echo
+  echo "-- remove docker-ce --"
+  sudo apt-get -y purge docker-ce
+
+  echo
+  echo "-- move dbc install --"
+  dbc_dir=$(dirname  `which dbc` 2>/dev/null)
+  if [ "$dbc_dir" == "" ]; then
+	echo "no dbc install found"
+  else
+	dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
+	echo "mv $dbc_dir $dbc_backup_dir"
+	mv $dbc_dir $dbc_backup_dir
+  fi
+
+  echo
+  echo "-- remove dbc install path from bashrc --"
+  sed -i "s/export DBC_PATH=.*//g" ~/.bashrc
+  sed -i "s/export PATH=\$PATH:\$DBC_PATH.*//g" ~/.bashrc
+
+  echo
+  echo "complete"
+}
 
 
-echo "begin to configure the DBC program container.conf item :host_volum_dir"
-echo "below is your computer disk utilization:"
-echo -e
-df -hl
+post_config()
+{
+    echo "add nvidia-persistenced.service"
+    #wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/0.3.4.0/nvidia-persistenced.service
 
-system_directory=`df -l | sort -n -r -k 4 |awk '{print $6}'`
+    path=$1
+    path="${path}/${release_version}"
+    path_now=`pwd`
+    cd $path
+    current_directory=`pwd`
+    echo "current directory is $current_directory "
 
-a=0
-for line in $system_directory
-do
-   array[$a]=$line
-   a=$(($a+1))
+    sudo cp ./mining_repo/nvidia-persistenced.service /lib/systemd/system/
+    #sudo rm nvidia-persistenced.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable nvidia-persistenced.service
+    sudo systemctl restart nvidia-persistenced.service
+
+    echo "begin to  config container.conf shm_size"
+    memory_size=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
+    rato=`expr 1024 \* 1024 \* 100 / 70`
+    shm_size=`expr $memory_size / $rato`
+    sed -i "/shm_size/c shm_size=$shm_size" ./dbc_repo/conf/container.conf
+
+    echo "show node id:"
+    cd ./dbc_repo/
+    ./dbc --id
+    cd ./../
+    echo -e
+
+    echo "begin to add dbc executable path to ENV PATH"
+    cat ~/.bashrc | grep "DBC_PATH="
+    if [ $? -ne 0 ]; then
+        echo "export DBC_PATH=$current_directory/dbc_repo" >> ~/.bashrc
+        echo 'export PATH=$PATH:$DBC_PATH' >> ~/.bashrc
+        echo 'export PATH=$PATH:$DBC_PATH/tool' >> ~/.bashrc
+        echo "source .bashrc" >> ~/.bash_profile
+    else
+        sed -i "/DBC_PATH=/c export DBC_PATH=$current_directory/dbc_repo" ~/.bashrc
+    fi
+    echo -e
+
+    echo "begin to set dbc auto-start when reboot/restart"
+    user_name=`whoami`
+    sudo rm -f /lib/systemd/system/dbc.service
+    sudo touch /lib/systemd/system/dbc.service
+    sudo chmod 777 /lib/systemd/system/dbc.service
+    echo "[Unit]" >> /lib/systemd/system/dbc.service
+    echo "Description=dbc Daemon" >> /lib/systemd/system/dbc.service
+    echo "Wants=network.target" >> /lib/systemd/system/dbc.service
+    echo "[Service]" >> /lib/systemd/system/dbc.service
+    echo "Type=forking" >> /lib/systemd/system/dbc.service
+    echo "User=$user_name" >> /lib/systemd/system/dbc.service
+    #echo "Group=$user_name" >> /lib/systemd/system/dbc.service
+    echo "WorkingDirectory=$current_directory/dbc_repo" >> /lib/systemd/system/dbc.service
+    echo "ExecStart=$current_directory/dbc_repo/dbc --ai --daemon -n \"$host\"" >> /lib/systemd/system/dbc.service
+    echo "ExecStop=$current_directory/dbc_repo/stopapp" >> /lib/systemd/system/dbc.service
+    echo "[Install]" >> /lib/systemd/system/dbc.service
+    echo "WantedBy=multi-user.target" >> /lib/systemd/system/dbc.service
+    sudo chmod 644 /lib/systemd/system/dbc.service
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable dbc.service
+    #sudo systemctl restart dbc.service
+    echo -e
+
+    echo "disable system upgrade automatically"
+    sudo sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
+
+    echo "dbc ai mining install finished"
+    echo "run newgrp - docker and source ~/.bashrc to make DBC ENV effective"
+    cd $path_now
+}
+
+usage() { echo "Usage: $0 [-d ] [-i path] [-u]" 1>&2; exit 1; }
+
+while getopts "udi:" o; do
+    case "${o}" in
+        u)
+			while true; do
+			read -p "Do you wish to uninstall dbc(y/n)?" yn
+			case $yn in
+				[Yy]* ) uninstall_dbc; break;;
+				[Nn]* ) exit;;
+			* ) echo "Please answer yes or no.";;
+			esac
+			done
+			exit 0
+			;;
+        d)
+			echo "download install tar ball"
+            download_dbc_tar
+			exit 0
+            ;;
+        i)
+            install_path=${OPTARG}
+            echo "install"
+			dbc_tar=dbc-allinone-linux-mining-$release_version.tar.gz
+            if [ ! -f $dbc_tar ];then
+				echo "$dbc_tar not found"
+				exit 1
+			fi
+				if [ -d $install_path/$release_version ]; then
+					echo "target install folder $install_path/$release_version is not empty!"
+					exit 1
+				fi
+				tar -zxvf $dbc_tar -C $install_path
+			    install_dbc $install_path
+                post_config $install_path
+			exit 0
+			;;
+        *)
+            usage
+            ;;
+    esac
 done
-echo -e
+shift $((OPTIND-1))
 
-default_install_directory=`df -l | sort -n -r -k 4 |awk 'NR==1{print}'|awk '{print $6}'`
-
-echo "Please choose your host_volum_dir directory,eg.you can input 0 if you want to set host_volum_dir as ${array[0]},recommend to choose the directory which has Maximal remaining space"
-echo "***NOTE:if you ENTER directly the host_volum_dir default value is $default_install_directory (Maximal remaining space)"
-echo "The directory below has already been descending order by remaining space "
-echo -e
-
-length=$((${#array[@]}-1))
-loop=$(($length-1))
-
-for(( i=0;i<$length;i++)) do
-    echo [$i]:${array[$i]}
-done
-echo -e
-
-read -p "Please input the number from 0 to $loop,can also input ENTER directly to use the default value:" num 
-while [[ $num -lt 0 || $num -gt $loop ]];do
-   read -p "you have input a invalid number,it must be from 0 to $loop,please reinput:" num
-done
-
-if [ -z $num ];then
-   echo "container.conf item :host_volum_dir will be set as default value:$default_install_directory"
-   sudo rm -rf $default_install_directory/container_data_dir
-   sudo mkdir $default_install_directory/container_data_dir
-   if [ $? -ne 0 ]; then
-      echo "mkdir error:maybe no authorization or readonly directory"
-      exit
-   fi
-   sed -i "5c host_volum_dir=$default_install_directory/container_data_dir" ./dbc_repo/conf/container.conf
-else
-   echo "you have choosed number:$num,host_volum_dir will be set as ${array[$num]} "
-   sudo rm -rf ${array[$num]}/container_data_dir
-   sudo mkdir ${array[$num]}/container_data_dir
-   if [ $? -ne 0 ]; then
-      echo "mkdir error:maybe no authorization or readonly directory"
-      exit
-   fi
-   sed -i "5c host_volum_dir=${array[$num]}/container_data_dir" ./dbc_repo/conf/container.conf
+if [ -z "${s}" ] || [ -z "${p}" ]; then
+    usage
 fi
 
-echo "configure the container.conf item :host_volum_dir finished"
-echo -e
-
-echo "show node id:"
-cd ./dbc_repo/
-./dbc --id
-cd ./../
-echo -e
-
-echo "begin to add dbc executable path to ENV PATH"
-cat ~/.bashrc | grep DBC_PATH
-if [ $? -ne 0 ]; then
-    echo "export DBC_PATH=$current_directory/dbc_repo" >> ~/.bashrc    
-    echo 'export PATH=$PATH:$DBC_PATH' >> ~/.bashrc
-    echo 'export PATH=$PATH:$DBC_PATH/tool' >> ~/.bashrc
-    echo "source .bashrc" >> ~/.bash_profile
-else
-    sed -i "/dbc_repo/c export DBC_PATH=$current_directory/dbc_repo" ~/.bashrc
-fi
-echo -e
-
-echo "begin to set dbc auto-start when reboot/restart"
-sudo rm -f /lib/systemd/system/dbc.service
-sudo touch /lib/systemd/system/dbc.service
-sudo chmod 777 /lib/systemd/system/dbc.service
-echo "[Unit]" >> /lib/systemd/system/dbc.service 
-echo "Description=dbc Daemon" >> /lib/systemd/system/dbc.service
-echo "Wants=network.target" >> /lib/systemd/system/dbc.service
-echo "[Service]" >> /lib/systemd/system/dbc.service 
-echo "Type=forking" >> /lib/systemd/system/dbc.service
-echo "User=dbc" >> /lib/systemd/system/dbc.service
-echo "Group=dbc" >> /lib/systemd/system/dbc.service 
-echo "WorkingDirectory=$current_directory/dbc_repo" >> /lib/systemd/system/dbc.service
-echo "ExecStart=$current_directory/dbc_repo/dbc --ai --daemon -n \"$host\"" >> /lib/systemd/system/dbc.service
-echo "ExecStop=$current_directory/dbc_repo/stopapp" >> /lib/systemd/system/dbc.service
-echo "[Install]" >> /lib/systemd/system/dbc.service
-echo "WantedBy=multi-user.target" >> /lib/systemd/system/dbc.service
-sudo chmod 644 /lib/systemd/system/dbc.service
-
-sudo systemctl daemon-reload
-sudo systemctl enable dbc.service
-#sudo systemctl restart dbc.service
-echo -e
-
-echo "dbc ai mining install finished"
-echo "run newgrp - docker and source ~/.bashrc to make DBC ENV effective"
-
+exit 0
