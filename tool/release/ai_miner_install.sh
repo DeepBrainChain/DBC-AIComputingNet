@@ -1,17 +1,17 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.5.4
+release_version=0.3.6.0
 host=$(hostname)
 
 
 download_dbc_tar()
 {
   echo "begin to wget DBC release package"
-  rm -rf dbc-allinone_linux-mining-$release_version.tar.gz
+  rm -rf dbc-linux-mining-$release_version.tar.gz
 
-  #wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/dbc-allinone_linux-mining-$release_version.tar.gz
-  wget http://116.85.24.172:20444/static/dbc-allinone-linux-mining-$release_version.tar.gz
+  #wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/dbc-linux-mining-$release_version.tar.gz
+  wget http://116.85.24.172:20444/static/dbc-linux-mining-$release_version.tar.gz
   if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
@@ -178,7 +178,7 @@ while getopts "udi:" o; do
         i)
             install_path=${OPTARG}
             echo "install"
-			dbc_tar=dbc-allinone-linux-mining-$release_version.tar.gz
+			dbc_tar=dbc-linux-mining-$release_version.tar.gz
             if [ ! -f $dbc_tar ];then
 				echo "$dbc_tar not found"
 				exit 1

@@ -177,6 +177,8 @@ mining_package()
 
     cp $tool_dir/mining_install.sh  $mining_repo_dir/
     cp $tool_dir/docker_gpg.key     $mining_repo_dir/
+    cp $tool_dir/nvidia-persistenced.service $mining_repo_dir/
+    cp -r $deployment_dir/archive   $mining_repo_dir/
 
     chmod +x $mining_repo_dir/*.sh
 }
