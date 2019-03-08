@@ -47,8 +47,9 @@ sudo add-apt-repository \
        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
        $(lsb_release -cs) \
        stable"
-sudo apt-get update
-echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu
+#sudo apt-get update
+#echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu
+sudo dpkg -i ./archive/docker-ce_18.06.1~ce~3-0~ubuntu_amd64.deb
 if [ $? -ne 0 ]; then
     echo "install docker-ce failed"
     exit
@@ -133,6 +134,8 @@ fi
 
 gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
+
+# jimmy: install nvidia-docker 1 from public repo
 #    wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
 #    if [ $? -ne 0 ]; then
 #        echo "***wget nvidia-docker deb failed***"
@@ -145,11 +148,23 @@ if [ $? -eq 0 ]; then
 #        exit
 #    fi
 #    echo "***install nvidia-docker success ***"
-    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-    sudo apt-get -y update
-    sudo apt-get -y install nvidia-docker2=2.0.3+docker18.06.1-1 nvidia-container-runtime=2.0.0+docker18.06.1-1
+
+# jimmy: install nvidia-docker 2 from public repo
+#    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+#    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+#    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+#    sudo apt-get -y update
+#    sudo apt-get -y install nvidia-docker2=2.0.3+docker18.06.1-1 nvidia-container-runtime=2.0.0+docker18.06.1-1
+#    sudo pkill -SIGHUP dockerd
+
+
+    # jimmy: install nvidia-docker 2 from local archive
+    sudo dpkg -i ./archive/nvidia-docker2_2.0.3+docker18.06.1-1_all.deb ./archive/nvidia-container-runtime_2.0.0+docker18.06.1-1_amd64.deb
+    if [ $? -ne 0 ]; then
+        echo "***dpkg nvidia-docker deb failed***"
+        exit
+    fi
+    echo "***install nvidia-docker success ***"
     sudo pkill -SIGHUP dockerd
 fi
 
