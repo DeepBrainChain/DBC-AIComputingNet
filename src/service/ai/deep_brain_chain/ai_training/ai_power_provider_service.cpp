@@ -413,9 +413,6 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            //relay on stop_training to network(maybe task running on multiple nodes)
-            LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
-            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             //check task_id
             if (0 == m_user_task_ptr->get_user_cur_task_size())
@@ -441,6 +438,11 @@ namespace ai
             else
             {
                 LOG_DEBUG << "stop training, not found task: " << task_id << endl;
+
+                // relay on stop_training to network
+                // not support task running on multiple nodes
+                LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
             return E_SUCCESS;
