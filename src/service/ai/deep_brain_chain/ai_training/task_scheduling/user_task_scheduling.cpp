@@ -67,13 +67,23 @@ namespace ai
                     m_training_tasks.insert({ task->task_id, task });
                     LOG_DEBUG << "user task scheduling insert ai training task to task map, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << to_training_task_status_string(task->status);
 
+
+                    //jimmy: support tasks run concurrently
                     //go next
-                    if (task_running == task->status || task_queueing == task->status || task_pulling_image == task->status)
+                    if (task_queueing == task->status || task_pulling_image == task->status)
                     {
                         //add to queue
                         m_queueing_tasks.push_back(task);
                         LOG_DEBUG << "user task scheduling insert ai training task to task queue, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << to_training_task_status_string(task->status);
                     }
+
+                    if (task_running == task->status)
+                    {
+                        //add to queue
+                        m_running_tasks[task->task_id] = task;
+                        LOG_DEBUG << "user task scheduling insert ai training task to running task set, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << to_training_task_status_string(task->status);
+                    }
+
                 }
 
                 //sort by received_time_stamp
@@ -140,12 +150,48 @@ namespace ai
                 LOG_ERROR << "start user task failed, task id:" << task->task_id;
                 return E_DEFAULT;
             }
+            else
+            {
+                if (task->status == task_running)
+                {
+                    //jimmy: move task from waiting queue  into running tasks map
+                    m_running_tasks[task->task_id] = task;
+                    m_queueing_tasks.remove(task);
+                }
+
+            }
+
             LOG_DEBUG << "start user task success, task id:" << task->task_id;
             return E_SUCCESS;
         }
 
         int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
         {
+
+            // case 1: stop a task in running set
+            if (task->status == task_running)
+            {
+
+                int32_t ret = task_scheduling::stop_task(task);
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
+                    return ret;
+                }
+
+                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
+
+                task->__set_end_time(time_util::get_time_stamp_ms());
+                task->__set_status(end_status);
+                write_task_to_db(task);
+
+                m_running_tasks.erase(task->task_id);
+
+                return E_SUCCESS;
+            }
+
+
+            // case 2: stop a task in waiting queue
             if (m_queueing_tasks.empty())
             {
                 return E_SUCCESS;
@@ -157,15 +203,15 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (task_running == task->status)
-            {
-                int32_t ret = task_scheduling::stop_task(task);
-                if (E_SUCCESS != ret)
-                {
-                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
-                }
-                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
-            }
+//            if (task_running == task->status)
+//            {
+//                int32_t ret = task_scheduling::stop_task(task);
+//                if (E_SUCCESS != ret)
+//                {
+//                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
+//                }
+//                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
+//            }
 
             if (task_pulling_image == task->status)
             {
@@ -289,7 +335,7 @@ namespace ai
             }
             else
             {
-                //task state is pulling, but image is not pulling. so dbc may be restarted. 
+                //task state is pulling, but image is not pulling. so dbc may be restarted.
                 task->__set_status(task_queueing);
             }
 
@@ -319,9 +365,14 @@ namespace ai
             return ret;
         }
 
-        int32_t user_task_scheduling::check_training_task_status()
+        int32_t user_task_scheduling::check_training_task_status(std::shared_ptr<ai_training_task> task)
         {
-            auto task = m_queueing_tasks.front();
+//            auto task = m_queueing_tasks.front();
+            if (task == nullptr)
+            {
+                return E_NULL_POINTER;
+            }
+
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
@@ -366,32 +417,44 @@ namespace ai
 
         int32_t user_task_scheduling::process_task()
         {
-            if (m_queueing_tasks.empty())
+
+            // jimmy: support task runs in concurrently
+
+            // step 1: process tasks in waiting queue
+            if (!m_queueing_tasks.empty())
             {
-                return E_SUCCESS;
+
+                auto task = m_queueing_tasks.front();
+                if (task_queueing == task->status)
+                {
+                    return exec_task();
+                }
+                else if (task_pulling_image == task->status)
+                {
+                    return check_pull_image_state();
+                }
+//            else if (task_running == task->status)
+//            {
+//                LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+//                return check_training_task_status();
+//            }
+                else
+                {
+                    //drop this task.
+                    m_queueing_tasks.pop_front();
+                    LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: "
+                              << to_training_task_status_string(task->status);
+                    return E_DEFAULT;
+                }
             }
 
-            auto task = m_queueing_tasks.front();
-            if (task_queueing == task->status)
+            // step 2: process tasks in running set
+
+            for (auto& each : m_running_tasks)
             {
-                return  exec_task();
+                check_training_task_status(each.second);
             }
-            else if (task_pulling_image == task->status)
-            {
-                return check_pull_image_state();
-            }
-            else if (task_running == task->status)
-            {
-                LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
-                return check_training_task_status();
-            }
-            else
-            {
-                //drop this task.
-                m_queueing_tasks.pop_front();
-                LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: " << to_training_task_status_string(task->status);
-                return E_DEFAULT;
-            }
+
             return E_SUCCESS;
         }
 
