@@ -46,6 +46,7 @@ include_directories(
         ${SRC_PATH}/service/topic
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_scheduling
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/resource
 
 )
 
@@ -59,18 +60,20 @@ add_executable(dbc_service_test
         test_main.cpp
         service_info_collection_test.cpp
         node_info_collection_test.cpp
+        gpu_pool_test.cpp
         ${SRC_PATH}/service/misc/service_info_collection.cpp
         ${SRC_PATH}/service/misc/node_info_collection.cpp
         ${SRC_PATH}/service/misc/node_info_collection.cpp
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/oss_task_manager.cpp
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/ai_db_types.cpp
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_common_def.cpp
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/resource/gpu_pool.cpp
         )
 
 set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if(APPLE)
-    TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 )
+    TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1  -lgmp)
 elseif(LINUX)
     TARGET_LINK_LIBRARIES(dbc_service_test ${dbclib} ${Boost_LIBRARIES} -levent -levent_core -levent_openssl -levent_pthreads -lleveldb -lcrypto -lssl -lsecp256k1 -lboost_thread -pthread -ldl)
 endif()

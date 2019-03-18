@@ -1,3 +1,7 @@
+#!/bin/bash
+test -d ./db_thrift_cpp && rm -rf ./db_thrift_cpp
+test -d ./matrix_thrift_cpp && rm -rf ./matrix_thrift_cpp
+
 mkdir ./db_thrift_cpp
 mkdir ./matrix_thrift_cpp
 

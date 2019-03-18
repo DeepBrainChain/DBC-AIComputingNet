@@ -7,6 +7,7 @@
 * date                  :   2018.01.28
 * author             :   Bruce Feng
 **********************************************************************************/
+#include <boost/property_tree/json_parser.hpp>
 #include <cassert>
 #include <boost/exception/all.hpp>
 #include "server.h"
@@ -31,6 +32,7 @@
 #include <stdlib.h>
 
 #include <boost/algorithm/string/join.hpp>
+
 using namespace std;
 using namespace matrix::core;
 using namespace matrix::service_core;
@@ -67,7 +69,7 @@ namespace ai
             }
             
             m_user_task_ptr = std::make_shared<user_task_scheduling>(m_container_worker);
-            if (E_SUCCESS != m_user_task_ptr->init())
+            if (E_SUCCESS != m_user_task_ptr->init(options))
             {
                 return E_DEFAULT;
             }
@@ -209,6 +211,37 @@ namespace ai
             return E_SUCCESS;
         }
 
+        std::string get_gpu_spec(std::string s)
+        {
+            if (s.empty())
+            {
+                return "";
+            }
+
+            std::string rt;
+            std::stringstream ss;
+            ss << s;
+            boost::property_tree::ptree pt;
+
+            try
+            {
+                boost::property_tree::read_json(ss, pt);
+                rt = pt.get<std::string>("env.NVIDIA_VISIBLE_DEVICES");
+
+                if ( !rt.empty())
+                {
+                    matrix::core::string_util::trim(rt);
+                    LOG_DEBUG << "gpus requirement: " << rt;
+                }
+            }
+            catch (...)
+            {
+
+            }
+
+            return rt;
+        }
+
         int32_t ai_power_provider_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req)
         {
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
@@ -242,8 +275,9 @@ namespace ai
             task->__set_checkpoint_dir(req->body.checkpoint_dir);
             task->__set_hyper_parameters(req->body.hyper_parameters);
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
-
             task->__set_error_times(0);
+
+            task->__set_gpus(get_gpu_spec(task->server_specification));
 
             // reuse container where container name is specificed in training requester msg.
             //      As we know, dbc names a container with the task id value when create the container.
@@ -413,9 +447,6 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            //relay on stop_training to network(maybe task running on multiple nodes)
-            LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
-            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             //check task_id
             if (0 == m_user_task_ptr->get_user_cur_task_size())
@@ -441,6 +472,11 @@ namespace ai
             else
             {
                 LOG_DEBUG << "stop training, not found task: " << task_id << endl;
+
+                // relay on stop_training to network
+                // not support task running on multiple nodes
+                LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
             return E_SUCCESS;
@@ -726,7 +762,7 @@ namespace ai
             //content body
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
-            log.__set_log_content((nullptr == container_resp) ? log_content : std::move(format_logs(container_resp->log_content, req_content->body.number_of_lines)));
+            log.__set_log_content((nullptr == container_resp) ? log_content : format_logs(container_resp->log_content, req_content->body.number_of_lines));
             if (GET_LOG_HEAD == req_content->body.head_or_tail)
             {
                 log.log_content = log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
@@ -872,7 +908,8 @@ namespace ai
                 task_num = -1; // task_num(-1) means idle task is running.
             }
 
-            resp->set(task_num);
+            resp->set_task_size(task_num);
+            resp->set_gpu_state(m_user_task_ptr->get_gpu_state());
 
             auto resp_msg = std::dynamic_pointer_cast<message>(resp);
 

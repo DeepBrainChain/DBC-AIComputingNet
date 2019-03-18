@@ -18,6 +18,7 @@
 #include "url_validator.h"
 
 #include <stdlib.h>
+#include "service_name.h"
 
 namespace ai
 {
@@ -27,14 +28,28 @@ namespace ai
         {
         }
         
-        int32_t user_task_scheduling::init()
+        int32_t user_task_scheduling::init(bpo::variables_map &options)
         {
+            if (options.count(SERVICE_NAME_AI_TRAINING))
+            {
+                //todo: driver not ready yet when dbc starts
+                LOG_INFO << "wait 30 seconds for nvidia gpu initialization completed";
+                std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+                gpu_pool_helper::update_gpu_from_proc(m_gpu_pool, "/proc/driver/nvidia/gpus");
+
+                LOG_INFO<<m_gpu_pool.toString();
+
+            }
+
+
             init_db("prov_training_task.db");
             if (CONF_MANAGER->get_prune_task_stop_interval() < 1 || CONF_MANAGER->get_prune_task_stop_interval() > 8760)
             {
                 return E_DEFAULT;
             }
             m_prune_intervel = CONF_MANAGER->get_prune_task_stop_interval();
+
+
             return E_SUCCESS;
         }
 
@@ -53,7 +68,8 @@ namespace ai
 
                     //deserialization
                     std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-                    task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());            //may exception
+                    task_buf->write_to_byte_buf(it->value().data(),
+                                                (uint32_t) it->value().size());            //may exception
                     binary_protocol proto(task_buf.get());
                     task->read(&proto);             //may exception
 
@@ -64,15 +80,39 @@ namespace ai
                     }
 
                     //insert training task
-                    m_training_tasks.insert({ task->task_id, task });
-                    LOG_DEBUG << "user task scheduling insert ai training task to task map, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << to_training_task_status_string(task->status);
+                    m_training_tasks.insert({task->task_id, task});
+                    LOG_DEBUG << "user task scheduling insert ai training task to task map, task id: " << task->task_id
+                              << " container_id: " << task->container_id << " task status: "
+                              << to_training_task_status_string(task->status);
 
-                    //go next
-                    if (task_running == task->status || task_queueing == task->status || task_pulling_image == task->status)
+
+                    //jimmy: support tasks run concurrently
+                    if (task_queueing == task->status || task_pulling_image == task->status)
                     {
-                        //add to queue
                         m_queueing_tasks.push_back(task);
-                        LOG_DEBUG << "user task scheduling insert ai training task to task queue, task id: " << task->task_id << " container_id: " << task->container_id << " task status: " << to_training_task_status_string(task->status);
+                        LOG_DEBUG << "user task scheduling insert ai training task to task queue, task id: "
+                                  << task->task_id << " container_id: " << task->container_id << " task status: "
+                                  << to_training_task_status_string(task->status);
+                    }
+                    else if (task_running == task->status)
+                    {
+                        //jimmy: gpu resource management
+                        if (!m_gpu_pool.allocate(task->gpus))
+                        {
+                            LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id
+                                      << ", gpu requirement "
+                                      << task->gpus << ", gpu state " << m_gpu_pool.toString();
+                            // todo: error handling
+                        }
+                        else
+                        {
+                            LOG_DEBUG << m_gpu_pool.toString();
+                        }
+
+                        m_running_tasks[task->task_id] = task;
+                        LOG_INFO << "user task scheduling insert ai training task to running task set, task id: "
+                                 << task->task_id << " container_id: " << task->container_id << " task status: "
+                                 << to_training_task_status_string(task->status);
                     }
                 }
 
@@ -99,6 +139,17 @@ namespace ai
 
                 LOG_WARNING << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
+            }
+
+            // jimmy: validate task's gpu requirement
+            if (!m_gpu_pool.allocate(task->gpus)){
+                LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement " << task->gpus << ", gpu remainder " <<m_gpu_pool.toString();
+                stop_task(task, task_out_of_resource);
+                return E_DEFAULT;
+            }
+            else
+            {
+                LOG_DEBUG<< "gpu state " << m_gpu_pool.toString();
             }
 
             if (E_SUCCESS == auth_task(task))
@@ -140,12 +191,51 @@ namespace ai
                 LOG_ERROR << "start user task failed, task id:" << task->task_id;
                 return E_DEFAULT;
             }
+            else
+            {
+                if (task->status == task_running)
+                {
+                    //jimmy: move task from waiting queue  into running tasks map
+                    m_running_tasks[task->task_id] = task;
+                    m_queueing_tasks.remove(task);
+                }
+
+            }
+
             LOG_DEBUG << "start user task success, task id:" << task->task_id;
             return E_SUCCESS;
         }
 
         int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
         {
+
+            // case 1: stop a task from running set
+            if (task->status == task_running)
+            {
+
+                int32_t ret = task_scheduling::stop_task(task);
+                if (E_SUCCESS != ret)
+                {
+                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
+                    return ret;
+                }
+
+                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
+
+                task->__set_end_time(time_util::get_time_stamp_ms());
+                task->__set_status(end_status);
+                write_task_to_db(task);
+
+                m_running_tasks.erase(task->task_id);
+
+                //free gpu resource
+                m_gpu_pool.free(task->gpus);
+
+                return E_SUCCESS;
+            }
+
+
+            // case 2: stop a task from waiting queue
             if (m_queueing_tasks.empty())
             {
                 return E_SUCCESS;
@@ -157,15 +247,15 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            if (task_running == task->status)
-            {
-                int32_t ret = task_scheduling::stop_task(task);
-                if (E_SUCCESS != ret)
-                {
-                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
-                }
-                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
-            }
+//            if (task_running == task->status)
+//            {
+//                int32_t ret = task_scheduling::stop_task(task);
+//                if (E_SUCCESS != ret)
+//                {
+//                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
+//                }
+//                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
+//            }
 
             if (task_pulling_image == task->status)
             {
@@ -289,7 +379,7 @@ namespace ai
             }
             else
             {
-                //task state is pulling, but image is not pulling. so dbc may be restarted. 
+                //task state is pulling, but image is not pulling. so dbc may be restarted.
                 task->__set_status(task_queueing);
             }
 
@@ -319,9 +409,14 @@ namespace ai
             return ret;
         }
 
-        int32_t user_task_scheduling::check_training_task_status()
+        int32_t user_task_scheduling::check_training_task_status(std::shared_ptr<ai_training_task> task)
         {
-            auto task = m_queueing_tasks.front();
+//            auto task = m_queueing_tasks.front();
+            if (task == nullptr)
+            {
+                return E_NULL_POINTER;
+            }
+
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
@@ -366,32 +461,44 @@ namespace ai
 
         int32_t user_task_scheduling::process_task()
         {
-            if (m_queueing_tasks.empty())
+
+            // jimmy: support task runs in concurrently
+
+            // step 1: process tasks in waiting queue
+            if (!m_queueing_tasks.empty())
             {
-                return E_SUCCESS;
+
+                auto task = m_queueing_tasks.front();
+                if (task_queueing == task->status)
+                {
+                    return exec_task();
+                }
+                else if (task_pulling_image == task->status)
+                {
+                    return check_pull_image_state();
+                }
+//            else if (task_running == task->status)
+//            {
+//                LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+//                return check_training_task_status();
+//            }
+                else
+                {
+                    //drop this task.
+                    m_queueing_tasks.pop_front();
+                    LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: "
+                              << to_training_task_status_string(task->status);
+                    return E_DEFAULT;
+                }
             }
 
-            auto task = m_queueing_tasks.front();
-            if (task_queueing == task->status)
+            // step 2: process tasks in running set
+
+            for (auto& each : m_running_tasks)
             {
-                return  exec_task();
+                check_training_task_status(each.second);
             }
-            else if (task_pulling_image == task->status)
-            {
-                return check_pull_image_state();
-            }
-            else if (task_running == task->status)
-            {
-                LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
-                return check_training_task_status();
-            }
-            else
-            {
-                //drop this task.
-                m_queueing_tasks.pop_front();
-                LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: " << to_training_task_status_string(task->status);
-                return E_DEFAULT;
-            }
+
             return E_SUCCESS;
         }
 
@@ -468,6 +575,11 @@ namespace ai
             }
 
             return E_SUCCESS;
+        }
+
+        std::string user_task_scheduling::get_gpu_state()
+        {
+            return m_gpu_pool.toString();
         }
 
 

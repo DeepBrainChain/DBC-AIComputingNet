@@ -54,7 +54,8 @@ namespace ai
             task_abnormally_closed = 32,
             task_overdue_closed     = 64,
             task_noimage_closed     = 65,
-            task_nospace_closed     = 66
+            task_nospace_closed     = 66,
+            task_out_of_resource    = 67
         };
 
         //__BEGIN_DECLS
