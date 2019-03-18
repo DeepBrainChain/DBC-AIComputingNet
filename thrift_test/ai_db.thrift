@@ -20,6 +20,8 @@ struct ai_training_task{
   13: required string ai_user_node_id
   14: required i64 start_time
   15: required i64 end_time
+
+  16: optional string gpus
   
   252: required i8 error_times;
   253: required string container_id;

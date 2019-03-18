@@ -81,6 +81,11 @@ void ai_training_task::__set_end_time(const int64_t val) {
   this->end_time = val;
 }
 
+void ai_training_task::__set_gpus(const std::string& val) {
+  this->gpus = val;
+__isset.gpus = true;
+}
+
 void ai_training_task::__set_error_times(const int8_t val) {
   this->error_times = val;
 }
@@ -271,6 +276,14 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 16:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->gpus);
+          this->__isset.gpus = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       case 252:
         if (ftype == ::apache::thrift::protocol::T_BYTE) {
           xfer += iprot->readByte(this->error_times);
@@ -422,6 +435,11 @@ uint32_t ai_training_task::write(::apache::thrift::protocol::TProtocol* oprot) c
   xfer += oprot->writeI64(this->end_time);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.gpus) {
+    xfer += oprot->writeFieldBegin("gpus", ::apache::thrift::protocol::T_STRING, 16);
+    xfer += oprot->writeString(this->gpus);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldBegin("error_times", ::apache::thrift::protocol::T_BYTE, 252);
   xfer += oprot->writeByte(this->error_times);
   xfer += oprot->writeFieldEnd();
@@ -460,6 +478,7 @@ void swap(ai_training_task &a, ai_training_task &b) {
   swap(a.ai_user_node_id, b.ai_user_node_id);
   swap(a.start_time, b.start_time);
   swap(a.end_time, b.end_time);
+  swap(a.gpus, b.gpus);
   swap(a.error_times, b.error_times);
   swap(a.container_id, b.container_id);
   swap(a.received_time_stamp, b.received_time_stamp);
@@ -483,6 +502,7 @@ ai_training_task::ai_training_task(const ai_training_task& other6) {
   ai_user_node_id = other6.ai_user_node_id;
   start_time = other6.start_time;
   end_time = other6.end_time;
+  gpus = other6.gpus;
   error_times = other6.error_times;
   container_id = other6.container_id;
   received_time_stamp = other6.received_time_stamp;
@@ -505,6 +525,7 @@ ai_training_task& ai_training_task::operator=(const ai_training_task& other7) {
   ai_user_node_id = other7.ai_user_node_id;
   start_time = other7.start_time;
   end_time = other7.end_time;
+  gpus = other7.gpus;
   error_times = other7.error_times;
   container_id = other7.container_id;
   received_time_stamp = other7.received_time_stamp;
@@ -530,6 +551,7 @@ void ai_training_task::printTo(std::ostream& out) const {
   out << ", " << "ai_user_node_id=" << to_string(ai_user_node_id);
   out << ", " << "start_time=" << to_string(start_time);
   out << ", " << "end_time=" << to_string(end_time);
+  out << ", " << "gpus="; (__isset.gpus ? (out << to_string(gpus)) : (out << "<null>"));
   out << ", " << "error_times=" << to_string(error_times);
   out << ", " << "container_id=" << to_string(container_id);
   out << ", " << "received_time_stamp=" << to_string(received_time_stamp);

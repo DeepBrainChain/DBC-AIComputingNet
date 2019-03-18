@@ -23,6 +23,7 @@
 #include "image_manager.h"
 #include "task_scheduling.h"
 #include "oss_task_manager.h"
+#include "resource/gpu_pool.h"
 using namespace std;
 using namespace matrix::core;
 
@@ -41,21 +42,21 @@ namespace ai
         public:
             user_task_scheduling(std::shared_ptr<container_worker> &container_worker_ptr);
             user_task_scheduling() = default;
-            ~user_task_scheduling() = default;
+            virtual ~user_task_scheduling() = default;
            
-            int32_t init();
+            int32_t init(bpo::variables_map &options);
             int32_t load_task();
             int32_t exec_task();
 
             int32_t check_pull_image_state();
-            int32_t check_training_task_status();
+            int32_t check_training_task_status(std::shared_ptr<ai_training_task> task);
 
             //check the task is cached or not.
             //bool have_task(std::string task_id);
             void add_task(std::shared_ptr<ai_training_task> task);
             std::shared_ptr<ai_training_task> find_task(std::string task_id);
 
-            size_t get_user_cur_task_size() {return m_queueing_tasks.size();}
+            size_t get_user_cur_task_size() {return m_queueing_tasks.size() + m_running_tasks.size();}
             size_t get_total_user_task_size() { return m_training_tasks.size(); }
 
             int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status);
@@ -68,18 +69,23 @@ namespace ai
             int32_t process_urgent_task(std::shared_ptr<ai_training_task> task);
 
             int32_t prune_task();
+
+            std::string get_gpu_state();
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
             int32_t prune_task(int16_t interval);
 
         protected:
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
+            std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
         private:
             auth_task_handler m_auth_task_handler;
             stop_idle_task_handler m_stop_idle_task_handler;
             //std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;
             int16_t m_prune_intervel = 0;
+
+            gpu_pool m_gpu_pool;
         };
     }
 }

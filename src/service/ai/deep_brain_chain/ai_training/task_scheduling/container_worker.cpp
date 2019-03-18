@@ -20,6 +20,11 @@
 #include "ip_validator.h"
 #include "port_validator.h"
 #include "server.h"
+
+#include <sstream>
+#include <iostream>
+#include <boost/property_tree/json_parser.hpp>
+
 namespace ai
 {
     namespace dbc
@@ -201,6 +206,7 @@ namespace ai
             return E_SUCCESS;
         }
 
+
         std::shared_ptr<container_config> container_worker::get_container_config(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task)
@@ -255,8 +261,41 @@ namespace ai
             if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
             {
                 LOG_DEBUG << "get common attributes of nvidia docker";
-                config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
-                config->env.push_back(AI_TRAINING_NVIDIA_DRIVER_CAPABILITIES);
+
+                // jimmy: support NVIDIA GPU env configure from task spec
+                std::map< std::string, std::string > env_map;
+                env_map["NVIDIA_VISIBLE_DEVICES"] = "all";
+                env_map["NVIDIA_DRIVER_CAPABILITIES"] = "compute,utility";
+
+                auto customer_setting=task->server_specification;
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+
+                        for (const auto& kv: pt.get_child("env")) {
+                            env_map[kv.first.data()] = kv.second.data();
+                            LOG_DEBUG << "[env] " << kv.first.data() << "="<<env_map[kv.first.data()];
+                        }
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+
+//                config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
+//                config->env.push_back(AI_TRAINING_NVIDIA_DRIVER_CAPABILITIES);
+                for (auto & kv: env_map)
+                {
+                    config->env.push_back(kv.first+"=" + kv.second);
+                }
+
                 config->host_config.share_memory = m_shm_size;
                 config->host_config.ulimits.push_back(container_ulimits("memlock", -1, -1));
             }

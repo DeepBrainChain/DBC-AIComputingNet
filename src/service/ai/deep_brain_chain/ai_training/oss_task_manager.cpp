@@ -253,6 +253,17 @@ namespace ai
                 return false;
             }
 
+            //jimmy: design change:
+            //  1) auth the task before run
+            //  2) stop a task by owner from external
+            //  3) no more send billing action when m_auth_time_interval expired
+
+            if (task_queueing == task->status)
+            {
+                return true;
+            }
+
+/*
             if (task->status < task_stopped)
             {
                 ////dbc maybe restart and the task is  running state, at this time, dbc should send auth req
@@ -281,6 +292,7 @@ namespace ai
                 return true;
             }
 
+ */
             return false;
         }
     }
