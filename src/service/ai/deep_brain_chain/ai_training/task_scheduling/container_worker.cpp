@@ -206,23 +206,6 @@ namespace ai
             return E_SUCCESS;
         }
 
-//        std::string get_from_pt(boost::property_tree::ptree & pt, std::string path)
-//        {
-//            try {
-//                return pt.get<std::string>(path);
-//            }
-//            catch(const boost::property_tree::ptree_bad_path &e)
-//            {
-//                return "";
-//            }
-//            catch (...)
-//            {
-//                return "";
-//            }
-//
-//            return "";
-//
-//        }
 
         std::shared_ptr<container_config> container_worker::get_container_config(std::shared_ptr<ai_training_task> task)
         {
@@ -299,25 +282,6 @@ namespace ai
                             env_map[kv.first.data()] = kv.second.data();
                             LOG_DEBUG << "[env] " << kv.first.data() << "="<<env_map[kv.first.data()];
                         }
-
-//                        std::string v = get_from_pt(pt,"env.NVIDIA_VISIBLE_DEVICES");
-//                        if ( !v.empty())
-//                            env_map("NVIDIA_VISIBLE_DEVICES=") = v;
-//
-//                        v = get_from_pt(pt,"env.NVIDIA_DRIVER_CAPABILITIES");
-//                        if ( !v.empty())
-//                            env_map("NVIDIA_DRIVER_CAPABILITIES=") = v;
-
-                        // todo: support env variable
-
-                    }
-                    catch (const boost::property_tree::json_parser_error &e)
-                    {
-                        //ignore
-                    }
-                    catch(const boost::property_tree::ptree_bad_path &e)
-                    {
-
                     }
                     catch (...)
                     {

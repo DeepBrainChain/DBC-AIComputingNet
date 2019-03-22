@@ -162,7 +162,7 @@ fi
 
 
 # run ai-training task
-if [ "$restart" == "true" ]; then
+if ["$restart" == "true" ]; then
     /bin/bash /dbc_task_imp.sh "$restart" "$code_dir" $3
 else
     /bin/bash /dbc_task_imp.sh "$1" "$code_dir" $3

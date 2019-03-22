@@ -20,11 +20,12 @@ class ai_training_task;
 class cmd_task_info;
 
 typedef struct _ai_training_task__isset {
-  _ai_training_task__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false) {}
+  _ai_training_task__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), gpus(false) {}
   bool master :1;
   bool server_specification :1;
   bool server_count :1;
   bool hyper_parameters :1;
+  bool gpus :1;
 } _ai_training_task__isset;
 
 class ai_training_task : public virtual ::apache::thrift::TBase {
@@ -32,7 +33,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
 
   ai_training_task(const ai_training_task&);
   ai_training_task& operator=(const ai_training_task&);
-  ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), ai_user_node_id(), start_time(0), end_time(0), error_times(0), container_id(), received_time_stamp(0), status(0) {
+  ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), ai_user_node_id(), start_time(0), end_time(0), gpus(), error_times(0), container_id(), received_time_stamp(0), status(0) {
   }
 
   virtual ~ai_training_task() throw();
@@ -51,6 +52,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   std::string ai_user_node_id;
   int64_t start_time;
   int64_t end_time;
+  std::string gpus;
   int8_t error_times;
   std::string container_id;
   int64_t received_time_stamp;
@@ -87,6 +89,8 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   void __set_start_time(const int64_t val);
 
   void __set_end_time(const int64_t val);
+
+  void __set_gpus(const std::string& val);
 
   void __set_error_times(const int8_t val);
 
@@ -135,6 +139,10 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
     if (!(start_time == rhs.start_time))
       return false;
     if (!(end_time == rhs.end_time))
+      return false;
+    if (__isset.gpus != rhs.__isset.gpus)
+      return false;
+    else if (__isset.gpus && !(gpus == rhs.gpus))
       return false;
     if (!(error_times == rhs.error_times))
       return false;

@@ -151,7 +151,8 @@ namespace service
                     "gpu_usage",
                     "state",
                     "version",
-                    "startup_time"
+                    "startup_time",
+                    "gpu_state"
             };
 
             int num_of_attrs = sizeof(ATTRS)/sizeof(char*);
@@ -659,8 +660,9 @@ namespace service
                 return E_NULL_POINTER;
             }
 
-            LOG_DEBUG << "on_get_task_queue_size_resp: task_queue_size=" << std::to_string(resp->get());
-            m_node_info_collection.set("state", std::to_string(resp->get()));
+            LOG_DEBUG << "on_get_task_queue_size_resp: task_queue_size=" << std::to_string(resp->get_task_size());
+            m_node_info_collection.set("state", std::to_string(resp->get_task_size()));
+            m_node_info_collection.set("gpu_state", resp->get_gpu_state());
 
             return E_SUCCESS;
         }
