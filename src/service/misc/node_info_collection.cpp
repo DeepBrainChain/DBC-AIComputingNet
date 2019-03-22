@@ -81,7 +81,8 @@ namespace service
             "state",
             "image",
             "version",
-            "startup_time"
+            "startup_time",
+            "gpu_state"
             };
 
             int num_of_attrs = sizeof(ATTRS)/sizeof(char*);

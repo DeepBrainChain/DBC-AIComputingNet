@@ -36,7 +36,7 @@ namespace ai
         public:
             idle_task_scheduling(std::shared_ptr<container_worker> & container_worker_ptr);
             idle_task_scheduling() = default;
-            ~idle_task_scheduling() = default;
+            virtual ~idle_task_scheduling() = default;
             int32_t init();
             int32_t exec_task();
             int32_t stop_task();
