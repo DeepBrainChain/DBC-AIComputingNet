@@ -31,9 +31,11 @@
 #include <leveldb/write_batch.h>
 #include <boost/format.hpp>
 
+#include "ai_crypter.h"
 
 using namespace std;
 using namespace matrix::core;
+using namespace matrix::service_core;
 
 const uint32_t max_reconnect_times = 1;
 //const uint32_t max_connected_cnt = 8;
@@ -845,7 +847,7 @@ namespace matrix
 
             std::string sign_req_msg =  boost::str(boost::format("%s%s%d%d") %req_content->header.nonce %req_content->body.node_id 
                                                               %req_content->body.core_version %req_content->body.protocol_version);
-            if (! verify_sign(sign_req_msg, req_content->header.exten_info,req_content->body.node_id))
+            if (! ai_crypto_util::verify_sign(sign_req_msg, req_content->header.exten_info,req_content->body.node_id))
             {
                 LOG_ERROR << "fake message. " << req_content->body.node_id;
                 return E_DEFAULT;
@@ -871,7 +873,7 @@ namespace matrix
             resp_content->body.__set_protocol_version(PROTOCO_VERSION);
 
             std::string sign_msg =  boost::str(boost::format("%s%s%d%d") %resp_content->header.nonce %CONF_MANAGER->get_node_id() %CORE_VERSION %PROTOCO_VERSION);
-            if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
             {
                 return E_DEFAULT;
             }
@@ -902,7 +904,7 @@ namespace matrix
             }
 
             std::string sign_msg =  boost::str(boost::format("%s%s%d%d") %resp_content->header.nonce %resp_content->body.node_id %resp_content->body.core_version %resp_content->body.protocol_version);
-            if (! verify_sign(sign_msg, resp_content->header.exten_info, resp_content->body.node_id))
+            if (! ai_crypto_util::verify_sign(sign_msg, resp_content->header.exten_info, resp_content->body.node_id))
             {
                 LOG_ERROR << "fake message. " << resp_content->body.node_id;
                 return E_DEFAULT;
@@ -1077,7 +1079,7 @@ namespace matrix
                 req_content->body.__set_start_height(0);              //later
 
                 std::string sign_msg =  boost::str(boost::format("%s%s%d%d") %req_content->header.nonce %CONF_MANAGER->get_node_id() %CORE_VERSION %PROTOCO_VERSION);
-                if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
                 {
                     return E_DEFAULT;
                 }

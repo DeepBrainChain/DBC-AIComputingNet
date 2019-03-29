@@ -25,9 +25,11 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/core/timer_service
         ${SRC_PATH}/core/filter
         ${SRC_PATH}/core
+        ${SRC_PATH}/
         ${SRC_PATH}/service/topic
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include
+        ${SRC_PATH}/3rd/crypto/secp256k1/contrib
         ${SRC_PATH}/3rd/db/
         ${SRC_PATH}/3rd/network/libevent
         ${SRC_PATH}/3rd/network/libevent/event2

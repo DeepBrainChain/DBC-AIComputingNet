@@ -18,6 +18,8 @@
 #include "node_info_collection.h"
 #include <boost/algorithm/string/join.hpp>
 
+#include "ai_crypter.h"
+
 using namespace matrix::service_core;
 
 namespace service
@@ -71,7 +73,7 @@ namespace service
                            + content->header.session_id+d_node_id
                            +boost::algorithm::join(content->body.keys, "");
             std::map<std::string, std::string> exten_info;
-            if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
             {
                 return;
             }

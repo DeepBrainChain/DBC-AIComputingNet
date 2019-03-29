@@ -20,6 +20,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/map.hpp>
 
+#include "ai_crypter.h"
+
 using namespace matrix::service_core;
 
 namespace service
@@ -81,7 +83,7 @@ namespace service
             std::string message = content->header.nonce + content->header.session_id+d_node_id 
                                      + boost::algorithm::join(kvs | boost::adaptors::map_values, "");
             std::map<std::string, std::string> exten_info;
-            if (E_SUCCESS != extra_sign_info(message,exten_info))
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
             {
                 return E_DEFAULT;
             }

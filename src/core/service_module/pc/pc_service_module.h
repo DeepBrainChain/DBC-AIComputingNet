@@ -19,6 +19,7 @@
 #include "service_message.h"
 #include "rw_lock.h"
 #include "session.h"
+#include "pubkey.h"
 
 #if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
 
@@ -42,9 +43,10 @@ namespace matrix
         using timer_invoker_type = typename std::function<int32_t(std::shared_ptr<core_timer> timer)>;
         const std::string ECDSA = "ecdsa";
         bool use_sign_verify();
-        int32_t extra_sign_info(std::string &message, std::map<std::string, std::string> & exten_info);
-        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & exten_info);
-        bool verify_sign(std::string &message, std::map<std::string, std::string> & exten_info, std::string origin_node);
+//        int32_t extra_sign_info(std::string &message, std::map<std::string, std::string> & exten_info);
+//        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & exten_info);
+//        bool derive_pub_key_bysign(std::string &message, std::map<std::string, std::string> & exten_info, CPubKey& pub);
+//        bool verify_sign(std::string &message, std::map<std::string, std::string> & exten_info, std::string origin_node);
 
         class service_module : public module
         {

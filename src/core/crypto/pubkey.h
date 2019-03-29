@@ -7,6 +7,7 @@
 #define _PUBKEY_H_
 
 #include <hash.h>
+#include "secp256k1.h"
 //#include <serialize.h>
 #include <uint256.h>
 
@@ -189,6 +190,9 @@ public:
 
     //! Derive BIP32 child pubkey.
     bool Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
+
+    //! return pubkey of secp256k1_pubkey type
+    bool DeSerialize(secp256k1_pubkey& raw);
 };
 
 struct CExtPubKey {

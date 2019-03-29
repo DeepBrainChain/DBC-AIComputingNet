@@ -23,6 +23,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/format.hpp>
 
+#include "ai_crypter.h"
+
 using namespace std;
 using namespace matrix::core;
 using namespace ai::dbc;
@@ -578,7 +580,7 @@ namespace ai
             {
                 std::map<std::string, std::string> exten_info;
                 exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-                if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
                 {
                     return E_DEFAULT;
                 }
@@ -754,7 +756,7 @@ namespace ai
             std::string message = boost::algorithm::join(req_content->body.task_list, "") + req_content->header.nonce + req_content->header.session_id;
             std::map<std::string, std::string> exten_info;
             exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-            if (E_SUCCESS != extra_sign_info(message,exten_info))
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
             {
                 return E_DEFAULT;
             }
@@ -822,7 +824,7 @@ namespace ai
                     task_status_msg = task_status_msg + t.task_id + boost::str(boost::format("%d") % t.status);
                 }
                 std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
-                if (! verify_sign(sign_msg, rsp_content->header.exten_info, rsp_content->header.exten_info["origin_id"]))
+                if (! ai_crypto_util::verify_sign(sign_msg, rsp_content->header.exten_info, rsp_content->header.exten_info["origin_id"]))
                 {
                     return E_DEFAULT;
                 }
@@ -1123,7 +1125,7 @@ FINAL_PROC:
             {
                 std::map<std::string, std::string> exten_info;
                 exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-                if (E_SUCCESS != extra_sign_info(message,exten_info))
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
                 {
                     task_info.result = "sign error.pls check node key or task property";
                     return nullptr;
@@ -1494,7 +1496,7 @@ FINAL_PROC:
             std::string message = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id;
             std::map<std::string, std::string> exten_info;
             exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-            if (E_SUCCESS != extra_sign_info(message,exten_info))
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
             {
                 return E_DEFAULT;
             }
@@ -1526,6 +1528,86 @@ FINAL_PROC:
             return E_SUCCESS;
         }
 
+
+//        std::string decrypt(std::string pub_str, std::string& cipher_str )
+//        {
+//            CPubKey cpk_onetime;
+//            cpk_onetime.Set(pub_str.c_str(), pub_str.c_str()+pub_str.size());
+//
+//            secp256k1_pubkey pk_onetime;
+//            cpk_onetime.DeSerialize(pk_onetime);
+//
+//
+//            // extract local node's secret
+//            const int32_t key_len = 32;
+//            unsigned char privkey_c[key_len];
+//
+//            secp256k1_context *ctx_sign = static_cast<secp256k1_context *>(get_context_sign());
+//            if (!ctx_sign)
+//            {
+//                LOG_ERROR << "fail to get ecdh context";
+//                return "";
+//            }
+//
+//            {
+//                std::string node_private_key = CONF_MANAGER->get_node_private_key();
+//                std::vector<unsigned char> vch;
+//                if (!id_generator().decode_private_key(node_private_key, vch))
+//                {
+//                    LOG_ERROR << "decode_private_key fail";
+//                    return "";
+//                }
+//
+//
+//                CPrivKey prikey;
+//                prikey.insert(prikey.end(), vch.begin(), vch.end());
+//
+//
+//                if (1 != ec_privkey_import_der(ctx_sign, privkey_c, prikey.data(), prikey.size()))
+//                {
+//                    return "";
+//                }
+//            }
+//
+//
+//            // calculate ecdh share secret
+//
+//            unsigned char ecdh_share_secret[32] = {0};
+//
+//            if ( 1 != secp256k1_ecdh(ctx_sign, ecdh_share_secret, &pk_onetime, privkey_c))
+//            {
+//                return "";
+//            }
+//
+//            // cbcaes256 decrypt
+//            {
+//                bool padin = true;
+//                unsigned char *key = ecdh_share_secret;
+//                unsigned char iv[16] = {0};
+//                iv[15] = 1;
+//
+//                AES256CBCDecrypt de(key, iv, padin);
+//
+//                const unsigned char *cipher = (const unsigned char *) cipher_str.c_str();
+//                // max ciphertext len for a n bytes of plaintext is
+//                // n + AES_BLOCKSIZE bytes
+//                // here, we allocate additional space (64-AES_BLOCKSIZE) to avoid array write out of boundry.
+//                unsigned char *plain = new unsigned char[cipher_str.size() + 64];
+//                memset(plain, 0, cipher_str.size() + 64);
+//
+//                int plain_size = de.Decrypt(cipher, cipher_str.size(), plain);
+//
+//                assert(plain_size < cipher_str.size() + 64);
+//
+//                std::string rtn = std::string((char *) plain, plain_size);
+//                delete[] cipher;
+//
+//                return rtn;
+//            }
+//
+//            return "";
+//        }
+
         int32_t ai_power_requestor_service::on_logs_resp(std::shared_ptr<message> &msg)
         {
             if (!msg)
@@ -1554,7 +1636,7 @@ FINAL_PROC:
             }
             
             std::string sign_msg = rsp_content->body.log.peer_node_id + rsp_content->header.nonce + rsp_content->header.session_id + rsp_content->body.log.log_content;
-            if (! verify_sign(sign_msg, rsp_content->header.exten_info, rsp_content->body.log.peer_node_id))
+            if (! ai_crypto_util::verify_sign(sign_msg, rsp_content->header.exten_info, rsp_content->body.log.peer_node_id))
             {
                 LOG_ERROR << "fake message. " << rsp_content->header.exten_info["origin_id"];
                 return E_DEFAULT;
@@ -1581,7 +1663,34 @@ FINAL_PROC:
             //just support single machine + multi GPU now
             cmd_peer_node_log log;
             log.peer_node_id = rsp_content->body.log.peer_node_id;
-            log.log_content = std::move(rsp_content->body.log.log_content);
+
+            // jimmy: decrypt log_content
+            ai_ecdh_cipher cipher;
+            cipher.m_pub = rsp_content->header.exten_info["ecdh_pub"];
+            if (!cipher.m_pub.empty())
+            {
+                LOG_DEBUG << " decrypt logs content ";
+                cipher.m_data = std::move(rsp_content->body.log.log_content);
+
+                ai_ecdh_crypter crypter(static_cast<secp256k1_context *>(get_context_sign()));
+
+                CKey key;
+                if (!ai_crypto_util::get_local_node_private_key(key))
+                {
+                    LOG_ERROR << " fail to get local node's private key";
+                }
+                else
+                {
+                    if (!crypter.decrypt(cipher, key, log.log_content))
+                    {
+                        LOG_ERROR << "fail to decrypt log content";
+                    }
+                }
+            }
+            else
+            {
+                log.log_content = std::move(rsp_content->body.log.log_content);
+            }
 
 
             cmd_resp->peer_node_logs.push_back(std::move(log));

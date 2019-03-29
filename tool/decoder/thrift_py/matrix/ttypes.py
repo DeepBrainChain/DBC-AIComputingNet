@@ -1904,7 +1904,12 @@ class peer_node_log(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.log_content = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    # self.log_content = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    self.log_content = iprot.readString()
+                    try:
+                        self.log_content = self.log_content.decode('utf-8')
+                    except UnicodeDecodeError:
+                        pass
                 else:
                     iprot.skip(ftype)
             else:
