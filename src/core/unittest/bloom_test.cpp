@@ -10,17 +10,17 @@ namespace utf = boost::unit_test;
 #include <stdlib.h>
 #include <string>
 
-using namespace matrix::core;
-const int SIZE_CHAR = 32; //Éú³É32 + 1Î»C Style×Ö·û´®
+//using namespace matrix::core;
+const int SIZE_CHAR = 32; //ï¿½ï¿½ï¿½ï¿½32 + 1Î»C Styleï¿½Ö·ï¿½ï¿½ï¿½
 const char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 std::string get_str()
 {
-	  const int SIZE_CHAR = 32; //Éú³É32 + 1Î»C Style×Ö·û´®
+	  const int SIZE_CHAR = 32; //ï¿½ï¿½ï¿½ï¿½32 + 1Î»C Styleï¿½Ö·ï¿½ï¿½ï¿½
     const char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		srand((unsigned)time(NULL));
     //char ch[SIZE_CHAR + 1] = { 0 };
-    string test_str="";
+    std::string test_str="";
     for (int i = 0; i < SIZE_CHAR; ++i)
     {
         int x = rand() / (RAND_MAX / (sizeof(CCH) - 1));

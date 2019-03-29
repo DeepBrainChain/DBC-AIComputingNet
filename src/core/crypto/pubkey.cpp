@@ -237,6 +237,14 @@ bool CPubKey::Decompress() {
     return true;
 }
 
+
+bool CPubKey::DeSerialize(secp256k1_pubkey& raw) {
+    if (!secp256k1_ec_pubkey_parse(secp256k1_context_verify, &raw, &(*this)[0], size())) {
+        return false;
+    }
+    return true;
+}
+
 bool CPubKey::Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const {
     assert(IsValid());
     assert((nChild >> 31) == 0);

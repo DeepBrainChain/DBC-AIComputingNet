@@ -249,6 +249,16 @@ namespace matrix
 
            return true;
        }
+
+        bool id_generator::derive_pub_key_by_sign(const std::string & message, const std::string & sign, CPubKey& pub)
+        {
+            uint256 hash;
+            CHash256().Write((unsigned char*)message.data(), message.size()).Finalize(hash.begin());
+            std::vector<unsigned char> vchSig = ParseHex(sign);
+
+            pub.RecoverCompact(hash, vchSig);
+            return true;
+        }
     }
 }
 

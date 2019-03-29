@@ -33,6 +33,8 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "ai_crypter.h"
+
 using namespace std;
 using namespace matrix::core;
 using namespace matrix::service_core;
@@ -361,7 +363,7 @@ namespace ai
             }
 
             if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
-                && (! verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])))
+                && (! ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])))
             {
                 LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
                 return E_DEFAULT;
@@ -441,7 +443,7 @@ namespace ai
             }
 
             if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"], req->header.exten_info["sign_algo"]))
-                && (! verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])) )
+                && (! ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"])) )
             {
                 LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
                 return E_DEFAULT;
@@ -517,7 +519,7 @@ namespace ai
             }
 
             std::string sign_msg = boost::algorithm::join(req_content->body.task_list, "") + req_content->header.nonce + req_content->header.session_id;
-            if (! verify_sign(sign_msg, req_content->header.exten_info, req_content->header.exten_info["origin_id"]))
+            if (! ai_crypto_util::verify_sign(sign_msg, req_content->header.exten_info, req_content->header.exten_info["origin_id"]))
             {
                 LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
                 return E_DEFAULT;
@@ -580,7 +582,7 @@ namespace ai
                     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
                     std::map<std::string, std::string> exten_info;
                     exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-                    if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                    if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
                     {
                         return E_DEFAULT;
                     }
@@ -619,7 +621,7 @@ namespace ai
                 std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id+task_status_msg;
                 std::map<std::string, std::string> exten_info;
                 exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-                if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
                 {
                     return E_DEFAULT;
                 }
@@ -679,9 +681,9 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            //add sign
+            //verify sign
             std::string sign_req_msg = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id;
-            if (! verify_sign(sign_req_msg, req_content->header.exten_info, req_content->header.exten_info["origin_id"]))
+            if (! ai_crypto_util::verify_sign(sign_req_msg, req_content->header.exten_info, req_content->header.exten_info["origin_id"]))
             {
                 LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
                 return E_DEFAULT;
@@ -762,7 +764,41 @@ namespace ai
             //content body
             peer_node_log log;
             log.__set_peer_node_id(CONF_MANAGER->get_node_id());
-            log.__set_log_content((nullptr == container_resp) ? log_content : format_logs(container_resp->log_content, req_content->body.number_of_lines));
+
+            log_content = (nullptr == container_resp) ? log_content : format_logs(container_resp->log_content, req_content->body.number_of_lines);
+
+            std::map<std::string, std::string> exten_info;
+
+            // jimmy: encrypt log content with ecdh
+            CPubKey cpk_remote;
+            bool encrypt_ok = false;
+
+            ai_ecdh_crypter crypter(static_cast<secp256k1_context *>(get_context_sign()));
+
+            if (!ai_crypto_util::derive_pub_key_bysign(sign_req_msg, req_content->header.exten_info, cpk_remote))
+            {
+                LOG_ERROR << "fail to extract the pub key from signature";
+            }
+            else
+            {
+                ai_ecdh_cipher cipher;
+                if (!crypter.encrypt(cpk_remote, log_content, cipher))
+                {
+                    LOG_ERROR << "fail to encrypt log content";
+                }
+
+                encrypt_ok = true;
+                log.__set_log_content(cipher.m_data);
+                exten_info["ecdh_pub"] = cipher.m_pub;
+
+                LOG_DEBUG << "encrypt log content ok";
+            }
+
+            if(!encrypt_ok)
+            {
+                log.__set_log_content(log_content);
+            }
+
             if (GET_LOG_HEAD == req_content->body.head_or_tail)
             {
                 log.log_content = log.log_content.substr(0, MAX_LOG_CONTENT_SIZE);
@@ -780,11 +816,13 @@ namespace ai
 
             //add sign
             std::string sign_msg = CONF_MANAGER->get_node_id()+rsp_content->header.nonce + rsp_content->header.session_id + rsp_content->body.log.log_content;
-            std::map<std::string, std::string> exten_info;
-            if (E_SUCCESS != extra_sign_info(sign_msg, exten_info))
+
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
             {
                 return E_DEFAULT;
             }
+
+
             rsp_content->header.__set_exten_info(exten_info);
 
             //resp msg

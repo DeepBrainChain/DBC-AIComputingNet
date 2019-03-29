@@ -81,7 +81,16 @@ class msg_header(object):
                     (_ktype7, _vtype8, _size6) = iprot.readMapBegin()
                     for _i10 in range(_size6):
                         _key11 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                        _val12 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+
+                        # try:
+                        #     _val12 = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                        # except UnicodeDecodeError:
+                        _val12 = iprot.readString()
+                        try:
+                             _val12 = _val12.decode('utf-8')
+                        except UnicodeDecodeError:
+                            pass
+
                         self.exten_info[_key11] = _val12
                     iprot.readMapEnd()
                 else:

@@ -24,6 +24,7 @@ include_directories(
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
         ${SRC_PATH}/core
+        ${SRC_PATH}/
 
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/db/
@@ -51,7 +52,8 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
 
 add_executable(dbc_service_core_test
         test_main.cpp
-        matrix_codec_test.cpp )
+        matrix_codec_test.cpp
+        ai_crypto_test.cpp)
 
 set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 

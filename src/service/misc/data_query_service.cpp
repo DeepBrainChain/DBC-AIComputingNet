@@ -30,6 +30,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/map.hpp>
 
+#include "ai_crypter.h"
+
 using namespace matrix::service_core;
 
 namespace service
@@ -356,7 +358,7 @@ namespace service
             std::string sign_msg = content->header.nonce 
                                      + content->header.session_id
                                      +d_node_id+boost::algorithm::join(content->body.keys, "");
-            if (! verify_sign(sign_msg, content->header.exten_info,o_node_id))
+            if (! ai_crypto_util::verify_sign(sign_msg, content->header.exten_info,o_node_id))
             {
                 LOG_ERROR << "fake message. " << o_node_id;
                 return E_DEFAULT;
@@ -473,7 +475,7 @@ namespace service
 
             std::string sign_msg = content->header.nonce + content->header.session_id+d_node_id 
                                      + boost::algorithm::join(content->body.kvs | boost::adaptors::map_values, "");
-            if (! verify_sign(sign_msg, content->header.exten_info,o_node_id))
+            if (! ai_crypto_util::verify_sign(sign_msg, content->header.exten_info,o_node_id))
             {
                 LOG_ERROR << "fake message. " << o_node_id;
                 return E_DEFAULT;

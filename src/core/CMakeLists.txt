@@ -27,7 +27,7 @@ INCLUDE_DIRECTORIES(
 
 # all sub folders under core/
 set(SRC_FOLDER_LIST codec common conf conf/validataor
-        crypto container oss oss/bill oss/idle_task env
+        crypto crypto/ctaes container oss oss/bill oss/idle_task env
         initiator log math memory module monitor mutex
         network service_bus service_module
         service_module/pc storage timer_service filter compress)

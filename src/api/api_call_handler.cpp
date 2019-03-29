@@ -170,7 +170,7 @@ namespace ai
             {
                 cout << "****************************************************************************************************" << endl;
                 cout << "node id: " << it->peer_node_id << endl;
-                LOG_INFO << "log_content:" << it->log_content;
+//                LOG_INFO << "log_content:" << it->log_content;
                 const char* p = (it->log_content).c_str();
                 size_t size = (it->log_content).size();
                 for( size_t i = 0; i < size; i++ )

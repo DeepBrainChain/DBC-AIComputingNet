@@ -50,9 +50,11 @@ namespace matrix
             std::string sign(const std::string & message, const std::string & node_private_key);
             
             bool derive_node_id_by_sign(const std::string & message, const std::string & sign, std::string & node_id);
+            bool derive_pub_key_by_sign(const std::string & message, const std::string & sign, CPubKey& pub);
 
-        private:
-            
+//        private:
+        public:
+
             bool decode_node_id(const std::string & node_id, std::vector<uint8_t> & vch);
             
             std::string encode_node_id(const CPubKey &pubkey);
