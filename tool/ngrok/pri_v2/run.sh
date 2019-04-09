@@ -27,7 +27,9 @@ fi
 # optional
 services=$(echo $args | ./jq -r .services[]?)
 id_pub=$(echo $args | ./jq -r .id_pub?)
-default_pwd=$(echo $args | ./jq -r .pwd?)
+#default_pwd=$(echo $args | ./jq -r .pwd?)
+default_pwd=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
+echo "pwd: $default_pwd"
 
 if [ -z "$services" ]; then services=("ssh"); fi
 
