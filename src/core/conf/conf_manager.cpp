@@ -115,7 +115,9 @@ namespace matrix
                 ("prune_container_stop_interval", bpo::value<int16_t>()->default_value(DEFAULT_PRUNE_CONTAINER_INTERVAL), "")
                 ("prune_docker_root_use_ratio", bpo::value<int16_t>()->default_value(DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO), "")
                 ("prune_task_stop_interval", bpo::value<int16_t>()->default_value(DEFAULT_PRUNE_TASK_INTERVAL), "")
-                ("rest_port", bpo::value<std::string>()->default_value(DEFAULT_REST_PORT), "0 prohibit http server");
+                ("rest_port", bpo::value<std::string>()->default_value(DEFAULT_REST_PORT), "0 prohibit http server")
+                ("auth_mode", bpo::value<std::string>()->default_value(""), "")
+                ("trust_node_id", bpo::value<std::vector<std::string>>(), "");
 
             //peer opt description
             bpo::options_description peer_opts("peer options");
