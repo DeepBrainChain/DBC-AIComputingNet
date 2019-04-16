@@ -28,7 +28,12 @@ using namespace matrix::core;
 namespace ai
 {
     namespace dbc
-    { 
+    {
+        enum dbc_auth_mode {
+            DBC_ONLINE_AUTH = 0,
+            DBC_OFFLINE_AUTH = 1,
+            DBC_NO_AUTH = 2
+        };
         class oss_task_manager:public std::enable_shared_from_this<oss_task_manager>, boost::noncopyable
         {
         public:
@@ -45,7 +50,12 @@ namespace ai
             std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
             bool can_exec_idle_task() { return m_enable_idle_task; }
             std::shared_ptr<idle_task_resp> fetch_idle_task();
-            
+
+        private:
+            void set_auth_mode(std::string auth_mode_str);
+            int32_t auth_online(std::shared_ptr<ai_training_task> task);
+            int32_t auth_offline(std::shared_ptr<ai_training_task> task);
+
         private:
             std::shared_ptr<oss_client> m_oss_client = nullptr;
 
@@ -64,6 +74,12 @@ namespace ai
             //m_enable_idle_task=true, will fetch idle task from oss
             bool m_enable_idle_task = true;
             const int32_t UPDATE_IDLE_TASK_MIN_CYCLE = 10 * 60 * 1000;   //10min
+
+            //auth mode
+            dbc_auth_mode m_auth_mode = DBC_ONLINE_AUTH;
+
+            //
+            std::set<std::string> m_trust_nodes;
         };
     }
 }

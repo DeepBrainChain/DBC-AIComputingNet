@@ -31,10 +31,39 @@ namespace ai
             return E_SUCCESS;
         }
 
+        void oss_task_manager::set_auth_mode(std::string auth_mode_str)
+        {
+            if(auth_mode_str == std::string("no_auth"))
+            {
+                m_auth_mode = DBC_NO_AUTH;
+            }
+            else if (auth_mode_str == std::string("offline"))
+            {
+                m_auth_mode = DBC_OFFLINE_AUTH;
+            }
+            else if (auth_mode_str == std::string("online"))
+            {
+                m_auth_mode = DBC_ONLINE_AUTH;
+            }
+            else
+            {
+                // by default
+                m_auth_mode = DBC_ONLINE_AUTH;
+            }
+        }
+
         int32_t oss_task_manager::load_oss_config()
         {
             m_enable_idle_task = CONF_MANAGER->get_enable_idle_task();
-            m_enable_billing = CONF_MANAGER->get_enable_billing();
+
+            set_auth_mode(CONF_MANAGER->get_auth_mode());
+
+            //load offline trust node id list
+            auto v = CONF_MANAGER->get_trust_node_ids();
+            m_trust_nodes = std::set<std::string> (v.begin(), v.end());
+
+//            m_enable_billing = CONF_MANAGER->get_enable_billing();
+            m_enable_billing = (m_auth_mode == DBC_ONLINE_AUTH);
 
             if (!m_enable_idle_task && !m_enable_billing)
             {
@@ -48,6 +77,7 @@ namespace ai
                 m_enable_billing = false;
                 return E_SUCCESS;
             }
+
             variable_value val;
             val.value() = url;
             if (true != url_validator().validate(val))
@@ -158,21 +188,10 @@ namespace ai
             return req;
         }
 
-        int32_t oss_task_manager::auth_task(std::shared_ptr<ai_training_task> task)
+
+        int32_t oss_task_manager::auth_online(std::shared_ptr<ai_training_task> task)
         {
-            //dbc is setted to not need authentication
-            if (!m_enable_billing)
-            {
-//                return E_SUCCESS;
-                return E_BILL_DISABLE;
-            }
-
-            if (false == task_need_auth(task))
-            {
-                return E_SUCCESS;
-            }
-
-            LOG_DEBUG << "auth task:" << task->task_id;
+            LOG_DEBUG << "online auth task:" << task->task_id;
 
             if (0 == task->start_time)
             {
@@ -244,6 +263,141 @@ namespace ai
             }
 
             return E_DEFAULT;
+
+
+        }
+
+        int32_t oss_task_manager::auth_offline(std::shared_ptr<ai_training_task> task)
+        {
+            //
+            if( m_trust_nodes.empty())
+            {
+                LOG_DEBUG << "no trust nodes, fall back to no auth mode";
+                return E_SUCCESS;
+            }
+
+            //
+            if (m_trust_nodes.find(task->ai_user_node_id) != m_trust_nodes.end())
+            {
+                LOG_DEBUG << "task's user id is in trust node list";
+                return E_SUCCESS;
+            }
+
+            LOG_DEBUG << "task's user id is not in trust node list";
+            return E_DEFAULT;
+
+        }
+
+
+        int32_t oss_task_manager::auth_task(std::shared_ptr<ai_training_task> task)
+        {
+            //dbc is setted to not need authentication
+//            if (!m_enable_billing)
+            if (m_auth_mode == DBC_NO_AUTH)
+            {
+//                return E_SUCCESS;
+                return E_BILL_DISABLE;
+            }
+
+            if (false == task_need_auth(task))
+            {
+                return E_SUCCESS;
+            }
+
+            int32_t rtn = E_SUCCESS;
+            dbc_auth_mode mode = m_auth_mode;
+
+            // online auth
+            if( mode == DBC_ONLINE_AUTH)
+            {
+                rtn = auth_online(task);
+                if (rtn == E_NETWORK_FAILURE)
+                {
+                    //fallback to offline auth
+                    mode = DBC_OFFLINE_AUTH;
+                }
+            }
+
+            // offline auth
+            if ( mode == DBC_OFFLINE_AUTH)
+            {
+                rtn = auth_offline(task);
+            }
+
+            return rtn;
+
+//            LOG_DEBUG << "auth task:" << task->task_id;
+//
+//            if (0 == task->start_time)
+//            {
+//                task->__set_start_time(time_util::get_time_stamp_ms());
+//            }
+//
+//            task->__set_end_time(time_util::get_time_stamp_ms());
+//
+//            if (nullptr == m_oss_client)
+//            {
+//                LOG_WARNING << "bill system is not config.";
+//                return E_SUCCESS;
+//            }
+//
+//            std::shared_ptr<auth_task_req> task_req = create_auth_task_req(task);
+//            if (nullptr == task_req)
+//            {
+//                return E_SUCCESS;
+//            }
+//
+//            if (task_req->sign.empty())
+//            {
+//                LOG_DEBUG << "sign error";
+//                return E_DEFAULT;
+//            }
+//
+//            if (task->status < task_stopped)
+//            {
+//                //if oss is abnormal, the value of m_auth_time_interval is default value.
+//                m_auth_time_interval = DEFAULT_AUTH_REPORT_INTERVAL;
+//            }
+//
+//            if (m_oss_client != nullptr)
+//            {
+//                std::shared_ptr<auth_task_resp> resp = m_oss_client->post_auth_task(task_req);
+//                if (nullptr == resp)
+//                {
+//                    LOG_WARNING << "bill system can not arrive." << " Next auth time:" << DEFAULT_AUTH_REPORT_CYTLE << "m";
+////                    return E_SUCCESS;
+//                    return E_NETWORK_FAILURE;
+//                }
+//
+//                if (OSS_SUCCESS == resp->status  && resp->contract_state == "Active"
+//                    && (task->status < task_stopped))
+//                {
+//                    LOG_INFO << "auth success " << " next auth time:" << resp->report_cycle << "m";
+//                    m_auth_time_interval = resp->report_cycle * 60 * 1000;
+//                    return E_SUCCESS;
+//                }
+//
+//                if (OSS_SUCCESS == resp->status  && "Active" == resp->contract_state)
+//                {
+//                    return E_SUCCESS;
+//                }
+//
+//                //if status=-1, means the rsp message is not real auth_resp
+//                if (OSS_NET_ERROR == resp->status)
+//                {
+//                    LOG_WARNING << "bill system can not arrive." << " Next auth time:" << DEFAULT_AUTH_REPORT_CYTLE << "m";
+//                    return E_NETWORK_FAILURE;
+////                    return E_SUCCESS;
+//                }
+//
+//                LOG_ERROR << "auth failed. auth_status:" << resp->status << " contract_state:" << resp->contract_state;
+//            }
+//            else
+//            {
+//                return E_SUCCESS;
+//            }
+
+//            return E_DEFAULT;
         }
 
         bool oss_task_manager::task_need_auth(std::shared_ptr<ai_training_task> task)

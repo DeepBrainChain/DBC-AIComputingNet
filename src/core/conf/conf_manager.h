@@ -15,6 +15,7 @@
 #include "id_generator.h"
 #include "net_type_params.h"
 #include "compress/matrix_capacity.h"
+#include <vector>
 
 using namespace boost::program_options;
 
@@ -160,6 +161,22 @@ namespace matrix
             const int16_t & get_prune_container_stop_interval() {return m_args.count("prune_container_stop_interval") > 0 ? m_args["prune_container_stop_interval"].as<int16_t>() : DEFAULT_PRUNE_CONTAINER_INTERVAL;}
             const int16_t & get_prune_docker_root_use_ratio() {return m_args.count("prune_docker_root_use_ratio") > 0 ? m_args["prune_docker_root_use_ratio"].as<int16_t>() : DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO;}
             const int16_t & get_prune_task_stop_interval() {return m_args.count("prune_task_stop_interval") > 0 ? m_args["prune_task_stop_interval"].as<int16_t>() : DEFAULT_PRUNE_TASK_INTERVAL;}
+
+            const std::string get_auth_mode()
+            {
+                return  m_args.count("auth_mode") > 0 ?  m_args["auth_mode"].as<std::string>(): std::string("online");
+            }
+
+            const std::vector<std::string>  get_trust_node_ids()
+            {
+                if ( m_args.count("trust_node_id") == 0 )
+                {
+                    std::vector<std::string> rtn;
+                    return rtn;
+                }
+
+                return m_args["trust_node_id"].as< std::vector<std::string> >();
+            }
 
         protected:
 
