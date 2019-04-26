@@ -140,7 +140,8 @@ namespace ai
             {
                 if (task->status != task_running)
                 {
-                    task->status = task_running;
+//                    task->status = task_running;
+                    task->__set_status(task_running);
                     write_task_to_db(task);
                 }
                 LOG_DEBUG << "task have been running, do not need to start. task id:" << task->task_id;
@@ -203,7 +204,8 @@ namespace ai
 
             LOG_INFO << "start task success. Task id:" << task->task_id;
             task->__set_start_time(time_util::get_time_stamp_ms());
-            task->status = task_running;
+            task->__set_status(task_running);
+//            task->status = task_running;
             task->error_times = 0;
             write_task_to_db(task);
             return E_SUCCESS;

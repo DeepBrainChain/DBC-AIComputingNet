@@ -88,6 +88,8 @@ namespace matrix
 
             void set_encode_context(channel_handler_context &ctx);
 
+            void set_decode_context(channel_handler_context &ctx);
+
         private:
             bool validate_req_path(std::string msg_name, std::vector<std::string>& path);
             bool validate_resp_path(std::string msg_name, std::vector<std::string>& path);

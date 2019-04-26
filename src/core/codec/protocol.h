@@ -275,6 +275,8 @@ namespace matrix
 
             virtual void init_buf(byte_buf *buf) = 0;
 
+            virtual byte_buf* get_buf() = 0;
+
             virtual uint32_t writeMessageBegin(const std::string& name,
                 const TMessageType messageType,
                 const int32_t seqid) = 0;
@@ -363,6 +365,9 @@ namespace matrix
             * Method to arbitrarily skip over data.
             */
             virtual uint32_t skip(TType type) = 0;
+
+
+            virtual uint32_t append_raw(const char* v, const uint32_t size) = 0;
         };
 
     }
@@ -579,6 +584,17 @@ namespace matrix
             ~msg_base() {}
         public:
             base_header header;
+        };
+
+
+        // jimmy: message for forward action
+        class msg_forward: public msg_base
+        {
+        public:
+            ~msg_forward() {}
+
+        public:
+            byte_buf body;
         };
 
     }

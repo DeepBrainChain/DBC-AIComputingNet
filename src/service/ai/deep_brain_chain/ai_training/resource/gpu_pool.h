@@ -45,6 +45,9 @@ namespace ai
             bool allocate(std::string gpu_str);
             bool allocate(std::set<int32_t>&);
 
+            bool check(std::string gpu_str);
+            bool check(std::set<int32_t>&);
+
             void free(int32_t gpu_id);
             void free(std::set<int32_t>&);
             void free(std::string gpu_str);

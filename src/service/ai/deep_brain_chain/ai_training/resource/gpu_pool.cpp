@@ -51,6 +51,27 @@ namespace ai
             }
         }
 
+        bool gpu_pool::check(std::string gpu_str)
+        {
+            auto ids = gpu_pool_helper::parse_gpu_list(*this, gpu_str);
+            return check(ids);
+        }
+
+        bool gpu_pool::check(std::set<int32_t>& ids)
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+
+            for(auto const& id: ids)
+            {
+                if (m_gpus_free.find(id) == m_gpus_free.end())
+                {
+                    return false;
+                }
+            }
+            return true;
+
+        }
+
         bool gpu_pool::allocate(std::set<int32_t>& ids)
         {
             std::unique_lock<std::mutex> lock(m_mutex);

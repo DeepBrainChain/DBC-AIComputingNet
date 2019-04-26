@@ -42,66 +42,6 @@ namespace matrix
             return false;
         }
 
-//        int32_t extra_sign_info(std::string & message, std::map<std::string, std::string> & exten_info)
-//        {
-//            time_t cur = std::time(nullptr);
-//            std::string sign_message = boost::str(boost::format("%s%d") % message %cur);
-//            std::string sign = id_generator().sign(sign_message, CONF_MANAGER->get_node_private_key());
-//            if (sign.empty())
-//            {
-//                return E_DEFAULT;
-//            }
-//
-//            exten_info["sign"] = sign;
-//            exten_info["sign_algo"] = ECDSA;
-//            exten_info["sign_at"]= boost::str(boost::format("%d") %cur);
-//            return E_SUCCESS;
-//        }
-//
-//        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & exten_info)
-//        {
-//            if (exten_info["sign"].empty() ||exten_info["sign_algo"].empty() || exten_info["sign_at"].empty())
-//            {
-//                return "";
-//            }
-//
-//            std::string sign_message = boost::str(boost::format("%s%s") % message %exten_info["sign_at"]);
-//            std::string derive_node_id;
-//
-//            id_generator().derive_node_id_by_sign(sign_message, exten_info["sign"], derive_node_id);
-//
-//            return derive_node_id;
-//        }
-//
-//        bool derive_pub_key_bysign(std::string &message, std::map<std::string, std::string> & exten_info, CPubKey& pub)
-//        {
-//
-//            if (exten_info["sign"].empty() ||exten_info["sign_algo"].empty() || exten_info["sign_at"].empty())
-//            {
-//                return false;
-//            }
-//
-//            std::string sign_message = boost::str(boost::format("%s%s") % message %exten_info["sign_at"]);
-//
-//            bool rtn = id_generator().derive_pub_key_by_sign(sign_message, exten_info["sign"], pub);
-//
-//            return rtn;
-//        }
-//
-//        bool verify_sign(std::string &message, std::map<std::string, std::string> & exten_info, std::string origin_node)
-//        {
-//            if (use_sign_verify())
-//            {
-//                if (origin_node.empty())
-//                {
-//                    return false;
-//                }
-//
-//                return (origin_node == derive_nodeid_bysign(message, exten_info));
-//            }
-//
-//            return true;
-//        }
 
         service_module::service_module()
             : m_exited(false),

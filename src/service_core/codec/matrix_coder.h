@@ -81,6 +81,8 @@ namespace matrix
 
             decode_status decode_service_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg, std::shared_ptr<protocol> proto);
 
+            decode_status decode_fast_forward(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg, base_header& header, std::shared_ptr<protocol> proto);
+
             template<typename msg_type>
             void decode_invoke(std::shared_ptr<message> &msg, base_header &msg_header, std::shared_ptr<protocol> &proto);
 
@@ -90,6 +92,8 @@ namespace matrix
             bool get_compress_enabled(channel_handler_context &ctx);
 
             int get_thrift_proto(channel_handler_context &ctx);
+
+            std::string get_local_node_id(channel_handler_context &ctx);
 
         protected:            
 

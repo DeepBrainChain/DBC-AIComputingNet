@@ -14,6 +14,10 @@
 #include "stringbuffer.h"
 #include "error/en.h"
 #include "oss_common_def.h"
+
+#include <boost/format.hpp>
+
+
 namespace matrix
 {
     namespace core
@@ -125,6 +129,18 @@ namespace matrix
             }
             root.AddMember("Volumes", json_volumes, allocator);
 
+            //exposed ports
+            // e.g. "ExposedPorts":{"22/tcp":{}}
+            rapidjson::Value json_exposed_ports(rapidjson::kObjectType);
+            for (auto const & it : host_config.port_bindings.ports)
+            {
+                const container_port &c = it.second;
+                std::string k = boost::str(boost::format("%s/%s") %c.port %c.scheme);
+                json_exposed_ports.AddMember(STRING_REF(k), "{}", allocator);
+
+            }
+            root.AddMember("ExposedPorts", json_exposed_ports, allocator);
+
             //container_host_config
             rapidjson::Value json_host_config(rapidjson::kObjectType);
 
@@ -182,6 +198,24 @@ namespace matrix
             json_host_config.AddMember("Links", json_links, allocator);
 
             //json_host_config: port_bindings
+            // e.g. "PortBindings":{"22/tcp":[{"HostIp":"","HostPort":"1022"}]},
+            rapidjson::Value json_host_portsbinding(rapidjson::kObjectType);
+            for (auto const & it : host_config.port_bindings.ports)
+            {
+                const container_port& c = it.second;
+
+                std::string k = boost::str(boost::format("%s/%s") %c.port %c.scheme);
+                rapidjson::Value v(rapidjson::kArrayType);
+
+                v.AddMember("HostIp", STRING_REF(c.host_ip), allocator);
+                v.AddMember("HostPort", STRING_REF(c.host_port), allocator);
+
+                json_host_portsbinding.AddMember(STRING_REF(k), v, allocator);
+            }
+
+            json_host_config.AddMember("PortBindings",  json_host_portsbinding, allocator);
+
+
 
             //json_host_config: privileged
             json_host_config.AddMember("Privileged", host_config.privileged, allocator);
@@ -213,7 +247,7 @@ namespace matrix
                 json_limt.AddMember("Soft", it->m_soft, allocator);                
                 json_ulimts.PushBack(json_limt.Move(), allocator);
             }
-            
+
             json_host_config.AddMember("Ulimits", json_ulimts, allocator);
 
             //json_host_config: dns

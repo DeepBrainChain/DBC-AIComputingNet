@@ -298,6 +298,38 @@ namespace ai
 
                 config->host_config.share_memory = m_shm_size;
                 config->host_config.ulimits.push_back(container_ulimits("memlock", -1, -1));
+
+                // port binding
+                container_port port;
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+
+                        for (const auto& kv: pt.get_child("port")) {
+
+                            container_port p;
+                            p.scheme="tcp";
+                            p.port=kv.first.data();
+                            p.host_ip="";
+                            p.host_port=kv.second.data();
+
+                            config->host_config.port_bindings.ports[p.port] = p;
+
+                            LOG_DEBUG << "[port] " << kv.first.data() << "="<<env_map[kv.first.data()];
+                        }
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+
             }
 
             switch (nv_docker_ver)

@@ -66,6 +66,8 @@ namespace ai
             int32_t on_cmd_logs_req(const std::shared_ptr<message> &msg);
             int32_t on_logs_resp(std::shared_ptr<message> &msg);
 
+            int32_t on_binary_forward(std::shared_ptr<message> &msg);
+
             int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm, std::string& error);
             int32_t validate_ipfs_path(const std::string &path_arg);
             int32_t validate_entry_file_name(const std::string &entry_file_name);

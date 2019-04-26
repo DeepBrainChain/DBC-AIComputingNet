@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(test_encode_shake_hand){
     }
 
 
-    BOOST_AUTO_TEST_CASE(test_decode_msg1){
+    BOOST_AUTO_TEST_CASE(test_decode_get_peer_nodes_resp){
         channel_handler_context ctx;
         byte_buf buf;
 
@@ -355,6 +355,7 @@ BOOST_AUTO_TEST_CASE(test_encode_shake_hand){
 
         decode_status r = coder.decode_frame(ctx, buf, msg);
 
+        std::cout<<"msg name: " << msg->content->header.msg_name <<std::endl;
 
 
 
@@ -404,4 +405,146 @@ BOOST_AUTO_TEST_CASE(test_decode_compact){
     decode_status r = coder.decode_frame(ctx, buf, msg);
 
     BOOST_TEST(r == DECODE_SUCCESS);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_decode_as_none_forward_msg){
+
+    byte_buf buf;
+
+    // generate buf on demand
+    {
+        message msg;
+
+        channel_handler_context ctx;
+
+        matrix_coder coder;
+
+        msg.header.msg_name = P2P_GET_PEER_NODES_RESP;
+        msg.header.msg_priority = 0;
+
+        auto resp_content = std::make_shared<get_peer_nodes_resp>();
+        resp_content->header.__set_magic(TEST_NET);
+        resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
+        resp_content->header.__set_nonce("12345");
+
+        {
+            std::map<std::string, std::string> exten_info;
+            exten_info["origin_id"] = "bob";
+            exten_info["dest_id"] = "alice";
+            exten_info["drt"] = "b";
+            resp_content->header.__set_exten_info(exten_info);
+        }
+
+        matrix::service_core::peer_node_info info;
+        info.peer_node_id = "node1";
+        info.live_time_stamp = 1;
+        info.addr.ip = "192.168.0.2";
+        info.addr.port = 10001;
+        info.service_list.push_back(std::string("ai_training"));
+
+        std::vector<peer_node_info>  peer_nodes_list;
+        peer_nodes_list.push_back(info);
+        resp_content->body.__set_peer_nodes_list(peer_nodes_list);
+
+        msg.set_content(resp_content);
+
+        auto r = coder.encode(ctx, msg, buf);
+
+//        std::cout<<"compress: "<< buf.to_string()<<std::endl;
+    }
+
+
+    {
+        channel_handler_context ctx;
+        variable_value v1;
+        v1.value() = std::string("mike");
+        ctx.add("LOCAL_NODE_ID", v1);
+
+        matrix_coder coder;
+
+        shared_ptr<message> msg = std::make_shared<message>();
+
+        decode_status r = coder.decode_frame(ctx, buf, msg);
+
+//    std::cout<<"msg name: " << msg->content->header.msg_name <<std::endl;
+        std::cout << "msg name: " << msg->content->header << std::endl;
+
+
+        BOOST_TEST(r == DECODE_SUCCESS);
+    }
+
+//    auto r2 = coder.encode(ctx, *msg, buf);
+//    std::cout<<"buf: "<< buf.to_string()<<std::endl;
+//    BOOST_TEST(r2==ENCODE_SUCCESS);
+}
+
+BOOST_AUTO_TEST_CASE(test_decode_as_forward_msg){
+
+    byte_buf buf;
+
+    // generate buf on demand
+    {
+        message msg;
+
+        channel_handler_context ctx;
+
+        matrix_coder coder;
+
+        msg.header.msg_name = LIST_TRAINING_REQ;
+        msg.header.msg_priority = 0;
+
+        auto content = std::make_shared<list_training_req>();
+        content->header.__set_magic(TEST_NET);
+        content->header.__set_msg_name(LIST_TRAINING_REQ);
+        content->header.__set_nonce("12345");
+
+        {
+            std::map<std::string, std::string> exten_info;
+            exten_info["origin_id"] = "bob";
+            exten_info["dest_id"] = "alice";
+            exten_info["drt"] = "b";
+            content->header.__set_exten_info(exten_info);
+        }
+
+        content->body.task_list.push_back("task_1");
+
+        msg.set_content(content);
+
+        auto r = coder.encode(ctx, msg, buf);
+
+//        std::cout<<"compress: "<< buf.to_string()<<std::endl;
+    }
+
+
+    shared_ptr<message> msg = std::make_shared<message>();
+
+    {
+        channel_handler_context ctx;
+        variable_value v1;
+        v1.value() = std::string("mike");
+        ctx.add("LOCAL_NODE_ID", v1);
+
+        matrix_coder coder;
+
+
+
+        decode_status r = coder.decode_frame(ctx, buf, msg);
+
+//    std::cout<<"msg name: " << msg->content->header.msg_name <<std::endl;
+        std::cout << "msg name: " << msg->content->header << std::endl;
+
+
+        BOOST_TEST(r == DECODE_SUCCESS);
+    }
+
+    // encode binary forward message
+    {
+        channel_handler_context ctx;
+        matrix_coder coder;
+
+        auto r2 = coder.encode(ctx, *msg, buf);
+        std::cout << "buf: " << buf.to_string() << std::endl;
+        BOOST_TEST(r2 == ENCODE_SUCCESS);
+    }
 }
