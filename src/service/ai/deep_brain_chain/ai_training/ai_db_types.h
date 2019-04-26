@@ -189,6 +189,7 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
   std::string result;
   int8_t status;
   std::string description;
+  std::vector<std::string>  peer_nodes_list;
 
   _cmd_task_info__isset __isset;
 
@@ -201,6 +202,8 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
   void __set_status(const int8_t val);
 
   void __set_description(const std::string& val);
+
+  void __set_peer_nodes_list(const std::vector<std::string> & val);
 
   bool operator == (const cmd_task_info & rhs) const
   {
@@ -215,6 +218,8 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
     if (__isset.description != rhs.__isset.description)
       return false;
     else if (__isset.description && !(description == rhs.description))
+      return false;
+    if (!(peer_nodes_list == rhs.peer_nodes_list))
       return false;
     return true;
   }

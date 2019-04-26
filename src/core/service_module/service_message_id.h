@@ -51,6 +51,8 @@
 #define GET_TASK_QUEUE_SIZE_REQ                                 "get_task_queue_size_req"
 #define GET_TASK_QUEUE_SIZE_RESP                                "get_task_queue_size_resp"
 
+#define BINARY_FORWARD_MSG                  "binary_forward_message"
+
 #endif
 
 

@@ -81,6 +81,11 @@ namespace ai
 
             //logs resp
             SUBSCRIBE_BUS_MESSAGE(LOGS_RESP);
+
+
+            //forward binary message
+            SUBSCRIBE_BUS_MESSAGE(BINARY_FORWARD_MSG);
+
         }
 
         void ai_power_requestor_service::init_invoker()
@@ -99,6 +104,8 @@ namespace ai
 
             BIND_MESSAGE_INVOKER(LIST_TRAINING_RESP, &ai_power_requestor_service::on_list_training_resp);
             BIND_MESSAGE_INVOKER(LOGS_RESP, &ai_power_requestor_service::on_logs_resp);
+
+            BIND_MESSAGE_INVOKER(BINARY_FORWARD_MSG, &ai_power_requestor_service::on_binary_forward);
 
         }
 
@@ -241,6 +248,8 @@ namespace ai
                         std::string node = nodes[0];
                         task_description = node;
                         //                    task_description=node.substr(node.length()-8);
+
+                        cmd_resp->task_info.peer_nodes_list.push_back(node);
                     }
                     catch (const std::exception &e)
                     {
@@ -529,7 +538,10 @@ namespace ai
             const std::string &task_id = cmd_req_content->task_id;
 
             //check valid
-            if (!is_task_exist_in_db(task_id))
+//            if (!is_task_exist_in_db(task_id))
+
+            ai::dbc::cmd_task_info task_info_in_db;
+            if(read_task_info_from_db(task_id, task_info_in_db))
             {
                 LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
                 //public resp directly
@@ -556,8 +568,13 @@ namespace ai
 
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
-            
+
+
+            std::map<std::string, std::string> exten_info;
+
             std::string sign_msg = req_content->body.task_id + req_content->header.nonce;
+            // change on sign message:
+            //     timestamp is added to the signature input.
             if (!use_sign_verify())
             {
                 std::string sign = id_generator().sign(sign_msg, CONF_MANAGER->get_node_private_key());
@@ -568,24 +585,29 @@ namespace ai
                     TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_stop_training_resp).name(), cmd_resp);
                     return E_DEFAULT;
                 }
-                std::map<std::string, std::string> exten_info;
+//                std::map<std::string, std::string> exten_info;
                 exten_info["sign"] = sign;
                 exten_info["sign_algo"] = ECDSA;
                 exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
-                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-                req_content->header.__set_exten_info(exten_info);
+//                req_content->header.__set_exten_info(exten_info);
             }
-            
-            if (use_sign_verify())
+            else
             {
-                std::map<std::string, std::string> exten_info;
-                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
                 if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
                 {
                     return E_DEFAULT;
                 }
-                req_content->header.__set_exten_info(exten_info);
             }
+
+            // needs to fill dest_id with the "peer_list" from task db
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+
+            if(task_info_in_db.peer_nodes_list.size() > 0)
+            {
+                exten_info["dest_id"] = task_info_in_db.peer_nodes_list[0];
+            }
+
+            req_content->header.__set_exten_info(exten_info);
 
 
             if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
@@ -755,7 +777,9 @@ namespace ai
 
             std::string message = boost::algorithm::join(req_content->body.task_list, "") + req_content->header.nonce + req_content->header.session_id;
             std::map<std::string, std::string> exten_info;
+
             exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+
             if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
             {
                 return E_DEFAULT;
@@ -1103,6 +1127,9 @@ FINAL_PROC:
             req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
             req_msg->set_content(req_content);
             task_info.task_id = req_content->body.task_id;
+
+            std::map<std::string, std::string> exten_info;
+
             std::string message = req_content->body.task_id + req_content->body.code_dir + req_content->header.nonce;
             if (!use_sign_verify())
             {
@@ -1113,25 +1140,30 @@ FINAL_PROC:
                     return nullptr;
                 }
 
-                std::map<std::string, std::string> exten_info;
+//                std::map<std::string, std::string> exten_info;
                 exten_info["sign"] = sign;
                 exten_info["sign_algo"] = ECDSA;
                 exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
                 exten_info["origin_id"] = CONF_MANAGER->get_node_id();
                 req_content->header.__set_exten_info(exten_info);
             }
-
-            if (use_sign_verify())
+            else
             {
-                std::map<std::string, std::string> exten_info;
-                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-                if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
+
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(message, exten_info))
                 {
                     task_info.result = "sign error.pls check node key or task property";
                     return nullptr;
                 }
-                req_content->header.__set_exten_info(exten_info);
             }
+
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            for(auto& each : req_content->body.peer_nodes_list)
+            {
+                exten_info["dest_id"] += each + " ";
+            }
+
+            req_content->header.__set_exten_info(exten_info);
 
             return req_msg;
         }
@@ -1388,9 +1420,12 @@ FINAL_PROC:
 
 
             //check task id
-            std::string task_value;
-            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), cmd_req->task_id, &task_value);
-            if (!status.ok())
+//            std::string task_value;
+//            leveldb::Status status = m_req_training_task_db->Get(leveldb::ReadOptions(), cmd_req->task_id, &task_value);
+//            if (!status.ok())
+
+            ai::dbc::cmd_task_info task_info_in_db;
+            if(read_task_info_from_db(cmd_req->task_id, task_info_in_db))
             {
                 LOG_ERROR << "ai power requester service cmd logs check task id error: " << cmd_req->task_id;
 
@@ -1401,6 +1436,7 @@ FINAL_PROC:
                 TOPIC_MANAGER->publish<void>(typeid(ai::dbc::cmd_logs_resp).name(), cmd_resp);
                 return E_SUCCESS;
             }
+
 
             //check head or tail
             if (GET_LOG_HEAD != cmd_req->head_or_tail && GET_LOG_TAIL != cmd_req->head_or_tail)
@@ -1493,9 +1529,15 @@ FINAL_PROC:
                 return E_DEFAULT;
             }
 
-            std::string message = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id;
+
             std::map<std::string, std::string> exten_info;
             exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            if(task_info_in_db.peer_nodes_list.size() > 0)
+            {
+                exten_info["dest_id"] = task_info_in_db.peer_nodes_list[0];
+            }
+
+            std::string message = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id;
             if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
             {
                 return E_DEFAULT;
@@ -1529,84 +1571,43 @@ FINAL_PROC:
         }
 
 
-//        std::string decrypt(std::string pub_str, std::string& cipher_str )
-//        {
-//            CPubKey cpk_onetime;
-//            cpk_onetime.Set(pub_str.c_str(), pub_str.c_str()+pub_str.size());
-//
-//            secp256k1_pubkey pk_onetime;
-//            cpk_onetime.DeSerialize(pk_onetime);
-//
-//
-//            // extract local node's secret
-//            const int32_t key_len = 32;
-//            unsigned char privkey_c[key_len];
-//
-//            secp256k1_context *ctx_sign = static_cast<secp256k1_context *>(get_context_sign());
-//            if (!ctx_sign)
-//            {
-//                LOG_ERROR << "fail to get ecdh context";
-//                return "";
-//            }
-//
-//            {
-//                std::string node_private_key = CONF_MANAGER->get_node_private_key();
-//                std::vector<unsigned char> vch;
-//                if (!id_generator().decode_private_key(node_private_key, vch))
-//                {
-//                    LOG_ERROR << "decode_private_key fail";
-//                    return "";
-//                }
-//
-//
-//                CPrivKey prikey;
-//                prikey.insert(prikey.end(), vch.begin(), vch.end());
-//
-//
-//                if (1 != ec_privkey_import_der(ctx_sign, privkey_c, prikey.data(), prikey.size()))
-//                {
-//                    return "";
-//                }
-//            }
-//
-//
-//            // calculate ecdh share secret
-//
-//            unsigned char ecdh_share_secret[32] = {0};
-//
-//            if ( 1 != secp256k1_ecdh(ctx_sign, ecdh_share_secret, &pk_onetime, privkey_c))
-//            {
-//                return "";
-//            }
-//
-//            // cbcaes256 decrypt
-//            {
-//                bool padin = true;
-//                unsigned char *key = ecdh_share_secret;
-//                unsigned char iv[16] = {0};
-//                iv[15] = 1;
-//
-//                AES256CBCDecrypt de(key, iv, padin);
-//
-//                const unsigned char *cipher = (const unsigned char *) cipher_str.c_str();
-//                // max ciphertext len for a n bytes of plaintext is
-//                // n + AES_BLOCKSIZE bytes
-//                // here, we allocate additional space (64-AES_BLOCKSIZE) to avoid array write out of boundry.
-//                unsigned char *plain = new unsigned char[cipher_str.size() + 64];
-//                memset(plain, 0, cipher_str.size() + 64);
-//
-//                int plain_size = de.Decrypt(cipher, cipher_str.size(), plain);
-//
-//                assert(plain_size < cipher_str.size() + 64);
-//
-//                std::string rtn = std::string((char *) plain, plain_size);
-//                delete[] cipher;
-//
-//                return rtn;
-//            }
-//
-//            return "";
-//        }
+
+        int32_t ai_power_requestor_service::on_binary_forward(std::shared_ptr<message> &msg)
+        {
+            if (!msg)
+            {
+                LOG_ERROR << "recv logs_resp but msg is nullptr";
+                return E_DEFAULT;
+            }
+
+
+            std::shared_ptr<matrix::core::msg_forward> content = std::dynamic_pointer_cast<matrix::core::msg_forward>(msg->content);
+
+            if(!content)
+            {
+                LOG_ERROR << "not a valid binary forward msg";
+                return E_DEFAULT;
+            }
+
+            // support request message name end with "_req" postfix
+            auto& msg_name = msg->content->header.msg_name;
+
+            if (msg_name.substr(msg_name.size()-4) == std::string("_req"))
+            {
+                // add path
+                msg->content->header.path.push_back(CONF_MANAGER->get_node_id());
+
+                CONNECTION_MANAGER->broadcast_message(msg);
+            }
+            else
+            {
+                CONNECTION_MANAGER->send_resp_message(msg);
+            }
+
+            return E_SUCCESS;
+
+        }
+
 
         int32_t ai_power_requestor_service::on_logs_resp(std::shared_ptr<message> &msg)
         {

@@ -76,7 +76,10 @@ set_docker_data_dir()
 
     system_directory=`df -l | grep -v loop | grep -v tmpfs | sort -n -r -k 4 |awk '{print $6}'`
 
-    a=0
+
+    array[0]="/var/lib/docker"
+
+    a=1
     for line in $system_directory
     do
        array[$a]=$line
@@ -110,10 +113,19 @@ set_docker_data_dir()
         t1=$(echo ${array[$num]} | sed 's/\/$//')
     fi
 
-    docker_install_dir="$t1/docker_data"
+    if [ 0 -eq $num ]; then
+        docker_install_dir="$t1"
+    else
+        docker_install_dir="$t1/docker_data"
+    fi
 }
 
-set_docker_data_dir
+if [ -d $1 ]; then
+    docker_install_dir="$1"
+else
+    set_docker_data_dir
+fi
+
 
 #sudo echo 'DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://127.0.0.1:31107"' >> /etc/default/docker
 sudo sed -i "s;ExecStart=.*;ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:31107 -H unix:///var/run/docker.sock --data-root=\"$docker_install_dir\" ;g" /lib/systemd/system/docker.service
@@ -134,6 +146,7 @@ fi
 
 gpu_flag=`lspci |grep -i nvidia`
 if [ $? -eq 0 ]; then
+    echo "install nvidia docker"
 
 # jimmy: install nvidia-docker 1 from public repo
 #    wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
@@ -159,6 +172,7 @@ if [ $? -eq 0 ]; then
 
 
     # jimmy: install nvidia-docker 2 from local archive
+    sudo dpkg -i ./archive/libnvidia-container1_1.0.2-1_amd64.deb ./archive/libnvidia-container-tools_1.0.2-1_amd64.deb ./archive/nvidia-container-runtime-hook_1.4.0-1_amd64.deb
     sudo dpkg -i ./archive/nvidia-docker2_2.0.3+docker18.06.1-1_all.deb ./archive/nvidia-container-runtime_2.0.0+docker18.06.1-1_amd64.deb
     if [ $? -ne 0 ]; then
         echo "***dpkg nvidia-docker deb failed***"

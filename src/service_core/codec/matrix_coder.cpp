@@ -9,6 +9,7 @@
 **********************************************************************************/
 #include "matrix_coder.h"
 #include "compress/matrix_compress.h"
+#include "service_message_id.h"
  
 namespace matrix
 {
@@ -101,6 +102,72 @@ namespace matrix
             return it->second;
         }
 
+        /**
+         * decode input message as an binary forward message if it match the fast forwarding conditions
+         * @param ctx
+         * @param in
+         * @param msg
+         * @param header
+         * @param proto
+         * @return DECODE_SUCCESS if no error happened
+         */
+        decode_status matrix_coder::decode_fast_forward(channel_handler_context &ctx,
+                byte_buf &in, std::shared_ptr<message> &msg,
+                base_header& header, std::shared_ptr<protocol> proto)
+        {
+            std::string local_node_id = get_local_node_id(ctx);
+            if (local_node_id.empty())
+            {
+                return DECODE_SUCCESS;
+            }
+
+            static std::vector<std::string> legacy_none_forwarding_messages{
+                    "ver_req",
+                    "ver_resp",
+                    "shake_hand_req",
+                    "shake_hand_resp",
+                    "get_peer_nodes_req",
+                    "get_peer_nodes_resp",
+                    "service_broadcast_req"
+            };
+
+            if (find(legacy_none_forwarding_messages.begin(), legacy_none_forwarding_messages.end(),
+                     header.msg_name)
+                != legacy_none_forwarding_messages.end())
+            {
+                // do not forward the legacy none forwarding message.
+                return DECODE_SUCCESS;
+            }
+
+
+            if (header.exten_info.count("dest_id")
+                && header.exten_info["dest_id"].find(local_node_id) == std::string::npos)
+            {
+                LOG_DEBUG << "forward " << header.msg_name;
+
+                std::shared_ptr<msg_forward> content = std::make_shared<msg_forward>();
+
+                content->header = header;
+
+                byte_buf *buf = proto->get_buf();
+
+                if (buf == nullptr)
+                {
+                    return DECODE_ERROR;
+                }
+
+                content->body.write_to_byte_buf(buf->get_read_ptr(), buf->get_valid_read_len());
+                buf->move_read_ptr(buf->get_valid_read_len());
+
+                msg->set_content(content);
+//                        msg->set_name(content->header.msg_name);
+                msg->set_name(BINARY_FORWARD_MSG);
+            }
+
+            return DECODE_SUCCESS;
+        }
+
+
         decode_status matrix_coder::decode_frame(channel_handler_context &ctx, byte_buf &in, std::shared_ptr<message> &msg)
         {
             byte_buf uncompress_out;
@@ -136,6 +203,7 @@ namespace matrix
                 {
                     proto->init_buf(&decode_in);
                 }
+
                 decode_status decodeRet = decode_service_frame(ctx, decode_in, msg, proto);
                 if (E_SUCCESS == decodeRet)
                 {
@@ -146,7 +214,7 @@ namespace matrix
                         return DECODE_ERROR;
                     }
                 }
-          
+
                 return decodeRet;
             }
             catch (std::exception &e)
@@ -167,6 +235,20 @@ namespace matrix
             //service header
             base_header header;
             header.read(proto.get());
+
+            // jimmy: fast_forward processing
+            decode_status rtn = decode_fast_forward(ctx, in, msg, header, proto);
+
+            if ( rtn != DECODE_SUCCESS)
+            {
+                return rtn;
+            }
+
+            if ( msg->get_name() == std::string(BINARY_FORWARD_MSG) )
+            {
+                return rtn;
+            }
+
 
             //find decoder
             auto it = m_binary_decode_invokers.find(header.msg_name);
@@ -206,14 +288,7 @@ namespace matrix
                 matrix_packet_header packet_header;
                 packet_header.write(out);
 
-                //find encoder
-                auto it = m_binary_encode_invokers.find(msg.get_name());
-                if (it == m_binary_encode_invokers.end())
-                {
-                    LOG_ERROR << "matrix encoder received unknown message: " << msg.get_name();
-                    return ENCODE_ERROR;
-                }
-
+                // prepare protocol
                 bool enable_compress = get_compress_enabled(ctx);
                 uint32_t thrift_proto = get_thrift_proto(ctx);
 
@@ -227,10 +302,30 @@ namespace matrix
 
                 proto->init_buf(&out);
 
-                //body invoker
-                auto invoker = it->second;
-                invoker(ctx, proto, msg, out);
+                // encode
+                std::shared_ptr<matrix::core::msg_forward> bin_fwd_content = std::dynamic_pointer_cast<matrix::core::msg_forward>(msg.content);
+                if(bin_fwd_content)
+                {
+                    LOG_DEBUG << "matrix encoder forward binary of " << msg.get_name();
 
+                    bin_fwd_content->header.write(proto.get());
+                    proto->append_raw(bin_fwd_content->body.get_read_ptr(), bin_fwd_content->body.get_valid_read_len());
+
+                }
+                else
+                {
+                    //find encoder
+                    auto it = m_binary_encode_invokers.find(msg.get_name());
+                    if (it == m_binary_encode_invokers.end())
+                    {
+                        LOG_ERROR << "matrix encoder received unknown message: " << msg.get_name();
+                        return ENCODE_ERROR;
+                    }
+
+                    //body invoker
+                    auto invoker = it->second;
+                    invoker(ctx, proto, msg, out);
+                }
 
                 //update packet len and packet type
                 packet_header.packet_len = out.get_valid_read_len();
@@ -343,6 +438,26 @@ namespace matrix
                 if (vm.count("THRIFT_PROTO"))
                 {
                     rtn = vm["THRIFT_PROTO"].as<int>();
+                }
+            }
+            catch (...)
+            {
+
+            }
+
+            return rtn;
+        }
+
+        std::string matrix_coder::get_local_node_id(channel_handler_context &ctx)
+        {
+            std::string  rtn;
+
+            variables_map& vm = ctx.get_args();
+            try
+            {
+                if (vm.count("LOCAL_NODE_ID"))
+                {
+                    rtn = vm["LOCAL_NODE_ID"].as<string>();
                 }
             }
             catch (...)

@@ -163,6 +163,8 @@ namespace matrix
                 
                 while (m_decoder->has_complete_message())
                 {
+                    set_decode_context(ctx);
+
                     shared_ptr<message> msg = std::make_shared<message>();
                     decode_status status = m_decoder->decode(ctx, msg);
 
@@ -183,9 +185,17 @@ namespace matrix
                         }
 
                         //send to bus
-                        if (msg->get_name() != SHAKE_HAND_REQ
-                            && msg->get_name() != SHAKE_HAND_RESP)
+
+
+                        if (msg->get_name() == SHAKE_HAND_REQ
+                            || msg->get_name() == SHAKE_HAND_RESP)
                         {
+                            // not deliver shake hand message to upper service
+
+                        }
+                        else
+                        {
+
                             if (nullptr == msg || nullptr == msg->content)
                             {
                                 LOG_ERROR << "decode error, msg is null" << m_sid.to_string();
@@ -215,9 +225,26 @@ namespace matrix
                                     LOG_INFO << "over_speed";
                                     return E_SUCCESS;
                                 }
-                                TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-                                //LOG_INFO << "m_count "<< m_count << endl;
-                                LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name() << ", nonce: " << nonce << m_sid.to_string();
+
+
+//                                if (std::dynamic_pointer_cast<matrix::core::msg_forward>(msg->content))
+                                if (msg->get_name() == std::string(BINARY_FORWARD_MSG))
+                                {
+//                                    msg->set_name(BINARY_FORWARD_MSG);
+
+                                    TOPIC_MANAGER->publish<int32_t>(BINARY_FORWARD_MSG, msg);
+                                    LOG_DEBUG << "matrix socket channel handler forward msg: " << msg->get_name()
+                                              << ", nonce: " << nonce << m_sid.to_string();
+                                }
+                                else
+                                {
+                                    TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                                    //LOG_INFO << "m_count "<< m_count << endl;
+                                    LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name()
+                                              << ", nonce: " << nonce << m_sid.to_string();
+                                }
+
+
                             }
                             else
                             {
@@ -247,6 +274,14 @@ namespace matrix
 
             }
             return E_SUCCESS;
+        }
+
+        void matrix_socket_channel_handler::set_decode_context(channel_handler_context &ctx)
+        {
+            std::string node_id = CONF_MANAGER->get_node_id();
+            variable_value v1;
+            v1.value() = node_id;
+            ctx.add("LOCAL_NODE_ID", v1);
         }
 
         void matrix_socket_channel_handler::set_encode_context(channel_handler_context &ctx)

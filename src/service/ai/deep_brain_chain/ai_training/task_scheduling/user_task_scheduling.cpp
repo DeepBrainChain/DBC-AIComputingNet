@@ -141,15 +141,18 @@ namespace ai
                 return E_DEFAULT;
             }
 
+
             // jimmy: validate task's gpu requirement
-            if (!m_gpu_pool.allocate(task->gpus)){
-                LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement " << task->gpus << ", gpu remainder " <<m_gpu_pool.toString();
-                stop_task(task, task_out_of_resource);
-                return E_DEFAULT;
-            }
-            else
+
+            if (task_queueing == task->status)
             {
-                LOG_DEBUG<< "gpu state " << m_gpu_pool.toString();
+                if (!m_gpu_pool.check(task->gpus))
+                {
+                    LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                              << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
+                    stop_task(task, task_out_of_gpu_resource);
+                    return E_DEFAULT;
+                }
             }
 
             if (E_SUCCESS == auth_task(task))
@@ -198,6 +201,20 @@ namespace ai
                     //jimmy: move task from waiting queue  into running tasks map
                     m_running_tasks[task->task_id] = task;
                     m_queueing_tasks.remove(task);
+
+                    if (!m_gpu_pool.allocate(task->gpus))
+                    {
+                        // is supposed never happen because gpu check passed before
+                        LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                                  << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
+                        stop_task(task, task_out_of_gpu_resource);
+                        return E_DEFAULT;
+                    }
+                    else
+                    {
+                        LOG_DEBUG << "gpu state " << m_gpu_pool.toString();
+                    }
+
                 }
 
             }
@@ -228,8 +245,12 @@ namespace ai
 
                 m_running_tasks.erase(task->task_id);
 
-                //free gpu resource
-                m_gpu_pool.free(task->gpus);
+
+                if ( task_out_of_gpu_resource != end_status )
+                {
+                    //free gpu resource
+                    m_gpu_pool.free(task->gpus);
+                }
 
                 return E_SUCCESS;
             }
@@ -527,6 +548,9 @@ namespace ai
 
                 //1. if task have been stop too long
                 //2. if task have been stopped , and  container_id is empty means task have never been exectue
+
+                // jimmy: the task status in client may be in wrong status(e.g queueing) for ever;
+                //        if the client do not query the task status before task deleted by the computer node.
                 if ((cur - task_iter->second->end_time) > p_interval
                     ||task_iter->second->container_id.empty())
                 {

@@ -584,6 +584,10 @@ void cmd_task_info::__set_description(const std::string& val) {
   this->description = val;
 __isset.description = true;
 }
+
+void cmd_task_info::__set_peer_nodes_list(const std::vector<std::string> & val) {
+  this->peer_nodes_list = val;
+}
 std::ostream& operator<<(std::ostream& out, const cmd_task_info& obj)
 {
   obj.printTo(out);
@@ -607,6 +611,7 @@ uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
   bool isset_create_time = false;
   bool isset_result = false;
   bool isset_status = false;
+  bool isset_peer_nodes_list = false;
 
   while (true)
   {
@@ -656,6 +661,26 @@ uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->peer_nodes_list.clear();
+            uint32_t _size8;
+            ::apache::thrift::protocol::TType _etype11;
+            xfer += iprot->readListBegin(_etype11, _size8);
+            this->peer_nodes_list.resize(_size8);
+            uint32_t _i12;
+            for (_i12 = 0; _i12 < _size8; ++_i12)
+            {
+              xfer += iprot->readString(this->peer_nodes_list[_i12]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_peer_nodes_list = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -672,6 +697,8 @@ uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
   if (!isset_result)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_status)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_peer_nodes_list)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
@@ -702,6 +729,18 @@ uint32_t cmd_task_info::write(::apache::thrift::protocol::TProtocol* oprot) cons
     xfer += oprot->writeString(this->description);
     xfer += oprot->writeFieldEnd();
   }
+  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 6);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    std::vector<std::string> ::const_iterator _iter13;
+    for (_iter13 = this->peer_nodes_list.begin(); _iter13 != this->peer_nodes_list.end(); ++_iter13)
+    {
+      xfer += oprot->writeString((*_iter13));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -714,24 +753,27 @@ void swap(cmd_task_info &a, cmd_task_info &b) {
   swap(a.result, b.result);
   swap(a.status, b.status);
   swap(a.description, b.description);
+  swap(a.peer_nodes_list, b.peer_nodes_list);
   swap(a.__isset, b.__isset);
 }
 
-cmd_task_info::cmd_task_info(const cmd_task_info& other8) {
-  task_id = other8.task_id;
-  create_time = other8.create_time;
-  result = other8.result;
-  status = other8.status;
-  description = other8.description;
-  __isset = other8.__isset;
+cmd_task_info::cmd_task_info(const cmd_task_info& other14) {
+  task_id = other14.task_id;
+  create_time = other14.create_time;
+  result = other14.result;
+  status = other14.status;
+  description = other14.description;
+  peer_nodes_list = other14.peer_nodes_list;
+  __isset = other14.__isset;
 }
-cmd_task_info& cmd_task_info::operator=(const cmd_task_info& other9) {
-  task_id = other9.task_id;
-  create_time = other9.create_time;
-  result = other9.result;
-  status = other9.status;
-  description = other9.description;
-  __isset = other9.__isset;
+cmd_task_info& cmd_task_info::operator=(const cmd_task_info& other15) {
+  task_id = other15.task_id;
+  create_time = other15.create_time;
+  result = other15.result;
+  status = other15.status;
+  description = other15.description;
+  peer_nodes_list = other15.peer_nodes_list;
+  __isset = other15.__isset;
   return *this;
 }
 void cmd_task_info::printTo(std::ostream& out) const {
@@ -742,6 +784,7 @@ void cmd_task_info::printTo(std::ostream& out) const {
   out << ", " << "result=" << to_string(result);
   out << ", " << "status=" << to_string(status);
   out << ", " << "description="; (__isset.description ? (out << to_string(description)) : (out << "<null>"));
+  out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
   out << ")";
 }
 

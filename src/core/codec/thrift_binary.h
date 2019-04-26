@@ -27,6 +27,8 @@ namespace matrix
 
             void init_buf(byte_buf *buf) { m_buf = buf; }
 
+            byte_buf* get_buf() { return m_buf; }
+
             virtual uint32_t writeMessageBegin(const std::string& name,
                                                const TMessageType messageType,
                                                const int32_t seqid)
@@ -363,6 +365,11 @@ namespace matrix
             virtual uint32_t skip(TType type)
             {
                 return matrix::core::skip(*this, type);
+            }
+
+
+            uint32_t append_raw(const char* v, const uint32_t size) {
+                return m_buf->write_to_byte_buf(v, size);
             }
 
         protected:
