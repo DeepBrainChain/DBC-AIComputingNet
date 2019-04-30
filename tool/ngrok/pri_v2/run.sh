@@ -20,7 +20,7 @@ server_dns=($(echo $args | ./jq -r .server[].dn?))
 
 token=$(echo $args | ./jq -r .token?)
 
-if [ "$token"] == "null" ]; then
+if [ "$token" == "null" ]; then
     echo "Error: token missing"
 fi
 

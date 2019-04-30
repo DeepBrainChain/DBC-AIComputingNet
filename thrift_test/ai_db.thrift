@@ -36,4 +36,7 @@ struct cmd_task_info{
 	4: required i8 status,
 	5: optional string description,
 	6: required list<string> peer_nodes_list,
+	7: optional string addr,
+	8: optional string pwd,
+	9: optional string raw
 }

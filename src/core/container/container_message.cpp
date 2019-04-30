@@ -136,9 +136,11 @@ namespace matrix
             {
                 const container_port &c = it.second;
                 std::string k = boost::str(boost::format("%s/%s") %c.port %c.scheme);
-                json_exposed_ports.AddMember(STRING_REF(k), "{}", allocator);
 
+                rapidjson::Value empty(rapidjson::kObjectType);
+                json_exposed_ports.AddMember(STRING_DUP(k), empty, allocator);
             }
+
             root.AddMember("ExposedPorts", json_exposed_ports, allocator);
 
             //container_host_config
@@ -205,12 +207,17 @@ namespace matrix
                 const container_port& c = it.second;
 
                 std::string k = boost::str(boost::format("%s/%s") %c.port %c.scheme);
-                rapidjson::Value v(rapidjson::kArrayType);
 
-                v.AddMember("HostIp", STRING_REF(c.host_ip), allocator);
-                v.AddMember("HostPort", STRING_REF(c.host_port), allocator);
 
-                json_host_portsbinding.AddMember(STRING_REF(k), v, allocator);
+                rapidjson::Value ports(rapidjson::kArrayType);
+
+                rapidjson::Value port(rapidjson::kObjectType);
+                port.AddMember("HostIp", STRING_REF(c.host_ip), allocator);
+                port.AddMember("HostPort", STRING_REF(c.host_port), allocator);
+
+                ports.PushBack(port.Move(), allocator);
+
+                json_host_portsbinding.AddMember(STRING_DUP(k), ports, allocator);
             }
 
             json_host_config.AddMember("PortBindings",  json_host_portsbinding, allocator);
