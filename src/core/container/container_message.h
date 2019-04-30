@@ -14,6 +14,7 @@
 
 
 #define STRING_REF(VAR)                        rapidjson::StringRef(VAR.c_str(), VAR.length())
+#define STRING_DUP(VAR)                        rapidjson::Value().SetString(VAR.c_str(),VAR.length(),allocator)
 
 #define RUNTIME_NVIDIA                                  "nvidia"
 #define RUNTIME_DEFAULT                                 "runc"

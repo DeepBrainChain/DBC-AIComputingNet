@@ -321,7 +321,7 @@ namespace ai
 
                             config->host_config.port_bindings.ports[p.port] = p;
 
-                            LOG_DEBUG << "[port] " << kv.first.data() << "="<<env_map[kv.first.data()];
+                            LOG_DEBUG << "[port] " << kv.first.data() << " = "<<p.host_port;
                         }
                     }
                     catch (...)
