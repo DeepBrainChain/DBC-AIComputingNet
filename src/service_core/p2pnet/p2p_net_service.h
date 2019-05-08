@@ -146,7 +146,7 @@ namespace matrix
 
             bool is_peer_candidate_exist(tcp::endpoint &ep);
 
-            bool add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype);
+            bool add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype, std::string node_id="");
 
             bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
 

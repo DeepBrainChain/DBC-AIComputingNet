@@ -86,19 +86,13 @@ if [ $# -ne 3 ]; then
 fi
 
 # install necessary tool
-if [ ! `which curl` ] || [ ! `which wget` ]; then
-    echo "apt update"
-    apt-get update >/dev/null
-fi
-
-if [ ! `which curl` ]; then
-    echo "install curl"
-    apt-get install --yes curl >/dev/null
-fi
-
-if [ ! `which wget` ]; then
-    echo "install wget"
-    apt-get install --yes wget >/dev/null
+if [ -f /etc/centos-release ]; then
+    echo "install common tools for centos"
+    yum -y install curl wget vim openssl openssh-server passwd net-tools &>/dev/null
+else
+    echo "install common tools for ubutu"
+    apt-get update
+    apt-get install --yes wget curl >/dev/null
 fi
 
 restart=false

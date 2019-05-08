@@ -14,7 +14,7 @@
 #include <string>
 #include "http_client.h"
 #include "container_message.h"
-#include "ai_db_types.h"
+#include "db/ai_db_types.h"
 #include "container_message.h"
 #include "service_module.h"
 #include "task_common_def.h"

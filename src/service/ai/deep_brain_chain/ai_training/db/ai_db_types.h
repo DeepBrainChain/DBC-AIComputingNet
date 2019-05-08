@@ -171,8 +171,12 @@ void swap(ai_training_task &a, ai_training_task &b);
 std::ostream& operator<<(std::ostream& out, const ai_training_task& obj);
 
 typedef struct _cmd_task_info__isset {
-  _cmd_task_info__isset() : description(false) {}
+  _cmd_task_info__isset() : description(false), peer_nodes_list(false), addr(false), pwd(false), raw(false) {}
   bool description :1;
+  bool peer_nodes_list :1;
+  bool addr :1;
+  bool pwd :1;
+  bool raw :1;
 } _cmd_task_info__isset;
 
 class cmd_task_info : public virtual ::apache::thrift::TBase {
@@ -180,7 +184,7 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
 
   cmd_task_info(const cmd_task_info&);
   cmd_task_info& operator=(const cmd_task_info&);
-  cmd_task_info() : task_id(), create_time(0), result(), status(0), description() {
+  cmd_task_info() : task_id(), create_time(0), result(), status(0), description(), addr(), pwd(), raw() {
   }
 
   virtual ~cmd_task_info() throw();
@@ -190,6 +194,9 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
   int8_t status;
   std::string description;
   std::vector<std::string>  peer_nodes_list;
+  std::string addr;
+  std::string pwd;
+  std::string raw;
 
   _cmd_task_info__isset __isset;
 
@@ -205,6 +212,12 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
 
   void __set_peer_nodes_list(const std::vector<std::string> & val);
 
+  void __set_addr(const std::string& val);
+
+  void __set_pwd(const std::string& val);
+
+  void __set_raw(const std::string& val);
+
   bool operator == (const cmd_task_info & rhs) const
   {
     if (!(task_id == rhs.task_id))
@@ -219,7 +232,21 @@ class cmd_task_info : public virtual ::apache::thrift::TBase {
       return false;
     else if (__isset.description && !(description == rhs.description))
       return false;
-    if (!(peer_nodes_list == rhs.peer_nodes_list))
+    if (__isset.peer_nodes_list != rhs.__isset.peer_nodes_list)
+      return false;
+    else if (__isset.peer_nodes_list && !(peer_nodes_list == rhs.peer_nodes_list))
+      return false;
+    if (__isset.addr != rhs.__isset.addr)
+      return false;
+    else if (__isset.addr && !(addr == rhs.addr))
+      return false;
+    if (__isset.pwd != rhs.__isset.pwd)
+      return false;
+    else if (__isset.pwd && !(pwd == rhs.pwd))
+      return false;
+    if (__isset.raw != rhs.__isset.raw)
+      return false;
+    else if (__isset.raw && !(raw == rhs.raw))
       return false;
     return true;
   }

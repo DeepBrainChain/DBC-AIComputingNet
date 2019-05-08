@@ -22,7 +22,7 @@
 #include "api_call.h"
 #include <set>
 #include "time_util.h"
-#include "ai_db_types.h"
+#include "db/ai_db_types.h"
 #include "peer_candidate.h"
 #include "util.h"
 
@@ -199,6 +199,10 @@ namespace ai
             int8_t status;
 
             std::string description;
+
+            std::string raw;
+
+            std::string pwd;
         };
 
         class cmd_list_training_resp:public matrix::core::msg_base, public outputter
@@ -210,44 +214,9 @@ namespace ai
 
             std::list<cmd_task_status> task_status_list;
 
-            void format_output()
-            {
-                if(E_SUCCESS != result)
-                {
-                    cout << result_info << endl;
-                    return;
-                }
+            void format_output();
+            void format_output_detail();
 
-                console_printer printer;
-                printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 56)(LEFT_ALIGN, 24)(LEFT_ALIGN, 30)(LEFT_ALIGN,48);
-
-                printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << "description" << matrix::core::endl;
-                int i = 1;
-                for(auto it = task_status_list.begin(); it != task_status_list.end(); ++it, ++i)
-                {
-                    std::string description = it->description;
-                    if (description.empty())
-                    {
-                        description = "N/A";
-                    }
-                    else
-                    {
-                        // todo: only display the last 8 digits of node id
-                        std::string delimiter = " : ";
-                        size_t pos = description.find(delimiter);
-
-                        if (pos != std::string::npos)
-                        {
-                            if (pos > 8)
-                                description = description.substr(pos - 8);
-                        }
-                    }
-
-                    printer << matrix::core::init << i << it->task_id << time_util::time_2_str(
-                            it->create_time) << to_training_task_status_string(it->status)
-                            << description << matrix::core::endl;
-                }
-            }
         };
 
         class cmd_get_peer_nodes_resp_formater:public outputter
@@ -392,6 +361,7 @@ namespace ai
             void format_output();
 
             std::string get_training_result_hash_from_log(std::string& s);
+            std::string get_value_from_log(std::string prefix);
 
         private:
             void format_output_segment();

@@ -127,7 +127,7 @@ namespace ai
 
             if( s.find(task_end_str + task_id) != std::string::npos && s.find(task_sh_end_str) == std::string::npos )
             {
-                std::cout << "task had not complete yet" << std::endl;
+                std::cout << "task is still on going" << std::endl;
 
                 return "";
             }
@@ -147,6 +147,36 @@ namespace ai
                 auto hash = s.substr(start + prefix.length(), end - start - prefix.length());
 
                 return hash;
+            }
+            else
+            {
+                return "";
+            }
+
+        }
+
+
+        std::string cmd_logs_resp::get_value_from_log(std::string prefix)
+        {
+
+//            std::string prefix = "pwd:";
+
+            if(peer_node_logs.size() == 0)
+                return "";
+
+
+            std::string& s = peer_node_logs[0].log_content;
+
+            size_t start = s.find(prefix);
+            if( start == std::string::npos )
+            {
+                return "";
+            }
+
+            size_t end = s.find("\n", start);
+            if( end != std::string::npos )
+            {
+                return  s.substr(start + prefix.length(), end - start - prefix.length());
             }
             else
             {
@@ -308,6 +338,7 @@ namespace ai
             {
                 format_output_segment();
             }
+
         }
 
         /**
@@ -591,6 +622,94 @@ namespace ai
                 LOG_ERROR << "unknown op " << op;
             }
         }
+
+        void cmd_list_training_resp::format_output_detail()
+        {
+            if (E_SUCCESS != result)
+            {
+                cout << result_info << endl;
+                return;
+            }
+
+            int i = 1;
+            for(auto it = task_status_list.begin(); it != task_status_list.end(); ++it, ++i)
+            {
+                std::string description = it->description;
+                if (description.empty())
+                {
+                    description = "N/A";
+                }
+                else
+                {
+                    // todo: only display the last 8 digits of node id
+                    std::string delimiter = " : ";
+                    size_t pos = description.find(delimiter);
+
+                    if (pos != std::string::npos)
+                    {
+                        if (pos > 8)
+                            description = description.substr(pos - 8);
+                    }
+                }
+
+                std::cout << "id    : " << it->task_id << std::endl;
+                std::cout << "time  : " << time_util::time_2_str(it->create_time) << std::endl;
+                std::cout << "status: " << to_training_task_status_string(it->status) << std::endl;
+                std::cout << "descri: " << description << std::endl;
+                std::cout << "pwd   : " << it->pwd << std::endl;
+                std::cout << "raw   : " << it->raw << std::endl;
+//                std::cout << "passwo: " << it->pwd << std::endl;
+
+                std::cout<<std::endl;
+            }
+        }
+
+        void cmd_list_training_resp::format_output()
+        {
+            if(E_SUCCESS != result)
+            {
+                cout << result_info << endl;
+                return;
+            }
+
+            if (task_status_list.size() == 1)
+            {
+                format_output_detail();
+                return;
+            }
+
+            console_printer printer;
+            printer(LEFT_ALIGN, 5)(LEFT_ALIGN, 56)(LEFT_ALIGN, 24)(LEFT_ALIGN, 30)(LEFT_ALIGN,48);
+
+            printer << matrix::core::init << "num" << "task_id" << "time" << "task_status" << "description" << matrix::core::endl;
+            int i = 1;
+            for(auto it = task_status_list.begin(); it != task_status_list.end(); ++it, ++i)
+            {
+                std::string description = it->description;
+                if (description.empty())
+                {
+                    description = "N/A";
+                }
+                else
+                {
+                    // todo: only display the last 8 digits of node id
+                    std::string delimiter = " : ";
+                    size_t pos = description.find(delimiter);
+
+                    if (pos != std::string::npos)
+                    {
+                        if (pos > 8)
+                            description = description.substr(pos - 8);
+                    }
+                }
+
+                printer << matrix::core::init << i << it->task_id << time_util::time_2_str(
+                        it->create_time) << to_training_task_status_string(it->status)
+                        << description << matrix::core::endl;
+            }
+        }
+
+
 
     }
 }

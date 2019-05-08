@@ -513,7 +513,6 @@ BOOST_AUTO_TEST_CASE(test_decode_as_forward_msg){
 
         auto r = coder.encode(ctx, msg, buf);
 
-//        std::cout<<"compress: "<< buf.to_string()<<std::endl;
     }
 
 

@@ -15,7 +15,7 @@
 #include <boost/process.hpp>
 #include <set>
 #include "oss_client.h"
-#include "ai_db_types.h"
+#include "db/ai_db_types.h"
 #include <leveldb/db.h>
 #include <chrono>
 #include "rw_lock.h"
@@ -23,6 +23,7 @@
 //#include <boost/program_options/variables_map.hpp>
 #include "service_module.h"
 #include "container_worker.h"
+#include "db/ai_provider_task_db.h"
 
 #define CONTAINER_WORKER_IF m_container_worker->get_worer_if()
 
@@ -59,22 +60,22 @@ namespace ai
             task_scheduling() = default;
             ~task_scheduling() = default;
             
-            int32_t init_db(std::string db_path);
+            int32_t init_db(std::string db_name);
             virtual int32_t load_task() { return E_SUCCESS; }
             int32_t start_task(std::shared_ptr<ai_training_task> task);
             int32_t stop_task(std::shared_ptr<ai_training_task> task);
+
             TASK_STATE get_task_state(std::shared_ptr<ai_training_task> task);
-            int32_t write_task_to_db(std::shared_ptr<ai_training_task> task);
+
             std::string get_pull_log(std::string training_engine) { return m_pull_image_mng->get_out_log(training_engine); }
         protected:
             int32_t start_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t stop_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t delete_task(std::shared_ptr<ai_training_task> task);
-            int32_t delete_task_from_db(std::shared_ptr<ai_training_task> task);
         private:
             int32_t create_task(std::shared_ptr<ai_training_task> task);
         protected:
-            std::shared_ptr<leveldb::DB> m_task_db = nullptr;
+            ai_provider_task_db m_task_db;
             std::shared_ptr<image_manager> m_pull_image_mng = nullptr;
             std::shared_ptr<container_worker> m_container_worker = nullptr;
         };
