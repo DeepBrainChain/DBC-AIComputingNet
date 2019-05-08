@@ -587,6 +587,22 @@ __isset.description = true;
 
 void cmd_task_info::__set_peer_nodes_list(const std::vector<std::string> & val) {
   this->peer_nodes_list = val;
+__isset.peer_nodes_list = true;
+}
+
+void cmd_task_info::__set_addr(const std::string& val) {
+  this->addr = val;
+__isset.addr = true;
+}
+
+void cmd_task_info::__set_pwd(const std::string& val) {
+  this->pwd = val;
+__isset.pwd = true;
+}
+
+void cmd_task_info::__set_raw(const std::string& val) {
+  this->raw = val;
+__isset.raw = true;
 }
 std::ostream& operator<<(std::ostream& out, const cmd_task_info& obj)
 {
@@ -676,7 +692,31 @@ uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
             }
             xfer += iprot->readListEnd();
           }
-          isset_peer_nodes_list = true;
+          this->__isset.peer_nodes_list = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 7:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->addr);
+          this->__isset.addr = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 8:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->pwd);
+          this->__isset.pwd = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 9:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->raw);
+          this->__isset.raw = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -697,8 +737,6 @@ uint32_t cmd_task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
   if (!isset_result)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_status)
-    throw TProtocolException(TProtocolException::INVALID_DATA);
-  if (!isset_peer_nodes_list)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
@@ -729,18 +767,34 @@ uint32_t cmd_task_info::write(::apache::thrift::protocol::TProtocol* oprot) cons
     xfer += oprot->writeString(this->description);
     xfer += oprot->writeFieldEnd();
   }
-  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 6);
-  {
-    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-    std::vector<std::string> ::const_iterator _iter13;
-    for (_iter13 = this->peer_nodes_list.begin(); _iter13 != this->peer_nodes_list.end(); ++_iter13)
+  if (this->__isset.peer_nodes_list) {
+    xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 6);
     {
-      xfer += oprot->writeString((*_iter13));
+      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+      std::vector<std::string> ::const_iterator _iter13;
+      for (_iter13 = this->peer_nodes_list.begin(); _iter13 != this->peer_nodes_list.end(); ++_iter13)
+      {
+        xfer += oprot->writeString((*_iter13));
+      }
+      xfer += oprot->writeListEnd();
     }
-    xfer += oprot->writeListEnd();
+    xfer += oprot->writeFieldEnd();
   }
-  xfer += oprot->writeFieldEnd();
-
+  if (this->__isset.addr) {
+    xfer += oprot->writeFieldBegin("addr", ::apache::thrift::protocol::T_STRING, 7);
+    xfer += oprot->writeString(this->addr);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.pwd) {
+    xfer += oprot->writeFieldBegin("pwd", ::apache::thrift::protocol::T_STRING, 8);
+    xfer += oprot->writeString(this->pwd);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.raw) {
+    xfer += oprot->writeFieldBegin("raw", ::apache::thrift::protocol::T_STRING, 9);
+    xfer += oprot->writeString(this->raw);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -754,6 +808,9 @@ void swap(cmd_task_info &a, cmd_task_info &b) {
   swap(a.status, b.status);
   swap(a.description, b.description);
   swap(a.peer_nodes_list, b.peer_nodes_list);
+  swap(a.addr, b.addr);
+  swap(a.pwd, b.pwd);
+  swap(a.raw, b.raw);
   swap(a.__isset, b.__isset);
 }
 
@@ -764,6 +821,9 @@ cmd_task_info::cmd_task_info(const cmd_task_info& other14) {
   status = other14.status;
   description = other14.description;
   peer_nodes_list = other14.peer_nodes_list;
+  addr = other14.addr;
+  pwd = other14.pwd;
+  raw = other14.raw;
   __isset = other14.__isset;
 }
 cmd_task_info& cmd_task_info::operator=(const cmd_task_info& other15) {
@@ -773,6 +833,9 @@ cmd_task_info& cmd_task_info::operator=(const cmd_task_info& other15) {
   status = other15.status;
   description = other15.description;
   peer_nodes_list = other15.peer_nodes_list;
+  addr = other15.addr;
+  pwd = other15.pwd;
+  raw = other15.raw;
   __isset = other15.__isset;
   return *this;
 }
@@ -784,7 +847,10 @@ void cmd_task_info::printTo(std::ostream& out) const {
   out << ", " << "result=" << to_string(result);
   out << ", " << "status=" << to_string(status);
   out << ", " << "description="; (__isset.description ? (out << to_string(description)) : (out << "<null>"));
-  out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+  out << ", " << "peer_nodes_list="; (__isset.peer_nodes_list ? (out << to_string(peer_nodes_list)) : (out << "<null>"));
+  out << ", " << "addr="; (__isset.addr ? (out << to_string(addr)) : (out << "<null>"));
+  out << ", " << "pwd="; (__isset.pwd ? (out << to_string(pwd)) : (out << "<null>"));
+  out << ", " << "raw="; (__isset.raw ? (out << to_string(raw)) : (out << "<null>"));
   out << ")";
 }
 

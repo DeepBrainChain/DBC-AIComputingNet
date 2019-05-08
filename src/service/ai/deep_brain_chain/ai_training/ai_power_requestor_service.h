@@ -9,11 +9,12 @@
 **********************************************************************************/
 #pragma once
 
-#include <leveldb/db.h>
-#include "ai_db_types.h"
+
+#include "db/ai_db_types.h"
 #include <string>
 #include "service_module.h"
 
+#include "db/ai_requestor_task_db.h"
 
 using namespace matrix::core;
 
@@ -46,8 +47,6 @@ namespace ai
             void init_subscription();
 
             void init_invoker();
-
-            int32_t init_db();
 
             void init_timer();
 
@@ -82,27 +81,14 @@ namespace ai
 
             std::shared_ptr<message> create_task_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info);
 
-            bool write_task_info_to_db(ai::dbc::cmd_task_info &task_info);
-
-            bool read_task_info_from_db(std::vector<ai::dbc::cmd_task_info> &task_infos, uint32_t filter_status = 0);
-
-            bool read_task_info_from_db(std::list<std::string> task_ids, std::vector<ai::dbc::cmd_task_info> &task_infos, uint32_t filter_status = 0);
-
-            bool read_task_info_from_db(std::string task_id, ai::dbc::cmd_task_info &task_info);
-
-            bool is_task_exist_in_db(std::string task_id);
-
             //int32_t on_cmd_clear(const std::shared_ptr<message> &msg);
             int32_t on_cmd_ps(const std::shared_ptr<message> &msg);
-
-            std::string get_node_id_from_db(std::string task_id);
-
-            void reset_task_status_to_db(std::string task_id);
 
 
         protected:
 
-            std::shared_ptr<leveldb::DB> m_req_training_task_db;
+//            std::shared_ptr<leveldb::DB> m_req_training_task_db;
+            ai::dbc::ai_requestor_task_db m_req_training_task_db;
         };
 
     }

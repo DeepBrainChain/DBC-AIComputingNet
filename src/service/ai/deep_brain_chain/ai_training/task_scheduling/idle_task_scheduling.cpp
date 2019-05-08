@@ -33,40 +33,35 @@ namespace ai
 
         int32_t idle_task_scheduling::load_task()
         {
+
+            m_idle_task = m_task_db.load_idle_task();
+
+            if (nullptr == m_idle_task)
+            {
+                return E_DEFAULT;
+            }
+
             try
             {
-                //iterate task in db
-                std::unique_ptr<leveldb::Iterator> it;
-                it.reset(m_task_db->NewIterator(leveldb::ReadOptions()));
-                for (it->SeekToFirst(); it->Valid(); it->Next())
+                if (!m_idle_task->training_engine.empty()
+                    && E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(m_idle_task->training_engine))
                 {
-                    if (nullptr == m_idle_task)
-                    {
-                        m_idle_task = std::make_shared<ai_training_task>();
-                    }
+                    start_pull_image(m_idle_task);
+                }
 
-                    //deserialization
-                    std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-                    task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());            //may exception
-                    binary_protocol proto(task_buf.get());
-                    m_idle_task->read(&proto);            //may exception
-                    
-                    if (! m_idle_task->training_engine.empty()
-                        && E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(m_idle_task->training_engine))
-                    {
-                        start_pull_image(m_idle_task);
-                    }
-                    m_idle_task->__set_status(task_stopped);
-                    break;
-                }                
+                m_idle_task->__set_status(task_stopped);
             }
             catch (...)
             {
-                LOG_ERROR << "load idle task from db exception";
+                LOG_ERROR << "start idle task exception";
                 return E_DEFAULT;
             }
+
             return E_SUCCESS;
+
+
         }
+
 
         int32_t idle_task_scheduling::exec_task()
         {
@@ -145,7 +140,7 @@ namespace ai
                     start_pull_image(m_idle_task);
                 }
 
-                write_task_to_db(m_idle_task);
+                m_task_db.write_task_to_db(m_idle_task);
             }
         }
         

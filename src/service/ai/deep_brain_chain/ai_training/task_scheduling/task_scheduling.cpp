@@ -25,77 +25,28 @@ namespace ai
         {
             m_container_worker = container_worker_ptr;
         }
-        
-        int32_t task_scheduling::init_db(std::string db_path)
+
+
+        int32_t task_scheduling::init_db(std::string db_name)
         {
-            leveldb::DB *db = nullptr;
-            leveldb::Options  options;
-            options.create_if_missing = true;
+            auto rtn = m_task_db.init_db(env_manager::get_db_path(),db_name);
+            if (E_SUCCESS != rtn)
+            {
+                return rtn;
+            }
+
             try
             {
-                //get db path
-                fs::path task_db_path = env_manager::get_db_path();
-                if (false == fs::exists(task_db_path))
-                {
-                    LOG_DEBUG << "db directory path does not exist and create db directory" << task_db_path;
-                    fs::create_directory(task_db_path);
-                }
-
-                //check db directory
-                if (false == fs::is_directory(task_db_path))
-                {
-                    LOG_ERROR << "db directory path does not exist and exit" << task_db_path;
-                    return E_DEFAULT;
-                }
-
-                task_db_path /= fs::path(db_path);
-                LOG_DEBUG << "training task db path: " << task_db_path.generic_string();
-
-                //open db
-                leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
-                if (false == status.ok())
-                {
-                    LOG_ERROR << "init task db error: " << status.ToString();
-                    return E_DEFAULT;
-                }
-
-                //smart point auto close db
-                m_task_db.reset(db);
-
-                //load task
                 load_task();
-
-                LOG_INFO << "task db path:" << task_db_path;
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "create task db error: " << e.what();
-                return E_DEFAULT;
-            }
-            catch (const boost::exception & e)
-            {
-                LOG_ERROR << "create task db error" << diagnostic_information(e);
+                LOG_ERROR << "load task from db error: " << e.what();
                 return E_DEFAULT;
             }
 
             return E_SUCCESS;
-        }
 
-        int32_t task_scheduling::write_task_to_db(std::shared_ptr<ai_training_task> task)
-        {
-            //serialization
-            std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-            binary_protocol proto(out_buf.get());
-            task->write(&proto);
-
-            //flush to db
-            leveldb::WriteOptions write_options;
-            write_options.sync = true;
-
-            leveldb::Slice slice(out_buf->get_read_ptr(), out_buf->get_valid_read_len());
-            m_task_db->Put(write_options, task->task_id, slice);
-
-            return E_SUCCESS;
         }
 
         int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task)
@@ -140,9 +91,8 @@ namespace ai
             {
                 if (task->status != task_running)
                 {
-//                    task->status = task_running;
                     task->__set_status(task_running);
-                    write_task_to_db(task);
+                    m_task_db.write_task_to_db(task);
                 }
                 LOG_DEBUG << "task have been running, do not need to start. task id:" << task->task_id;
                 return E_SUCCESS;
@@ -205,9 +155,8 @@ namespace ai
             LOG_INFO << "start task success. Task id:" << task->task_id;
             task->__set_start_time(time_util::get_time_stamp_ms());
             task->__set_status(task_running);
-//            task->status = task_running;
             task->error_times = 0;
-            write_task_to_db(task);
+            m_task_db.write_task_to_db(task);
             return E_SUCCESS;
         }
 
@@ -219,7 +168,7 @@ namespace ai
             }
             LOG_INFO << "stop task " << task->task_id;
             task->__set_end_time(time_util::get_time_stamp_ms());
-            write_task_to_db(task);
+            m_task_db.write_task_to_db(task);
             return CONTAINER_WORKER_IF->stop_container(task->container_id);
         }
 
@@ -241,8 +190,8 @@ namespace ai
                 {
                     CONTAINER_WORKER_IF->remove_container(task->container_id);
                 }
-                LOG_INFO << "delete task " << task->task_id;
-                m_task_db->Delete(leveldb::WriteOptions(), task->task_id);
+
+                m_task_db.delete_task(task);
             }
             catch (...)
             {
@@ -253,26 +202,6 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t task_scheduling::delete_task_from_db(std::shared_ptr<ai_training_task> task)
-        {
-            if (nullptr == task)
-            {
-                return E_SUCCESS;
-            }
-
-            try
-            {
-                LOG_INFO << "delete task from db " << task->task_id;
-                m_task_db->Delete(leveldb::WriteOptions(), task->task_id);
-            }
-            catch (...)
-            {
-                LOG_ERROR << "delete task abnormal";
-                return E_DEFAULT;
-            }
-
-            return E_SUCCESS;
-        }
 
         TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> task)
         {
@@ -361,7 +290,7 @@ namespace ai
                 task->__set_status(task_pulling_image);
                 LOG_DEBUG << "docker pulling image. change status to " << to_training_task_status_string(task->status)
                     << " task id:" << task->task_id << " image engine:" << task->training_engine;
-                write_task_to_db(task);
+                m_task_db.write_task_to_db(task);
             }
 
             return E_SUCCESS;

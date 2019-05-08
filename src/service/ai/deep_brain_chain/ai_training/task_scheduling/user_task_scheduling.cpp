@@ -24,10 +24,11 @@ namespace ai
 {
     namespace dbc
     {
-        user_task_scheduling::user_task_scheduling(std::shared_ptr<container_worker> & container_worker_ptr):task_scheduling(container_worker_ptr)
+        user_task_scheduling::user_task_scheduling(std::shared_ptr<container_worker> &container_worker_ptr)
+                : task_scheduling(container_worker_ptr)
         {
         }
-        
+
         int32_t user_task_scheduling::init(bpo::variables_map &options)
         {
             if (options.count(SERVICE_NAME_AI_TRAINING))
@@ -37,7 +38,7 @@ namespace ai
                 std::this_thread::sleep_for(std::chrono::milliseconds(30000));
                 gpu_pool_helper::update_gpu_from_proc(m_gpu_pool, "/proc/driver/nvidia/gpus");
 
-                LOG_INFO<<m_gpu_pool.toString();
+                LOG_INFO << m_gpu_pool.toString();
 
             }
 
@@ -55,78 +56,55 @@ namespace ai
 
         int32_t user_task_scheduling::load_task()
         {
-            try
-            {
-                std::shared_ptr<ai_training_task> task;
 
-                //iterate task in db
-                std::unique_ptr<leveldb::Iterator> it;
-                it.reset(m_task_db->NewIterator(leveldb::ReadOptions()));
-                for (it->SeekToFirst(); it->Valid(); it->Next())
+            auto rtn = m_task_db.load_user_task(m_training_tasks);
+            if (rtn != E_SUCCESS)
+            {
+                return rtn;
+            }
+
+
+            for (auto item: m_training_tasks)
+            {
+                auto task = item.second;
+                //
+                // support tasks run concurrently
+                //
+                if (task_queueing == task->status || task_pulling_image == task->status)
                 {
-                    task = std::make_shared<ai_training_task>();
-
-                    //deserialization
-                    std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-                    task_buf->write_to_byte_buf(it->value().data(),
-                                                (uint32_t) it->value().size());            //may exception
-                    binary_protocol proto(task_buf.get());
-                    task->read(&proto);             //may exception
-
-                    if (0 != m_training_tasks.count(task->task_id))
-                    {
-                        LOG_ERROR << "user training task duplicated: " << task->task_id;
-                        continue;
-                    }
-
-                    //insert training task
-                    m_training_tasks.insert({task->task_id, task});
-                    LOG_DEBUG << "user task scheduling insert ai training task to task map, task id: " << task->task_id
-                              << " container_id: " << task->container_id << " task status: "
+                    m_queueing_tasks.push_back(task);
+                    LOG_DEBUG << "user task scheduling insert ai training task to task queue, task id: "
+                              << task->task_id << " container_id: " << task->container_id << " task status: "
                               << to_training_task_status_string(task->status);
-
-
-                    //jimmy: support tasks run concurrently
-                    if (task_queueing == task->status || task_pulling_image == task->status)
-                    {
-                        m_queueing_tasks.push_back(task);
-                        LOG_DEBUG << "user task scheduling insert ai training task to task queue, task id: "
-                                  << task->task_id << " container_id: " << task->container_id << " task status: "
-                                  << to_training_task_status_string(task->status);
-                    }
-                    else if (task_running == task->status)
-                    {
-                        //jimmy: gpu resource management
-                        if (!m_gpu_pool.allocate(task->gpus))
-                        {
-                            LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id
-                                      << ", gpu requirement "
-                                      << task->gpus << ", gpu state " << m_gpu_pool.toString();
-                            // todo: error handling
-                        }
-                        else
-                        {
-                            LOG_DEBUG << m_gpu_pool.toString();
-                        }
-
-                        m_running_tasks[task->task_id] = task;
-                        LOG_INFO << "user task scheduling insert ai training task to running task set, task id: "
-                                 << task->task_id << " container_id: " << task->container_id << " task status: "
-                                 << to_training_task_status_string(task->status);
-                    }
                 }
+                else if (task_running == task->status)
+                {
+                    if (!m_gpu_pool.allocate(task->gpus))
+                    {
+                        LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id
+                                  << ", gpu requirement "
+                                  << task->gpus << ", gpu state " << m_gpu_pool.toString();
+                        stop_task(task, task_out_of_gpu_resource);
+                    }
+                    else
+                    {
+                        LOG_DEBUG << m_gpu_pool.toString();
+                    }
 
-                //sort by received_time_stamp
-                m_queueing_tasks.sort(task_time_stamp_comparator());
+                    m_running_tasks[task->task_id] = task;
+                    LOG_INFO << "user task scheduling insert ai training task to running task set, task id: "
+                             << task->task_id << " container_id: " << task->container_id << " task status: "
+                             << to_training_task_status_string(task->status);
+                }
             }
-            catch (...)
-            {
-                LOG_ERROR << "user task scheduling load task from db exception";
-                return E_DEFAULT;
-            }
+
+
+            //sort by received_time_stamp
+            m_queueing_tasks.sort(task_time_stamp_comparator());
 
             return E_SUCCESS;
         }
+
 
         int32_t user_task_scheduling::exec_task()
         {
@@ -187,7 +165,7 @@ namespace ai
                     stop_task(task, task_noimage_closed);
                     break;
                 default:
-                    write_task_to_db(task);
+                    m_task_db.write_task_to_db(task);
                     break;
                 }
                 
@@ -237,13 +215,14 @@ namespace ai
                     return ret;
                 }
 
-                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id;
 
                 task->__set_end_time(time_util::get_time_stamp_ms());
                 task->__set_status(end_status);
-                write_task_to_db(task);
+                m_task_db.write_task_to_db(task);
 
                 m_running_tasks.erase(task->task_id);
+
+                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id << " end time: "<< task->end_time;
 
 
                 if ( task_out_of_gpu_resource != end_status )
@@ -284,7 +263,7 @@ namespace ai
             }
             task->__set_end_time(time_util::get_time_stamp_ms());
             task->__set_status(end_status);
-            write_task_to_db(task);
+            m_task_db.write_task_to_db(task);
             
             if (end_status != task_overdue_closed)
             {
@@ -311,7 +290,7 @@ namespace ai
             }
 
             //flush to db
-            if (E_SUCCESS != write_task_to_db(task))
+            if (E_SUCCESS != m_task_db.write_task_to_db(task))
             {
                 return;
             }
@@ -329,21 +308,23 @@ namespace ai
             }
 
             //this may be never happend
-            std::string task_value;
-            leveldb::Status status = m_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
-            if (!status.ok() || status.IsNotFound())
-            {
-                return nullptr;
-            }
+//            std::string task_value;
+//            leveldb::Status status = m_task_db->Get(leveldb::ReadOptions(), task_id, &task_value);
+//            if (!status.ok() || status.IsNotFound())
+//            {
+//                return nullptr;
+//            }
+//
+//            std::shared_ptr<ai_training_task> task_ptr = std::make_shared<ai_training_task>();
+//            //deserialization
+//            std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
+//            buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
+//            binary_protocol proto(buf.get());
+//            task_ptr->read(&proto);
 
-            std::shared_ptr<ai_training_task> task_ptr = std::make_shared<ai_training_task>();
-            //deserialization
-            std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
-            buf->write_to_byte_buf(task_value.data(), (uint32_t)task_value.size());
-            binary_protocol proto(buf.get());
-            task_ptr->read(&proto);
+//            return task_ptr;
 
-            return task_ptr;
+            return nullptr;
         }
 
         int32_t user_task_scheduling::check_pull_image_state()
@@ -454,7 +435,7 @@ namespace ai
 
                 task->error_times++;
                 //flush to db
-                write_task_to_db(task);
+                m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }
 
@@ -530,13 +511,19 @@ namespace ai
             return E_SUCCESS;
         }
 
+        /**
+         *  This method will check all stopped user tasks and delete them from db and cache.
+         *  Docker container will be removed by common_service::on_timer_prune_container.
+         * @param interval, threshold that system will wait before deleting a stoppped task.
+         * @return
+         */
         int32_t user_task_scheduling::prune_task(int16_t interval)
         {
             int64_t cur = time_util::get_time_stamp_ms();
 
-            int64_t p_interval = interval* 3600*1000;
+            int64_t p_interval = (int64_t) interval * 3600 * 1000;
 
-            LOG_INFO << "prune docker container." << " interval:" << interval << "h";
+            LOG_DEBUG << "prune docker container." << " interval:" << interval << "h";
 
             for (auto task_iter = m_training_tasks.begin(); task_iter != m_training_tasks.end();)
             {
@@ -546,15 +533,24 @@ namespace ai
                     continue;
                 }
 
-                //1. if task have been stop too long
-                //2. if task have been stopped , and  container_id is empty means task have never been exectue
-
-                // jimmy: the task status in client may be in wrong status(e.g queueing) for ever;
-                //        if the client do not query the task status before task deleted by the computer node.
-                if ((cur - task_iter->second->end_time) > p_interval
-                    ||task_iter->second->container_id.empty())
+                // container_id is empty when the task fail to exectue.
+                // note: client node may fail to update its task status after task pruned from the computing node.
+                bool enable_delete = false;
+                auto task = task_iter->second;
+                if ( (cur - task->end_time) > p_interval)
                 {
-                    delete_task_from_db(task_iter->second);
+                    enable_delete = true;
+                    LOG_INFO << "prune long duration stopped task " << task->task_id;
+                }
+                else if (task->container_id.empty())
+                {
+                    enable_delete = true;
+                    LOG_INFO << "prune fail to exeucte: " << task->task_id;
+                }
+
+                if (enable_delete)
+                {
+                    m_task_db.delete_task(task);
                     m_training_tasks.erase(task_iter++);
                 }
                 else

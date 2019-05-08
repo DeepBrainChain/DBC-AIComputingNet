@@ -501,7 +501,7 @@ namespace matrix
                 {
                     try
                     {
-                        LOG_DEBUG << "p2p net service connect peer address: " << candidate->tcp_ep;
+                        LOG_DEBUG << " nodeid: " << candidate->node_id << "p2p net service connect peer address: " << candidate->tcp_ep;
 
                         candidate->last_conn_tm = time(nullptr);
                         candidate->net_st = ns_in_use;
@@ -1269,7 +1269,7 @@ namespace matrix
                     }
 
                     //add to peer candidates
-                    if (false == add_peer_candidate(ep, ns_available, NORMAL_NODE))
+                    if (false == add_peer_candidate(ep, ns_available, NORMAL_NODE, node.peer_node_id))
                     {
                         LOG_DEBUG << "p2p net service add peer candidate error: " << ep;
                     }
@@ -1383,7 +1383,8 @@ namespace matrix
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
                 resp_msg->set_content(resp_content);
 
-                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
+//                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
+                CONNECTION_MANAGER->send_message(node->m_sid,resp_msg);
             }
             else// broadcast all nodes
             {
@@ -1457,7 +1458,7 @@ namespace matrix
             return it != m_peer_candidates.end();
         }
 
-        bool p2p_net_service::add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype)
+        bool p2p_net_service::add_peer_candidate(tcp::endpoint & ep, net_state ns, peer_node_type ntype, std::string node_id)
         {     
             if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT)
             {
@@ -1468,7 +1469,11 @@ namespace matrix
             auto candidate = get_peer_candidate(ep);
             if (nullptr == candidate)
             {
-                m_peer_candidates.emplace_back(std::make_shared<peer_candidate>(ep, ns, ntype));
+                auto c = std::make_shared<peer_candidate>(ep, ns, ntype, 0, time(nullptr), 0 , node_id);
+
+                LOG_DEBUG << "node id:" << c->node_id;
+
+                m_peer_candidates.emplace_back(c);
                 return true;
             }
 

@@ -15,7 +15,7 @@
 #include <boost/process.hpp>
 #include <set>
 #include "oss_client.h"
-#include "ai_db_types.h"
+#include "db/ai_db_types.h"
 #include <leveldb/db.h>
 #include <chrono>
 #include "nio_loop_group.h"

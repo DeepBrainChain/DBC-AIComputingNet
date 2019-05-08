@@ -65,7 +65,7 @@ add_executable(dbc_service_test
         ${SRC_PATH}/service/misc/node_info_collection.cpp
         ${SRC_PATH}/service/misc/node_info_collection.cpp
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/oss_task_manager.cpp
-        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/ai_db_types.cpp
+        ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/db/ai_db_types.cpp
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_common_def.cpp
         ${SRC_PATH}/service/ai/deep_brain_chain/ai_training/resource/gpu_pool.cpp
         )
