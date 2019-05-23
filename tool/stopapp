@@ -1,0 +1,195 @@
+#!/bin/bash
+#set -x
+
+###############################################
+# get started processes and shell
+# record to app.proc.argv
+# line format: process name process id command line parameter
+#
+
+USERID=`id -u`
+LOGNAME=`whoami`
+
+GetProcArgv()
+{
+    APP_MPROC_LIST="dbc"
+    
+    for PROC_NAME in ${APP_MPROC_LIST}
+    do
+
+
+        ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}'") || ($8~/\/'${PROC_NAME}'$/))) print}' >> ${APP_PROC_ARGV_FILE}
+
+        PROC_ID=`ps -aef | awk '{if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && (($8 == "'${PROC_NAME}'") || ($8~/\/'${PROC_NAME}'$/))) print $2}'`
+        PIDINFO="$PROC_ID $PIDINFO"
+
+    done
+}
+
+PrintAlign()
+{
+    echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb" >>$LOG_FILE
+    
+    # $1 processes name, $2 node type, $3 node id
+    NODE_TYPE_TMP=`echo $2 | sed 's/ //g'`
+    if [ "${NODE_TYPE_TMP}" = "" ]; then
+        PROC_INFO="$1"
+    else
+        PROC_INFO="$1 -t $2 -n $3"
+    fi
+    
+    # cal len
+    STR_LEN=`echo $PROC_INFO|awk '{print length($0)}'`
+    
+
+    echo $aaa "${PROC_INFO} $bbb" | tee -a $LOG_FILE
+
+    SEPIND=""
+    COUNTER=$STR_LEN
+      
+    while [ $COUNTER -lt 50 ]
+    do
+        SEPIND="$SEPIND."
+        COUNTER=`expr $COUNTER + 1`
+    done
+    echo $aaa "$SEPIND $bbb" | tee -a $LOG_FILE
+}
+
+sleep 1
+
+UNAME=`uname -s`
+
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+LOG_FILE=$DIR/stopapp.log
+
+if [ !  -f  $LOG_FILE ]; then
+rm -rf LOG_FILE > /dev/null 2>&1
+cat >$LOG_FILE<<! 
+!
+fi
+
+aaa='-n'              #do not next line,Linux: echo -n string other Platform: echo string \c
+bbb='\c'              #
+SYSTEM=`uname -s`
+if [ "$SYSTEM" = "Linux" ] 
+then
+    aaa='-n'
+    bbb=""
+else
+    aaa=""
+    bbb='\c'
+fi
+
+echo "" | tee -a $LOG_FILE
+echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb"  >>$LOG_FILE
+echo "stopapp V1.0"  | tee -a $LOG_FILE
+echo ""
+echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb" >>$LOG_FILE
+echo "shutdown all processes" | tee -a $LOG_FILE
+PIDINFO=""
+
+
+APP_PROC_ARGV_FILE="stopapp.proc"
+if [ -f ${APP_PROC_ARGV_FILE} ]; then
+    rm -rf ${APP_PROC_ARGV_FILE}
+fi
+
+#get started processes
+GetProcArgv
+
+# get startapp if exists
+STARTAPP_PID=`ps -efa |awk '{ if ((($1 == "'${LOGNAME}'") || ($1 == "'${USERID}'")) && ($8 == "startapp" || $8~/\/startapp$/ || $9 == "startapp" || $9~/\/startapp$/) ) print $2}' | tr -s "\n" " "`
+#echo $STARTAPP_PID
+
+
+PIDINFO="$STARTAPP_PID $PIDINFO"
+
+for iPID in $PIDINFO
+do
+    kill -CONT $iPID > /dev/null 2>&1
+done
+
+# startapp not exist
+if test "$STARTAPP_PID" = ""
+then
+
+    # kill each process
+    if [ -f ${APP_PROC_ARGV_FILE} ]
+    then
+        while read USERNAME PROCPID PARENTPID C STIME TTY STARTTIME PROCNAME PARAMTYPE NODETYPE PARAMID NODEID 
+        do
+            if test "${PROCPID}" != ""
+            then
+
+                    kill -USR1 ${PROCPID} > /dev/null 2>&1
+
+            fi
+        done < ${APP_PROC_ARGV_FILE}
+    fi
+else
+
+    # send signal USR1 to startapp
+    if test "$STARTAPP_PID" != ""
+    then
+    for PID in $STARTAPP_PID
+    do
+        if kill -USR1 $PID > /dev/null 2>&1
+        then
+            echo $aaa $bbb
+        else
+            echo "Process startapp($PID) can not be stopped at " `date` >>$LOG_FILE
+        fi
+    done
+    fi   
+fi
+
+timeStop=5
+
+#found process from proc file, if exist kill -9
+if [ -f ${APP_PROC_ARGV_FILE} ]
+then
+    while read USERNAME PROCPID PARENTPID C STIME TTY STARTTIME PROCNAME PARAMTYPE NODETYPE PARAMID NODEID
+    do
+        PrintAlign ${PROCNAME} ${NODETYPE} ${NODEID}
+        LOOPCNT=0
+        while true
+        do
+            sleep 1
+            
+            LOOPCNT=`expr $LOOPCNT + 1`
+            
+            PROC_PID=`ps -efa | awk '{ if ($2 == "'${PROCPID}'") print $2}'`
+
+            if test "${PROC_PID}" = ""
+            then
+                echo "[OK]" | tee -a $LOG_FILE
+                break
+            elif test ${LOOPCNT} -ge $timeStop
+            then
+
+                    # sleep timestop, kill -9, my god! 
+                    kill -9 ${PROCPID} > /dev/null 2>&1
+
+                echo "[OK]*" | tee -a $LOG_FILE
+                break
+            fi
+        done
+    done < ${APP_PROC_ARGV_FILE}
+fi
+
+
+# clean temp file
+if [ -f ${APP_PROC_ARGV_FILE} ]; then
+    rm -rf ${APP_PROC_ARGV_FILE}
+fi
+
+
+#=================================================================================
+
+echo ""
+echo $aaa `date "+%Y-%m-%d %H:%M:%S"` "$bbb" >>$LOG_FILE
+echo "system is down." | tee -a $LOG_FILE
+echo ""
+
+exit 0

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºchannel_handler_contex.h
-* description    £ºchannel handler context for parameter
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   channel_handler_contex.h
+* description      :   channel handler context for parameter
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -23,6 +23,8 @@ namespace matrix
         public:
             
             variables_map &get_args() { return m_args; }
+
+            void add(std::string arg_name, variable_value val) { m_args.insert({ arg_name, val }); }
 
         protected:
 

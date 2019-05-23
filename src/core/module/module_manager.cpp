@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：module_manager.cpp
-* description    ：module manager for all the modules
-* date                  : 2018.01.20
-* author            ：Bruce Feng
+* file name        :   module_manager.cpp
+* description    :   module manager for all the modules
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #include "module_manager.h"
 #include <thread>
@@ -32,15 +32,17 @@ namespace matrix
 
         int32_t module_manager::exit_modules()
         {
-            for (auto it = m_modules.begin(); it != m_modules.end(); it++)
+            for (auto it = m_modules_list.rbegin(); it != m_modules_list.rend(); it++)
             {
-                std::shared_ptr<module> module = it->second;
+                std::shared_ptr<module> module = *it;
                 module->stop();
                 std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_STOP_SLEEP_MILLI_SECONDS));
                 module->exit();
             }
 
+            m_modules_list.clear();
             m_modules.clear();
+
             return E_SUCCESS;
         }
 
@@ -55,9 +57,17 @@ namespace matrix
             return it->second;
         }
 
-        void module_manager::add_module(std::string name, std::shared_ptr<module > mdl) 
-        { 
-            m_modules.insert(std::make_pair(name, mdl)); 
+        bool module_manager::add_module(std::string name, std::shared_ptr<module > mdl)
+        {
+            if (nullptr != get(name))
+            {
+                return false;
+            }
+
+            auto p = m_modules.insert(std::make_pair(name, mdl));
+            m_modules_list.push_back(mdl);
+
+            return p.second;
         }
 
     }

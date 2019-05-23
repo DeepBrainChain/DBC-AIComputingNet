@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºmessage_to_byte_encoder.h
-* description    £ºmessage encode to bytes
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        message_to_byte_encoder.h
+* description    message encode to bytes
+* date                  :   2018.01.20
+* author            Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -24,7 +24,7 @@ namespace matrix
 
             virtual encode_status encode(channel_handler_context &ctx, message & msg, byte_buf &out)
             {
-                std::shared_ptr<binary_protocol> proto(new binary_protocol(&out));
+                std::shared_ptr<binary_protocol> proto = std::make_shared<binary_protocol>(&out);
 
                 try
                 {

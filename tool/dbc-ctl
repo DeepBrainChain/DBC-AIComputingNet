@@ -1,0 +1,172 @@
+#!/bin/bash
+
+
+if [ $# -lt 1 ]; then
+    echo "dbc-ctl [start] [stop] [status]"
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
+fi
+
+
+workspace=`pwd`
+USERID=`id -u`
+PROC_NAME="dbc"
+ps_="ps -e -o uid -o pid -o command"
+listen_port="21107\|11107"
+os_name=`uname`
+
+
+
+status()
+{
+    pid=$($ps_  | awk '{if (($1 == "'${USERID}'") && ($3~/\/'${PROC_NAME}'$/)) print $2}')
+
+    if [ -z "$pid" ]; then
+        echo "info  | dbc service is not running"
+        return 1
+    fi
+
+    port=$(netstat -an| grep $listen_port | grep -i listen | wc -l)
+    if [ $port -eq 0 ]; then
+        echo "info  | dbc service is not ready due to port is not listening"
+        return 1;
+    fi
+
+    echo "info  | dbc service is running"
+    return 0
+}
+
+start()
+{
+    type=$1
+    name=$2
+
+    status > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "warn  | another dbc instanse is running in the same node"
+        exit 1
+    fi
+
+    if [ ! -f ./dbc -a ! -f ../dbc ]; then
+        echo "error | dbc: no such file"
+        echo "error | fail to start dbc"
+        return 1
+    fi
+
+    if [ -f ../dbc ]; then
+        cd ../
+    fi
+
+
+    case "$type" in
+
+    "ai_server")
+        if [ -z "$name" ]; then
+            ./dbc --ai --daemon --path `pwd`
+        else
+        # use specified node name
+            ./dbc --ai --daemon -n "$name" --path `pwd`
+        fi
+
+        sleep 2
+        for i in `seq 1 10`;
+        do
+            status > /dev/null
+            if [ $? -eq 0 ]; then
+                echo "info  | dbc $type is started"
+                exit 0
+            fi
+            echo -n "."
+            sleep 1
+        done
+
+        echo "error | dbc fail to start!"
+    ;;
+
+    "seed")
+        ./dbc --daemon
+    ;;
+
+    "ai_client")
+        ./dbc
+    ;;
+    "")
+        ./dbc
+    ;;
+    *)
+        echo "unknown type $type"
+        echo "    mining: dbc-ctl start ai_server"
+        echo "    client: dbc-ctl start"
+        return 1
+    ;;
+    esac
+
+    if [ $? -ne 0 ]; then
+        echo "error | dbc fail to start!"
+        return 1
+    fi
+
+
+    exit 1
+
+
+}
+
+stop()
+{
+    pid=$($ps_  | awk '{if (($1 == "'${USERID}'") && ($3~/\/'${PROC_NAME}'$/)) print $2}')
+    if [[ -n "$pid" ]]; then
+        echo "stop dbc service"
+        kill -USR1 $pid > /dev/null 2>&1
+    fi
+
+    for i in `seq 1 10`;
+    do
+        status > /dev/null
+        if [ $? -eq 1 ]; then
+            echo
+            echo "info  | dbc is stopped"
+            exit 0
+        fi
+        echo -n "."
+        sleep 1
+    done
+
+    kill -9 $pid
+    echo "info  | kill dbc service"
+
+}
+
+arg=$1
+
+case "$arg" in
+
+"start")
+    start $2 "$3"
+;;
+
+"stop")
+    stop
+
+    for i in `seq 1 10`;
+    do
+        status > /dev/null
+        if [ $? -eq 1 ]; then
+            echo "info  | dbc is stopped"
+            exit 0
+        fi
+        echo -n "."
+        sleep 1
+    done
+
+    echo "error | dbc fail to stop!"
+    exit 1
+;;
+
+"status")
+    status
+;;
+
+*)
+    echo "dbc-ctl [start] [stop] [status]"
+;;
+esac

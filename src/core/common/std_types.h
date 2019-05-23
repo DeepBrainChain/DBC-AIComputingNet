@@ -52,6 +52,16 @@ typedef void * POSITION;
 
 #endif /*USE_MATRIX_DEFINE_TYPE*/
 
+#ifdef _MSC_VER
+#if !defined(ssize_t)
+#ifdef _WIN64
+typedef int64_t ssize_t;
+#else
+typedef int32_t ssize_t;
+#endif
+#endif
+#endif
+
 #endif
 
 /******************* (C) COPYRIGHT 2017 Robot OS -- Bruce Feng *****END OF FILE****/

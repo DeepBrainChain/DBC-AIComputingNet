@@ -1,0 +1,7 @@
+dbctraining/h2o-cpu-py2:v1.0.0
+dbctraining/h2o-gpu-cuda9-py3:v1.0.0
+dbctraining/pytorch0.4.1-gpu-cuda9-cudnn7-py3:v1.0.0
+dbctraining/mxnet1.2.1-gpu-cuda9-py2:v1.0.0
+dbctraining/caffe1-gpu-cuda8-py2:v1.0.0
+dbctraining/cntk2.5-gpu-cuda9-py3:v1.0.1
+dbctraining/tensorflow1.9.0-cuda9-gpu-py3:v1.0.0

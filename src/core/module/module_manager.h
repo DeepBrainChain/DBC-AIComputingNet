@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：module_manager.h
-* description    ：module manager for all the modules
-* date                  : 2018.01.20
-* author            ：Bruce Feng
+* file name        :   module_manager.h
+* description    :   module manager for all the modules
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 
 #ifndef _SERVICE_MODULE_MANAGER_H_
@@ -43,7 +43,7 @@ namespace matrix
 
             virtual std::shared_ptr<module> get(const std::string &module_name);
 
-            virtual void add_module(std::string name, std::shared_ptr<module > mdl);
+            virtual bool add_module(std::string name, std::shared_ptr<module > mdl);
 
         protected:
 
@@ -55,6 +55,8 @@ namespace matrix
         protected:
 
             std::unordered_map<std::string, std::shared_ptr<module>> m_modules;
+
+            std::list<std::shared_ptr<module>> m_modules_list;
 
         };
 

@@ -2,20 +2,15 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºsocket_id.hpp
-* description    £ºsocket id for each socket channel
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name         :   socket_id.hpp
+* description     :   socket id for each socket channel
+* date                  :   2018.01.20
+* author             :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
-
-#include <map>
 #include <atomic>
-#include <mutex>
-#include <memory>
 #include <boost/serialization/singleton.hpp>
-#include "common.h"
 
 
 using namespace boost::serialization;
@@ -50,25 +45,34 @@ namespace matrix
 
             socket_id & operator=(const socket_id &sid) { this->m_id = sid.m_id; this->m_type = sid.m_type; return *this; }
 
+            //bool operator==(const socket_id &sid) { return (m_id == sid.get_id()) && (m_type == sid.get_type()); }
+
+            //bool operator!=(const socket_id &sid) { return !(*this == sid); }
+
             std::string to_string() const 
             { 
                 std::stringstream str_stream;
-                str_stream << "socket type: " << ((m_type == CLIENT_SOCKET) ? "client " : "server ") << " socket id: " << m_id;              
+                str_stream << " socket type: " << ((m_type == CLIENT_SOCKET) ? "client" : "server") << " socket id: " << m_id;            
                 return  str_stream.str();
             }
 
         protected:
 
-            uint64_t m_id;
-
             socket_type m_type;
+
+            uint64_t m_id;
         };
 
         inline bool operator==(const socket_id &s1, const socket_id &s2)
         {
-            return (s1.get_id() == s2.get_id()) && (s1.get_type() && s2.get_type());
+            return (s1.get_id() == s2.get_id()) && (s1.get_type() == s2.get_type());
         }
 
+        inline bool operator!=(const socket_id &s1, const socket_id &s2)
+        {
+            return !(s1 == s2);
+        }
+        
         class cmp_key
         {
         public:

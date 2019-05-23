@@ -1,0 +1,21 @@
+$def with (post)
+
+<h1>submit result</h1>
+<table border="1">
+    <tr>
+        <th>task_id</th>
+        <th>task_state</th>
+        <th>create_time</th>
+        <th>code_hash</th>
+        <th>entry_file</th>
+        <th>engine</th>
+    </tr>
+    <tr>
+        <td>$post.task_id</td>
+        <td>$post.task_state</td>
+        <td>$time_tool.stamp_to_localtime(post.create_time)</td>
+        <td>$post.code_hash</td>
+        <td>$post.entry_file</td>
+        <td>$post.engine</td>
+    </tr>
+</table>
