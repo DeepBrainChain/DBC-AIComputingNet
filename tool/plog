@@ -1,0 +1,55 @@
+#!/bin/bash
+cmd=$*
+
+
+echo_help()
+{
+    echo "use file batch cmd to show dbc log. useage:"
+    echo "plog             : show the latest dbc log info"
+    echo "plog -h          : help info"  
+    echo "plog tail xxx    : use system tail cmd to show the latest dbc log. plog tail -f"
+    echo "plog head xxx    : use system head  cmd to show the latest dbc log. "
+    echo "plog more        : use system more cmd to show the latest dbc log"
+    echo "plog cat         : use system cat cmd to show the latest dbc log"
+    echo "plog grep XXX    : use system grep cmd to show the latest dbc log. plog grep error"
+    echo "plog xxcmd       : you can use other file batch cmd to show the latest dbc log"
+}
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+logpath=$DIR/logs
+
+if [ ! -d $logpath ] ; then
+    echo "logs is not exist. pls check dbc running status and dbc logs folder"
+    exit
+fi
+cd $logpath
+loglatest=`ls -t|head -1`
+
+if [[ $# = 0 ]];then
+    if [ -z $loglatest ]; then
+       echo "log is empty.pls check dbc running status"
+       exit
+    fi
+    tail $loglatest
+    exit 0
+fi
+
+if [ $1 = "-h" ]; then
+    echo_help
+    exit
+fi
+
+if [ ${1:0:1} = "-" ]; then
+    echo "invalid option"
+    echo_help
+    exit
+fi
+
+cmd_path=`which $1`
+if [ $? -ne 0 ]; then
+  echo "invalid cmd"
+  echo_help
+  exit
+fi
+
+exec $cmd  $loglatest

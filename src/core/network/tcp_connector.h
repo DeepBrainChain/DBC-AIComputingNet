@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtcp_connector.hpp
-* description    £ºtcp connector for nio client socket
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   tcp_connector.hpp
+* description      :   tcp connector for nio client socket
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -16,14 +16,17 @@
 #include "common.h"
 #include "channel.h"
 #include "socket_id.h"
-#include "channel.h"
 #include "handler_create_functor.h"
 #include "service_message_def.h"
 
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-#define MAX_RECONNECT_TIMES                 60
+
+#define RECONNECT_INTERVAL                     2                    //2->4->8->16->32->64...
+#define MAX_RECONNECT_TIMES                  2
+
+
 
 namespace matrix
 {
@@ -35,17 +38,23 @@ namespace matrix
             using ios_ptr = typename std::shared_ptr<io_service>;
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
 
+            typedef void (timer_handler_type)(const boost::system::error_code &);
+
         public:
 
-            tcp_connector(nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func);
+            tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func);
 
-            virtual ~tcp_connector() = default;
+            virtual ~tcp_connector();
 
-            virtual int32_t start();
+            virtual int32_t start(uint32_t retry = MAX_RECONNECT_TIMES);
 
             virtual int32_t stop();
 
             const tcp::endpoint &get_connect_addr() const { return m_connect_addr; }
+
+            const socket_id &get_socket_id() const { return m_sid; }
+
+            bool is_connected() { return m_connected; }
 
         protected:
 
@@ -54,6 +63,10 @@ namespace matrix
             virtual void on_connect(const boost::system::error_code& error);
 
             virtual void connect_notification(CLIENT_CONNECT_STATUS status);
+            //modify by regulus: fix connect crash
+            void reconnect(const std::string errorinfo);
+
+            void on_reconnect_timer_expired(const boost::system::error_code& error);
 
         protected:
 
@@ -61,7 +74,9 @@ namespace matrix
 
             bool m_connected;
 
-            int m_reconnect_times;
+            uint32_t m_reconnect_times;
+
+            uint32_t m_req_reconnect_times;
 
             nio_loop_ptr m_worker_group;
 
@@ -71,6 +86,7 @@ namespace matrix
 
             handler_create_functor m_handler_create_func;
 
+            steady_timer m_reconnect_timer;
         };
 
     }

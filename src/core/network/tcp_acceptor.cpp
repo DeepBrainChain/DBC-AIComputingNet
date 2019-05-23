@@ -2,27 +2,29 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºtcp_acceptor.cpp
-* description    £ºtcp acceptor for nio server listening
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name         :  tcp_acceptor.cpp
+* description    :   tcp acceptor for nio server listening
+* date                  :   2018.01.20
+* author             :   Bruce Feng
 **********************************************************************************/
 #include "tcp_acceptor.h"
 #include "tcp_socket_channel.h"
 #include "server.h"
+#include <boost/exception/all.hpp>
 
 namespace matrix
 {
     namespace core
     {
 
-        tcp_acceptor::tcp_acceptor(ios_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func)
+        tcp_acceptor::tcp_acceptor(ios_weak_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func)
             : m_endpoint(endpoint)
             , m_io_service(io_service)
             , m_worker_group(worker_group)
-            , m_acceptor(*m_io_service, endpoint, true)
+            , m_acceptor(*io_service.lock(), endpoint, true)
             , m_handler_create_func(func)
         {
+
         }
 
         int32_t tcp_acceptor::start()
@@ -68,31 +70,72 @@ namespace matrix
             auto server_channel = std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), sid, m_handler_create_func, DEFAULT_BUF_LEN);
             assert(server_channel != nullptr);
 
-            //add to connection manager
-            int32_t ret = CONNECTION_MANAGER->add_channel(sid, std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()));
-            assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
+            LOG_DEBUG << "channel create_channel use count " << server_channel.use_count() << server_channel->id().to_string();
+            //LOG_DEBUG << "channel create_channel add_channel end use count " << server_channel.use_count() << server_channel->id().to_string();
 
             //async accept
+            assert(nullptr != server_channel->shared_from_this());
             m_acceptor.async_accept(server_channel->get_socket(), boost::bind(&tcp_acceptor::on_accept, shared_from_this(), std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()), boost::asio::placeholders::error));
+            LOG_DEBUG << "channel async_accept end use count " << server_channel.use_count() << server_channel->id().to_string();
 
             return E_SUCCESS;
         }
 
         int32_t tcp_acceptor::on_accept(std::shared_ptr<channel> ch, const boost::system::error_code& error)
         {
-            if (error)
-            {
-                LOG_ERROR << "tcp acceptor on accept call back error: " << error;
+            std::shared_ptr<tcp_socket_channel> socket_channel =  std::dynamic_pointer_cast<tcp_socket_channel>(ch);
 
-                //new channel
-                create_channel();
+            if (nullptr == ch || nullptr == socket_channel)
+            {
+                LOG_ERROR << "tcp acceptor on acceptor nullptr and exit";
                 return E_DEFAULT;
             }
 
-            //start run
-            ch->start();
-            tcp::endpoint ep = std::dynamic_pointer_cast<tcp_socket_channel>(ch)->get_remote_addr();
-            LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port();
+            if (error)
+            {
+                //aborted, maybe cancel triggered
+                if (boost::asio::error::operation_aborted == error.value())
+                {
+                    LOG_DEBUG << "tcp acceptor on accept aborted: " << error.value() << " " << error.message();
+                    return E_DEFAULT;
+                }
+
+                LOG_ERROR << "tcp acceptor on accept call back error: " << error.value() << " " << error.message();
+
+                socket_channel->on_error();
+
+                create_channel();
+
+                return E_DEFAULT;
+            }
+			
+            try
+            {
+                //start run
+                socket_channel->start();
+                tcp::endpoint ep = std::dynamic_pointer_cast<tcp_socket_channel>(socket_channel)->get_remote_addr();
+                LOG_DEBUG << "tcp acceptor accept new socket channel at ip: " << ep.address().to_string() << " port: " << ep.port() << socket_channel->id().to_string();
+
+            }
+            catch (const boost::exception & e)
+            {
+                LOG_ERROR << "tcp acceptor on accept call back error: " << diagnostic_information(e);
+
+                socket_channel->on_error();
+                create_channel();
+                return E_DEFAULT;
+            }
+			
+            //add to connection manager
+            int32_t ret = CONNECTION_MANAGER->add_channel(socket_channel->id(), socket_channel->shared_from_this());
+            //assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
+            if (ret != E_SUCCESS)
+            {
+                LOG_DEBUG << "tcp acceptor abnormal." << ch->id().to_string();
+                ch->close();
+                ch->on_error();
+            }
+            LOG_DEBUG << "tcp acceptor add channel to connection manager" << socket_channel->id().to_string() << " remote addr:" << socket_channel->get_remote_addr();
 
             //new channel
             return create_channel();

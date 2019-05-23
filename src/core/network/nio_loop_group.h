@@ -2,16 +2,15 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºnio_loop_group.h
-* description    £ºnio thread loop group for network connection
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   nio_loop_group.h
+* description      :   nio thread loop group for network connection
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
 
 #include <thread>
-#include <functional>
 #include <vector>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>

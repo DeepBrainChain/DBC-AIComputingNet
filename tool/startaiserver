@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    dbc --ai --daemon
+else
+# use specified node name
+    dbc --ai --daemon -n "$1"
+fi
+
+

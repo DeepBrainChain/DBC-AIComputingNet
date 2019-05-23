@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºrw_lock.h
-* description    £ºread write lock
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   rw_lock.h
+* description      :   read write lock
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -56,7 +56,7 @@ namespace matrix
             void write_unlock()
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
-                (--m_write_count == 0) ? m_read_cond.notify_all() : m_write_cond.notify_one();                
+                (--m_write_count == 0) ? m_read_cond.notify_all() : m_write_cond.notify_one();
                 m_is_writing_status = false;
             }
 

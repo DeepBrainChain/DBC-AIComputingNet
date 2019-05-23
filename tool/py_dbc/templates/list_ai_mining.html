@@ -1,0 +1,26 @@
+$def with (posts, form)
+<h1>ai mining device</h1>
+<form action="" method="post">
+$:form.render()
+</form>
+<table border="1">
+    <tr>
+        <th>node_id</th>
+        <th>node_name</th>
+        <th>version</th>
+        <th>gpu_num</th>
+        <th>gpu_model</th>
+        <th>state</th>
+        <th>time</th>
+    </tr>
+    $for post in posts:
+        <tr>
+            <td>$post.node_id</td>
+            <td>$post.name</td>
+            <td>$post.version</td>
+            <td>$post.gpu_num</td>
+            <td>$post.gpu_model</td>
+            <td>$post.state</td>
+            <td>$time_tool.stamp_to_localtime(post.time_stamp)</td>
+        </tr>
+</table>

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºbyte_buf.h
-* description    £ºbyte_buf for network transport
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   byte_buf.h
+* description    :   byte_buf for network transport
+* date                  :   2018.01.20
+* author            :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -26,6 +26,9 @@
 
 
 #define MAX_BYTE_BUF_LEN                (16 * 1024 * 1024)                       //max 16M bytes
+#define DEFAULT_BUF_LEN     (10 * 1024)
+
+
 
 namespace matrix
 {
@@ -37,7 +40,7 @@ namespace matrix
 
         public:
 
-            byte_buf(int32_t len, bool auto_alloc = true);
+            byte_buf(int32_t len = DEFAULT_BUF_LEN, bool auto_alloc = true);
 
             char * get_buf() { return m_buf.get(); }
 

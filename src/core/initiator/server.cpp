@@ -1,13 +1,13 @@
-﻿/*********************************************************************************
+﻿#include "server.h"
+/*********************************************************************************
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        ：server.cpp
-* description    ：core is abstracted into server, server is responsible for init and exit
+* file name        :   server.cpp
+* description    :   core is abstracted into server, server is responsible for init and exit
 * date                  : 2017.01.23
-* author            ：Bruce Feng
+* author            :   Bruce Feng
 **********************************************************************************/
-#include "server.h"
 #include <memory>
 #include <cassert>
 #include <thread>
@@ -24,6 +24,21 @@ namespace matrix
 
         std::unique_ptr<server> g_server(new server());
 
+
+        void dummy_idle_task()
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
+            //LOG_DEBUG << "main thread do idle cycle task";
+        }
+
+        server::server() 
+            : m_init_result(E_SUCCESS)
+            , m_exited(false)
+            , m_module_manager(new module_manager())
+            , m_idle_task(dummy_idle_task)
+        {        
+        }
+
         int32_t server::init(int argc, char* argv[])
         {
             m_initiator = shared_ptr<server_initiator>(m_init_factory.create_initiator());
@@ -34,9 +49,6 @@ namespace matrix
         {
             while (!m_exited)
             {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-
-                //to do idle task.
                 do_cycle_task();
             }
 
@@ -45,7 +57,10 @@ namespace matrix
 
         void server::do_cycle_task()
         {
-            //LOG_DEBUG << "server is running and doing idle cycle task";
+            if (m_idle_task)
+            {
+                m_idle_task();
+            }
         }
 
         int32_t server::exit()

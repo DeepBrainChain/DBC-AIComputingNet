@@ -1,0 +1,15 @@
+$def with (posts)
+<h1>p2p acitve info</h1>
+<table border="1">
+    <tr>
+        <th>node_id</th>
+        <th>addr</th>
+        <th>state</th>
+    </tr>
+    $for post in posts:
+        <tr>
+            <td >$post.node_id</td>
+            <td>$post.end_point[0]</td>
+            <td>$post.net_state</td>
+        </tr>
+</table>

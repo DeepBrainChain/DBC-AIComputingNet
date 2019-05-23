@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºio_service_wrapper.h
-* description    £ºwrap io_service into io_service::work
-* date                  : 2018.01.20
-* author            £ºBruce Feng
+* file name        :   io_service_wrapper.h
+* description      :   wrap io_service into io_service::work
+* date             :   2018.01.20
+* author           :   Bruce Feng
 **********************************************************************************/
 #pragma once
 
