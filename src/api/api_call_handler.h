@@ -137,47 +137,6 @@ namespace ai
             }
         };
 
-        class cmd_start_multi_training_req:public matrix::core::msg_base
-        {
-        public:
-            std::string mulit_task_file_path;
-
-            bpo::options_description single_task_config_opts;
-            bpo::options_description multi_tasks_config_opts;
-        };
-
-        class cmd_start_multi_training_resp:public matrix::core::msg_base, public outputter
-        {
-        public:
-            int32_t result;
-            std::string result_info;
-
-            std::list<cmd_task_info> task_info_list;
-
-            void format_output()
-            {
-                if(E_SUCCESS != result)
-                {
-                    cout << result_info << endl;
-                    return;
-                }
-
-                auto it = task_info_list.begin();
-                for(; it != task_info_list.end(); it++)
-                {
-                    if(!it->task_id.empty())
-                    {
-                        cout << "task id: " << it->task_id << "     create_time: " << time_util::time_2_str(
-                                it->create_time) << endl;
-                    }
-                    else
-                    {
-                        cout << "task id: " << it->task_id << "     create_time: " << time_util::time_2_str(
-                                it->create_time) << " result: " << it->result << endl;
-                    }
-                }
-            }
-        };
 
         class cmd_list_training_req:public matrix::core::msg_base
         {
@@ -451,54 +410,6 @@ namespace ai
             void format_output();
 
             std::string to_time_str(time_t t);
-
-        };
-
-        /*class cmd_clear_req : public matrix::core::msg_base
-        {
-        public:
-
-        };
-
-        class cmd_clear_resp : public matrix::core::msg_base
-        {
-        public:
-
-        };*/
-
-        class cmd_ps_req:public matrix::core::msg_base
-        {
-        public:
-            std::string task_id;
-        };
-
-        class cmd_ps_resp:public matrix::core::msg_base, public outputter
-        {
-        public:
-            int32_t result;
-            std::string result_info;
-
-            std::vector<cmd_task_info> task_infos;
-
-            void format_output()
-            {
-                if(E_SUCCESS != result)
-                {
-                    cout << result_info << endl;
-                    return;
-                }
-
-                console_printer printer;
-                printer(LEFT_ALIGN, 56)(LEFT_ALIGN, 24)(LEFT_ALIGN, 24)(LEFT_ALIGN, 20);
-
-                printer << matrix::core::init << "task_id" << "time" << "task_status" << "result" << matrix::core::endl;
-                for(cmd_task_info task_info : task_infos)
-                {
-                    printer << matrix::core::init << task_info.task_id << task_info.create_time << to_training_task_status_string(
-                            task_info.status) << task_info.result << endl;
-                }
-
-            }
 
         };
 

@@ -28,6 +28,10 @@ namespace service
     {
         typedef std::map <std::string, node_service_info> service_info_map;
 
+        enum {
+            MAX_CHANGE_SET_SIZE = 48
+        };
+
         class service_info_collection //: public singleton<service_info_collection>
         {
         public:
