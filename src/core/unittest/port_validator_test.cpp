@@ -8,7 +8,7 @@
 * date              : 2018/8/1
 * author            : Taz Zhang
 **********************************************************************************/
-#define BOOST_TEST_DYN_LINK
+//#define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
 #include <string>

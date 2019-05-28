@@ -48,12 +48,10 @@ namespace ai
         {
             SUBSCRIBE_RESP_MSG(cmd_start_training_resp);
             SUBSCRIBE_RESP_MSG(cmd_stop_training_resp);
-            SUBSCRIBE_RESP_MSG(cmd_start_multi_training_resp);
             SUBSCRIBE_RESP_MSG(cmd_list_training_resp);
             SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_resp);
             SUBSCRIBE_RESP_MSG(cmd_logs_resp);
             SUBSCRIBE_RESP_MSG(cmd_show_resp);
-            SUBSCRIBE_RESP_MSG(cmd_ps_resp);
             SUBSCRIBE_RESP_MSG(cmd_task_clean_resp);
         }
 

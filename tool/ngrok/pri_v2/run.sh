@@ -146,7 +146,7 @@ do
 
                 if print_tcp_port $port_http; then
                     echo "ssh -p $port root@${server_ip}"
-                    port_=$(($port_http+1))
+                    port_http=$(($port_http+1))
                 fi
 
             ;;
@@ -158,7 +158,7 @@ do
 
                 if print_tcp_port $port_http; then
                     echo "jupyter url:  http://${server_ip}:${port}"
-                    port_=$(($port_http+1))
+                    port_http=$(($port_http+1))
                 fi
             ;;
 

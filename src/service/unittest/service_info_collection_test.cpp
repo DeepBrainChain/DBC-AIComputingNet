@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(test_get_change_set_size_128)
 
     auto cs = sc.get_change_set();
 
-    BOOST_TEST(cs.size() == 32);
+    BOOST_TEST(cs.size() == service::misc::MAX_CHANGE_SET_SIZE);
 }
 
 
@@ -91,11 +91,10 @@ BOOST_AUTO_TEST_CASE(test_get_change_set_no_overlap)
     }
 
     auto cs1 = sc.get_change_set();
-    BOOST_TEST(cs1.size() == 32);
+    BOOST_TEST(cs1.size() == service::misc::MAX_CHANGE_SET_SIZE);
 
     auto cs2 = sc.get_change_set();
 
-    BOOST_TEST(cs2.count(id_base+"032")==1);
     BOOST_TEST(cs2.count(id_base+"063")==1);
 
 }
@@ -107,7 +106,7 @@ BOOST_AUTO_TEST_CASE(test_get_change_set_loop)
     sc.init("2gfpp3MAB3xSZjSnTMYu13Ccwg9Gb83kk2irByb9aVp");
 
     string id_base= "2gfpp3MAB41g5L9wRh6RF5PcyMEuJz53g1xckU4S";
-    for(int i=0; i< 40; i++)
+    for(int i=0; i< 50; i++)
     {
         node_service_info nsi;
         nsi.__set_name("pc"+std::to_string(i));
@@ -124,12 +123,10 @@ BOOST_AUTO_TEST_CASE(test_get_change_set_loop)
     }
 
     auto cs1 = sc.get_change_set();
-    BOOST_TEST(cs1.size() == 32);
+    BOOST_TEST(cs1.size() == service::misc::MAX_CHANGE_SET_SIZE);
 
     auto cs2 = sc.get_change_set();
 
-
-    BOOST_TEST(cs2.count(id_base+"032")==1);
     BOOST_TEST(cs2.count(id_base+"023")==1);
 
 }
