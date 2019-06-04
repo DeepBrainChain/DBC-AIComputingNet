@@ -60,29 +60,27 @@ namespace service
         {
             LOG_DEBUG << "data_query_service::int";
 
-            bool enable_node_info_collection = false;
+            m_is_computing_node = false;
+
             if (options.count(SERVICE_NAME_AI_TRAINING))
             {
-                enable_node_info_collection = true;
-            }
+                m_is_computing_node = true;
 
+                std::string fn = env_manager::get_home_path().generic_string() + "/.dbc_bash.sh";
+                auto rtn = m_node_info_collection.init(fn);
+                if (rtn != E_SUCCESS)
+                {
+                    return rtn;
+                }
 
-            m_node_info_collection.set_query_sh();
-            auto rtn = m_node_info_collection.init(enable_node_info_collection);
-            if ( rtn != E_SUCCESS )
-            {
-                return rtn;
+                cfg_own_node(options, m_own_node_id);
             }
 
             m_own_node_id = CONF_MANAGER->get_node_id();
 
             m_service_info_collection.init(m_own_node_id);
 
-            cfg_own_node(options, m_own_node_id);
-
-            rtn = service_module::init(options);
-
-            return rtn;
+            return service_module::init(options);
         }
 
         /**
@@ -112,16 +110,8 @@ namespace service
         void data_query_service::cfg_own_node(bpo::variables_map &options, std::string own_id)
         {
             node_service_info info;
+            info.service_list.push_back(SERVICE_NAME_AI_TRAINING);
 
-            if (options.count(SERVICE_NAME_AI_TRAINING))
-            {
-                info.service_list.push_back(SERVICE_NAME_AI_TRAINING);
-            }
-            else
-            {
-                //info.service_list.push_back("");
-                return;
-            }
 
             if (options.count("name"))
             {
@@ -177,7 +167,8 @@ namespace service
          */
         int32_t data_query_service::on_timer_node_info_collection(std::shared_ptr<matrix::core::core_timer> timer)
         {
-            m_node_info_collection.refresh();
+            if(m_is_computing_node)
+                m_node_info_collection.refresh();
 
             return E_SUCCESS;
         }
@@ -279,7 +270,7 @@ namespace service
                     std::vector<std::string> tmp_keys;
                     if (req->keys.size() == 1 && req->keys[0]=="all")
                     {
-                        tmp_keys = m_node_info_collection.get_keys();
+                        tmp_keys = m_node_info_collection.get_all_attributes();
                     }
                     else
                     {
@@ -304,7 +295,7 @@ namespace service
 
                 if (req->keys.size() == 1 && req->keys[0]=="all")
                 {
-                    auto tmp_keys = m_node_info_collection.get_keys();
+                    auto tmp_keys = m_node_info_collection.get_all_attributes();
                     q->prepare(req->o_node_id, req->d_node_id, tmp_keys,sesssion_id);
                 }
                 else
@@ -539,7 +530,8 @@ namespace service
             }
 
             // update service_info_collection of own node
-            std::string v = m_node_info_collection.get("gpu");
+            std::string v = m_node_info_collection.get_gpu_short_desc();
+
             m_service_info_collection.update(m_own_node_id,"gpu", v);
 
             v = m_node_info_collection.get("state");

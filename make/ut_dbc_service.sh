@@ -33,4 +33,4 @@ fi
 # run
 #
 echo "run dbc service test"
-../../output/dbc_service_test  -r detailed -l all ${@:1}
+cd ../../output; ./dbc_service_test  -r detailed -l all ${@:1}; cd -

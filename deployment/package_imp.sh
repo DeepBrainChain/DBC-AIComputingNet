@@ -111,6 +111,9 @@ dbc_package()
         cp $tool_dir/startaiserver  $dbc_repo_dir/startapp
         cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
 
+        # dbc node info tool
+        cp -r $tool_dir/node_info $dbc_repo_dir/tool/
+
         chmod +x $dbc_repo_dir/startapp
         chmod +x $dbc_repo_dir/stopapp
     fi
