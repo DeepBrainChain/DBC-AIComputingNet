@@ -352,11 +352,13 @@ namespace ai
             int32_t op;
             std::string filter;
             std::string sort;
+
+            //todo: support offset, it is always 0 now
             int32_t num_lines;
 
         public:
             cmd_show_req():
-                    op(OP_SHOW_UNKNOWN), sort("gpu")
+                    op(OP_SHOW_UNKNOWN), sort("gpu"), num_lines(1000)
             {
 
             }

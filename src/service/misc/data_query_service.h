@@ -77,10 +77,10 @@ namespace service
             int32_t on_net_service_broadcast_req(std::shared_ptr<message> &msg);
 
             int32_t create_data_query_session(std::string session_id, std::shared_ptr<node_info_query_req_msg> q);
-
             void rm_data_query_session(std::shared_ptr<service_session> session);
 
         private:
+            bool m_is_computing_node;
             std::string m_own_node_id;
 
             service_info_collection m_service_info_collection;

@@ -64,11 +64,16 @@ uninstall_dbc()
   echo "-- move dbc install --"
   dbc_dir=$(dirname  `which dbc` 2>/dev/null)
   if [ "$dbc_dir" == "" ]; then
-	echo "no dbc install found"
+	  echo "no dbc install found"
   else
-	dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
-	echo "mv $dbc_dir $dbc_backup_dir"
-	mv $dbc_dir $dbc_backup_dir
+      now_dir="$(pwd)"
+      cd $dbc_dir/..
+      dbc_dir=$(pwd)
+      cd $now_dir
+
+	  dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
+	  echo "mv $dbc_dir $dbc_backup_dir"
+	  mv $dbc_dir $dbc_backup_dir
   fi
 
   echo

@@ -200,18 +200,30 @@ namespace ai
             if (m_gpus.empty())
                 return s;
 
-            s += "\n";
+            s = "{\"gpus\":[";
+
+            int n = 0;
             for (auto const& it: m_gpus)
             {
-                s += it.second->toString();
+
                 std::string state = "busy";
                 if (m_gpus_free.find(it.first) != m_gpus_free.end())
                 {
                     state = "idle";
                 }
-                s += "    "+state;
-                s += "\n";
+
+                if (n)
+                {
+                    s+=",";
+                }
+
+                std::string each = std::string("{") + "\"id\":\"" + std::to_string((int)it.second->id()) + "\",\"state\":\"" + state + "\"}";
+                s += each;
+
+                n++;
             }
+
+            s+="]}";
 
             return s;
         }

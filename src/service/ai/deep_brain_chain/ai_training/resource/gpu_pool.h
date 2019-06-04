@@ -31,6 +31,9 @@ namespace ai
         private:
             int32_t m_id;
             std::string m_type;
+
+            std::string m_ram;
+
         };
 
 

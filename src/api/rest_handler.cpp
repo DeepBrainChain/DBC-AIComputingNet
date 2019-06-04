@@ -155,6 +155,72 @@ namespace ai
                                  rapidjson::Document::AllocatorType& allocator)
         {
 
+            for(auto& kv: resp->kvs)
+            {
+                if(kv.second.length() > 0 && kv.second[0] == '{')
+                {
+                    rapidjson::Document doc;
+
+                    if(doc.Parse<0>(kv.second.c_str()).HasParseError() != true)
+                    {
+                        rapidjson::Value v = rapidjson::Value(doc, allocator);
+
+                        data.AddMember(STRING_DUP(kv.first), v, allocator);
+                    }
+                }
+                else
+                {
+                    // legacy gpu state or  gpu usage
+                    if (kv.first == std::string("image"))
+                    {
+                        rapidjson::Value images(rapidjson::kArrayType);
+                        std::vector<std::string> image_list;
+                        string_util::split(resp->kvs["image"], "\n", image_list);
+                        for (auto& img : image_list) {
+                            images.PushBack(STRING_DUP(img), allocator);
+                        }
+
+                        data.AddMember("images", images, allocator);
+                    }
+                    else if (kv.first == std::string("gpu_usage"))
+                    {
+                        //   gpu_usage_str:
+                        //"gpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\n"
+                        //
+                        std::string gpu_usage_str = string_util::rtrim(resp->kvs["gpu_usage"], '\n');
+                        rapidjson::Value gpu_usage(rapidjson::kArrayType);
+                        std::vector<std::string> gpu_usage_list;
+                        string_util::split(gpu_usage_str, "\n", gpu_usage_list);
+
+                        if (gpu_usage_list.size()%2==0) {
+                            for (auto i = 0; i < gpu_usage_list.size(); i += 2) {
+                                std::string gpu;
+                                rest_util::get_value_from_string(gpu_usage_list[i], "gpu", gpu);
+
+                                std::string mem;
+                                rest_util::get_value_from_string(gpu_usage_list[i + 1], "mem", mem);
+
+                                rapidjson::Value g(rapidjson::kObjectType);
+                                g.AddMember("gpu", STRING_DUP(gpu), allocator);
+                                g.AddMember("mem", STRING_DUP(mem), allocator);
+
+                                gpu_usage.PushBack(g, allocator);
+
+                            }
+                        }
+
+                        data.AddMember("gpu_usage", gpu_usage, allocator);
+
+                    }
+                    else
+                    {
+                        fill_json_filed_string(data, allocator, kv.first, kv.second);
+                    }
+                }
+            }
+
+#if 0
+
             std::string cpu_info = resp->kvs["cpu"];
             string_util::trim(cpu_info);
             int pos = cpu_info.find_first_of(' ');
@@ -288,6 +354,7 @@ namespace ai
             mem.AddMember("free", STRING_DUP(mem_free), allocator);
 
             data.AddMember("mem", mem, allocator);
+#endif
 
         }
 
