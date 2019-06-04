@@ -56,3 +56,16 @@ BOOST_AUTO_TEST_CASE(test_node_startup_time)
     BOOST_TEST(nc.get_node_startup_time() != 0);
     std::cout<<"node startup time: " << matrix::core::time_util::time_2_str(nc.get_node_startup_time())<<endl;
 }
+
+
+BOOST_AUTO_TEST_CASE(test_read_node_info_conf)
+{
+    node_info_collection nc;
+
+    nc.read_node_static_info("../src/service/unittest/dbc_node_info.conf");
+
+    BOOST_TEST(nc.get("network_dl") == std::string("10.71 Mbit/s"));
+    BOOST_TEST(nc.get("network_ul") == std::string("14.05 Mbit/s"));
+
+    nc.get_gpu_short_desc();
+}

@@ -61,6 +61,7 @@ add_executable(dbc_service_test
         service_info_collection_test.cpp
         node_info_collection_test.cpp
         gpu_pool_test.cpp
+        rest_handler_test.cpp
         ${SRC_PATH}/service/misc/service_info_collection.cpp
         ${SRC_PATH}/service/misc/node_info_collection.cpp
         ${SRC_PATH}/service/misc/node_info_collection.cpp

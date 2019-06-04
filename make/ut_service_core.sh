@@ -32,4 +32,5 @@ fi
 # run
 #
 echo "run dbc service core test"
-../../output/dbc_service_core_test  -r detailed -l all ${@:1}
+#../../output/dbc_service_core_test  -r detailed -l all ${@:1}
+../../output/dbc_service_core_test ${@:1}
