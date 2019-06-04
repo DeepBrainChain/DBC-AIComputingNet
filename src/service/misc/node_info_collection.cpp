@@ -4,7 +4,7 @@
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name         : node_info_collection.cpp
-* description       : 
+* description       :
 * date              : 2018/6/14
 * author            : Jimmy Kuang
 **********************************************************************************/
@@ -20,10 +20,78 @@
 #include "server.h"
 #include "common/util.h"
 
+#include <boost/program_options.hpp>
+
+#include <sstream>
+#include <iostream>
+#include <boost/property_tree/json_parser.hpp>
+
+#include <boost/filesystem.hpp>
+
+namespace bpo = boost::program_options;
+
 namespace service
 {
     namespace misc
     {
+
+        static const std::string basic_attrs[] = {
+            "version",
+            "startup_time",
+            "state",
+            "gpu_state"
+        };
+
+        static const std::string debug_cmds[] = {
+            "docker ps",
+            "nvidia-smi"
+        };
+
+        static const std::string dynamic_attrs[] = {
+            "gpu_usage",
+            "cpu_usage",
+            "mem_usage",
+            "image"
+        };
+
+        static const std::string static_attrs[]={
+            "network_dl",
+            "network_ul",
+            "os",
+            "ip",
+            "cpu",
+            "gpu",
+            "disk",
+            "mem"
+        };
+
+
+        std::vector<std::string> node_info_collection::get_all_attributes()
+        {
+            std::vector<std::string> v;
+            for(auto& k: static_attrs)
+            {
+                v.push_back(k);
+            }
+
+            for(auto& k: dynamic_attrs)
+            {
+                v.push_back(k);
+            }
+
+            v.push_back("state");
+            v.push_back("gpu_state");
+            v.push_back("version");
+
+
+//            for(auto& k: basic_attrs)
+//            {
+//                v.push_back(k);
+//            }
+
+            return v;
+        }
+
 
         bool is_linux_os()
         {
@@ -40,98 +108,15 @@ namespace service
         };
 
 
-        node_info_collection::node_info_collection()
+        bash_interface::bash_interface()
         {
-            m_enable = true;
-            m_honest = true;
 
-            m_query_sh_file_name = "" ; //env_manager::get_home_path().generic_string() + "/.node_info_query.sh";
-            m_sh_file_hash = std::hash<std::string> {} (node_info_query_sh_str);
-
-            m_node_2_services.clear();
-
-            reset_node_info();
-        }
-
-        void node_info_collection::set_query_sh(std::string fn)
-        {
-            if (fn.empty())
-            {
-                m_query_sh_file_name = env_manager::get_home_path().generic_string() + "/.node_info_query.sh";
-            }
-            else
-            {
-                m_query_sh_file_name = fn;
-            }
-        }
-
-        void node_info_collection::reset_node_info()
-        {
-            m_kvs.clear();
-
-            const char* ATTRS[] = {
-            "gpu",
-            "cpu",
-            "mem",
-            "disk",
-            "gpu_usage",
-            "gpu_driver",
-            "cpu_usage",
-            "mem_usage",
-            "state",
-            "image",
-            "version",
-            "startup_time",
-            "gpu_state"
-            };
-
-            int num_of_attrs = sizeof(ATTRS)/sizeof(char*);
-
-            for(int i=0; i< num_of_attrs; i++)
-            {
-                auto k = ATTRS[i];
-                m_keys.push_back(k);
-                m_kvs[k] = "N/A";
-            }
-
-            std::string ver = STR_VER(CORE_VERSION);
-            auto s = matrix::core::string_util::remove_leading_zero(ver.substr(2, 2)) + "."
-                    + matrix::core::string_util::remove_leading_zero(ver.substr(4, 2)) + "."
-                    + matrix::core::string_util::remove_leading_zero(ver.substr(6, 2)) + "."
-                    + matrix::core::string_util::remove_leading_zero(ver.substr(8, 2));
-            m_kvs["version"] = s;
-        }
-
-        std::vector<std::string> node_info_collection::get_keys()
-        {
-            return m_keys;
         }
 
 
-
-        #include <sys/stat.h>
-        /**
-        * Check if a file exists
-        * @return true if and only if the file exists, false else
-        */
-        bool file_exists(const std::string &file)
+        bool bash_interface::init(std::string fn, std::string text)
         {
-            struct stat buf;
-            return (stat(file.c_str(), &buf) == 0);
-        }
-
-
-        /**
-         * create node info query sh file and store in host
-         * @param text
-         * @return true if file created, otherwise return false
-         */
-        bool node_info_collection::generate_query_sh_file(std::string text)
-        {
-            if(!m_enable)
-            {
-                return false;
-            }
+            m_fn = fn;
 
             if(!is_linux_os())
             {
@@ -140,46 +125,29 @@ namespace service
 
             try
             {
-                if (file_exists(m_query_sh_file_name))
+                std::remove(m_fn.c_str());
+
+                std::ofstream qf (m_fn);
+                if (!qf.is_open())
                 {
-                    int rtn = std::remove(m_query_sh_file_name.c_str());
-                    if (rtn)
-                    {
-                        LOG_ERROR << "fail to remove " << m_query_sh_file_name << " error code: " << rtn;
-                        std::cout << "fail to remove " << m_query_sh_file_name << " error code: " << rtn << "\n";
-                        std::cout << "please remove this file from shell with proper user account\n";
-                        return false;
-                    }
+                    return false;
                 }
+
+                qf << text;
+                qf.close();
             }
             catch (...)
             {
-                LOG_ERROR << "fail to remvoe " << m_query_sh_file_name;
-                std::cout << "fail to remove " << m_query_sh_file_name << "\n";
-                std::cout << "please remove this file from shell with proper user account\n";
                 return false;
             }
 
-            std::ofstream qf (m_query_sh_file_name);
-            if (!qf.is_open())
-            {
-                return false;
-            }
-
-            qf << text;
-            qf.close();
             return true;
         }
 
-        /**
-        * query
-        * @param k the name of the attribute to be queried
-        * @return the attribute value
-        */
-        std::string node_info_collection::query(std::string k)
+        std::string bash_interface::run(std::string k)
         {
 #ifdef __linux__
-            std::string cmd = "/bin/bash "+ m_query_sh_file_name + " " + k;
+            std::string cmd = "/bin/bash "+ m_fn + " " + k;
             FILE *proc = popen(cmd.c_str(), "r");
             if (proc != NULL)
             {
@@ -197,65 +165,100 @@ namespace service
             return "N/A";
         }
 
-        bool node_info_collection::check_sh_file(std::string fn)
+
+        void node_info_collection::generate_node_static_info(std::string path)
         {
-
-            std::ifstream t(m_query_sh_file_name);
-
-            if(t)
+#ifdef __linux__
+            std::string cmd = "/bin/bash "+ path + "/tool/node_info/node_info.sh" ;
+            FILE *proc = popen(cmd.c_str(), "r");
+            if (proc != NULL)
             {
-                std::stringstream buffer;
-                buffer << t.rdbuf();
+                char line[LINE_SIZE];
+                std::string result;
 
-                std::size_t h = std::hash<std::string>{} (buffer.str());
+                while (fgets(line, LINE_SIZE, proc))
+                    result += line;
+                pclose(proc);
 
-                if (h == m_sh_file_hash)
-                {
-                    return true;
-                }
+                LOG_INFO << result;
             }
-            return false;
+#endif
         }
 
-        /**
-         * update hardware usage of dbc own node
-         */
-        void node_info_collection::refresh()
-        {
-            //std::unique_lock<std::mutex> lock(m_mutex);
 
-            if(!m_enable)
+        node_info_collection::node_info_collection()
+        {
+            m_kvs.clear();
+
+            for(auto& k: dynamic_attrs)
             {
-                return;
+                m_kvs[k]="N/A";
             }
 
+            for(auto& k: static_attrs)
+            {
+                m_kvs[k]="N/A";
+            }
+
+            for(auto& k: basic_attrs)
+            {
+                m_kvs[k]="N/A";
+            }
+
+            for(auto& k: debug_cmds)
+            {
+                m_kvs[k]="N/A";
+            }
+
+        }
+
+
+        int32_t node_info_collection::init(std::string fn)
+        {
+            if(!is_linux_os())
+            {
+                LOG_DEBUG << "skip node info collection for none linux os" ;
+                return E_SUCCESS;
+            }
+
+
+            if (!m_shell.init(fn, bash_interface_str))
+            {
+                LOG_ERROR << "fail to init shell interface for computing node!";
+                return E_FILE_FAILURE;
+            }
+
+            // version
+            std::string ver = STR_VER(CORE_VERSION);
+            auto s = matrix::core::string_util::remove_leading_zero(ver.substr(2, 2)) + "."
+                     + matrix::core::string_util::remove_leading_zero(ver.substr(4, 2)) + "."
+                     + matrix::core::string_util::remove_leading_zero(ver.substr(6, 2)) + "."
+                     + matrix::core::string_util::remove_leading_zero(ver.substr(8, 2));
+            m_kvs["version"] = s;
+
+            // startup time
+            set_node_startup_time();
+
+            // read more node info from conf
+            std::string node_info_file_path = env_manager::get_home_path().generic_string() + "/.dbc_node_info.conf";
+            read_node_static_info(node_info_file_path);
+
+            return E_SUCCESS;
+        }
+
+
+        void node_info_collection::refresh()
+        {
             if(!is_linux_os())
             {
                 return;
             }
 
-            // cheat once then be forbiden forever
-            if (m_honest)
-            {
-                m_honest = check_sh_file(node_info_query_sh_str);
-            }
-
-            if(!m_honest)
-            {
-                LOG_ERROR << "SH file check failed, it is not a honest node!";
-
-                reset_node_info();
-                m_kvs["gpu"] = "suspected node";
-
-                return;
-            }
-
-            m_kvs["gpu"] = query("gpu");
-            m_kvs["gpu_usage"] = query("gpu_usage");
-            m_kvs["cpu_usage"] = query("cpu_usage");
-            m_kvs["mem_usage"] = query("mem_usage");
-            m_kvs["image"] = query("image");
-            m_kvs["disk"] = query("disk");
+            // reload all dynamic info from
+            m_kvs["gpu_usage"] = m_shell.run("gpu_usage");
+            m_kvs["cpu_usage"] = m_shell.run("cpu_usage");
+            m_kvs["mem_usage"] = m_shell.run("mem_usage");
+            m_kvs["image"] = m_shell.run("image");
 
             //async invoke
             auto req = std::make_shared<service::get_task_queue_size_req_msg>();
@@ -264,38 +267,41 @@ namespace service
             TOPIC_MANAGER->publish<int32_t>(typeid(service::get_task_queue_size_req_msg).name(), msg);
         }
 
-        /**
-         * initial node info collection, e.g. generate query shell script.
-         * @return error code
-         */
-        int32_t node_info_collection::init(bool enable)
+        int32_t node_info_collection::read_node_static_info(std::string fn)
         {
-            if(!enable)
+            LOG_DEBUG << fn;
+
+
+            if (false == boost::filesystem::exists(fn) || false == boost::filesystem::is_regular_file(fn))
             {
-                m_enable = false;
-                return E_SUCCESS;
+                generate_node_static_info(env_manager::get_home_path().generic_string());
             }
 
-            if(!is_linux_os())
+            bpo::options_description opts("node info options");
+            for(auto& k: static_attrs)
             {
-                LOG_DEBUG << "skip node info collection for none linux os" ;
-                return E_SUCCESS;
+                opts.add_options()(k.c_str(),bpo::value<std::string>(), "");
             }
 
-            if (!generate_query_sh_file(node_info_query_sh_str))
+            bpo::variables_map vm;
+            try
             {
-                LOG_ERROR << "generate node info query sh file failed!";
-                return E_FILE_FAILURE;
+                std::ifstream conf_ifs(fn);
+                bpo::store(bpo::parse_config_file(conf_ifs, opts, true), vm);
+                bpo::notify(vm);
+
+                for(auto& k: static_attrs){
+                    if(vm.count(k))
+                    {
+                        m_kvs[k]=vm[k].as<std::string>();
+                    }
+                }
             }
-
-            m_kvs["gpu"] = query("gpu");
-            m_kvs["cpu"] = query("cpu");
-            m_kvs["mem"] = query("mem");
-            m_kvs["disk"] = query("disk");
-            m_kvs["image"] = query("image");
-            m_kvs["gpu_driver"] = query("gpu_driver");
-
-            set_node_startup_time();
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "parse node info conf error: " << e.what();
+                return E_DEFAULT;
+            }
 
             return E_SUCCESS;
         }
@@ -329,58 +335,58 @@ namespace service
         }
 
 
-        /**
-         * to string
-         * @return string of one attribute
-         */
-        std::string node_info_collection::get_one(std::string k)
+        std::string node_info_collection::pretty_state(std::string v)
         {
-            std::string v = "";
-            if( k.length() <= MAX_KEY_LEN && m_kvs.count(k) )
+            if (v == "0" || v == "N/A")
             {
-                v = m_kvs[k];
-                if ( k == "state")
-                {
-                    if (v == "0" || v == "N/A")
-                    {
-                        v = "idle";
-                    }
-                    else if ( v == "-1" )
-                    {
-                        v = "idle(*)";
-                    }
-                    else
-                    {
-                        v = "busy("+v+")";
-                    }
-                }
+                return "idle";
             }
-            else if (k == std::string("nvidia-smi"))
+            else if ( v == "-1" )
             {
-                v = query(k);
-            }
-            else if (k == std::string("docker ps"))
-            {
-                v = query(k);
+                return "idle(*)";
             }
             else
             {
-                v = "unknown keyword";
+                return "busy("+v+")";
             }
 
             return v;
         }
 
-        /**
-         * get the attribute value
-         * @param k the name of attribute
-         * @return attribute value
-         */
         std::string node_info_collection::get(std::string k)
         {
-            //std::unique_lock<std::mutex> lock(m_mutex);
-            return get_one(k);
+            std::string v = "";
+            if( k.length() > MAX_KEY_LEN )
+            {
+                return "keyword overlength";
+            }
+
+            if (!m_kvs.count(k))
+            {
+                return "unknown keyword";
+            }
+
+
+            v = m_kvs[k];
+            if ( k == "state")
+            {
+                return pretty_state(v);
+            }
+
+
+            // support debug commands
+            for(auto& each: debug_cmds)
+            {
+                if(each == k)
+                {
+                    return m_shell.run(k);
+                }
+            }
+
+
+            return v;
         }
+
 
 
         std::string node_info_collection::get_gpu_usage_in_total()
@@ -392,7 +398,7 @@ namespace service
 
             // 'kvs': {   u'gpu_usage': u'gpu: 10 %\nmem: 1 %\ngpu: 0 %\nmem: 0 %\n'}
 
-            std::string v = get_one("gpu_usage");
+            std::string v = get("gpu_usage");
             if (v.empty() || v == std::string("N/A"))
             {
                 return "N/A";
@@ -442,21 +448,63 @@ namespace service
             return "0 %";
         }
 
-        /**
-         * set k,v
-         * @param k
-         * @param v
-         */
         void node_info_collection::set(std::string k, std::string v)
         {
-            //std::unique_lock<std::mutex> lock(m_mutex);
             m_kvs[k] = v;
         }
 
-
-        bool node_info_collection::is_honest_node()
+        std::string node_info_collection::get_gpu_short_desc()
         {
-            return m_honest;
+            std::string raw = m_kvs["gpu"];
+
+            //gpu={"num":"4", "driver":"410.66", "cuda":"10.0", "p2p":"ok", "gpus":[{"id":"0", "type":"GeForceGTX1080Ti", ...
+
+            std::string rt;
+            std::stringstream ss;
+            ss << raw;
+            boost::property_tree::ptree pt;
+
+            try
+            {
+                boost::property_tree::read_json(ss, pt);
+
+                std::string num = pt.get<std::string>("num");
+                int32_t n = atoi(num.c_str());
+                if (n > 0)
+                {
+
+                    std::map<std::string, int> gpu_map;
+                    for(boost::property_tree::ptree::value_type &v:  pt.get_child("gpus"))
+                    {
+                        boost::property_tree::ptree const &gpu = v.second;
+                        auto type = gpu.get<std::string>("type");
+                        if (gpu_map.count(type))
+                        {
+                            gpu_map[type] += 1;
+                        }
+                        else
+                        {
+                            gpu_map[type] = 1;
+                        }
+                    }
+
+                    for(auto& kv: gpu_map)
+                    {
+                        if (!rt.empty()) rt+=" ";
+
+                        rt += std::to_string(kv.second) + std::string(" * ") +  kv.first;
+                    }
+                }
+            }
+            catch (std::exception& e)
+            {
+                LOG_ERROR << e.what() << endl;
+            }
+
+            LOG_DEBUG << "gpu: " << rt;
+
+            return rt;
+
         }
 
     }
