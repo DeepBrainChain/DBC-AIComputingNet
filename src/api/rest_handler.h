@@ -35,6 +35,8 @@ namespace ai
 
         std::shared_ptr<message> rest_task_stop(HTTP_REQUEST_PTR httpReq, const std::string& path);
 
+        std::shared_ptr<message> rest_task_restart(HTTP_REQUEST_PTR httpReq, const std::string& path);
+
         int32_t on_stop_training_resp(HTTP_REQ_CTX_PTR hreq_context, std::shared_ptr<message>& resp_msg);
 
         std::shared_ptr<message> rest_task_result(HTTP_REQUEST_PTR httpReq, const std::string& path);

@@ -306,8 +306,12 @@ namespace ai
             auto it = m_invokers.find(cmd);
             if (it == m_invokers.end())
             {
-                cout << "unknown command, for prompt please input 'help'" << endl;
-                return;
+                it = m_invokers.find("system");
+                if( it == m_invokers.end())
+                {
+                    cout << "unknown command, for prompt please input 'help'" << endl;
+                    return;
+                }
             }
 
             //call handler function
@@ -1039,6 +1043,8 @@ namespace ai
 
                 }
 
+                // sleep one second to avoid messages race condition
+                std::this_thread::sleep_for(std::chrono::seconds(1));
 
 
                 if (vm.count("task_id"))
@@ -1553,7 +1559,15 @@ namespace ai
             try
             {
                 std::string cmd;
-                for(int i=1; i<argc; i++)
+
+                int offset = 0;
+                if( std::string("system") == std::string(argv[0]) ||
+                        std::string("sys") == std::string(argv[0]) )
+                {
+                    offset = 1;
+                }
+
+                for(int i=offset; i<argc; i++)
                 {
                     cmd += argv[i];
                     cmd += " ";
@@ -1670,10 +1684,10 @@ namespace ai
                         cout << "unknown command " << argv[1] << endl;
                         return;
                     }
-                    
+
                     //call handler function
                     auto func = it->second;
-                    
+
                     func(argc-1, argv+1);
                     
                 }
