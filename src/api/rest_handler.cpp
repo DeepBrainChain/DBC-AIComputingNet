@@ -157,7 +157,8 @@ namespace ai
 
             for(auto& kv: resp->kvs)
             {
-                if(kv.second.length() > 0 && kv.second[0] == '{')
+                if(kv.second.length() > 0 &&
+                    (kv.second[0] == '{'  || kv.second[0] == '[' ))
                 {
                     rapidjson::Document doc;
 
@@ -503,6 +504,11 @@ namespace ai
                 if (second_param=="clean") {
                     return rest_task_clean(httpReq, path);
                 }
+
+                // restart
+                if (second_param=="start") {
+                    return rest_task_restart(httpReq, path);
+                }
             }
 
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "Invalid requests. "
@@ -676,6 +682,64 @@ namespace ai
             std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
             bpo::variables_map& vm = req->vm;
 
+            INSERT_VARIABLE(vm, peer_nodes_list);
+            INSERT_VARIABLE(vm, code_dir);
+            INSERT_VARIABLE(vm, data_dir);
+            INSERT_VARIABLE(vm, hyper_parameters);
+            INSERT_VARIABLE(vm, entry_file);
+            INSERT_VARIABLE(vm, training_engine);
+            INSERT_VARIABLE(vm, master);
+            INSERT_VARIABLE(vm, checkpoint_dir);
+            INSERT_VARIABLE(vm, server_specification);
+            INSERT_VARIABLE(vm, container_name);
+            INSERT_VARIABLE(vm, select_mode);
+            INSERT_VARIABLE(vm, server_count);
+
+            bpo::notify(vm);
+
+            RETURN_REQ_MSG(cmd_start_training_req);
+        }
+
+        std::shared_ptr<message> rest_task_restart(HTTP_REQUEST_PTR httpReq, const std::string& path)
+        {
+            if (httpReq->get_request_method()!=http_request::POST) {
+                ERROR_REPLY(HTTP_BADREQUEST,
+                            RPC_INVALID_REQUEST,
+                            "Only support POST requests. POST /api/v1/tasks/<task_id>/start");
+                return nullptr;
+
+            }
+
+            std::vector<std::string> path_list;
+            rest_util::split_path(path, path_list);
+
+            if (path_list.size()!=2) {
+                ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid api. Use /api/v1/tasks/<task_id>/start");
+                return nullptr;
+            }
+
+
+            const std::string& task_id = path_list[0];
+
+            std::vector<std::string> peer_nodes_list;
+            std::string code_dir = TASK_RESTART;
+            std::string data_dir = TASK_RESTART;
+            std::string hyper_parameters = "";
+            std::string entry_file = "dummy";
+            std::string training_engine = "dummy";
+            std::string master = "";
+            std::string checkpoint_dir = "";
+            std::string server_specification = "";
+            std::string container_name = "dummy";
+            int8_t select_mode = 0;
+            int32_t server_count = 0;
+
+
+
+            std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
+            bpo::variables_map& vm = req->vm;
+
+            INSERT_VARIABLE(vm, task_id);
             INSERT_VARIABLE(vm, peer_nodes_list);
             INSERT_VARIABLE(vm, code_dir);
             INSERT_VARIABLE(vm, data_dir);
