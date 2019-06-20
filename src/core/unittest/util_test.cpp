@@ -64,3 +64,14 @@ BOOST_AUTO_TEST_CASE(test_split_char_one) {
 
     BOOST_TEST(argc == 2);
 }
+
+BOOST_AUTO_TEST_CASE(test_split_url) {
+
+    std::string path = "/2gfpp3MAB4ARp8JAkTBjPyEUdPM2wckxuDgHNQ3AxKA/cpu";
+    std::vector<std::string> path_list;
+
+
+    rest_util::split_path(path, path_list);
+
+    BOOST_TEST(path_list.size() == 2);
+}
