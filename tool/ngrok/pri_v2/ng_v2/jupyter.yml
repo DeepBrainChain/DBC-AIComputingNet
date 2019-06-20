@@ -1,8 +1,0 @@
-server_addr: 2.ngrok.dbc.com:20443
-tunnels:
-  jupyter:
-    proto:
-      tcp: 8888
-
-inspect_addr: 4051
-

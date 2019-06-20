@@ -24,7 +24,7 @@ namespace ai
 {
     namespace dbc
     {
-        user_task_scheduling::user_task_scheduling(std::shared_ptr<container_worker> &container_worker_ptr)
+        user_task_scheduling::user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr)
                 : task_scheduling(container_worker_ptr)
         {
         }

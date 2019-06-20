@@ -1,0 +1,21 @@
+# dbc linux client
+FROM ubuntu:16.04
+
+RUN apt-get update
+
+RUN apt-get install --yes \
+    vim \
+    net-tools \
+    wget \
+    tar
+
+
+WORKDIR /root
+
+ADD http://116.85.24.172:20444/static/dbc_client_linux.tar.gz /root
+
+RUN tar -xvzf /root/dbc_client_linux.tar.gz
+
+WORKDIR /root/dbc_client_linux
+
+CMD ["/bin/bash"]

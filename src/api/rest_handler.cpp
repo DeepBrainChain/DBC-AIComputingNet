@@ -440,30 +440,50 @@ namespace ai
             std::vector<std::string> path_list;
             rest_util::split_path(path, path_list);
 
-            if (path_list.size() > 1) {
+            if (path_list.size() > 2) {
                 ERROR_REPLY(HTTP_BADREQUEST,
                             RPC_INVALID_PARAMS,
-                            "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}");
+                            "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}/{key}");
                 return nullptr;
             }
 
+
             std::string nodeid;
-            if (path_list.size() >= 1) {
+            if (path_list.size() >= 1)
+            {
                 nodeid = path_list[0];
             }
 
             std::shared_ptr<cmd_show_req> req = std::make_shared<cmd_show_req>();
             req->op = OP_SHOW_UNKNOWN;
 
-            if (!nodeid.empty()) {
+            if (!nodeid.empty())
+            {
                 req->o_node_id = CONF_MANAGER->get_node_id();
                 req->d_node_id = nodeid;
                 req->op = OP_SHOW_NODE_INFO;
-                req->keys.push_back("all");
-            } else {
+
+                std::string key;
+                if (path_list.size() >= 2)
+                {
+                    key = path_list[1];
+                }
+
+                if(key.empty())
+                {
+                    req->keys.push_back("all");
+                }
+                else
+                {
+                    req->keys.push_back(key);
+                }
+            }
+            else
+            {
                 req->op = OP_SHOW_SERVICE_LIST;
             }
             RETURN_REQ_MSG(cmd_show_req);
+
 
         }
 
