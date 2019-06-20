@@ -2,6 +2,10 @@
 #include "common/util.h"
 
 #include <boost/format.hpp>
+#include <iostream>
+
+
+using namespace matrix::core;
 
 namespace ai
 {
@@ -14,10 +18,11 @@ namespace ai
             m_type = "";
         }
 
-        gpu::gpu(int32_t id, std::string type)
+        gpu::gpu(int32_t id, std::string type, std::string uuid)
         {
             m_id = id;
             m_type = type;
+            m_uuid = uuid;
         }
 
         std::string gpu::toString()
@@ -217,7 +222,12 @@ namespace ai
                     s+=",";
                 }
 
-                std::string each = std::string("{") + "\"id\":\"" + std::to_string((int)it.second->id()) + "\",\"state\":\"" + state + "\"}";
+                std::string each = std::string("{") + "\"id\":\""
+                        + std::to_string((int)it.second->id())
+                        + "\",\"state\":\"" + state
+                        + "\",\"type\":\"" + it.second->type()
+                        + "\",\"uuid\":\"" + it.second->uuid()
+                        + "\"}";
                 s += each;
 
                 n++;
@@ -229,32 +239,95 @@ namespace ai
         }
 
 
-        void gpu_pool_helper::parse_gpu_info(gpu_pool& pool, std::string str)
+        void gpu_pool::merge(gpu_pool& from)
+        {
+            auto f = [] (std::map<int32_t, std::shared_ptr<gpu>>& pool, std::string uuid) -> bool {
+
+                for (auto const& it: pool)
+                {
+                    if (it.second->uuid() == uuid) return true;
+                }
+                return false;
+            };
+
+
+            for (auto const& he: from.m_gpus)
+            {
+                std::shared_ptr<gpu> g = he.second;
+
+                if (!f(m_gpus, g->uuid()))
+                {
+                    // new gpu
+                    m_gpus[g->id()] = g;
+                    m_gpus_free.insert(g->id());
+                }
+
+            }
+        }
+
+
+        bool gpu_pool_helper::parse_gpu_info(gpu_pool& pool, std::string str)
         {
             std::vector<std::string> vec;
             matrix::core::string_util::split(str, "\n", vec);
 
             std::set<gpu> gpus;
-            int i = 0;
-            for (auto &s: vec)
+
+            if(vec.size()%2)
             {
-                matrix::core::string_util::trim(s);
-                if (!s.empty() && s != "Unknown")
-                {
-                    gpus.insert(gpu(i,s));
-                    i++;
-                }
+                // each card has both model and uuid info
+                return false;
             }
 
+            auto f = [] (std::string s, std::string name) -> std::string {
+                std::vector<std::string> each;
+                string_util::split(s, ":", each);
+                if(each.size()!=2) return std::string("");
+
+                std::string k = each[0];
+                std::string v = each[1];
+
+                if (k.find(name) == std::string::npos) return  std::string("");
+
+                string_util::trim(v);
+
+                string_util::trim(v);
+                if (v.empty() || v == "Unknown")
+                {
+                    return  std::string("");
+                }
+
+                return v;
+            };
+
+            for (int i=0; i< vec.size()-1; i+=2)
+            {
+                // Model: GeForce 940MX
+                // GPU UUID: GPU-914b7cac-4d5f-60a9-7abb-aee06a91176c
+                std::string model = f(vec[i], std::string("Model"));
+                std::string uuid = f(vec[i+1], std::string("UUID"));
+
+                if (model.empty() || uuid.empty())
+                {
+                    return false;
+                }
+
+                gpus.insert(gpu(i/2,model,uuid));
+            }
+
+
             pool.init(gpus);
+
+            return true;
         }
 
-        void gpu_pool_helper::update_gpu_from_proc(gpu_pool& pool, std::string path)
+        bool gpu_pool_helper::update_gpu_from_proc(gpu_pool& pool, std::string path)
         {
             #if defined(__linux__) || defined(MAC_OSX)
 
-//            std::string path= "/proc/driver/nvidia/gpus";
-            std::string cmd = "for i in `ls " + path + "`; do cat " + path + "/$i/information | grep Model | awk '{out=\"\"; for(i=2;i<=NF;i++){out=out$i}; print out}' ;done";
+//            std::string cmd = "for i in `ls " + path + "`; do cat " + path + "/$i/information | grep Model | awk '{out=\"\"; for(i=2;i<=NF;i++){out=out$i}; print out}' ;done";
+            std::string cmd = "for i in `ls " + path + "`; do cat " + path + "/$i/information | grep \"Model\\|UUID\"  | xargs -L 1 ;done";
+
             FILE *proc = popen(cmd.c_str(), "r");
             if (proc != NULL)
             {
@@ -269,10 +342,14 @@ namespace ai
 
                 matrix::core::string_util::trim(result);
 
-                gpu_pool_helper::parse_gpu_info(pool, result);
+//                std::cout << result <<std::endl;
+
+                return gpu_pool_helper::parse_gpu_info(pool, result);
             }
 
             #endif
+
+            return true;
         }
 
         std::set<int32_t> gpu_pool_helper::parse_gpu_list(gpu_pool& pool, std::string gpu_str)

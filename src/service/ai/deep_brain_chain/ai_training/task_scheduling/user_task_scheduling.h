@@ -71,6 +71,8 @@ namespace ai
             int32_t prune_task();
 
             std::string get_gpu_state();
+            void update_gpu_info_from_proc();
+
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
             int32_t prune_task(int16_t interval);
