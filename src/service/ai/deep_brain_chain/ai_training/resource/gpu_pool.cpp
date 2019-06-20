@@ -300,7 +300,7 @@ namespace ai
                 return v;
             };
 
-            for (int i=0; i< vec.size()-1; i+=2)
+            for (int i=0; i+1 < vec.size(); i+=2)
             {
                 // Model: GeForce 940MX
                 // GPU UUID: GPU-914b7cac-4d5f-60a9-7abb-aee06a91176c
