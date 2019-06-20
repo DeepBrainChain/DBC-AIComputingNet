@@ -17,11 +17,18 @@ using namespace matrix::core;
 BOOST_AUTO_TEST_CASE(test_read_gpu_info)
 {
 
-    std::string path = "../src/service/unittest/gpus";
+    std::string path1 = "../src/service/unittest/gpus";
+    std::string path2 = "../src/service/unittest/gpus_ok";
 
-    gpu_pool pool;
-    gpu_pool_helper::update_gpu_from_proc(pool, path);
-    std::cout << pool.toString();
+    gpu_pool pool1;
+    gpu_pool pool2;
+    gpu_pool_helper::update_gpu_from_proc(pool1, path1);
+    std::cout << pool1.toString();
+    gpu_pool_helper::update_gpu_from_proc(pool2, path2);
+    pool1.merge(pool2);
+    std::cout << pool1.toString();
+
+
 }
 
 BOOST_AUTO_TEST_CASE(test_gpu_pool)

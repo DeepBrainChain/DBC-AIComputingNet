@@ -18,11 +18,13 @@ namespace ai
         public:
             gpu();
 
-            gpu(int32_t id, std::string type = "");
+            gpu(int32_t id, std::string type = "", std::string uuid = "");
 
             int32_t id() const { return m_id; }
 
             std::string type() const { return m_type; }
+
+            std::string uuid() const { return m_uuid; }
 
             std::string toString();
 
@@ -30,10 +32,8 @@ namespace ai
 
         private:
             int32_t m_id;
-            std::string m_type;
-
-            std::string m_ram;
-
+            std::string m_type;   //model type, e.g. GeForce 1080ti
+            std::string m_uuid;   //uuid, e.g. GPU-914b7cac-4d5f-60a9-7abb-aee06a91176c
         };
 
 
@@ -65,6 +65,8 @@ namespace ai
 
             std::string toString();
 
+            void merge(gpu_pool& from);
+
         private:
             std::mutex m_mutex;
             std::map<int32_t, std::shared_ptr<gpu>> m_gpus;
@@ -77,8 +79,8 @@ namespace ai
         class gpu_pool_helper{
         public:
             static std::set<int32_t> parse_gpu_list(gpu_pool&, std::string);
-            static void parse_gpu_info(gpu_pool& pool, std::string str);
-            static void update_gpu_from_proc(gpu_pool& pool, std::string);
+            static bool parse_gpu_info(gpu_pool& pool, std::string str);
+            static bool update_gpu_from_proc(gpu_pool& pool, std::string);
         };
 
     }
