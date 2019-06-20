@@ -53,7 +53,7 @@ namespace ai
             }
         };
 
-        class task_scheduling:public std::enable_shared_from_this<task_scheduling>, boost::noncopyable
+        class task_scheduling
         {
         public:
             task_scheduling(std::shared_ptr<container_worker> m_container_worker);
