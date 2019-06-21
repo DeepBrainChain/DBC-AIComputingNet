@@ -13,6 +13,7 @@ fi
 
 DIR=$1
 format=$2
+force=$3
 prefix=$(echo "${DIR//.}" | tr / _)
 
 # need to kill ipfs daemon on exit if ipfs daemon is started by dbc_upload:
@@ -283,9 +284,10 @@ if ! add_to_local_ipfs_repo; then
     exit 1
 fi
 
-
-if check_content_duplicate_or_not; then
-    exit 0
+if [ "$force" != "-f" ]; then
+    if check_content_duplicate_or_not; then
+        exit 0
+    fi
 fi
 
 # set ipfs server list

@@ -2,10 +2,10 @@
 *  Copyright (c) 2017-2018 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        £ºp2p_net_service.h
-* description    £ºp2p net service
+* file name        ï¿½ï¿½p2p_net_service.h
+* description    ï¿½ï¿½p2p net service
 * date                  : 2018.01.28
-* author            £ºBruce Feng
+* author            ï¿½ï¿½Bruce Feng
 **********************************************************************************/
 #pragma once
 
@@ -46,7 +46,6 @@ namespace matrix
 		protected:
 
 			int32_t cmd_on_start_training_req(std::shared_ptr<message> &msg);
-			int32_t on_cmd_start_multi_training_req(std::shared_ptr<message> &msg);
 
         protected:
 			void add_task_config_opts(bpo::options_description &opts) const;

@@ -8,8 +8,7 @@
 * date              : 2018/7/1
 * author            : Jimmy Kuang
 **********************************************************************************/
-// The following two lines indicates boost test with Shared Library mode
-#define BOOST_TEST_DYN_LINK
+
 #include <boost/test/unit_test.hpp>
 
 #include "filter/simple_expression.h"

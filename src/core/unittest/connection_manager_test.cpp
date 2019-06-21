@@ -11,7 +11,7 @@
 
 
 // The following two lines indicates boost test with Shared Library mode
-#define BOOST_TEST_DYN_LINK
+//#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 

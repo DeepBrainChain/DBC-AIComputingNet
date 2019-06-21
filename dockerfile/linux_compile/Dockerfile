@@ -8,10 +8,10 @@ RUN apt-get install --yes \
 	build-essential \
 	gcc \
 	g++ \
-	libicu-dev \
+	libicu-devel \
 #	libboost-all-dev \
-	libssl-dev \
-	libevent-dev \
+	openssl-devel \
+	libevent-devel \
 	libtool \
 	git \
 	make \

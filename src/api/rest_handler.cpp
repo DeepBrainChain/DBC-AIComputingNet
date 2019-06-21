@@ -155,6 +155,73 @@ namespace ai
                                  rapidjson::Document::AllocatorType& allocator)
         {
 
+            for(auto& kv: resp->kvs)
+            {
+                if(kv.second.length() > 0 &&
+                    (kv.second[0] == '{'  || kv.second[0] == '[' ))
+                {
+                    rapidjson::Document doc;
+
+                    if(doc.Parse<0>(kv.second.c_str()).HasParseError() != true)
+                    {
+                        rapidjson::Value v = rapidjson::Value(doc, allocator);
+
+                        data.AddMember(STRING_DUP(kv.first), v, allocator);
+                    }
+                }
+                else
+                {
+                    // legacy gpu state or  gpu usage
+                    if (kv.first == std::string("image"))
+                    {
+                        rapidjson::Value images(rapidjson::kArrayType);
+                        std::vector<std::string> image_list;
+                        string_util::split(resp->kvs["image"], "\n", image_list);
+                        for (auto& img : image_list) {
+                            images.PushBack(STRING_DUP(img), allocator);
+                        }
+
+                        data.AddMember("images", images, allocator);
+                    }
+                    else if (kv.first == std::string("gpu_usage"))
+                    {
+                        //   gpu_usage_str:
+                        //"gpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\n"
+                        //
+                        std::string gpu_usage_str = string_util::rtrim(resp->kvs["gpu_usage"], '\n');
+                        rapidjson::Value gpu_usage(rapidjson::kArrayType);
+                        std::vector<std::string> gpu_usage_list;
+                        string_util::split(gpu_usage_str, "\n", gpu_usage_list);
+
+                        if (gpu_usage_list.size()%2==0) {
+                            for (auto i = 0; i < gpu_usage_list.size(); i += 2) {
+                                std::string gpu;
+                                rest_util::get_value_from_string(gpu_usage_list[i], "gpu", gpu);
+
+                                std::string mem;
+                                rest_util::get_value_from_string(gpu_usage_list[i + 1], "mem", mem);
+
+                                rapidjson::Value g(rapidjson::kObjectType);
+                                g.AddMember("gpu", STRING_DUP(gpu), allocator);
+                                g.AddMember("mem", STRING_DUP(mem), allocator);
+
+                                gpu_usage.PushBack(g, allocator);
+
+                            }
+                        }
+
+                        data.AddMember("gpu_usage", gpu_usage, allocator);
+
+                    }
+                    else
+                    {
+                        fill_json_filed_string(data, allocator, kv.first, kv.second);
+                    }
+                }
+            }
+
+#if 0
+
             std::string cpu_info = resp->kvs["cpu"];
             string_util::trim(cpu_info);
             int pos = cpu_info.find_first_of(' ');
@@ -288,6 +355,7 @@ namespace ai
             mem.AddMember("free", STRING_DUP(mem_free), allocator);
 
             data.AddMember("mem", mem, allocator);
+#endif
 
         }
 
@@ -372,30 +440,50 @@ namespace ai
             std::vector<std::string> path_list;
             rest_util::split_path(path, path_list);
 
-            if (path_list.size() > 1) {
+            if (path_list.size() > 2) {
                 ERROR_REPLY(HTTP_BADREQUEST,
                             RPC_INVALID_PARAMS,
-                            "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}");
+                            "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}/{key}");
                 return nullptr;
             }
 
+
             std::string nodeid;
-            if (path_list.size() >= 1) {
+            if (path_list.size() >= 1)
+            {
                 nodeid = path_list[0];
             }
 
             std::shared_ptr<cmd_show_req> req = std::make_shared<cmd_show_req>();
             req->op = OP_SHOW_UNKNOWN;
 
-            if (!nodeid.empty()) {
+            if (!nodeid.empty())
+            {
                 req->o_node_id = CONF_MANAGER->get_node_id();
                 req->d_node_id = nodeid;
                 req->op = OP_SHOW_NODE_INFO;
-                req->keys.push_back("all");
-            } else {
+
+                std::string key;
+                if (path_list.size() >= 2)
+                {
+                    key = path_list[1];
+                }
+
+                if(key.empty())
+                {
+                    req->keys.push_back("all");
+                }
+                else
+                {
+                    req->keys.push_back(key);
+                }
+            }
+            else
+            {
                 req->op = OP_SHOW_SERVICE_LIST;
             }
             RETURN_REQ_MSG(cmd_show_req);
+
 
         }
 
@@ -435,6 +523,11 @@ namespace ai
 
                 if (second_param=="clean") {
                     return rest_task_clean(httpReq, path);
+                }
+
+                // restart
+                if (second_param=="start") {
+                    return rest_task_restart(httpReq, path);
                 }
             }
 
@@ -609,6 +702,64 @@ namespace ai
             std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
             bpo::variables_map& vm = req->vm;
 
+            INSERT_VARIABLE(vm, peer_nodes_list);
+            INSERT_VARIABLE(vm, code_dir);
+            INSERT_VARIABLE(vm, data_dir);
+            INSERT_VARIABLE(vm, hyper_parameters);
+            INSERT_VARIABLE(vm, entry_file);
+            INSERT_VARIABLE(vm, training_engine);
+            INSERT_VARIABLE(vm, master);
+            INSERT_VARIABLE(vm, checkpoint_dir);
+            INSERT_VARIABLE(vm, server_specification);
+            INSERT_VARIABLE(vm, container_name);
+            INSERT_VARIABLE(vm, select_mode);
+            INSERT_VARIABLE(vm, server_count);
+
+            bpo::notify(vm);
+
+            RETURN_REQ_MSG(cmd_start_training_req);
+        }
+
+        std::shared_ptr<message> rest_task_restart(HTTP_REQUEST_PTR httpReq, const std::string& path)
+        {
+            if (httpReq->get_request_method()!=http_request::POST) {
+                ERROR_REPLY(HTTP_BADREQUEST,
+                            RPC_INVALID_REQUEST,
+                            "Only support POST requests. POST /api/v1/tasks/<task_id>/start");
+                return nullptr;
+
+            }
+
+            std::vector<std::string> path_list;
+            rest_util::split_path(path, path_list);
+
+            if (path_list.size()!=2) {
+                ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid api. Use /api/v1/tasks/<task_id>/start");
+                return nullptr;
+            }
+
+
+            const std::string& task_id = path_list[0];
+
+            std::vector<std::string> peer_nodes_list;
+            std::string code_dir = TASK_RESTART;
+            std::string data_dir = TASK_RESTART;
+            std::string hyper_parameters = "";
+            std::string entry_file = "dummy";
+            std::string training_engine = "dummy";
+            std::string master = "";
+            std::string checkpoint_dir = "";
+            std::string server_specification = "";
+            std::string container_name = "dummy";
+            int8_t select_mode = 0;
+            int32_t server_count = 0;
+
+
+
+            std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
+            bpo::variables_map& vm = req->vm;
+
+            INSERT_VARIABLE(vm, task_id);
             INSERT_VARIABLE(vm, peer_nodes_list);
             INSERT_VARIABLE(vm, code_dir);
             INSERT_VARIABLE(vm, data_dir);

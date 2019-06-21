@@ -35,12 +35,12 @@ namespace ai
 {
     namespace dbc
     { 
-        class user_task_scheduling:public std::enable_shared_from_this<user_task_scheduling>, public task_scheduling
+        class user_task_scheduling: public task_scheduling
         {
             using auth_task_handler = typename std::function<int32_t(shared_ptr<ai_training_task>)>;
             using stop_idle_task_handler = typename std::function<int32_t()>;
         public:
-            user_task_scheduling(std::shared_ptr<container_worker> &container_worker_ptr);
+            user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr);
             user_task_scheduling() = default;
             virtual ~user_task_scheduling() = default;
            
@@ -71,6 +71,8 @@ namespace ai
             int32_t prune_task();
 
             std::string get_gpu_state();
+            void update_gpu_info_from_proc();
+
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
             int32_t prune_task(int16_t interval);

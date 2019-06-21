@@ -120,12 +120,7 @@ set_docker_data_dir()
     fi
 }
 
-if [ -d $1 ]; then
-    docker_install_dir="$1"
-else
-    set_docker_data_dir
-fi
-
+set_docker_data_dir
 
 #sudo echo 'DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://127.0.0.1:31107"' >> /etc/default/docker
 sudo sed -i "s;ExecStart=.*;ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:31107 -H unix:///var/run/docker.sock --data-root=\"$docker_install_dir\" ;g" /lib/systemd/system/docker.service

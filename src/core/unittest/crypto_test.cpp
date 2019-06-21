@@ -1,16 +1,16 @@
 
+#include <boost/test/unit_test.hpp>
+
 #include "core/crypto/key.h"
 #include "core/crypto/crypto_service.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include "core/crypto/sha512.h"
+
+
+
 #include "core/crypto/random.h"
-
-
-// The following two lines indicates boost test with Shared Library mode
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
 
 
 using namespace boost::unit_test;
