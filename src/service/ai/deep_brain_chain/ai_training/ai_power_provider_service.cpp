@@ -3,7 +3,7 @@
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name         :   ai_power_provider_service.cpp
-* description     :   ai_power_provider_service
+* description     :     init and the callback of thrift matrix cmd
 * date                  :   2018.01.28
 * author             :   Bruce Feng
 **********************************************************************************/
@@ -450,14 +450,6 @@ namespace ai
             }
 
 
-            //check task_id
-            if (0 == m_user_task_ptr->get_user_cur_task_size())
-            {
-                LOG_DEBUG << "training queuing task is empty";
-                return E_SUCCESS;
-            }
-
-            
             const std::string& task_id = std::dynamic_pointer_cast<stop_training_req>(msg->get_content())->body.task_id;
             auto  sp_task = m_user_task_ptr->find_task(task_id);
 
@@ -926,10 +918,24 @@ namespace ai
                     m_idle_task_ptr->exec_task();
                 }
                 LOG_DEBUG << "training queuing task is empty";
-                return E_SUCCESS;
+//                return E_SUCCESS;
+            }
+            else
+            {
+                m_user_task_ptr->process_task();
             }
 
-            m_user_task_ptr->process_task();
+            // gpu info update periodically
+
+            static int count = 0;
+            count ++;
+            if ( (count % 10 ) == 0){
+                LOG_DEBUG << "update gpu proc info";
+
+                m_user_task_ptr->update_gpu_info_from_proc();
+            }
+
+
             return E_SUCCESS;
         }
 

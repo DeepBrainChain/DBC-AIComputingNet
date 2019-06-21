@@ -25,48 +25,53 @@ namespace service
 {
     namespace misc
     {
-        class node_info_collection //: public singleton<node_info_collection>
+
+        class bash_interface
+        {
+        public:
+            bash_interface();
+            bool init(std::string fn, std::string text);
+            std::string run(std::string arg);
+
+        private:
+            std::string m_fn;
+        };
+
+        class node_info_collection
         {
         public:
             node_info_collection();
+
             std::string get(std::string);
+
             void set(std::string k, std::string v);
 
             void refresh();
-            int32_t init(bool enable=true);
 
-            std::vector<std::string> get_keys();
-            bool is_honest_node();
+            int32_t init(std::string);
 
             std::string get_gpu_usage_in_total();
-            void set_query_sh(std::string fn="");
 
             time_t get_node_startup_time();
+
             void set_node_startup_time();
 
-        private:
-            bool generate_query_sh_file(std::string text);
+            int32_t read_node_static_info(std::string fn);
 
-            std::string query(std::string k);
-            std::string get_one(std::string k);
+            std::string get_gpu_short_desc();
 
-            bool check_sh_file(std::string fn);
-
-            void reset_node_info();
-
+        public:
+            static std::vector<std::string> get_all_attributes();
 
         private:
-            std::map<std::string, std::vector<std::string>> m_node_2_services;
+            void generate_node_static_info(std::string path);
+
+            std::string pretty_state(std::string v);
+
+        private:
             std::map<std::string, std::string> m_kvs;
 
-            //std::mutex m_mutex;
-            std::vector<std::string> m_keys;
-
-            std::string m_query_sh_file_name;
-
-            bool m_enable;
-            std::size_t m_sh_file_hash;
-            bool m_honest;
+            bash_interface m_shell;
         };
 
     }

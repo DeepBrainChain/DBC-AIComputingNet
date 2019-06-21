@@ -111,6 +111,9 @@ dbc_package()
         cp $tool_dir/startaiserver  $dbc_repo_dir/startapp
         cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
 
+        # dbc node info tool
+        cp -r $tool_dir/node_info $dbc_repo_dir/tool/
+
         chmod +x $dbc_repo_dir/startapp
         chmod +x $dbc_repo_dir/stopapp
     fi
@@ -146,8 +149,11 @@ dbc_package()
         cp $ipfs_repo_src_dir/swarm.key         $dbc_repo_dir/container/
         cp $ipfs_repo_src_dir/install_ipfs.sh   $dbc_repo_dir/container/
         cp $ipfs_repo_src_dir/$ipfs_pkg_tgz     $dbc_repo_dir/container/
-        cp $tool_dir/dbc_upload                  $dbc_repo_dir/container/
+        cp $tool_dir/dbc_upload                 $dbc_repo_dir/container/
         cp $tool_dir/upload.py                  $dbc_repo_dir/container/
+        cp -r $deployment_dir/cache             $dbc_repo_dir/container/
+        cp $tool_dir/jq                         $dbc_repo_dir/container/
+        cp $tool_dir/ngrok                      $dbc_repo_dir/container/
 
     fi
 }

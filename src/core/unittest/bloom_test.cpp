@@ -1,6 +1,4 @@
 
-// The following two lines indicates boost test with Shared Library mode
-#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 namespace utf = boost::unit_test;
@@ -11,12 +9,12 @@ namespace utf = boost::unit_test;
 #include <string>
 
 //using namespace matrix::core;
-const int SIZE_CHAR = 32; //����32 + 1λC Style�ַ���
+const int SIZE_CHAR = 32;
 const char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 std::string get_str()
 {
-	  const int SIZE_CHAR = 32; //����32 + 1λC Style�ַ���
+	  const int SIZE_CHAR = 32;
     const char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		srand((unsigned)time(NULL));
     //char ch[SIZE_CHAR + 1] = { 0 };

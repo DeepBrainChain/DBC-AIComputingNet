@@ -128,14 +128,15 @@ namespace ai
 
         static void print_cmd_task_usage()
         {
-            cout << "start:         start a task" << endl;
-            cout << "stop:          stop a task" << endl;
+            cout << "start:         start a new task" << endl;
+            cout << "stop:          stop a existing task" << endl;
+            cout << "restart:       restart a existing task" << endl;
             cout << "result:        download task exec result" <<endl;
             cout << "logs:          log" << endl;
             cout << "list:          get task status" << endl;
-//            cout << "ps:            get task status in cache" << endl;
             cout << "clear:         remove task record from local db" << endl;
-            cout << "start_multi:   start multi training tasks" << endl;
+
+
             cout << "-----------------------------------------" << endl;
         }
 
@@ -197,7 +198,6 @@ namespace ai
         {
             m_invokers["start"] = std::bind(&cmd_line_service::start_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["stop"] = std::bind(&cmd_line_service::stop_training, this, std::placeholders::_1, std::placeholders::_2);
-            m_invokers["start_multi"] = std::bind(&cmd_line_service::start_multi_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["list"] = std::bind(&cmd_line_service::list_training, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["peers"] = std::bind(&cmd_line_service::get_peers, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["result"] = std::bind(&cmd_line_service::result, this, std::placeholders::_1, std::placeholders::_2);
@@ -205,7 +205,6 @@ namespace ai
             m_invokers["show"] = std::bind(&cmd_line_service::show, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["clear"] = std::bind(&cmd_line_service::clear, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["history"] = std::bind(&cmd_line_service::history, this, std::placeholders::_1, std::placeholders::_2);
-//            m_invokers["ps"] = std::bind(&cmd_line_service::ps, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["system"] = std::bind(&cmd_line_service::system_cmd, this, std::placeholders::_1, std::placeholders::_2);
             m_invokers["sys"] = m_invokers["system"];
 
@@ -217,8 +216,6 @@ namespace ai
             m_invokers["task_stop"] = m_invokers["stop"];
             m_invokers["task_result"] = m_invokers["result"];
             m_invokers["task_logs"] = m_invokers["logs"];
-            m_invokers["task_start_multi"] = m_invokers["start_multi"];
-//            m_invokers["task_ps"] = m_invokers["ps"];
 
             m_invokers["reboot"] = std::bind(&cmd_line_service::node_reboot, this, std::placeholders::_1, std::placeholders::_2);
 
@@ -309,8 +306,12 @@ namespace ai
             auto it = m_invokers.find(cmd);
             if (it == m_invokers.end())
             {
-                cout << "unknown command, for prompt please input 'help'" << endl;
-                return;
+                it = m_invokers.find("system");
+                if( it == m_invokers.end())
+                {
+                    cout << "unknown command, for prompt please input 'help'" << endl;
+                    return;
+                }
             }
 
             //call handler function
@@ -682,57 +683,7 @@ namespace ai
                 cout << opts;
             }
         }
-        
-        void cmd_line_service::start_multi_training(int argc, char* argv[])
-        {
-            bpo::variables_map vm;
-            options_description opts("start multi task options");
 
-            try
-            {
-                opts.add_options()
-                    ("help,h", "start multi task")
-                    ("config,c", bpo::value<std::string>(), "task config file path");
-
-                //parse
-                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
-                bpo::notify(vm);
-
-                if (vm.count("config") || vm.count("c"))
-                {
-                    std::shared_ptr<cmd_start_multi_training_req> req = std::make_shared<cmd_start_multi_training_req>();
-                    req->mulit_task_file_path = vm["config"].as<std::string>();
-
-                    set_multi_tasks_config_opts(req->multi_tasks_config_opts);
-                    set_single_task_config_opts(req->single_task_config_opts);
-
-                    std::shared_ptr<cmd_start_multi_training_resp> resp = g_api_call_handler->invoke<cmd_start_multi_training_req, cmd_start_multi_training_resp>(req);
-                    if (nullptr == resp)
-                    {
-                        cout << endl << "command time out" << endl;
-                    }
-                    else
-                    {
-                        format_output(resp);
-                    }
-                }
-                else if (vm.count("help") || vm.count("h"))
-                {
-                    cout << opts;
-                }
-                else
-                {
-                    cout << argv[0] << " invalid option" << endl;
-                    cout << opts;
-                }
-            }
-            catch (...)
-            {
-                cout << argv[0] << " invalid option" << endl;
-                cout << opts;
-            }
-        }
-        
         void cmd_line_service::list_training(int argc, char* argv[])
         {
             bpo::variables_map vm;
@@ -1059,8 +1010,6 @@ namespace ai
                 bpo::variables_map& vm_r = req->vm;
 
 
-                std::this_thread::sleep_for(std::chrono::seconds(1));  // wait a second to avoid race condition between start_training_req and list_training_req in network.
-
                 // stop task
                 if (vm.count("task_id"))
                 {
@@ -1094,6 +1043,8 @@ namespace ai
 
                 }
 
+                // sleep one second to avoid messages race condition
+                std::this_thread::sleep_for(std::chrono::seconds(1));
 
 
                 if (vm.count("task_id"))
@@ -1324,52 +1275,6 @@ namespace ai
 
                 system(cmd.c_str());
 
-            }
-            catch (...)
-            {
-                cout << argv[0] << " invalid option" << endl;
-                cout << opts;
-            }
-        }
-
-        void cmd_line_service::ps(int argc, char* argv[])
-        {
-            bpo::variables_map vm;
-            options_description opts("clear info options");
-            try
-            {
-                opts.add_options()
-                    ("help,h", "clear help")
-                    ("all,a","show all task cache state")
-                    ("task,t",bpo::value<std::string>(), "show assign task cache state");
-
-                //parse
-                bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
-                bpo::notify(vm);
-
-                if (vm.count("help") || vm.count("h"))
-                {
-                    cout << opts;
-                    return;
-                }
-
-                if (vm.count("task") || vm.count("t"))
-                {
-                    std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
-                    req->task_id = vm["task"].as<std::string>();
-                    std::shared_ptr<cmd_ps_resp> resp = g_api_call_handler->invoke<cmd_ps_req, cmd_ps_resp>(req);
-                    format_output(resp);
-                    return;
-                }
-
-                if (vm.count("all") || vm.count("a"))
-                {
-                    std::shared_ptr<cmd_ps_req> req = std::make_shared<cmd_ps_req>();
-                    req->task_id = "all";;
-                    std::shared_ptr<cmd_ps_resp> resp = g_api_call_handler->invoke<cmd_ps_req, cmd_ps_resp>(req);
-                    format_output(resp);
-                    return;
-                }
             }
             catch (...)
             {
@@ -1654,7 +1559,15 @@ namespace ai
             try
             {
                 std::string cmd;
-                for(int i=1; i<argc; i++)
+
+                int offset = 0;
+                if( std::string("system") == std::string(argv[0]) ||
+                        std::string("sys") == std::string(argv[0]) )
+                {
+                    offset = 1;
+                }
+
+                for(int i=offset; i<argc; i++)
                 {
                     cmd += argv[i];
                     cmd += " ";
@@ -1771,10 +1684,10 @@ namespace ai
                         cout << "unknown command " << argv[1] << endl;
                         return;
                     }
-                    
+
                     //call handler function
                     auto func = it->second;
-                    
+
                     func(argc-1, argv+1);
                     
                 }

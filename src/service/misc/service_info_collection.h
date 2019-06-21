@@ -28,6 +28,10 @@ namespace service
     {
         typedef std::map <std::string, node_service_info> service_info_map;
 
+        enum {
+            MAX_CHANGE_SET_SIZE = 48
+        };
+
         class service_info_collection //: public singleton<service_info_collection>
         {
         public:
@@ -45,7 +49,7 @@ namespace service
             void reset_change_set();
             service_info_map& get_change_set();
 
-            void set_query_sh(std::string fn);
+            void set_bash_interface_fn(std::string fn);
 
         private:
             bool check(expression& e, std::string node_id, node_service_info& s_info);

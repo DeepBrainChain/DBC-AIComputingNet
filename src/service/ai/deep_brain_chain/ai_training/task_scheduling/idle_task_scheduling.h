@@ -30,11 +30,11 @@ namespace ai
 {
     namespace dbc
     { 
-        class idle_task_scheduling:public std::enable_shared_from_this<idle_task_scheduling>, task_scheduling
+        class idle_task_scheduling: task_scheduling
         {
             using fetch_task_handler = typename std::function<std::shared_ptr<idle_task_resp>()>;
         public:
-            idle_task_scheduling(std::shared_ptr<container_worker> & container_worker_ptr);
+            idle_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr);
             idle_task_scheduling() = default;
             virtual ~idle_task_scheduling() = default;
             int32_t init();

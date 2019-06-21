@@ -28,6 +28,76 @@ ipfs_get_task_pid=12345
 task=$3
 opts="${@:4}"
 
+
+start_ipfs_daemon()
+{
+    USERID=`id -u`
+    PROC_NAME="ipfs"
+    ps_="ps -e -o uid -o pid -o command"
+    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+    if [ -z "$ipfs_pid" ]; then
+        echo "ipfs daemon is starting"
+        nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
+    else
+        # ipfs is running
+        return 0
+    fi
+
+    # wait process ready
+    sleep 1
+    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
+    if [ -z "$ipfs_pid" ]; then
+        echo "error: fail to start ipfs daemon"
+        return 1
+    else
+        # loop until ipfs daemon is ready for use
+        for i in {1..60}; do
+            echo -n "."
+            if ipfs swarm peers &>/dev/null; then
+                echo
+                echo "ipfs is started"
+                return 0
+            fi
+            sleep 1
+        done
+    fi
+
+    echo
+    echo "error: fail to start ipfs daemon!"
+    return 1
+}
+
+setup_ipfs()
+{
+    ipfs_tgz=go-ipfs_v0.4.15_linux-amd64.tar.gz
+    ipfs_install_path=/dbc/.ipfs
+
+    export IPFS_PATH=$ipfs_install_path
+
+    if [ "$restart" != "true" ]; then
+        cp -f /home/dbc_utils/$ipfs_tgz /tmp/
+        cp -f /home/dbc_utils/swarm.key /tmp/
+        cp -f /home/dbc_utils/install_ipfs.sh /tmp/
+        # install ipfs repo
+
+        pwd_now=$(pwd)
+        cd /tmp
+        mkdir $ipfs_install_path
+        bash ./install_ipfs.sh ./$ipfs_tgz
+        cd $pwd_now
+
+        #set ipfs repo
+        ipfs config Datastore.StorageMax 100GB
+
+    else
+        if ! start_ipfs_daemon; then
+                echo "task completed: $task_id"
+                exit 1
+        fi
+        cd /
+    fi
+}
+
 myecho()
 {
     if [ "$SYSTEM" = "Linux" ]; then
@@ -85,7 +155,8 @@ end_ai_training()
     echo -n "end to exec task: "
     echo $home_dir/code/$task
 
-    upload_result_file
+#    upload_result_file
+
     myecho "\n\n"
     stop_ipfs
 }
@@ -244,45 +315,55 @@ if [ "$restart" != "true" ]; then
     echo -n "begin to download code dir: "
     echo $code_dir_hash
 
-    download $code_dir_hash ./code
-    #ipfs get $code_dir_hash -o ./code
 
-    if [ $? -ne 0 ]; then
-            echo "download code dir failed and dbc_task.sh exit"
-            stop_ipfs
-            exit
-    fi
+    if [ -d /home/dbc_utils/cache/$code_dir_hash ]; then
+        echo "cache hit"
+        cp -r /home/dbc_utils/cache/$code_dir_hash ./code
+    else
+        #
+        setup_ipfs
 
-    if [ ! -e "$home_dir/code/$task" ]; then
-       echo "task not exist. quit now"
-       rm -rf $home_dir/code
-       stop_ipfs
-       exit
-    fi
-
-    echo -n "end to download code dir: "
-    echo $code_dir_hash
-
-    #download data_dir
-    echo "======================================================="
-    if [ -n "$data_dir_hash" ]; then
-        echo -n "begin to download data dir: "
-        echo $data_dir_hash
-
-    #    ipfs get $data_dir_hash -o ./data
-        download $data_dir_hash ./data
+        download $code_dir_hash ./code
+        #ipfs get $code_dir_hash -o ./code
 
         if [ $? -ne 0 ]; then
-            echo "download data dir failed and dbc_task.sh exit"
-            stop_ipfs
-            exit
+                echo "download code dir failed and dbc_task.sh exit"
+                stop_ipfs
+                exit
         fi
 
-        echo -n "end to download data dir: "
-        echo $data_dir_hash
+        if [ ! -e "$home_dir/code/$task" ]; then
+           echo "task not exist. quit now"
+           rm -rf $home_dir/code
+           stop_ipfs
+           exit
+        fi
 
-        sleep $sleep_time
+        echo -n "end to download code dir: "
+        echo $code_dir_hash
     fi
+
+
+    #download data_dir
+#    echo "======================================================="
+#    if [ -n "$data_dir_hash" ]; then
+#        echo -n "begin to download data dir: "
+#        echo $data_dir_hash
+#
+#    #    ipfs get $data_dir_hash -o ./data
+#        download $data_dir_hash ./data
+#
+#        if [ $? -ne 0 ]; then
+#            echo "download data dir failed and dbc_task.sh exit"
+#            stop_ipfs
+#            exit
+#        fi
+#
+#        echo -n "end to download data dir: "
+#        echo $data_dir_hash
+#
+#        sleep $sleep_time
+#    fi
 
 fi
 

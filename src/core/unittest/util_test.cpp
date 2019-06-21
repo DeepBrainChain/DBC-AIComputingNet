@@ -1,6 +1,4 @@
 
-// The following two lines indicates boost test with Shared Library mode
-#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 namespace utf = boost::unit_test;
@@ -65,4 +63,15 @@ BOOST_AUTO_TEST_CASE(test_split_char_one) {
     string_util::split(&s[0], delim, argc, &argv[0]);
 
     BOOST_TEST(argc == 2);
+}
+
+BOOST_AUTO_TEST_CASE(test_split_url) {
+
+    std::string path = "/2gfpp3MAB4ARp8JAkTBjPyEUdPM2wckxuDgHNQ3AxKA/cpu";
+    std::vector<std::string> path_list;
+
+
+    rest_util::split_path(path, path_list);
+
+    BOOST_TEST(path_list.size() == 2);
 }
