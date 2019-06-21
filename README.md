@@ -134,21 +134,9 @@ macos, support osx 10.14. Open a terminal
 # ./dbc
 ```
 
-# configure dbc restful interface
-goto dbc install folder, and edit core.conf under conf dir.
-```
-rest_ip=127.0.0.1
-rest_port=41107
-```
-
-# configure dbc offline auth node
-only valid for computing node. add trust node, enable running management instructions from these nodes. 
-for example, edit core.conf under conf dir.
-```
-auth_mode=online
-trust_node_id=2gfpp3MAB475q4WNyyuL6kPUjw3nedJLKRgiiJiUj7Z
-trust_node_id=2gfpp3MAB4F5y2zVd1U7EJjLhMnqZPAcQ9kfpe4jpXZ
-```
+# dbc user manual
+refer to [doc/dbc_user_manual.md](doc/dbc_user_manual.md) for more details about start/stop dbc and configuration.
+ 
 
 
 
