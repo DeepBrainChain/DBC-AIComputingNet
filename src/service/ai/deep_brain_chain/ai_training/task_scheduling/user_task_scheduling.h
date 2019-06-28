@@ -88,6 +88,8 @@ namespace ai
             int16_t m_prune_intervel = 0;
 
             gpu_pool m_gpu_pool;
+
+            bool m_is_computing_node = false;
         };
     }
 }

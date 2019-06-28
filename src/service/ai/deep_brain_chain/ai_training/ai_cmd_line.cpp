@@ -914,9 +914,9 @@ namespace ai
             {
                 try
                 {
-                    bool cleanable = (cmd_req_content->clean_all) ||
-                        (cmd_req_content->task_id.empty() && task.status == task_unknown) ||
-                        (cmd_req_content->task_id == task.task_id);
+                    bool cleanable = (cmd_req_content->clean_all)
+                         || (cmd_req_content->task_id.empty() && task.status == task_unknown)
+                         || (cmd_req_content->task_id == task.task_id && (task.status != task_running && task.status != task_pulling_image && task.status != task_queueing));
 
                     if (cleanable)
                     {

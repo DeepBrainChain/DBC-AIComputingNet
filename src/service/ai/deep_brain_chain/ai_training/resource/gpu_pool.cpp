@@ -323,7 +323,7 @@ namespace ai
 
         bool gpu_pool_helper::update_gpu_from_proc(gpu_pool& pool, std::string path)
         {
-            #if defined(__linux__) || defined(MAC_OSX)
+            #if defined(__linux__)
 
 //            std::string cmd = "for i in `ls " + path + "`; do cat " + path + "/$i/information | grep Model | awk '{out=\"\"; for(i=2;i<=NF;i++){out=out$i}; print out}' ;done";
             std::string cmd = "for i in `ls " + path + "`; do cat " + path + "/$i/information | grep \"Model\\|UUID\"  | xargs -L 1 ;done";

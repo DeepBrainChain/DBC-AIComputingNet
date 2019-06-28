@@ -579,6 +579,10 @@ namespace ai
                 data.AddMember("task_id", STRING_REF(it->task_id), allocator);
                 data.AddMember("create_time", (int64_t) it->create_time, allocator);
                 data.AddMember("status", STRING_DUP(to_training_task_status_string(it->status)), allocator);
+                data.AddMember("desc", STRING_DUP(it->description),allocator);
+                data.AddMember("pwd", STRING_DUP(it->pwd),allocator);
+                data.AddMember("raw", STRING_DUP(it->raw),allocator);
+
 
                 SUCC_REPLY(data);
                 return E_SUCCESS;
@@ -677,6 +681,7 @@ namespace ai
             int32_t server_count = 0;
             int8_t select_mode = 0;
             std::vector<std::string> peer_nodes_list;
+            std::string description;
 
             JSON_PARSE_STRING(document, "code_dir", code_dir);
             JSON_PARSE_STRING(document, "data_dir", data_dir);
@@ -687,6 +692,7 @@ namespace ai
             JSON_PARSE_STRING(document, "checkpoint_dir", checkpoint_dir);
             JSON_PARSE_STRING(document, "server_specification", server_specification);
             JSON_PARSE_STRING(document, "container_name", container_name);
+            JSON_PARSE_STRING(document, "description", description);
             JSON_PARSE_UINT(document, "select_mode", select_mode);
             JSON_PARSE_UINT(document, "server_count", server_count);
 
@@ -716,6 +722,8 @@ namespace ai
             INSERT_VARIABLE(vm, server_count);
 
             bpo::notify(vm);
+
+            req->parameters["description"]=description;
 
             RETURN_REQ_MSG(cmd_start_training_req);
         }
