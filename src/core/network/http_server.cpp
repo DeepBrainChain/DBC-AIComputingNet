@@ -169,6 +169,9 @@ namespace matrix
             std::string strJSON(buffer->GetString());
             LOG_ERROR << "response error=> " << strJSON;
 
+            // cors setting
+            write_header("Access-Control-Allow-Origin", "*");
+
             write_header("Content-Type", "application/json");
             write_reply(status, strJSON + "\r\n");
 
@@ -192,6 +195,9 @@ namespace matrix
             if (strJSON.size() < SHORT_JSON_STRING_SIZE) {
                 LOG_INFO << "response ok=> " << strJSON;
             }
+
+            // cors setting
+            write_header("Access-Control-Allow-Origin", "*");
 
             write_header("Content-Type", "application/json");
             write_reply(HTTP_OK, strJSON + "\r\n");

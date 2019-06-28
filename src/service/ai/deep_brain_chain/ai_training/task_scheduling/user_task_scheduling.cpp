@@ -33,6 +33,7 @@ namespace ai
         {
             if (options.count(SERVICE_NAME_AI_TRAINING))
             {
+                m_is_computing_node = true;
                 //todo: driver not ready yet when dbc starts
 //                LOG_INFO << "wait 30 seconds for nvidia gpu initialization completed";
 //                std::this_thread::sleep_for(std::chrono::milliseconds(30000));
@@ -56,12 +57,15 @@ namespace ai
 
         void user_task_scheduling::update_gpu_info_from_proc()
         {
-            gpu_pool gp;
-            gpu_pool_helper::update_gpu_from_proc(gp, "/proc/driver/nvidia/gpus");
+            if (m_is_computing_node)
+            {
+                gpu_pool gp;
+                gpu_pool_helper::update_gpu_from_proc(gp, "/proc/driver/nvidia/gpus");
 
-            LOG_DEBUG << gp.toString();
-            m_gpu_pool.merge(gp);
-            LOG_DEBUG << m_gpu_pool.toString();
+                LOG_DEBUG << gp.toString();
+                m_gpu_pool.merge(gp);
+                LOG_DEBUG << m_gpu_pool.toString();
+            }
         }
 
         int32_t user_task_scheduling::load_task()

@@ -1,70 +1,4 @@
 #!/bin/bash
-#set -x
-
-#start_ipfs_daemon()
-#{
-#    USERID=`id -u`
-#    PROC_NAME="ipfs"
-#    ps_="ps -e -o uid -o pid -o command"
-#    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
-#    if [ -z "$ipfs_pid" ]; then
-#        echo "ipfs daemon is starting"
-#        nohup ipfs daemon --enable-gc >/dev/null 2>&1 &
-#    else
-#        # ipfs is running
-#        return 0
-#    fi
-#
-#    # wait process ready
-#    sleep 1
-#    ipfs_pid=$($ps_  | grep [d]aemon | awk '{if (($1 == "'${USERID}'") && ($3~/'${PROC_NAME}'$/)) print $2}')
-#    if [ -z "$ipfs_pid" ]; then
-#        echo "error: fail to start ipfs daemon"
-#        return 1
-#    else
-#        # loop until ipfs daemon is ready for use
-#        for i in {1..60}; do
-#            echo -n "."
-#            if ipfs swarm peers &>/dev/null; then
-#                echo
-#                echo "ipfs is started"
-#                return 0
-#            fi
-#            sleep 1
-#        done
-#    fi
-#
-#    echo
-#    echo "error: fail to start ipfs daemon!"
-#    return 1
-#}
-#
-#setup_ipfs()
-#{
-#    # install ipfs repo to indicated directory, e.g. /dbc/
-#    ipfs_install_path=/dbc/.ipfs
-#
-#    export IPFS_PATH=$ipfs_install_path
-#
-#    if [ "$restart" != "true" ]; then
-#        cp -f /home/dbc_utils/$ipfs_tgz /
-#        # install ipfs repo
-#
-#        mkdir $ipfs_install_path
-#        bash ./install_ipfs.sh ./$ipfs_tgz
-#
-#        #set ipfs repo
-#        ipfs config Datastore.StorageMax 100GB
-#
-#    else
-#        if ! start_ipfs_daemon; then
-#                echo "task completed: $task_id"
-#                exit 1
-#        fi
-#        cd /
-#    fi
-#}
-
 
 # cp utility
 cp -f /home/dbc_utils/dbc_task.sh /
@@ -113,7 +47,6 @@ fi
 echo "task start: $task_id"
 echo "params: " $@
 
-#setup_ipfs
 
 if [ ! -d /dbc ]; then
     mkdir /dbc
