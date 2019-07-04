@@ -155,6 +155,9 @@ post_config()
     echo "disable system upgrade automatically"
     sudo sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
 
+    # register private repo
+    bash ./dbc_repo/tool/private_docker_repo/register_docker_repo.sh
+
     echo "dbc ai mining install finished"
     echo "run newgrp - docker and source ~/.bashrc to make DBC ENV effective"
     cd $path_now
