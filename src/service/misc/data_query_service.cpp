@@ -274,6 +274,11 @@ namespace service
                     {
                         tmp_keys = m_node_info_collection.get_all_attributes();
                     }
+                    else if (req->keys.size() == 1 && req->keys[0]=="docker")
+                    {
+                        // for restful api
+                        tmp_keys[0] = "docker ps" ;
+                    }
                     else
                     {
                         tmp_keys = req->keys;
@@ -302,6 +307,11 @@ namespace service
                 }
                 else
                 {
+                    if (req->keys.size() == 1 && req->keys[0]=="docker")
+                    {
+                        // for restful api
+                        req->keys[0] = "docker ps" ;
+                    }
                     q->prepare(req->o_node_id, req->d_node_id, req->keys,sesssion_id);
                 }
 

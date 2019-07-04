@@ -147,6 +147,9 @@ post_config()
 
     echo -e
 
+    echo "INFO: register dbc private docker register"
+    bash $new_dbc_install_path/dbc_repo/tool/private_docker_repo/register_docker_repo.sh
+
     return 0
 }
 

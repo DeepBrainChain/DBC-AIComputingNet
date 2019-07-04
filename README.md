@@ -137,6 +137,5 @@ macos, support osx 10.14. Open a terminal
 # dbc user manual
 refer to [doc/dbc_user_manual.md](doc/dbc_user_manual.md) for more details about start/stop dbc and configuration.
  
-
-
-
+# dbc technical description
+refer to [doc/dbc_tech_description.md](doc/dbc_tech_description.md) for more details.
