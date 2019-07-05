@@ -38,8 +38,7 @@ namespace service
         static const std::string basic_attrs[] = {
             "version",
             "startup_time",
-            "state",
-            "gpu_state"
+            "state"
         };
 
         static const std::string debug_cmds[] = {
@@ -51,7 +50,10 @@ namespace service
             "gpu_usage",
             "cpu_usage",
             "mem_usage",
-            "image"
+            "image",
+            "gpu_state",
+            "active_task",
+            "wallet"
         };
 
         static const std::string static_attrs[]={
@@ -259,6 +261,28 @@ namespace service
             m_kvs["cpu_usage"] = m_shell.run("cpu_usage");
             m_kvs["mem_usage"] = m_shell.run("mem_usage");
             m_kvs["image"] = m_shell.run("image");
+
+            {
+                std::string s;
+                for (auto & k : CONF_MANAGER->get_wallets())
+                {
+                    if(s.empty())
+                    {
+                        s="[";
+                    }
+                    else
+                    {
+                        s+=",";
+                    }
+
+                    s+="\""+k+"\"";
+                }
+
+                s+="]";
+
+                m_kvs["wallet"] = s;
+            }
+
 
             //async invoke
             auto req = std::make_shared<service::get_task_queue_size_req_msg>();

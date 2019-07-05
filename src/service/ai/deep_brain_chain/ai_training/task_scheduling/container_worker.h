@@ -26,7 +26,7 @@ using namespace matrix::core;
 
 #define AI_PULLING_IMAGE_TIMER_INTERVAL                             (5*3600* 1000)                                              //5h timer
 #define AI_TRAINING_MAX_RETRY_TIMES                                 1
-#define AI_TRAINING_MAX_TASK_COUNT                                  3
+#define AI_TRAINING_MAX_TASK_COUNT                                  32
 
 #define AI_TRAINING_TASK_SCRIPT_HOME                                "/home/dbc_utils/"
 #define AI_TRAINING_TASK_SCRIPT                                     "dbc_task.sh"                                               //training shell script name

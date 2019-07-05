@@ -117,7 +117,8 @@ namespace matrix
                 ("prune_task_stop_interval", bpo::value<int16_t>()->default_value(DEFAULT_PRUNE_TASK_INTERVAL), "")
                 ("rest_port", bpo::value<std::string>()->default_value(DEFAULT_REST_PORT), "0 prohibit http server")
                 ("auth_mode", bpo::value<std::string>()->default_value(""), "")
-                ("trust_node_id", bpo::value<std::vector<std::string>>(), "");
+                ("trust_node_id", bpo::value<std::vector<std::string>>(), "")
+                ("wallet", bpo::value<std::vector<std::string>>(), "");
 
             //peer opt description
             bpo::options_description peer_opts("peer options");

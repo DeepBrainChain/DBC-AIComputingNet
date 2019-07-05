@@ -132,6 +132,8 @@ function get_disk_info {
 
     disk_size=$(echo $raw_info | awk '{print $2}')
 
+    free_disk_size=$(echo $raw_info | awk '{print $4}')
+
     device=$(echo $raw_info | awk '{print $1}' | awk -F"/" '{print $3}')
 
     disk_type=$(lsblk -o name,rota | grep $device | awk '{if($1=="1")print "HDD"; else print "SSD"}')
@@ -142,7 +144,7 @@ function get_disk_info {
 
     rm -f /tmp/dbc_speed_test_output
 
-    disk_info="{\"size\":\"$disk_size\", \"type\":\"$disk_type\", \"speed\":\"$disk_speed\"}"
+    disk_info="{\"size\":\"$disk_size\", \"free\":\"$free_disk_size\", \"type\":\"$disk_type\", \"speed\":\"$disk_speed\"}"
 
     echo "INFO: get disk info, end"
 }
