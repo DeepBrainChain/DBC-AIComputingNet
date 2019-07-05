@@ -616,6 +616,26 @@ namespace ai
             return m_gpu_pool.toString();
         }
 
+        std::string user_task_scheduling::get_active_tasks()
+        {
+            std::string s;
+            for (auto & kvp : m_running_tasks)
+            {
+                if(s.empty())
+                {
+                    s="[";
+                }
+                else
+                {
+                    s+=",";
+                }
+
+                s+="\""+kvp.first+"\"";
+            }
+
+            s+="]";
+            return s;
+        }
 
     }
 }

@@ -669,6 +669,7 @@ namespace service
             LOG_DEBUG << "on_get_task_queue_size_resp: task_queue_size=" << std::to_string(resp->get_task_size());
             m_node_info_collection.set("state", std::to_string(resp->get_task_size()));
             m_node_info_collection.set("gpu_state", resp->get_gpu_state());
+            m_node_info_collection.set("active_task", resp->get_active_tasks());
 
             return E_SUCCESS;
         }

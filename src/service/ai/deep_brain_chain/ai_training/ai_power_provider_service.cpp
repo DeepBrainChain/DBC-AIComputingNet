@@ -954,6 +954,7 @@ namespace ai
 
             resp->set_task_size(task_num);
             resp->set_gpu_state(m_user_task_ptr->get_gpu_state());
+            resp->set_active_tasks(m_user_task_ptr->get_active_tasks());
 
             auto resp_msg = std::dynamic_pointer_cast<message>(resp);
 

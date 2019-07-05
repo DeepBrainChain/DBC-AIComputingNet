@@ -178,6 +178,17 @@ namespace matrix
                 return m_args["trust_node_id"].as< std::vector<std::string> >();
             }
 
+            const std::vector<std::string> get_wallets()
+            {
+                if ( m_args.count("wallet") == 0 )
+                {
+                    std::vector<std::string> rtn;
+                    return rtn;
+                }
+
+                return m_args["wallet"].as< std::vector<std::string> >();
+            }
+
         protected:
 
             int32_t parse_local_conf();

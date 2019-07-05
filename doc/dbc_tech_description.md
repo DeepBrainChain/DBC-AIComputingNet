@@ -3,7 +3,7 @@
 This document depicts some major design concepts of dbc network:
 * [dbc matrix protocol](#protocol)
 * [security](#security)
-* [RESTFul API] (#RESTFul API)
+* [RESTful API] (#RESTful API)
 
 
 # dbc matrix protocol
@@ -391,7 +391,7 @@ With online auth, dbc will send RESTFul API to external billing node.
 
 
 ## signature
-The original dbc node always send message with a signature of this message. 
+The original dbc node always send message with a signature of this message. The signature algorithm is ECDSA with secp256k1.
 Other node can extract public key from the signature, and then verify both the message content and the message's original source node id. 
 
 ```
@@ -412,6 +412,7 @@ message with private/confidential info will be encrypted before transport in dbc
 
 so far, only the resp message from computing node will be encrypt. node A send a request to node B to ask for some confidential inforamtion.
 
+The secret exchange process follow ECDH, and then the data is encrypted with AES.
 node B encrypt message:
  * generate a pair of onetime secect and public key (s_onetime/p_onetime). 
  * derive the permanent public key of node A, p_nodeA, from signature in the request message
@@ -450,5 +451,5 @@ dbc node will receive address of other nodes with public IP. And then release th
 
 
 
-# RESTFUL API
+# RESTful API
 refer to [dbc_restful.md](dbc_restful.md) for more details.
