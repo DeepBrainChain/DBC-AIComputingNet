@@ -474,39 +474,6 @@ namespace matrix
             }
         }
 
-        std::shared_ptr<nvidia_config_resp> container_client::get_nvidia_config()
-        {
-            //endpoint
-            std::string endpoint = "/docker/cli";
-
-            //headers, resp
-            kvs headers;
-            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
-            int32_t ret = E_SUCCESS;
-
-            try
-            {
-                ret = m_http_client.get(endpoint, headers, resp);
-            }
-            catch (const std::exception & e)
-            {
-                LOG_ERROR << "container client get nvidia config error: " << e.what();
-                return nullptr;
-            }
-
-            if (E_SUCCESS != ret)
-            {
-                return nullptr;
-            }
-            else
-            {
-                std::shared_ptr<nvidia_config_resp> nv_config_resp = std::make_shared<nvidia_config_resp>();
-                nv_config_resp->content = resp.body;
-
-                return nv_config_resp;
-            }
-        }
 
         void container_client::set_address(std::string remote_ip, uint16_t remote_port)
         {

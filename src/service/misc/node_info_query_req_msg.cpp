@@ -26,7 +26,7 @@ namespace service
 {
     namespace misc
     {
-#define MAX_NODE_INFO_KEYS_NUM 15
+#define MAX_NODE_INFO_KEYS_NUM 30
 #define MAX_NODE_INFO_KEY_LENGTH 30
 
         node_info_query_req_msg::node_info_query_req_msg():

@@ -78,13 +78,12 @@ namespace service
 
             for(auto& k: dynamic_attrs)
             {
-                v.push_back(k);
+                if(k != "image" && k != "active_task")
+                    v.push_back(k);
             }
 
             v.push_back("state");
-            v.push_back("gpu_state");
             v.push_back("version");
-
 
 //            for(auto& k: basic_attrs)
 //            {
