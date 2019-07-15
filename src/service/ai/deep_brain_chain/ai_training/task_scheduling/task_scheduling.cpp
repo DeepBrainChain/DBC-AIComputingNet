@@ -120,7 +120,7 @@ namespace ai
             std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";
             std::string text = "task_id=" + task->task_id + "\n";
 
-            LOG_ERROR << " container_id: " << task->container_id << " task_id: " << task->task_id;
+            LOG_DEBUG << " container_id: " << task->container_id << " task_id: " << task->task_id;
 
             if (is_container_existed)
             {

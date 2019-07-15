@@ -33,8 +33,6 @@ namespace ai
             :m_container_ip(DEFAULT_LOCAL_IP)
             , m_container_port((uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT))
             , m_container_client(std::make_shared<container_client>(m_container_ip, m_container_port))
-            , m_nvidia_client(std::make_shared<container_client>(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT))
-            , m_nv_config(nullptr)
             , m_nv_docker_version(NVIDIA_DOCKER_UNKNOWN)
         {
         }
@@ -81,7 +79,6 @@ namespace ai
             }
 
             m_container_client->set_address(m_container_ip, m_container_port);
-            m_nvidia_client->set_address(m_container_ip, DEFAULT_NVIDIA_DOCKER_PORT);
 
             //file path
             const fs::path &container_path = env_manager::get_container_path();
@@ -334,58 +331,6 @@ namespace ai
 
             switch (nv_docker_ver)
             {
-            case NVIDIA_DOCKER_ONE:
-            {
-                std::shared_ptr<nvidia_config> nv_config = get_nvidia_config_from_cli();
-
-                if (!nv_config) break;
-
-                LOG_INFO << "nvidia docker 1.x";
-
-                //binds
-                config->host_config.binds.push_back(nv_config->volume);
-
-                //devices
-                for (auto it = nv_config->devices.begin(); it != nv_config->devices.end(); it++)
-                {
-                    container_device dev;
-
-                    dev.path_on_host = *it;
-                    dev.path_in_container = *it;
-                    dev.cgroup_permissions = AI_TRAINING_CGROUP_PERMISSIONS;
-
-                    config->host_config.devices.push_back(dev);
-                }
-
-                //VolumeDriver
-                config->host_config.volume_driver = nv_config->driver_name;
-
-                //Mounts
-                /*container_mount nv_mount;
-                nv_mount.type = "volume";
-
-                std::vector<std::string> vec;
-                string_util::split(nv_config->driver_name, ":", vec);
-                if (vec.size() > 0)
-                {
-                nv_mount.name = vec[0];
-                }
-                else
-                {
-                LOG_ERROR << "container config get mounts name from nv_config error";
-                return nullptr;
-                }
-
-                nv_mount.source = AI_TRAINING_MOUNTS_SOURCE;
-                nv_mount.destination = AI_TRAINING_MOUNTS_DESTINATION;
-                nv_mount.driver = nv_config->driver_name;
-                nv_mount.mode = AI_TRAINING_MOUNTS_MODE;
-                nv_mount.rw = false;
-                nv_mount.propagation = DEFAULT_STRING;
-
-                config->host_config.mounts.push_back(nv_mount);*/
-                break;
-            }
             case NVIDIA_DOCKER_TWO:
             {
                 LOG_INFO << "nvidia docker 2.x";
@@ -401,93 +346,6 @@ namespace ai
             return config;
         }
 
-        std::shared_ptr<nvidia_config> container_worker::get_nvidia_config_from_cli()
-        {
-            //already have
-            if (nullptr != m_nv_config)
-            {
-                return m_nv_config;
-            }
-
-            if (nullptr == m_nvidia_client)
-            {
-                LOG_ERROR << "nvidia client is nullptr";
-                return nullptr;
-            }
-
-            std::shared_ptr<nvidia_config_resp> resp = m_nvidia_client->get_nvidia_config();
-            if (nullptr == resp)
-            {
-                LOG_ERROR << "nvidia client get nvidia config error";
-                return nullptr;
-            }
-
-            std::vector<std::string> vec;
-            string_util::split(resp->content, " ", vec);
-            if (0 == vec.size())
-            {
-                LOG_ERROR << "nvidia client get nvidia config split content into vector error";
-                return nullptr;
-            }
-
-            m_nv_config = std::make_shared<nvidia_config>();
-
-            //get nv gpu config
-            for (auto it = vec.begin(); it != vec.end(); it++)
-            {
-                std::vector<std::string> v;
-                std::string::size_type pos = std::string::npos;
-
-                //--volume-driver
-                pos = it->find("--volume-driver");
-                if (std::string::npos != pos)
-                {
-                    string_util::split(*it, "=", v);
-                    if (DEFAULT_SPLIT_COUNT == v.size())
-                    {
-                        m_nv_config->driver_name = v[1];
-                        LOG_DEBUG << "--volume-driver: " << m_nv_config->driver_name;
-                    }
-                    continue;
-                }
-
-                //--volume
-                pos = it->find("--volume");
-                if (std::string::npos != pos)
-                {
-                    string_util::split(*it, "=", v);
-                    if (DEFAULT_SPLIT_COUNT == v.size())
-                    {
-                        m_nv_config->volume = v[1];
-                        LOG_DEBUG << "--volume: " << m_nv_config->volume;
-                    }
-                    continue;
-                }
-
-                //--device
-                pos = it->find("--device");
-                if (std::string::npos != pos)
-                {
-                    string_util::split(*it, "=", v);
-                    if (DEFAULT_SPLIT_COUNT == v.size())
-                    {
-                        m_nv_config->devices.push_back(v[1]);
-                        LOG_DEBUG << "--device: " << v[1];
-                    }
-                    continue;
-                }
-            }
-
-            /*m_nv_config->driver_name = "nvidia-docker";
-            m_nv_config->volume = "nvidia_driver_384.111:/usr/local/nvidia:ro";
-
-            m_nv_config->devices.push_back("/dev/nvidiactl");
-            m_nv_config->devices.push_back("/dev/nvidia-uvm");
-            m_nv_config->devices.push_back("/dev/nvidia-uvm-tools");
-            m_nv_config->devices.push_back("/dev/nvidia0");*/
-
-            return m_nv_config;
-        }
 
         /**
         *
@@ -500,12 +358,6 @@ namespace ai
                 return m_nv_docker_version;
             }
 
-            if (get_nvidia_config_from_cli() != nullptr)
-            {
-                // nvidia-docker 1.x added a plug-in on runc.
-                m_nv_docker_version = NVIDIA_DOCKER_ONE;
-            }
-            else
             {
                 // nvidia-docker 2.x add a new docker runtime named nvidia. Check if nvidia runtime exists.
                 auto docker_info_ptr = m_container_client->get_docker_info();

@@ -633,7 +633,14 @@ namespace ai
                 s+="\""+kvp.first+"\"";
             }
 
-            s+="]";
+            if(s.empty())
+            {
+                s = "[]";
+            }
+            else
+            {
+                s += "]";
+            }
             return s;
         }
 

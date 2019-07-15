@@ -85,7 +85,6 @@ namespace ai
             ~container_worker() = default;
         public:
             int32_t init() { return load_container_config(); }
-            std::shared_ptr<nvidia_config> get_nvidia_config_from_cli();
             std::shared_ptr<container_config> get_container_config(std::shared_ptr<ai_training_task> task);
             nvidia_docker_version get_nv_docker_version();
             std::shared_ptr<container_client> get_worer_if() { return m_container_client;}
@@ -111,8 +110,6 @@ namespace ai
             //min disk_free 1024MB
             const uint32_t m_min_disk_free = 1024;
 
-            std::shared_ptr<nvidia_config> m_nv_config;
-            std::shared_ptr<container_client> m_nvidia_client;
             std::shared_ptr<container_client> m_container_client = nullptr;
 
             int64_t m_memory = 0;
