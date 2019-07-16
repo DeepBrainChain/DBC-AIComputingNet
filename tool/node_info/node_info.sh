@@ -55,15 +55,24 @@ function get_all_gpus_info {
 }
 
 
-gpu_bandwidth="N/A"
+gpu_bandwidth_h2d="N/A"
+gpu_bandwidth_d2d="N/A"
 function get_gpu_bandwidth {
 
     echo "INFO: gpu $1 bandwidth test, start"
 
-    v=$($DIR/bandwidthTest --device=$1 --htod --csv | grep bandwidth |awk -F "," '{print $2}' | awk -F "=" '{print $2}'|xargs)
+    v=$($DIR/bandwidthTest --device=$1 --htod --csv | grep bandwidth |awk -F "," '{print $2}' | awk -F "=" '{print $2}'|xargs| awk '{print $1}')
 
     if [ "$v" != "" ]; then
-        gpu_bandwidth=$v
+        x=$(python -c "print ($v*1000)")
+        gpu_bandwidth_h2d=$(printf "%.0f" $x)
+    fi
+
+    v=$($DIR/bandwidthTest --device=$1 --dtod --csv | grep bandwidth |awk -F "," '{print $2}' | awk -F "=" '{print $2}'|xargs | awk '{print $1}')
+
+    if [ "$v" != "" ]; then
+        x=$(python -c "print ($v*1000)")
+        gpu_bandwidth_d2d=$(printf "%.0f" $x)
     fi
 
     echo "INFO: gpu $1 bandwidth test, end"
@@ -85,9 +94,12 @@ function get_gpu_info {
         get_gpu_bandwidth $id
 
         let "n=id+2"
-        gpu_mem=$(nvidia-smi --query-gpu=memory.total --format=csv| head -$n | tail -1)
 
-        gpu_info="{\"id\":\"$id\", \"type\":\"$type\", \"mem\":\"$gpu_mem\", \"bandwidth\":\"$gpu_bandwidth\"}"
+
+        x=$(nvidia-smi --query-gpu=memory.total --format=csv| head -$n | tail -1|awk '{print $1}')
+        gpu_mem=$((x*1024))
+
+        gpu_info="{\"id\":\"$id\", \"type\":\"$type\", \"mem\":\"$gpu_mem\", \"pcie_bandwidth\":\"$gpu_bandwidth_h2d\", \"mem_bandwidth\":\"$gpu_bandwidth_d2d\"}"
     fi
 }
 
@@ -101,8 +113,9 @@ function speed_test {
     echo > $fn
     python $DIR/speedtest.py > $fn
 
-    speed_download=$(grep "Download:" /tmp/dbc_speedtest.log | awk -F ": " '{print $2}')
-    speed_upload=$(grep "Upload:" /tmp/dbc_speedtest.log | awk -F ": " '{print $2}')
+    speed_download=$(grep "Download:" /tmp/dbc_speedtest.log | awk -F ": " '{print $2}'|awk '{print $1}')
+
+    speed_upload=$(grep "Upload:" /tmp/dbc_speedtest.log | awk -F ": " '{print $2}'|awk '{print $1}')
 
     echo "INFO: network speed test, end"
 }
@@ -128,7 +141,7 @@ function get_disk_info {
         return 1
     fi
 
-    raw_info=$(df -l -h $dbc_container_path | tail -1)
+    raw_info=$(df -l -k $dbc_container_path | tail -1)
 
     disk_size=$(echo $raw_info | awk '{print $2}')
 
@@ -139,10 +152,21 @@ function get_disk_info {
     disk_type=$(lsblk -o name,rota | grep $device | awk '{if($1=="1")print "HDD"; else print "SSD"}')
 
 
+
     v=$(dd if=/dev/zero of=/tmp/dbc_speed_test_output bs=8k count=10k 2>&1)
-    disk_speed=$(echo $v | awk '{print $(NF-1)" " $NF}')
+    disk_speed=$(echo $v | awk '{print $(NF-1)}')
+    disk_speed_unit=$(echo $v | awk '{print $NF}')
+
+    if [ "${disk_speed_unit}" == "GB/s" ]; then
+        x=$(python -c "print ($disk_speed*1000*1000)")
+        disk_speed=$(printf "%.0f" $x)
+    elif [ "${disk_speed_unit}" == "MB/s" ]; then
+        x=$(python -c "print ($disk_speed*1000)")
+        disk_speed=$(printf "%.0f" $x)
+    fi
 
     rm -f /tmp/dbc_speed_test_output
+
 
     disk_info="{\"size\":\"$disk_size\", \"free\":\"$free_disk_size\", \"type\":\"$disk_type\", \"speed\":\"$disk_speed\"}"
 
@@ -172,7 +196,7 @@ function get {
 
     case "$attr" in
     "mem")
-        value=$(free -g -h | grep "Mem:" | awk '{print $2}')
+        value=$(free -g -k | grep "Mem:" | awk '{print $2}')
     ;;
 
     "os")

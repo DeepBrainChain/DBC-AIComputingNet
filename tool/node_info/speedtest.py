@@ -1882,8 +1882,8 @@ def shell():
             callback=callback,
             threads=(None, 1)[args.single]
         )
-        printer('Download: %0.2f M%s/s' %
-                ((results.download / 1000.0 / 1000.0) / args.units[1],
+        printer('Download: %0.2f K%s/s' %
+                ((results.download / 1000.0 ) / args.units[1],
                  args.units[0]),
                 quiet)
     else:
@@ -1897,8 +1897,8 @@ def shell():
             pre_allocate=args.pre_allocate,
             threads=(None, 1)[args.single]
         )
-        printer('Upload: %0.2f M%s/s' %
-                ((results.upload / 1000.0 / 1000.0) / args.units[1],
+        printer('Upload: %0.2f K%s/s' %
+                ((results.upload / 1000.0 ) / args.units[1],
                  args.units[0]),
                 quiet)
     else:
@@ -1910,11 +1910,11 @@ def shell():
         results.share()
 
     if args.simple:
-        printer('Ping: %s ms\nDownload: %0.2f M%s/s\nUpload: %0.2f M%s/s' %
+        printer('Ping: %s ms\nDownload: %0.2f K%s/s\nUpload: %0.2f K%s/s' %
                 (results.ping,
-                 (results.download / 1000.0 / 1000.0) / args.units[1],
+                 (results.download / 1000.0 ) / args.units[1],
                  args.units[0],
-                 (results.upload / 1000.0 / 1000.0) / args.units[1],
+                 (results.upload / 1000.0 ) / args.units[1],
                  args.units[0]))
     elif args.csv:
         printer(results.csv(delimiter=args.csv_delimiter))

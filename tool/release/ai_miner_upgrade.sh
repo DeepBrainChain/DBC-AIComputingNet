@@ -98,6 +98,14 @@ merge_dbc_data()
 }
 
 
+install_dependency()
+{
+    echo "INFO: install other tools"
+
+    return 0
+}
+
+
 post_config()
 {
     echo "INFO: add dbc executable path to ENV PATH"
@@ -195,7 +203,7 @@ new_dbc_install_path="$(dirname $(dirname $(dirname `which dbc`)))/${new_ver}"
 
 echo "** dbc upgrade from $old_ver to $new_ver"
 
-func_list=(pre_check download_dbc_tar stop_dbc_service install_dbc merge_dbc_data post_config)
+func_list=(pre_check download_dbc_tar stop_dbc_service install_dbc merge_dbc_data install_dependency post_config)
 
 i=1
 for func in ${func_list[@]}
