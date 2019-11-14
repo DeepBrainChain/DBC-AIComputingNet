@@ -8,7 +8,7 @@ If you want to add your machine to the DBC network, go straight to the “instal
 Suppose download dbc source code locates into ~/deepbrainchain folder.
 ```
     $ cd ~
-    $ git clone https://github.com/DeepBrainChain/deepbrainchain.git
+    $ git clone https://github.com/DeepBrainChain/DBC-AIComputingNet.git
     $ git checkout dev
     
     $ docker pull dbctraining/dbc_compile:v3
@@ -35,7 +35,7 @@ prerequisite
    
 ```
     $ cd ~
-    $ git clone https://github.com/DeepBrainChain/deepbrainchain.git
+    $ git clone https://github.com/DeepBrainChain/DBC-AIComputingNet.git
     $ git checkout dev
     
     $ cd ~/deepbrainchain/make
