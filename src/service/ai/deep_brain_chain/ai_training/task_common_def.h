@@ -14,7 +14,7 @@
 #include "common.h"
 
 
-#define MAX_LIST_TASK_COUNT                                     100
+#define MAX_LIST_TASK_COUNT                                     10000
 #define MAX_TASK_COUNT_PER_REQ                                  10
 //TODO ...
 #define MAX_TASK_COUNT_ON_PROVIDER                              10000

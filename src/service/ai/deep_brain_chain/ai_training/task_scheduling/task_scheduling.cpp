@@ -48,6 +48,62 @@ namespace ai
             return E_SUCCESS;
 
         }
+        int32_t task_scheduling::open_gpu(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
+            if (task->entry_file.empty() || task->code_dir.empty() || task->task_id.empty())
+            {
+                LOG_DEBUG << "task config error.";
+                return E_DEFAULT;
+            }
+           int32_t result0=commit_image(task);
+           if(E_SUCCESS==result0)
+           {
+               int32_t result1=stop_task(task);
+               if(E_SUCCESS==result1)
+               {
+                   create_task(task);
+               }
+           }
+        }
+
+        int32_t task_scheduling::stop_gpu(std::shared_ptr<ai_training_task> task)
+        {
+
+        }
+
+        int32_t task_scheduling::commit_image(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
+
+            if (task->entry_file.empty() || task->code_dir.empty() || task->task_id.empty())
+            {
+                LOG_DEBUG << "task config error.";
+                return E_DEFAULT;
+            }
+
+            std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
+            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id);
+            if (resp != nullptr && !resp->container_id.empty())
+            {
+                task->__set_container_id(resp->container_id);
+                LOG_DEBUG << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
+
+                return E_SUCCESS;
+            }
+            else
+            {
+                LOG_ERROR << "create task failed. task id:" << task->task_id;
+            }
+            return E_DEFAULT;
+        }
+
 
         int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task)
         {

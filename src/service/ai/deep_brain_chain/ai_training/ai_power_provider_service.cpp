@@ -206,7 +206,8 @@ namespace ai
             task->__set_container_id("");
             task->__set_received_time_stamp(std::time(nullptr));
             task->__set_status(task_queueing);
-
+            task->__set_memory(req->body.memory);
+            task->__set_memory_swap(req->body.memory_swap);
 
             m_urgent_task = task;
 
@@ -281,6 +282,8 @@ namespace ai
 
             task->__set_gpus(get_gpu_spec(task->server_specification));
 
+            task->__set_memory(req->body.memory);
+            task->__set_memory_swap(req->body.memory_swap);
             // reuse container where container name is specificed in training requester msg.
             //      As we know, dbc names a container with the task id value when create the container.
             //      So the input container name also refer to a task id.

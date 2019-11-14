@@ -101,6 +101,14 @@ void ai_training_task::__set_received_time_stamp(const int64_t val) {
 void ai_training_task::__set_status(const int8_t val) {
   this->status = val;
 }
+
+void ai_training_task::__set_memory(const int64_t val) {
+            this->memory = val;
+}
+
+void ai_training_task::__set_memory_swap(const int64_t val) {
+            this->memory_swap = val;
+}
 std::ostream& operator<<(std::ostream& out, const ai_training_task& obj)
 {
   obj.printTo(out);
@@ -135,6 +143,8 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
   bool isset_container_id = false;
   bool isset_received_time_stamp = false;
   bool isset_status = false;
+  bool isset_memory=false;
+  bool isset_memory_swap=false;
 
   while (true)
   {
@@ -284,6 +294,22 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 17:
+            if (ftype == ::apache::thrift::protocol::T_I64) {
+                xfer += iprot->readI64(this->memory);
+                this->__isset.memory = true;
+            } else {
+                xfer += iprot->skip(ftype);
+            }
+            break;
+      case 18:
+            if (ftype == ::apache::thrift::protocol::T_I64) {
+                xfer += iprot->readI64(this->memory_swap);
+                this->__isset.memory_swap = true;
+            } else {
+                xfer += iprot->skip(ftype);
+            }
+            break;
       case 252:
         if (ftype == ::apache::thrift::protocol::T_BYTE) {
           xfer += iprot->readByte(this->error_times);
@@ -347,7 +373,11 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_end_time)
     throw TProtocolException(TProtocolException::INVALID_DATA);
-  if (!isset_error_times)
+    if (!isset_memory)
+        throw TProtocolException(TProtocolException::INVALID_DATA);
+    if (!isset_memory_swap)
+        throw TProtocolException(TProtocolException::INVALID_DATA);
+    if (!isset_error_times)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_container_id)
     throw TProtocolException(TProtocolException::INVALID_DATA);
@@ -355,6 +385,7 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_status)
     throw TProtocolException(TProtocolException::INVALID_DATA);
+
   return xfer;
 }
 
@@ -440,6 +471,20 @@ uint32_t ai_training_task::write(::apache::thrift::protocol::TProtocol* oprot) c
     xfer += oprot->writeString(this->gpus);
     xfer += oprot->writeFieldEnd();
   }
+
+    if (this->__isset.memory) {
+        xfer += oprot->writeFieldBegin("memory", ::apache::thrift::protocol::T_I64, 17);
+        xfer += oprot->writeI64(this->memory);
+        xfer += oprot->writeFieldEnd();
+    }
+
+    if (this->__isset.memory_swap) {
+        xfer += oprot->writeFieldBegin("memory_swap", ::apache::thrift::protocol::T_I64, 18);
+        xfer += oprot->writeI64(this->memory_swap);
+        xfer += oprot->writeFieldEnd();
+    }
+
+
   xfer += oprot->writeFieldBegin("error_times", ::apache::thrift::protocol::T_BYTE, 252);
   xfer += oprot->writeByte(this->error_times);
   xfer += oprot->writeFieldEnd();
@@ -484,6 +529,8 @@ void swap(ai_training_task &a, ai_training_task &b) {
   swap(a.received_time_stamp, b.received_time_stamp);
   swap(a.status, b.status);
   swap(a.__isset, b.__isset);
+    swap(a.memory, b.memory);
+    swap(a.memory_swap, b.memory_swap);
 }
 
 ai_training_task::ai_training_task(const ai_training_task& other6) {
@@ -508,6 +555,8 @@ ai_training_task::ai_training_task(const ai_training_task& other6) {
   received_time_stamp = other6.received_time_stamp;
   status = other6.status;
   __isset = other6.__isset;
+  memory=other6.memory;
+  memory_swap=other6.memory_swap;
 }
 ai_training_task& ai_training_task::operator=(const ai_training_task& other7) {
   task_id = other7.task_id;
@@ -531,6 +580,8 @@ ai_training_task& ai_training_task::operator=(const ai_training_task& other7) {
   received_time_stamp = other7.received_time_stamp;
   status = other7.status;
   __isset = other7.__isset;
+  memory=other7.memory;
+  memory_swap=other7.memory_swap;
   return *this;
 }
 void ai_training_task::printTo(std::ostream& out) const {
@@ -556,6 +607,8 @@ void ai_training_task::printTo(std::ostream& out) const {
   out << ", " << "container_id=" << to_string(container_id);
   out << ", " << "received_time_stamp=" << to_string(received_time_stamp);
   out << ", " << "status=" << to_string(status);
+    out << ", " << "memory="; (__isset.memory ? (out << to_string(memory)) : (out << "<null>"));
+    out << ", " << "memory_swap="; (__isset.memory_swap ? (out << to_string(memory_swap)) : (out << "<null>"));
   out << ")";
 }
 

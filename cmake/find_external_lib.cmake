@@ -26,7 +26,7 @@ if (APPLE)
     SET(Boost_USE_STATIC_LIBS     ON)
 #    SET(Boost_USE_STATIC_RUNTIME  ON)
     set(Boost_USE_MULTITHREADED   ON)
-    set(PREFER_BOOST_VER 1.69)
+#    set(PREFER_BOOST_VER 1.69)
 
 #    add_definitions("-DBOOST_LOG_DYN_LINK")  # boost specific macro
     find_package(Boost ${PREFER_BOOST_VER} REQUIRED COMPONENTS log log_setup thread date_time system filesystem  exception program_options serialization  serialization chrono unit_test_framework )

@@ -62,6 +62,10 @@ namespace ai
             
             int32_t init_db(std::string db_name);
             virtual int32_t load_task() { return E_SUCCESS; }
+            int32_t open_gpu(std::shared_ptr<ai_training_task> task);
+            int32_t stop_gpu(std::shared_ptr<ai_training_task> task);
+
+            int32_t commit_image(std::shared_ptr<ai_training_task> task);
             int32_t start_task(std::shared_ptr<ai_training_task> task);
             int32_t stop_task(std::shared_ptr<ai_training_task> task);
 
