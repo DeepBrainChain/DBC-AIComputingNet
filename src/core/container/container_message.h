@@ -212,7 +212,7 @@ namespace matrix
 
             //int64_t memory_swap;
 
-            int32_t cup_shares;
+            int32_t cpu_shares;
 
             bool attach_stdin;
 

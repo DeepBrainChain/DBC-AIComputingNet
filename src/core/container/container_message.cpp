@@ -31,7 +31,7 @@ namespace matrix
 
             memory_limit = 0;
             //memory_swap = 0;
-            cup_shares = 0;
+            cpu_shares = 0;
 
             attach_stdin = false;
             attach_stdout = false;

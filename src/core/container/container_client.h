@@ -40,6 +40,7 @@ namespace matrix
 
             std::shared_ptr<container_create_resp> create_container(std::shared_ptr<container_config> config, std::string name);
 
+            int32_t commit_image(std::string container_id, std::shared_ptr<container_host_config> config);
             //start
             int32_t start_container(std::string container_id);
 

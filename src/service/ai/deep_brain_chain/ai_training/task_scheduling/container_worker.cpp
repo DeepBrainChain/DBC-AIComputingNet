@@ -231,8 +231,10 @@ namespace ai
             config->host_config.binds.push_back(AI_TRAINING_BIND_LOCALTIME);
             config->host_config.binds.push_back(AI_TRAINING_BIND_TIMEZONE);
 
-            config->host_config.memory = m_memory;
-            config->host_config.memory_swap = m_memory_swap;
+           // config->host_config.memory = m_memory;
+           // config->host_config.memory_swap = m_memory_swap;
+             config->host_config.memory =task->memory;
+             config->host_config.memory_swap = task->memory_swap;
             config->host_config.nano_cpus = m_nano_cpus;
 
             std::string mount_dbc_data_dir = m_container_args["host_volum_dir"].as<std::string>();
