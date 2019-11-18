@@ -233,7 +233,8 @@ namespace ai
 
            // config->host_config.memory = m_memory;
            // config->host_config.memory_swap = m_memory_swap;
-             config->host_config.memory =task->memory;
+            LOG_INFO << "task->memory:"+task->memory;
+            config->host_config.memory =task->memory;
              config->host_config.memory_swap = task->memory_swap;
             config->host_config.nano_cpus = m_nano_cpus;
 
