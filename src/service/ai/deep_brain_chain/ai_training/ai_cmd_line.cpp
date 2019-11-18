@@ -659,6 +659,8 @@ namespace ai
                 req_content->body.__set_checkpoint_dir(vm["checkpoint_dir"].as<std::string>());
                 req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
                 req_content->body.__set_container_name(vm["container_name"].as<std::string>());
+                req_content->body.__set_memory(vm["memory"].as<int64_t>());
+                req_content->body.__set_memory_swap(vm["memory_swap"].as<int64_t>());
             }
             catch (const std::exception &e)
             {

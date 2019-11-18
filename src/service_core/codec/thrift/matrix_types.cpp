@@ -1834,8 +1834,17 @@ __isset.hyper_parameters = true;
 }
 
 void start_training_req_body::__set_container_name(const std::string& val) {
-  this->container_name = val;
-__isset.container_name = true;
+            this->container_name = val;
+            __isset.container_name = true;
+}
+
+void start_training_req_body::__set_memory(const int64_t val)  {
+            this->memory = val;
+            __isset.memory = true;
+ }
+ void start_training_req_body::__set_memory_swap(const int64_t val)  {
+            this->memory_swap = val;
+            __isset.memory_swap = true;
 }
 std::ostream& operator<<(std::ostream& out, const start_training_req_body& obj)
 {
