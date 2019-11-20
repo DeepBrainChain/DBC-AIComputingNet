@@ -86,6 +86,7 @@ namespace ai
             cmd_resp->task_info.status = task_unknown;
 
             std::shared_ptr<base> content = msg->get_content();
+            LOG_INFO << "on_cmd_start_training_req content: " << content;
             std::shared_ptr<cmd_start_training_req> req = std::dynamic_pointer_cast<cmd_start_training_req>(content);
             assert(nullptr != req && nullptr != content);
             COPY_MSG_HEADER(req,cmd_resp);
@@ -112,7 +113,7 @@ namespace ai
             }
 
             LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << req_msg->get_content()->header.nonce;
-
+            LOG_INFO << "ai power requester service broadcast start training msg, nonce req->vm: " << req->vm;
 
             if (CONNECTION_MANAGER->broadcast_message(req_msg) != E_SUCCESS)
             {
