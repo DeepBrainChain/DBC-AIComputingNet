@@ -309,6 +309,7 @@ namespace ai
                 return;
             }
             LOG_INFO << "user task scheduling flush task to db: " << task->task_id;
+            LOG_INFO << "user task scheduling flush task to db memory: " << task->memory;
             m_queueing_tasks.push_back(task);
             m_training_tasks[task->task_id] = task;
         }
