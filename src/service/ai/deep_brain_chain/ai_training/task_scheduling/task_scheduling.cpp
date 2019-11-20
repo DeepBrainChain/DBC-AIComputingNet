@@ -123,7 +123,7 @@ namespace ai
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);
-                LOG_DEBUG << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
+                LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
 
                 return E_SUCCESS;
             }
