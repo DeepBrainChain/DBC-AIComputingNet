@@ -660,6 +660,8 @@ namespace ai
                 req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
                 req_content->body.__set_container_name(vm["container_name"].as<std::string>());
                 req_content->body.__set_memory(vm["memory"].as<int64_t>());
+                LOG_INFO << "vm[\"container_name\"].as<int64_t>():"+vm["container_name"].as<std::string>();
+                LOG_INFO << "vm[\"memory\"].as<int64_t>():"+vm["memory"].as<int64_t>();
                 req_content->body.__set_memory_swap(vm["memory_swap"].as<int64_t>());
             }
             catch (const std::exception &e)
