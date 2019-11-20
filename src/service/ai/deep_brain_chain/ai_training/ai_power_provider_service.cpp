@@ -282,6 +282,8 @@ namespace ai
 
             task->__set_gpus(get_gpu_spec(task->server_specification));
 
+            LOG_DEBUG << "body.memory: " <<req->body.memory;
+
             task->__set_memory(req->body.memory);
             task->__set_memory_swap(req->body.memory_swap);
             // reuse container where container name is specificed in training requester msg.
