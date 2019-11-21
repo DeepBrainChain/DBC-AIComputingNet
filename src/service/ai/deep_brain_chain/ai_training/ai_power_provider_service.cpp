@@ -152,7 +152,7 @@ namespace ai
 
         int32_t ai_power_provider_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req )
         {
-            LOG_DEBUG << "restart training " << req->body.task_id << endl;
+            LOG_INFO << "restart training " << req->body.task_id << endl;
 
             auto task = m_user_task_ptr->find_task(req->body.task_id);
             if (nullptr == task)
@@ -281,7 +281,7 @@ namespace ai
             task->__set_error_times(0);
 
             task->__set_gpus(get_gpu_spec(task->server_specification));
-
+            LOG_INFO << "body.training_engine: " <<req->body.training_engine;
             LOG_INFO << "body.memory: " <<req->body.memory;
 
             task->__set_memory(req->body.memory);
@@ -322,6 +322,7 @@ namespace ai
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<matrix::service_core::start_training_req> req = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
+            LOG_INFO <<"ai power provider service on_start_training_req  memory:" << req->body.memory;
             assert(nullptr != req);
 
             if (id_generator().check_base58_id(req->header.nonce) != true)

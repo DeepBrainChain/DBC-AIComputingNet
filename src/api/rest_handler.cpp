@@ -679,6 +679,8 @@ namespace ai
             std::string server_specification;
             std::string container_name;
             int32_t server_count = 0;
+            int64_t memory = 0;
+            int64_t memory_swap = 0;
             int8_t select_mode = 0;
             std::vector<std::string> peer_nodes_list;
             std::string description;
@@ -695,6 +697,8 @@ namespace ai
             JSON_PARSE_STRING(document, "description", description);
             JSON_PARSE_UINT(document, "select_mode", select_mode);
             JSON_PARSE_UINT(document, "server_count", server_count);
+            JSON_PARSE_UINT(document, "memory", memory);
+            JSON_PARSE_UINT(document, "memory_swap", memory_swap);
 
             if (document.HasMember("peer_nodes_list")) {
                 if (document["peer_nodes_list"].IsArray()) {
@@ -720,6 +724,8 @@ namespace ai
             INSERT_VARIABLE(vm, container_name);
             INSERT_VARIABLE(vm, select_mode);
             INSERT_VARIABLE(vm, server_count);
+            INSERT_VARIABLE(vm, memory);
+            INSERT_VARIABLE(vm, memory_swap);
 
             bpo::notify(vm);
 
@@ -761,7 +767,8 @@ namespace ai
             std::string container_name = "dummy";
             int8_t select_mode = 0;
             int32_t server_count = 0;
-
+            int64_t memory = 0;
+            int64_t memory_swap = 0;
 
 
             std::shared_ptr<cmd_start_training_req> req = std::make_shared<cmd_start_training_req>();
@@ -780,7 +787,8 @@ namespace ai
             INSERT_VARIABLE(vm, container_name);
             INSERT_VARIABLE(vm, select_mode);
             INSERT_VARIABLE(vm, server_count);
-
+            INSERT_VARIABLE(vm, memory);
+            INSERT_VARIABLE(vm, memory_swap);
             bpo::notify(vm);
 
             RETURN_REQ_MSG(cmd_start_training_req);
