@@ -3,8 +3,8 @@ cmake_minimum_required (VERSION 3.2)
 ############################################################################
 
 #debug setting
-#set(DEBUG_MODE ON)
-SET(CMAKE_BUILD_TYPE "Debug")
+set(DEBUG_MODE ON)
+#SET(CMAKE_BUILD_TYPE "Debug")
 #set(CMAKE_VERBOSE_MAKEFILE on)
 
 project("dbc")
