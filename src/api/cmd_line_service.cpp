@@ -335,6 +335,8 @@ namespace ai
                     ("peer_nodes_list", bpo::value<std::vector<std::string>>(), "")
                     ("server_specification", bpo::value<std::string>()->default_value(""), "")
                     ("server_count", bpo::value<int32_t>()->default_value(0), "")
+                    ("memory", bpo::value<int64_t>()->default_value(0), "")
+                    ("memory_swap", bpo::value<int64_t>()->default_value(0), "")
                     ("training_engine", bpo::value<std::string>(), "")
                     ("code_dir", bpo::value<std::string>(), "")
                     ("entry_file", bpo::value<std::string>(), "")
@@ -1066,7 +1068,8 @@ namespace ai
                     std::string container_name = "dummy";
                     int8_t select_mode = 0;
                     int32_t server_count = 0;
-
+                    int64_t memory = 0;
+                    int64_t memory_swap = 0;
 
                     INSERT_VARIABLE(vm_r, task_id);
                     INSERT_VARIABLE(vm_r, peer_nodes_list);
@@ -1081,7 +1084,8 @@ namespace ai
                     INSERT_VARIABLE(vm_r, container_name);
                     INSERT_VARIABLE(vm_r, select_mode);
                     INSERT_VARIABLE(vm_r, server_count);
-
+                    INSERT_VARIABLE(vm_r, memory);
+                    INSERT_VARIABLE(vm_r, memory_swap);
 
                     std::shared_ptr<cmd_start_training_resp> resp = g_api_call_handler->invoke<cmd_start_training_req, cmd_start_training_resp >(req);
 
