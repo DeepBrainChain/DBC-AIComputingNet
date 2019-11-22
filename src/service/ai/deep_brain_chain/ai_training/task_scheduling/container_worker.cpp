@@ -339,16 +339,16 @@ namespace ai
                     try
                     {
                         boost::property_tree::read_json(ss, pt);
-                        LOG_INFO<< "pt.count(\"memory\")" << pt.count("memory");
-                     //   if(pt.count("memory")!=0){
+                        LOG_INFO<< "pt.count(\"memory\"):" << pt.count("memory");
+                        if(pt.count("memory")!=0){
                             int64_t memory = pt.get<int64_t>("memory");
                             config->host_config.memory =memory;
 
 
                             LOG_INFO<< "memory: " << memory ;
 
-                      //  }
-                        LOG_INFO<< "pt.count(\"memory_swap\")" << pt.count("memory_swap");
+                        }
+                        LOG_INFO<< "pt.count(\"memory_swap\"):" << pt.count("memory_swap");
                         if(pt.count("memory_swap")!=0){
 
 
@@ -365,7 +365,7 @@ namespace ai
                     }
                 }
 
-                LOG_INFO << "config->host_config.memory"+config->host_config.memory;
+               // LOG_INFO << "config->host_config.memory"+config->host_config.memory;
 
             }
 
