@@ -223,17 +223,17 @@ namespace ai
             std::string start_cmd = task->entry_file + " " + task->hyper_parameters;
 
 
-            config->volumes.dests.push_back("/proc");
-            config->volumes.binds.push_back("/var/lib/lxcfs/proc");
+            config->volumes.dests.push_back("/proc/cpuinfo");
+            config->volumes.binds.push_back("/var/lib/lxcfs/proc/cpuinfo");
             config->volumes.modes.push_back("rw");
 
-          //  config->volumes.dests.push_back("/proc/diskstats");
-          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/diskstats");
-          //  config->volumes.modes.push_back("rw");
+            config->volumes.dests.push_back("/proc/diskstats");
+            config->volumes.binds.push_back("/var/lib/lxcfs/proc/diskstats");
+            config->volumes.modes.push_back("rw");
 
-          //  config->volumes.dests.push_back("/proc/meminfo");
-          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/meminfo");
-          //  config->volumes.modes.push_back("rw");
+            config->volumes.dests.push_back("/proc/meminfo");
+            config->volumes.binds.push_back("/var/lib/lxcfs/proc/meminfo");
+            config->volumes.modes.push_back("rw");
 
           //  config->volumes.dests.push_back("/proc/stat");
           //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/stat");
