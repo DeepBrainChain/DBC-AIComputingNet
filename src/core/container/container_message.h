@@ -54,9 +54,11 @@ namespace matrix
         {
         public:
 
+            std::list<std::string> binds;
+
             std::list<std::string> dests;
 
-            std::list<std::string> binds;
+            std::list<std::string> modes;
 
         };
 
