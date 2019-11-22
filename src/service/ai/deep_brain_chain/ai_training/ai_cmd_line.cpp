@@ -113,7 +113,7 @@ namespace ai
             }
 
             LOG_DEBUG << "ai power requester service broadcast start training msg, nonce: " << req_msg->get_content()->header.nonce;
-            LOG_INFO << "ai power requester service broadcast start training msg, nonce req->vm: " << req_msg->get_content();
+            LOG_INFO << "ai power requester service broadcast start training msg, header.msg_name: " << req_msg->get_content()->header.msg_name;
 
             if (CONNECTION_MANAGER->broadcast_message(req_msg) != E_SUCCESS)
             {
