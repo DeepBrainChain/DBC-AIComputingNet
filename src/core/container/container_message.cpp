@@ -123,9 +123,23 @@ namespace matrix
 
             //Volumes
             rapidjson::Value json_volumes(rapidjson::kObjectType);
+            auto it_bind = this->volumes.binds.begin();
+            auto it_mode = this->volumes.modes.begin();
             for (auto it = this->volumes.dests.begin(); it != this->volumes.dests.end(); it++)
             {
-                json_volumes.AddMember(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), rapidjson::Value().SetString("{}"), allocator);
+                rapidjson::Value json_volumes_bind(rapidjson::kObjectType);
+
+                json_volumes_bind.AddMember("bind",rapidjson::Value().SetString(it_bind->c_str(), (rapidjson::SizeType)it_bind->length()), allocator);
+                json_volumes_bind.AddMember("mode",rapidjson::Value().SetString(it_mode->c_str(), (rapidjson::SizeType)it_mode->length()), allocator);
+
+
+                json_volumes.AddMember(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), json_volumes_bind, allocator);
+
+                //LOG_INFO << "it_bind："+it_bind;
+                //LOG_INFO << "it_bind："+it_bind;
+
+                it_bind++;
+                it_mode++;
             }
             root.AddMember("Volumes", json_volumes, allocator);
 
@@ -268,8 +282,10 @@ namespace matrix
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
+            std::string s=buffer->GetString();
 
-            return buffer->GetString();
+            LOG_INFO << "buffer->GetString():"+s;
+            return s;
         }
 
         void container_create_resp::from_string(const std::string & buf)

@@ -129,7 +129,7 @@ namespace matrix
                     if (doc.HasMember("message"))
                     {
                         rapidjson::Value &message = doc["message"];
-                        LOG_ERROR << "commit container message: " << message.GetString();
+                        LOG_ERROR << "start container message: " << message.GetString();
                     }
 
                 }
