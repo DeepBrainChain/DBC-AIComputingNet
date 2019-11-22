@@ -328,6 +328,7 @@ namespace ai
 
         void set_single_task_config_opts(bpo::options_description &opts)
         {
+            LOG_INFO << "set_single_task_config_opts: " << "memory";
             opts.add_options()
                     ("task_id", bpo::value<std::string>(), "")
                     ("select_mode", bpo::value<int8_t>()->default_value(0), "")
@@ -1193,7 +1194,8 @@ namespace ai
                     std::string container_name = "dummy";
                     int8_t select_mode = 0;
                     int32_t server_count = 0;
-
+                    int64_t memory = 0;
+                    int64_t memory_swap = 0;
 
                     INSERT_VARIABLE(vm_r, peer_nodes_list);
                     INSERT_VARIABLE(vm_r, code_dir);
@@ -1207,7 +1209,8 @@ namespace ai
                     INSERT_VARIABLE(vm_r, container_name);
                     INSERT_VARIABLE(vm_r, select_mode);
                     INSERT_VARIABLE(vm_r, server_count);
-
+                    INSERT_VARIABLE(vm_r, memory);
+                    INSERT_VARIABLE(vm_r, memory_swap);
 
                     std::shared_ptr<cmd_start_training_resp> resp = g_api_call_handler->invoke<cmd_start_training_req, cmd_start_training_resp >(req);
 

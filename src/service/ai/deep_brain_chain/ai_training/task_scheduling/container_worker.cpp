@@ -329,6 +329,40 @@ namespace ai
 
                     }
                 }
+//memory
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+                        if(pt.count("memory")!=0){
+                            int64_t memory = pt.get<int64_t>("memory");
+                            config->host_config.memory =memory;
+
+
+                            LOG_INFO<< "memory: " << memory ;
+
+                        }
+
+                        if(pt.count("memory_swap")!=0){
+
+
+
+                            int64_t memory_swap = pt.get<int64_t>("memory_swap");
+                            config->host_config.memory_swap = memory_swap;
+                            LOG_INFO<< "memory_swap: " << memory_swap;
+                        }
+
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
 
             }
 
