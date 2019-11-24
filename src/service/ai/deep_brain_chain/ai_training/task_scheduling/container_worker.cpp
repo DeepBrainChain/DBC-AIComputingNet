@@ -223,17 +223,42 @@ namespace ai
             std::string start_cmd = task->entry_file + " " + task->hyper_parameters;
 
 
-            config->volumes.dests.push_back("/proc/cpuinfo");
-            config->volumes.binds.push_back("/var/lib/lxcfs/proc/cpuinfo");
-            config->volumes.modes.push_back("rw");
+          //  config->volumes.dests.push_back("/proc/cpuinfo");
+          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/cpuinfo");
+         //   config->volumes.modes.push_back("rw");
 
-            config->volumes.dests.push_back("/proc/diskstats");
-            config->volumes.binds.push_back("/var/lib/lxcfs/proc/diskstats");
-            config->volumes.modes.push_back("rw");
+          //  config->volumes.dests.push_back("/proc/diskstats");
+          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/diskstats");
+          //  config->volumes.modes.push_back("rw");
 
-            config->volumes.dests.push_back("/proc/meminfo");
-            config->volumes.binds.push_back("/var/lib/lxcfs/proc/meminfo");
-            config->volumes.modes.push_back("rw");
+          //  config->volumes.dests.push_back("/proc/meminfo");
+          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/meminfo");
+          //  config->volumes.modes.push_back("rw");
+
+            container_mount mount1 ;
+            mount1.target="/proc/cpuinfo";
+            mount1.source="/var/lib/lxcfs/proc/cpuinfo";
+            mount1.type="bind";
+            mount1.read_only=false;
+            mount1.consistency="consistent";
+
+            container_mount mount2 ;
+            mount2.target="/proc/diskstats";
+            mount2.source="/var/lib/lxcfs/proc/diskstats";
+            mount2.type="bind";
+            mount2.read_only=false;
+            mount2.consistency="consistent";
+
+            container_mount mount3 ;
+            mount3.target="/proc/meminfo";
+            mount3.source="/var/lib/lxcfs/proc/meminfo";
+            mount3.type="bind";
+            mount3.read_only=false;
+            mount3.consistency="consistent";
+
+            config->host_config.mounts.push_back(mount1);
+            config->host_config.mounts.push_back(mount2);
+            config->host_config.mounts.push_back(mount3);
 
           //  config->volumes.dests.push_back("/proc/stat");
           //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/stat");

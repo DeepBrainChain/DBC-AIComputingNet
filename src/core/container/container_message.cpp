@@ -190,12 +190,13 @@ namespace matrix
             for (auto it = host_config.mounts.begin(); it != host_config.mounts.end(); it++)
             {
                 rapidjson::Value json_mount(rapidjson::kObjectType);
-
-                json_mount.AddMember("Type", STRING_REF(it->type), allocator);
-                json_mount.AddMember("Name", STRING_REF(it->name), allocator);
+                json_mount.AddMember("Target", STRING_REF(it->target), allocator);
                 json_mount.AddMember("Source", STRING_REF(it->source), allocator);
+                json_mount.AddMember("Type", STRING_REF(it->type), allocator);
+                json_mount.AddMember("Consistency", STRING_REF(it->consistency), allocator);
+                json_mount.AddMember("ReadOnly", it->read_only, allocator);
                 //json_mount.AddMember("Destination", STRING_REF(it->destination), allocator);
-                json_mount.AddMember("Tag", STRING_REF(it->tag), allocator);
+
                 //json_mount.AddMember("Driver", STRING_REF(it->driver), allocator);
                 //json_mount.AddMember("Mode", STRING_REF(it->mode), allocator);
                 //json_mount.AddMember("RW", it->rw, allocator);
