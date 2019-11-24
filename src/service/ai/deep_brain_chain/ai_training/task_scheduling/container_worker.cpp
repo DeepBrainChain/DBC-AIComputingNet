@@ -408,6 +408,26 @@ namespace ai
                             LOG_INFO<< "memory_swap: " << memory_swap;
                         }
 
+                        LOG_INFO<< "pt.count(\"storage\"):" << pt.count("storage");
+                        if(pt.count("storage")!=0){
+
+
+
+                            std::string storage = pt.get<std::string>("storage");
+                            config->host_config.storage = storage;
+                            LOG_INFO<< "storage: " << storage;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpuShares\"):" << pt.count("cpuShares");
+                        if(pt.count("cpuShares")!=0){
+
+
+
+                            int32_t cpuShares = pt.get<int32_t>("cpuShares");
+                            config->host_config.cpu_shares = cpuShares;
+                            LOG_INFO<< "cpuShares: " << cpuShares;
+                        }
+
                     }
                     catch (...)
                     {

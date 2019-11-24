@@ -184,6 +184,10 @@ namespace matrix
             
             int64_t memory;
 
+            std::string storage;
+
+            int32_t cpu_shares;
+
             int64_t share_memory;
             
             std::list<container_ulimits> ulimits;

@@ -251,7 +251,12 @@ namespace matrix
             //json_host_config: MemorySwap
             json_host_config.AddMember("MemorySwap", host_config.memory_swap, allocator);
 
-            json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
+            //json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
+            json_host_config.AddMember("CpuShares", host_config.cpu_shares, allocator);
+
+            rapidjson::Value json_storage(rapidjson::kObjectType);
+            json_storage.AddMember("size", host_config.storage, allocator);
+            json_host_config.AddMember("StorageOpt",json_storage , allocator);
 
             json_host_config.AddMember("ShmSize", host_config.share_memory, allocator);
 
