@@ -255,7 +255,7 @@ namespace matrix
             json_host_config.AddMember("CpuShares", host_config.cpu_shares, allocator);
 
             rapidjson::Value json_storage(rapidjson::kObjectType);
-            json_storage.AddMember("size", host_config.storage, allocator);
+            json_storage.AddMember("size", STRING_REF(host_config.storage), allocator);
             json_host_config.AddMember("StorageOpt",json_storage , allocator);
 
             json_host_config.AddMember("ShmSize", host_config.share_memory, allocator);
