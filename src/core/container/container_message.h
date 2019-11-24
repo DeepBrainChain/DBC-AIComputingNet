@@ -109,14 +109,14 @@ namespace matrix
         {
         public:
 
-            std::string type;
 
-            std::string name;
+
+            std::string target;
 
             std::string source;
 
             //std::string destination;
-            std::string tag;
+            std::string type;
 
             //std::string driver;
 
