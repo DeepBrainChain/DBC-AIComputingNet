@@ -25,6 +25,13 @@ cd ./../
 echo "start install ipfs finished"
 echo -e
 
+echo "start to install lxcfs"
+cd ./lxcfs/
+/bin/bash ./install.sh
+cd ./../
+echo "install lxcfs finished"
+echo -e
+
 echo "show node id:"
 cd ./dbc_repo/
 ./dbc --id
