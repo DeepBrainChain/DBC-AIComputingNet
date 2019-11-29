@@ -196,6 +196,28 @@ namespace matrix
             std::string runtime;
         };
 
+        class update_container_config : public json_io_buf
+        {
+        public:
+
+
+
+            int64_t memory;
+
+            int64_t memory_swap;
+
+            int32_t cpu_shares;
+
+
+            //GPU needed
+            std::list<std::string> env;
+
+            int64_t disk_quota;
+
+            std::string update_to_string();
+
+        };
+
         class container_config : public json_io_buf
         {
         public:

@@ -48,7 +48,9 @@ namespace ai
             return E_SUCCESS;
 
         }
-        int32_t task_scheduling::open_gpu(std::shared_ptr<ai_training_task> task)
+
+
+        int32_t task_scheduling::update_task(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task)
             {
@@ -59,20 +61,49 @@ namespace ai
                 LOG_DEBUG << "task config error.";
                 return E_DEFAULT;
             }
-           int32_t result0=commit_image(task);
-           if(E_SUCCESS==result0)
-           {
-               int32_t result1=stop_task(task);
-               if(E_SUCCESS==result1)
-               {
-                   create_task(task);
-               }
-           }
-        }
 
-        int32_t task_scheduling::stop_gpu(std::shared_ptr<ai_training_task> task)
-        {
+            auto state = get_task_state(task);
+            if (DBC_TASK_RUNNING == state)
+            {
+                if (task->status != task_running)
+                {
+                    LOG_INFO << "task have not been running. task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
 
+                if (task->container_id.empty())
+                {
+
+                    LOG_INFO << "task id null. task id";
+
+                    return E_DEFAULT;
+                }
+
+                std::shared_ptr<update_container_config> config = m_container_worker->get_update_container_config(task);
+                int32_t ret= CONTAINER_WORKER_IF->update_container(task->container_id, config);
+
+
+                if (ret != E_SUCCESS)
+                {
+                    LOG_ERROR << "update task error. Task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
+
+                LOG_INFO << "update task success. Task id:" << task->task_id;
+                task->__set_update_time(time_util::get_time_stamp_ms());
+
+                task->__set_memory(config->memory);
+                task->__set_memory_swap(config->memory_swap);
+               // task->__set_gpus(config->env);
+                m_task_db.write_task_to_db(task);
+
+            }
+
+
+
+
+
+            return E_SUCCESS;
         }
 
         int32_t task_scheduling::commit_image(std::shared_ptr<ai_training_task> task)
@@ -118,6 +149,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
+
             std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
             std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id);
             if (resp != nullptr && !resp->container_id.empty())
@@ -140,6 +172,8 @@ namespace ai
             {
                 return E_SUCCESS;
             }
+
+
 
 
             auto state = get_task_state(task);
@@ -171,6 +205,16 @@ namespace ai
                 }
             }
 
+            //update container
+            std::string operation =  m_container_worker->get_operation(task);
+            if(operation=="update")
+            {
+                LOG_INFO<< "task will update,  task id:" << task->task_id;
+                return  update_task(task);
+            }else if(operation=="restart")
+            {
+                //return  update_task(task);
+            }
 
             // update container's parameter if
             std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";

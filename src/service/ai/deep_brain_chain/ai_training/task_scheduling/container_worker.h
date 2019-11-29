@@ -89,6 +89,8 @@ namespace ai
             nvidia_docker_version get_nv_docker_version();
             std::shared_ptr<container_client> get_worer_if() { return m_container_client;}
             int32_t can_pull_image();
+            std::string get_operation(std::shared_ptr<ai_training_task> task);
+            std::shared_ptr<update_container_config> get_update_container_config(std::shared_ptr<ai_training_task> task);
 
         private:
             int32_t load_container_config();
