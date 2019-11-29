@@ -259,6 +259,7 @@ namespace ai
             LOG_INFO << "task status:" << "task_running";
             m_task_db.write_task_to_db(task);
             LOG_INFO << "task status:" << "write_task_to_db";
+            LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
             return E_SUCCESS;
         }
 

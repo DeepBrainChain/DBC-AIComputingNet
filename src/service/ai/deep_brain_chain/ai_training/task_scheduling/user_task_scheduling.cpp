@@ -163,9 +163,10 @@ namespace ai
             {
                 m_stop_idle_task_handler();
             }
-
+            LOG_INFO << "start_task start" ;
             int32_t ret = start_task(task);
 
+            LOG_INFO << "start_task over,ret:"<< ret;
             if (ret != E_SUCCESS)
             {
                 task->error_times++;
@@ -188,6 +189,7 @@ namespace ai
             }
             else
             {
+                LOG_INFO << "task->status" << task->status;
                 if (task->status == task_running)
                 {
                     //jimmy: move task from waiting queue  into running tasks map
