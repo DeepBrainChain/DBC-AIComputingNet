@@ -145,7 +145,7 @@ namespace ai
 
             if (task->entry_file.empty() || task->code_dir.empty() || task->task_id.empty())
             {
-                LOG_DEBUG << "task config error.";
+                LOG_INFO << "task config error.";
                 return E_DEFAULT;
             }
 
@@ -207,6 +207,7 @@ namespace ai
 
             //update container
             std::string operation =  m_container_worker->get_operation(task);
+            LOG_INFO<< "task operation:" << operation;
             if(operation=="update")
             {
                 LOG_INFO<< "task will update,  task id:" << task->task_id;
@@ -220,7 +221,7 @@ namespace ai
             std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";
             std::string text = "task_id=" + task->task_id + "\n";
 
-            LOG_DEBUG << " container_id: " << task->container_id << " task_id: " << task->task_id;
+            LOG_INFO << " container_id: " << task->container_id << " task_id: " << task->task_id;
 
             if (is_container_existed)
             {
