@@ -281,8 +281,8 @@ namespace ai
             task->__set_error_times(0);
 
             task->__set_gpus(get_gpu_spec(task->server_specification));
-            LOG_INFO << "body.training_engine: " <<req->body.training_engine;
-            LOG_INFO << "body.memory: " <<req->body.memory;
+           // LOG_INFO << "body.training_engine: " <<req->body.training_engine;
+           // LOG_INFO << "body.memory: " <<req->body.memory;
 
             task->__set_memory(req->body.memory);
             task->__set_memory_swap(req->body.memory_swap);
@@ -291,11 +291,11 @@ namespace ai
             //      So the input container name also refer to a task id.
             std::string ref_container_id="";
             auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
-            LOG_DEBUG << "req container_name: " << req->body.container_name;
+            LOG_INFO << "req container_name: " << req->body.container_name;
             if (ref_task != nullptr)
             {
-                LOG_DEBUG << "ref task container id: " << ref_task->container_id;
-                LOG_DEBUG << "ref task id: " << ref_task->task_id;
+                LOG_INFO << "ref task container id: " << ref_task->container_id;
+                LOG_INFO << "ref task id: " << ref_task->task_id;
 
                 if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
                 {
@@ -923,7 +923,7 @@ namespace ai
                 {
                     m_idle_task_ptr->exec_task();
                 }
-                LOG_DEBUG << "training queuing task is empty";
+                LOG_INFO << "training queuing task is empty";
 //                return E_SUCCESS;
             }
             else
