@@ -936,7 +936,7 @@ namespace ai
             static int count = 0;
             count ++;
             if ( (count % 10 ) == 0){
-                LOG_DEBUG << "update gpu proc info";
+                LOG_INFO << "update gpu proc info";
 
                 m_user_task_ptr->update_gpu_info_from_proc();
             }
