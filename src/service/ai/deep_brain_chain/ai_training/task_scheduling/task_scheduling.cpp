@@ -258,6 +258,7 @@ namespace ai
             task->error_times = 0;
             LOG_INFO << "task status:" << "task_running";
             m_task_db.write_task_to_db(task);
+            LOG_INFO << "task status:" << "write_task_to_db";
             return E_SUCCESS;
         }
 
