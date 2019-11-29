@@ -230,7 +230,7 @@ namespace ai
                 }
                 catch (...)
                 {
-
+                    LOG_INFO<< "operation: " << "error" ;
                 }
             }
         }
