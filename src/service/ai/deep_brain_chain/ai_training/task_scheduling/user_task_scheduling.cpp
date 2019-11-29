@@ -211,7 +211,7 @@ namespace ai
 
             }
 
-            LOG_DEBUG << "start user task success, task id:" << task->task_id;
+            LOG_INFO << "start user task success, task id:" << task->task_id;
             return E_SUCCESS;
         }
 

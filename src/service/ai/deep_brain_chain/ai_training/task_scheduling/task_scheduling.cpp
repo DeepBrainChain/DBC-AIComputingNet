@@ -256,6 +256,7 @@ namespace ai
             task->__set_start_time(time_util::get_time_stamp_ms());
             task->__set_status(task_running);
             task->error_times = 0;
+            LOG_INFO << "task status:" << "task_running";
             m_task_db.write_task_to_db(task);
             return E_SUCCESS;
         }
