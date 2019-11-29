@@ -191,20 +191,21 @@ namespace ai
                 if (task->status == task_running)
                 {
                     //jimmy: move task from waiting queue  into running tasks map
+                    LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
                     m_running_tasks[task->task_id] = task;
                     m_queueing_tasks.remove(task);
 
                     if (!m_gpu_pool.allocate(task->gpus))
                     {
                         // is supposed never happen because gpu check passed before
-                        LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                        LOG_INFO << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
                                   << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
                         stop_task(task, task_out_of_gpu_resource);
                         return E_DEFAULT;
                     }
                     else
                     {
-                        LOG_DEBUG << "gpu state " << m_gpu_pool.toString();
+                        LOG_INFO << "gpu state " << m_gpu_pool.toString();
                     }
 
                 }
@@ -456,7 +457,7 @@ namespace ai
 
             if (true == resp->state.running)
             {
-                LOG_DEBUG << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_INFO << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 auth_task(task);
                 return E_SUCCESS;
             }
