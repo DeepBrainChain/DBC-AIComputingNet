@@ -202,7 +202,155 @@ namespace ai
 
             return E_SUCCESS;
         }
+        std::string container_worker::get_operation(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
 
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "pt.count(\"operation\"):" << pt.count("operation");
+                    if(pt.count("operation")!=0){
+                        std::string operation = pt.get<std::string>("operation");
+                        LOG_INFO<< "operation: " << operation ;
+                        return operation;
+                    }
+
+
+                }
+                catch (...)
+                {
+
+                }
+            }
+        }
+
+        std::shared_ptr<update_container_config> container_worker::get_update_container_config(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+
+            std::shared_ptr<update_container_config> config = std::make_shared<update_container_config>();
+
+
+            auto nv_docker_ver = get_nv_docker_version();
+
+            if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
+            {
+                LOG_DEBUG << "get common attributes of nvidia docker";
+
+                // jimmy: support NVIDIA GPU env configure from task spec
+                std::map< std::string, std::string > env_map;
+                env_map["NVIDIA_VISIBLE_DEVICES"] = "all";
+                env_map["NVIDIA_DRIVER_CAPABILITIES"] = "compute,utility";
+
+                auto customer_setting=task->server_specification;
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+
+                        for (const auto& kv: pt.get_child("env")) {
+                            env_map[kv.first.data()] = kv.second.data();
+                            LOG_INFO << "[env] " << kv.first.data() << "="<<env_map[kv.first.data()];
+                        }
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+
+
+                for (auto & kv: env_map)
+                {
+                    config->env.push_back(kv.first+"=" + kv.second);
+                }
+
+
+
+//memory
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+                        LOG_INFO<< "pt.count(\"memory\"):" << pt.count("memory");
+                        if(pt.count("memory")!=0){
+                            int64_t memory = pt.get<int64_t>("memory");
+                            config->memory =memory;
+
+
+                            LOG_INFO<< "memory: " << memory ;
+
+                        }
+                        LOG_INFO<< "pt.count(\"memory_swap\"):" << pt.count("memory_swap");
+                        if(pt.count("memory_swap")!=0){
+
+
+
+                            int64_t memory_swap = pt.get<int64_t>("memory_swap");
+                            config->memory_swap = memory_swap;
+                            LOG_INFO<< "memory_swap: " << memory_swap;
+                        }
+
+                        LOG_INFO<< "pt.count(\"disk_quota\"):" << pt.count("disk_quota");
+                        if(pt.count("disk_quota")!=0){
+
+
+
+                            int64_t disk_quota = pt.get<int64_t>("disk_quota");
+                            config->disk_quota = disk_quota;
+                            LOG_INFO<< "disk_quota: " << disk_quota;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpuShares\"):" << pt.count("cpuShares");
+                        if(pt.count("cpuShares")!=0){
+
+
+
+                            int32_t cpuShares = pt.get<int32_t>("cpuShares");
+                            config->cpu_shares = cpuShares;
+                            LOG_INFO<< "cpuShares: " << cpuShares;
+                        }
+
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+
+
+
+            }
+
+
+
+            return config;
+        }
 
         std::shared_ptr<container_config> container_worker::get_container_config(std::shared_ptr<ai_training_task> task)
         {
@@ -330,7 +478,7 @@ namespace ai
 
                         for (const auto& kv: pt.get_child("env")) {
                             env_map[kv.first.data()] = kv.second.data();
-                            LOG_DEBUG << "[env] " << kv.first.data() << "="<<env_map[kv.first.data()];
+                            LOG_INFO << "[env] " << kv.first.data() << "="<<env_map[kv.first.data()];
                         }
                     }
                     catch (...)

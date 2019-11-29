@@ -294,6 +294,45 @@ namespace matrix
             return s;
         }
 
+        std::string update_container_config::update_to_string()
+        {
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+            rapidjson::Value root(rapidjson::kObjectType);
+
+
+            //env
+            rapidjson::Value json_env(rapidjson::kArrayType);
+            for (auto it = this->env.begin(); it != this->env.end(); it++)
+            {
+                json_env.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
+            }
+            root.AddMember("Env", json_env, allocator);
+
+
+            //json_host_config: Memory
+            root.AddMember("Memory", this->memory, allocator);
+
+            //json_host_config: MemorySwap
+            root.AddMember("MemorySwap", this->memory_swap, allocator);
+
+            //json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
+            root.AddMember("CpuShares", this->cpu_shares, allocator);
+
+            root.AddMember("disk_quota",this->disk_quota , allocator);
+
+
+            std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+            root.Accept(writer);
+            std::string s=buffer->GetString();
+
+            LOG_INFO << "buffer->GetString():"+s;
+            return s;
+        }
+
+
         void container_create_resp::from_string(const std::string & buf)
         {
             try

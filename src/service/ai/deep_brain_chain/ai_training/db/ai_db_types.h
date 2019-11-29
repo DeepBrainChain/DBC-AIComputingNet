@@ -56,6 +56,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   std::string hyper_parameters;
   std::string ai_user_node_id;
   int64_t start_time;
+  int64_t update_time;
   int64_t end_time;
   std::string gpus;
   int8_t error_times;
@@ -93,6 +94,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   void __set_ai_user_node_id(const std::string& val);
 
   void __set_start_time(const int64_t val);
+    void __set_update_time(const int64_t val);
 
   void __set_end_time(const int64_t val);
 
@@ -145,6 +147,8 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
       return false;
     if (!(ai_user_node_id == rhs.ai_user_node_id))
       return false;
+      if (!(update_time == rhs.update_time))
+          return false;
     if (!(start_time == rhs.start_time))
       return false;
     if (!(end_time == rhs.end_time))

@@ -72,6 +72,9 @@ __isset.hyper_parameters = true;
 void ai_training_task::__set_ai_user_node_id(const std::string& val) {
   this->ai_user_node_id = val;
 }
+void ai_training_task::__set_update_time(const int64_t val) {
+            this->update_time = val;
+}
 
 void ai_training_task::__set_start_time(const int64_t val) {
   this->start_time = val;
@@ -137,6 +140,7 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
   bool isset_data_dir = false;
   bool isset_checkpoint_dir = false;
   bool isset_ai_user_node_id = false;
+  bool isset_update_time = false;
   bool isset_start_time = false;
   bool isset_end_time = false;
   bool isset_error_times = false;
@@ -310,6 +314,14 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
                 xfer += iprot->skip(ftype);
             }
             break;
+        case 19:
+            if (ftype == ::apache::thrift::protocol::T_I64) {
+                xfer += iprot->readI64(this->update_time);
+                isset_update_time = true;
+            } else {
+                xfer += iprot->skip(ftype);
+            }
+            break;
       case 252:
         if (ftype == ::apache::thrift::protocol::T_BYTE) {
           xfer += iprot->readByte(this->error_times);
@@ -371,6 +383,8 @@ uint32_t ai_training_task::read(::apache::thrift::protocol::TProtocol* iprot) {
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_start_time)
     throw TProtocolException(TProtocolException::INVALID_DATA);
+    if (!isset_update_time)
+        throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_end_time)
     throw TProtocolException(TProtocolException::INVALID_DATA);
     if (!isset_memory)
@@ -458,6 +472,10 @@ uint32_t ai_training_task::write(::apache::thrift::protocol::TProtocol* oprot) c
   xfer += oprot->writeString(this->ai_user_node_id);
   xfer += oprot->writeFieldEnd();
 
+    xfer += oprot->writeFieldBegin("update_time", ::apache::thrift::protocol::T_I64, 14);
+    xfer += oprot->writeI64(this->update_time);
+    xfer += oprot->writeFieldEnd();
+
   xfer += oprot->writeFieldBegin("start_time", ::apache::thrift::protocol::T_I64, 14);
   xfer += oprot->writeI64(this->start_time);
   xfer += oprot->writeFieldEnd();
@@ -521,6 +539,7 @@ void swap(ai_training_task &a, ai_training_task &b) {
   swap(a.checkpoint_dir, b.checkpoint_dir);
   swap(a.hyper_parameters, b.hyper_parameters);
   swap(a.ai_user_node_id, b.ai_user_node_id);
+    swap(a.update_time, b.update_time);
   swap(a.start_time, b.start_time);
   swap(a.end_time, b.end_time);
   swap(a.gpus, b.gpus);
@@ -547,6 +566,7 @@ ai_training_task::ai_training_task(const ai_training_task& other6) {
   checkpoint_dir = other6.checkpoint_dir;
   hyper_parameters = other6.hyper_parameters;
   ai_user_node_id = other6.ai_user_node_id;
+    update_time = other6.update_time;
   start_time = other6.start_time;
   end_time = other6.end_time;
   gpus = other6.gpus;
@@ -600,6 +620,7 @@ void ai_training_task::printTo(std::ostream& out) const {
   out << ", " << "checkpoint_dir=" << to_string(checkpoint_dir);
   out << ", " << "hyper_parameters="; (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
   out << ", " << "ai_user_node_id=" << to_string(ai_user_node_id);
+    out << ", " << "update_time=" << to_string(update_time);
   out << ", " << "start_time=" << to_string(start_time);
   out << ", " << "end_time=" << to_string(end_time);
   out << ", " << "gpus="; (__isset.gpus ? (out << to_string(gpus)) : (out << "<null>"));
