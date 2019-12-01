@@ -210,6 +210,7 @@ namespace ai
                 return nullptr;
             }
             auto customer_setting=task->server_specification;
+            std::string operation ="";
             if (!customer_setting.empty())
             {
                 std::stringstream ss;
@@ -222,9 +223,9 @@ namespace ai
                     LOG_INFO<< "task->server_specification" << task->server_specification;
                     LOG_INFO<< "pt.count(\"operation\"):" << pt.count("operation");
                     if(pt.count("operation")!=0){
-                        std::string operation = pt.get<std::string>("operation");
+                        operation = pt.get<std::string>("operation");
                         LOG_INFO<< "operation: " << operation ;
-                        return operation;
+
                     }
 
 
@@ -234,6 +235,8 @@ namespace ai
                     LOG_INFO<< "operation: " << "error" ;
                 }
             }
+
+            return operation;
         }
 
         std::shared_ptr<update_container_config> container_worker::get_update_container_config(std::shared_ptr<ai_training_task> task)
