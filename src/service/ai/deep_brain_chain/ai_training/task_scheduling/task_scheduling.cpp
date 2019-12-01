@@ -206,16 +206,16 @@ namespace ai
             }
 
             //update container
-            std::string operation =  m_container_worker->get_operation(task);
-            LOG_INFO<< "task operation:" << operation;
-            if(operation=="update")
-            {
-                LOG_INFO<< "task will update,  task id:" << task->task_id;
-                return  update_task(task);
-            }else if(operation=="restart")
-            {
-                //return  update_task(task);
-            }
+           // std::string operation =  m_container_worker->get_operation(task);
+         //   LOG_INFO<< "task operation:" << operation;
+          //  if(operation=="update")
+         //   {
+          //      LOG_INFO<< "task will update,  task id:" << task->task_id;
+         //       return  update_task(task);
+          //  }else if(operation=="restart")
+         //   {
+         //       //return  update_task(task);
+         //   }
 
             // update container's parameter if
             std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";

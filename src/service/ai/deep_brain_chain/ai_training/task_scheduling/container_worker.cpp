@@ -219,6 +219,7 @@ namespace ai
                 try
                 {
                     boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
                     LOG_INFO<< "pt.count(\"operation\"):" << pt.count("operation");
                     if(pt.count("operation")!=0){
                         std::string operation = pt.get<std::string>("operation");
