@@ -62,12 +62,12 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            auto state = get_task_state(task);
-             
+          //  auto state = get_task_state(task);
+
                 if (task->container_id.empty())
                 {
 
-                    LOG_INFO << "task id null. task id";
+                    LOG_INFO << "container_id null. container_id";
 
                     return E_DEFAULT;
                 }
