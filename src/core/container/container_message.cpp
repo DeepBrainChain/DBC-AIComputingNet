@@ -304,11 +304,11 @@ namespace matrix
 
             //env
             rapidjson::Value json_env(rapidjson::kArrayType);
-            for (auto it = this->env.begin(); it != this->env.end(); it++)
-            {
-                json_env.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
-            }
-            root.AddMember("Env", json_env, allocator);
+         //   for (auto it = this->env.begin(); it != this->env.end(); it++)
+         //   {
+         //       json_env.PushBack(rapidjson::Value().SetString(it->c_str(), (rapidjson::SizeType)it->length()), allocator);
+         //   }
+          //  root.AddMember("Env", json_env, allocator);
 
 
             //json_host_config: Memory
@@ -320,8 +320,9 @@ namespace matrix
             //json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
             root.AddMember("CpuShares", this->cpu_shares, allocator);
 
-            root.AddMember("disk_quota",this->disk_quota , allocator);
+            root.AddMember("DiskQuota",this->disk_quota , allocator);
 
+            root.AddMember("Gpus",this->gpus , allocator);
 
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
