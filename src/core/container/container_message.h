@@ -208,9 +208,10 @@ namespace matrix
 
             int32_t cpu_shares;
 
+            int32_t gpus;
 
             //GPU needed
-            std::list<std::string> env;
+         //   std::list<std::string> env;
 
             int64_t disk_quota;
 

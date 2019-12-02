@@ -286,7 +286,7 @@ namespace ai
 
                 for (auto & kv: env_map)
                 {
-                    config->env.push_back(kv.first+"=" + kv.second);
+                   // config->env.push_back(kv.first+"=" + kv.second);
                 }
 
 
@@ -338,6 +338,16 @@ namespace ai
                             int32_t cpuShares = pt.get<int32_t>("cpuShares");
                             config->cpu_shares = cpuShares;
                             LOG_INFO<< "cpuShares: " << cpuShares;
+                        }
+
+                        LOG_INFO<< "pt.count(\"gpus\"):" << pt.count("gpus");
+                        if(pt.count("gpus")!=0){
+
+
+
+                            int32_t gpus= pt.get<int32_t>("gpus");
+                            config->gpus = gpus;
+                            LOG_INFO<< "gpus: " << gpus;
                         }
 
                     }
