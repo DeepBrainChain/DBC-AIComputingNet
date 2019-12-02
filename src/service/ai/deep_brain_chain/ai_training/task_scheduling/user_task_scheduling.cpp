@@ -362,7 +362,12 @@ namespace ai
             LOG_INFO << "user task scheduling flush task to db: " << task->task_id;
             LOG_INFO << "user task scheduling flush task to db memory: " << task->memory;
             m_queueing_tasks.push_back(task);
-            m_training_tasks[task->task_id] = task;
+            auto it_task = m_training_tasks.find(task->task_id);
+            if (it_task == m_training_tasks.end())
+            {
+                m_training_tasks[task->task_id] = task;
+            }
+
         }
 
         std::shared_ptr<ai_training_task> user_task_scheduling::find_task(std::string task_id)
