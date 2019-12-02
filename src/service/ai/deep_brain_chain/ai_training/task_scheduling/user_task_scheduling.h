@@ -54,6 +54,7 @@ namespace ai
             //check the task is cached or not.
             //bool have_task(std::string task_id);
             void add_task(std::shared_ptr<ai_training_task> task);
+            void add_update_task(std::shared_ptr<ai_training_task> task);
             std::shared_ptr<ai_training_task> find_task(std::string task_id);
 
             size_t get_user_cur_task_size() {return m_queueing_tasks.size() + m_running_tasks.size();}
