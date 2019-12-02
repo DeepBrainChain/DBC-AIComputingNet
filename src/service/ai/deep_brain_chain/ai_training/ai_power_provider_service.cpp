@@ -318,7 +318,7 @@ namespace ai
 
                 auto ref_task2 = m_user_task_ptr->find_task(task_id);
 
-                if (ref_task != nullptr)
+                if (ref_task2 != nullptr)
                 {
                     LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
@@ -336,6 +336,8 @@ namespace ai
                     //no need add task
                 } else
                 {
+                    LOG_INFO << "ref_task == nullptr";
+                    LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
                     task->__set_container_id(ref_container_id);
 
                     task->__set_received_time_stamp(std::time(nullptr));
