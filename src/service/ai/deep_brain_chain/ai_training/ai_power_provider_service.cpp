@@ -292,6 +292,10 @@ namespace ai
             std::string ref_container_id="";
             auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
             LOG_INFO << "req container_name: " << req->body.container_name;
+
+
+
+
             if (ref_task != nullptr)
             {
                 LOG_INFO << "ref task container id: " << ref_task->container_id;
@@ -305,6 +309,10 @@ namespace ai
                 {
                     LOG_WARNING << "forbid reusing container not own";
                 }
+
+            } else // //update container ,get task_id
+            {
+                ref_container_id=get_task_id(req);
             }
 
             task->__set_container_id(ref_container_id);
@@ -317,7 +325,42 @@ namespace ai
             return E_SUCCESS;
         }
 
+        std::string ai_power_provider_service::get_task_id(std::shared_ptr<matrix::service_core::start_training_req> req)
+        {
+            if (nullptr == req)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+            auto customer_setting=req->body.server_specification;
+            std::string task_id ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
 
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << req->body.server_specification;
+                    LOG_INFO<< "pt.count(\"task_id\"):" << pt.count("task_id");
+                    if(pt.count("task_id")!=0){
+                        task_id = pt.get<std::string>("task_id");
+                        LOG_INFO<< "task_id: " << task_id ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "task_id: " << "error" ;
+                }
+            }
+
+            return task_id;
+        }
 
         int32_t ai_power_provider_service::on_start_training_req(std::shared_ptr<message> &msg)
         {
