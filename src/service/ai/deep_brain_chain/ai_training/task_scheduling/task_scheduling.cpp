@@ -63,14 +63,7 @@ namespace ai
             }
 
             auto state = get_task_state(task);
-            if (DBC_TASK_RUNNING == state)
-            {
-                if (task->status != task_running)
-                {
-                    LOG_INFO << "task have not been running. task id:" << task->task_id;
-                    return E_DEFAULT;
-                }
-
+             
                 if (task->container_id.empty())
                 {
 
@@ -97,7 +90,7 @@ namespace ai
                // task->__set_gpus(config->env);
                 m_task_db.write_task_to_db(task);
 
-            }
+
 
 
 
