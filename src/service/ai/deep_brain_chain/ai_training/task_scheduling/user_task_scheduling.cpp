@@ -87,7 +87,7 @@ namespace ai
                 if (task_queueing == task->status || task_pulling_image == task->status)
                 {
                     m_queueing_tasks.push_back(task);
-                    LOG_DEBUG << "user task scheduling insert ai training task to task queue, task id: "
+                    LOG_INFO << "user task scheduling insert ai training task to task queue, task id: "
                               << task->task_id << " container_id: " << task->container_id << " task status: "
                               << to_training_task_status_string(task->status);
                 }
@@ -134,18 +134,6 @@ namespace ai
             }
 
 
-            // jimmy: validate task's gpu requirement
-
-            if (task_queueing == task->status)
-            {
-                if (!m_gpu_pool.check(task->gpus))
-                {
-                    LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
-                              << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
-                    stop_task(task, task_out_of_gpu_resource);
-                    return E_DEFAULT;
-                }
-            }
 
             if (E_SUCCESS == auth_task(task))
             {
@@ -163,59 +151,105 @@ namespace ai
             {
                 m_stop_idle_task_handler();
             }
-            LOG_INFO << "start_task start" ;
-            int32_t ret = start_task(task);
+            LOG_INFO << "exec_task start" ;
+            int32_t ret = E_DEFAULT;
 
-            LOG_INFO << "start_task over,ret:"<< ret;
-            if (ret != E_SUCCESS)
-            {
-                task->error_times++;
-                switch (ret)
+            std::string operation =  m_container_worker->get_operation(task);
+            LOG_INFO<< "task operation:" << operation;
+            if(operation=="update")
+            {    //update container
+                LOG_INFO<< "task will update,  task id:" << task->task_id;
+                ret = update_task(task);
+                if (ret == E_SUCCESS)
                 {
-                case E_NO_DISK_SPACE:
-                    stop_task(task, task_nospace_closed);
-                    break;
-                case E_PULLING_IMAGE:
-                case E_IMAGE_NOT_FOUND:
-                    stop_task(task, task_noimage_closed);
-                    break;
-                default:
-                    m_task_db.write_task_to_db(task);
-                    break;
-                }
-                
-                LOG_ERROR << "start user task failed, task id:" << task->task_id;
-                return E_DEFAULT;
-            }
-            else
-            {
-                LOG_INFO << "task->status" << task->status;
-                if (task->status == task_running)
-                {
-                    //jimmy: move task from waiting queue  into running tasks map
-                    LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
-                    m_running_tasks[task->task_id] = task;
-                    m_queueing_tasks.remove(task);
-
-                    if (!m_gpu_pool.allocate(task->gpus))
+                    LOG_INFO << "task->status" << task->status;
+                    if (task->status == task_running)
                     {
-                        // is supposed never happen because gpu check passed before
-                        LOG_INFO << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                        //feng: move task from waiting queue  into running tasks map
+                        LOG_INFO << "move task from waiting queue map" << task->task_id;
+                     //   m_running_tasks[task->task_id] = task;
+                        m_queueing_tasks.remove(task);
+
+
+                        LOG_INFO << "gpu state " << m_gpu_pool.toString();
+
+
+                    }
+                }
+
+            }else if(operation=="restart")
+            {
+                //return  update_task(task);
+            } else{
+
+                // feng: validate task's gpu requirement
+                if (task_queueing == task->status)
+                {
+                    if (!m_gpu_pool.check(task->gpus))
+                    {
+                        LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
                                   << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
                         stop_task(task, task_out_of_gpu_resource);
                         return E_DEFAULT;
                     }
-                    else
+                }
+
+                ret = start_task(task);
+                LOG_INFO << "start_task over,ret:"<< ret;
+                if (ret != E_SUCCESS)
+                {
+                    task->error_times++;
+                    switch (ret)
                     {
-                        LOG_INFO << "gpu state " << m_gpu_pool.toString();
+                        case E_NO_DISK_SPACE:
+                            stop_task(task, task_nospace_closed);
+                            break;
+                        case E_PULLING_IMAGE:
+                        case E_IMAGE_NOT_FOUND:
+                            stop_task(task, task_noimage_closed);
+                            break;
+                        default:
+                            m_task_db.write_task_to_db(task);
+                            break;
+                    }
+
+                    LOG_ERROR << "start user task failed, task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
+                else
+                {
+                    LOG_INFO << "task->status" << task->status;
+                    if (task->status == task_running)
+                    {
+                        //jimmy: move task from waiting queue  into running tasks map
+                        LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
+                        m_running_tasks[task->task_id] = task;
+                        m_queueing_tasks.remove(task);
+
+                        if (!m_gpu_pool.allocate(task->gpus))
+                        {
+                            // is supposed never happen because gpu check passed before
+                            LOG_INFO << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                                     << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
+                            stop_task(task, task_out_of_gpu_resource);
+                            return E_DEFAULT;
+                        }
+                        else
+                        {
+                            LOG_INFO << "gpu state " << m_gpu_pool.toString();
+                        }
+
                     }
 
                 }
 
+                LOG_INFO << "start user task success, task id:" << task->task_id;
+
             }
 
-            LOG_INFO << "start user task success, task id:" << task->task_id;
             return E_SUCCESS;
+
+
         }
 
         int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
@@ -297,6 +331,20 @@ namespace ai
 
             return E_SUCCESS;
         }
+        void user_task_scheduling::add_update_task(std::shared_ptr<ai_training_task> task)
+        {
+
+            //flush to db
+            if (E_SUCCESS != m_task_db.write_task_to_db(task))
+            {
+                return;
+            }
+            LOG_INFO << "update user task scheduling flush task to db: " << task->task_id;
+            LOG_INFO << "update user task scheduling flush task to db memory: " << task->memory;
+            m_queueing_tasks.push_back(task);
+
+        }
+
 
         void user_task_scheduling::add_task(std::shared_ptr<ai_training_task> task)
         {

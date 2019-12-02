@@ -313,18 +313,40 @@ namespace ai
             } else // //update container ,get task_id
             {
                 std::string task_id=get_task_id(req);
-                auto ref_task = m_user_task_ptr->find_task(task_id);
-                ref_container_id=ref_task->container_id;
-                LOG_INFO << "req container_name: " << req->body.container_name;
-                task->__set_task_id(task_id);
+
+                LOG_INFO << "get_task_id task_id:" << task_id;
+
+                auto ref_task2 = m_user_task_ptr->find_task(task_id);
+
+                if (ref_task != nullptr)
+                {
+                    LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
+
+                    ref_container_id=ref_task2->container_id;
+
+                    LOG_INFO << "req container_name: " << req->body.container_name;
+
+                    task->__set_task_id(task_id);
+                    task->__set_container_id(ref_container_id);
+
+                    task->__set_received_time_stamp(std::time(nullptr));
+                    task->__set_status(task_queueing);
+
+                    m_user_task_ptr->add_update_task(task);
+                    //no need add task
+                } else
+                {
+                    task->__set_container_id(ref_container_id);
+
+                    task->__set_received_time_stamp(std::time(nullptr));
+                    task->__set_status(task_queueing);
+
+                    m_user_task_ptr->add_task(task);
+                }
+
             }
 
-            task->__set_container_id(ref_container_id);
 
-            task->__set_received_time_stamp(std::time(nullptr));
-            task->__set_status(task_queueing);
-
-            m_user_task_ptr->add_task(task);
 
             return E_SUCCESS;
         }
