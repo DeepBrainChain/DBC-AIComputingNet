@@ -163,7 +163,7 @@ namespace ai
                 if (ret == E_SUCCESS)
                 {
                     LOG_INFO << "task->status" << task->status;
-                    if (task->status == task_running)
+                  //  if (task->status == task_running)
                     {
                         //feng: move task from waiting queue  into running tasks map
                         LOG_INFO << "move task from waiting queue map" << task->task_id;
