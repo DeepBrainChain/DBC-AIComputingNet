@@ -132,7 +132,7 @@ namespace ai
 
                     //insert training task
                     training_tasks.insert({task->task_id, task});
-                    LOG_DEBUG << "user task scheduling insert ai training task to task map, task id: " << task->task_id
+                    LOG_INFO << "user task scheduling insert ai training task to task map, task id: " << task->task_id
                               << " container_id: " << task->container_id << " task status: "
                               << to_training_task_status_string(task->status);
 
