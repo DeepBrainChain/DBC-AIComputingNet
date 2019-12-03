@@ -331,34 +331,35 @@ namespace ai
 
             return E_SUCCESS;
         }
-        void user_task_scheduling::add_update_task(std::shared_ptr<ai_training_task> task)
+        int32_t  user_task_scheduling::add_update_task(std::shared_ptr<ai_training_task> task)
         {
 
             //flush to db
             if (E_SUCCESS != m_task_db.write_task_to_db(task))
             {
-                return;
+                return E_DEFAULT;
             }
             LOG_INFO << "update user task scheduling flush task to db: " << task->task_id;
-            LOG_INFO << "update user task scheduling flush task to db memory: " << task->memory;
+          //  LOG_INFO << "update user task scheduling flush task to db memory: " << task->memory;
             m_queueing_tasks.push_back(task);
             LOG_INFO << "user task scheduling add m_training_tasks:" << task->task_id;
             m_training_tasks[task->task_id] = task;
+            return E_SUCCESS;
         }
 
 
-        void user_task_scheduling::add_task(std::shared_ptr<ai_training_task> task)
+        int32_t user_task_scheduling::add_task(std::shared_ptr<ai_training_task> task)
         {
             if (m_training_tasks.size() > MAX_TASK_COUNT)
             {
                 LOG_ERROR << "task is full.";
-                return;
+                return E_DEFAULT;
             }
 
             //flush to db
             if (E_SUCCESS != m_task_db.write_task_to_db(task))
             {
-                return;
+                return E_DEFAULT;
             }
             LOG_INFO << "user task scheduling flush task to db: " << task->task_id;
            // LOG_INFO << "user task scheduling flush task to db memory: " << task->memory;
@@ -367,7 +368,7 @@ namespace ai
             LOG_INFO << "user task scheduling add m_training_tasks:" << task->task_id;
             m_training_tasks[task->task_id] = task;
 
-
+            return E_SUCCESS;
         }
 
         std::shared_ptr<ai_training_task> user_task_scheduling::find_task(std::string task_id)

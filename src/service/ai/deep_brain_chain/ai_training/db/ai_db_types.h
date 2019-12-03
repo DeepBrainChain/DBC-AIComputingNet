@@ -21,14 +21,14 @@ class cmd_task_info;
 
 typedef struct _ai_training_task__isset {
   _ai_training_task__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false),
-  gpus(false),memory(false),memory_swap(false)  {}
+  gpus(false) {}
   bool master :1;
   bool server_specification :1;
   bool server_count :1;
   bool hyper_parameters :1;
   bool gpus :1;
-    bool memory:1;
-    bool memory_swap:1;
+   // bool memory:1;
+  //  bool memory_swap:1;
 } _ai_training_task__isset;
 
 class ai_training_task : public virtual ::apache::thrift::TBase {
@@ -38,7 +38,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   ai_training_task& operator=(const ai_training_task&);
   ai_training_task() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(),
   entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), ai_user_node_id(), start_time(0), end_time(0), gpus(),
-  error_times(0), container_id(), received_time_stamp(0), status(0),memory(),memory_swap() {
+  error_times(0), container_id(), received_time_stamp(0), status(0) {
   }
 
   virtual ~ai_training_task() throw();
@@ -56,15 +56,15 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   std::string hyper_parameters;
   std::string ai_user_node_id;
   int64_t start_time;
-  int64_t update_time;
+  //int64_t update_time;
   int64_t end_time;
   std::string gpus;
   int8_t error_times;
   std::string container_id;
   int64_t received_time_stamp;
   int8_t status;
-    int64_t memory;
-    int64_t memory_swap;
+  //  int64_t memory;
+  //  int64_t memory_swap;
   _ai_training_task__isset __isset;
 
   void __set_task_id(const std::string& val);
@@ -94,7 +94,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   void __set_ai_user_node_id(const std::string& val);
 
   void __set_start_time(const int64_t val);
-    void __set_update_time(const int64_t val);
+   // void __set_update_time(const int64_t val);
 
   void __set_end_time(const int64_t val);
 
@@ -107,9 +107,9 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
   void __set_received_time_stamp(const int64_t val);
 
   void __set_status(const int8_t val);
-    void __set_memory(const int64_t val);
+  //  void __set_memory(const int64_t val);
 
-    void __set_memory_swap(const int64_t val);
+  //  void __set_memory_swap(const int64_t val);
 
   bool operator == (const ai_training_task & rhs) const
   {
@@ -147,8 +147,8 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
       return false;
     if (!(ai_user_node_id == rhs.ai_user_node_id))
       return false;
-      if (!(update_time == rhs.update_time))
-          return false;
+    //  if (!(update_time == rhs.update_time))
+      //    return false;
     if (!(start_time == rhs.start_time))
       return false;
     if (!(end_time == rhs.end_time))
@@ -165,14 +165,7 @@ class ai_training_task : public virtual ::apache::thrift::TBase {
       return false;
     if (!(status == rhs.status))
       return false;
-      if (__isset.memory != rhs.__isset.memory)
-          return false;
-      else if (__isset.memory && !(memory == rhs.memory))
-          return false;
-      if (__isset.memory_swap != rhs.__isset.memory_swap)
-          return false;
-      else if (__isset.memory_swap && !(memory_swap == rhs.memory_swap))
-          return false;
+
     return true;
   }
   bool operator != (const ai_training_task &rhs) const {
