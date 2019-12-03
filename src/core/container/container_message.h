@@ -184,6 +184,8 @@ namespace matrix
             
             int64_t memory;
 
+            int64_t disk_quota;
+
             std::string storage;
 
             int32_t cpu_shares;

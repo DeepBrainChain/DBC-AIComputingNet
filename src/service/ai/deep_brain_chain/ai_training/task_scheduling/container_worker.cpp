@@ -590,6 +590,16 @@ namespace ai
                             LOG_INFO<< "cpuShares: " << cpuShares;
                         }
 
+                        LOG_INFO<< "pt.count(\"disk_quota\"):" << pt.count("disk_quota");
+                        if(pt.count("disk_quota")!=0){
+
+
+
+                            int64_t disk_quota = pt.get<int64_t>("disk_quota");
+                            config->host_config.disk_quota = disk_quota;
+                            LOG_INFO<< "disk_quota: " << disk_quota;
+                        }
+
                     }
                     catch (...)
                     {
