@@ -83,10 +83,10 @@ namespace ai
                 }
 
                 LOG_INFO << "update task success. Task id:" << task->task_id;
-                task->__set_update_time(time_util::get_time_stamp_ms());
+//                task->__set_update_time(time_util::get_time_stamp_ms());
 
-                task->__set_memory(config->memory);
-                task->__set_memory_swap(config->memory_swap);
+   //             task->__set_memory(config->memory);
+   //             task->__set_memory_swap(config->memory_swap);
                // task->__set_gpus(config->env);
                 m_task_db.write_task_to_db(task);
 
