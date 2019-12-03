@@ -173,9 +173,19 @@ namespace ai
 
                         LOG_INFO << "gpu state " << m_gpu_pool.toString();
 
-
+                        return E_SUCCESS;
                     }
+
+                } else
+                    {
+
+                        m_queueing_tasks.remove(task);
+                        return E_DEFAULT;
+
                 }
+
+
+
 
             }else if(operation=="restart")
             {
@@ -239,7 +249,11 @@ namespace ai
                             LOG_INFO << "gpu state " << m_gpu_pool.toString();
                         }
 
+                        return E_SUCCESS;
+
                     }
+
+                    return E_DEFAULT;
 
                 }
 
