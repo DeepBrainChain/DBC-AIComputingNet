@@ -211,7 +211,7 @@ namespace matrix
             int32_t cpu_shares;
 
             int32_t gpus;
-            int32_t storage;
+            std::string storage;
 
             //GPU needed
             std::list<std::string> env;
