@@ -327,7 +327,7 @@ namespace matrix
 
           //  root.AddMember("DiskQuota",this->disk_quota , allocator);
             rapidjson::Value json_storage(rapidjson::kObjectType);
-            json_storage.AddMember("size", this->storage, allocator);
+            json_storage.AddMember("size", STRING_REF(this->storage), allocator);
             root.AddMember("StorageOpt",json_storage , allocator);
 
            // root.AddMember("Gpus",this->gpus , allocator);
