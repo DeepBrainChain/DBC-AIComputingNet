@@ -336,7 +336,7 @@ namespace ai
                     //no need add task
                 } else
                 {
-                    LOG_INFO << "ref_task == nullptr";
+                    LOG_INFO << "ref_task ref_task2 == nullptr";
                     LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
                     task->__set_container_id(ref_container_id);
 
