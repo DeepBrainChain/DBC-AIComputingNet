@@ -286,7 +286,7 @@ namespace ai
 
                 for (auto & kv: env_map)
                 {
-                   // config->env.push_back(kv.first+"=" + kv.second);
+                    config->env.push_back(kv.first+"=" + kv.second);
                 }
 
 
@@ -348,6 +348,16 @@ namespace ai
                             int32_t gpus= pt.get<int32_t>("gpus");
                             config->gpus = gpus;
                             LOG_INFO<< "gpus: " << gpus;
+                        }
+
+                        LOG_INFO<< "pt.count(\"storage\"):" << pt.count("storage");
+                        if(pt.count("storage")!=0){
+
+
+
+                            std::string storage = pt.get<std::string>("storage");
+                            config->storage = storage;
+                            LOG_INFO<< "storage: " << storage;
                         }
 
                     }
