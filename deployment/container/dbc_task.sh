@@ -54,9 +54,14 @@ fi
 
 if [ "$restart" != "true" && GPU_SERVER_RESTART!="yes"]; then
   rm -rf /dbc/*
-  export GPU_SERVER_RESTART="yes"
+
 fi
 
+if [  -d /restart_dbc ]; then
+    restart=true
+else
+    mkdir /restart_dbc
+fi
 
 # run ai-training task
 if [ "$restart" == "true" ]; then
