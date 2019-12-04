@@ -519,9 +519,9 @@ namespace ai
             {
                 LOG_ERROR << "user task check container error, container id: " << task->container_id;
 
-             //   task->error_times++;
+                task->error_times++;
                 //flush to db
-             //   m_task_db.write_task_to_db(task);
+                m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }
 
@@ -535,13 +535,13 @@ namespace ai
             else if (0 != resp->state.exit_code)
             {
                 LOG_INFO << "inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
-              //  stop_task(task, task_abnormally_closed);
+                stop_task(task, task_abnormally_closed);
                 return E_SUCCESS;
             }
             else
             {
                 LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
-               // stop_task(task, task_successfully_closed);
+                stop_task(task, task_successfully_closed);
                 return E_SUCCESS;
             }
             return E_SUCCESS;
