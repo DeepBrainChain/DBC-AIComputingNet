@@ -73,7 +73,7 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
-                LOG_DEBUG << "create container failed: " <<  resp.body << " name:" << name;
+                LOG_INFO << "create container failed: " <<  resp.body << " name:" << name;
                 return nullptr;
             }
 
