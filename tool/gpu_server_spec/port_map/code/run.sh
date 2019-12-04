@@ -14,7 +14,13 @@ echo $args
 #        set -x
 #    fi
 #}
-
+run_jupyter()
+{
+    JUPYTER_TOKEN=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c64; echo)
+    nohup jupyter-notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root --NotebookApp.token=$JUPYTER_TOKEN &
+    URL_TOKEN="?token="$JUPYTER_TOKEN
+    echo "Jupyter_url_token:"$URL_TOKEN
+}
 setup_ssh_service()
 {
     if ! which sshd
@@ -57,7 +63,7 @@ set_passwd()
         if [ "$default_pwd" != "null" ]; then
             echo root:$default_pwd|chpasswd
             echo "pwd: $default_pwd"
-
+            export GPU_SERVER_RESTART="yes"
         else
             echo "fail to set passwword"
         fi
@@ -96,6 +102,7 @@ main_loop()
 
     set_passwd
 
+    run_jupyter
 
     echo "gpu server is ready"
 

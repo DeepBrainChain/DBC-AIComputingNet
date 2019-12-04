@@ -584,7 +584,7 @@ namespace ai
 
             for (auto& each : m_running_tasks)
             {
-                check_training_task_status(each.second);
+                //check_training_task_status(each.second);
             }
 
             return E_SUCCESS;
@@ -609,7 +609,7 @@ namespace ai
 
             int64_t p_interval = (int64_t) interval * 3600 * 1000;
 
-            LOG_DEBUG << "prune docker container." << " interval:" << interval << "h";
+            LOG_INFO << "prune docker container." << " interval:" << interval << "h";
 
             for (auto task_iter = m_training_tasks.begin(); task_iter != m_training_tasks.end();)
             {
