@@ -254,7 +254,12 @@ namespace matrix
             //json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
             json_host_config.AddMember("CpuShares", host_config.cpu_shares, allocator);
 
+            rapidjson::Value json_restartPolicy(rapidjson::kObjectType);
 
+            json_restartPolicy.AddMember("Name", "unless-stopped", allocator);
+            json_restartPolicy.AddMember("MaximumRetryCount", 0, allocator);
+
+            json_host_config.AddMember("RestartPolicy", json_restartPolicy, allocator);
 
           //  json_host_config.AddMember("DiskQuota",host_config.disk_quota , allocator);
 
