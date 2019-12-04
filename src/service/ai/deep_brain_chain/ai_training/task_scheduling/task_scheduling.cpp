@@ -84,6 +84,9 @@ namespace ai
 
                 LOG_INFO << "update task success. Task id:" << task->task_id;
 //                task->__set_update_time(time_util::get_time_stamp_ms());
+                task->__set_start_time(time_util::get_time_stamp_ms());
+                task->__set_status(task_running);
+                task->error_times = 0;
 
    //             task->__set_memory(config->memory);
    //             task->__set_memory_swap(config->memory_swap);
