@@ -52,8 +52,9 @@ if [ ! -d /dbc ]; then
     mkdir /dbc
 fi
 
-if [ "$restart" != "true" ]; then
+if [ "$restart" != "true" && GPU_SERVER_RESTART!="yes"]; then
   rm -rf /dbc/*
+  export GPU_SERVER_RESTART="yes"
 fi
 
 

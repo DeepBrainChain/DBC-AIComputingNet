@@ -113,6 +113,7 @@ set_passwd()
         if [ "$default_pwd" != "null" ]; then
             echo root:$default_pwd|chpasswd
             echo "pwd: $default_pwd"
+
         else
             echo "fail to set passwword"
         fi
