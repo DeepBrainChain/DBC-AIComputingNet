@@ -257,7 +257,7 @@ namespace matrix
             rapidjson::Value json_restartPolicy(rapidjson::kObjectType);
 
             json_restartPolicy.AddMember("Name", "unless-stopped", allocator);
-            json_restartPolicy.AddMember("MaximumRetryCount", 10, allocator);
+            json_restartPolicy.AddMember("MaximumRetryCount", 0, allocator);
 
             json_host_config.AddMember("RestartPolicy", json_restartPolicy, allocator);
 
