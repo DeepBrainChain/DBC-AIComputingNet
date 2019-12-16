@@ -14,6 +14,7 @@
 #include "task_common_def.h"
 #include "server.h"
 #include <boost/format.hpp>
+#include <regex>
 #include "time_util.h"
 #include "url_validator.h"
 
@@ -119,11 +120,12 @@ namespace ai
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version);
             if(image_id!="")
             {
-                std:string training_engine_original=task->training_engine;
-                task->__set_training_engine("www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id+autodbcimage_version);
+                std::string training_engine_original=task->training_engine;
+                std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id.substr(0,12)+autodbcimage_version;
+                task->__set_training_engine(training_engine_new);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
-                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id+autodbcimage_version;
-                if(E_SUCCESS != start_task_from_new_image(task,autodbcimage_version))
+                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id.substr(0,12)+autodbcimage_version;
+                if(E_SUCCESS != start_task_from_new_image(task,autodbcimage_version,training_engine_new))
                 {
                     task->__set_training_engine(training_engine_original);
 
@@ -137,7 +139,7 @@ namespace ai
         }
 
        //from new image
-        int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version)
+        int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version,std::string training_engine_new)
         {
             if (nullptr == task)
             {
@@ -169,16 +171,28 @@ namespace ai
             if (E_SUCCESS != create_task_from_image(task,autodbcimage_version))
             {
                 LOG_ERROR << "create task error";
+                CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
                 CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
                 return E_DEFAULT;
             }else{
 
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
                 {
-
+                    CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
+                    CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
+                    CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
                     return E_DEFAULT;
                 }
                 LOG_INFO << "delete old container success , task id:" << old_container_id;
+                if(E_SUCCESS!=CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version))
+                {
+                    CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
+                    CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
+                    CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
+                    return E_DEFAULT;
+                }
+
+                LOG_INFO << "rename container success , task id:" << task->task_id;
             }
             LOG_INFO << "start_task_from_new_image success. Task id:" ;
 
@@ -201,6 +215,27 @@ namespace ai
             return E_SUCCESS;
         }
 
+        vector<string> split(const string& str, const string& delim) {
+            vector<string> res;
+            if("" == str) return res;
+            //先将要切割的字符串从string类型转换为char*类型
+            char * strs = new char[str.length() + 1] ; //不要忘了
+            strcpy(strs, str.c_str());
+
+            char * d = new char[delim.length() + 1];
+            strcpy(d, delim.c_str());
+
+            char *p = strtok(strs, d);
+            while(p) {
+                string s = p; //分割得到的字符串转换为string类型
+                res.push_back(s); //存入结果数组
+                p = strtok(NULL, d);
+            }
+
+            return res;
+        }
+
+
         int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task> task,std::string  autodbcimage_version)
         {
             if (nullptr == task)
@@ -216,7 +251,12 @@ namespace ai
 
          //   std::string container_id_original=task->container_id;
             std::shared_ptr<container_config> config = m_container_worker->get_container_config_from_image(task);
-            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id,autodbcimage_version);
+            std::string task_id=task->task_id;
+
+           // vector<string> vData=split(task_id, "@DBC@");
+           // std::string sub_task_id=vData[0];
+            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task_id,autodbcimage_version);
+
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);

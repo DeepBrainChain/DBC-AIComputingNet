@@ -64,11 +64,11 @@ namespace ai
             virtual int32_t load_task() { return E_SUCCESS; }
 
             int32_t update_task(std::shared_ptr<ai_training_task> task);
-
+            vector<string> split(const string& str, const string& delim);
             int32_t update_task_commit_image(std::shared_ptr<ai_training_task> task);
             int32_t start_task(std::shared_ptr<ai_training_task> task);
             int32_t stop_task(std::shared_ptr<ai_training_task> task);
-            int32_t start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version);
+            int32_t start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version,std::string training_engine_new);
             int32_t create_task_from_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version);
             TASK_STATE get_task_state(std::shared_ptr<ai_training_task> task);
 
