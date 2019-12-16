@@ -535,7 +535,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            else if (0 != resp->state.exit_code)
+            else if (0 != resp->state.exit_code && 137 != resp->state.exit_code)
             {
                 LOG_INFO << "inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
                // stop_task(task, task_abnormally_closed);
@@ -546,7 +546,7 @@ namespace ai
             {
                 LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
                // stop_task(task, task_successfully_closed);
-                start_task(task);
+              //  start_task(task);
                 return E_SUCCESS;
             }
             return E_SUCCESS;

@@ -417,8 +417,8 @@ namespace matrix
 
             endpoint += container_id;
 
-            endpoint += "?v=";
-            endpoint += remove_volumes ? "1" : "0";
+           // endpoint += "?v=";
+           // endpoint += remove_volumes ? "1" : "0";
 
             //req content, headers, resp
             kvs headers;
@@ -438,16 +438,16 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
-                //parse resp
-                //rapidjson::Document doc;
-                //doc.Parse<0>(resp.body.c_str());
+               // parse resp;
+                rapidjson::Document doc;
+                doc.Parse<0>(resp.body.c_str());
 
                 ////message
-                //if (doc.HasMember("message"))
-                //{
-                //    rapidjson::Value &message = doc["message"];
-                //    LOG_ERROR << "remove container message: " << message.GetString();
-                //}
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "remove container message: " << message.GetString();
+                }
                 return ret;
             }
 
