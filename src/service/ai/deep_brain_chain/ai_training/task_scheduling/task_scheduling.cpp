@@ -153,6 +153,10 @@ namespace ai
                 if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(task->container_id))
                 {
                     LOG_INFO << "stop container success , task id:" << task->task_id;
+                    if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(task->container_id))
+                    {
+                        return E_DEFAULT;
+                    }
                    // return E_SUCCESS;
                 } else
                 {
