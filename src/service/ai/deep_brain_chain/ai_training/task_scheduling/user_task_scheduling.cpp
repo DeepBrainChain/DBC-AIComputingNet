@@ -159,7 +159,10 @@ namespace ai
             if(operation=="update")
             {    //update container
                 LOG_INFO<< "task will update,  task id:" << task->task_id;
-                ret = update_task(task);
+               // ret = update_task(task);
+                m_running_tasks.erase(task->task_id);
+                ret = update_task_commit_image(task);
+                m_running_tasks[task->task_id] = task;
                 if (ret == E_SUCCESS)
                 {
                     LOG_INFO << "task->status" << task->status;

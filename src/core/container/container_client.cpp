@@ -84,30 +84,29 @@ namespace matrix
              return create_resp;
         }
 
-        int32_t container_client::commit_image(std::string container_id, std::shared_ptr<container_host_config> config)
+        std::string container_client::get_commit_image(std::string container_id,std::string version)
         {
             //endpoint
             std::string endpoint = "/commit?container=";
             if (container_id.empty())
             {
                 LOG_ERROR << "commit container container id is empty";
-                return E_DEFAULT;
+                return "";
             }
 
             endpoint += container_id;
-            endpoint += "&tag="+container_id+"001";
+            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+container_id+version;
 
             //req content, headers, resp
             std::string req_content = "";
             kvs headers;
-            if (nullptr != config)
-            {
-                headers.push_back({ "Content-Type", "application/json" });
-            }
+
+            headers.push_back({ "Content-Type", "application/json" });
+
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
             http_response resp;
-            int32_t ret = E_SUCCESS;
+            int32_t ret;
 
             try
             {
@@ -116,28 +115,41 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "container client commit container error: " << e.what();
-                return E_DEFAULT;
+                return "";
             }
-
+            rapidjson::Document doc;
             if (E_SUCCESS != ret)
             {
                 //parse resp
-                rapidjson::Document doc;
+
                 if (!doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
                     //message
                     if (doc.HasMember("message"))
                     {
                         rapidjson::Value &message = doc["message"];
-                        LOG_ERROR << "start container message: " << message.GetString();
+                        LOG_ERROR << "commit image error:" << message.GetString();
+                        return message.GetString();
                     }
 
                 }
 
-                return ret;
+
+            } else
+            {
+                if (doc.HasMember("Id"))
+                {
+                    rapidjson::Value &id = doc["Id"];
+                    std::string idString=id.GetString();
+                    LOG_INFO << "commit image Id: " << idString;
+
+                    return idString;
+                }
             }
 
-            return E_SUCCESS;
+
+
+            return "";
         }
 
         int32_t container_client::start_container(std::string container_id)
@@ -677,6 +689,7 @@ namespace matrix
             return docker_ptr;
         }
 
+
         int32_t container_client::prune_container(int16_t interval)
         {
             //endpoint
@@ -684,6 +697,7 @@ namespace matrix
 
             if (interval > 0)
             {
+
                 endpoint += boost::str(boost::format("?filters={\"until\":[\"%dh\"]}") % interval);
             }
 
@@ -696,15 +710,110 @@ namespace matrix
             try
             {
                 ret = m_http_client.post(endpoint, headers, "",resp);
+
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "prun container error: " << e.what();
+                LOG_ERROR << "prun container error: " << endpoint<<e.what();
                 return E_DEFAULT;
             }
-
+            LOG_INFO << "prun container success: " << endpoint;
             return ret;
         }
+
+        std::shared_ptr<images_info>  container_client::get_images()
+        {
+            //endpoint
+            std::string endpoint = "/images/json";
+
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers,resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "get images error: " << endpoint<<e.what();
+                return nullptr;
+            }
+            LOG_INFO << "get images success: " << endpoint;
+
+            if (E_SUCCESS != ret)
+            {
+                LOG_DEBUG << "get images info failed: " << resp.body;
+                return nullptr;
+            }
+
+            //parse resp
+            std::shared_ptr<images_info> list_images_info_ptr = std::make_shared<images_info>();
+            list_images_info_ptr->from_string(resp.body);
+
+            return list_images_info_ptr;
+        }
+
+        int32_t container_client::delete_image(std::string id)
+        {
+            //endpoint
+            std::string endpoint = "/images/";
+
+
+            endpoint += id;
+
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.del(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "delete image error: " << endpoint<<e.what();
+                return E_DEFAULT;
+            }
+            LOG_INFO << "delete image success: " << endpoint;
+            return ret;
+        }
+
+        int32_t container_client::prune_images()
+        {
+            //endpoint
+            std::string endpoint = "/images/prune";
+
+
+
+            endpoint += boost::str(boost::format("?filters={\"dangling\":[\"true\"]}") );
+
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, "",resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "prun images error: " << endpoint<<e.what();
+                return E_DEFAULT;
+            }
+            LOG_INFO << "prun images success: " << endpoint;
+            return ret;
+        }
+
     }
 
 }

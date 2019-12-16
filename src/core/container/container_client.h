@@ -40,7 +40,7 @@ namespace matrix
 
             std::shared_ptr<container_create_resp> create_container(std::shared_ptr<container_config> config, std::string name);
             int32_t update_container(std::string container_id, std::shared_ptr<update_container_config> config);
-            int32_t commit_image(std::string container_id, std::shared_ptr<container_host_config> config);
+            std::string get_commit_image(std::string container_id,std::string version);
             //start
             int32_t start_container(std::string container_id);
 
@@ -62,6 +62,9 @@ namespace matrix
             //prune container
             int32_t prune_container(int16_t interval);
 
+            int32_t prune_images();
+            int32_t delete_image(std::string id);
+            std::shared_ptr<images_info> get_images();
             //inspect
             std::shared_ptr<container_inspect_response> inspect_container(std::string container_id);
 
@@ -84,6 +87,8 @@ namespace matrix
             uint16_t m_remote_port;
 
             std::shared_ptr<docker_info> m_docker_info_ptr;
+
+          //  std::shared_ptr<images_info> m_list_images_info_ptr;
         };
 
     }
