@@ -44,10 +44,10 @@ function prune_container_template()
         exit
     fi
     usage=$(df -h -l /var/lib/docker | grep -v Use | awk '{print $5}' | cut -d \% -f 1)
-    if [ $usage -gt $scale ];then
+   # if [ $usage -gt $scale ];then
         p_interval=$((p_interval/2))
         prune_container_template $p_interval $st_template $time_template
-    fi
+   # fi
 }
 function prune_container()
 {

@@ -181,7 +181,9 @@ namespace matrix
             int64_t  nano_cpus;
 
             int64_t memory_swap;
-            
+
+            std::string autodbcimage_version;
+
             int64_t memory;
 
             int64_t disk_quota;
@@ -419,6 +421,22 @@ namespace matrix
             void from_string(const std::string & buf);
         };
 
+        class image_info
+        {
+        public:
+            std::string id = "";
+            int64_t size ;
+            int64_t virtual_size ;
+            int16_t containers;
+
+        };
+
+        class images_info
+        {
+        public:
+            std::list<image_info> list_images_info;
+            void from_string(const std::string & buf);
+        };
     }
 
 }

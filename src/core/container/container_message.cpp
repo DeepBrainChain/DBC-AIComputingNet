@@ -4,8 +4,8 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        :   container_message.h
 * description    :   container message definition
-* date                  :   2018.04.07
-* author            :   Bruce Feng
+* date                  :   2019.12.06
+* author            :   feng
 **********************************************************************************/
 
 #include "container_message.h"
@@ -15,6 +15,7 @@
 #include "error/en.h"
 #include "oss_common_def.h"
 
+#include <vector>
 #include <boost/format.hpp>
 
 
@@ -479,6 +480,47 @@ namespace matrix
                 LOG_ERROR << "container client get docker info exception";
             }
         }
+
+
+        void images_info::from_string(const std::string & buf)
+        {
+            try
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(buf.c_str());              //left to later not all fields set
+                if (doc.Parse<0>(buf.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse images list file error:" << GetParseError_En(doc.GetParseError());
+                    return;
+                }
+
+
+                rapidjson::Value & contents = doc;
+                if (contents.IsArray()) {
+                    for (size_t i = 0; i < contents.Size(); ++i) {
+                        rapidjson::Value & v = contents[i];
+                        image_info info;
+                        assert(v.IsObject());
+
+                        info.id=v["Id"].GetString();
+                        info.size=v["Size"].GetInt64();
+                        info.virtual_size=v["VirtualSize"].GetInt64();
+                        info.containers=v["Containers"].GetInt();
+
+                        this->list_images_info.push_back(info);
+                    }
+                }
+
+
+
+            }
+            catch (...)
+            {
+                LOG_ERROR << "container client get docker info exception";
+            }
+        }
+
+
 
     }
 

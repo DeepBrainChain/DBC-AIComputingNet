@@ -94,15 +94,10 @@ namespace ai
                 m_task_db.write_task_to_db(task);
 
 
-
-
-
-
-
             return E_SUCCESS;
         }
 
-        int32_t task_scheduling::commit_image(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task)
             {
@@ -115,12 +110,105 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
+            std::string autodbcimage_version=m_container_worker->get_autodbcimage_version(task);
+            if(autodbcimage_version=="")
+            {
+                return E_DEFAULT;
+            }
+            std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version);
+            if(image_id!="")
+            {
+                std:string training_engine_original=task->training_engine;
+                task->__set_training_engine("www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version);
+                LOG_INFO << "training_engine_original" << training_engine_original;
+                LOG_INFO << "training_engine_new" << "www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version;
+                if(E_SUCCESS != start_task_from_new_image(task))
+                {
+                    task->__set_training_engine(training_engine_original);
+
+                }
+
+
+            }
+
+
+            return E_DEFAULT;
+        }
+
+       //from new image
+        int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                return E_SUCCESS;
+            }
+
+
+
+            std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
+
+            if (true == resp->state.running)
+            {
+                if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(task->container_id))
+                {
+                    LOG_INFO << "stop container success , task id:" << task->task_id;
+                    return E_SUCCESS;
+                } else
+                {
+                    LOG_INFO << "stop container failure , task id:" << task->task_id;
+                    return E_DEFAULT;
+
+                }
+            }
+
+
+            if (E_SUCCESS != create_task_from_image(task))
+            {
+                LOG_ERROR << "create task error";
+                CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
+                return E_DEFAULT;
+            }
+
+
+            int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
+
+            if (ret != E_SUCCESS)
+            {
+                LOG_ERROR << "Start task error. Task id:" << task->task_id;
+                return E_DEFAULT;
+            }
+
+            LOG_INFO << "start task success. Task id:" << task->task_id;
+            task->__set_start_time(time_util::get_time_stamp_ms());
+            task->__set_status(task_running);
+            task->error_times = 0;
+            LOG_INFO << "update task status:" << "task_running";
+            m_task_db.write_task_to_db(task);
+            LOG_INFO << "update task status:" << "write_task_to_db";
+            LOG_INFO << "update E_SUCCESS:" << E_SUCCESS;
+            return E_SUCCESS;
+        }
+
+        int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
+
+            if (task->entry_file.empty() || task->code_dir.empty() || task->task_id.empty())
+            {
+                LOG_INFO << "task config error.";
+                return E_DEFAULT;
+            }
+
+         //   std::string container_id_original=task->container_id;
+            std::shared_ptr<container_config> config = m_container_worker->get_container_config_from_image(task);
             std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id);
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);
-                LOG_DEBUG << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
+                LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
 
                 return E_SUCCESS;
             }
@@ -329,6 +417,8 @@ namespace ai
 
             return DBC_TASK_STOPPED;
         }
+
+
 
         int32_t task_scheduling::start_pull_image(std::shared_ptr<ai_training_task> task)
         {

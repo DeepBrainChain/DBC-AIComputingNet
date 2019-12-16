@@ -239,6 +239,48 @@ namespace ai
             return operation;
         }
 
+        std::string container_worker::get_autodbcimage_version(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string autodbcimage_version ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+
+                    LOG_INFO<< "pt.count(\"autodbcimage_version\"):" << pt.count("autodbcimage_version");
+                    if(pt.count("autodbcimage_version")!=0){
+
+
+
+                        int32_t autodbcimage_version = pt.get<int32_t>("autodbcimage_version");
+                        autodbcimage_version = autodbcimage_version;
+                        LOG_INFO<< "autodbcimage_version: " << autodbcimage_version;
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "operation: " << "error" ;
+                }
+            }
+
+            return autodbcimage_version;
+        }
+
+
         std::shared_ptr<update_container_config> container_worker::get_update_container_config(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task)
@@ -330,14 +372,14 @@ namespace ai
                             LOG_INFO<< "disk_quota: " << disk_quota;
                         }
 
-                        LOG_INFO<< "pt.count(\"cpuShares\"):" << pt.count("cpuShares");
-                        if(pt.count("cpuShares")!=0){
+                        LOG_INFO<< "pt.count(\"cpu_shares\"):" << pt.count("cpu_shares");
+                        if(pt.count("cpu_shares")!=0){
 
 
 
-                            int32_t cpuShares = pt.get<int32_t>("cpuShares");
-                            config->cpu_shares = cpuShares;
-                            LOG_INFO<< "cpuShares: " << cpuShares;
+                            int32_t cpu_shares = pt.get<int32_t>("cpu_shares");
+                            config->cpu_shares = cpu_shares;
+                            LOG_INFO<< "cpu_shares: " << cpu_shares;
                         }
 
                         LOG_INFO<< "pt.count(\"gpus\"):" << pt.count("gpus");
@@ -375,6 +417,266 @@ namespace ai
 
             return config;
         }
+
+        std::shared_ptr<container_config> container_worker::get_container_config_from_image(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+
+            std::shared_ptr<container_config> config = std::make_shared<container_config>();
+
+            //exec cmd: dbc_task.sh data_dir_hash code_dir_hash ai_training_python
+            //dbc_task.sh Qme2UKa6yi9obw6MUcCRbpZBUmqMnGnznti4Rnzba5BQE3 QmbA8ThUawkUNtoV7yjso6V8B1TYeCgpXDhMAfYCekTNkr ai_training.py hyperparameters
+            //download file + exec training
+            std::string exec_cmd = AI_TRAINING_TASK_SCRIPT_HOME;
+            exec_cmd += AI_TRAINING_TASK_SCRIPT;
+
+            std::string start_cmd = task->entry_file + " " + task->hyper_parameters;
+
+            container_mount mount1 ;
+            mount1.target="/proc/cpuinfo";
+            mount1.source="/var/lib/lxcfs/proc/cpuinfo";
+            mount1.type="bind";
+            mount1.read_only=false;
+            mount1.consistency="consistent";
+
+            container_mount mount2 ;
+            mount2.target="/proc/diskstats";
+            mount2.source="/var/lib/lxcfs/proc/diskstats";
+            mount2.type="bind";
+            mount2.read_only=false;
+            mount2.consistency="consistent";
+
+            container_mount mount3 ;
+            mount3.target="/proc/meminfo";
+            mount3.source="/var/lib/lxcfs/proc/meminfo";
+            mount3.type="bind";
+            mount3.read_only=false;
+            mount3.consistency="consistent";
+
+            container_mount mount4 ;
+            mount4.target="/proc/swaps";
+            mount4.source="/var/lib/lxcfs/proc/swaps";
+            mount4.type="bind";
+            mount4.read_only=false;
+            mount4.consistency="consistent";
+
+            config->host_config.mounts.push_back(mount1);
+            config->host_config.mounts.push_back(mount2);
+            config->host_config.mounts.push_back(mount3);
+            config->host_config.mounts.push_back(mount4);
+          //  config->volumes.dests.push_back("/proc/stat");
+         //   config->volumes.binds.push_back("/var/lib/lxcfs/proc/stat");
+          //  config->volumes.modes.push_back("rw");
+
+          //  config->volumes.dests.push_back("/proc/swaps");
+          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/swaps");
+          //  config->volumes.modes.push_back("rw");
+
+          //  config->volumes.dests.push_back("/proc/uptime");
+          //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/uptime");
+          //  config->volumes.modes.push_back("rw");
+
+            config->image = task->training_engine;
+            config->cmd.push_back(exec_cmd);
+            config->cmd.push_back(task->data_dir);
+            config->cmd.push_back(task->code_dir);
+            config->cmd.push_back(start_cmd);
+
+            config->host_config.binds.push_back(AI_TRAINING_BIND_LOCALTIME);
+            config->host_config.binds.push_back(AI_TRAINING_BIND_TIMEZONE);
+
+            // config->host_config.memory = m_memory;
+            // config->host_config.memory_swap = m_memory_swap;
+
+            // config->host_config.memory =task->memory;
+            //  config->host_config.memory_swap = task->memory_swap;
+            config->host_config.nano_cpus = m_nano_cpus;
+
+            std::string mount_dbc_data_dir = m_container_args["host_volum_dir"].as<std::string>();
+
+            if (!mount_dbc_data_dir.empty())
+            {
+                mount_dbc_data_dir = mount_dbc_data_dir + ":" + "/dbc";
+                config->host_config.binds.push_back(mount_dbc_data_dir);
+            }
+
+            std::string mount_dbc_utils_dir = env_manager::get_home_path().generic_string();
+
+            if (!mount_dbc_utils_dir.empty())
+            {
+                // read only
+                mount_dbc_utils_dir = mount_dbc_utils_dir + "/container:" + "/home/dbc_utils:ro";
+                config->host_config.binds.push_back(mount_dbc_utils_dir);
+            }
+
+
+            auto nv_docker_ver = get_nv_docker_version();
+
+            if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
+            {
+                LOG_DEBUG << "get common attributes of nvidia docker";
+
+                // jimmy: support NVIDIA GPU env configure from task spec
+                std::map< std::string, std::string > env_map;
+                env_map["NVIDIA_VISIBLE_DEVICES"] = "all";
+                env_map["NVIDIA_DRIVER_CAPABILITIES"] = "compute,utility";
+
+                auto customer_setting=task->server_specification;
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+
+                        for (const auto& kv: pt.get_child("env")) {
+                            env_map[kv.first.data()] = kv.second.data();
+                            LOG_INFO << "[env] " << kv.first.data() << "="<<env_map[kv.first.data()];
+                        }
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+
+//                config->env.push_back(AI_TRAINING_NVIDIA_VISIBLE_DEVICES);
+//                config->env.push_back(AI_TRAINING_NVIDIA_DRIVER_CAPABILITIES);
+                for (auto & kv: env_map)
+                {
+                    config->env.push_back(kv.first+"=" + kv.second);
+                }
+
+                config->host_config.share_memory = m_shm_size;
+                config->host_config.ulimits.push_back(container_ulimits("memlock", -1, -1));
+
+                // port binding
+                container_port port;
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+
+                        for (const auto& kv: pt.get_child("port")) {
+
+                            container_port p;
+                            p.scheme="tcp";
+                            p.port=kv.first.data();
+                            p.host_ip="";
+                            p.host_port=kv.second.data();
+
+                            config->host_config.port_bindings.ports[p.port] = p;
+
+                            LOG_DEBUG << "[port] " << kv.first.data() << " = "<<p.host_port;
+                        }
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+//memory
+                if (!customer_setting.empty())
+                {
+                    std::stringstream ss;
+                    ss << customer_setting;
+                    boost::property_tree::ptree pt;
+
+                    try
+                    {
+                        boost::property_tree::read_json(ss, pt);
+                        LOG_INFO<< "pt.count(\"memory\"):" << pt.count("memory");
+                        if(pt.count("memory")!=0){
+                            int64_t memory = pt.get<int64_t>("memory");
+                            config->host_config.memory =memory;
+
+
+                            LOG_INFO<< "memory: " << memory ;
+
+                        }
+                        LOG_INFO<< "pt.count(\"memory_swap\"):" << pt.count("memory_swap");
+                        if(pt.count("memory_swap")!=0){
+
+
+
+                            int64_t memory_swap = pt.get<int64_t>("memory_swap");
+                            config->host_config.memory_swap = memory_swap;
+                            LOG_INFO<< "memory_swap: " << memory_swap;
+                        }
+
+                        LOG_INFO<< "pt.count(\"storage\"):" << pt.count("storage");
+                        if(pt.count("storage")!=0){
+
+
+
+                            std::string storage = pt.get<std::string>("storage");
+                            config->host_config.storage = storage;
+                            LOG_INFO<< "storage: " << storage;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpu_shares\"):" << pt.count("cpu_shares");
+                        if(pt.count("cpu_shares")!=0){
+
+
+
+                            int32_t cpu_shares = pt.get<int32_t>("cpu_shares");
+                            config->host_config.cpu_shares = cpu_shares;
+                            LOG_INFO<< "cpu_shares: " << cpu_shares;
+                        }
+
+                        LOG_INFO<< "pt.count(\"autodbcimage_version\"):" << pt.count("autodbcimage_version");
+                        if(pt.count("autodbcimage_version")!=0){
+
+
+
+                            int32_t autodbcimage_version = pt.get<int32_t>("autodbcimage_version");
+                            config->host_config.autodbcimage_version = autodbcimage_version;
+                            LOG_INFO<< "autodbcimage_version: " << autodbcimage_version;
+                        }
+
+
+
+                    }
+                    catch (...)
+                    {
+
+                    }
+                }
+
+                // LOG_INFO << "config->host_config.memory"+config->host_config.memory;
+
+            }
+
+            switch (nv_docker_ver)
+            {
+                case NVIDIA_DOCKER_TWO:
+                {
+                    LOG_INFO << "nvidia docker 2.x";
+                    config->host_config.runtime = RUNTIME_NVIDIA;
+                    break;
+                }
+                default:
+                {
+                    LOG_INFO << "not find nvidia docker";
+                }
+            }
+
+            return config;
+        }
+
+
 
         std::shared_ptr<container_config> container_worker::get_container_config(std::shared_ptr<ai_training_task> task)
         {
@@ -590,14 +892,14 @@ namespace ai
                             LOG_INFO<< "storage: " << storage;
                         }
 
-                        LOG_INFO<< "pt.count(\"cpuShares\"):" << pt.count("cpuShares");
-                        if(pt.count("cpuShares")!=0){
+                        LOG_INFO<< "pt.count(\"cpu_shares\"):" << pt.count("cpu_shares");
+                        if(pt.count("cpu_shares")!=0){
 
 
 
-                            int32_t cpuShares = pt.get<int32_t>("cpuShares");
-                            config->host_config.cpu_shares = cpuShares;
-                            LOG_INFO<< "cpuShares: " << cpuShares;
+                            int32_t cpu_shares = pt.get<int32_t>("cpu_shares");
+                            config->host_config.cpu_shares = cpu_shares;
+                            LOG_INFO<< "cpu_shares: " << cpu_shares;
                         }
 
                         LOG_INFO<< "pt.count(\"disk_quota\"):" << pt.count("disk_quota");
