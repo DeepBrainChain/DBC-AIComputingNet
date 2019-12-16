@@ -308,21 +308,21 @@ namespace ai
             dbc_auth_mode mode = m_auth_mode;
 
             // online auth
-            if( mode == DBC_ONLINE_AUTH)
-            {
-                rtn = auth_online(task);
-                if (rtn == E_NETWORK_FAILURE)
-                {
+      //      if( mode == DBC_ONLINE_AUTH)
+      //      {
+       //         rtn = auth_online(task);
+      //          if (rtn == E_NETWORK_FAILURE)
+      //          {
                     //fallback to offline auth
-                    mode = DBC_OFFLINE_AUTH;
-                }
-            }
+      //              mode = DBC_OFFLINE_AUTH;
+      //          }
+      //      }
 
             // offline auth
-            if ( mode == DBC_OFFLINE_AUTH)
-            {
-                rtn = auth_offline(task);
-            }
+     //       if ( mode == DBC_OFFLINE_AUTH)
+     //       {
+     //           rtn = auth_offline(task);
+     //       }
 
             return rtn;
 

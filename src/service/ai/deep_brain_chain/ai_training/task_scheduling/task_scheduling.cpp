@@ -121,8 +121,8 @@ namespace ai
             {
                 std:string training_engine_original=task->training_engine;
                 task->__set_training_engine("www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version);
-                LOG_INFO << "training_engine_original" << training_engine_original;
-                LOG_INFO << "training_engine_new" << "www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version;
+                LOG_INFO << "training_engine_original:" << training_engine_original;
+                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version;
                 if(E_SUCCESS != start_task_from_new_image(task))
                 {
                     task->__set_training_engine(training_engine_original);
@@ -141,7 +141,7 @@ namespace ai
         {
             if (nullptr == task)
             {
-                return E_SUCCESS;
+                return E_DEFAULT;
             }
 
 
@@ -169,7 +169,7 @@ namespace ai
                 CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
                 return E_DEFAULT;
             }
-
+            LOG_INFO << "start_task_from_new_image success. Task id:" ;
 
             int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
 
@@ -179,7 +179,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            LOG_INFO << "start task success. Task id:" << task->task_id;
+            LOG_INFO << "start_task_from_new_image success. Task id:" << task->task_id;
             task->__set_start_time(time_util::get_time_stamp_ms());
             task->__set_status(task_running);
             task->error_times = 0;
@@ -209,7 +209,7 @@ namespace ai
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);
-                LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
+                LOG_INFO << "create from_image task success. task id:" << task->task_id << " container id:" << task->container_id;
 
                 return E_SUCCESS;
             }

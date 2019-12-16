@@ -158,7 +158,7 @@ namespace ai
             LOG_INFO<< "task operation:" << operation;
             if(operation=="update")
             {    //update container
-                LOG_INFO<< "task will update,  task id:" << task->task_id;
+                LOG_INFO<< "task will update,  now erase task id:" << task->task_id;
                // ret = update_task(task);
                 m_running_tasks.erase(task->task_id);
                 ret = update_task_commit_image(task);
@@ -530,7 +530,7 @@ namespace ai
 
             if (true == resp->state.running)
             {
-                LOG_INFO << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                //LOG_INFO << "ai power provider service check container is running, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 auth_task(task);
                 return E_SUCCESS;
             }
