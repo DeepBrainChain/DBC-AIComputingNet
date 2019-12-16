@@ -95,7 +95,7 @@ namespace matrix
             }
 
             endpoint += container_id;
-            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+container_id+version;
+            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+container_id+version;
 
             //req content, headers, resp
             std::string req_content = "";

@@ -120,9 +120,9 @@ namespace ai
             if(image_id!="")
             {
                 std:string training_engine_original=task->training_engine;
-                task->__set_training_engine("www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version);
+                task->__set_training_engine("www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id+autodbcimage_version);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
-                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage"+task->container_id+autodbcimage_version;
+                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id+autodbcimage_version;
                 if(E_SUCCESS != start_task_from_new_image(task))
                 {
                     task->__set_training_engine(training_engine_original);
@@ -157,6 +157,8 @@ namespace ai
                     {
                         return E_DEFAULT;
                     }
+
+                    LOG_INFO << "delete container success , task id:" << task->task_id;
                    // return E_SUCCESS;
                 } else
                 {
