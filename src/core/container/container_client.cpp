@@ -139,8 +139,8 @@ namespace matrix
                 return "";
             }
 
-            endpoint += container_id.substr(0,12);
-            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+container_id+version;
+            endpoint += container_id;
+            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+container_id.substr(0,12)+version;
 
             //req content, headers, resp
             std::string req_content = "";
@@ -824,7 +824,11 @@ namespace matrix
                 LOG_ERROR << "delete image error: " << endpoint<<e.what();
                 return E_DEFAULT;
             }
-            LOG_INFO << "delete image success: " << endpoint;
+            if(ret==E_SUCCESS)
+            {
+                LOG_INFO << "delete image success: " << endpoint;
+            }
+
             return ret;
         }
 
