@@ -120,33 +120,31 @@ namespace matrix
             rapidjson::Document doc;
             if (E_SUCCESS != ret)
             {
+                return "";
+            }
                 //parse resp
 
-                if (!doc.Parse<0>(resp.body.c_str()).HasParseError())
-                {
+            if (!doc.Parse<0>(resp.body.c_str()).HasParseError())
+            {
                     //message
                     if (doc.HasMember("message"))
                     {
                         rapidjson::Value &message = doc["message"];
                         LOG_ERROR << "commit image error:" << message.GetString();
-                        return message.GetString();
+                        return "";
+                    } else
+                    {
+                        if (doc.HasMember("Id"))
+                        {
+                            rapidjson::Value &id = doc["Id"];
+                            std::string idString=id.GetString();
+                            LOG_INFO << "commit image Id: " << idString;
+
+                            return idString;
+                        }
                     }
 
-                }
-
-
-            } else
-            {
-                if (doc.HasMember("Id"))
-                {
-                    rapidjson::Value &id = doc["Id"];
-                    std::string idString=id.GetString();
-                    LOG_INFO << "commit image Id: " << idString;
-
-                    return idString;
-                }
-            }
-
+             }
 
 
             return "";
