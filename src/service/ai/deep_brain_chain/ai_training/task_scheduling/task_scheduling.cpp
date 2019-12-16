@@ -153,7 +153,7 @@ namespace ai
                 if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(task->container_id))
                 {
                     LOG_INFO << "stop container success , task id:" << task->task_id;
-                    return E_SUCCESS;
+                   // return E_SUCCESS;
                 } else
                 {
                     LOG_INFO << "stop container failure , task id:" << task->task_id;
