@@ -123,7 +123,7 @@ namespace ai
                 task->__set_training_engine("www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id+autodbcimage_version);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
                 LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id+autodbcimage_version;
-                if(E_SUCCESS != start_task_from_new_image(task))
+                if(E_SUCCESS != start_task_from_new_image(task,autodbcimage_version))
                 {
                     task->__set_training_engine(training_engine_original);
 
@@ -137,7 +137,7 @@ namespace ai
         }
 
        //from new image
-        int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version)
         {
             if (nullptr == task)
             {
@@ -147,18 +147,15 @@ namespace ai
 
 
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
-
+            std:string old_container_id=task->container_id;
             if (true == resp->state.running)
             {
-                if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(task->container_id))
+                if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(old_container_id))
                 {
-                    LOG_INFO << "stop container success , task id:" << task->task_id;
-                    if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(task->container_id))
-                    {
-                        return E_DEFAULT;
-                    }
+                    LOG_INFO << "stop container success , task id:" << old_container_id;
 
-                    LOG_INFO << "delete container success , task id:" << task->task_id;
+
+
                    // return E_SUCCESS;
                 } else
                 {
@@ -169,11 +166,19 @@ namespace ai
             }
 
 
-            if (E_SUCCESS != create_task_from_image(task))
+            if (E_SUCCESS != create_task_from_image(task,autodbcimage_version))
             {
                 LOG_ERROR << "create task error";
                 CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
                 return E_DEFAULT;
+            }else{
+
+                if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
+                {
+
+                    return E_DEFAULT;
+                }
+                LOG_INFO << "delete old container success , task id:" << old_container_id;
             }
             LOG_INFO << "start_task_from_new_image success. Task id:" ;
 
@@ -196,7 +201,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task> task,std::string  autodbcimage_version)
         {
             if (nullptr == task)
             {
@@ -211,7 +216,7 @@ namespace ai
 
          //   std::string container_id_original=task->container_id;
             std::shared_ptr<container_config> config = m_container_worker->get_container_config_from_image(task);
-            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id);
+            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id,autodbcimage_version);
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);
@@ -242,7 +247,7 @@ namespace ai
 
 
             std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
-            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id);
+            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id,"");
             if (resp != nullptr && !resp->container_id.empty())
             {
                 task->__set_container_id(resp->container_id);

@@ -36,17 +36,17 @@ namespace matrix
 
         std::shared_ptr<container_create_resp> container_client::create_container(std::shared_ptr<container_config> config)
         {
-            return create_container(config, "");
+            return create_container(config, "","");
         }
 
-        std::shared_ptr<container_create_resp> container_client::create_container(std::shared_ptr<container_config> config, std::string name)
+        std::shared_ptr<container_create_resp> container_client::create_container(std::shared_ptr<container_config> config, std::string name,std::string autodbcimage_version)
         {
             //endpoint
             std::string endpoint = "/containers/create";
             if (!name.empty())
             {
                 endpoint += "?name=";
-                endpoint += name;
+                endpoint += name+autodbcimage_version;
             }
 
             //req content, headers, resp

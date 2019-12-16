@@ -38,7 +38,7 @@ namespace matrix
             //create
             std::shared_ptr<container_create_resp> create_container(std::shared_ptr<container_config> config);
 
-            std::shared_ptr<container_create_resp> create_container(std::shared_ptr<container_config> config, std::string name);
+            std::shared_ptr<container_create_resp> create_container(std::shared_ptr<container_config> config, std::string name,std::string autodbcimage_version);
             int32_t update_container(std::string container_id, std::shared_ptr<update_container_config> config);
             std::string get_commit_image(std::string container_id,std::string version);
             //start
