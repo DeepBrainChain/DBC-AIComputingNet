@@ -162,6 +162,7 @@ namespace ai
                // ret = update_task(task);
                 m_running_tasks.erase(task->task_id);
                 ret = update_task_commit_image(task);
+                LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
                 m_running_tasks[task->task_id] = task;
                 if (ret == E_SUCCESS)
                 {

@@ -68,8 +68,8 @@ namespace ai
             int32_t update_task_commit_image(std::shared_ptr<ai_training_task> task);
             int32_t start_task(std::shared_ptr<ai_training_task> task);
             int32_t stop_task(std::shared_ptr<ai_training_task> task);
-            int32_t start_task_from_new_image(std::shared_ptr<ai_training_task> task);
-            int32_t create_task_from_image(std::shared_ptr<ai_training_task> task);
+            int32_t start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version);
+            int32_t create_task_from_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version);
             TASK_STATE get_task_state(std::shared_ptr<ai_training_task> task);
 
             std::string get_pull_log(std::string training_engine) { return m_pull_image_mng->get_out_log(training_engine); }
