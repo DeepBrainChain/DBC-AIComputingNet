@@ -111,6 +111,7 @@ namespace ai
             }
 
             std::string autodbcimage_version=m_container_worker->get_autodbcimage_version(task);
+            LOG_INFO << "autodbcimage_version" << autodbcimage_version;
             if(autodbcimage_version=="")
             {
                 return E_DEFAULT;

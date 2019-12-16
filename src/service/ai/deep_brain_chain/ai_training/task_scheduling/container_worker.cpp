@@ -264,8 +264,8 @@ namespace ai
 
 
 
-                        int32_t autodbcimage_version = pt.get<int32_t>("autodbcimage_version");
-                        autodbcimage_version = autodbcimage_version;
+                        autodbcimage_version = pt.get<std::string>("autodbcimage_version");
+
                         LOG_INFO<< "autodbcimage_version: " << autodbcimage_version;
                     }
 
