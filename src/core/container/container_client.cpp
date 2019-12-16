@@ -43,10 +43,17 @@ namespace matrix
         {
             //endpoint
             std::string endpoint = "/containers/create";
+
+
             if (!name.empty())
             {
-                endpoint += "?name=";
-                endpoint += name+autodbcimage_version;
+                endpoint += "?name="+name;
+
+            }
+
+            if(!autodbcimage_version.empty())
+            {
+                endpoint += "@DBC@"+autodbcimage_version;
             }
 
             //req content, headers, resp
@@ -84,6 +91,44 @@ namespace matrix
              return create_resp;
         }
 
+        int32_t container_client::rename_container(std::string name,std::string autodbcimage_version)
+        {
+            //endpoint
+            std::string endpoint = "/containers/";
+
+
+            if (!name.empty())
+            {
+                endpoint += name;
+
+            }
+
+            endpoint += "@DBC@"+autodbcimage_version+"/rename/";
+            endpoint += "?name="+name;
+            //req content, headers, resp
+
+            kvs headers;
+            headers.push_back({"Content-Type", "application/json"});
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+
+            http_response resp;
+            int32_t ret ;
+
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, "", resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client create container error: " << e.what();
+
+            }
+
+
+            return ret;
+        }
+
+
         std::string container_client::get_commit_image(std::string container_id,std::string version)
         {
             //endpoint
@@ -94,7 +139,7 @@ namespace matrix
                 return "";
             }
 
-            endpoint += container_id;
+            endpoint += container_id.substr(0,12);
             endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+container_id+version;
 
             //req content, headers, resp
