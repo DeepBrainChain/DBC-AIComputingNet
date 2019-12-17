@@ -103,7 +103,7 @@ namespace matrix
 
             }
 
-            endpoint += "_DBC_"+autodbcimage_version+"/rename/";
+            endpoint += "_DBC_"+autodbcimage_version+"/rename";
             endpoint += "?name="+name;
             //req content, headers, resp
 
