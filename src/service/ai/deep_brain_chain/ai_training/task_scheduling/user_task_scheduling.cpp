@@ -186,9 +186,17 @@ namespace ai
 
 
 
-            }else if(operation=="restart")
+            }else if(task->server_specification=="restart")
             {
-                //return  update_task(task);
+
+                ret = start_task(task);
+                m_queueing_tasks.remove(task);
+                LOG_INFO << "move restart task from waiting queue map" << task->task_id;
+
+                return ret;
+
+
+
             } else{
 
                 // feng: validate task's gpu requirement
@@ -234,8 +242,8 @@ namespace ai
                         LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
                         m_running_tasks[task->task_id] = task;
                         m_queueing_tasks.remove(task);
-
-                   /*     if (!m_gpu_pool.allocate(task->gpus))
+                       // m_gpu_pool.allocate(task->gpus);
+                        if (!m_gpu_pool.allocate(task->gpus))
                         {
                             // is supposed never happen because gpu check passed before
                             LOG_INFO << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
@@ -246,7 +254,7 @@ namespace ai
                         else
                         {
                             LOG_INFO << "gpu state " << m_gpu_pool.toString();
-                        }  */
+                        }
 
                         return E_SUCCESS;
 

@@ -195,7 +195,7 @@ namespace ai
                 return E_DEFAULT;
             }else{
 
-                if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
+              //  if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
                 {
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
                     CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
@@ -383,8 +383,8 @@ namespace ai
 
             LOG_INFO << " container_id: " << task->container_id << " task_id: " << task->task_id;
 
-            if (is_container_existed)
-            {
+          //  if (is_container_existed)
+          //  {
                 // server_specification indicates the container to be reused for this task
                 // needs to indicate container run with different parameters
                // text += ("code_dir=" + task->code_dir + "\n");
@@ -394,7 +394,7 @@ namespace ai
                     // use case: restart a task
               //      text += ("restart=true\n");
               //  }
-            }
+           // }
 
 
             if (!file_util::write_file(path, text))
