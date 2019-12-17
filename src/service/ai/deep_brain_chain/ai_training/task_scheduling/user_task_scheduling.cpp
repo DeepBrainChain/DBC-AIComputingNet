@@ -164,27 +164,22 @@ namespace ai
                 ret = update_task_commit_image(task);
                 LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
                 m_running_tasks[task->task_id] = task;
+                m_queueing_tasks.remove(task);
+                LOG_INFO << "move task from waiting queue map" << task->task_id;
                 if (ret == E_SUCCESS)
                 {
                     LOG_INFO << "task->status" << task->status;
-                  //  if (task->status == task_running)
-                    {
-                        //feng: move task from waiting queue  into running tasks map
-                        LOG_INFO << "move task from waiting queue map" << task->task_id;
-                     //   m_running_tasks[task->task_id] = task;
-                        m_queueing_tasks.remove(task);
 
+                    LOG_INFO << "gpu state " << m_gpu_pool.toString();
 
-                        LOG_INFO << "gpu state " << m_gpu_pool.toString();
+                    return E_SUCCESS;
 
-                        return E_SUCCESS;
-                    }
 
                 } else
-                    {
+                {
 
-                        m_queueing_tasks.remove(task);
-                        return E_DEFAULT;
+
+                    return E_DEFAULT;
 
                 }
 

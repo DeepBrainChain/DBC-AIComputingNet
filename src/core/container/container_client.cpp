@@ -53,7 +53,7 @@ namespace matrix
 
             if(!autodbcimage_version.empty())
             {
-                endpoint += "@DBC@"+autodbcimage_version;
+                endpoint += "_DBC_"+autodbcimage_version;
             }
 
             //req content, headers, resp
@@ -103,7 +103,7 @@ namespace matrix
 
             }
 
-            endpoint += "@DBC@"+autodbcimage_version+"/rename/";
+            endpoint += "_DBC_"+autodbcimage_version+"/rename/";
             endpoint += "?name="+name;
             //req content, headers, resp
 

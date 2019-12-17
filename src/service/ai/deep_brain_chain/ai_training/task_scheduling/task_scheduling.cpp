@@ -253,7 +253,7 @@ namespace ai
             std::shared_ptr<container_config> config = m_container_worker->get_container_config_from_image(task);
             std::string task_id=task->task_id;
 
-           // vector<string> vData=split(task_id, "@DBC@");
+           // vector<string> vData=split(task_id, "_DBC_");
            // std::string sub_task_id=vData[0];
             std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task_id,autodbcimage_version);
 
