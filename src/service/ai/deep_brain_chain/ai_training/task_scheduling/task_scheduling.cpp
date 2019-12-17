@@ -342,7 +342,7 @@ namespace ai
                     m_task_db.write_task_to_db(task);
                 }
 
-                int32_t ret = CONTAINER_WORKER_IF->restart_container(task->container_id,nullptr);
+                int32_t ret = CONTAINER_WORKER_IF->restart_container(task->container_id);
 
                 if (ret != E_SUCCESS)
                 {
