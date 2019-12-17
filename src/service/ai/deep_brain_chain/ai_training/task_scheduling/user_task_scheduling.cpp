@@ -235,7 +235,7 @@ namespace ai
                         m_running_tasks[task->task_id] = task;
                         m_queueing_tasks.remove(task);
 
-                        if (!m_gpu_pool.allocate(task->gpus))
+                   /*     if (!m_gpu_pool.allocate(task->gpus))
                         {
                             // is supposed never happen because gpu check passed before
                             LOG_INFO << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
@@ -246,7 +246,7 @@ namespace ai
                         else
                         {
                             LOG_INFO << "gpu state " << m_gpu_pool.toString();
-                        }
+                        }  */
 
                         return E_SUCCESS;
 
@@ -269,7 +269,7 @@ namespace ai
         {
 
             // case 1: stop a task from running set
-            if (task->status == task_running)
+            if (task->status == task_running || task->status == update_task_error ||task->status >= task_stopped)
             {
 
                 int32_t ret = task_scheduling::stop_task(task);
@@ -306,10 +306,10 @@ namespace ai
             }
             auto top_task = m_queueing_tasks.front();
             m_queueing_tasks.remove(task);
-            if (task->status >= task_stopped)
-            {
-                return E_SUCCESS;
-            }
+           // if (task->status >= task_stopped)
+          //  {
+          //      return E_SUCCESS;
+          //  }
 
 //            if (task_running == task->status)
 //            {

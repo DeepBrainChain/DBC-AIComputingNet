@@ -47,7 +47,7 @@ namespace ai
             task_queueing =      2,
             task_pulling_image = 3,
             task_running = 4,
-
+            update_task_error  =5,
             ///////////termianl state///////////////////////
             task_stopped = 8,
             task_successfully_closed = 16,
@@ -56,6 +56,7 @@ namespace ai
             task_noimage_closed     = 65,
             task_nospace_closed     = 66,
             task_out_of_gpu_resource    = 67
+
         };
 
         //__BEGIN_DECLS

@@ -256,6 +256,63 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t container_client::restart_container(std::string container_id, std::shared_ptr<container_host_config> config)
+        {
+            //endpoint
+            std::string endpoint = "/containers/";
+            if (container_id.empty())
+            {
+                LOG_ERROR << "start container container id is empty";
+                return E_DEFAULT;
+            }
+
+            endpoint += container_id;
+            endpoint += "/restart";
+
+            //req content, headers, resp
+            std::string req_content = "";
+            kvs headers;
+            if (nullptr != config)
+            {
+                headers.push_back({ "Content-Type", "application/json" });
+            }
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.post(endpoint, headers, req_content, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client start container error: " << e.what();
+                return E_DEFAULT;
+            }
+
+            if (E_SUCCESS != ret)
+            {
+                //parse resp
+                rapidjson::Document doc;
+                if (!doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    //message
+                    if (doc.HasMember("message"))
+                    {
+                        rapidjson::Value &message = doc["message"];
+                        LOG_ERROR << "start container message: " << message.GetString();
+                    }
+
+                }
+
+                return ret;
+            }
+
+            return E_SUCCESS;
+        }
+
+
         int32_t container_client::update_container(std::string container_id, std::shared_ptr<update_container_config> config)
         {
             //endpoint
