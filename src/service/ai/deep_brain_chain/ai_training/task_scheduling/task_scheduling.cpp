@@ -183,6 +183,10 @@ namespace ai
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
                     CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
                     CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
+                    task->__set_status(task_running);
+                    task->error_times = 0;
+                    m_task_db.write_task_to_db(task);
+                    LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
                 }
                 LOG_INFO << "delete old container success , task id:" << old_container_id;
