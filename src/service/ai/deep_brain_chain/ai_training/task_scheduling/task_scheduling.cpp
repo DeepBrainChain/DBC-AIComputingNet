@@ -383,18 +383,18 @@ namespace ai
 
             LOG_INFO << " container_id: " << task->container_id << " task_id: " << task->task_id;
 
-          //  if (is_container_existed)
-          //  {
-                // server_specification indicates the container to be reused for this task
-                // needs to indicate container run with different parameters
-               // text += ("code_dir=" + task->code_dir + "\n");
+            //  if (is_container_existed)
+            //  {
+            // server_specification indicates the container to be reused for this task
+            // needs to indicate container run with different parameters
+            // text += ("code_dir=" + task->code_dir + "\n");
 
-              //  if (task->server_specification == "restart")
-               // {
-                    // use case: restart a task
-              //      text += ("restart=true\n");
-              //  }
-           // }
+            //  if (task->server_specification == "restart")
+            // {
+            // use case: restart a task
+            //      text += ("restart=true\n");
+            //  }
+            // }
 
 
             if (!file_util::write_file(path, text))
@@ -412,6 +412,55 @@ namespace ai
                 LOG_ERROR << "Start task error. Task id:" << task->task_id;
                 return E_DEFAULT;
             }
+
+            LOG_INFO << "start task success. Task id:" << task->task_id;
+            task->__set_start_time(time_util::get_time_stamp_ms());
+            task->__set_status(task_running);
+            task->error_times = 0;
+            LOG_INFO << "task status:" << "task_running";
+            m_task_db.write_task_to_db(task);
+            LOG_INFO << "task status:" << "write_task_to_db";
+            LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
+            return E_SUCCESS;
+        }
+
+        int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                return E_SUCCESS;
+            }
+
+            auto state = get_task_state(task);
+            if (DBC_TASK_RUNNING == state)
+            {
+                if (task->status != task_running)
+                {
+                    task->__set_status(task_running);
+                    m_task_db.write_task_to_db(task);
+                }
+
+                int32_t ret = CONTAINER_WORKER_IF->restart_container(task->container_id,nullptr);
+
+                if (ret != E_SUCCESS)
+                {
+                    LOG_ERROR << "restart task error. Task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
+                LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
+
+                return E_SUCCESS;
+            } else
+            {
+                int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);
+
+                if (ret != E_SUCCESS)
+                {
+                    LOG_ERROR << "Start task error. Task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
+            }
+
 
             LOG_INFO << "start task success. Task id:" << task->task_id;
             task->__set_start_time(time_util::get_time_stamp_ms());

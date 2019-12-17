@@ -152,8 +152,18 @@ namespace ai
                 m_stop_idle_task_handler();
             }
             LOG_INFO << "exec_task start" ;
-            int32_t ret = E_DEFAULT;
+            int32_t ret ;
 
+             if(task->server_specification=="restart")
+            {
+
+                ret = restart_task(task);
+                m_queueing_tasks.remove(task);
+                LOG_INFO << "move restart task from waiting queue map" << task->task_id;
+
+                return ret;
+
+            }
             std::string operation =  m_container_worker->get_operation(task);
             LOG_INFO<< "task operation:" << operation;
             if(operation=="update")
@@ -186,18 +196,7 @@ namespace ai
 
 
 
-            }else if(task->server_specification=="restart")
-            {
-
-                ret = start_task(task);
-                m_queueing_tasks.remove(task);
-                LOG_INFO << "move restart task from waiting queue map" << task->task_id;
-
-                return ret;
-
-
-
-            } else{
+            }else{
 
                 // feng: validate task's gpu requirement
                 if (task_queueing == task->status)
@@ -277,7 +276,7 @@ namespace ai
         {
 
             // case 1: stop a task from running set
-            if (task->status == task_running || task->status == update_task_error ||task->status >= task_stopped)
+            if (task->status == task_running || task->status == update_task_error ||task->status >= task_stopped ||task->status == task_queueing)
             {
 
                 int32_t ret = task_scheduling::stop_task(task);

@@ -174,7 +174,7 @@ namespace ai
 
             // hack: restart task
             task->__set_server_specification("restart");
-
+            LOG_INFO << "set_server_specification: " << task->server_specification;
             m_user_task_ptr->add_task(task);
 
             return E_SUCCESS;
