@@ -28,8 +28,9 @@
 #define E_NO_DISK_SPACE                                     -14
 #define E_NETWORK_FAILURE                                   -15                 //exit because network failure
 #define E_BILL_DISABLE                                      -16                 //exit because network failure
-#define E_NOT_COMPUTING_NODE                                -17
 
+#define E_NOT_COMPUTING_NODE                                -17
+#define E_NO_START_CONTAINER                                -18                 //create new container from  new images ,but no start container
 
 
 #endif
