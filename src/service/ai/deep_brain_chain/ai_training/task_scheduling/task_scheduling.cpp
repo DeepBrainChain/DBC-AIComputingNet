@@ -186,9 +186,13 @@ namespace ai
                 LOG_INFO << "delete old container success , task id:" << old_container_id;
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version))
                 {
-                    CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
-                    CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
-                    CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
+                    LOG_INFO << "rename container failure";
+                  //  CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
+                 //   LOG_INFO << "delete new  container ";
+                  //  CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
+                 //   CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
+                    CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version);
+                    CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
                     return E_DEFAULT;
                 }
 
