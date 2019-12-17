@@ -264,7 +264,7 @@ namespace matrix
                 return ret;
             } else
             {
-                return E_DEFAULT;  
+                return E_DEFAULT;
             }
 
         }
