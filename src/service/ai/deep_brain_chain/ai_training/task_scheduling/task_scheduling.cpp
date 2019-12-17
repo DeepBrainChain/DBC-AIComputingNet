@@ -347,6 +347,7 @@ namespace ai
                 if (ret != E_SUCCESS)
                 {
                     LOG_ERROR << "restart task error. Task id:" << task->task_id;
+                    LOG_ERROR << "restart task error. container_id:" << task->container_id;
                     return E_DEFAULT;
                 }
                 LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
@@ -446,6 +447,7 @@ namespace ai
                 if (ret != E_SUCCESS)
                 {
                     LOG_ERROR << "restart task error. Task id:" << task->task_id;
+                    LOG_ERROR << "restart task error. container_id:" << task->container_id;
                     return E_DEFAULT;
                 }
                 LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
