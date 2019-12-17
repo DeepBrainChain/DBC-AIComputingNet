@@ -105,9 +105,12 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if (task->entry_file.empty() || task->code_dir.empty() || task->task_id.empty())
+            if (task->task_id.empty())
             {
                 LOG_DEBUG << "task config error.";
+                task->__set_status(update_task_error);
+                task->error_times = 0;
+                m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }
 
@@ -115,6 +118,9 @@ namespace ai
             LOG_INFO << "autodbcimage_version" << autodbcimage_version;
             if(autodbcimage_version=="")
             {
+                task->__set_status(update_task_error);
+                task->error_times = 0;
+                m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version);
@@ -134,6 +140,12 @@ namespace ai
                 }
 
 
+            }else
+            {
+                task->__set_status(update_task_error);
+                task->error_times = 0;
+                m_task_db.write_task_to_db(task);
+                return E_DEFAULT;
             }
 
 
@@ -145,6 +157,7 @@ namespace ai
         {
             if (nullptr == task)
             {
+
                 return E_DEFAULT;
             }
 
@@ -159,11 +172,12 @@ namespace ai
                     LOG_INFO << "stop container success , task id:" << old_container_id;
 
 
-
-                   // return E_SUCCESS;
                 } else
                 {
                     LOG_INFO << "stop container failure , task id:" << task->task_id;
+                    task->__set_status(update_task_error);
+                    task->error_times = 0;
+                    m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
 
                 }
@@ -175,6 +189,9 @@ namespace ai
                 LOG_ERROR << "create task error";
                 CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
                 CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
+                task->__set_status(update_task_error);
+                task->error_times = 0;
+                m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }else{
 
@@ -183,7 +200,7 @@ namespace ai
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
                     CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
                     CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
-                    task->__set_status(task_running);
+                    task->__set_status(update_task_error);
                     task->error_times = 0;
                     m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
@@ -193,13 +210,9 @@ namespace ai
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version))
                 {
                     LOG_INFO << "rename container failure";
-                  //  CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
-                 //   LOG_INFO << "delete new  container ";
-                  //  CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
-                 //   CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
+
                     CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version);
-                   // CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
-                   // return E_DEFAULT;
+
                 }
 
                 LOG_INFO << "rename container success , task id:" << task->task_id;
@@ -319,9 +332,6 @@ namespace ai
                 return E_SUCCESS;
             }
 
-
-
-
             auto state = get_task_state(task);
             if (DBC_TASK_RUNNING == state)
             {
@@ -330,7 +340,22 @@ namespace ai
                     task->__set_status(task_running);
                     m_task_db.write_task_to_db(task);
                 }
-                LOG_DEBUG << "task have been running, do not need to start. task id:" << task->task_id;
+
+                int32_t ret = CONTAINER_WORKER_IF->restart_container(task->container_id,nullptr);
+
+                if (ret != E_SUCCESS)
+                {
+                    LOG_ERROR << "restart task error. Task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
+                LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
+                task->__set_start_time(time_util::get_time_stamp_ms());
+                task->__set_status(task_running);
+                task->error_times = 0;
+                LOG_INFO << "task status:" << "task_running";
+                m_task_db.write_task_to_db(task);
+                LOG_INFO << "task status:" << "write_task_to_db";
+                LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
                 return E_SUCCESS;
             }
 
@@ -362,13 +387,13 @@ namespace ai
             {
                 // server_specification indicates the container to be reused for this task
                 // needs to indicate container run with different parameters
-                text += ("code_dir=" + task->code_dir + "\n");
+               // text += ("code_dir=" + task->code_dir + "\n");
 
-                if (task->server_specification == "restart")
-                {
+              //  if (task->server_specification == "restart")
+               // {
                     // use case: restart a task
-                    text += ("restart=true\n");
-                }
+              //      text += ("restart=true\n");
+              //  }
             }
 
 

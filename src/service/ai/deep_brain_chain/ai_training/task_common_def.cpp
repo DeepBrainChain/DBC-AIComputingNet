@@ -52,6 +52,8 @@ namespace ai
                 return "task_nospace_closed";
             case task_out_of_gpu_resource:
                     return "task_out_of_gpu_resource";
+            case update_task_error:
+                    return "update_task_error";
             default:
                 return DEFAULT_STRING;
             }
