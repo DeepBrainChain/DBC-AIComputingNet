@@ -524,7 +524,7 @@ namespace ai
             }
 
             // inspect container
-            std::string container_id = task->task_id;
+            std::string container_id = task->container_id;
 
             // container can be started again by task delivered latter,
             // in that case, the container's id and name keeps the original value, then new task's id and container's name does not equal any more.
@@ -536,6 +536,7 @@ namespace ai
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(container_id);
             if (nullptr == resp)
             {
+                LOG_ERROR << "set_container_id:" << "null";
                 task->__set_container_id("");
                 return DBC_TASK_NOEXIST;
             }
