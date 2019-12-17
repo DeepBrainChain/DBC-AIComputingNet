@@ -125,17 +125,19 @@ namespace ai
                 task->__set_training_engine(training_engine_new);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
                 LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id.substr(0,12)+autodbcimage_version;
-                if(E_SUCCESS != start_task_from_new_image(task,autodbcimage_version,training_engine_new))
+                int32_t status=start_task_from_new_image(task,autodbcimage_version,training_engine_new);
+
+                if(status!= E_NO_START_CONTAINER &&status!= E_SUCCESS)
                 {
                     task->__set_training_engine(training_engine_original);
-
+                    return E_DEFAULT;
                 }
 
 
             }
 
 
-            return E_DEFAULT;
+            return E_SUCCESS;
         }
 
        //from new image
@@ -192,8 +194,8 @@ namespace ai
                   //  CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
                  //   CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
                     CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version);
-                    CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
-                    return E_DEFAULT;
+                   // CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
+                   // return E_DEFAULT;
                 }
 
                 LOG_INFO << "rename container success , task id:" << task->task_id;
@@ -205,7 +207,7 @@ namespace ai
             if (ret != E_SUCCESS)
             {
                 LOG_ERROR << "Start task error. Task id:" << task->task_id;
-                return E_DEFAULT;
+                return E_NO_START_CONTAINER;
             }
 
             LOG_INFO << "start_task_from_new_image success. Task id:" << task->task_id;
