@@ -205,13 +205,25 @@ namespace ai
 
 
 
-        }
+            }
             std::string operation =  m_container_worker->get_operation(task);
             LOG_INFO<< "task operation:" << operation;
             if(operation=="update")
             {    //update container
                 LOG_INFO<< "task will update,  now erase task id:" << task->task_id;
-               // ret = update_task(task);
+                std:string old_gpus=task->gpus;
+                m_gpu_pool.free(old_gpus);// free old gpus
+                if (!m_gpu_pool.check(get_gpu_spec(task->server_specification)))
+                {
+                    LOG_ERROR << "update out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                              << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
+                    task->__set_status(update_task_error);
+
+                    m_task_db.write_task_to_db(task);
+                    return E_DEFAULT;
+                }
+                m_gpu_pool.allocate(old_gpus);//add old gpus again
+
                 m_running_tasks.erase(task->task_id);
                 ret = update_task_commit_image(task);
                 LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
@@ -222,7 +234,8 @@ namespace ai
                 {
 
                     LOG_INFO << "task->status" << task->status;
-
+                    m_gpu_pool.free(old_gpus);// free old gpus
+                    m_gpu_pool.allocate(task->gpus);//add new gpus
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
 
                     return E_SUCCESS;
@@ -315,6 +328,8 @@ namespace ai
 
 
         }
+
+
 
         int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
         {
