@@ -213,6 +213,8 @@ namespace ai
                 LOG_INFO<< "task will update,  now erase task id:" << task->task_id;
                 std:string old_gpus=task->gpus;
                 m_gpu_pool.free(old_gpus);// free old gpus
+                LOG_INFO<< "task will update,  old_gpus:" << old_gpus;
+                LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
                 if (!m_gpu_pool.check(get_gpu_spec(task->server_specification)))
                 {
                     LOG_ERROR << "update out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
@@ -224,6 +226,7 @@ namespace ai
                 }
                 m_gpu_pool.allocate(old_gpus);//add old gpus again
 
+                LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
                 m_running_tasks.erase(task->task_id);
                 ret = update_task_commit_image(task);
                 LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
@@ -235,6 +238,7 @@ namespace ai
 
                     LOG_INFO << "task->status" << task->status;
                     m_gpu_pool.free(old_gpus);// free old gpus
+                    LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
                     m_gpu_pool.allocate(task->gpus);//add new gpus
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
 
