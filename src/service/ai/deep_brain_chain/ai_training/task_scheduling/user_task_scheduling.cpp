@@ -212,6 +212,10 @@ namespace ai
             {    //update container
                 LOG_INFO<< "task will update,  now erase task id:" << task->task_id;
                 auto old_task =m_running_tasks[task->task_id];
+                if (nullptr == old_task)
+                {
+                    return E_DEFAULT;
+                }
                 std:string old_gpus=old_task->gpus;
                 m_gpu_pool.free(old_gpus);// free old gpus
                 LOG_INFO<< "task will update,  old_gpus:" << old_gpus;
