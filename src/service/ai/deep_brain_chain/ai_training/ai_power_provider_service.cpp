@@ -245,6 +245,40 @@ namespace ai
             return rt;
         }
 
+        std::string get_is_update(std::string s)
+        {
+            if (s.empty())
+            {
+                return "";
+            }
+            std::string operation ="";
+            std::stringstream ss;
+                ss << s;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << s;
+                    LOG_INFO<< "pt.count(\"operation\"):" << pt.count("operation");
+                    if(pt.count("operation")!=0){
+                        operation = pt.get<std::string>("operation");
+                        LOG_INFO<< "operation: " << operation ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "operation: " << "error" ;
+                }
+
+
+            return operation;
+        }
+
+
         int32_t ai_power_provider_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req)
         {
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
@@ -280,7 +314,11 @@ namespace ai
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
             task->__set_error_times(0);
 
-            task->__set_gpus(get_gpu_spec(task->server_specification));
+            if(get_is_update(task->server_specification)!="update")
+            {
+                task->__set_gpus(get_gpu_spec(task->server_specification));
+            }
+
            // LOG_INFO << "body.training_engine: " <<req->body.training_engine;
            // LOG_INFO << "body.memory: " <<req->body.memory;
 

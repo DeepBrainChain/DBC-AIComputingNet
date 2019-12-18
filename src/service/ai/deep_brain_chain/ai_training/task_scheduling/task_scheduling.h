@@ -12,7 +12,7 @@
 #include "container_client.h"
 #include <memory>
 #include <string>
-#include <boost/process.hpp>
+
 #include <set>
 #include "oss_client.h"
 #include "db/ai_db_types.h"
@@ -20,6 +20,7 @@
 #include <chrono>
 #include "rw_lock.h"
 #include "image_manager.h"
+
 //#include <boost/program_options/variables_map.hpp>
 #include "service_module.h"
 #include "container_worker.h"
@@ -62,7 +63,7 @@ namespace ai
             
             int32_t init_db(std::string db_name);
             virtual int32_t load_task() { return E_SUCCESS; }
-
+            std::string get_gpu_spec(std::string s);
             int32_t update_task(std::shared_ptr<ai_training_task> task);
             vector<string> split(const string& str, const string& delim);
             int32_t update_task_commit_image(std::shared_ptr<ai_training_task> task);
@@ -79,6 +80,7 @@ namespace ai
             int32_t delete_task(std::shared_ptr<ai_training_task> task);
         private:
             int32_t create_task(std::shared_ptr<ai_training_task> task);
+
         protected:
             ai_provider_task_db m_task_db;
             std::shared_ptr<image_manager> m_pull_image_mng = nullptr;

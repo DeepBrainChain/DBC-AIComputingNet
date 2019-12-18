@@ -120,6 +120,7 @@ namespace ai
         }
 
 
+
         int32_t user_task_scheduling::exec_task()
         {
             auto task = m_queueing_tasks.front();
@@ -178,6 +179,7 @@ namespace ai
                 LOG_INFO << "move task from waiting queue map" << task->task_id;
                 if (ret == E_SUCCESS)
                 {
+
                     LOG_INFO << "task->status" << task->status;
 
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();

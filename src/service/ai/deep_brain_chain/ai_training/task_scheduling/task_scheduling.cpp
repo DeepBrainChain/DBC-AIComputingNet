@@ -13,11 +13,11 @@
 #include "utilstrencodings.h"
 #include "task_common_def.h"
 #include "server.h"
-#include <boost/format.hpp>
+
 #include <regex>
 #include "time_util.h"
 #include "url_validator.h"
-
+#include <boost/property_tree/json_parser.hpp>
 namespace ai
 {
     namespace dbc
@@ -148,8 +148,39 @@ namespace ai
                 return E_DEFAULT;
             }
 
-
+            task->__set_gpus(get_gpu_spec(task->server_specification));
             return E_SUCCESS;
+        }
+
+        std::string task_scheduling::get_gpu_spec(std::string s)
+        {
+            if (s.empty())
+            {
+                return "";
+            }
+
+            std::string rt;
+            std::stringstream ss;
+            ss << s;
+            boost::property_tree::ptree pt;
+
+            try
+            {
+                boost::property_tree::read_json(ss, pt);
+                rt = pt.get<std::string>("env.NVIDIA_VISIBLE_DEVICES");
+
+                if ( !rt.empty())
+                {
+                    matrix::core::string_util::trim(rt);
+                    LOG_DEBUG << "gpus requirement: " << rt;
+                }
+            }
+            catch (...)
+            {
+
+            }
+
+            return rt;
         }
 
        //from new image
