@@ -226,7 +226,7 @@ namespace ai
                 return E_DEFAULT;
             }else{
 
-              //  if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
+                if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
                 {
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
                     CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
