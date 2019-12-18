@@ -176,7 +176,7 @@ namespace ai
                             stop_task(task, task_noimage_closed);
                             break;
                         default:
-                            m_task_db.write_task_to_db(task);
+                         //   m_task_db.write_task_to_db(task);
                             break;
                     }
 
@@ -214,6 +214,7 @@ namespace ai
                 auto old_task =m_running_tasks[task->task_id];
                 if (nullptr == old_task)
                 {
+                    m_queueing_tasks.remove(task);
                     return E_DEFAULT;
                 }
                 std:string old_gpus=old_task->gpus;
