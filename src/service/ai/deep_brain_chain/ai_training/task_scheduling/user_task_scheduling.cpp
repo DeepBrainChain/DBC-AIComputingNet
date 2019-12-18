@@ -162,9 +162,50 @@ namespace ai
                 m_queueing_tasks.remove(task);
                 LOG_INFO << "move restart task from waiting queue map" << task->task_id;
 
-                return ret;
+                LOG_INFO << "restart_task over,ret:"<< ret;
+                if (ret != E_SUCCESS)
+                {
+                    task->error_times++;
+                    switch (ret)
+                    {
+                        case E_NO_DISK_SPACE:
+                            stop_task(task, task_nospace_closed);
+                            break;
+                        case E_PULLING_IMAGE:
+                        case E_IMAGE_NOT_FOUND:
+                            stop_task(task, task_noimage_closed);
+                            break;
+                        default:
+                            m_task_db.write_task_to_db(task);
+                            break;
+                    }
 
-            }
+                    LOG_ERROR << "restart user task failed, task id:" << task->task_id;
+                    return E_DEFAULT;
+                }
+                else
+                {
+                    LOG_INFO << "task->status" << task->status;
+                    if (task->status == task_running)
+                    {
+                        //jimmy: move task from waiting queue  into running tasks map
+                        LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
+                        m_running_tasks[task->task_id] = task;
+                        m_gpu_pool.allocate(task->gpus);
+                        return E_SUCCESS;
+
+                    }
+
+                    return E_DEFAULT;
+
+                }
+
+                LOG_INFO << "restart user task success, task id:" << task->task_id;
+
+
+
+
+        }
             std::string operation =  m_container_worker->get_operation(task);
             LOG_INFO<< "task operation:" << operation;
             if(operation=="update")
@@ -213,6 +254,7 @@ namespace ai
                 }
 
                 ret = start_task(task);
+                m_queueing_tasks.remove(task);
                 LOG_INFO << "start_task over,ret:"<< ret;
                 if (ret != E_SUCCESS)
                 {
@@ -242,7 +284,7 @@ namespace ai
                         //jimmy: move task from waiting queue  into running tasks map
                         LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
                         m_running_tasks[task->task_id] = task;
-                        m_queueing_tasks.remove(task);
+
                        // m_gpu_pool.allocate(task->gpus);
                         if (!m_gpu_pool.allocate(task->gpus))
                         {

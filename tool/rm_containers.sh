@@ -11,7 +11,7 @@ function print_usage()
     echo "  stop_interval  use_ration  # prune the containers that have been stopped more than stop_interval(1~8640) hour, and the disk use ratio should smaller than use_ration%(1~100) "
     echo "  help                       # rm_containers useage"
     echo "example:"
-    echo "  rm_containers  100  60     # prune the containers that have been stopped more than 100 hour, and the disk use ratio should smaller than 60%"
+    echo "  rm_containers  100  60     # prune the containers that have been stopped more than 100 hour, or the disk use ratio should smaller than 60%"
 }
 function rm_container()	
 {
@@ -45,8 +45,8 @@ function prune_container_template()
     fi
     usage=$(df -h -l /var/lib/docker | grep -v Use | awk '{print $5}' | cut -d \% -f 1)
    # if [ $usage -gt $scale ];then
-        p_interval=$((p_interval/2))
-        prune_container_template $p_interval $st_template $time_template
+   #     p_interval=$((p_interval/2))
+   #    prune_container_template $p_interval $st_template $time_template
    # fi
 }
 function prune_container()
