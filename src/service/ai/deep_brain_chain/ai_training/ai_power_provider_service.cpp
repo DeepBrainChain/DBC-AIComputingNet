@@ -279,7 +279,7 @@ namespace ai
         }
 
 
-        int32_t ai_power_provider_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req)
+        int32_t ai_power_provider_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req)//start new task or update task
         {
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
             {
@@ -358,7 +358,7 @@ namespace ai
 
                 if (ref_task2 != nullptr )
                 {
-                    if(get_is_update(task->server_specification)=="update"  || task->server_specification=="restart"){//restart or update
+                    if(get_is_update(task->server_specification)=="update" ){// update
 
                         LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
@@ -366,7 +366,7 @@ namespace ai
 
                         LOG_INFO << "req container_name: " << req->body.container_name;
 
-                        // task->__set_task_id(task_id);
+                        task->__set_task_id(task_id); //update to old task id
                         task->__set_container_id(ref_container_id);
 
                         task->__set_received_time_stamp(std::time(nullptr));
@@ -378,7 +378,7 @@ namespace ai
                     //no need add task
                 } else
                 {
-                    if(get_is_update(task->server_specification)!="update"  && task->server_specification!="restart") {// only create new task
+                    if(get_is_update(task->server_specification)!="update" ) {// only create new task
 
                         LOG_INFO << "ref_task ref_task2 == nullptr";
                         LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
