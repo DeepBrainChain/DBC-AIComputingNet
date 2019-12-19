@@ -91,7 +91,7 @@ namespace ai
                               << task->task_id << " container_id: " << task->container_id << " task status: "
                               << to_training_task_status_string(task->status);
                 }
-                else if (task_running == task->status)
+                else if (task_running == task->status ||update_task_error ==task->status)
                 {
                     if (!m_gpu_pool.allocate(task->gpus))
                     {
@@ -135,7 +135,6 @@ namespace ai
             }
 
 
-
             if (E_SUCCESS == auth_task(task))
             {
                 LOG_DEBUG << "training start exec ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
@@ -165,45 +164,25 @@ namespace ai
                 LOG_INFO << "restart_task over,ret:"<< ret;
                 if (ret != E_SUCCESS)
                 {
-                    task->error_times++;
-                    switch (ret)
-                    {
-                        case E_NO_DISK_SPACE:
-                            stop_task(task, task_nospace_closed);
-                            break;
-                        case E_PULLING_IMAGE:
-                        case E_IMAGE_NOT_FOUND:
-                            stop_task(task, task_noimage_closed);
-                            break;
-                        default:
-                         //   m_task_db.write_task_to_db(task);
-                            break;
-                    }
+                     task->__set_status(task_stopped);
+                     m_task_db.write_task_to_db(task);
+                     LOG_ERROR << "restart user task failed, task id:" << task->task_id;
+                     return E_DEFAULT;
 
-                    LOG_ERROR << "restart user task failed, task id:" << task->task_id;
-                    return E_DEFAULT;
                 }
+
                 else
                 {
                     LOG_INFO << "task->status" << task->status;
-                    if (task->status == task_running)
-                    {
-                        //jimmy: move task from waiting queue  into running tasks map
+                    //jimmy: move task from waiting queue  into running tasks map
                         LOG_INFO << "move task from waiting queue  into running tasks map" << task->task_id;
                         m_running_tasks[task->task_id] = task;
                         m_gpu_pool.allocate(task->gpus);
+                        m_task_db.write_task_to_db(task);
+                    LOG_INFO << "restart user task success, task id:" << task->task_id;
                         return E_SUCCESS;
 
-                    }
-
-                    return E_DEFAULT;
-
                 }
-
-                LOG_INFO << "restart user task success, task id:" << task->task_id;
-
-
-
 
             }
             std::string operation =  m_container_worker->get_operation(task);
@@ -214,6 +193,7 @@ namespace ai
                 auto old_task =m_running_tasks[task->task_id];
                 if (nullptr == old_task)
                 {
+
                     m_queueing_tasks.remove(task);
                     return E_DEFAULT;
                 }
@@ -247,14 +227,14 @@ namespace ai
                     LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
                     m_gpu_pool.allocate(task->gpus);//add new gpus
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
-
+                    m_task_db.write_task_to_db(task);
                     return E_SUCCESS;
 
 
                 } else
                 {
 
-
+                    m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
 
                 }
@@ -325,7 +305,7 @@ namespace ai
                         return E_SUCCESS;
 
                     }
-
+                    m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
 
                 }
@@ -356,9 +336,9 @@ namespace ai
                 }
 
 
-                task->__set_end_time(time_util::get_time_stamp_ms());
+            //    task->__set_end_time(time_util::get_time_stamp_ms());
                 task->__set_status(end_status);
-                m_task_db.write_task_to_db(task);
+            //    m_task_db.write_task_to_db(task);
 
                 m_running_tasks.erase(task->task_id);
 
