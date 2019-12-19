@@ -110,7 +110,7 @@ namespace ai
                 LOG_DEBUG << "task config error.";
                 task->__set_status(update_task_error);
                 task->error_times = 0;
-                m_task_db.write_task_to_db(task);
+
                 return E_DEFAULT;
             }
 
@@ -121,7 +121,7 @@ namespace ai
             {
                 task->__set_status(update_task_error);
                 task->error_times = 0;
-                m_task_db.write_task_to_db(task);
+
                 return E_DEFAULT;
             }
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version);
@@ -145,7 +145,7 @@ namespace ai
             {
                 task->__set_status(update_task_error);
                 task->error_times = 0;
-                m_task_db.write_task_to_db(task);
+
                 return E_DEFAULT;
             }
 

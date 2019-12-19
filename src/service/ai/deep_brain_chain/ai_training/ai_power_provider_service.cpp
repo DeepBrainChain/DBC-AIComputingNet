@@ -328,27 +328,27 @@ namespace ai
             //      As we know, dbc names a container with the task id value when create the container.
             //      So the input container name also refer to a task id.
             std::string ref_container_id="";
-            auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
-            LOG_INFO << "req container_name: " << req->body.container_name;
+        //    auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
+        //    LOG_INFO << "req container_name: " << req->body.container_name;
 
 
 
 
-            if (ref_task != nullptr)
-            {
-                LOG_INFO << "ref task container id: " << ref_task->container_id;
-                LOG_INFO << "ref task id: " << ref_task->task_id;
+         //   if (ref_task != nullptr)
+         //   {
+          //      LOG_INFO << "ref task container id: " << ref_task->container_id;
+          //      LOG_INFO << "ref task id: " << ref_task->task_id;
 
-                if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
-                {
-                    ref_container_id = ref_task->container_id;
-                }
-                else
-                {
-                    LOG_WARNING << "forbid reusing container not own";
-                }
+         //       if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
+         //       {
+         //           ref_container_id = ref_task->container_id;
+         //       }
+         //       else
+          //      {
+          //          LOG_WARNING << "forbid reusing container not own";
+         //       }
 
-            } else // //update container ,get task_id
+         //   } else // //update container ,get task_id
             {
                 std::string task_id=get_task_id(req);
 
@@ -364,7 +364,7 @@ namespace ai
 
                     LOG_INFO << "req container_name: " << req->body.container_name;
 
-                    task->__set_task_id(task_id);
+                   // task->__set_task_id(task_id);
                     task->__set_container_id(ref_container_id);
 
                     task->__set_received_time_stamp(std::time(nullptr));
@@ -376,7 +376,7 @@ namespace ai
                 {
                     LOG_INFO << "ref_task ref_task2 == nullptr";
                     LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
-                    task->__set_container_id(ref_container_id);
+                   // task->__set_container_id(ref_container_id);
 
                     task->__set_received_time_stamp(std::time(nullptr));
                     task->__set_status(task_queueing);
