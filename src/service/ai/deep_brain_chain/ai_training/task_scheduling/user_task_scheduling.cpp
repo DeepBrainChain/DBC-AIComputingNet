@@ -193,7 +193,9 @@ namespace ai
                 auto old_task =m_running_tasks[task->task_id];
                 if (nullptr == old_task)
                 {
+                    task->__set_status(task_stopped);
 
+                  //  m_task_db.write_task_to_db(task);
                     m_queueing_tasks.remove(task);
                     return E_DEFAULT;
                 }
@@ -404,11 +406,11 @@ namespace ai
         {
 
             //flush to db
-            if (E_SUCCESS != m_task_db.write_task_to_db(task))
-            {
-                return E_DEFAULT;
-            }
-            LOG_INFO << "update user task scheduling flush task to db: " << task->task_id;
+         //   if (E_SUCCESS != m_task_db.write_task_to_db(task))
+         //   {
+        //        return E_DEFAULT;
+        //    }
+         //   LOG_INFO << "update user task scheduling flush task to db: " << task->task_id;
           //  LOG_INFO << "update user task scheduling flush task to db memory: " << task->memory;
             m_queueing_tasks.push_back(task);
             LOG_INFO << "user task scheduling add m_training_tasks:" << task->task_id;
