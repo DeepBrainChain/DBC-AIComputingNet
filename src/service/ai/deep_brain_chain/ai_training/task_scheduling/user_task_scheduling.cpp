@@ -598,7 +598,7 @@ namespace ai
             }
             else
             {
-                LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id  << " exit_code" << resp->state.exit_code;
                // stop_task(task, task_successfully_closed);
               //  start_task(task);
                 return E_SUCCESS;
