@@ -124,7 +124,7 @@ namespace ai
 
                 return E_DEFAULT;
             }
-            std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version);
+            std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id);
             if(image_id!="")
             {
                 std::string training_engine_original=task->training_engine;
