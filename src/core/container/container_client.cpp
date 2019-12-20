@@ -129,7 +129,7 @@ namespace matrix
         }
 
 
-        std::string container_client::get_commit_image(std::string container_id,std::string version)
+        std::string container_client::get_commit_image(std::string container_id,std::string version,std::string task_id)
         {
             //endpoint
             std::string endpoint = "/commit?container=";
@@ -140,7 +140,7 @@ namespace matrix
             }
 
             endpoint += container_id;
-            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+container_id.substr(0,12)+version;
+            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+task_id.substr(0,6)+"_"+container_id.substr(0,6)+version;
 
             //req content, headers, resp
             std::string req_content = "";
