@@ -208,7 +208,7 @@ namespace ai
                     LOG_ERROR << "update out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
                               << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
                     task->__set_status(update_task_error);
-
+                    m_gpu_pool.allocate(old_gpus);//add old gpus again
                     m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
                 }

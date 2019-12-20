@@ -128,10 +128,10 @@ namespace ai
             if(image_id!="")
             {
                 std::string training_engine_original=task->training_engine;
-                std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id.substr(0,12)+autodbcimage_version;
+                std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
                 task->__set_training_engine(training_engine_new);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
-                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->container_id.substr(0,12)+autodbcimage_version;
+                LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
                 int32_t status=start_task_from_new_image(task,autodbcimage_version,training_engine_new);
 
                 if(status!= E_NO_START_CONTAINER &&status!= E_SUCCESS)
@@ -256,6 +256,7 @@ namespace ai
 
             if (ret != E_SUCCESS)
             {
+                task->__set_status(update_task_error);
                 LOG_ERROR << "Start task error. Task id:" << task->task_id;
                 return E_NO_START_CONTAINER;
             }
