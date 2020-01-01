@@ -2,7 +2,10 @@
 
 args="$@"
 echo $args
-
+URL_TOKEN=""
+DEFAULT_PWD=""
+SSH_INFO=""
+jupyter_url=""
 parse_arg()
 {
     test -f ./jq && chmod +x ./jq
@@ -52,6 +55,24 @@ parse_arg()
 
     # optional, ssh public key
     id_pub=$(echo $args | ./jq -r .id_pub?)
+}
+
+
+run_jupyter()
+{
+   # JUPYTER_TOKEN=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c64; echo)
+   # nohup jupyter-notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root --NotebookApp.token=$JUPYTER_TOKEN &
+   # URL_TOKEN="?token="$JUPYTER_TOKEN
+
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+        echo "keep jupyter current password"
+    else
+        JUPYTER_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
+        echo "JUPYTER_PASSWD:"$JUPYTER_PASSWD
+        export GPU_SERVER_RESTART="yes"
+        expect /chjupyter.exp $JUPYTER_PASSWD
+    fi
+    nohup jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root > jupyter.log 2>&1 &
 }
 
 
@@ -109,10 +130,10 @@ set_passwd()
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
         echo "keep current password"
     else
-        default_pwd=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
-        if [ "$default_pwd" != "null" ]; then
-            echo root:$default_pwd|chpasswd
-            echo "pwd: $default_pwd"
+        DEFAULT_PWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
+        if [ "$DEFAULT_PWD" != "null" ]; then
+            echo root:$DEFAULT_PWD|chpasswd
+
         else
             echo "fail to set passwword"
         fi
@@ -144,6 +165,12 @@ print_tcp_port()
     return 1
 }
 
+print_login_info()
+{
+    sleep 3s
+    echo $SSH_INFO
+    echo $jupyter_url
+}
 create_yml_file()
 {
     ngrok_dn=$1
@@ -200,17 +227,20 @@ setup_ngrok_connection()
                 port_http=$(($port_http+1))
             else
                 echo "fail to export $service"
-                exit 1
-            fi
+                 if [ "$GPU_SERVER_RESTART" != "yes" ]; then
+                    exit 1
+                 fi
 
+            fi
+            run_jupyter
 
             # usage hint for ssh and jupyter
             case $service in
                 ssh)
-                    echo "ssh -p $port root@${server_ip}"
+                    SSH_INFO="ssh_login_info: ssh -p $port root@${server_ip}; pwd:"${DEFAULT_PWD}
                 ;;
                 jupyter)
-                    echo "jupyter url:  http://${server_ip}:${port}"
+                    jupyter_url="jupyter url:  http://${server_ip}:${port}  "
                 ;;
                 *)
                 ;;
@@ -251,6 +281,8 @@ main_loop()
     if [ "$debug" == "true" ]; then
         set +x
     fi
+
+    print_login_info
 
     # loop until say bye
     while ! ls /tmp/bye &>/dev/null; do

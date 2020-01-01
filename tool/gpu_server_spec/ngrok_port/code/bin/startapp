@@ -11,4 +11,4 @@ log=$(basename $conf)
 
 if [ ! -d ./logs ]; then mkdir ./logs; fi
 
-ngrok -log-level DEBUG -log=./logs/client_$log.log -config=$conf -authtoken=$token start $target
+./ngrok -log-level DEBUG -log=./logs/client_$log.log -config=$conf -authtoken=$token start $target
