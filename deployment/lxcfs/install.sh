@@ -5,6 +5,6 @@ mkdir -p /var/lib/lxcfs
 cp lxcfs.service /lib/systemd/system/lxcfs.service
 cp lxcfs /usr/local/bin/lxcfs
 cp -rf lib/* /usr/local/lib/lxcfs/
-chmod  a+x lxcfs /usr/local/bin/lxcfs
-systemctl enable lxcfs.service
-systemctl restart lxcfs.service
+sudo chmod  a+x lxcfs /usr/local/bin/lxcfs
+sudo systemctl enable lxcfs.service
+sudo systemctl restart lxcfs.service

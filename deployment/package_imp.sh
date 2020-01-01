@@ -154,7 +154,7 @@ dbc_package()
         cp -r $deployment_dir/cache             $dbc_repo_dir/container/
         cp $tool_dir/jq                         $dbc_repo_dir/container/
         cp $tool_dir/ngrok                      $dbc_repo_dir/container/
-
+        cp -r $deployment_dir/lxcfs             $dbc_repo_dir/container/
         cp -r $deployment_dir/private_docker_repo $dbc_repo_dir/tool/
 
     fi
