@@ -327,7 +327,7 @@ namespace ai
         {
 
             // case 1: stop a task from running set
-            if (task->status == task_running || task->status == update_task_error ||task->status >= task_stopped ||task->status == task_queueing)
+            if (task->status == task_running || task->status == update_task_error ||task->status > task_stopped ||task->status == task_queueing)
             {
 
                 int32_t ret = task_scheduling::stop_task(task);

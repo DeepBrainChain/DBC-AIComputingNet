@@ -227,7 +227,10 @@ setup_ngrok_connection()
                 port_http=$(($port_http+1))
             else
                 echo "fail to export $service"
-                exit 1
+                 if [ "$GPU_SERVER_RESTART" != "yes" ]; then
+                    exit 1
+                 fi
+
             fi
             run_jupyter
 

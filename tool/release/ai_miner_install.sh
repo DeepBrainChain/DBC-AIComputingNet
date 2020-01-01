@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.6.0
+release_version=0.3.7.2
 host=$(hostname)
 
 
@@ -64,16 +64,16 @@ uninstall_dbc()
   echo "-- move dbc install --"
   dbc_dir=$(dirname  `which dbc` 2>/dev/null)
   if [ "$dbc_dir" == "" ]; then
-	  echo "no dbc install found"
+	echo "no dbc install found"
   else
-      now_dir="$(pwd)"
-      cd $dbc_dir/..
-      dbc_dir=$(pwd)
-      cd $now_dir
+	now_dir="$(pwd)"
+  	cd $dbc_dir/..
+  	dbc_dir=$(pwd)
+  	cd $now_dir
 
-	  dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
-	  echo "mv $dbc_dir $dbc_backup_dir"
-	  mv $dbc_dir $dbc_backup_dir
+	dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
+	echo "mv $dbc_dir $dbc_backup_dir"
+	mv $dbc_dir $dbc_backup_dir
   fi
 
   echo
@@ -113,6 +113,21 @@ post_config()
     echo "show node id:"
     cd ./dbc_repo/
     ./dbc --id
+      echo "-----------------------------------------------------------"
+      echo "Please input your dbc wallet address below"
+      echo "CAUTION:the dbc address will be used in payment of rent."
+      echo "please be sure that the wallet you filled is correct!"
+      echo "-----------------------------------------------------------"
+      read -p "please input your dbc wallet address:" wallet_addr
+      if [ -z $wallet_addr ]
+      then
+        echo "wallet address is empty or invalid, please check and try again!"
+        echo "please add your wallet address manually by editing ./dbc_repo/conf/core.conf"
+        echo "eg. wallet=AbpBWkCp3jcLZpvf5zCtCLRaGNRi95osik"
+      fi
+      echo "wallet=${wallet_addr}" >> ./conf/core.conf
+
+
     cd ./../
     echo -e
 
@@ -156,10 +171,20 @@ post_config()
     sudo sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
 
     # register private repo
-    bash ./dbc_repo/tool/private_docker_repo/register_docker_repo.sh
-
+    sudo bash ./dbc_repo/tool/private_docker_repo/register_docker_repo.sh
+    sudo bash ./dbc_repo/container/lxcfs/install.sh
     echo "dbc ai mining install finished"
-    echo "run newgrp - docker and source ~/.bashrc to make DBC ENV effective"
+    # settings to let user run docker command without sudo
+    count=$(grep docker /etc/group|wc -l)
+    if [ $count -eq 0 ]
+    then
+        sudo groupadd docker
+    fi
+    sudo gpasswd -a ${USER} docker
+    sudo service docker restart
+    newgrp - docker
+    source ~/.bashrc
+    
     cd $path_now
 }
 
@@ -186,17 +211,17 @@ while getopts "udi:" o; do
         i)
             install_path=${OPTARG}
             echo "install"
-			dbc_tar=dbc-linux-mining-$release_version.tar.gz
+			      dbc_tar=dbc-linux-mining-$release_version.tar.gz
             if [ ! -f $dbc_tar ];then
-				echo "$dbc_tar not found"
-				exit 1
-			fi
-				if [ -d $install_path/$release_version ]; then
-					echo "target install folder $install_path/$release_version is not empty!"
-					exit 1
-				fi
-				tar -zxvf $dbc_tar -C $install_path
-			    install_dbc $install_path
+              echo "$dbc_tar not found"
+              exit 1
+		      	fi
+            if [ -d $install_path/$release_version ]; then
+              echo "target install folder $install_path/$release_version is not empty!"
+              exit 1
+            fi
+				    tar -zxvf $dbc_tar -C $install_path
+			          install_dbc $install_path
                 post_config $install_path
 			exit 0
 			;;
