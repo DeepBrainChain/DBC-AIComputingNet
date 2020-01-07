@@ -730,10 +730,17 @@ namespace ai
             mount3.read_only=false;
             mount3.consistency="consistent";
 
+            container_mount mount4 ;
+            mount4.target="/proc/swaps";
+            mount4.source="/var/lib/lxcfs/proc/swaps";
+            mount4.type="bind";
+            mount4.read_only=false;
+            mount4.consistency="consistent";
+
             config->host_config.mounts.push_back(mount1);
             config->host_config.mounts.push_back(mount2);
             config->host_config.mounts.push_back(mount3);
-
+            config->host_config.mounts.push_back(mount4);
           //  config->volumes.dests.push_back("/proc/stat");
           //  config->volumes.binds.push_back("/var/lib/lxcfs/proc/stat");
           //  config->volumes.modes.push_back("rw");
