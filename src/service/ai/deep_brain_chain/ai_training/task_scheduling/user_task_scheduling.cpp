@@ -191,31 +191,44 @@ namespace ai
             {    //update container
                 LOG_INFO<< "task will update,  now erase task id:" << task->task_id;
                 auto old_task =m_running_tasks[task->task_id];
+
+
                 if (nullptr == old_task)
                 {
-                    task->__set_status(task_stopped);
+                   // task->__set_status(task_stopped);
 
                   //  m_task_db.write_task_to_db(task);
-                    m_queueing_tasks.remove(task);
-                    return E_DEFAULT;
-                }
-                std:string old_gpus=old_task->gpus;
-                m_gpu_pool.free(old_gpus);// free old gpus
-                LOG_INFO<< "task will update,  old_gpus:" << old_gpus;
-                LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
-                if (!m_gpu_pool.check(get_gpu_spec(task->server_specification)))
-                {
-                    LOG_ERROR << "update out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
-                              << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
-                    task->__set_status(update_task_error);
-                    m_gpu_pool.allocate(old_gpus);//add old gpus again
-                    m_task_db.write_task_to_db(task);
-                    return E_DEFAULT;
-                }
-                m_gpu_pool.allocate(old_gpus);//add old gpus again
+                    if (!m_gpu_pool.check(get_gpu_spec(task->server_specification)))
+                    {
+                        LOG_ERROR << "update out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                                  << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
+                        task->__set_status(update_task_error);
 
-                LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
-                m_running_tasks.erase(task->task_id);
+                        m_task_db.write_task_to_db(task);
+                        return E_DEFAULT;
+                    }
+
+                }else{
+
+                    std::string old_gpus=old_task->gpus;
+                    m_gpu_pool.free(old_gpus);// free old gpus
+                    LOG_INFO<< "task will update,  old_gpus:" << old_gpus;
+                    LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
+                    if (!m_gpu_pool.check(get_gpu_spec(task->server_specification)))
+                    {
+                        LOG_ERROR << "update out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
+                                  << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
+                        task->__set_status(update_task_error);
+                        m_gpu_pool.allocate(old_gpus);//add old gpus again
+                        m_task_db.write_task_to_db(task);
+                        return E_DEFAULT;
+                    }
+                    m_gpu_pool.allocate(old_gpus);//add old gpus again
+
+                    LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
+                    m_running_tasks.erase(task->task_id);
+                }
+
                 ret = update_task_commit_image(task);
                 LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
                 m_running_tasks[task->task_id] = task;
@@ -225,7 +238,12 @@ namespace ai
                 {
 
                     LOG_INFO << "task->status" << task->status;
-                    m_gpu_pool.free(old_gpus);// free old gpus
+                    if (nullptr != old_task){
+
+                        std::string old_gpus=old_task->gpus;
+                        m_gpu_pool.free(old_gpus);// free old gpus
+                    }
+
                     LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
                     m_gpu_pool.allocate(task->gpus);//add new gpus
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
