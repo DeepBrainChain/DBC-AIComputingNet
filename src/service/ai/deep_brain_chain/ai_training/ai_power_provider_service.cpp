@@ -589,7 +589,7 @@ namespace ai
             }
             else
             {
-                LOG_DEBUG << "stop training, not found task: " << task_id << endl;
+                LOG_INFO << "stop training, not found task: " << task_id << endl;
 
                 // relay on stop_training to network
                 // not support task running on multiple nodes
