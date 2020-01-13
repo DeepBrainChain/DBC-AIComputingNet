@@ -117,7 +117,7 @@ namespace ai
 
             std::string autodbcimage_version=m_container_worker->get_autodbcimage_version(task);
             LOG_INFO << "autodbcimage_version" << autodbcimage_version;
-            if(autodbcimage_version=="")
+            if(autodbcimage_version.empty())
             {
                 task->__set_status(update_task_error);
                 task->error_times = 0;
@@ -518,7 +518,12 @@ namespace ai
             LOG_INFO << "stop task " << task->task_id;
             task->__set_end_time(time_util::get_time_stamp_ms());
             m_task_db.write_task_to_db(task);
-            return CONTAINER_WORKER_IF->stop_container(task->container_id);
+            if(task->container_id.empty()){
+                return CONTAINER_WORKER_IF->stop_container(task->task_id);
+            }else{
+                return CONTAINER_WORKER_IF->stop_container(task->container_id);
+            }
+
         }
 
         int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task)
