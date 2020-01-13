@@ -526,6 +526,14 @@ namespace ai
 
         }
 
+        int32_t task_scheduling::stop_task_only_id(std::string task_id)
+        {
+
+            return CONTAINER_WORKER_IF->stop_container(task_id);
+
+
+        }
+
         int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task)
