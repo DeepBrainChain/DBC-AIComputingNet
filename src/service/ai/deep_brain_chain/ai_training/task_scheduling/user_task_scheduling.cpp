@@ -580,13 +580,7 @@ namespace ai
                 return E_NULL_POINTER;
             }
 
-            //judge retry times
-            if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
-            {
-                LOG_WARNING << "user task restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
-                stop_task(task, task_abnormally_closed);                
-                return E_DEFAULT;
-            }
+
 
             //inspect container
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
@@ -597,6 +591,17 @@ namespace ai
                 task->error_times++;
                 //flush to db
                 m_task_db.write_task_to_db(task);
+                return E_DEFAULT;
+            }else{
+                task->error_times=0;
+                m_task_db.write_task_to_db(task);
+            }
+
+            //judge retry times
+            if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
+            {
+                LOG_WARNING << "user task restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                stop_task(task, task_abnormally_closed);
                 return E_DEFAULT;
             }
 
