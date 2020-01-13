@@ -196,7 +196,7 @@ namespace ai
 
 
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
-            std:string old_container_id=task->container_id;
+            std::string old_container_id=task->container_id;
             if (true == resp->state.running)
             {
                 if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(old_container_id))
