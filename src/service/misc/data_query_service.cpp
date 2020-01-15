@@ -277,7 +277,13 @@ namespace service
                     else if (req->keys.size() == 1 && req->keys[0]=="docker")
                     {
                         // for restful api
+
+                        LOG_INFO << "come in docker ps " ;
                         tmp_keys[0] = "docker ps" ;
+                    } else if(req->keys.size() == 1 && req->keys[0].find("container_size")!= string::npos)
+                    {
+                        LOG_INFO << "come in  get container " ;
+                        tmp_keys[0] = req->keys[0];
                     }
                     else
                     {
