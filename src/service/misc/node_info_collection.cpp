@@ -388,7 +388,7 @@ namespace service
                 return "keyword overlength";
             }
 
-            if (!m_kvs.count(k) ||k.find("container_size")== string::npos ||k.find("running")== string::npos)
+            if (!m_kvs.count(k) && k.find("container_size")== string::npos && k.find("running")== string::npos)
             {
                 return "shit! unknown keyword";
             }
