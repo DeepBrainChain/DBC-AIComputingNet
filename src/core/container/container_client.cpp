@@ -911,6 +911,42 @@ namespace matrix
             return container;
         }
 
+        std::string container_client::get_running_container()
+        {
+            //endpoint
+            std::string endpoint = "/containers/json";
+            endpoint += boost::str(boost::format("?filters={\"status\":[\"running\"]}") );
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers,resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "get running  containers error: " << endpoint<<e.what();
+                return nullptr;
+            }
+            LOG_INFO << "get running containers success: " << endpoint;
+
+            if (E_SUCCESS != ret)
+            {
+                LOG_INFO << "get running containers  info failed: " << resp.body;
+                return nullptr;
+            }
+
+
+            std::string container=resp.body;
+
+            return container;
+        }
+
+
 
     }
 
