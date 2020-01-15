@@ -79,6 +79,7 @@ namespace matrix
             int32_t exist_docker_image(const std::string & image_name);
 
             std::shared_ptr<docker_info> get_docker_info();
+            std::string get_container(const std::string user_container_name);
 
         protected:
 
