@@ -914,8 +914,9 @@ namespace matrix
         std::string container_client::get_running_container()
         {
             //endpoint
-            std::string endpoint = "/containers/json";
-            endpoint += boost::str(boost::format("?filters={\"status\":[\"running\"]}") );
+            std::string endpoint = "/containers/json?";
+            endpoint +="size=true";
+            endpoint += boost::str(boost::format("&filters={\"status\":[\"running\"]}") );
 
             //headers, resp
             kvs headers;
