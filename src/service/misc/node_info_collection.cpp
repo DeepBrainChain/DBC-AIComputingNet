@@ -45,6 +45,8 @@ namespace service
         static const std::string debug_cmds[] = {
             "docker ps",
             "nvidia-smi"
+            "container_size"
+            "runnning"
         };
 
         static const std::string dynamic_attrs[] = {
@@ -106,7 +108,7 @@ namespace service
 
         enum {
             LINE_SIZE = 2048,
-            MAX_KEY_LEN = 128
+            MAX_KEY_LEN = 1280
         };
 
 
@@ -379,13 +381,14 @@ namespace service
 
         std::string node_info_collection::get(std::string k)
         {
+            LOG_INFO << "come in  " ;
             std::string v = "";
             if( k.length() > MAX_KEY_LEN )
             {
                 return "keyword overlength";
             }
 
-            if (!m_kvs.count(k))
+            if (!m_kvs.count(k) ||k.find("container_size")== string::npos)
             {
                 return "unknown keyword";
             }
@@ -404,6 +407,15 @@ namespace service
                 string_util::split(k, "@", list);
 
                 return get_container(list[1]);
+            }
+
+            if(k=="running"){
+
+                LOG_INFO << "come in  running container " ;
+                std::vector<std::string> list;
+
+
+                return get_running_container();
             }
 
             // support debug commands
@@ -427,6 +439,16 @@ namespace service
             uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
             m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
             return m_container_client->get_container(container_name);
+        }
+
+
+        std::string node_info_collection::get_running_container(){
+
+            std::shared_ptr<container_client> m_container_client = nullptr;
+            std::string m_container_ip=DEFAULT_LOCAL_IP;
+            uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
+            m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
+            return m_container_client->get_running_container();
         }
 
 

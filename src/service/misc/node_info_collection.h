@@ -68,6 +68,7 @@ namespace service
 
             std::string pretty_state(std::string v);
             std::string get_container(std::string container_name);
+            std::string get_running_container();
 
         private:
             std::map<std::string, std::string> m_kvs;

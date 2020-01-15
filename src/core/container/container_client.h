@@ -80,6 +80,7 @@ namespace matrix
 
             std::shared_ptr<docker_info> get_docker_info();
             std::string get_container(const std::string user_container_name);
+            std::string get_running_container();
 
         protected:
 
