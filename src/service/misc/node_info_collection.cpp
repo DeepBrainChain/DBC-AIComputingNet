@@ -27,6 +27,7 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include <boost/filesystem.hpp>
+#include "container_client.h"
 
 namespace bpo = boost::program_options;
 
@@ -396,12 +397,21 @@ namespace service
                 return pretty_state(v);
             }
 
+            if(k.find("container_size")!= string::npos){
+
+                LOG_INFO << "come in  get container " ;
+                std::vector<std::string> list;
+                string_util::split(k, "@", list);
+
+                return get_container(list[1]);
+            }
 
             // support debug commands
             for(auto& each: debug_cmds)
             {
                 if(each == k)
                 {
+
                     return m_shell.run(k);
                 }
             }
@@ -410,6 +420,14 @@ namespace service
             return v;
         }
 
+        std::string node_info_collection::get_container(std::string container_name){
+
+            std::shared_ptr<container_client> m_container_client = nullptr;
+            std::string m_container_ip=DEFAULT_LOCAL_IP;
+            uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
+            m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
+            return m_container_client->get_container(container_name);
+        }
 
 
         std::string node_info_collection::get_gpu_usage_in_total()

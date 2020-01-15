@@ -67,11 +67,13 @@ namespace service
             void generate_node_static_info(std::string path);
 
             std::string pretty_state(std::string v);
+            std::string get_container(std::string container_name);
 
         private:
             std::map<std::string, std::string> m_kvs;
 
             bash_interface m_shell;
+
         };
 
     }
