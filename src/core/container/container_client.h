@@ -69,11 +69,11 @@ namespace matrix
             std::shared_ptr<images_info> get_images();
             //inspect
             std::shared_ptr<container_inspect_response> inspect_container(std::string container_id);
-
+            bool  can_delete_image(std::string image_id);
             //logs
             std::shared_ptr<container_logs_resp> get_container_log(std::shared_ptr<container_logs_req> req);
-
-
+            std::string get_image_id(std::string container_id);
+            int32_t remove_image(std::string image_id);
             void set_address(std::string remote_ip, uint16_t remote_port);
 
             int32_t exist_docker_image(const std::string & image_name);

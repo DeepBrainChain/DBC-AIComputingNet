@@ -513,6 +513,49 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t container_client::remove_image(std::string image_id)
+        {
+            //endpoint
+            std::string endpoint = "/images/";
+            if (image_id.empty())
+            {
+                return E_DEFAULT;
+            }
+
+            endpoint += image_id;
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.del(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client remove image error: " << e.what();
+                return E_DEFAULT;
+            }
+
+            if (E_SUCCESS != ret)
+            {
+                // parse resp;
+                rapidjson::Document doc;
+                doc.Parse<0>(resp.body.c_str());
+
+                ////message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "remove image message: " << message.GetString();
+                }
+                return ret;
+            }
+
+            return E_SUCCESS;
+        }
+
         std::shared_ptr<container_inspect_response> container_client::inspect_container(std::string container_id)
         {
             //endpoint
@@ -597,6 +640,143 @@ namespace matrix
                 return inspect_resp;
             }
         }
+
+        std::string container_client::get_image_id(std::string container_id)
+        {
+            //endpoint
+            std::string endpoint = "/containers/";
+            if (container_id.empty())
+            {
+                return nullptr;
+            }
+
+            endpoint += container_id;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+            std::string image_id ="";
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect container error: " << e.what();
+                return nullptr;
+            }
+
+            if (E_SUCCESS != ret)
+            {
+
+                return nullptr;
+            }
+            else
+            {
+                rapidjson::Document doc;
+
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
+                    return nullptr;
+                }
+
+                std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
+
+                //message
+                if (!doc.HasMember("Image"))
+                {
+                    return nullptr;
+                }
+
+                rapidjson::Value &image = doc["Image"];
+
+                image_id=image.GetString();
+                LOG_ERROR << "get image id: " << image_id;
+            }
+
+            return image_id ;
+        }
+
+        bool  container_client::can_delete_image(std::string image_id)
+        {
+            //endpoint
+            std::string endpoint = "/images/";
+            if (image_id.empty())
+            {
+                return nullptr;
+            }
+
+            endpoint += image_id;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+            bool can_delete_image=false;
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect image error: " << e.what();
+                return nullptr;
+            }
+
+            if (E_SUCCESS != ret)
+            {
+
+                return nullptr;
+            }
+            else
+            {
+                rapidjson::Document doc;
+
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse inspect_image file error:" << GetParseError_En(doc.GetParseError());
+                    return nullptr;
+                }
+
+                std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
+
+                //message
+                if (!doc.HasMember("RepoTags"))
+                {
+                    return nullptr;
+                }
+
+
+                rapidjson::Value &tags = doc["RepoTags"];
+
+                for (rapidjson::Value::ConstValueIterator itr = tags.Begin(); itr != tags.End(); ++itr)
+                {
+                    if(itr->IsString())
+                    {
+                        std::string tag=itr->GetString();
+                        if(tag.find("autodbcimage"))
+                        {
+                            LOG_INFO << "TAG contain:autodbcimage";
+                            can_delete_image=true;
+                            return can_delete_image;
+                        }
+                    }
+
+                }
+
+
+
+            }
+
+            return can_delete_image;
+        }
+
 
         std::shared_ptr<container_logs_resp> container_client::get_container_log(std::shared_ptr<container_logs_req> req)
         {
