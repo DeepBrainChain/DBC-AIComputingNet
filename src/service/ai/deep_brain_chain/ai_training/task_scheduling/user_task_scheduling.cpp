@@ -238,6 +238,7 @@ namespace ai
                 {
                     LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
                     m_running_tasks[task->task_id] = task;
+                    task->__set_status(task_running);
                     LOG_INFO << "task->status" << task->status;
                     if (nullptr != old_task){
 
