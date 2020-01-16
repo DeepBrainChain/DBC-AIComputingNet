@@ -144,6 +144,7 @@ namespace ai
             }else
             {
                 CONTAINER_WORKER_IF->delete_image(image_id);//delete new image,防止可能创建成功
+                LOG_INFO << "update_task_error";
                 task->__set_status(update_task_error);
                 task->error_times = 0;
 
