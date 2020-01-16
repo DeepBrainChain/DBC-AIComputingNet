@@ -208,6 +208,7 @@ namespace ai
                         return E_DEFAULT;
                     }
 
+
                 }else{
 
                     std::string old_gpus=old_task->gpus;
@@ -226,17 +227,17 @@ namespace ai
                     m_gpu_pool.allocate(old_gpus);//add old gpus again
 
                     LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
-                    m_running_tasks.erase(task->task_id);
+                    m_running_tasks.erase(task->task_id);//防止自动检测任务，将任务关闭
                 }
 
                 ret = update_task_commit_image(task);
-                LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
-                m_running_tasks[task->task_id] = task;
+
                 m_queueing_tasks.remove(task);
                 LOG_INFO << "move task from waiting queue map" << task->task_id;
                 if (ret == E_SUCCESS)
                 {
-
+                    LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
+                    m_running_tasks[task->task_id] = task;
                     LOG_INFO << "task->status" << task->status;
                     if (nullptr != old_task){
 
