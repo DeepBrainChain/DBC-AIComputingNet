@@ -125,10 +125,22 @@ namespace ai
                 return E_DEFAULT;
             }
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id);
-            if(!image_id.empty())
+            std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
+            bool can_create_container=false;
+            if(image_id.empty())
             {
+               if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_new))
+                {
+                    can_create_container=true;
+                }
+            }else
+            {
+                can_create_container=true;
+            }
+             if(can_create_container)
+             {
                 std::string training_engine_original=task->training_engine;
-                std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
+             //   training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
                 task->__set_training_engine(training_engine_new);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
                 LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
@@ -143,6 +155,7 @@ namespace ai
 
             }else
             {
+
                 CONTAINER_WORKER_IF->delete_image(image_id);//delete new image,防止可能创建成功
                 LOG_INFO << "update_task_error";
                 task->__set_status(update_task_error);
