@@ -760,11 +760,13 @@ namespace matrix
                     if(itr->IsString())
                     {
                         std::string tag=itr->GetString();
-                        if(tag.find("autodbcimage"))
+                        if(tag.find("autodbcimage")!= std::string::npos)
                         {
-                            LOG_INFO << "TAG contain:autodbcimage";
+                            LOG_INFO << tag <<"TAG contain:autodbcimage";
                             can_delete_image=true;
                             return can_delete_image;
+                        }else{
+                            LOG_INFO << tag <<"TAG don't contain:autodbcimage";
                         }
                     }
 
