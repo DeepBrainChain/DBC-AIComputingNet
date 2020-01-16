@@ -227,6 +227,22 @@ namespace ai
                 return E_DEFAULT;
             }else{
 
+                std:string image_id=CONTAINER_WORKER_IF->get_image_id(old_container_id);
+
+                if(image_id.empty()){
+                    CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
+                    CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
+                    CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id
+                    task->__set_container_id(old_container_id);
+                    task->__set_status(update_task_error);
+                    task->error_times = 0;
+                    m_task_db.write_task_to_db(task);
+                    LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
+                    return E_DEFAULT;
+                }
+
+                bool can_delete_image=CONTAINER_WORKER_IF->can_delete_image(image_id);//is or not delete image,can not delete original images
+
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
                 {
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
@@ -238,6 +254,11 @@ namespace ai
                     m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
+                }else if(can_delete_image){
+
+                    if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_image(image_id)){//delete old image
+                        CONTAINER_WORKER_IF->remove_image(image_id);
+                    }
                 }
                 LOG_INFO << "delete old container success , task id:" << old_container_id;
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version))
