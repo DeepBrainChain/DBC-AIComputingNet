@@ -707,7 +707,7 @@ namespace matrix
             std::string endpoint = "/images/";
             if (image_id.empty())
             {
-                return nullptr;
+                return false;
             }
 
             endpoint += image_id;
@@ -726,13 +726,13 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "container client inspect image error: " << e.what();
-                return nullptr;
+                return false;
             }
 
             if (E_SUCCESS != ret)
             {
 
-                return nullptr;
+                return false;
             }
             else
             {
@@ -741,7 +741,7 @@ namespace matrix
                 if (doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
                     LOG_ERROR << "parse inspect_image file error:" << GetParseError_En(doc.GetParseError());
-                    return nullptr;
+                    return false;
                 }
 
                 std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
@@ -749,7 +749,7 @@ namespace matrix
                 //message
                 if (!doc.HasMember("RepoTags"))
                 {
-                    return nullptr;
+                    return false;
                 }
 
 
