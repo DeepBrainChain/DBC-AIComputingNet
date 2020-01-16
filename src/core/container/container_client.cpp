@@ -165,6 +165,7 @@ namespace matrix
             rapidjson::Document doc;
             if (E_SUCCESS != ret)
             {
+                LOG_INFO << "commit image error" ;
                 return "";
             }
                 //parse resp
@@ -175,7 +176,7 @@ namespace matrix
                     if (doc.HasMember("message"))
                     {
                         rapidjson::Value &message = doc["message"];
-                        LOG_ERROR << "commit image error:" << message.GetString();
+                        LOG_INFO << "commit image error:" << message.GetString();
                         return "";
                     } else
                     {
