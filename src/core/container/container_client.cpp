@@ -1160,7 +1160,7 @@ namespace matrix
                 return ;
             }
             LOG_INFO << "get images success: " << resp.body;
-            return;
+
             if (E_SUCCESS != ret)
             {
                 // parse resp;
@@ -1173,7 +1173,7 @@ namespace matrix
                     rapidjson::Value &message = doc["message"];
                     LOG_ERROR << "images message: " << message.GetString();
                 }
-                return ;
+
             }
             else
             {
