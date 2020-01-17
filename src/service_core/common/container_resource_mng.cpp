@@ -93,7 +93,7 @@ int32_t container_resource_mng::exec_prune()
         LOG_INFO << " prune ret code:" << ret << ". " << prune_log ;
 
         LOG_INFO << "start del_images"  ;
-    //    del_images();
+        del_images();
 
     }
     catch (const std::exception & e)
