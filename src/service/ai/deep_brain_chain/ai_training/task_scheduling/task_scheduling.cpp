@@ -269,11 +269,11 @@ namespace ai
                     m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
-                }else if(can_delete_image){
+                }else if(can_delete_image){//旧的镜像 因为有新生成的子镜像，故无法删除
 
-                    if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_image(image_id)){//delete old image
-                        CONTAINER_WORKER_IF->remove_image(image_id);
-                    }
+                    //if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_image(image_id)){//delete old image
+                   //     CONTAINER_WORKER_IF->remove_image(image_id);
+                   // }
                 }
                 LOG_INFO << "delete old container success , task id:" << old_container_id;
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version))

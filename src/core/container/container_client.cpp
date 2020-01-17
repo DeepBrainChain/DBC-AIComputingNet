@@ -685,7 +685,7 @@ namespace matrix
                     return nullptr;
                 }
 
-                std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
+         //       std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
 
                 //message
                 if (!doc.HasMember("Image"))
@@ -745,7 +745,7 @@ namespace matrix
                     return false;
                 }
 
-                std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
+         //       std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
 
                 //message
                 if (!doc.HasMember("RepoTags"))
@@ -1128,6 +1128,95 @@ namespace matrix
             std::string container=resp.body;
 
             return container;
+        }
+
+
+        int32_t container_client::del_images()
+        {
+            //endpoint
+            std::string endpoint = "/images/json?";
+            endpoint +="size=true";
+            endpoint += boost::str(boost::format("&filters={\"dangling\":[\"true\"]}") );
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers,resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "get images error: " << endpoint<<e.what();
+                return E_DEFAULT;
+            }
+            LOG_INFO << "get images success: " << endpoint;
+
+            if (E_SUCCESS != ret)
+            {
+
+                return E_DEFAULT;
+            }
+            else
+            {
+                rapidjson::Document doc;
+
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse images file error:" << GetParseError_En(doc.GetParseError());
+                    return E_DEFAULT;
+                }
+
+
+                rapidjson::Value &images = doc;
+
+                for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); ++itr)
+                {
+                    if(itr->HasMember("Id"))
+                    {
+                        rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
+
+                        std::string id_sha_string=id->value.GetString();
+
+                        std::vector<std::string> list;
+                        string_util::split(id_sha_string, ":", list);
+
+                        std::string id_string=list[1];
+
+                        rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
+
+                        int size= tags->value.Size();
+                        for (int j = 0; j < size; ++j) {
+
+                            std::string tag= tags->value[0].GetString();
+                            if(tag.find("autodbcimage")!= std::string::npos)
+                            {
+                                LOG_INFO << tag <<"TAG contain:autodbcimage";
+                                delete_image(id_string);
+
+
+                            }else{
+                                LOG_INFO << tag <<"TAG don't contain:autodbcimage";
+                            }
+                        }
+
+
+
+
+                    }
+
+                }
+
+                return E_SUCCESS;
+
+
+
+            }
+
+
         }
 
 
