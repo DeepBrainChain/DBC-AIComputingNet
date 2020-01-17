@@ -678,6 +678,9 @@ namespace matrix
             else
             {
                 rapidjson::Document doc;
+                if (resp.body.empty()){
+                    return nullptr;
+                }
 
                 if (doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
@@ -738,6 +741,9 @@ namespace matrix
             else
             {
                 rapidjson::Document doc;
+                if (resp.body.empty()){
+                    return false;
+                }
 
                 if (doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
@@ -1134,9 +1140,9 @@ namespace matrix
         void container_client::del_images()
         {
             //endpoint
-            std::string endpoint = "/images/json?";
-          //  endpoint +="size=true";
-            endpoint += boost::str(boost::format("filters={\"dangling\":[\"true\"]}") );
+            std::string endpoint = "/images/json";
+
+            endpoint += boost::str(boost::format("filters={\"dangling\":[\"false\"]}") );
 
             //headers, resp
             kvs headers;
@@ -1163,7 +1169,9 @@ namespace matrix
             else
             {
                 rapidjson::Document doc;
-
+                if (resp.body.empty()){
+                    return ;
+                }
                 if (doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
                     LOG_ERROR << "parse images file error:" << GetParseError_En(doc.GetParseError());
