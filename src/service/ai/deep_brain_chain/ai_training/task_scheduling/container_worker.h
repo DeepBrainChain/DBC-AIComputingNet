@@ -93,6 +93,7 @@ namespace ai
             std::shared_ptr<update_container_config> get_update_container_config(std::shared_ptr<ai_training_task> task);
             std::shared_ptr<container_config> get_container_config_from_image(std::shared_ptr<ai_training_task> task);
             std::string get_autodbcimage_version(std::shared_ptr<ai_training_task> task);
+
         private:
             int32_t load_container_config();
             int32_t check_cpu_config(const int16_t & cpu_info);

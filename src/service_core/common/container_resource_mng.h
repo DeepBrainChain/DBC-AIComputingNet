@@ -29,6 +29,7 @@ namespace matrix
             int32_t exec_prune();
         private:
             void set_prune_sh();
+            std::string del_images();
         private:
             std::string m_prune_cmd;
             std::string m_docker_prune_sh_file_name;
