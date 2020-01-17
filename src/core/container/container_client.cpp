@@ -1131,12 +1131,12 @@ namespace matrix
         }
 
 
-        int32_t container_client::del_images()
+        void container_client::del_images()
         {
             //endpoint
             std::string endpoint = "/images/json?";
           //  endpoint +="size=true";
-            endpoint += boost::str(boost::format("&filters={\"dangling\":[\"true\"]}") );
+            endpoint += boost::str(boost::format("filters={\"dangling\":[\"true\"]}") );
 
             //headers, resp
             kvs headers;
@@ -1151,14 +1151,14 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "get images error: " << endpoint<<e.what();
-                return E_DEFAULT;
+                return ;
             }
             LOG_INFO << "get images success: " << endpoint;
 
             if (E_SUCCESS != ret)
             {
 
-                return E_DEFAULT;
+                return ;
             }
             else
             {
@@ -1167,7 +1167,7 @@ namespace matrix
                 if (doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
                     LOG_ERROR << "parse images file error:" << GetParseError_En(doc.GetParseError());
-                    return E_DEFAULT;
+                    return ;
                 }
 
 
@@ -1184,7 +1184,7 @@ namespace matrix
                         std::vector<std::string> list;
                         string_util::split(id_sha_string, ":", list);
 
-                        LOG_INFO << "id_sha_string"<< id_sha_string;
+                        LOG_INFO << "id_sha_string "<< id_sha_string;
                         std::string id_string=list[1];
                         LOG_INFO << "id_string "<< id_string;
 
@@ -1193,6 +1193,7 @@ namespace matrix
                         rapidjson::Value::ConstMemberIterator time = itr->FindMember("Created");
 
                         int64_t t =time->value.GetInt64();
+                        LOG_INFO << "time:" << t;
                         if(t<5000000)//时间很短
                         {
                             break;
@@ -1207,14 +1208,15 @@ namespace matrix
                                 try
                                 {
                                     delete_image(id_string);
+                                    break;
                                 }
                                 catch (const std::exception & e)
                                 {
                                     LOG_ERROR << "delete image error: " << endpoint<<e.what();
-                                    return E_DEFAULT;
+                                    break;
                                 }
 
-                                break;
+
 
 
                             }else{
@@ -1229,12 +1231,12 @@ namespace matrix
 
                 }
 
-                return E_SUCCESS;
+
 
 
 
             }
-
+            return ;
 
         }
 
