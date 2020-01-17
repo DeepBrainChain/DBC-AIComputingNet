@@ -1142,7 +1142,7 @@ namespace matrix
             //endpoint
             std::string endpoint = "/images/json";
 
-            endpoint += boost::str(boost::format("filters={\"dangling\":[\"false\"]}") );
+          //  endpoint += boost::str(boost::format("filters={\"dangling\":[\"false\"]}") );
 
             //headers, resp
             kvs headers;
