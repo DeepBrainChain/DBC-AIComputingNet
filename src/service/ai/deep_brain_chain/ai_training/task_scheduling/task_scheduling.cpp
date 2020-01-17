@@ -256,7 +256,7 @@ namespace ai
                     return E_DEFAULT;
                 }
 
-                bool can_delete_image=CONTAINER_WORKER_IF->can_delete_image(image_id);//is or not delete image,can not delete original images
+              //  bool can_delete_image=CONTAINER_WORKER_IF->can_delete_image(image_id);//is or not delete image,can not delete original images
 
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
                 {
@@ -269,12 +269,12 @@ namespace ai
                     m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
-                }else if(can_delete_image){//旧的镜像 因为有新生成的子镜像，故无法删除
+                }//else// if(can_delete_image){//旧的镜像 因为有新生成的子镜像，故无法删除
 
                     //if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_image(image_id)){//delete old image
                    //     CONTAINER_WORKER_IF->remove_image(image_id);
                    // }
-                }
+               // }
                 LOG_INFO << "delete old container success , task id:" << old_container_id;
                 if(E_SUCCESS!=CONTAINER_WORKER_IF->rename_container(task->task_id,autodbcimage_version))
                 {

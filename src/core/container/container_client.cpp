@@ -764,7 +764,7 @@ namespace matrix
 
                 for (rapidjson::Value::ConstValueIterator itr = tags.Begin(); itr != tags.End(); ++itr)
                 {
-                    if(itr->IsString())
+                    if(itr!= nullptr&&itr->IsString())
                     {
                         std::string tag=itr->GetString();
                         if(tag.find("autodbcimage")!= std::string::npos)
@@ -1143,7 +1143,7 @@ namespace matrix
             std::string endpoint = "/images/json";
 
           //  endpoint += boost::str(boost::format("filters={\"dangling\":[\"false\"]}") );
-
+            //  endpoint += boost::str(boost::format("?filters={\"dangling\":[\"true\"]}") );
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
@@ -1177,82 +1177,84 @@ namespace matrix
             }
             else
             {
-                rapidjson::Document doc;
-                if (resp.body.empty()){
-                    return ;
-                }
-                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
-                {
-                    LOG_ERROR << "parse images file error:" << GetParseError_En(doc.GetParseError());
-                    return ;
-                }
+                try {
+                    rapidjson::Document doc;
+                    if (resp.body.empty()) {
+                        return;
+                    }
+                    if (doc.Parse<0>(resp.body.c_str()).HasParseError()) {
+                        LOG_ERROR << "parse images file error:" << GetParseError_En(doc.GetParseError());
+                        return;
+                    }
 
 
-                rapidjson::Value &images = doc;
+                    rapidjson::Value &images = doc;
 
-                for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); ++itr)
-                {
-                    if(itr->HasMember("Id"))
-                    {
-                        rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
+                    for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); ++itr) {
+                        if (itr != nullptr && itr->HasMember("Id")) {
+                            rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
 
-                        std::string id_sha_string=id->value.GetString();
+                            std::string id_sha_string = id->value.GetString();
 
-                        std::vector<std::string> list;
-                        string_util::split(id_sha_string, ":", list);
+                            std::vector<std::string> list;
+                            string_util::split(id_sha_string, ":", list);
 
-                        LOG_INFO << "id_sha_string "<< id_sha_string;
-                        std::string id_string=list[1];
-                        LOG_INFO << "id_string "<< id_string;
+                            LOG_INFO << "id_sha_string " << id_sha_string;
+                            std::string id_string = list[1];
+                            LOG_INFO << "id_string " << id_string;
 
-                        rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
+                            rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
 
-                        rapidjson::Value::ConstMemberIterator time = itr->FindMember("Created");
+                            rapidjson::Value::ConstMemberIterator time = itr->FindMember("Created");
 
-                        int64_t t =time->value.GetInt64();
-                        LOG_INFO << "time:" << t;
-                        if(t<5000000)//时间很短
-                        {
-                            break;
-                        }
-                        int size= tags->value.Size();
-                        for (int j = 0; j < size; ++j) {
+                            rapidjson::Value::ConstMemberIterator containers = itr->FindMember("Containers");
+                            int16_t containers_int = containers->value.GetInt();
 
-                            std::string tag= tags->value[0].GetString();
-                            if(tag.find("autodbcimage")!= std::string::npos )//||tag.find("<none>:<none>")!= std::string::npos
+                            int64_t t = time->value.GetInt64();
+                            LOG_INFO << "time:" << t;
+                            LOG_INFO << "time:" << t;
+                            if (t < 5000000 || containers_int>0)//时间很短
                             {
-                                LOG_INFO << "tag:" << tag;
-                                try
-                                {
-                                    delete_image(id_string);
-                                    break;
-                                }
-                                catch (const std::exception & e)
-                                {
-                                    LOG_ERROR << "delete image error: " << endpoint<<e.what();
-                                    break;
-                                }
-
-
-
-
-                            }else{
-                                LOG_INFO << tag <<"TAG don't contain:autodbcimage";
+                                break;
                             }
+                            int size = tags->value.Size();
+                            for (int j = 0; j < size; ++j) {
+
+                                std::string tag = tags->value[0].GetString();
+                                if (tag.find("autodbcimage") !=
+                                    std::string::npos)//||tag.find("<none>:<none>")!= std::string::npos
+                                {
+                                    LOG_INFO << "tag:" << tag;
+                                    try {
+                                        delete_image(id_string);
+                                        break;
+                                    }
+                                    catch (const std::exception &e) {
+                                        LOG_ERROR << "delete image error: " << endpoint << e.what();
+                                        break;
+                                    }
+
+
+                                } else {
+                                    LOG_INFO << tag << "TAG don't contain:autodbcimage";
+                                }
+                            }
+
+
                         }
-
-
-
 
                     }
 
+
+                } catch (const std::exception & e)
+                {
+                    LOG_ERROR << "get images error: " << endpoint<<e.what();
+                    return ;
                 }
 
 
+               }
 
-
-
-            }
             return ;
 
         }
