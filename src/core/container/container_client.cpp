@@ -1187,7 +1187,7 @@ namespace matrix
                         return;
                     }
 
-
+                    return;
                     rapidjson::Value &images = doc;
 
                     for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); itr++) {
