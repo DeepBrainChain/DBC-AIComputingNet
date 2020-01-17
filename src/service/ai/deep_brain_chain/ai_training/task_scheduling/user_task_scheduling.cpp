@@ -372,7 +372,9 @@ namespace ai
                     //free gpu resource
                     m_gpu_pool.free(task->gpus);
                 }
+                task->__set_end_time(time_util::get_time_stamp_ms());
 
+                m_task_db.write_task_to_db(task);
                 return E_SUCCESS;
             }
 
@@ -743,6 +745,7 @@ namespace ai
 
             return E_SUCCESS;
         }
+
 
         int32_t user_task_scheduling::process_urgent_task(std::shared_ptr<ai_training_task> task)
         {

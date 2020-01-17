@@ -1153,7 +1153,7 @@ namespace matrix
                 LOG_ERROR << "get images error: " << endpoint<<e.what();
                 return ;
             }
-            LOG_INFO << "get images success: " << endpoint;
+            LOG_INFO << "get images success: " << resp.body;
 
             if (E_SUCCESS != ret)
             {
@@ -1202,7 +1202,7 @@ namespace matrix
                         for (int j = 0; j < size; ++j) {
 
                             std::string tag= tags->value[0].GetString();
-                            if(tag.find("autodbcimage")!= std::string::npos ||tag.find("<none>:<none>")!= std::string::npos)
+                            if(tag.find("autodbcimage")!= std::string::npos )//||tag.find("<none>:<none>")!= std::string::npos
                             {
                                 LOG_INFO << "tag:" << tag;
                                 try
