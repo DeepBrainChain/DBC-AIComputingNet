@@ -1160,7 +1160,7 @@ namespace matrix
                 return ;
             }
             LOG_INFO << "get images success: " << resp.body;
-
+            return;
             if (E_SUCCESS != ret)
             {
                 // parse resp;
@@ -1187,7 +1187,7 @@ namespace matrix
                         return;
                     }
 
-                    return;
+
                     rapidjson::Value &images = doc;
 
                     for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); itr++) {
