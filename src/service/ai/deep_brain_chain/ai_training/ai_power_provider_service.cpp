@@ -314,7 +314,8 @@ namespace ai
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
             task->__set_error_times(0);
 
-            if(get_is_update(task->server_specification)!="update")
+            std:string update="update";
+            if(update.compare(get_is_update(task->server_specification))!=0)
             {
                 task->__set_gpus(get_gpu_spec(task->server_specification));
             }
@@ -358,7 +359,7 @@ namespace ai
 
                 if (ref_task2 != nullptr )
                 {
-                    if(get_is_update(task->server_specification)=="update" ){// update
+                    if(update.compare(get_is_update(task->server_specification))==0){// update
 
                         LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
@@ -378,7 +379,7 @@ namespace ai
                     //no need add task
                 } else
                 {
-                    if(get_is_update(task->server_specification)!="update" ) {// only create new task
+                    if(update.compare(get_is_update(task->server_specification))!=0){// only create new task
 
                         LOG_INFO << "ref_task ref_task2 == nullptr";
                         LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
@@ -596,7 +597,7 @@ namespace ai
                 LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
                 m_user_task_ptr->stop_task_only_id(task_id);//强制停止
                 LOG_INFO << "force stop training" << task_id << endl;
-                
+
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
@@ -1044,7 +1045,7 @@ namespace ai
                 {
                     m_idle_task_ptr->exec_task();
                 }
-                LOG_INFO << "training queuing task is empty";
+             //   LOG_INFO << "training queuing task is empty";
 //                return E_SUCCESS;
             }
             else
