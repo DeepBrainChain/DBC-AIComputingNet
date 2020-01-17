@@ -1187,17 +1187,33 @@ namespace matrix
                         LOG_INFO << "id_sha_string"<< id_sha_string;
                         std::string id_string=list[1];
                         LOG_INFO << "id_string "<< id_string;
-                        
+
                         rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
 
+                        rapidjson::Value::ConstMemberIterator time = itr->FindMember("Created");
+
+                        int64_t t =time->value.GetInt64();
+                        if(t<5000000)//时间很短
+                        {
+                            break;
+                        }
                         int size= tags->value.Size();
                         for (int j = 0; j < size; ++j) {
 
                             std::string tag= tags->value[0].GetString();
                             if(tag.find("autodbcimage")!= std::string::npos ||tag.find("<none>:<none>")!= std::string::npos)
                             {
-                                LOG_INFO << tag <<"TAG contain:autodbcimage";
-                                delete_image(id_string);
+                                LOG_INFO << "tag:" << tag;
+                                try
+                                {
+                                    delete_image(id_string);
+                                }
+                                catch (const std::exception & e)
+                                {
+                                    LOG_ERROR << "delete image error: " << endpoint<<e.what();
+                                    return E_DEFAULT;
+                                }
+
                                 break;
 
 
