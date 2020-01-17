@@ -1190,8 +1190,16 @@ namespace matrix
 
                     rapidjson::Value &images = doc;
 
-                    for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); ++itr) {
-                        if (itr != nullptr && itr->HasMember("Id")) {
+                    for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); itr++) {
+                        if (itr == nullptr)
+                        {
+                            return;
+                        }
+                        if (!itr->IsObject())
+                        {
+                            return;
+                        }
+                        if (itr->HasMember("Id")) {
                             rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
 
                             std::string id_sha_string = id->value.GetString();
@@ -1212,13 +1220,13 @@ namespace matrix
 
                             int64_t t = time->value.GetInt64();
                             LOG_INFO << "time:" << t;
-                            LOG_INFO << "time:" << t;
+                            LOG_INFO << "containers_int:" << containers_int;
                             if (t < 5000000 || containers_int>0)//时间很短
                             {
                                 break;
                             }
                             int size = tags->value.Size();
-                            for (int j = 0; j < size; ++j) {
+                            for (int j = 0; j < size; j++) {
 
                                 std::string tag = tags->value[0].GetString();
                                 if (tag.find("autodbcimage") !=
