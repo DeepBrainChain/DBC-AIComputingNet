@@ -1135,7 +1135,7 @@ namespace matrix
         {
             //endpoint
             std::string endpoint = "/images/json?";
-            endpoint +="size=true";
+          //  endpoint +="size=true";
             endpoint += boost::str(boost::format("&filters={\"dangling\":[\"true\"]}") );
 
             //headers, resp
@@ -1184,18 +1184,21 @@ namespace matrix
                         std::vector<std::string> list;
                         string_util::split(id_sha_string, ":", list);
 
+                        LOG_INFO << "id_sha_string"<< id_sha_string;
                         std::string id_string=list[1];
-
+                        LOG_INFO << "id_string "<< id_string;
+                        
                         rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
 
                         int size= tags->value.Size();
                         for (int j = 0; j < size; ++j) {
 
                             std::string tag= tags->value[0].GetString();
-                            if(tag.find("autodbcimage")!= std::string::npos)
+                            if(tag.find("autodbcimage")!= std::string::npos ||tag.find("<none>:<none>")!= std::string::npos)
                             {
                                 LOG_INFO << tag <<"TAG contain:autodbcimage";
                                 delete_image(id_string);
+                                break;
 
 
                             }else{
