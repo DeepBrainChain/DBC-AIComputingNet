@@ -1163,7 +1163,16 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
+                // parse resp;
+                rapidjson::Document doc;
+                doc.Parse<0>(resp.body.c_str());
 
+                ////message
+                if (doc.HasMember("message"))
+                {
+                    rapidjson::Value &message = doc["message"];
+                    LOG_ERROR << "images message: " << message.GetString();
+                }
                 return ;
             }
             else
