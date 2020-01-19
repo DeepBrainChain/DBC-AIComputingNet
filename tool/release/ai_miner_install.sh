@@ -180,7 +180,7 @@ post_config()
     sudo chmod 777 /etc/systemd/system/restart_dbc.sh
     sudo cp  ./dbc_repo/tool/restart_dbc.service /etc/systemd/system
     sudo chmod 777 /etc/systemd/system/restart_dbc.service
-    sudo systemctl daemo-reload
+    sudo systemctl daemon-reload
     sudo systemctl start restart_dbc.service
     sudo systemctl enable restart_dbc.service
 
