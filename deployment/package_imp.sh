@@ -122,6 +122,8 @@ dbc_package()
     cp $tool_dir/stopapp            $dbc_repo_dir/tool/
     cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/tool/
     cp $tool_dir/rm_containers.sh   $dbc_repo_dir/tool/
+    cp $tool_dir/restart_dbc.sh     $dbc_repo_dir/tool/
+    cp $tool_dir/restart_dbc.service   $dbc_repo_dir/tool/
     cp $tool_dir/plog               $dbc_repo_dir/
     cp $tool_dir/ipfs-ctl           $dbc_repo_dir/tool/
     cp $tool_dir/dbc_upload          $dbc_repo_dir/tool/

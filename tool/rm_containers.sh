@@ -13,21 +13,39 @@ function print_usage()
     echo "example:"
     echo "  rm_containers  100  60     # prune the containers that have been stopped more than 100 hour, or the disk use ratio should smaller than 60%"
 }
-function rm_container()	
+
+function rm_container()
+{
+    cur_second=$(date +%s)
+    p_interval=$2
+    for info in $1
+   do
+        time_stamp=`echo $info | cut -d \, -f 1`
+        containerid=`echo $info | cut -d \, -f 2`
+        t_seconds=$(date --date="$time_stamp" +%s);
+        interval=$(((cur_second-t_seconds)/3600))
+        if [ $interval -ge $p_interval ];then
+            docker container rm -f $containerid
+        fi
+    done
+}
+
+function rm_image()
 {
     cur_second=$(date +%s)
     p_interval=$2
     for info in $1
     do
         time_stamp=`echo $info | cut -d \, -f 1`
-        containerid=`echo $info | cut -d \, -f 2`        
-        t_seconds=$(date --date="$time_stamp" +%s); 
-        interval=$(((cur_second-t_seconds)/3600))        
+        imageid=`echo $info | cut -d \, -f 2`
+        t_seconds=$(date --date="$time_stamp" +%s);
+        interval=$(((cur_second-t_seconds)/3600))
         if [ $interval -ge $p_interval ];then
-            docker container rm -f $containerid 
-        fi       
+            docker  rmi  $imageid
+        fi
     done
 }
+
 function prune_container_template()
 {
     p_interval=$1
@@ -49,6 +67,27 @@ function prune_container_template()
    #    prune_container_template $p_interval $st_template $time_template
    # fi
 }
+
+function prune_image_template()
+{
+    p_interval=$1
+    st_template=$2
+
+    images=$(docker images | grep "dbc-free-container"  | awk '{print $3}')
+    if [ -z "$images" ];then
+        return
+    fi
+    images_f=`docker inspect --format "{{.$st_template}},{{.ID}}" $images`
+    rm_image "$images_f" $p_interval
+
+    if [ $p_interval -eq 0 ];then
+        exit
+    fi
+
+
+}
+
+
 function prune_container()
 {
     p_interval=$1 
@@ -57,6 +96,10 @@ function prune_container()
     #the container was created, but it was never running.
     echo "rm created, but never running containers"
     prune_container_template $p_interval "created" "Created"
+
+     #the image was created
+    echo "rm image"
+    prune_image_template $p_interval  "Created"
 }
 
 if [ $# -eq 0 ];then
