@@ -4,7 +4,7 @@ Description=restart_dbc
 
 
 [Service]
-ExecStart=/etc/systemd/system/restart_dbc.sh                                                                                                                                                   
+ExecStart=/bin/bash  /etc/systemd/system/restart_dbc.sh    &
 
 [Install]
 WantedBy=multi-user.target

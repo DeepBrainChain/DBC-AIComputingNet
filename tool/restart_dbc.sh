@@ -28,7 +28,7 @@ do
     fi
 
 
-    sleep 100s #每100秒检查一轮
+    sleep 100s
 
 
 done
