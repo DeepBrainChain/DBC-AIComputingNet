@@ -4,7 +4,7 @@
 #include "container_resource_mng.h"
 
 #define AI_PRUNE_CONTAINER_TIMER                                      "prune_task_container"
-#define AI_PRUNE_CONTAINER_TIMER_INTERVAL                             (1*60*1000)                                                 //10min timer
+#define AI_PRUNE_CONTAINER_TIMER_INTERVAL                             (10*60*1000)                                                 //10min timer
 
 namespace matrix
 {
