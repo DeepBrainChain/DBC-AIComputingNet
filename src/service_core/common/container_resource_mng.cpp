@@ -93,7 +93,7 @@ int32_t container_resource_mng::exec_prune()
         LOG_INFO << " prune ret code:" << ret << ". " << prune_log ;
 
         //LOG_INFO << "start del_images"  ;
-        //del_images();
+
 
     }
     catch (const std::exception & e)
@@ -107,15 +107,6 @@ int32_t container_resource_mng::exec_prune()
         return E_DEFAULT;
     }
     return E_SUCCESS;
-}
-
-std::string container_resource_mng::del_images(){
-
-    std::shared_ptr<container_client> m_container_client = nullptr;
-    std::string m_container_ip=DEFAULT_LOCAL_IP;
-    uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
-    m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
-    m_container_client->del_images();
 }
 
 

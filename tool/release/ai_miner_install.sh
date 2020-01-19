@@ -173,6 +173,17 @@ post_config()
     # register private repo
     sudo bash ./dbc_repo/tool/private_docker_repo/register_docker_repo.sh
     sudo bash ./dbc_repo/container/lxcfs/install.sh
+
+    echo "set restart dbc automatically"
+    sudo chmod 777 ./dbc_repo/tool/restart_dbc.sh
+    sudo cp  ./dbc_repo/tool/restart_dbc.sh /etc/systemd/system
+    sudo chmod 777 /etc/systemd/system/restart_dbc.sh
+    sudo cp  ./dbc_repo/tool/restart_dbc.service /etc/systemd/system
+    sudo chmod 777 ./dbc_repo/tool/restart_dbc.service
+    sudo systemctl daemo-reload
+    sudo systemctl start restart_dbc.service
+    sudo systemctl enable restart_dbc.service
+
     echo "dbc ai mining install finished"
     # settings to let user run docker command without sudo
     count=$(grep docker /etc/group|wc -l)
