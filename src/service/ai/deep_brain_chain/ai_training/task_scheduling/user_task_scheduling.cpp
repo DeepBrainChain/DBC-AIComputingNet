@@ -279,7 +279,10 @@ namespace ai
                 }
 
                 ret = start_task(task);
-                m_queueing_tasks.remove(task);
+                if(task->status != task_pulling_image){
+                    m_queueing_tasks.remove(task);
+                }
+
                 LOG_INFO << "start_task over,ret:"<< ret;
                 if (ret != E_SUCCESS)
                 {
