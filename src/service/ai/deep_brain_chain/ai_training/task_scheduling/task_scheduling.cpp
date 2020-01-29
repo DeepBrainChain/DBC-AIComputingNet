@@ -124,6 +124,11 @@ namespace ai
 
                 return E_DEFAULT;
             }
+
+            std::string training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
+            if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name)) {
+                CONTAINER_WORKER_IF->delete_image(training_engine_name);//删除之前的同名镜像
+            }
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id);
             std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
             bool can_create_container=false;
@@ -242,7 +247,7 @@ namespace ai
                 return E_DEFAULT;
             }else{
 
-                std:string image_id=CONTAINER_WORKER_IF->get_image_id(old_container_id);
+                std::string image_id=CONTAINER_WORKER_IF->get_image_id(old_container_id);
 
                 if(image_id.empty()){
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
@@ -348,6 +353,11 @@ namespace ai
 
            // vector<string> vData=split(task_id, "_DBC_");
            // std::string sub_task_id=vData[0];
+
+           std::string container_name=task_id+"_DBC_"+autodbcimage_version;
+           if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND){
+               CONTAINER_WORKER_IF->remove_container(container_name);
+           }
             std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task_id,autodbcimage_version);
 
             if (resp != nullptr && !resp->container_id.empty())
