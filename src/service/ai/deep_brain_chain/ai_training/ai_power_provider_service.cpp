@@ -314,7 +314,7 @@ namespace ai
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
             task->__set_error_times(0);
 
-            std:string update="update";
+            std::string update="update";
             if(update.compare(get_is_update(task->server_specification))!=0)
             {
                 task->__set_gpus(get_gpu_spec(task->server_specification));

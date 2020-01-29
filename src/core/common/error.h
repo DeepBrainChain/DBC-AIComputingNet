@@ -31,7 +31,7 @@
 
 #define E_NOT_COMPUTING_NODE                                -17
 #define E_NO_START_CONTAINER                                -18                 //create new container from  new images ,but no start container
-
+#define E_CONTAINER_NOT_FOUND                                   -19                  // docker container not found
 
 #endif
 
