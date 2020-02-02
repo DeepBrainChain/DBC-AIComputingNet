@@ -391,19 +391,29 @@ namespace ai
                         return m_user_task_ptr->add_task(task);
                     } else{
 
-                        LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
-                        ref_container_id=ref_task2->container_id;
+                        std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task_id);
 
-                        LOG_INFO << "req container_name: " << req->body.container_name;
+                        if (nullptr != resp){
 
-                        task->__set_task_id(task_id); //update to old task id
-                        task->__set_container_id(ref_container_id);
+                            if (!resp->id.empty())
+                            {
+                                task->__set_container_id(resp->id);
+                                LOG_INFO << "req container_name: " << req->body.container_name;
 
-                        task->__set_received_time_stamp(std::time(nullptr));
-                        task->__set_status(task_queueing);
+                                task->__set_task_id(task_id); //update to old task id
+                                task->__set_container_id(ref_container_id);
 
-                        return m_user_task_ptr->add_update_task(task);
+                                task->__set_received_time_stamp(std::time(nullptr));
+                                task->__set_status(task_queueing);
+
+                                return m_user_task_ptr->add_update_task(task);
+                            }
+
+
+                        }
+
+
                     }
 
 
