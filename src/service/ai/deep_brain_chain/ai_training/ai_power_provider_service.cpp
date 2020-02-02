@@ -402,7 +402,7 @@ namespace ai
                                 LOG_INFO << "req container_name: " << req->body.container_name;
 
                                 task->__set_task_id(task_id); //update to old task id
-                                task->__set_container_id(ref_container_id);
+                              
 
                                 task->__set_received_time_stamp(std::time(nullptr));
                                 task->__set_status(task_queueing);
