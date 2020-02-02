@@ -389,6 +389,21 @@ namespace ai
                         task->__set_status(task_queueing);
 
                         return m_user_task_ptr->add_task(task);
+                    } else{
+
+                        LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
+
+                        ref_container_id=ref_task2->container_id;
+
+                        LOG_INFO << "req container_name: " << req->body.container_name;
+
+                        task->__set_task_id(task_id); //update to old task id
+                        task->__set_container_id(ref_container_id);
+
+                        task->__set_received_time_stamp(std::time(nullptr));
+                        task->__set_status(task_queueing);
+
+                        return m_user_task_ptr->add_update_task(task);
                     }
 
 
