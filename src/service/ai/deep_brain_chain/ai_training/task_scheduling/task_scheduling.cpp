@@ -18,6 +18,7 @@
 #include "time_util.h"
 #include "url_validator.h"
 #include <boost/property_tree/json_parser.hpp>
+#include <unistd.h>
 namespace ai
 {
     namespace dbc
@@ -127,14 +128,19 @@ namespace ai
 
             std::string training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
             if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name)) {
+
+                LOG_INFO << "delete the same name image";
                 CONTAINER_WORKER_IF->delete_image(training_engine_name);//删除之前的同名镜像
+                sleep(10);
             }
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id);
-            std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
+         //   std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
             bool can_create_container=false;
             if(image_id.empty())
             {
-               if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_new))
+
+                LOG_INFO << "is or not exist_docker_image";
+               if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name))
                 {
                     can_create_container=true;
                 }
@@ -146,10 +152,10 @@ namespace ai
              {
                 std::string training_engine_original=task->training_engine;
              //   training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
-                task->__set_training_engine(training_engine_new);
+                task->__set_training_engine(training_engine_name);
                 LOG_INFO << "training_engine_original:" << training_engine_original;
                 LOG_INFO << "training_engine_new:" << "www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
-                int32_t status=start_task_from_new_image(task,autodbcimage_version,training_engine_new);
+                int32_t status=start_task_from_new_image(task,autodbcimage_version,training_engine_name);
 
                 if(status!= E_NO_START_CONTAINER &&status!= E_SUCCESS)
                 {
@@ -161,7 +167,7 @@ namespace ai
             }else
             {
 
-                CONTAINER_WORKER_IF->delete_image(image_id);//delete new image,防止可能创建成功
+              //  CONTAINER_WORKER_IF->delete_image(image_id);//delete new image,防止可能创建成功
                 LOG_INFO << "update_task_error";
                 task->__set_status(update_task_error);
                 task->error_times = 0;
