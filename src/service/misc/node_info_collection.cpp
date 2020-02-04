@@ -409,7 +409,7 @@ namespace service
                 return get_container(list[1]);
             }
 
-            if(k=="running"){
+            if(k.compare("running")==0){
 
                 LOG_INFO << "come in  running container " ;
                 std::vector<std::string> list;

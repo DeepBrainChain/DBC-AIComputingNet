@@ -137,7 +137,7 @@ namespace matrix
             if (container_id.empty())
             {
                 LOG_ERROR << "commit container container id is empty";
-                return nullptr;
+                return "error";
             }
 
             endpoint += container_id;
@@ -161,13 +161,13 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "container client commit container error: " << e.what();
-                return nullptr;
+                return "error";
             }
             rapidjson::Document doc;
             if (E_SUCCESS != ret)
             {
                 LOG_INFO << "commit image error" ;
-                return nullptr;
+                return "error";
             }
                 //parse resp
 
@@ -178,7 +178,7 @@ namespace matrix
                     {
                         rapidjson::Value &message = doc["message"];
                         LOG_INFO << "commit image error:" << message.GetString();
-                        return nullptr;
+                        return "error";
                     } else
                     {
                         if (doc.HasMember("Id"))
@@ -194,7 +194,7 @@ namespace matrix
              }
 
 
-            return nullptr;
+            return "error";
         }
 
         int32_t container_client::start_container(std::string container_id)
@@ -649,7 +649,7 @@ namespace matrix
             std::string endpoint = "/containers/";
             if (container_id.empty())
             {
-                return nullptr;
+                return "error";
             }
 
             endpoint += container_id;
@@ -668,25 +668,25 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "container client inspect container error: " << e.what();
-                return nullptr;
+                return "error";
             }
 
             if (E_SUCCESS != ret)
             {
 
-                return nullptr;
+                return "error";
             }
             else
             {
                 rapidjson::Document doc;
                 if (resp.body.empty()){
-                    return nullptr;
+                    return "error";
                 }
 
                 if (doc.Parse<0>(resp.body.c_str()).HasParseError())
                 {
                     LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
-                    return nullptr;
+                    return "error";
                 }
 
          //       std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
@@ -694,7 +694,7 @@ namespace matrix
                 //message
                 if (!doc.HasMember("Image"))
                 {
-                    return nullptr;
+                    return "error";
                 }
 
                 rapidjson::Value &image = doc["Image"];

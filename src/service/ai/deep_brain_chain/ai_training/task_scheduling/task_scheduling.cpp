@@ -136,7 +136,7 @@ namespace ai
             std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id);
          //   std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
             bool can_create_container=false;
-            if(image_id.empty())
+            if(image_id.compare("error")==0)
             {
 
                 LOG_INFO << "is or not exist_docker_image";
@@ -255,7 +255,7 @@ namespace ai
 
                 std::string image_id=CONTAINER_WORKER_IF->get_image_id(old_container_id);
 
-                if(image_id.empty()){
+                if(image_id.compare("error")==0){
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
                     CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
                     CONTAINER_WORKER_IF->start_container(old_container_id);//start original container_id

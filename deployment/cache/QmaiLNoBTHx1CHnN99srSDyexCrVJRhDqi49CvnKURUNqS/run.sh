@@ -259,7 +259,7 @@ main_loop()
     # update .basrc
     append_to_bashrc "export IPFS_PATH=/dbc/.ipfs"
     append_to_bashrc "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
-    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin"
     update_path "/usr/local/nvidia/bin"
 
 
