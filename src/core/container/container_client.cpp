@@ -20,6 +20,7 @@
 #include "error/en.h"
 #include "oss_common_def.h"
 #include <boost/format.hpp>
+
 namespace matrix
 {
     namespace core
@@ -136,7 +137,7 @@ namespace matrix
             if (container_id.empty())
             {
                 LOG_ERROR << "commit container container id is empty";
-                return "";
+                return nullptr;
             }
 
             endpoint += container_id;
@@ -160,13 +161,13 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "container client commit container error: " << e.what();
-                return "";
+                return nullptr;
             }
             rapidjson::Document doc;
             if (E_SUCCESS != ret)
             {
                 LOG_INFO << "commit image error" ;
-                return "";
+                return nullptr;
             }
                 //parse resp
 
@@ -177,7 +178,7 @@ namespace matrix
                     {
                         rapidjson::Value &message = doc["message"];
                         LOG_INFO << "commit image error:" << message.GetString();
-                        return "";
+                        return nullptr;
                     } else
                     {
                         if (doc.HasMember("Id"))
@@ -193,7 +194,7 @@ namespace matrix
              }
 
 
-            return "";
+            return nullptr;
         }
 
         int32_t container_client::start_container(std::string container_id)
@@ -883,7 +884,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            LOG_DEBUG << "inspect image resp:" << resp.body;
+            LOG_INFO << "inspect image resp:" << resp.status;
 
             if (200 == resp.status)
             {
