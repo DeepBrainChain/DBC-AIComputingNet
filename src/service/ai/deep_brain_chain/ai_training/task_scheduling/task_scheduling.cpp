@@ -140,11 +140,18 @@ namespace ai
             {
 
                 LOG_INFO << "is or not exist_docker_image";
-                sleep(10);
+                sleep(100);
                if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name))
                 {
                     can_create_container=true;
-                }
+                }else{
+
+                   sleep(150);
+                   if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name))
+                   {
+                       can_create_container=true;
+                   }
+               }
             }else
             {
                 can_create_container=true;
@@ -376,7 +383,14 @@ namespace ai
             }
             else
             {
-                LOG_ERROR << "create task failed. task id:" << task->task_id;
+                sleep(60);
+                LOG_INFO << "exist_container ?" ;
+                if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND) {
+                    LOG_INFO << "exist_container yes";
+                }else{
+                    LOG_ERROR << "create task failed. task id:" << task->task_id;
+                }
+
             }
             return E_DEFAULT;
         }
@@ -407,7 +421,20 @@ namespace ai
             }
             else
             {
-                LOG_ERROR << "create task failed. task id:" << task->task_id;
+                sleep(60);
+                std::string container_name=task->task_id;
+                LOG_INFO << "exist_container ?" ;
+                if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND){
+                    LOG_INFO << "exist_container yes" ;
+                    task->__set_container_id(resp->container_id);
+                    LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
+
+                    return E_SUCCESS;
+                }else{
+                    LOG_INFO << "exist_container no" ;
+                    LOG_ERROR << "create task failed. task id:" << task->task_id;
+                }
+
             }
             return E_DEFAULT;
         }
