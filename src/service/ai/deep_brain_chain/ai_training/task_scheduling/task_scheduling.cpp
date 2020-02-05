@@ -140,6 +140,7 @@ namespace ai
             {
 
                 LOG_INFO << "is or not exist_docker_image";
+                sleep(10);
                if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name))
                 {
                     can_create_container=true;
