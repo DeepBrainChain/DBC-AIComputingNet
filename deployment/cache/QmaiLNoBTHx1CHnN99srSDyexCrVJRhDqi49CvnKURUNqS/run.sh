@@ -263,6 +263,8 @@ main_loop()
     update_path "/usr/local/nvidia/bin"
 
 
+    source ~/.bashrc
+
     setup_ssh_service
 
     set_passwd
