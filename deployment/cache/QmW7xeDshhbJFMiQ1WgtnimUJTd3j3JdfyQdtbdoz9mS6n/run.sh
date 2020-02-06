@@ -105,7 +105,7 @@ main_loop()
     update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin"
     update_path "/usr/local/nvidia/bin"
 
-
+    source ~/.bashrc
     setup_ssh_service
 
     run_jupyter
