@@ -49,7 +49,7 @@ sudo add-apt-repository \
        stable"
 #sudo apt-get update
 #echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu
-sudo dpkg -i ./archive/docker-ce_18.06.1~ce~3-0~ubuntu_amd64.deb
+sudo dpkg -i   ./archive/containerd.io_1.2.12-1_amd64.deb  ./archive/docker-ce-cli_19.03.6~3-0~ubuntu-xenial_amd64.deb ./archive/docker-ce_18.06.1~ce~3-0~ubuntu_amd64.deb
 if [ $? -ne 0 ]; then
     echo "install docker-ce failed"
     exit
@@ -167,8 +167,8 @@ if [ $? -eq 0 ]; then
 
 
     # jimmy: install nvidia-docker 2 from local archive
-    sudo dpkg -i ./archive/libnvidia-container1_1.0.2-1_amd64.deb ./archive/libnvidia-container-tools_1.0.2-1_amd64.deb ./archive/nvidia-container-runtime-hook_1.4.0-1_amd64.deb
-    sudo dpkg -i ./archive/nvidia-docker2_2.0.3+docker18.06.1-1_all.deb ./archive/nvidia-container-runtime_2.0.0+docker18.06.1-1_amd64.deb
+    sudo dpkg -i ./archive/libnvidia-container1_1.0.7-1_amd64.deb ./archive/libnvidia-container-tools_1.0.7-1_amd64.deb
+    sudo dpkg -i ./archive/nvidia-container-toolkit_1.0.5-1_amd64.deb ./archive/nvidia-container-runtime_3.1.4-1_amd64.deb
     if [ $? -ne 0 ]; then
         echo "***dpkg nvidia-docker deb failed***"
         exit
