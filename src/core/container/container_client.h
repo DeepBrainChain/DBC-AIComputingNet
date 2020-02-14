@@ -83,6 +83,7 @@ namespace matrix
             std::string get_running_container();
             void del_images();
             int32_t exist_container(const std::string & container_name);
+            std::string get_container_id(std::string container_name);
 
         protected:
 

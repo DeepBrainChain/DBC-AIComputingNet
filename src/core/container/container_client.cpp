@@ -1312,6 +1312,77 @@ namespace matrix
         }
 
 
+        std::string container_client::get_container_id(std::string container_name)
+        {
+            //endpoint
+            std::string endpoint = "/containers/";
+            if (container_name.empty())
+            {
+                return "error";
+            }
+
+            endpoint += container_name;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers, resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect container error: " << e.what();
+                return "error";
+            }
+
+            if (E_SUCCESS != ret)
+            {
+
+                  return "error";
+            }
+            else
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
+                    return "error";
+                }
+
+
+
+                //message
+                if (!doc.HasMember("State"))
+                {
+                    return "error";
+                }
+
+
+
+                //running state
+                if (doc.HasMember("Id"))
+                {
+                    rapidjson::Value &Id = doc["Id"];
+                    std::string idString=Id.GetString();
+                    return idString;
+                }
+
+
+
+                return "error";
+
+            }
+        }
+
+
+
+
 
     }
 
