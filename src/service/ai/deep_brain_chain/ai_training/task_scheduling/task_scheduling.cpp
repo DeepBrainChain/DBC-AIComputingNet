@@ -424,9 +424,11 @@ namespace ai
                 sleep(60);
                 std::string container_name=task->task_id;
                 LOG_INFO << "exist_container ?" ;
-                if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND){
+                std:string container_id=CONTAINER_WORKER_IF->get_container_id(container_name);
+
+                if(container_id.compare("error")!=0){
                     LOG_INFO << "exist_container yes" ;
-                    task->__set_container_id(resp->container_id);
+                    task->__set_container_id(container_id);
                     LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
 
                     return E_SUCCESS;
@@ -566,7 +568,7 @@ namespace ai
                 LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
 
                 return E_SUCCESS;
-            } else
+            } else if(DBC_TASK_STOPPED == state)
             {
                 int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);
 
@@ -575,6 +577,10 @@ namespace ai
                     LOG_ERROR << "Start task error. Task id:" << task->task_id;
                     return E_DEFAULT;
                 }
+            } else
+            {
+                LOG_ERROR << "Start task error. Task id:" << task->task_id;
+                return E_DEFAULT;
             }
 
 
@@ -665,8 +671,8 @@ namespace ai
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(container_id);
             if (nullptr == resp)
             {
-                LOG_ERROR << "set_container_id:" << "null";
-                task->__set_container_id("");
+               // LOG_ERROR << "set_container_id:" << "null";
+                //task->__set_container_id("");
                 return DBC_TASK_NOEXIST;
             }
             

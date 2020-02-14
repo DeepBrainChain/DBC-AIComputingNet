@@ -335,11 +335,11 @@ namespace ai
 
                 }
 
-                LOG_INFO << "start user task success, task id:" << task->task_id;
+           //     LOG_INFO << "start user task success, task id:" << task->task_id;
 
             }
 
-            return E_SUCCESS;
+         //   return E_SUCCESS;
 
 
         }
@@ -589,7 +589,10 @@ namespace ai
                 return E_NULL_POINTER;
             }
 
-
+            if (task->container_id.empty())
+            {
+                return E_NULL_POINTER;
+            }
 
             //inspect container
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
@@ -597,9 +600,9 @@ namespace ai
             {
                 LOG_ERROR << "user task check container error, container id: " << task->container_id;
 
-                task->error_times++;
+            //    task->error_times++;
                 //flush to db
-                m_task_db.write_task_to_db(task);
+             //   m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }else{
                 task->error_times=0;
@@ -607,12 +610,12 @@ namespace ai
             }
 
             //judge retry times
-            if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
-            {
-                LOG_WARNING << "user task restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
-                stop_task(task, task_abnormally_closed);
-                return E_DEFAULT;
-            }
+    //        if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
+    //        {
+    //            LOG_WARNING << "user task restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
+    //            stop_task(task, task_abnormally_closed);
+    //            return E_DEFAULT;
+    //        }
 
             if (true == resp->state.running)
             {
@@ -628,13 +631,14 @@ namespace ai
                 start_task(task);
                 return E_SUCCESS;
             }
-            else
-            {
-                LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id  << " exit_code" << resp->state.exit_code;
-                stop_task(task, task_successfully_closed);
+         //   else
+         //   {
+          //      LOG_INFO << "user task inspect container success closed, " << "task id: " << task->task_id << " container id: " << task->container_id  << " exit_code" << resp->state.exit_code;
+         //       stop_task(task, task_successfully_closed);
               //  start_task(task);
-                return E_SUCCESS;
-            }
+         //       return E_SUCCESS;
+         //   }
+
             return E_SUCCESS;
         }
 

@@ -610,8 +610,8 @@ namespace ai
                     LOG_ERROR << "bad user try to stop task" << endl;
                     return E_DEFAULT;
                 }
-                LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;                
-                m_user_task_ptr->stop_task(sp_task, task_stopped);              
+                LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
+                return m_user_task_ptr->stop_task(sp_task, task_stopped);
             }
             else
             {
@@ -620,13 +620,14 @@ namespace ai
                 // relay on stop_training to network
                 // not support task running on multiple nodes
                 LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
-                m_user_task_ptr->stop_task_only_id(task_id);//强制停止
                 LOG_INFO << "force stop training" << task_id << endl;
+                return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
 
-                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
+               // CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
-            return E_SUCCESS;
+           // return E_SUCCESS;
         }
 
         int32_t ai_power_provider_service::on_list_training_req(std::shared_ptr<message> &msg)
