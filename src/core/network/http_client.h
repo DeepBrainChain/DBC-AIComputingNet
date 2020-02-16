@@ -21,7 +21,7 @@
 #include <openssl/rand.h>
 #include <event2/bufferevent_ssl.h>
 
-#define DEFAULT_HTTP_TIME_OUT                 10
+#define DEFAULT_HTTP_TIME_OUT                 30
 
 using kvs = typename std::list<std::pair<std::string, std::string>>;
 
