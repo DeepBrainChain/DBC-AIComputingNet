@@ -1085,14 +1085,14 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "get container error: " << endpoint<<e.what();
-                return nullptr;
+                return "error";
             }
             LOG_INFO << "get container success: " << endpoint;
 
             if (E_SUCCESS != ret)
             {
                 LOG_INFO << "get container info failed: " << resp.body;
-                return nullptr;
+                return "error";
             }
 
 
@@ -1121,17 +1121,18 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "get running  containers error: " << endpoint<<e.what();
-                return nullptr;
+                return "error";
             }
-            LOG_INFO << "get running containers success: " << endpoint;
+
 
             if (E_SUCCESS != ret)
             {
                 LOG_INFO << "get running containers  info failed: " << resp.body;
-                return nullptr;
+                return "error";
             }
 
-
+            LOG_INFO << "get running containers success: " << endpoint;
+            LOG_INFO << "body " << resp.body;
             std::string container=resp.body;
 
             return container;
