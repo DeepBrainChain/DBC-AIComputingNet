@@ -292,10 +292,10 @@ namespace ai
             std::shared_ptr<update_container_config> config = std::make_shared<update_container_config>();
 
 
-            auto nv_docker_ver = get_nv_docker_version();
+          //  auto nv_docker_ver = get_nv_docker_version();
 
-            if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
-            {
+         //   if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
+        //    {
                 LOG_DEBUG << "get common attributes of nvidia docker";
 
                 // jimmy: support NVIDIA GPU env configure from task spec
@@ -411,7 +411,7 @@ namespace ai
 
 
 
-            }
+      //      }
 
 
 
@@ -514,10 +514,10 @@ namespace ai
             }
 
 
-            auto nv_docker_ver = get_nv_docker_version();
+        //    auto nv_docker_ver = get_nv_docker_version();
 
-            if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
-            {
+       //     if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
+       //     {
                 LOG_DEBUG << "get common attributes of nvidia docker";
 
                 // jimmy: support NVIDIA GPU env configure from task spec
@@ -657,9 +657,9 @@ namespace ai
 
                 // LOG_INFO << "config->host_config.memory"+config->host_config.memory;
 
-            }
+        //    }
 
-            switch (nv_docker_ver)
+        /*    switch (nv_docker_ver)
             {
                 case NVIDIA_DOCKER_TWO:
                 {
@@ -671,8 +671,8 @@ namespace ai
                 {
                     LOG_INFO << "not find nvidia docker";
                 }
-            }
-
+            }*/
+            config->host_config.runtime = RUNTIME_NVIDIA;
             return config;
         }
 
@@ -787,10 +787,10 @@ namespace ai
             }
 
 
-            auto nv_docker_ver = get_nv_docker_version();
+          //  auto nv_docker_ver = get_nv_docker_version();
 
-            if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
-            {
+         //   if (nv_docker_ver != NVIDIA_DOCKER_UNKNOWN)
+         //   {
                 LOG_DEBUG << "get common attributes of nvidia docker";
 
                 // jimmy: support NVIDIA GPU env configure from task spec
@@ -928,9 +928,9 @@ namespace ai
 
                // LOG_INFO << "config->host_config.memory"+config->host_config.memory;
 
-            }
+       //     }
 
-            switch (nv_docker_ver)
+          /*  switch (nv_docker_ver)
             {
             case NVIDIA_DOCKER_TWO:
             {
@@ -942,8 +942,8 @@ namespace ai
             {
                 LOG_INFO << "not find nvidia docker";
             }
-            }
-
+            }*/
+            config->host_config.runtime = RUNTIME_NVIDIA;
             return config;
         }
 
