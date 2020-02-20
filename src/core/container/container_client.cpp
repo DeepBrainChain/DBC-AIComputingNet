@@ -1202,7 +1202,7 @@ namespace matrix
                     int64_t SizeRootFs_int64=SizeRootFs->value.GetInt64();
                     container.AddMember("SizeRootFs", SizeRootFs_int64, allocator);
 
-                    root.PushBack(container, allocator);
+                    root.PushBack(container.Move(), allocator);
 
 
 
