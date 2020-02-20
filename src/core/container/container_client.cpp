@@ -1131,11 +1131,83 @@ namespace matrix
                 return "error";
             }
 
+
+
+
+            if (resp.body.empty()){
+                return "";
+            }
+            rapidjson::Document doc;
+            if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+            {
+                LOG_ERROR << "get running containers  error:" << GetParseError_En(doc.GetParseError());
+                return "";
+            }
+
             LOG_INFO << "get running containers success: " << endpoint;
             LOG_INFO << "body " << resp.body;
-            std::string container=resp.body;
 
-            return container;
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+            rapidjson::Value root(rapidjson::kObjectType);
+
+            if (doc.IsArray())
+            {
+                for (rapidjson::SizeType i = 0; i < doc.Size(); i++)
+                {
+                    const rapidjson::Value& object = doc[i];
+                    if (!object.HasMember("SizeRw"))
+                    {
+                        continue;
+                    }else{
+                        rapidjson::Value container(rapidjson::kObjectType);
+
+                        rapidjson::Value &Id = object["Id"];
+                        std::string Id_string=Id.GetString();
+                        container.AddMember("Id", Id_string, allocator);
+
+                        rapidjson::Value &Name = object["Names"];
+                        //  std::string Name_string=Name.GetArray();
+                        container.AddMember("Id", Name, allocator);
+
+                        rapidjson::Value &Image = object["Image"];
+                        std::string Image_string=Image.GetString();
+                        container.AddMember("Id", Image_string, allocator);
+
+                        rapidjson::Value &ImageID = object["ImageID"];
+                        std::string ImageID_string=ImageID.GetString();
+                        container.AddMember("ImageID", ImageID_string, allocator);
+
+
+                        rapidjson::Value &Created = object["Created"];
+                        int64_t Created_int64=Created.GetInt64();
+                        container.AddMember("Created", Created_int64, allocator);
+
+
+                        rapidjson::Value &SizeRw = object["SizeRw"];
+                        int64_t SizeRw_int64=SizeRw.GetInt64();
+                        container.AddMember("SizeRw", SizeRw_int64, allocator);
+
+                        rapidjson::Value &SizeRootFs = object["SizeRootFs"];
+                        int64_t SizeRootFs_int64=SizeRootFs.GetInt64();
+                        container.AddMember("SizeRootFs", SizeRootFs_int64, allocator);
+
+                        root.AddMember("Hostname", container, allocator);
+
+                    }
+
+                }
+            }
+
+
+
+            std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+            root.Accept(writer);
+            std::string containers=buffer->GetString();
+            LOG_INFO << "containers " << containers;
+            return containers;
         }
 
 
