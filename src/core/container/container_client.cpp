@@ -1171,7 +1171,8 @@ namespace matrix
                     rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
                     std::string Id_string=id->value.GetString();
                     container.AddMember("Id", STRING_REF(Id_string), allocator);
-
+                    LOG_INFO << "Id " <<Id_string;
+                    
                     rapidjson::Value::ConstMemberIterator Names = itr->FindMember("Names");
                     std::string  Names_string= Names->value[0].GetString();
                     rapidjson::Value names_array(rapidjson::kArrayType);
@@ -1214,7 +1215,7 @@ namespace matrix
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
-            std::string new_containers=buffer->GetString();
+            std::string new_containers=std::string(buffer->GetString());
             LOG_INFO << "new_containers " <<new_containers;
             return new_containers;
         }
