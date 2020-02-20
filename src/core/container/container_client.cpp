@@ -1170,22 +1170,22 @@ namespace matrix
 
                     rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
                     std::string Id_string=id->value.GetString();
-                    container.AddMember("Id", STRING_REF(Id_string), allocator);
-                    LOG_INFO << "Id " <<Id_string;
-                    
+                    container.AddMember("Id", STRING_DUP(Id_string), allocator);
+                  //  LOG_INFO << "Id " <<Id_string;
+
                     rapidjson::Value::ConstMemberIterator Names = itr->FindMember("Names");
                     std::string  Names_string= Names->value[0].GetString();
                     rapidjson::Value names_array(rapidjson::kArrayType);
-                    names_array.PushBack(STRING_REF(Names_string), allocator);
+                    names_array.PushBack(STRING_DUP(Names_string), allocator);
                     container.AddMember("Names",names_array , allocator);
 
                     rapidjson::Value::ConstMemberIterator Image =itr->FindMember("Image");
                     std::string Image_string=Image->value.GetString();
-                    container.AddMember("Image", STRING_REF(Image_string), allocator);
+                    container.AddMember("Image", STRING_DUP(Image_string), allocator);
 
                     rapidjson::Value::ConstMemberIterator ImageID =itr->FindMember("ImageID");
                     std::string ImageID_string=ImageID->value.GetString();
-                    container.AddMember("ImageID", STRING_REF(ImageID_string), allocator);
+                    container.AddMember("ImageID", STRING_DUP(ImageID_string), allocator);
 
 
                     rapidjson::Value::ConstMemberIterator Created = itr->FindMember("Created");
