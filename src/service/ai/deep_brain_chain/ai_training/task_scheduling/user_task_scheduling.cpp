@@ -535,7 +535,7 @@ namespace ai
                     else
                     {
                         //docker is not pulling image.
-                        if (CONTAINER_WORKER_IF->exist_docker_image(task->training_engine) != E_SUCCESS)
+                        if (CONTAINER_WORKER_IF->exist_docker_image(task->training_engine,20) != E_SUCCESS)
                         {
                             LOG_DEBUG << "docker pull image fail. engine: " << task->training_engine;
                             LOG_WARNING << "ai power provider service pull image failed";

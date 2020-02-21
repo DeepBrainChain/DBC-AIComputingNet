@@ -150,9 +150,10 @@ namespace matrix
             void set_remote(std::string remote_ip, uint16_t remote_port);
 
             int32_t post(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp);
+            int32_t post_sleep(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp,int32_t sleep_time);
 
             int32_t get(const std::string &endpoint, const kvs &headers, http_response &resp);
-
+            int32_t get_sleep(const std::string &endpoint, const kvs &headers, http_response &resp,int32_t sleep_time);
             int32_t del(const std::string &endpoint, const kvs &headers, http_response &resp);
 
             int32_t parse_url(const std::string & url);

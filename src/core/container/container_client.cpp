@@ -130,7 +130,7 @@ namespace matrix
         }
 
 
-        std::string container_client::get_commit_image(std::string container_id,std::string version,std::string task_id)
+        std::string container_client::get_commit_image(std::string container_id,std::string version,std::string task_id,int32_t sleep_time)
         {
             //endpoint
             std::string endpoint = "/commit?container=";
@@ -156,7 +156,7 @@ namespace matrix
 
             try
             {
-                ret = m_http_client.post(endpoint, headers, req_content, resp);
+                ret = m_http_client.post_sleep(endpoint, headers, req_content, resp,sleep_time);
             }
             catch (const std::exception & e)
             {
@@ -857,7 +857,7 @@ namespace matrix
             m_http_client.set_address(remote_ip, remote_port);
         }
 
-        int32_t container_client::exist_docker_image(const std::string & image_name)
+        int32_t container_client::exist_docker_image(const std::string & image_name,int32_t sleep_time)
         {
             std::string endpoint = "/images/";
             if (image_name.empty())
@@ -876,7 +876,7 @@ namespace matrix
 
             try
             {
-                ret = m_http_client.get(endpoint, headers, resp);
+                ret = m_http_client.get_sleep(endpoint, headers, resp,sleep_time);
             }
             catch (const std::exception & e)
             {

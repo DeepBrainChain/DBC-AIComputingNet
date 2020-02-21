@@ -198,6 +198,87 @@ namespace matrix
             return E_SUCCESS;
         }
 
+        int32_t http_client::post_sleep(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp,int32_t sleep_time)
+        {
+            try
+            {
+                if (start_ssl_engine() != true)
+                {
+                    return E_DEFAULT;
+                }
+                //event base
+                raii_event_base base = obtain_event_base();
+                bufferevent *  bev = obtain_evhttp_bev(base.get(), m_ssl);
+
+                //connection base
+                raii_evhttp_connection evcon = obtain_evhttp_connection_base2(base.get(), bev, m_remote_ip, m_remote_port);
+                evhttp_connection_set_timeout(evcon.get(), sleep_time);
+
+                //http request
+                http_response_wrapper wrapper = {&resp, base.get()};
+                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
+                if (nullptr == req)
+                {
+                    return E_DEFAULT;
+                }
+
+                evhttp_request_set_error_cb(req.get(), http_error_cb);
+
+                struct evkeyvalq* output_headers = evhttp_request_get_output_headers(req.get());
+                assert(output_headers);
+
+                //http header
+                for (auto it = headers.begin(); it != headers.end(); it++)
+                {
+                    evhttp_add_header(output_headers, it->first.c_str(), it->second.c_str());
+                }
+
+                // request data
+                //std::string strRequest = req_content;
+                struct evbuffer* output_buffer = evhttp_request_get_output_buffer(req.get());
+                assert(output_buffer);
+                evbuffer_add(output_buffer, req_content.data(), req_content.size());
+                //make request
+                int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
+                req.release();                 // ownership moved to evcon in above call
+                if (0 != r)
+                {
+                    return E_DEFAULT;
+                }
+
+                event_base_dispatch(base.get());
+                if (resp.status == 0)
+                {
+                    LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
+                    return E_DEFAULT;
+                }
+                else if (resp.status == 401)
+                {
+                    LOG_ERROR << "http client authorization failed";
+                    return E_DEFAULT;
+                }
+                else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
+                {
+                    LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
+                    return E_DEFAULT;
+                }
+                /*else if (resp.body.empty())
+                {
+                LOG_ERROR << "http client error: no resp from server";
+                return E_DEFAULT;
+                }*/
+                //bufferevent_free(bev);
+                //stop_ssl_engine();
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "http error" << e.what();
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
+
         int32_t http_client::get(const std::string &endpoint, const kvs &headers, http_response &resp)
         {
             try
@@ -267,6 +348,78 @@ namespace matrix
                 return E_DEFAULT;
             }
             
+            return E_SUCCESS;
+        }
+
+        int32_t http_client::get_sleep(const std::string &endpoint, const kvs &headers, http_response &resp,int32_t sleep_time)
+        {
+            try
+            {
+                //event base
+                raii_event_base base = obtain_event_base();
+
+                bufferevent *  bev = obtain_evhttp_bev(base.get(), m_ssl);
+                //connection base
+                //raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), m_remote_ip, m_remote_port);
+                raii_evhttp_connection evcon = obtain_evhttp_connection_base2(base.get(), bev, m_remote_ip, m_remote_port);
+                evhttp_connection_set_timeout(evcon.get(), sleep_time);
+
+                //http request
+                http_response_wrapper wrapper = {&resp, base.get()};
+                raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
+                if (nullptr == req)
+                {
+                    return E_DEFAULT;
+                }
+
+                evhttp_request_set_error_cb(req.get(), http_error_cb);
+
+                struct evkeyvalq* output_headers = evhttp_request_get_output_headers(req.get());
+                assert(output_headers);
+
+                //http header
+                for (auto it = headers.begin(); it != headers.end(); it++)
+                {
+                    evhttp_add_header(output_headers, it->first.c_str(), it->second.c_str());
+                }
+
+                //make request
+                int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_GET, endpoint.c_str());
+                req.release();                 // ownership moved to evcon in above call
+                if (0 != r)
+                {
+                    return E_DEFAULT;
+                }
+
+                event_base_dispatch(base.get());
+
+                if (resp.status == 0)
+                {
+                    LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
+                    return E_DEFAULT;
+                }
+                else if (resp.status == 401)
+                {
+                    LOG_ERROR << "http client authorization failed";
+                    return E_DEFAULT;
+                }
+                else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
+                {
+                    LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
+                    return E_DEFAULT;
+                }
+                /*else if (resp.body.empty())
+                {
+                LOG_ERROR << "http client error: no resp from server";
+                return E_DEFAULT;
+                }*/
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "http error" << e.what();
+                return E_DEFAULT;
+            }
+
             return E_SUCCESS;
         }
 

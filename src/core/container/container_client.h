@@ -42,7 +42,7 @@ namespace matrix
             int32_t rename_container(std::string name,std::string autodbcimage_version);
             int32_t restart_container(std::string container_id);
             int32_t update_container(std::string container_id, std::shared_ptr<update_container_config> config);
-            std::string get_commit_image(std::string container_id,std::string version,std::string task_id);
+            std::string get_commit_image(std::string container_id,std::string version,std::string task_id,int32_t sleep_time);
             //start
             int32_t start_container(std::string container_id);
 
@@ -76,7 +76,7 @@ namespace matrix
             int32_t remove_image(std::string image_id);
             void set_address(std::string remote_ip, uint16_t remote_port);
 
-            int32_t exist_docker_image(const std::string & image_name);
+            int32_t exist_docker_image(const std::string & image_name,int32_t sleep_time);
 
             std::shared_ptr<docker_info> get_docker_info();
             std::string get_container(const std::string user_container_name);
