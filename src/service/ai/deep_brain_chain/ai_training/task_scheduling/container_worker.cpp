@@ -442,7 +442,7 @@ namespace ai
                     if(pt.count("sleep_time")!=0){
 
 
-                        int32_t sleep_time = pt.get<int32_t>("sleep_time");
+                        sleep_time = pt.get<int32_t>("sleep_time");
 
                         LOG_INFO<< "sleep_time: " << sleep_time;
 

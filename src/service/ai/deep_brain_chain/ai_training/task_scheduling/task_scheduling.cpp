@@ -429,7 +429,7 @@ namespace ai
                 sleep(60);
                 std::string container_name=task->task_id;
                 LOG_INFO << "exist_container ?" ;
-                std:string container_id=CONTAINER_WORKER_IF->get_container_id(container_name);
+                std::string container_id=CONTAINER_WORKER_IF->get_container_id(container_name);
 
                 if(container_id.compare("error")!=0){
                     LOG_INFO << "exist_container yes" ;
