@@ -44,7 +44,7 @@ namespace ai
             try
             {
                 if (!m_idle_task->training_engine.empty()
-                    && E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(m_idle_task->training_engine))
+                    && E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(m_idle_task->training_engine,30))
                 {
                     start_pull_image(m_idle_task);
                 }
@@ -135,7 +135,7 @@ namespace ai
                 m_idle_task->__set_data_dir(task->data_dir);
                 m_idle_task->__set_hyper_parameters(task->hyper_parameters);
 
-                if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine))
+                if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine,30))
                 {
                     start_pull_image(m_idle_task);
                 }

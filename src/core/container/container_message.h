@@ -214,7 +214,7 @@ namespace matrix
 
             int32_t gpus;
             std::string storage;
-
+            int32_t sleep_time;
             //GPU needed
             std::list<std::string> env;
 

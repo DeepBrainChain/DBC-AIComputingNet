@@ -402,6 +402,8 @@ namespace ai
                             LOG_INFO<< "storage: " << storage;
                         }
 
+
+
                     }
                     catch (...)
                     {
@@ -417,6 +419,48 @@ namespace ai
 
             return config;
         }
+
+        int32_t container_worker::get_sleep_time(std::shared_ptr<ai_training_task> task) {
+
+            int32_t sleep_time=120;
+            if (nullptr == task) {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return sleep_time;
+            }
+
+
+            auto customer_setting=task->server_specification;
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "pt.count(\"sleep_time\"):" << pt.count("sleep_time");
+                    if(pt.count("sleep_time")!=0){
+
+
+                        int32_t sleep_time = pt.get<int32_t>("sleep_time");
+
+                        LOG_INFO<< "sleep_time: " << sleep_time;
+
+                    }
+
+                }
+                catch (...)
+                {
+
+                }
+            }
+
+            return sleep_time;
+
+
+        }
+
+
 
         std::shared_ptr<container_config> container_worker::get_container_config_from_image(std::shared_ptr<ai_training_task> task)
         {

@@ -127,27 +127,32 @@ namespace ai
             }
 
             std::string training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
-            if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name)) {
+            if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
 
                 LOG_INFO << "delete the same name image";
                 CONTAINER_WORKER_IF->delete_image(training_engine_name);//删除之前的同名镜像
                 sleep(10);
             }
-            std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id);
-         //   std::string training_engine_new="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
+
+            int32_t sleep_time=m_container_worker->get_sleep_time(task);
+            LOG_INFO << "sleep_time waiting :" << sleep_time << "s" ;
+           // sleep(sleep_time);
+
+            std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id,sleep_time);
+
             bool can_create_container=false;
             if(image_id.compare("error")==0)
             {
 
                 LOG_INFO << "is or not exist_docker_image";
-                sleep(100);
-               if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name))
+              //  sleep(100);
+               if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,100))
                 {
                     can_create_container=true;
                 }else{
 
-                   sleep(150);
-                   if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name))
+                  // sleep(150);
+                   if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,100))
                    {
                        can_create_container=true;
                    }
@@ -156,6 +161,7 @@ namespace ai
             {
                 can_create_container=true;
             }
+
              if(can_create_container)
              {
                 std::string training_engine_original=task->training_engine;
@@ -365,8 +371,7 @@ namespace ai
             std::shared_ptr<container_config> config = m_container_worker->get_container_config_from_image(task);
             std::string task_id=task->task_id;
 
-           // vector<string> vData=split(task_id, "_DBC_");
-           // std::string sub_task_id=vData[0];
+
 
            std::string container_name=task_id+"_DBC_"+autodbcimage_version;
            if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND){
@@ -383,7 +388,7 @@ namespace ai
             }
             else
             {
-                sleep(60);
+                sleep(90);
                 LOG_INFO << "exist_container ?" ;
                 if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND) {
                     LOG_INFO << "exist_container yes";
@@ -477,7 +482,7 @@ namespace ai
             }
 
             //if image do not exist, then pull it
-            if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine))
+            if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine,15))
             {
                 return start_pull_image(task);
             }
