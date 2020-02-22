@@ -357,7 +357,11 @@ namespace ai
                 if (E_SUCCESS != ret)
                 {
                     LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
-                    return ret;
+                   // return E_SUCCESS;
+                }else
+                {
+                    LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id << " end time: "<< task->end_time;
+
                 }
 
 
@@ -367,7 +371,6 @@ namespace ai
 
                 m_running_tasks.erase(task->task_id);
 
-                LOG_INFO << "stop container success, container id: " << task->container_id << " task is:" << task->task_id << " end time: "<< task->end_time;
 
 
                 if ( task_out_of_gpu_resource != end_status )

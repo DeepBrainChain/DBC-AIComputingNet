@@ -1145,7 +1145,7 @@ namespace matrix
             }
 
             LOG_INFO << "get running containers success: " << endpoint;
-            LOG_INFO << "body " << resp.body;
+          //  LOG_INFO << "body " << resp.body;
 
             rapidjson::Document document;
             rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
