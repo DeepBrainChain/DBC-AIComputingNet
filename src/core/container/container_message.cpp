@@ -182,6 +182,7 @@ namespace matrix
                 json_devices.PushBack(json_device.Move(), allocator);
             }
             json_host_config.AddMember("Devices", json_devices, allocator);
+            json_host_config.AddMember("OomKillDisable", true, allocator);
 
             //json_host_config: volume_driver
             json_host_config.AddMember("VolumeDriver", STRING_REF(host_config.volume_driver), allocator);
