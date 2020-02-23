@@ -243,6 +243,7 @@ namespace ai
                     if (task->status == task_creating_image) //说明正在创建镜像
                     {
                         LOG_INFO << "creating image:" << task->task_id;
+                        task->__set_status(task_creating_image);
                         m_task_db.write_task_to_db(task);
                         return E_DEFAULT;
                     }
@@ -266,7 +267,7 @@ namespace ai
 
                 } else
                 {
-                    task->__set_status(task_queueing);
+                    task->__set_status(update_task_error);
                     m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
 
