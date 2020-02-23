@@ -130,7 +130,7 @@ namespace ai
             std::string image_id="";
             bool can_create_container=false;
             LOG_INFO << "task->status:" << task->status ;
-            if (!task->status==task_creating_image){ //刚开始创建
+            if (task->status!=task_creating_image ){ //刚开始创建
 
                 if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
 

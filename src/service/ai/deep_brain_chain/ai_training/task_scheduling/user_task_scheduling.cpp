@@ -462,6 +462,7 @@ namespace ai
         //    }
          //   LOG_INFO << "update user task scheduling flush task to db: " << task->task_id;
           //  LOG_INFO << "update user task scheduling flush task to db memory: " << task->memory;
+            m_queueing_tasks.remove(task);
             m_queueing_tasks.push_back(task);
             LOG_INFO << "user task scheduling add m_training_tasks:" << task->task_id;
             m_training_tasks[task->task_id] = task;
