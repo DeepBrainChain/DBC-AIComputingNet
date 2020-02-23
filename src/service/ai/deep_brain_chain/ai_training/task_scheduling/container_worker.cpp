@@ -420,9 +420,9 @@ namespace ai
             return config;
         }
 
-        int32_t container_worker::get_sleep_time(std::shared_ptr<ai_training_task> task) {
+        int64_t container_worker::get_sleep_time(std::shared_ptr<ai_training_task> task) {
 
-            int32_t sleep_time=120;
+            int64_t sleep_time=120;
             if (nullptr == task) {
                 LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
                 return sleep_time;
@@ -442,7 +442,7 @@ namespace ai
                     if(pt.count("sleep_time")!=0){
 
 
-                        sleep_time = pt.get<int32_t>("sleep_time");
+                        sleep_time = pt.get<int64_t>("sleep_time");
 
                         LOG_INFO<< "sleep_time: " << sleep_time;
 
