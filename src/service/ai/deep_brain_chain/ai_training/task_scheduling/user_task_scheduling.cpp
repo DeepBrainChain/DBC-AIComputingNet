@@ -229,15 +229,19 @@ namespace ai
                     LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
                     m_running_tasks.erase(task->task_id);//防止自动检测任务，将任务关闭
                 }
-                auto task2= find_task(task->task_id);
+               // auto task2= find_task(task->task_id);
 
-                ret = update_task_commit_image(task2);
-                m_training_tasks[task2->task_id]=task2;
+                ret = update_task_commit_image(task);
+               // m_training_tasks[task2->task_id]=task2;
 
-                task=task2;
+              //  task=task2;
+
+
                 if(task->status != task_creating_image){
                     m_queueing_tasks.remove(task);
                     LOG_INFO << "move task from waiting queue map：" << task->task_id;
+                } else{
+                    LOG_INFO << "task_creating_image:" << task->task_id;
                 }
 
 
