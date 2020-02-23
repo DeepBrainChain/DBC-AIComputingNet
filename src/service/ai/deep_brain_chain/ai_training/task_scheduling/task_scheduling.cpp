@@ -160,9 +160,10 @@ namespace ai
                 {
                     int64_t real_time=time_util::get_time_stamp_ms();
                     int32_t sleep_time=m_container_worker->get_sleep_time(task);
-                    int32_t sub_time=real_time-sleep_time;
+                    int32_t sub_time=real_time-task->start_time;
                     LOG_INFO << "real_time：" << real_time;
-                    LOG_INFO << "real_time-task->start_time：" << sub_time;
+                    LOG_INFO << "task->start_time：" << task->start_time;
+                    LOG_INFO << "sub_time：" << sub_time;
 
                     if(sub_time>sleep_time*1000){//是否创建时间已经超过slee_time
 
