@@ -129,6 +129,7 @@ namespace ai
             std::string training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
             std::string image_id="";
             bool can_create_container=false;
+            LOG_INFO << "task->status:" << task->status ;
             if (!task->status==task_creating_image){ //刚开始创建
 
                 if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
