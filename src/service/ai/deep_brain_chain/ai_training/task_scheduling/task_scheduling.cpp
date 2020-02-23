@@ -165,7 +165,7 @@ namespace ai
                     LOG_INFO << "task->start_time：" << task->start_time;
                     LOG_INFO << "sub_time：" << sub_time;
 
-                    if(sub_time>sleep_time*1000){//是否创建时间已经超过slee_time
+                    if(sub_time>sleep_time*1000){//是否创建时间已经超过sleep_time
 
                         can_create_container= false;
 

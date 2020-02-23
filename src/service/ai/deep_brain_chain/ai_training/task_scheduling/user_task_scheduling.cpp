@@ -84,14 +84,14 @@ namespace ai
                 //
                 // support tasks run concurrently
                 //
-                if (task_queueing == task->status || task_pulling_image == task->status  || task_creating_image == task->status)
+                if (task_queueing == task->status || task_pulling_image == task->status  || task_creating_image == task->status )
                 {
                     m_queueing_tasks.push_back(task);
                     LOG_INFO << "user task scheduling insert ai training task to task queue, task id: "
                               << task->task_id << " container_id: " << task->container_id << " task status: "
                               << to_training_task_status_string(task->status);
                 }
-                else if (task_running == task->status ||update_task_error ==task->status)
+                else if (task_running == task->status )//||update_task_error ==task->status
                 {
                     if (!m_gpu_pool.allocate(task->gpus))
                     {
@@ -229,8 +229,12 @@ namespace ai
                     LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
                     m_running_tasks.erase(task->task_id);//防止自动检测任务，将任务关闭
                 }
+                auto task2= find_task(task->task_id);
 
-                ret = update_task_commit_image(task);
+                ret = update_task_commit_image(task2);
+                m_training_tasks[task2->task_id]=task2;
+
+                task=task2;
                 if(task->status != task_creating_image){
                     m_queueing_tasks.remove(task);
                     LOG_INFO << "move task from waiting queue map：" << task->task_id;
