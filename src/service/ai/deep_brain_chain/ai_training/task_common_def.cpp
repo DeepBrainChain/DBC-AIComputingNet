@@ -54,6 +54,8 @@ namespace ai
                     return "task_out_of_gpu_resource";
             case update_task_error:
                     return "update_task_error";
+            case task_creating_image:
+                    return "task_creating_image";
             default:
                 return DEFAULT_STRING;
             }

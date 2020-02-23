@@ -84,7 +84,7 @@ namespace ai
                 //
                 // support tasks run concurrently
                 //
-                if (task_queueing == task->status || task_pulling_image == task->status)
+                if (task_queueing == task->status || task_pulling_image == task->status  || task_creating_image == task->status)
                 {
                     m_queueing_tasks.push_back(task);
                     LOG_INFO << "user task scheduling insert ai training task to task queue, task id: "
@@ -233,7 +233,7 @@ namespace ai
                 ret = update_task_commit_image(task);
                 if(task->status != task_creating_image){
                     m_queueing_tasks.remove(task);
-                    LOG_INFO << "move task from waiting queue map" << task->task_id;
+                    LOG_INFO << "move task from waiting queue map：" << task->task_id;
                 }
 
 
@@ -266,7 +266,7 @@ namespace ai
 
                 } else
                 {
-
+                    task->__set_status(task_queueing);
                     m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
 
