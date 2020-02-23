@@ -140,7 +140,8 @@ namespace ai
                 int32_t sleep_time=m_container_worker->get_sleep_time(task);
                 task->__set_start_time(time_util::get_time_stamp_ms());
                 LOG_INFO << "sleep_time waiting :" << sleep_time << "s" ;
-                std:string status=CONTAINER_WORKER_IF->commit_image(task->container_id,autodbcimage_version,task->task_id,30);
+                task->__set_status(task_creating_image);
+                std::string status=CONTAINER_WORKER_IF->commit_image(task->container_id,autodbcimage_version,task->task_id,30);
                 if(status.compare("error")==0){
                     return E_DEFAULT;
                 }
@@ -149,7 +150,7 @@ namespace ai
             } else{ //正在创建中
 
                 if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,60)) {
-                    LOG_INFO << "is or not exist_docker_image";
+                    LOG_INFO << "is  exist_docker_image";
                     //  sleep(100);
 
                     can_create_container=true;
@@ -159,9 +160,11 @@ namespace ai
                 {
                     int64_t real_time=time_util::get_time_stamp_ms();
                     int32_t sleep_time=m_container_worker->get_sleep_time(task);
-                    LOG_INFO << "real_time-task->start_time" << real_time-task->start_time;
+                    int32_t sub_time=real_time-sleep_time;
+                    LOG_INFO << "real_time：" << real_time;
+                    LOG_INFO << "real_time-task->start_time：" << sub_time;
 
-                    if(real_time-task->start_time>sleep_time*1000){//是否创建时间已经超过slee_time
+                    if(sub_time>sleep_time*1000){//是否创建时间已经超过slee_time
 
                         can_create_container= false;
 
