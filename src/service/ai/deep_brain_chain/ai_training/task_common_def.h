@@ -48,6 +48,7 @@ namespace ai
             task_pulling_image = 3,
             task_running = 4,
             update_task_error  =5,
+            task_creating_image = 6,
             ///////////termianl state///////////////////////
             task_stopped = 8,
             task_successfully_closed = 16,

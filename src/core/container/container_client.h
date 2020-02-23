@@ -84,7 +84,7 @@ namespace matrix
             void del_images();
             int32_t exist_container(const std::string & container_name);
             std::string get_container_id(std::string container_name);
-
+            std::string commit_image(std::string container_id,std::string version,std::string task_id,int32_t sleep_time);
         protected:
 
             http_client m_http_client;
