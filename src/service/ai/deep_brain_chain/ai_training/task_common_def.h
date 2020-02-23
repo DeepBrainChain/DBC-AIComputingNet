@@ -47,8 +47,9 @@ namespace ai
             task_queueing =      2,
             task_pulling_image = 3,
             task_running = 4,
-            update_task_error  =5,
+            update_task_error  =5,//代表从running的容器升级
             task_creating_image = 6,
+          //  stop_update_task_error  =7,//代表从stop的容器升级
             ///////////termianl state///////////////////////
             task_stopped = 8,
             task_successfully_closed = 16,
