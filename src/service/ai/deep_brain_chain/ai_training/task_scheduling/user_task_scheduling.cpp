@@ -252,6 +252,8 @@ namespace ai
                     {
                         LOG_INFO << "creating image:" << task->task_id;
                         task->__set_status(task_creating_image);
+                        m_queueing_tasks.remove(task);
+                        m_queueing_tasks.push_back(task);
                         m_task_db.write_task_to_db(task);
                         return E_DEFAULT;
                     }
