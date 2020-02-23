@@ -676,7 +676,7 @@ namespace ai
             {
 
                 auto task = m_queueing_tasks.front();
-                if (task_queueing == task->status)
+                if (task_queueing == task->status || task_creating_image == task->status)
                 {
                     return exec_task();
                 }
