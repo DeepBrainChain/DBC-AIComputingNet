@@ -127,40 +127,54 @@ namespace ai
             }
 
             std::string training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
-            if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
-
-                LOG_INFO << "delete the same name image";
-                CONTAINER_WORKER_IF->delete_image(training_engine_name);//删除之前的同名镜像
-                sleep(10);
-            }
-
-            int32_t sleep_time=m_container_worker->get_sleep_time(task);
-            LOG_INFO << "sleep_time waiting :" << sleep_time << "s" ;
-           // sleep(sleep_time);
-
-            std::string image_id = CONTAINER_WORKER_IF->get_commit_image(task->container_id,autodbcimage_version,task->task_id,sleep_time);
-
+            std::string image_id="";
             bool can_create_container=false;
-            if(image_id.compare("error")==0)
-            {
+            if (!task->status==task_creating_image){ //刚开始创建
 
-                LOG_INFO << "is or not exist_docker_image";
-              //  sleep(100);
-               if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,100))
-                {
+                if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
+
+                    LOG_INFO << "delete the same name image";
+                    CONTAINER_WORKER_IF->delete_image(training_engine_name);//删除之前的同名镜像
+                    sleep(10);
+                }
+                int32_t sleep_time=m_container_worker->get_sleep_time(task);
+                task->__set_start_time(time_util::get_time_stamp_ms());
+                LOG_INFO << "sleep_time waiting :" << sleep_time << "s" ;
+                std:string status=CONTAINER_WORKER_IF->commit_image(task->container_id,autodbcimage_version,task->task_id,30);
+                if(status.compare("error")==0){
+                    return E_DEFAULT;
+                }
+                return E_SUCCESS;
+
+            } else{ //正在创建中
+
+                if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,60)) {
+                    LOG_INFO << "is or not exist_docker_image";
+                    //  sleep(100);
+
                     can_create_container=true;
-                }else{
 
-                  // sleep(150);
-                   if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,100))
-                   {
-                       can_create_container=true;
-                   }
-               }
-            }else
-            {
-                can_create_container=true;
+
+                }else
+                {
+                    int64_t real_time=time_util::get_time_stamp_ms();
+                    int32_t sleep_time=m_container_worker->get_sleep_time(task);
+                    LOG_INFO << "real_time-task->start_time" << real_time-task->start_time;
+
+                    if(real_time-task->start_time>sleep_time*1000){//是否创建时间已经超过slee_time
+
+                        can_create_container= false;
+
+                    } else
+                    {
+                        return E_SUCCESS;
+                    }
+
+                }
+
+
             }
+
 
              if(can_create_container)
              {
@@ -323,7 +337,7 @@ namespace ai
             }
 
             LOG_INFO << "start_task_from_new_image success. Task id:" << task->task_id;
-            task->__set_start_time(time_util::get_time_stamp_ms());
+           // task->__set_start_time(time_util::get_time_stamp_ms());
             task->__set_status(task_running);
             task->error_times = 0;
             LOG_INFO << "update task status:" << "task_running";

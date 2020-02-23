@@ -197,6 +197,45 @@ namespace matrix
             return "error";
         }
 
+        std::string container_client::commit_image(std::string container_id,std::string version,std::string task_id,int32_t sleep_time)
+        {
+            //endpoint
+            std::string endpoint = "/commit?container=";
+            if (container_id.empty())
+            {
+                LOG_ERROR << "commit container container id is empty";
+                return "error";
+            }
+
+            endpoint += container_id;
+            endpoint += "&repo=www.dbctalk.ai:5000/dbc-free-container&tag=autodbcimage_"+task_id.substr(0,6)+"_"+container_id.substr(0,6)+version;
+
+            //req content, headers, resp
+            std::string req_content = "";
+            kvs headers;
+
+            headers.push_back({ "Content-Type", "application/json" });
+
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.post_sleep(endpoint, headers, req_content, resp,sleep_time);
+            }
+            catch (const std::exception & e)
+            {
+
+            }
+
+
+
+            return "ok";
+        }
+
+
         int32_t container_client::start_container(std::string container_id)
         {
             return start_container(container_id, nullptr);

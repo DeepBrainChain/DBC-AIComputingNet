@@ -231,11 +231,22 @@ namespace ai
                 }
 
                 ret = update_task_commit_image(task);
+                if(task->status != task_creating_image){
+                    m_queueing_tasks.remove(task);
+                    LOG_INFO << "move task from waiting queue map" << task->task_id;
+                }
 
-                m_queueing_tasks.remove(task);
-                LOG_INFO << "move task from waiting queue map" << task->task_id;
+
+
                 if (ret == E_SUCCESS)
                 {
+                    if (task->status == task_creating_image) //说明正在创建镜像
+                    {
+                        LOG_INFO << "creating image:" << task->task_id;
+                        m_task_db.write_task_to_db(task);
+                        return E_DEFAULT;
+                    }
+
                     LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
                     m_running_tasks[task->task_id] = task;
                     task->__set_status(task_running);
