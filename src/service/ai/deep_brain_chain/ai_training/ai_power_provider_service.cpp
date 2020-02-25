@@ -337,14 +337,14 @@ namespace ai
                     if(update.compare(get_is_update(task->server_specification))==0){// update
 
                         LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
-                        if(ref_task2->status == task_running )
+                     /*   if(ref_task2->status == task_running )
                         {
-                            ref_task2->__set_status(task_queueing);
+                            task->__set_status(task_running);
                         }else  if(ref_task2->status >= task_stopped  )//如果gpu已经停止了，则gpus设置为空字符串
                         {
-                            ref_task2->__set_status(task_stopped);
 
-                        }
+                            task->__set_status(task_stopped);
+                        }*/
 
                         ref_container_id=ref_task2->container_id;
                         task->__set_status(task_queueing);
