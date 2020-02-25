@@ -571,6 +571,17 @@ namespace ai
             if (nullptr == task)
             {
                 return E_SUCCESS;
+            }if (task->status == update_task_error)//如果任务是升级错误状态，则只修改任务状态为running
+            {
+                LOG_INFO << "update task status success. Task id:" << task->task_id;
+                task->__set_start_time(time_util::get_time_stamp_ms());
+                task->__set_status(task_running);
+                task->error_times = 0;
+                LOG_INFO << "task status:" << "task_running";
+                m_task_db.write_task_to_db(task);
+                LOG_INFO << "task status:" << "write_task_to_db";
+                LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
+                return E_SUCCESS;
             }
 
             auto state = get_task_state(task);
