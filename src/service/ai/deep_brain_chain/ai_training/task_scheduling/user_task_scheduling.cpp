@@ -227,7 +227,7 @@ namespace ai
                     m_gpu_pool.allocate(old_gpus);//add old gpus again
 
                     LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
-                    m_running_tasks.erase(task->task_id);//防止自动检测任务，将任务关闭
+                    //m_running_tasks.erase(task->task_id);//防止自动检测任务，将任务关闭
                 }
                // auto task2= find_task(task->task_id);
 
@@ -259,7 +259,7 @@ namespace ai
                     }
 
                     LOG_INFO<< "task will update,  now add task id again:" << task->task_id;
-                    m_running_tasks[task->task_id] = task;
+
                     task->__set_status(task_running);
                     LOG_INFO << "task->status" << task->status;
                     if (nullptr != old_task){
@@ -279,6 +279,23 @@ namespace ai
                 {
                     task->__set_status(update_task_error);
                     m_task_db.write_task_to_db(task);
+
+                    //inspect container
+                    LOG_ERROR << "user task update_task_error, start inspect_container container id: " << task->container_id;
+                    std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
+                    if (nullptr == resp)
+                    {
+                        LOG_ERROR << "user task check container error, container id: " << task->container_id;
+                        m_running_tasks.erase(task->task_id);//
+
+                    }else  if (true == resp->state.running){
+                        m_running_tasks[task->task_id] = task;
+                    } else
+                    {
+
+                        m_running_tasks.erase(task->task_id);//
+                    }
+
                     return E_DEFAULT;
 
                 }
@@ -650,7 +667,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            else if (0 != resp->state.exit_code && 137 != resp->state.exit_code)
+            else if (0 != resp->state.exit_code && 137 != resp->state.exit_code &&task->status==task_running)
             {
                 LOG_INFO << "inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
                // stop_task(task, task_abnormally_closed);
