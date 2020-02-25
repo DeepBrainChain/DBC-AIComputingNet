@@ -269,7 +269,7 @@ namespace ai
                     LOG_INFO << "stop container failure , task id:" << task->task_id;
                     task->__set_status(update_task_error);
                     task->error_times = 0;
-                    m_task_db.write_task_to_db(task);
+                  //  m_task_db.write_task_to_db(task);
                     return E_DEFAULT;
 
                 }
@@ -283,7 +283,7 @@ namespace ai
                 CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
                 task->__set_status(update_task_error);
                 task->error_times = 0;
-                m_task_db.write_task_to_db(task);
+               // m_task_db.write_task_to_db(task);
                 return E_DEFAULT;
             }else{
 
@@ -296,7 +296,7 @@ namespace ai
                     task->__set_container_id(old_container_id);
                     task->__set_status(update_task_error);
                     task->error_times = 0;
-                    m_task_db.write_task_to_db(task);
+                  //  m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
                 }
@@ -311,7 +311,7 @@ namespace ai
                     task->__set_container_id(old_container_id);
                     task->__set_status(update_task_error);
                     task->error_times = 0;
-                    m_task_db.write_task_to_db(task);
+                  //  m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
                 }//else// if(can_delete_image){//旧的镜像 因为有新生成的子镜像，故无法删除
@@ -347,7 +347,7 @@ namespace ai
             task->__set_status(task_running);
             task->error_times = 0;
             LOG_INFO << "update task status:" << "task_running";
-            m_task_db.write_task_to_db(task);
+          //  m_task_db.write_task_to_db(task);
             LOG_INFO << "update task status:" << "write_task_to_db";
             LOG_INFO << "update E_SUCCESS:" << E_SUCCESS;
             return E_SUCCESS;

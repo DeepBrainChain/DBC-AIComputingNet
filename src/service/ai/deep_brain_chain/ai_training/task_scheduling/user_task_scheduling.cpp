@@ -254,7 +254,7 @@ namespace ai
                         task->__set_status(task_creating_image);
                         m_queueing_tasks.remove(task);
                         m_queueing_tasks.push_back(task);
-                        m_task_db.write_task_to_db(task);
+                       // m_task_db.write_task_to_db(task);
                         return E_DEFAULT;
                     }
 
@@ -271,17 +271,18 @@ namespace ai
                     LOG_INFO<< "task will update, free m_gpu_pool:" << m_gpu_pool.toString();
                     m_gpu_pool.allocate(task->gpus);//add new gpus
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
+                    m_running_tasks[task->task_id] = task;
                     m_task_db.write_task_to_db(task);
                     return E_SUCCESS;
 
 
                 } else
                 {
-                    task->__set_status(update_task_error);
-                    m_task_db.write_task_to_db(task);
+                   // task->__set_status(update_task_error);
+                   // m_task_db.write_task_to_db(task);
 
                     //inspect container
-                    LOG_ERROR << "user task update_task_error, start inspect_container container id: " << task->container_id;
+                /*    LOG_ERROR << "user task update_task_error, start inspect_container container id: " << task->container_id;
                     std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
                     if (nullptr == resp)
                     {
@@ -294,7 +295,7 @@ namespace ai
                     {
 
                         m_running_tasks.erase(task->task_id);//
-                    }
+                    }*/
 
                     return E_DEFAULT;
 
@@ -474,19 +475,14 @@ namespace ai
         int32_t  user_task_scheduling::add_update_task(std::shared_ptr<ai_training_task> task)
         {
 
-            //flush to db
-         //   if (E_SUCCESS != m_task_db.write_task_to_db(task))
-         //   {
-        //        return E_DEFAULT;
-        //    }
-         //   LOG_INFO << "update user task scheduling flush task to db: " << task->task_id;
-          //  LOG_INFO << "update user task scheduling flush task to db memory: " << task->memory;
+
             m_queueing_tasks.remove(task);
             m_queueing_tasks.push_back(task);
-            LOG_INFO << "user task scheduling add m_training_tasks:" << task->task_id;
-            m_training_tasks[task->task_id] = task;
+
+
             return E_SUCCESS;
         }
+
 
 
         int32_t user_task_scheduling::add_task(std::shared_ptr<ai_training_task> task)
