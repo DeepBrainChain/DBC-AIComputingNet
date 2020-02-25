@@ -207,7 +207,7 @@ namespace ai
                         m_task_db.write_task_to_db(task);
                         return E_DEFAULT;
                     }
-                    m_running_tasks[task->task_id] = task;
+                   // m_running_tasks[task->task_id] = task;
 
                 }else{
 
