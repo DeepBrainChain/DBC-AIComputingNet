@@ -295,7 +295,7 @@ namespace ai
 
                         auto ori_task =find_task(task->task_id);
                         ori_task->__set_status(task_running);
-                        m_training_tasks[ori_task->task_id] = ori_task;
+                        m_running_tasks[ori_task->task_id] = ori_task;
                         m_training_tasks[ori_task->task_id] = ori_task;
                         m_task_db.write_task_to_db(ori_task);
 
