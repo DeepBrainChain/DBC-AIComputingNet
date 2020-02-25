@@ -320,36 +320,11 @@ namespace ai
                 task->__set_gpus(get_gpu_spec(task->server_specification));
             }
 
-           // LOG_INFO << "body.training_engine: " <<req->body.training_engine;
-           // LOG_INFO << "body.memory: " <<req->body.memory;
 
-           // task->__set_memory(req->body.memory);
-           // task->__set_memory_swap(req->body.memory_swap);
             // reuse container where container name is specificed in training requester msg.
             //      As we know, dbc names a container with the task id value when create the container.
             //      So the input container name also refer to a task id.
             std::string ref_container_id="";
-        //    auto ref_task = m_user_task_ptr->find_task(req->body.container_name);
-        //    LOG_INFO << "req container_name: " << req->body.container_name;
-
-
-
-
-         //   if (ref_task != nullptr)
-         //   {
-          //      LOG_INFO << "ref task container id: " << ref_task->container_id;
-          //      LOG_INFO << "ref task id: " << ref_task->task_id;
-
-         //       if (ref_task->ai_user_node_id == req->header.exten_info["origin_id"])
-         //       {
-         //           ref_container_id = ref_task->container_id;
-         //       }
-         //       else
-          //      {
-          //          LOG_WARNING << "forbid reusing container not own";
-         //       }
-
-         //   } else // //update container ,get task_id
             {
                 std::string task_id=get_task_id(req);
 
@@ -362,16 +337,24 @@ namespace ai
                     if(update.compare(get_is_update(task->server_specification))==0){// update
 
                         LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
+                        if(ref_task2->status == task_running )
+                        {
+                            ref_task2->__set_status(task_queueing);
+                        }else  if(ref_task2->status >= task_stopped  )//如果gpu已经停止了，则gpus设置为空字符串
+                        {
+                            ref_task2->__set_status(task_stopped);
+
+                        }
 
                         ref_container_id=ref_task2->container_id;
 
                         LOG_INFO << "req container_name: " << req->body.container_name;
-
+                        LOG_INFO << "task->gpus;: " << task->gpus;
                         task->__set_task_id(task_id); //update to old task id
                         task->__set_container_id(ref_container_id);
 
                         task->__set_received_time_stamp(std::time(nullptr));
-                        task->__set_status(task_queueing);
+
 
                         return m_user_task_ptr->add_update_task(task);
                     }
@@ -405,7 +388,7 @@ namespace ai
 
 
                                 task->__set_received_time_stamp(std::time(nullptr));
-                                task->__set_status(task_queueing);
+                                task->__set_status(task_stopped);
 
                                 return m_user_task_ptr->add_update_task(task);
                             }
