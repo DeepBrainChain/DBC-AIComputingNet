@@ -272,7 +272,9 @@ namespace ai
                     m_gpu_pool.allocate(task->gpus);//add new gpus
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
                     m_running_tasks[task->task_id] = task;
+                    m_training_tasks[task->task_id] = task;
                     m_task_db.write_task_to_db(task);
+
                     return E_SUCCESS;
 
 
