@@ -349,7 +349,8 @@ namespace ai
                         ref_container_id=ref_task2->container_id;
                         task->__set_status(task_queueing);
                         LOG_INFO << "req container_name: " << req->body.container_name;
-                        LOG_INFO << "task->gpus;: " << task->gpus;
+                        task->__set_gpus(get_gpu_spec(task->server_specification));
+                        LOG_INFO << "task->gpus: " << task->gpus;
                         task->__set_task_id(task_id); //update to old task id
                         task->__set_container_id(ref_container_id);
 
