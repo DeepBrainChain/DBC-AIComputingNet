@@ -80,7 +80,7 @@ function prune_image_template()
         if [ -z "$images" ];then
          return
         fi
-        return
+       
     fi
     images_f=`docker inspect --format "{{.$st_template}},{{.ID}}" $images`
     rm_image "$images_f" $p_interval
