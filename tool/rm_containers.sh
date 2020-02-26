@@ -68,19 +68,14 @@ function prune_container_template()
    # fi
 }
 
-function prune_image_template()
+function prune_image_template_dbc-free-container()
 {
     p_interval=$1
     st_template=$2
 
     images=$(docker images | grep "dbc-free-container"  | awk '{print $3}')
     if [ -z "$images" ];then
-
-        images=$(docker images | grep "<none>"  | awk '{print $3}')
-        if [ -z "$images" ];then
          return
-        fi
-       
     fi
     images_f=`docker inspect --format "{{.$st_template}},{{.ID}}" $images`
     rm_image "$images_f" $p_interval
@@ -93,6 +88,31 @@ function prune_image_template()
 }
 
 
+function prune_image_template_none()
+{
+    p_interval=$1
+    st_template=$2
+
+
+
+    images=$(docker images | grep "<none>"  | awk '{print $3}')
+    if [ -z "$images" ];then
+         return
+    fi
+
+
+    images_f=`docker inspect --format "{{.$st_template}},{{.ID}}" $images`
+    rm_image "$images_f" $p_interval
+
+    if [ $p_interval -eq 0 ];then
+        exit
+    fi
+
+
+}
+
+
+
 function prune_container()
 {
     p_interval=$1 
@@ -100,8 +120,8 @@ function prune_container()
     prune_container_template $p_interval "exited" "State.FinishedAt"
     #the container was created, but it was never running.
     echo "rm created, but never running containers"
-    prune_container_template $p_interval "created" "Created"
-
+    prune_image_template_dbc-free-container $p_interval "created" "Created"
+    prune_image_template_none $p_interval "created" "Created"
      #the image was created
     echo "rm image"
     prune_image_template $p_interval  "Created"
