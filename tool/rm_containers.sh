@@ -120,11 +120,13 @@ function prune_container()
     prune_container_template $p_interval "exited" "State.FinishedAt"
     #the container was created, but it was never running.
     echo "rm created, but never running containers"
-    prune_image_template_dbc-free-container $p_interval "created" "Created"
-    prune_image_template_none $p_interval "created" "Created"
+    prune_container_template $p_interval "created" "Created"
+
      #the image was created
     echo "rm image"
-    prune_image_template $p_interval  "Created"
+    prune_image_template_dbc-free-container $p_interval  "Created"
+
+    prune_image_template_none $p_interval  "Created"
 }
 
 if [ $# -eq 0 ];then
