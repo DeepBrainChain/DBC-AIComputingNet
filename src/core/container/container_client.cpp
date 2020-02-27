@@ -1504,6 +1504,47 @@ namespace matrix
 
 
 
+        int32_t container_client::exist_container_time(const std::string & container_name,int32_t sleep_time)
+        {
+            std::string endpoint = "/containers/";
+            if (container_name.empty())
+            {
+                return E_DEFAULT;
+            }
+
+            endpoint += container_name;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.get_sleep(endpoint, headers, resp,sleep_time);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect container error: " << e.what();
+                return E_DEFAULT;
+            }
+
+            LOG_DEBUG << "inspect container resp:" << resp.body;
+
+            if (200 == resp.status)
+            {
+                return E_SUCCESS;
+            }
+
+            if (404 == resp.status)
+            {
+                return  E_CONTAINER_NOT_FOUND;
+            }
+
+            return ret;
+        }
 
 
     }

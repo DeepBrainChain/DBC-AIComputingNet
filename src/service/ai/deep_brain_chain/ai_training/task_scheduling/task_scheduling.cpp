@@ -408,9 +408,9 @@ namespace ai
             }
             else
             {
-                sleep(90);
+               // sleep(90);
                 LOG_INFO << "exist_container ?" ;
-                if(CONTAINER_WORKER_IF->exist_container(container_name)!=E_CONTAINER_NOT_FOUND) {
+                if(CONTAINER_WORKER_IF->exist_container_time(container_name,240)!=E_CONTAINER_NOT_FOUND) {
                     LOG_INFO << "exist_container yes";
                 }else{
                     LOG_ERROR << "create task failed. task id:" << task->task_id;
