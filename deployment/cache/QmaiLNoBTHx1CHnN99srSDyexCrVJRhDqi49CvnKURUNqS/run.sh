@@ -237,10 +237,16 @@ setup_ngrok_connection()
             # usage hint for ssh and jupyter
             case $service in
                 ssh)
-                    SSH_INFO="ssh_login_info: ssh -p $port root@${server_ip}; pwd:"${DEFAULT_PWD}
+                    SSH_INFO="ssh_login_info: ssh -p ${port} root@${server_ip}; pwd:"${DEFAULT_PWD}
                 ;;
                 jupyter)
                     jupyter_url="jupyter url:  http://${server_ip}:${port}  "
+                ;;
+                jupyter_lab)
+                    jupyter_lab_url="jupyter_lab_url:  http://${server_ip}:${port}  "
+                ;;
+                nextcloud)
+                    nextcloud_url="nextcloud_url:  http://${server_ip}:${port}  "
                 ;;
                 *)
                 ;;
