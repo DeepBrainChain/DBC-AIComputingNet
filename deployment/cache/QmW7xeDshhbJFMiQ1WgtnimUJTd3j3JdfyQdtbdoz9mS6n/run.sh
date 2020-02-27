@@ -110,6 +110,8 @@ main_loop()
 
     run_jupyter
     set_passwd
+     echo "support jupyter_lab"
+     echo "support nextcloud"
     echo "gpu server is ready"
 
     rm -rf /tmp/bye
