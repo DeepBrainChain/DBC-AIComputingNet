@@ -189,6 +189,26 @@ create_yml_file()
 }
 
 
+start_nextcloud()
+{
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+        echo "keep nextcloud current password"
+    else
+        NEXTCLOUD_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
+        echo "NEXTCLOUD_PASSWD:"$NEXTCLOUD_PASSWD
+        expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
+    fi
+
+    ip=${server_ips[0]}
+    sed -i "s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/$ip/g" /var/www/nextcloud/config/config.php
+   # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
+    service mysql start
+    redis-server /etc/redis/redis.conf
+    service apache2 restart
+
+
+}
+
 setup_ngrok_connection()
 {
     test -f ./ngrok && chmod +x ./ngrok
@@ -281,7 +301,7 @@ main_loop()
     cd `dirname $0`/bin
     setup_ngrok_connection
 
-
+    start_nextcloud
     echo "gpu server is ready"
 
     rm -rf /tmp/bye
