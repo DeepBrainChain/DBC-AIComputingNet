@@ -299,9 +299,10 @@ main_loop()
 
     # ngrok
     cd `dirname $0`/bin
+    start_nextcloud
     setup_ngrok_connection
 
-    start_nextcloud
+
     echo "gpu server is ready"
 
     rm -rf /tmp/bye
