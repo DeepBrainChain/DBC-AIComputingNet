@@ -128,8 +128,9 @@ main_loop()
     setup_ssh_service
 
     run_jupyter
-    set_passwd
     start_nextcloud
+    set_passwd
+
      echo "support jupyter_lab"
      echo "support nextcloud"
      echo "gpu server is ready"
