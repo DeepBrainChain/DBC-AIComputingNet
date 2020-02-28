@@ -94,6 +94,25 @@ update_path()
 	fi
 }
 
+start_nextcloud()
+{
+   if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+        echo "keep nextcloud current password"
+    else
+        NEXTCLOUD_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
+        echo "NEXTCLOUD_PASSWD:"$NEXTCLOUD_PASSWD
+        expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
+    fi
+    ip=$(curl ip.sb)
+    sed -i "s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/$ip/g" /var/www/nextcloud/config/config.php
+   # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
+    service mysql start
+    redis-server /etc/redis/redis.conf
+    service apache2 restart
+
+
+}
+
 main_loop()
 {
     # step 1
@@ -110,9 +129,10 @@ main_loop()
 
     run_jupyter
     set_passwd
+    start_nextcloud
      echo "support jupyter_lab"
      echo "support nextcloud"
-    echo "gpu server is ready"
+     echo "gpu server is ready"
 
     rm -rf /tmp/bye
 
