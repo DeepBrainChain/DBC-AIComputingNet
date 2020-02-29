@@ -96,13 +96,7 @@ update_path()
 
 start_nextcloud()
 {
-   if [ "$GPU_SERVER_RESTART" == "yes" ]; then
-        echo "keep nextcloud current password"
-    else
-        NEXTCLOUD_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
-        echo "NEXTCLOUD_PASSWD:"$NEXTCLOUD_PASSWD
-        expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
-    fi
+    sleep 15s
     ip=$(curl ip.sb)
     sed -i "s/0 => '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => '$ip/g" /var/www/nextcloud/config/config.php
     sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip#g" /var/www/nextcloud/config/config.php
@@ -111,6 +105,14 @@ start_nextcloud()
     redis-server /etc/redis/redis.conf
     service apache2 restart
 
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+        echo "keep nextcloud current password"
+    else
+        NEXTCLOUD_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
+        echo "NEXTCLOUD_PASSWD:"$NEXTCLOUD_PASSWD
+        expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
+
+    fi
 
 }
 
@@ -127,9 +129,9 @@ main_loop()
 
     source ~/.bashrc
     setup_ssh_service
-
-    run_jupyter
     start_nextcloud
+    run_jupyter
+
     set_passwd
 
      echo "support jupyter_lab"
