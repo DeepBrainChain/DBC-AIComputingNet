@@ -6,6 +6,7 @@ URL_TOKEN=""
 DEFAULT_PWD=""
 SSH_INFO=""
 jupyter_url=""
+nextcloud_url=""
 parse_arg()
 {
     test -f ./jq && chmod +x ./jq
@@ -170,6 +171,7 @@ print_login_info()
     sleep 3s
     echo $SSH_INFO
     echo $jupyter_url
+    echo $nextcloud_url
 }
 create_yml_file()
 {
