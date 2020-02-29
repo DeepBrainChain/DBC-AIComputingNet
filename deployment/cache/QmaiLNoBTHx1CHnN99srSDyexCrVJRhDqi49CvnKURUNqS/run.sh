@@ -255,7 +255,7 @@ setup_ngrok_connection()
              #    fi
 
             fi
-            run_jupyter
+
 
             # usage hint for ssh and jupyter
             case $service in
@@ -301,7 +301,7 @@ main_loop()
     cd `dirname $0`/bin
 
     setup_ngrok_connection
-
+    run_jupyter
 
     echo "gpu server is ready"
 
