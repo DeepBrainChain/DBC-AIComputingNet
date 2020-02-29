@@ -104,7 +104,8 @@ start_nextcloud()
         expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
     fi
     ip=$(curl ip.sb)
-    sed -i "s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/$ip/g" /var/www/nextcloud/config/config.php
+    sed -i "s/0 => [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => $ip/g" /var/www/nextcloud/config/config.php
+    sed -i "s/url' => [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/url' => $ip/g" /var/www/nextcloud/config/config.php
    # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
     service mysql start
     redis-server /etc/redis/redis.conf
