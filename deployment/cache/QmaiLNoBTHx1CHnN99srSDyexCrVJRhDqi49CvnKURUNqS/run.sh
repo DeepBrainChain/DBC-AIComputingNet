@@ -191,6 +191,16 @@ create_yml_file()
 
 start_nextcloud()
 {
+
+    sleep 15s
+    ip=${server_ips[0]}
+    sed -i "s/0 => '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => '$ip/g" /var/www/nextcloud/config/config.php
+    sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip#g" /var/www/nextcloud/config/config.php
+   # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
+    service mysql start
+    redis-server /etc/redis/redis.conf
+    service apache2 restart
+
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
         echo "keep nextcloud current password"
     else
@@ -198,15 +208,6 @@ start_nextcloud()
         echo "NEXTCLOUD_PASSWD:"$NEXTCLOUD_PASSWD
         expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
     fi
-
-    ip=${server_ips[0]}
-    sed -i "s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/$ip/g" /var/www/nextcloud/config/config.php
-   # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
-    service mysql start
-    redis-server /etc/redis/redis.conf
-    service apache2 restart
-
-
 }
 
 setup_ngrok_connection()
@@ -292,14 +293,14 @@ main_loop()
     source ~/.bashrc
 
     setup_ssh_service
-
+    start_nextcloud
     set_passwd
 
 
 
     # ngrok
     cd `dirname $0`/bin
-    start_nextcloud
+
     setup_ngrok_connection
 
 
