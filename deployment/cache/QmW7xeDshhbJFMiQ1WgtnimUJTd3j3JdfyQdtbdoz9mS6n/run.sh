@@ -105,7 +105,7 @@ start_nextcloud()
     fi
     ip=$(curl ip.sb)
     sed -i "s/0 => [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => $ip/g" /var/www/nextcloud/config/config.php
-    sed -i "s/url' => [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/url' => $ip/g" /var/www/nextcloud/config/config.php
+    sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip/g" /var/www/nextcloud/config/config.php
    # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
     service mysql start
     redis-server /etc/redis/redis.conf
