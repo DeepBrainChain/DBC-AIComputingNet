@@ -184,6 +184,8 @@ post_config()
     sudo systemctl start restart_dbc.service
     sudo systemctl enable restart_dbc.service
     sudo chmod 777 ./dbc_repo/tool/clean_cache.sh
+    sudo systemctl restart  cron
+    sudo systemctl enable cron
     echo "dbc ai mining install finished"
     # settings to let user run docker command without sudo
     count=$(grep docker /etc/group|wc -l)
