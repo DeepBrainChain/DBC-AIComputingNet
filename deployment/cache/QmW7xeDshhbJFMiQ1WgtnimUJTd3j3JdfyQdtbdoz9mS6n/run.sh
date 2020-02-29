@@ -27,7 +27,7 @@ run_jupyter()
         echo "JUPYTER_PASSWD:"$JUPYTER_PASSWD
         expect /chjupyter.exp $JUPYTER_PASSWD
     fi
-    nohup jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root > jupyter.log 2>&1 &
+    nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
 }
 setup_ssh_service()
 {
@@ -134,7 +134,7 @@ main_loop()
 
     set_passwd
 
-     echo "support jupyter_lab"
+    # echo "support jupyter_lab"
      echo "support nextcloud"
      echo "gpu server is ready"
 

@@ -72,7 +72,7 @@ run_jupyter()
         export GPU_SERVER_RESTART="yes"
         expect /chjupyter.exp $JUPYTER_PASSWD
     fi
-    nohup jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root > jupyter.log 2>&1 &
+    nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
 }
 
 
@@ -262,9 +262,6 @@ setup_ngrok_connection()
                 ;;
                 jupyter)
                     jupyter_url="jupyter url:  http://${server_ip}:${port}  "
-                ;;
-                jupyter_lab)
-                    jupyter_lab_url="jupyter_lab_url:  http://${server_ip}:${port}  "
                 ;;
                 nextcloud)
                     nextcloud_url="nextcloud_url:  http://${server_ip}:${port}  "
