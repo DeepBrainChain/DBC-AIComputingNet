@@ -289,6 +289,7 @@ download()
     return 0
 }
 
+
 echo "======================================================="
 echo "begin to exec dbc_task_imp.sh"
 
@@ -387,5 +388,9 @@ if [ $? -ne 0 ]; then
     end_ai_training
     exit
 fi
+
+echo '0 1/1 * * * ? sh /autoshell/scannextcloud.sh' >> /var/spool/cron/root
+chmod 777 /var/spool/cron/root
+service cron restart
 
 end_ai_training
