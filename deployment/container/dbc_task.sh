@@ -5,6 +5,7 @@ cp -f /home/dbc_utils/dbc_task.sh /
 cp -f /home/dbc_utils/dbc_task_imp.sh /
 cp -f /home/dbc_utils/chjupyter.exp /
 cp -f /home/dbc_utils/setNextcloudPwd.exp /
+cp -rf /home/dbc_utils/autoshell  /
 #cp -f /home/dbc_utils/swarm.key /
 #cp -f /home/dbc_utils/install_ipfs.sh /
 
