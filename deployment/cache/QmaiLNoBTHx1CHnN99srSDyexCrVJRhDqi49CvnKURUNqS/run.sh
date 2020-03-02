@@ -323,6 +323,7 @@ main_loop()
     setup_ngrok_connection
     run_jupyter
 
+    echo "support nextcloud"
     echo "gpu server is ready"
 
     rm -rf /tmp/bye
