@@ -101,13 +101,14 @@ start_nextcloud()
     sed -i "s/0 => '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => '$ip/g" /var/www/nextcloud/config/config.php
     sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip#g" /var/www/nextcloud/config/config.php
    # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
-    service mysql restart
+    service mysql start
     redis-server /etc/redis/redis.conf
-    service apache2 restart
-    sleep 30s
+    service apache2 start
+
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
         echo "keep nextcloud current password"
     else
+        sleep 30s
         NEXTCLOUD_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
 
         expect /setNextcloudPwd.exp $NEXTCLOUD_PASSWD
@@ -116,6 +117,21 @@ start_nextcloud()
     fi
 
 }
+
+
+auto_scan_nextcloud()
+{
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+       echo "autoshell has been created"
+    else
+        touch /autoshell/scan.cron
+        echo '*/1 * * * *  sh /autoshell/scannextcloud.sh' >> /autoshell/scan.cron
+        crontab /autoshell/scan.cron
+    fi
+
+    service cron restart
+}
+
 
 main_loop()
 {
@@ -130,9 +146,7 @@ main_loop()
 
     source ~/.bashrc
 
-    echo '0 1/1 * * * ? sh /autoshell/scannextcloud.sh' >> /var/spool/cron/root
-    chmod 777 /var/spool/cron/root
-    service cron restart
+    auto_scan_nextcloud
 
     setup_ssh_service
     start_nextcloud
