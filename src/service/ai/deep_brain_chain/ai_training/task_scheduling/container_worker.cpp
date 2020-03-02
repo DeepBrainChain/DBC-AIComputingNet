@@ -382,6 +382,27 @@ namespace ai
                             LOG_INFO<< "cpu_shares: " << cpu_shares;
                         }
 
+                        LOG_INFO<< "pt.count(\"cpu_period\"):" << pt.count("cpu_period");
+                        if(pt.count("cpu_period")!=0){
+
+
+
+                            int32_t cpu_period = pt.get<int32_t>("cpu_period");
+                            config->cpu_period = cpu_period;
+                            LOG_INFO<< "cpu_period: " << cpu_period;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpu_quota\"):" << pt.count("cpu_quota");
+                        if(pt.count("cpu_quota")!=0){
+
+
+
+                            int32_t cpu_quota = pt.get<int32_t>("cpu_quota");
+                            config->cpu_quota = cpu_quota;
+                            LOG_INFO<< "cpu_quota: " << cpu_quota;
+                        }
+
+
                         LOG_INFO<< "pt.count(\"gpus\"):" << pt.count("gpus");
                         if(pt.count("gpus")!=0){
 
@@ -680,6 +701,28 @@ namespace ai
                             LOG_INFO<< "cpu_shares: " << cpu_shares;
                         }
 
+
+                        LOG_INFO<< "pt.count(\"cpu_period\"):" << pt.count("cpu_period");
+                        if(pt.count("cpu_period")!=0){
+
+
+
+                            int32_t cpu_period = pt.get<int32_t>("cpu_period");
+                            config->host_config.cpu_period = cpu_period;
+                            LOG_INFO<< "cpu_period: " << cpu_period;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpu_quota\"):" << pt.count("cpu_quota");
+                        if(pt.count("cpu_quota")!=0){
+
+
+
+                            int32_t cpu_quota = pt.get<int32_t>("cpu_quota");
+                            config->host_config.cpu_quota = cpu_quota;
+                            LOG_INFO<< "cpu_quota: " << cpu_quota;
+                        }
+
+
                         LOG_INFO<< "pt.count(\"autodbcimage_version\"):" << pt.count("autodbcimage_version");
                         if(pt.count("autodbcimage_version")!=0){
 
@@ -951,6 +994,26 @@ namespace ai
                             int32_t cpu_shares = pt.get<int32_t>("cpu_shares");
                             config->host_config.cpu_shares = cpu_shares;
                             LOG_INFO<< "cpu_shares: " << cpu_shares;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpu_period\"):" << pt.count("cpu_period");
+                        if(pt.count("cpu_period")!=0){
+
+
+
+                            int32_t cpu_period = pt.get<int32_t>("cpu_period");
+                            config->host_config.cpu_period = cpu_period;
+                            LOG_INFO<< "cpu_period: " << cpu_period;
+                        }
+
+                        LOG_INFO<< "pt.count(\"cpu_quota\"):" << pt.count("cpu_quota");
+                        if(pt.count("cpu_quota")!=0){
+
+
+
+                            int32_t cpu_quota = pt.get<int32_t>("cpu_quota");
+                            config->host_config.cpu_quota = cpu_quota;
+                            LOG_INFO<< "cpu_quota: " << cpu_quota;
                         }
 
                         LOG_INFO<< "pt.count(\"disk_quota\"):" << pt.count("disk_quota");
