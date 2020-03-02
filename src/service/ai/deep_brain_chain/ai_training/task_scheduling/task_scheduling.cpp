@@ -434,6 +434,9 @@ namespace ai
                 return E_DEFAULT;
             }
 
+            if(CONTAINER_WORKER_IF->exist_container(task->task_id)!=E_CONTAINER_NOT_FOUND){
+                CONTAINER_WORKER_IF->remove_container(task->task_id);
+            }
 
             std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
             std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id,"");
