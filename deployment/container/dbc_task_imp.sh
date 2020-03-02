@@ -389,8 +389,6 @@ if [ $? -ne 0 ]; then
     exit
 fi
 
-echo '0 1/1 * * * ? sh /autoshell/scannextcloud.sh' >> /var/spool/cron/root
-chmod 777 /var/spool/cron/root
-service cron restart
+
 
 end_ai_training

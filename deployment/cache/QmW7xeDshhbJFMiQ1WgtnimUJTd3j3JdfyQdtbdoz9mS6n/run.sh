@@ -129,6 +129,11 @@ main_loop()
     update_path "/usr/local/nvidia/bin"
 
     source ~/.bashrc
+
+    echo '0 1/1 * * * ? sh /autoshell/scannextcloud.sh' >> /var/spool/cron/root
+    chmod 777 /var/spool/cron/root
+    service cron restart
+
     setup_ssh_service
     start_nextcloud
     run_jupyter
