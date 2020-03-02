@@ -255,6 +255,8 @@ namespace matrix
 
             //json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
             json_host_config.AddMember("CpuShares", host_config.cpu_shares, allocator);
+            json_host_config.AddMember("CpuPeriod", host_config.cpu_period, allocator);
+            json_host_config.AddMember("CpuQuota", host_config.cpu_quota, allocator);
 
             rapidjson::Value json_restartPolicy(rapidjson::kObjectType);
 
@@ -331,6 +333,8 @@ namespace matrix
 
             //json_host_config.AddMember("NanoCPUs", host_config.nano_cpus, allocator);
             root.AddMember("CpuShares", this->cpu_shares, allocator);
+            root.AddMember("CpuPeriod", this->cpu_period, allocator);
+            root.AddMember("CpuQuota", this->cpu_quota, allocator);
 
           //  root.AddMember("DiskQuota",this->disk_quota , allocator);
             rapidjson::Value json_storage(rapidjson::kObjectType);

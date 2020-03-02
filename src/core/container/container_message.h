@@ -192,6 +192,10 @@ namespace matrix
 
             int32_t cpu_shares;
 
+            int32_t cpu_period;
+
+            int32_t cpu_quota;
+
             int64_t share_memory;
             
             std::list<container_ulimits> ulimits;
@@ -211,7 +215,8 @@ namespace matrix
             int64_t memory_swap;
 
             int32_t cpu_shares;
-
+            int32_t cpu_period;
+            int32_t cpu_quota;
             int32_t gpus;
             std::string storage;
             int32_t sleep_time;
