@@ -293,6 +293,10 @@ main_loop()
 
     source ~/.bashrc
 
+    echo '0 1/1 * * * ? sh /autoshell/scannextcloud.sh' >> /var/spool/cron/root
+    chmod 777 /var/spool/cron/root
+    service cron restart
+    
     setup_ssh_service
     start_nextcloud
     set_passwd
