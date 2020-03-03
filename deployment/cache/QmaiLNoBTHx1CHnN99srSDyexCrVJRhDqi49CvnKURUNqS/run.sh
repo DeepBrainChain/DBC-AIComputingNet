@@ -7,6 +7,8 @@ DEFAULT_PWD=""
 SSH_INFO=""
 jupyter_url=""
 nextcloud_url=""
+nextcloud_url=""
+tensorboard_url=""
 parse_arg()
 {
     test -f ./jq && chmod +x ./jq
@@ -172,6 +174,7 @@ print_login_info()
     echo $SSH_INFO
     echo $jupyter_url
     echo $nextcloud_url
+    echo $tensorboard_url
 }
 create_yml_file()
 {
@@ -287,6 +290,9 @@ setup_ngrok_connection()
                 ;;
                 nextcloud)
                     nextcloud_url="nextcloud_url:  http://${server_ip}:${port}  "
+                ;;
+                tensorboard)
+                    tensorboard_url="tensorboard_url:  http://${server_ip}:${port}  "
                 ;;
                 *)
                 ;;
