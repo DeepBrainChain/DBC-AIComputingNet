@@ -127,6 +127,7 @@ auto_scan_nextcloud()
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
        echo "autoshell has been created"
     else
+        /etc/init.d/cron restart
         touch /autoshell/scan.cron
         echo '*/1 * * * *  sh /autoshell/scannextcloud.sh' >> /autoshell/scan.cron
         crontab /autoshell/scan.cron
