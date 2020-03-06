@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.7.2
+release_version=0.3.7.3
 host=$(hostname)
 
 
