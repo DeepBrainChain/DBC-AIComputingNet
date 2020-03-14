@@ -276,8 +276,9 @@ setup_ngrok_connection()
 
             screen -d -m bash ./startapp ./${service}.yml $service $token
 
-            echo  "ps -ef|grep \"./ngrok -config=./{$service}.yml\" | awk '{print  $2}'| xargs  kill -9"  >> restart_ngrok/create_ngrok.sh
-            echo  "screen -d -m bash ./startapp ./${service}.yml $service $token"  >> restart_ngrok/create_ngrok.sh
+           
+            echo  " ps -ef|grep \"./ngrok -config=./$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> restart_ngrok/create_ngrok.sh
+            echo  " screen -d -m bash ./startapp ./${service}.yml $service $token"  >> restart_ngrok/create_ngrok.sh
 
             if print_tcp_port $port_http; then
                 echo "map $service to ${server_ip}:${port}"
