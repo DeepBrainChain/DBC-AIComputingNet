@@ -7,8 +7,8 @@ if [ -z "$conf" ]; then
      echo "startapp <.yml>"
      exit 1
 fi
-log=$(basename $conf)
+#log=$(basename $conf)
 
-if [ ! -d ./logs ]; then mkdir ./logs; fi
+#if [ ! -d ./logs ]; then mkdir ./logs; fi
 
-./ngrok  -config=$conf -authtoken=$token start $target
+ngrok  -config=$conf -authtoken=$token start $target
