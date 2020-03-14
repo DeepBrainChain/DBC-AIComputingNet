@@ -241,11 +241,11 @@ setup_ngrok_connection()
 {
     test -f ./ngrok && chmod +x ./ngrok
 
-    if [  -f "restart_ngrok/create_ngrok.sh" ]; then
-        rm    restart_ngrok/create_ngrok.sh
-        touch restart_ngrok/create_ngrok.sh
+    if [  -f "create_ngrok.sh" ]; then
+        rm    create_ngrok.sh
+        touch create_ngrok.sh
     else
-        touch restart_ngrok/create_ngrok.sh
+        touch create_ngrok.sh
     fi
 
     # for each server, for each port, do port proxy
@@ -274,11 +274,11 @@ setup_ngrok_connection()
 
             cat ${service}.yml
 
-            screen -d -m bash ./startapp ./${service}.yml $service $token
+            screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token
 
-           
-            echo  " ps -ef|grep \"./ngrok -config=./$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> restart_ngrok/create_ngrok.sh
-            echo  " screen -d -m bash ./startapp ./${service}.yml $service $token"  >> restart_ngrok/create_ngrok.sh
+
+            echo  " ps -ef|grep \"./ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_ngrok.sh
+            echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ngrok.sh
 
             if print_tcp_port $port_http; then
                 echo "map $service to ${server_ip}:${port}"
@@ -302,9 +302,9 @@ setup_ngrok_connection()
                     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
                         echo "autoshell expect check_ngrok.exp has been created"
                     else
-
-                        echo "*/1 * * * *  expect /dbc/code/bin/restart_ngrok/check_ngrok.exp ${server_ip} ${port}" >> /autoshell/scan.cron
-
+                        touch /autoshell/check_ngrok.cron
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_ngrok.exp ${server_ip} ${port}" >> /autoshell/check_ngrok.cron
+                        crontab /autoshell/check_ngrok.cron
                     fi
 
                 ;;
@@ -319,8 +319,8 @@ setup_ngrok_connection()
                 ;;
                 vnc)
                     vnc_url="tensorboard_url:  http://${server_ip}:${port}  "
-                    echo "sleep 8s" >> restart_ngrok/create_ngrok.sh
-                    echo "succuss" >>  restart_ngrok/create_ngrok.sh
+                    echo "sleep 8s" >>  create_ngrok.sh
+
 
                 ;;
                 *)
@@ -340,7 +340,7 @@ main_loop()
     # update .basrc
     append_to_bashrc "export IPFS_PATH=/dbc/.ipfs"
     append_to_bashrc "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
-    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin"
+    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin:/dbc/code/bin"
     update_path "/usr/local/nvidia/bin"
 
 
