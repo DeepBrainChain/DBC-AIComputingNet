@@ -231,7 +231,7 @@ auto_scan_nextcloud()
         /etc/init.d/cron restart
         touch /autoshell/scan.cron
         echo "*/1 * * * *  sh /autoshell/scannextcloud.sh" >> /autoshell/scan.cron
-        crontab /autoshell/scan.cron
+
     fi
 
     service cron restart
@@ -302,9 +302,9 @@ setup_ngrok_connection()
                     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
                         echo "autoshell expect check_ngrok.exp has been created"
                     else
-                        touch /autoshell/check_ngrok.cron
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_ngrok.exp ${server_ip} ${port}" >> /autoshell/check_ngrok.cron
-                        crontab /autoshell/check_ngrok.cron
+
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_ngrok.exp ${server_ip} ${port}" >> /autoshell/scan.cron
+                        crontab /autoshell/scan.cron
                     fi
 
                 ;;
