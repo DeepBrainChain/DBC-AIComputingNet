@@ -175,6 +175,7 @@ print_login_info()
     echo $jupyter_url
     echo $nextcloud_url
     echo $tensorboard_url
+    echo $vnc_url
 }
 create_yml_file()
 {
@@ -229,7 +230,7 @@ auto_scan_nextcloud()
 
         /etc/init.d/cron restart
         touch /autoshell/scan.cron
-        echo '*/1 * * * *  sh /autoshell/scannextcloud.sh' >> /autoshell/scan.cron
+        echo "*/1 * * * *  sh /autoshell/scannextcloud.sh" >> /autoshell/scan.cron
         crontab /autoshell/scan.cron
     fi
 
@@ -239,6 +240,13 @@ auto_scan_nextcloud()
 setup_ngrok_connection()
 {
     test -f ./ngrok && chmod +x ./ngrok
+
+    if [  -f "restart_ngrok/create_ngrok.sh" ]; then
+        rm    restart_ngrok/create_ngrok.sh
+        touch restart_ngrok/create_ngrok.sh
+    else
+        touch restart_ngrok/create_ngrok.sh
+    fi
 
     # for each server, for each port, do port proxy
     for i in "${!server_ips[@]}"
@@ -268,6 +276,9 @@ setup_ngrok_connection()
 
             screen -d -m bash ./startapp ./${service}.yml $service $token
 
+            echo  "ps -ef|grep \"./ngrok -config=./{$service}.yml\" | awk '{print  $2}'| xargs  kill -9"  >> restart_ngrok/create_ngrok.sh
+            echo  "screen -d -m bash ./startapp ./${service}.yml $service $token"  >> restart_ngrok/create_ngrok.sh
+
             if print_tcp_port $port_http; then
                 echo "map $service to ${server_ip}:${port}"
 
@@ -286,6 +297,15 @@ setup_ngrok_connection()
             case $service in
                 ssh)
                     SSH_INFO="ssh_login_info: ssh -p ${port} root@${server_ip}; pwd:"${DEFAULT_PWD}
+
+                    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+                        echo "autoshell expect check_ngrok.exp has been created"
+                    else
+
+                        echo "*/1 * * * *  expect /dbc/code/bin/restart_ngrok/check_ngrok.exp ${server_ip} ${port}" >> /autoshell/scan.cron
+
+                    fi
+
                 ;;
                 jupyter)
                     jupyter_url="jupyter url:  http://${server_ip}:${port}  "
@@ -295,6 +315,12 @@ setup_ngrok_connection()
                 ;;
                 tensorboard)
                     tensorboard_url="tensorboard_url:  http://${server_ip}:${port}  "
+                ;;
+                vnc)
+                    vnc_url="tensorboard_url:  http://${server_ip}:${port}  "
+                    echo "sleep 8s" >> restart_ngrok/create_ngrok.sh
+                    echo "succuss" >>  restart_ngrok/create_ngrok.sh
+
                 ;;
                 *)
                 ;;
