@@ -604,7 +604,7 @@ namespace ai
                 // relay on stop_training to network
                 // not support task running on multiple nodes
                 LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
-                LOG_INFO << "force stop training" << task_id << endl;
+                LOG_INFO << "force stop training:" << task_id << endl;
                 return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
 
 
