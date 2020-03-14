@@ -277,7 +277,7 @@ setup_ngrok_connection()
             screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token
 
 
-            echo  " ps -ef|grep \"./ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_ngrok.sh
+            echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_ngrok.sh
             echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ngrok.sh
 
             if print_tcp_port $port_http; then
