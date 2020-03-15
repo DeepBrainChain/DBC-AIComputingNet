@@ -29,6 +29,7 @@
 #include <boost/filesystem.hpp>
 #include "container_client.h"
 
+#include "document.h"
 namespace bpo = boost::program_options;
 
 namespace service
@@ -46,7 +47,8 @@ namespace service
             "docker ps",
             "nvidia-smi"
             "container_size"
-            "runnning"
+            "running"
+            "task_runing"
         };
 
         static const std::string dynamic_attrs[] = {
@@ -246,11 +248,22 @@ namespace service
             // read more node info from conf
             std::string node_info_file_path = env_manager::get_home_path().generic_string() + "/.dbc_node_info.conf";
             read_node_static_info(node_info_file_path);
-
+            init_db("prov_training_task.db");
             return E_SUCCESS;
         }
 
+        int32_t node_info_collection::init_db(std::string db_name)
+        {
+            auto rtn = m_task_db.init_db(env_manager::get_db_path(),db_name);
+            if (E_SUCCESS != rtn)
+            {
+                LOG_ERROR << "linit_db error: ";
+                return rtn;
+            }
 
+            return E_SUCCESS;
+
+        }
         void node_info_collection::refresh()
         {
             if(!is_linux_os())
@@ -388,7 +401,7 @@ namespace service
                 return "keyword overlength";
             }
 
-            if (!m_kvs.count(k) && k.find("container_size")== string::npos && k.find("running")== string::npos)
+            if (!m_kvs.count(k) && k.find("container_size")== string::npos && k.find("running")== string::npos && k.find("task_runing")== string::npos )
             {
                 return "unknown keyword";
             }
@@ -409,13 +422,22 @@ namespace service
                 return get_container(list[1]);
             }
 
-            if(k.compare("running")==0){
+            if(k.compare("running")==0){//查询正在运行的镜像
 
                 LOG_INFO << "come in  running container " ;
                 std::vector<std::string> list;
 
 
                 return get_running_container();
+            }
+
+            if(k.compare("task_runing")==0){//查询正在运行的任务，是指dbc系统中运行的任务
+
+                LOG_INFO << "come in  runing task" ;
+                std::vector<std::string> list;
+
+
+                return get_tasks_runing();
             }
 
             // support debug commands
@@ -431,6 +453,55 @@ namespace service
 
             return v;
         }
+
+
+        std::string node_info_collection::get_tasks_runing()
+        {
+
+            auto rtn = m_task_db.load_user_task(m_training_tasks);
+            if (rtn != E_SUCCESS)
+            {
+                return "";
+            }
+
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+            rapidjson::Value root(rapidjson::kArrayType);
+            for (auto item: m_training_tasks)
+            {
+                auto task = item.second;
+                //
+                // support tasks run concurrently
+                //
+                 if (4 == task->status )//runing
+                {
+
+                        if (!task->task_id.empty())
+                        {
+
+                            rapidjson::Value task_id(rapidjson::kObjectType);
+                            task_id.AddMember("task_id", STRING_DUP(task->task_id), allocator);
+                            LOG_INFO << "get_tasks_runing " <<task->task_id;
+                            root.PushBack(task_id.Move(), allocator);
+
+                        }
+
+                }
+            }
+
+
+
+
+            std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+            root.Accept(writer);
+            std::string tasks_runing=std::string(buffer->GetString());
+            LOG_INFO << "get_tasks_runing " <<tasks_runing;
+            return tasks_runing;
+        }
+
+
 
         std::string node_info_collection::get_container(std::string container_name){
 
