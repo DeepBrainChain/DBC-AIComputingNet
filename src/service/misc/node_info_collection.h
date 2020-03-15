@@ -14,9 +14,10 @@
 #include <map>
 #include <string>
 #include <vector>
-
+#include "db/ai_db_types.h"
 #include <boost/serialization/singleton.hpp>
 #include <time.h>
+#include "db/ai_provider_task_db.h"
 
 using namespace boost::serialization;
 
@@ -57,7 +58,7 @@ namespace service
             void set_node_startup_time();
 
             int32_t read_node_static_info(std::string fn);
-
+            std::string get_tasks_runing();
             std::string get_gpu_short_desc();
 
         public:
@@ -69,11 +70,13 @@ namespace service
             std::string pretty_state(std::string v);
             std::string get_container(std::string container_name);
             std::string get_running_container();
+            int32_t init_db(std::string db_name);
 
         private:
             std::map<std::string, std::string> m_kvs;
-
+            ai::dbc::ai_provider_task_db m_task_db;
             bash_interface m_shell;
+            std::unordered_map<std::string, std::shared_ptr<ai::dbc::ai_training_task>> m_training_tasks;
 
         };
 

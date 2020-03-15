@@ -595,6 +595,9 @@ namespace ai
                     return E_DEFAULT;
                 }
                 LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
+                if(sp_task->status == task_stopped ){
+                    m_user_task_ptr->stop_task_only_id(task_id);//强制停止
+                }
                 return m_user_task_ptr->stop_task(sp_task, task_stopped);
             }
             else
@@ -605,13 +608,13 @@ namespace ai
                 // not support task running on multiple nodes
                 LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
                 LOG_INFO << "force stop training:" << task_id << endl;
-                return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
+               // return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
 
 
                // CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
             }
 
-           // return E_SUCCESS;
+            return E_SUCCESS;
         }
 
         int32_t ai_power_provider_service::on_list_training_req(std::shared_ptr<message> &msg)
