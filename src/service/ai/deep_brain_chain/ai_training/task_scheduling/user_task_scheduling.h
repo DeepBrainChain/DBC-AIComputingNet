@@ -24,13 +24,13 @@
 #include "task_scheduling.h"
 #include "oss_task_manager.h"
 #include "resource/gpu_pool.h"
-
+#include "server_initiator.h"
 using namespace std;
 using namespace matrix::core;
 
 #define MAX_TASK_COUNT 200000
 #define MAX_PRUNE_TASK_COUNT 160000
-
+extern std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
 //used to interactive with remote system
 namespace ai
 {
@@ -77,16 +77,16 @@ namespace ai
 
             std::string get_active_tasks();
 
-           // static  std::map< std::string, std::shared_ptr<ai_training_task> > & get_running_tasks() { return m_running_tasks; }
-
+       //     static  std::map< std::string, std::shared_ptr<ai_training_task> >  get_running_tasks() { return m_running_tasks; }
+       //     static std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
             int32_t prune_task(int16_t interval);
 
         protected:
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
-           // static std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
-            std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
+
+           // std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
         private:
             auth_task_handler m_auth_task_handler;
             stop_idle_task_handler m_stop_idle_task_handler;

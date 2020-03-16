@@ -28,7 +28,7 @@
 
 #include <boost/filesystem.hpp>
 #include "container_client.h"
-#include "service/ai/deep_brain_chain/ai_training/task_scheduling/user_task_scheduling.h"
+
 #include "document.h"
 namespace bpo = boost::program_options;
 
@@ -420,13 +420,13 @@ namespace service
                 return get_running_container();
             }
 
-         /*   if(k.compare("task_runing")==0){//查询正在运行的任务，是指dbc系统中运行的任务
+            if(k.compare("task_runing")==0){//查询正在运行的任务，是指dbc系统中运行的任务
 
                 LOG_INFO << "come in  runing task" ;
 
 
                 return get_tasks_runing();
-            }*/
+            }
 
             // support debug commands
             for(auto& each: debug_cmds)
@@ -443,10 +443,10 @@ namespace service
         }
 
 
-     /*   std::string node_info_collection::get_tasks_runing()
+        std::string node_info_collection::get_tasks_runing()
         {
 
-            m_running_tasks=ai::dbc::user_task_scheduling::get_running_tasks();
+
 
             rapidjson::Document document;
             rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
@@ -484,7 +484,7 @@ namespace service
             std::string tasks_runing=std::string(buffer->GetString());
             LOG_INFO << "get_tasks_runing " <<tasks_runing;
             return tasks_runing;
-        }*/
+        }
 
 
 
