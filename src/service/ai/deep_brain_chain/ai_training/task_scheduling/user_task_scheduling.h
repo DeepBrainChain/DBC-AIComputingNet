@@ -77,7 +77,7 @@ namespace ai
 
             std::string get_active_tasks();
 
-            static  std::map< std::string, std::shared_ptr<ai_training_task> > & get_running_tasks() { return m_running_tasks; }
+           // static  std::map< std::string, std::shared_ptr<ai_training_task> > & get_running_tasks() { return m_running_tasks; }
 
         private:
             int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
@@ -85,7 +85,8 @@ namespace ai
 
         protected:
             std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
-            static std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
+           // static std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
+            std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
         private:
             auth_task_handler m_auth_task_handler;
             stop_idle_task_handler m_stop_idle_task_handler;

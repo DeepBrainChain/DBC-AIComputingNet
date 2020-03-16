@@ -59,7 +59,7 @@ namespace service
             void set_node_startup_time();
 
             int32_t read_node_static_info(std::string fn);
-            std::string get_tasks_runing();
+          //  std::string get_tasks_runing();
             std::string get_gpu_short_desc();
 
         public:
@@ -78,7 +78,7 @@ namespace service
 
             bash_interface m_shell;
 
-            std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
+          //  std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
         };
 
     }
