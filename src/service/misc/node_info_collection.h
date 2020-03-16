@@ -14,10 +14,11 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "db/ai_db_types.h"
+
+#include "service/ai/deep_brain_chain/ai_training/db/ai_db_types.h"
 #include <boost/serialization/singleton.hpp>
 #include <time.h>
-#include "db/ai_provider_task_db.h"
+
 
 using namespace boost::serialization;
 
@@ -74,10 +75,10 @@ namespace service
 
         private:
             std::map<std::string, std::string> m_kvs;
-            ai::dbc::ai_provider_task_db m_task_db;
-            bash_interface m_shell;
-            std::unordered_map<std::string, std::shared_ptr<ai::dbc::ai_training_task>> m_training_tasks;
 
+            bash_interface m_shell;
+
+            std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
         };
 
     }
