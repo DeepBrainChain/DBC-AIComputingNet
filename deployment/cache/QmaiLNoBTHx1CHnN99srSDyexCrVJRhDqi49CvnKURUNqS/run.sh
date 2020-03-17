@@ -229,6 +229,10 @@ auto_scan_nextcloud()
     else
 
         /etc/init.d/cron restart
+        if [  -f "/autoshell/scan.cron" ]; then
+            rm /autoshell/scan.cron
+        fi
+
         touch /autoshell/scan.cron
         echo "*/1 * * * *  sh /autoshell/scannextcloud.sh" >> /autoshell/scan.cron
 
