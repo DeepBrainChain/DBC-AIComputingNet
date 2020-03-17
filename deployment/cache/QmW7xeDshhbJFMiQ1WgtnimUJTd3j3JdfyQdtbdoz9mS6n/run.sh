@@ -128,6 +128,9 @@ auto_scan_nextcloud()
        echo "autoshell has been created"
     else
         /etc/init.d/cron restart
+        if [  -f "/autoshell/scan.cron" ]; then
+            rm /autoshell/scan.cron
+        fi
         touch /autoshell/scan.cron
         echo '*/1 * * * *  sh /autoshell/scannextcloud.sh' >> /autoshell/scan.cron
         crontab /autoshell/scan.cron
