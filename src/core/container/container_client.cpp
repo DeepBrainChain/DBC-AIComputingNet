@@ -1676,7 +1676,7 @@ namespace matrix
             //endpoint
             std::string endpoint = "/containers/json?";
              endpoint +="size=false";
-            endpoint += boost::str(boost::format("filters={\"status\":[\"running\"]}") );
+            endpoint += boost::str(boost::format("&filters={\"status\":[\"running\"]}") );
 
             //headers, resp
             kvs headers;
