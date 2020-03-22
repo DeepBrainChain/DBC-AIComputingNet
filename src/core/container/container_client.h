@@ -86,6 +86,8 @@ namespace matrix
             std::string get_container_id(std::string container_name);
             std::string commit_image(std::string container_id,std::string version,std::string task_id,int32_t sleep_time);
             int32_t exist_container_time(const std::string & container_name,int32_t sleep_time);
+            std::string get_running_container_size(std::string id);
+            std::string get_running_container_no_size();
         protected:
 
             http_client m_http_client;
