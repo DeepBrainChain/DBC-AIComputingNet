@@ -1554,7 +1554,7 @@ namespace matrix
             //endpoint
             std::string endpoint = "/containers/json?";
             endpoint +="size=true";
-            endpoint += boost::str(boost::format("&filters={\"id\":["+id+"]}") );
+            endpoint += boost::str(boost::format("&filters={\"id\":[\""+id+"\"]}") );
             LOG_INFO << "get running container  id: " << id;
             //headers, resp
             kvs headers;
@@ -1762,15 +1762,15 @@ namespace matrix
                     container.AddMember("Created", Created_int64, allocator);
 
 
-                    rapidjson::Value::ConstMemberIterator SizeRw =itr->FindMember("SizeRw");
-                    int64_t SizeRw_int64=SizeRw->value.GetInt64();
+                  //  rapidjson::Value::ConstMemberIterator SizeRw =itr->FindMember("SizeRw");
+                  //  int64_t SizeRw_int64=SizeRw->value.GetInt64();
 
-                    container.AddMember("SizeRw", SizeRw_int64, allocator);
+                  //  container.AddMember("SizeRw", SizeRw_int64, allocator);
 
 
-                    rapidjson::Value::ConstMemberIterator SizeRootFs = itr->FindMember("SizeRootFs");
-                    int64_t SizeRootFs_int64=SizeRootFs->value.GetInt64();
-                    container.AddMember("SizeRootFs", SizeRootFs_int64, allocator);
+                  //  rapidjson::Value::ConstMemberIterator SizeRootFs = itr->FindMember("SizeRootFs");
+                 //   int64_t SizeRootFs_int64=SizeRootFs->value.GetInt64();
+                 //   container.AddMember("SizeRootFs", SizeRootFs_int64, allocator);
 
                     root.PushBack(container.Move(), allocator);
 
