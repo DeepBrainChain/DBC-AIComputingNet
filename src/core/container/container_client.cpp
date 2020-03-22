@@ -1554,7 +1554,7 @@ namespace matrix
             //endpoint
             std::string endpoint = "/containers/json?";
             endpoint +="all=true";
-            endpoint +="size=true";
+            endpoint +="&size=true";
             endpoint += boost::str(boost::format("&filters={\"id\":[\""+id+"\"]}") );
             LOG_INFO << "get  container  id: " << id;
             //headers, resp
