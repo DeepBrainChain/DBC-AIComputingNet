@@ -434,7 +434,7 @@ namespace service
                 std::vector<std::string> list;
                 string_util::split(k, "=", list);
 
-                return get_running_container_size( list[1]);
+                return get_container_size( list[1]);
             }
 
             // support debug commands
@@ -516,13 +516,13 @@ namespace service
             return m_container_client->get_running_container_no_size();
         }
 
-        std::string node_info_collection::get_running_container_size(std::string id){
+        std::string node_info_collection::get_container_size(std::string id){
 
             std::shared_ptr<container_client> m_container_client = nullptr;
             std::string m_container_ip=DEFAULT_LOCAL_IP;
             uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
             m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
-            return m_container_client->get_running_container_size(id);
+            return m_container_client->get_container_size(id);
         }
 
 
