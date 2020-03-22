@@ -1673,7 +1673,7 @@ namespace matrix
         std::string container_client::get_running_container_no_size()
         {
             //endpoint
-            std::string endpoint = "/containers/json";
+            std::string endpoint = "/containers/json?";
              endpoint +="size=false";
             endpoint += boost::str(boost::format("filters={\"status\":[\"running\"]}") );
 
