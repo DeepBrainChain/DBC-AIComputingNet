@@ -1674,8 +1674,8 @@ namespace matrix
         {
             //endpoint
             std::string endpoint = "/containers/json";
-            // endpoint +="size=true";
-           // endpoint += boost::str(boost::format("filters={\"status\":[\"running\"]}") );
+             endpoint +="size=false";
+            endpoint += boost::str(boost::format("filters={\"status\":[\"running\"]}") );
 
             //headers, resp
             kvs headers;
@@ -1731,7 +1731,7 @@ namespace matrix
                 {
                     return "";
                 }
-                if (!itr->HasMember("SizeRw")) {
+                if (!itr->HasMember("Id")) {
                     continue;
                 }else{
                     rapidjson::Value container(rapidjson::kObjectType);
