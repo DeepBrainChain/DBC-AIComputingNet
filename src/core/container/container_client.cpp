@@ -1555,7 +1555,7 @@ namespace matrix
             std::string endpoint = "/containers/json?";
             endpoint +="size=true";
             endpoint += boost::str(boost::format("&filters={\"id\":["+id+"]}") );
-
+            LOG_INFO << "get running container  id: " << id;
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
@@ -1673,9 +1673,9 @@ namespace matrix
         std::string container_client::get_running_container_no_size()
         {
             //endpoint
-            std::string endpoint = "/containers/json?";
+            std::string endpoint = "/containers/json";
             // endpoint +="size=true";
-            endpoint += boost::str(boost::format("filters={\"status\":[\"running\"]}") );
+           // endpoint += boost::str(boost::format("filters={\"status\":[\"running\"]}") );
 
             //headers, resp
             kvs headers;

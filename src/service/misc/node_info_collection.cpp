@@ -430,7 +430,7 @@ namespace service
 
             if(k.find("=")!= string::npos){
 
-                LOG_INFO << "come in  get container size" ;
+                LOG_INFO << "come in  get container size "<< k ;
                 std::vector<std::string> list;
                 string_util::split(k, "=", list);
 
