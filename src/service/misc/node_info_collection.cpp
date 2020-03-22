@@ -392,7 +392,7 @@ namespace service
 
             if (!m_kvs.count(k) && k.find("container_size")== string::npos && k.find("running")== string::npos && k.find("task_runing")== string::npos )
             {
-                return "unknown keyword";
+              //  return "unknown keyword";
             }
 
 
@@ -426,6 +426,15 @@ namespace service
 
 
                 return get_tasks_runing();
+            }
+
+            if(k.find("=")!= string::npos){
+
+                LOG_INFO << "come in  get container size" ;
+                std::vector<std::string> list;
+                string_util::split(k, "=", list);
+
+                return get_running_container_size( list[1]);
             }
 
             // support debug commands
@@ -504,7 +513,16 @@ namespace service
             std::string m_container_ip=DEFAULT_LOCAL_IP;
             uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
             m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
-            return m_container_client->get_running_container();
+            return m_container_client->get_running_container_no_size();
+        }
+
+        std::string node_info_collection::get_running_container_size(std::string id){
+
+            std::shared_ptr<container_client> m_container_client = nullptr;
+            std::string m_container_ip=DEFAULT_LOCAL_IP;
+            uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
+            m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
+            return m_container_client->get_running_container_size(id);
         }
 
 
