@@ -1549,13 +1549,14 @@ namespace matrix
 
 
 
-        std::string container_client::get_running_container_size(std::string id)
+        std::string container_client::get_container_size(std::string id)
         {
             //endpoint
             std::string endpoint = "/containers/json?";
+            endpoint +="all=true";
             endpoint +="size=true";
             endpoint += boost::str(boost::format("&filters={\"id\":[\""+id+"\"]}") );
-            LOG_INFO << "get running container  id: " << id;
+            LOG_INFO << "get  container  id: " << id;
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
@@ -1568,14 +1569,14 @@ namespace matrix
             }
             catch (const std::exception & e)
             {
-                LOG_ERROR << "get running  containers error: " << endpoint<<e.what();
+                LOG_ERROR << "get container error: " << endpoint<<e.what();
                 return "error";
             }
 
 
             if (E_SUCCESS != ret)
             {
-                LOG_INFO << "get running containers  info failed: " << resp.body;
+                LOG_INFO << "get  container  info failed: " << resp.body;
                 return "error";
             }
 
@@ -1588,11 +1589,11 @@ namespace matrix
             rapidjson::Document doc;
             if (doc.Parse<0>(resp.body.c_str()).HasParseError())
             {
-                LOG_ERROR << "get running containers  error:" << GetParseError_En(doc.GetParseError());
+                LOG_ERROR << "get  container  error:" << GetParseError_En(doc.GetParseError());
                 return "";
             }
 
-            LOG_INFO << "get running containers success: " << endpoint;
+            LOG_INFO << "get container success: " << endpoint;
             //  LOG_INFO << "body " << resp.body;
 
             rapidjson::Document document;
@@ -1663,9 +1664,9 @@ namespace matrix
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
-            std::string new_containers=std::string(buffer->GetString());
-            LOG_INFO << "new_containers " <<new_containers;
-            return new_containers;
+            std::string container=std::string(buffer->GetString());
+            LOG_INFO << "container " <<container;
+            return container;
         }
 
 
