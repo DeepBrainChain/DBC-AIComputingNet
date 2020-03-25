@@ -64,14 +64,14 @@ function get_gpu_bandwidth {
     v=$($DIR/bandwidthTest --device=$1 --htod --csv | grep bandwidth |awk -F "," '{print $2}' | awk -F "=" '{print $2}'|xargs| awk '{print $1}')
 
     if [ "$v" != "" ]; then
-        x=$(python -c "print ($v*1000)")
+        x=$(python3 -c "print ($v*1000)")
         gpu_bandwidth_h2d=$(printf "%.0f" $x)
     fi
 
     v=$($DIR/bandwidthTest --device=$1 --dtod --csv | grep bandwidth |awk -F "," '{print $2}' | awk -F "=" '{print $2}'|xargs | awk '{print $1}')
 
     if [ "$v" != "" ]; then
-        x=$(python -c "print ($v*1000)")
+        x=$(python3 -c "print ($v*1000)")
         gpu_bandwidth_d2d=$(printf "%.0f" $x)
     fi
 
@@ -111,7 +111,7 @@ function speed_test {
     fn=/tmp/dbc_speedtest.log
 
     echo > $fn
-    python $DIR/speedtest.py > $fn
+    python3 $DIR/speedtest.py > $fn
 
     speed_download=$(grep "Download:" /tmp/dbc_speedtest.log | awk -F ": " '{print $2}'|awk '{print $1}')
 
@@ -158,10 +158,10 @@ function get_disk_info {
     disk_speed_unit=$(echo $v | awk '{print $NF}')
 
     if [ "${disk_speed_unit}" == "GB/s" ]; then
-        x=$(python -c "print ($disk_speed*1000*1000)")
+        x=$(python3 -c "print ($disk_speed*1000*1000)")
         disk_speed=$(printf "%.0f" $x)
     elif [ "${disk_speed_unit}" == "MB/s" ]; then
-        x=$(python -c "print ($disk_speed*1000)")
+        x=$(python3 -c "print ($disk_speed*1000)")
         disk_speed=$(printf "%.0f" $x)
     fi
 
@@ -196,7 +196,7 @@ function get {
 
     case "$attr" in
     "mem")
-        value=$(free -g -k | grep "Mem:" | awk '{print $2}')
+        value=$(free  -k | grep "Mem:" | awk '{print $2}')
     ;;
 
     "os")
