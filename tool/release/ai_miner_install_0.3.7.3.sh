@@ -36,7 +36,7 @@ install_dbc()
   which nvidia-docker
   if [ $? -ne 0 ]; then
    cd ./mining_repo/
-   sed -i 's$echo y | sudo apt-get -y install docker-ce.*$echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu$g' ./mining_install.sh
+   #sed -i 's$echo y | sudo apt-get -y install docker-ce.*$echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu$g' ./mining_install.sh
    /bin/bash ./mining_install.sh
    cd ./../
    echo "mining_install.sh execution finished"
