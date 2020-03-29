@@ -1797,6 +1797,7 @@ namespace matrix
         //endpoint
         std::string endpoint = "/containers/json?";
         endpoint +="size=false";
+        endpoint +="&all=true";
        // endpoint += boost::str(boost::format("&filters={\"status\":[\"running\"]}") );
 
         //headers, resp
@@ -1811,14 +1812,14 @@ namespace matrix
         }
         catch (const std::exception & e)
         {
-            LOG_ERROR << "get running  containers error: " << endpoint<<e.what();
+            LOG_ERROR << "get all  containers error: " << endpoint<<e.what();
             return "";
         }
 
 
         if (E_SUCCESS != ret)
         {
-            LOG_INFO << "get running containers  info failed: " << resp.body;
+            LOG_INFO << "get all containers  info failed: " << resp.body;
             return "";
         }
 
@@ -1831,11 +1832,11 @@ namespace matrix
         rapidjson::Document doc;
         if (doc.Parse<0>(resp.body.c_str()).HasParseError())
         {
-            LOG_ERROR << "get running containers  error:" << GetParseError_En(doc.GetParseError());
+            LOG_ERROR << "get all containers  error:" << GetParseError_En(doc.GetParseError());
             return "";
         }
 
-        LOG_INFO << "get running containers success: " << endpoint;
+        LOG_INFO << "get all containers success: " << endpoint;
         //  LOG_INFO << "body " << resp.body;
 
         rapidjson::Document document;
@@ -1874,7 +1875,7 @@ namespace matrix
             }
         }
 
-
+        LOG_INFO << "get all containers success Id_string : " << Id_string;
         return Id_string;
     }
 
