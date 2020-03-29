@@ -550,7 +550,7 @@ namespace matrix
                 }
                 return ret;
             }
-
+            LOG_ERROR << "remove container message success";
             return E_SUCCESS;
         }
 
@@ -1864,6 +1864,7 @@ namespace matrix
                 {
                     rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
                     std::string Id_string=id->value.GetString();
+                    LOG_INFO << "get all containers success Id_string : " << Id_string;
                     return Id_string;
                 }
 
@@ -1875,7 +1876,7 @@ namespace matrix
             }
         }
 
-        LOG_INFO << "get all containers success Id_string : " << Id_string;
+
         return Id_string;
     }
 
