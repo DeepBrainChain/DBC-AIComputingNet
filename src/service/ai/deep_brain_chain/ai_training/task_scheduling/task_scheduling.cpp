@@ -340,7 +340,7 @@ namespace ai
                 return E_DEFAULT;
             }else{
 
-                std::string image_id=CONTAINER_WORKER_IF->get_image_id(old_container_id);
+          /*      std::string image_id=CONTAINER_WORKER_IF->get_image_id(old_container_id);
 
                 if(image_id.compare("error")==0){
                     CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
@@ -352,7 +352,7 @@ namespace ai
                   //  m_task_db.write_task_to_db(task);
                     LOG_INFO << "remove container failure. recover old_container:" << task->task_id;
                     return E_DEFAULT;
-                }
+                }*/
 
               //  bool can_delete_image=CONTAINER_WORKER_IF->can_delete_image(image_id);//is or not delete image,can not delete original images
 
