@@ -152,7 +152,7 @@ namespace ai
                     {
                         return E_DEFAULT;
                     }
-                   
+
                     task->__set_container_id(container_id);
                 }
                 training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
@@ -304,8 +304,10 @@ namespace ai
                 task->__set_container_id(container_id);
             }
 
-         /*   if (true == resp->state.running)
+            bool original_status_container=false;//默认容器是关闭的状态
+            if (true == resp->state.running)
             {
+                original_status_container=true;
                 if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(old_container_id))
                 {
                     LOG_INFO << "stop container success , task id:" << old_container_id;
@@ -320,14 +322,18 @@ namespace ai
                     return E_DEFAULT;
 
                 }
-            }*/
+            }
 
 
             if (E_SUCCESS != create_task_from_image(task,autodbcimage_version))
             {
                 LOG_ERROR << "create task error";
                 CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
-              //  CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
+                if(original_status_container)
+                {
+                    CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
+                }
+                
                 task->__set_status(update_task_error);
                 task->error_times = 0;
                // m_task_db.write_task_to_db(task);
