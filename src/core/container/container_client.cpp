@@ -1790,6 +1790,94 @@ namespace matrix
             return new_containers;
         }
 
+
+
+    std::string container_client::get_container_id_current(std::string task_id) //获取当前容器真实的容器id
+    {
+        //endpoint
+        std::string endpoint = "/containers/json?";
+        endpoint +="size=false";
+       // endpoint += boost::str(boost::format("&filters={\"status\":[\"running\"]}") );
+
+        //headers, resp
+        kvs headers;
+        headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+        http_response resp;
+        int32_t ret;
+        std::string Id_string="";
+        try
+        {
+            ret = m_http_client.get(endpoint, headers,resp);
+        }
+        catch (const std::exception & e)
+        {
+            LOG_ERROR << "get running  containers error: " << endpoint<<e.what();
+            return "";
+        }
+
+
+        if (E_SUCCESS != ret)
+        {
+            LOG_INFO << "get running containers  info failed: " << resp.body;
+            return "";
+        }
+
+
+
+
+        if (resp.body.empty()){
+            return "";
+        }
+        rapidjson::Document doc;
+        if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+        {
+            LOG_ERROR << "get running containers  error:" << GetParseError_En(doc.GetParseError());
+            return "";
+        }
+
+        LOG_INFO << "get running containers success: " << endpoint;
+        //  LOG_INFO << "body " << resp.body;
+
+        rapidjson::Document document;
+        rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+
+
+        rapidjson::Value &containers = doc;
+        for (rapidjson::Value::ConstValueIterator itr = containers.Begin(); itr != containers.End(); itr++) {
+            if (itr == nullptr)
+            {
+                return "";
+            }
+            if (!itr->IsObject())
+            {
+                return "";
+            }
+            if (!itr->HasMember("Id")) {
+                continue;
+            }else{
+
+                rapidjson::Value::ConstMemberIterator Names = itr->FindMember("Names");
+                std::string  Names_string= Names->value[0].GetString();
+                if(Names_string.find(task_id)!= string::npos)
+                {
+                    rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
+                    std::string Id_string=id->value.GetString();
+                    return Id_string;
+                }
+
+
+
+
+
+
+            }
+        }
+
+
+        return Id_string;
     }
+
+ }
 
 }

@@ -130,7 +130,33 @@ namespace ai
             std::string image_id="";
             bool can_create_container=false;
             LOG_INFO << "task->status:" << task->status ;
+            LOG_INFO << "training_engine_name 1"<<training_engine_name;
             if (task->status!=task_creating_image ){ //刚开始创建
+
+                std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);//需要查询一下task中的镜像名字是否和真正的容器id一致
+
+                if (resp == nullptr) //说明之前创建新的容器出问题了，没有保存container_id
+                {
+                    std::string container_id=CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                    if(container_id.empty())
+                    {
+                        container_id=CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                    }
+
+                    if(!container_id.empty())
+                    {
+                        resp = CONTAINER_WORKER_IF->inspect_container(container_id);
+                    }
+
+                    if (resp == nullptr)
+                    {
+                        return E_DEFAULT;
+                    }
+                   
+                    task->__set_container_id(container_id);
+                }
+                training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
+                LOG_INFO << "training_engine_name 2"<<training_engine_name;
 
                 if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
 
@@ -257,7 +283,28 @@ namespace ai
 
             std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
             std::string old_container_id=task->container_id;
-            if (true == resp->state.running)
+            if (resp == nullptr) //说明之前创建新的容器出问题了，没有保存container_id
+            {
+                std::string container_id=CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                if(container_id.empty())
+                {
+                    container_id=CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                }
+
+                if(!container_id.empty())
+                {
+                    resp = CONTAINER_WORKER_IF->inspect_container(container_id);
+                }
+
+                if (resp == nullptr)
+                {
+                    return E_DEFAULT;
+                }
+                old_container_id=container_id;
+                task->__set_container_id(container_id);
+            }
+
+         /*   if (true == resp->state.running)
             {
                 if(E_SUCCESS==CONTAINER_WORKER_IF->stop_container(old_container_id))
                 {
@@ -273,14 +320,14 @@ namespace ai
                     return E_DEFAULT;
 
                 }
-            }
+            }*/
 
 
             if (E_SUCCESS != create_task_from_image(task,autodbcimage_version))
             {
                 LOG_ERROR << "create task error";
                 CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
-                CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
+              //  CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
                 task->__set_status(update_task_error);
                 task->error_times = 0;
                // m_task_db.write_task_to_db(task);
