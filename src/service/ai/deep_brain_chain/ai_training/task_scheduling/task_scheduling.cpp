@@ -130,7 +130,7 @@ namespace ai
             std::string image_id="";
             bool can_create_container=false;
             LOG_INFO << "task->status:" << task->status ;
-            LOG_INFO << "training_engine_name 1"<<training_engine_name;
+            LOG_INFO << "training_engine_name 1 "<<training_engine_name;
             if (task->status!=task_creating_image ){ //刚开始创建
 
                 std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);//需要查询一下task中的镜像名字是否和真正的容器id一致
@@ -156,7 +156,7 @@ namespace ai
                     task->__set_container_id(container_id);
                 }
                 training_engine_name="www.dbctalk.ai:5000/dbc-free-container:autodbcimage_"+task->task_id.substr(0,6)+"_"+task->container_id.substr(0,6)+autodbcimage_version;
-                LOG_INFO << "training_engine_name 2"<<training_engine_name;
+                LOG_INFO << "training_engine_name 2 "<<training_engine_name;
 
                 if(E_SUCCESS==CONTAINER_WORKER_IF-> exist_docker_image(training_engine_name,30)) {
 
@@ -333,7 +333,7 @@ namespace ai
                 {
                     CONTAINER_WORKER_IF->start_container(task->container_id);//start original container_id
                 }
-                
+
                 task->__set_status(update_task_error);
                 task->error_times = 0;
                // m_task_db.write_task_to_db(task);
