@@ -2071,7 +2071,7 @@ namespace matrix
 
 
                         rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
-
+                        rapidjson::Value image(rapidjson::kObjectType);
 
 
 
@@ -2082,11 +2082,17 @@ namespace matrix
                             if (tag.find("dbc-ai-training") !=string::npos)
                             {
 
-                                rapidjson::Value image(rapidjson::kObjectType);
+
                                 image.AddMember("RepoTag", STRING_DUP(tag), allocator);
-                                root.PushBack(image.Move(), allocator);
+
                             }
                         }
+
+                        rapidjson::Value::ConstMemberIterator time = itr->FindMember("Created");
+                        int64_t Created_int64=time->value.GetInt64();
+                        image.AddMember("Created", Created_int64, allocator);
+
+                        root.PushBack(image.Move(), allocator);
 
 
                     }
