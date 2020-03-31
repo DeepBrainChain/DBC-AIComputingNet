@@ -437,6 +437,15 @@ namespace service
                 return get_container_size( list[1]);
             }
 
+            if(k.find("#")!= string::npos){
+
+                LOG_INFO << "task_id  come in  get container size "<< k ;
+                std::vector<std::string> list;
+                string_util::split(k, "=", list);
+
+                return get_container_size_by_task_id( list[1]);
+            }
+
             // support debug commands
             for(auto& each: debug_cmds)
             {
@@ -523,6 +532,15 @@ namespace service
             uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
             m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
             return m_container_client->get_container_size(id);
+        }
+
+        std::string node_info_collection::get_container_size_by_task_id(std::string id){
+
+            std::shared_ptr<container_client> m_container_client = nullptr;
+            std::string m_container_ip=DEFAULT_LOCAL_IP;
+            uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
+            m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
+            return m_container_client->get_container_size_by_task_id(id);
         }
 
 
