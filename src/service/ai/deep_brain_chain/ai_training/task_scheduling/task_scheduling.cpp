@@ -357,15 +357,25 @@ namespace ai
               //  bool can_delete_image=CONTAINER_WORKER_IF->can_delete_image(image_id);//is or not delete image,can not delete original images
 
                 std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(old_container_id);
-
+                bool is_exsit_old_container=false;
                 if(resp == nullptr)
                 {
                     sleep (3);
                     resp = CONTAINER_WORKER_IF->inspect_container(old_container_id);
                 }
 
+                if(resp == nullptr) //用第二种方法判断 旧容器知否存在
+                {
+                    sleep (6);
+                    std::string container_id=CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                    if(!container_id.empty())
+                    {
+                        is_exsit_old_container=true;
+                    }
 
-                if (resp != nullptr)//如果旧的镜像还存在，则删除
+                }
+
+                if (resp != nullptr || is_exsit_old_container)//如果旧的镜像还存在，则删除
                 {
                     if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
                     {

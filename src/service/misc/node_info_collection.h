@@ -73,7 +73,7 @@ namespace service
             std::string get_running_container();
             int32_t init_db(std::string db_name);
             std::string get_container_size(std::string id);
-
+            std::string get_container_size_by_task_id(std::string id);
         private:
             std::map<std::string, std::string> m_kvs;
 
