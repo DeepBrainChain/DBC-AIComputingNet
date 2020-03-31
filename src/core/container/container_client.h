@@ -90,6 +90,7 @@ namespace matrix
             std::string get_running_container_no_size();
             std::string get_container_id_current(std::string task_id);
             std::string get_container_size_by_task_id(std::string id);
+            std::string get_images_original();
         protected:
 
             http_client m_http_client;

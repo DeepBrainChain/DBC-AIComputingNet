@@ -428,6 +428,15 @@ namespace service
                 return get_tasks_runing();
             }
 
+            if(k.compare("images")==0){//查询机器包含的镜像
+
+                LOG_INFO << "come in get images" ;
+
+
+                return get_images();
+            }
+
+
             if(k.find("=")!= string::npos){
 
                 LOG_INFO << "come in  get container size "<< k ;
@@ -541,6 +550,15 @@ namespace service
             uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
             m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
             return m_container_client->get_container_size_by_task_id(id);
+        }
+
+        std::string node_info_collection::get_images(){
+
+            std::shared_ptr<container_client> m_container_client = nullptr;
+            std::string m_container_ip=DEFAULT_LOCAL_IP;
+            uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
+            m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
+            return m_container_client->get_images_original();
         }
 
 
