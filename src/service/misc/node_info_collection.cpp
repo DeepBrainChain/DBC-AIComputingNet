@@ -437,11 +437,11 @@ namespace service
                 return get_container_size( list[1]);
             }
 
-            if(k.find("#")!= string::npos){
+            if(k.find("$")!= string::npos){
 
                 LOG_INFO << "task_id  come in  get container size "<< k ;
                 std::vector<std::string> list;
-                string_util::split(k, "=", list);
+                string_util::split(k, "$", list);
 
                 return get_container_size_by_task_id( list[1]);
             }
