@@ -1255,7 +1255,7 @@ namespace matrix
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
             std::string new_containers=std::string(buffer->GetString());
-            LOG_INFO << "new_containers " <<new_containers;
+          //  LOG_INFO << "new_containers " <<new_containers;
             return new_containers;
         }
 
@@ -1665,7 +1665,7 @@ namespace matrix
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
             std::string container=std::string(buffer->GetString());
-            LOG_INFO << "container " <<container;
+        //    LOG_INFO << "container " <<container;
             return container;
         }
 
@@ -1998,9 +1998,120 @@ namespace matrix
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
             root.Accept(writer);
             std::string container=std::string(buffer->GetString());
-            LOG_INFO << "container " <<container;
+          //  LOG_INFO << "container " <<container;
             return container;
         }
+
+
+        std::string container_client::get_images_original() //获取可以用来创建容器的镜像
+        {
+            //endpoint
+            std::string endpoint = "/images/json";
+
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret;
+
+            try
+            {
+                ret = m_http_client.get(endpoint, headers,resp);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "get images error: " << endpoint<<e.what();
+                return nullptr;
+            }
+            LOG_INFO << "get images success: " << endpoint;
+
+            if (E_SUCCESS != ret)
+            {
+                LOG_DEBUG << "get images info failed: " << resp.body;
+                return nullptr;
+            }
+
+
+
+            if (resp.body.empty()){
+                return "";
+            }
+            rapidjson::Document doc;
+            if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+            {
+                LOG_ERROR << "get  images  error:" << GetParseError_En(doc.GetParseError());
+                return "";
+            }
+
+            LOG_INFO << "get images success: " ;
+
+
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+            rapidjson::Value root(rapidjson::kArrayType);
+
+
+
+            rapidjson::Value &images = doc;
+            try {
+
+
+                for (rapidjson::Value::ConstValueIterator itr = images.Begin(); itr != images.End(); itr++) {
+                    if (itr == nullptr)
+                    {
+                        return "";
+                    }
+                    if (!itr->IsObject())
+                    {
+                        return "";
+                    }
+                    if (itr->HasMember("RepoTags")) {
+
+
+                        rapidjson::Value::ConstMemberIterator tags = itr->FindMember("RepoTags");
+
+
+
+
+                        int size = tags->value.Size();
+                        for (int j = 0; j < size; j++) {
+
+                            std::string tag = tags->value[0].GetString();
+                            if (tag.find("dbc-ai-training") !=string::npos)
+                            {
+
+                                rapidjson::Value image(rapidjson::kObjectType);
+                                image.AddMember("RepoTag", STRING_DUP(tag), allocator);
+                                root.PushBack(image.Move(), allocator);
+                            }
+                        }
+
+
+                    }
+
+                }
+
+                std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+                rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+                root.Accept(writer);
+                std::string images=std::string(buffer->GetString());
+
+                return images;
+
+
+            } catch (const std::exception & e)
+            {
+                LOG_ERROR << "get images error: " << endpoint<<e.what();
+                return "";
+            }
+
+
+
+
+        }
+
 
 
 
