@@ -127,9 +127,10 @@ namespace matrix
           //  std::string end_point = "https://infotest.dbchain.ai/auth_task";
 
             LOG_INFO << "auth req end_point :" << end_point ;
+            req_content="";
             try
             {
-                ret = m_http_client.get_sleep(end_point, headers, resp , 30);
+                ret = m_http_client.post_sleep(end_point, headers, req_content,resp , 30);
 
             }
             catch (const std::exception & e)
