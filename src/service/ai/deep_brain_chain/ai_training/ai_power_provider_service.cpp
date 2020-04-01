@@ -594,11 +594,22 @@ namespace ai
                     LOG_ERROR << "bad user try to stop task" << endl;
                     return E_DEFAULT;
                 }
+
+                int32_t status=m_oss_task_mng->can_stop_this_task(task_id);
                 LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
-                if(sp_task->status == task_stopped ){
-                    m_user_task_ptr->stop_task_only_id(task_id);//强制停止
+
+                if(E_SUCCESS==status){
+
+                    if(sp_task->status == task_stopped ){
+                        m_user_task_ptr->stop_task_only_id(task_id);//强制停止
+                    }else{
+                        m_user_task_ptr->stop_task(sp_task, task_stopped);
+                    }
+
+
                 }
-                return m_user_task_ptr->stop_task(sp_task, task_stopped);
+
+                return E_SUCCESS;
             }
             else
             {

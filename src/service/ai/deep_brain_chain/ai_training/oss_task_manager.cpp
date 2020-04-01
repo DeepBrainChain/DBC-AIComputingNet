@@ -187,7 +187,43 @@ namespace ai
             req->sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
             return req;
         }
+        int32_t oss_task_manager::can_stop_this_task(std::string task_id)
+        {
+            LOG_DEBUG << "can_stop_this_task:" <<task_id;
 
+
+            if (nullptr == m_oss_client)
+            {
+                LOG_WARNING << "auth system is not config.";
+                return E_DEFAULT;
+            }
+
+            std::shared_ptr<auth_task_req> task_req =  std::make_shared<auth_task_req>();
+
+
+            task_req->mining_node_id = CONF_MANAGER->get_node_id();
+            task_req->task_id = task_id;
+
+            if (nullptr == task_req)
+            {
+                return E_DEFAULT;
+            }
+
+
+            if (m_oss_client != nullptr)
+            {
+                int32_t status = m_oss_client->post_auth_stop_task(task_req);
+                if (OSS_SUCCESS_TASK == status)
+                {
+                    return E_SUCCESS;
+                }
+                LOG_ERROR << "auth failed. auth_status:" << status ;
+            }
+
+
+            return E_DEFAULT;
+
+        }
 
         int32_t oss_task_manager::auth_online(std::shared_ptr<ai_training_task> task)
         {

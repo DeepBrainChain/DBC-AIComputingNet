@@ -88,6 +88,58 @@ namespace matrix
             }
         }
 
+
+        std::string auth_task_req::to_string_task(std::string operation)
+        {
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+            rapidjson::Value root(rapidjson::kObjectType);
+
+            root.AddMember("machine_id", STRING_REF(mining_node_id), allocator);
+
+            root.AddMember("task_id", STRING_REF(task_id), allocator);
+            root.AddMember("operation", STRING_REF(operation), allocator);
+
+            std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+            root.Accept(writer);
+
+            return buffer->GetString();
+        }
+
+        void auth_task_resp::from_string_task(const std::string & buf)
+        {
+            try
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(buf.c_str());              //left to later not all fields set
+                if (doc.Parse<0>(buf.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse bill_resp file error:" << GetParseError_En(doc.GetParseError());
+                    return;
+                }
+                //message
+                if (E_SUCCESS != parse_item_int64(doc, "status", this->status))
+                {
+                    this->status = OSS_NET_ERROR;
+                    return;
+                }
+                if (this->status != OSS_SUCCESS_TASK)
+                {
+                    return;
+                }
+
+
+            }
+            catch (...)
+            {
+                LOG_ERROR << "container client inspect container resp exception";
+            }
+        }
+
+
+
     }
 
 }
