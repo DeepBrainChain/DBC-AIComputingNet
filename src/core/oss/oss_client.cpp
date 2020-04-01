@@ -110,7 +110,7 @@ namespace matrix
             //req content, headers, resp
             std::string && req_content = req->to_string_task("stop_task");
 
-            LOG_DEBUG << "auth req info:" << req_content;
+            LOG_INFO << "auth req info:" << req_content;
 
             kvs headers;
             headers.push_back({ "Content-Type", "application/json;charset=UTF-8" });
@@ -118,6 +118,8 @@ namespace matrix
             http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/auth_task";
+            
+            LOG_INFO << "auth req end_point :" << end_point ;
             try
             {
                 ret = m_http_client.post(end_point, headers, req_content, resp);
@@ -130,11 +132,11 @@ namespace matrix
 
             if (E_SUCCESS != ret)
             {
-                LOG_DEBUG << "auth failed: " << resp.body;
+                LOG_INFO << "auth failed: " << resp.body;
                 return E_DEFAULT;
             }
 
-            LOG_DEBUG << "auth resp info: " << resp.body;
+            LOG_INFO << "auth resp info: " << resp.body;
 
             if (OSS_SUCCESS_TASK == resp.status)
             {
