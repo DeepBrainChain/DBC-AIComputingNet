@@ -169,10 +169,10 @@ namespace matrix
 
             rapidjson::Value &status = doc["status"];
             int32_t status_int=status.GetInt();
-            LOG_INFO << "auth resp stratus: " << status_int;
+            LOG_INFO << "auth resp status: " << status_int;
             if (OSS_SUCCESS_TASK ==status_int)
             {
-                return E_SUCCESS;
+                return OSS_SUCCESS_TASK;
             }
 
 
