@@ -336,7 +336,7 @@ namespace ai
                 {
                     if(update.compare(get_is_update(task->server_specification))==0){// update
 
-                        int32_t status=m_oss_task_mng->can_update_this_task(req->body.task_id); //升级容器授权
+                        int32_t status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
                         if(E_SUCCESS==status) {
                             LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
@@ -383,7 +383,7 @@ namespace ai
 
                             if (!resp->id.empty())
                             {
-                                int32_t status=m_oss_task_mng->can_update_this_task(req->body.task_id); //升级容器授权
+                                int32_t status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
                                 if(E_SUCCESS==status) {
                                     task->__set_container_id(resp->id);
                                     LOG_INFO << "req container_name: " << req->body.container_name;
