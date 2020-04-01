@@ -52,7 +52,7 @@ namespace ai
             std::shared_ptr<idle_task_resp> fetch_idle_task();
             int32_t can_stop_this_task(std::string task_id);
             int32_t can_restart_this_task(std::string task_id);
-            int32_t can_start_this_task();
+            int32_t can_create_this_task();
             int32_t can_update_this_task(std::string task_id);
         private:
             void set_auth_mode(std::string auth_mode_str);

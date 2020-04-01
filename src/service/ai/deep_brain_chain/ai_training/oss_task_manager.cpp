@@ -264,7 +264,7 @@ namespace ai
 
         }
 
-        int32_t oss_task_manager::can_start_this_task()
+        int32_t oss_task_manager::can_create_this_task()
         {
 
 
@@ -289,7 +289,7 @@ namespace ai
 
             if (m_oss_client != nullptr)
             {
-                int32_t status = m_oss_client->post_auth_start_task(task_req);
+                int32_t status = m_oss_client->post_auth_create_task(task_req);
                 if (OSS_SUCCESS_TASK == status)
                 {
                     return E_SUCCESS;

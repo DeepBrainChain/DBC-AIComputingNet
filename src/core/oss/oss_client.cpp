@@ -255,10 +255,10 @@ namespace matrix
         }
 
 //auth_stop_task
-        int32_t oss_client::post_auth_start_task(std::shared_ptr<auth_task_req> req)
+        int32_t oss_client::post_auth_create_task(std::shared_ptr<auth_task_req> req)
         {
             //req content, headers, resp
-            std::string && req_content = req->to_string_task("start_task");
+            std::string && req_content = req->to_string_task("create_task");
 
             LOG_INFO << "auth req info:" << req_content;
 
@@ -273,7 +273,7 @@ namespace matrix
             std::string end_point = m_http_client.get_uri() + "/auth_task?";
             end_point +="machine_id="+req->mining_node_id;
 
-            end_point +="&operation=start_task";
+            end_point +="&operation=create_task";
             //  std::string end_point = "https://infotest.dbchain.ai/auth_task";
 
             LOG_INFO << "auth req end_point :" << end_point ;
