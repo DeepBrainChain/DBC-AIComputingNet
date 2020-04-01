@@ -71,6 +71,7 @@ namespace ai
             }
 
             std::string url = CONF_MANAGER->get_oss_url();
+            LOG_INFO << "url config:" << url;
             if (url.empty())
             {
                 m_enable_idle_task = false;

@@ -570,6 +570,8 @@ namespace matrix
                 m_remote_ip = evhttp_uri_get_host(http_uri.get());
                 int32_t port = evhttp_uri_get_port(http_uri.get());
 
+
+
                 if (port == -1)
                 {
                     port = (m_scheme == "http") ? 80 : 443;
@@ -598,6 +600,10 @@ namespace matrix
                 {
                     LOG_DEBUG << "parse error";
                 }
+
+                LOG_INFO << "parse m_remote_ip" << m_remote_ip;
+                LOG_INFO << "parse port" << port;
+                LOG_INFO << "m_scheme" << m_scheme;
             }
             catch (...)
             {
