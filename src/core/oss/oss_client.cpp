@@ -147,7 +147,30 @@ namespace matrix
 
             LOG_INFO << "auth resp info: " << resp.body;
 
-            if (OSS_SUCCESS_TASK == resp.status)
+            if (resp.body.empty()){
+                return E_DEFAULT;
+            }
+
+            rapidjson::Document doc;
+            //doc.Parse<0>(resp.body.c_str());
+            if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+            {
+                LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
+                return E_DEFAULT;
+            }
+
+
+            //message
+            if (!doc.HasMember("status"))
+            {
+                return E_DEFAULT;
+            }
+
+
+            rapidjson::Value &status = doc["status"];
+            int32_t status_int=status.GetInt();
+            LOG_INFO << "auth resp stratus: " << status_int;
+            if (OSS_SUCCESS_TASK ==status_int)
             {
                 return E_SUCCESS;
             }
