@@ -120,14 +120,17 @@ namespace matrix
 
             http_response resp;
             int32_t ret = E_SUCCESS;
-            std::string end_point = m_http_client.get_uri() + "/auth_task";
-
+            std::string end_point = m_http_client.get_uri() + "/auth_task?";
+            end_point +="machine_id="+req->mining_node_id;
+            end_point +="&task_id"+req->task_id;
+            end_point +="&operation=stop_task";
           //  std::string end_point = "https://infotest.dbchain.ai/auth_task";
 
             LOG_INFO << "auth req end_point :" << end_point ;
             try
             {
-                ret = m_http_client.post(end_point, headers, req_content, resp);
+                ret = m_http_client.get_sleep(end_point, headers, resp , 30);
+
             }
             catch (const std::exception & e)
             {
