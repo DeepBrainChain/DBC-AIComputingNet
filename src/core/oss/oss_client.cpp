@@ -117,8 +117,10 @@ namespace matrix
             headers.push_back({ "Host", m_http_client.get_remote_host()});
             http_response resp;
             int32_t ret = E_SUCCESS;
-            std::string end_point = m_http_client.get_uri() + "/auth_task";
-            
+          //  std::string end_point = m_http_client.get_uri() + "/auth_task";
+
+            std::string end_point = "https://infotest.dbchain.ai/auth_task";
+
             LOG_INFO << "auth req end_point :" << end_point ;
             try
             {
