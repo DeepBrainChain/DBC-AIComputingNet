@@ -44,6 +44,7 @@ namespace matrix
             std::string sign;
 
             std::string to_string();
+            std::string to_string_task(std::string operation);
         };
 
         class auth_task_resp
@@ -56,6 +57,7 @@ namespace matrix
 
             int64_t report_cycle = DEFAULT_AUTH_REPORT_CYTLE;
             void from_string(const std::string & buf);
+            void from_string_task(const std::string & buf);
         };
     }
 

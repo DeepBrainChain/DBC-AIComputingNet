@@ -31,6 +31,7 @@ namespace matrix
 
             //auth_task
             std::shared_ptr<auth_task_resp> post_auth_task(std::shared_ptr<auth_task_req> req);
+            int32_t  post_auth_stop_task(std::shared_ptr<auth_task_req> req);
 
             //idle_task
             std::shared_ptr<idle_task_resp> post_idle_task(std::shared_ptr<idle_task_req> req);

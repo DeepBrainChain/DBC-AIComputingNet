@@ -50,6 +50,7 @@ namespace ai
             std::shared_ptr<auth_task_req> create_auth_task_req(std::shared_ptr<ai_training_task> task);
             bool can_exec_idle_task() { return m_enable_idle_task; }
             std::shared_ptr<idle_task_resp> fetch_idle_task();
+            int32_t can_stop_this_task(std::string task_id);
 
         private:
             void set_auth_mode(std::string auth_mode_str);

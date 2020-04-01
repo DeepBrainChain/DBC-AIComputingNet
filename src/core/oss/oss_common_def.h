@@ -6,7 +6,9 @@
 enum OSS_ERROR
 {
     OSS_NET_ERROR = -1,
-    OSS_SUCCESS = 0
+    OSS_SUCCESS = 0,
+
+    OSS_SUCCESS_TASK = 1
 };
 
 inline int32_t parse_item_string(rapidjson::Document &doc, std::string item, std::string &target)
