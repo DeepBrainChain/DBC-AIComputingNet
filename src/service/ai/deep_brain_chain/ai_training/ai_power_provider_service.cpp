@@ -336,28 +336,24 @@ namespace ai
                 {
                     if(update.compare(get_is_update(task->server_specification))==0){// update
 
-                        LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
-                     /*   if(ref_task2->status == task_running )
-                        {
-                            task->__set_status(task_running);
-                        }else  if(ref_task2->status >= task_stopped  )//如果gpu已经停止了，则gpus设置为空字符串
-                        {
+                        int32_t status=m_oss_task_mng->can_update_this_task(req->body.task_id); //升级容器授权
+                        if(E_SUCCESS==status) {
+                            LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
-                            task->__set_status(task_stopped);
-                        }*/
+                            ref_container_id=ref_task2->container_id;
+                            task->__set_status(task_queueing);
+                            LOG_INFO << "req container_name: " << req->body.container_name;
+                            task->__set_gpus(get_gpu_spec(task->server_specification));
+                            LOG_INFO << "task->gpus: " << task->gpus;
+                            task->__set_task_id(task_id); //update to old task id
+                            task->__set_container_id(ref_container_id);
 
-                        ref_container_id=ref_task2->container_id;
-                        task->__set_status(task_queueing);
-                        LOG_INFO << "req container_name: " << req->body.container_name;
-                        task->__set_gpus(get_gpu_spec(task->server_specification));
-                        LOG_INFO << "task->gpus: " << task->gpus;
-                        task->__set_task_id(task_id); //update to old task id
-                        task->__set_container_id(ref_container_id);
-
-                        task->__set_received_time_stamp(std::time(nullptr));
+                            task->__set_received_time_stamp(std::time(nullptr));
 
 
-                        return m_user_task_ptr->add_update_task(task);
+                            return m_user_task_ptr->add_update_task(task);
+                        }
+
                     }
 
                     //no need add task
@@ -365,14 +361,19 @@ namespace ai
                 {
                     if(update.compare(get_is_update(task->server_specification))!=0){// only create new task
 
-                        LOG_INFO << "ref_task ref_task2 == nullptr";
-                        LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
-                        // task->__set_container_id(ref_container_id);
+                        int32_t status=m_oss_task_mng->can_start_this_task(); //创建容器授权
+                        if(E_SUCCESS==status) {
 
-                        task->__set_received_time_stamp(std::time(nullptr));
-                        task->__set_status(task_queueing);
+                            LOG_INFO << "ref_task ref_task2 == nullptr";
+                            LOG_INFO << "__set_container_id(ref_container_id)" << ref_container_id;
+                            // task->__set_container_id(ref_container_id);
 
-                        return m_user_task_ptr->add_task(task);
+                            task->__set_received_time_stamp(std::time(nullptr));
+                            task->__set_status(task_queueing);
+
+                            return m_user_task_ptr->add_task(task);
+                        }
+
                     } else{
 
 
@@ -382,16 +383,19 @@ namespace ai
 
                             if (!resp->id.empty())
                             {
-                                task->__set_container_id(resp->id);
-                                LOG_INFO << "req container_name: " << req->body.container_name;
+                                int32_t status=m_oss_task_mng->can_update_this_task(req->body.task_id); //升级容器授权
+                                if(E_SUCCESS==status) {
+                                    task->__set_container_id(resp->id);
+                                    LOG_INFO << "req container_name: " << req->body.container_name;
 
-                                task->__set_task_id(task_id); //update to old task id
+                                    task->__set_task_id(task_id); //update to old task id
 
 
-                                task->__set_received_time_stamp(std::time(nullptr));
-                                task->__set_status(task_queueing);
+                                    task->__set_received_time_stamp(std::time(nullptr));
+                                    task->__set_status(task_queueing);
 
-                                return m_user_task_ptr->add_update_task(task);
+                                    return m_user_task_ptr->add_update_task(task);
+                                }
                             }
 
 
@@ -545,7 +549,12 @@ namespace ai
             // restart a user task
             if(req->body.code_dir == std::string(TASK_RESTART))
             {
-                return task_restart(req);
+
+                int32_t status=m_oss_task_mng->can_restart_this_task(req->body.task_id); //重启授权
+               if(E_SUCCESS==status) {
+                   return task_restart(req);
+               }
+
             }
 
             // start a normal user task

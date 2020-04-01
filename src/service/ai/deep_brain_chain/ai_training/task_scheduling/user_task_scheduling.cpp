@@ -157,6 +157,7 @@ namespace ai
              if(task->server_specification=="restart")
             {
 
+
                 ret = restart_task(task);
                 m_queueing_tasks.remove(task);
                 LOG_INFO << "move restart task from waiting queue map" << task->task_id;
