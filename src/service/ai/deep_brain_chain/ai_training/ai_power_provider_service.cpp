@@ -337,6 +337,9 @@ namespace ai
                     if(update.compare(get_is_update(task->server_specification))==0){// update
 
                         int32_t status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
+                        if(E_SUCCESS!=status) {
+                            status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
+                        }
                         if(E_SUCCESS==status) {
                             LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
@@ -362,6 +365,9 @@ namespace ai
                     if(update.compare(get_is_update(task->server_specification))!=0){// only create new task
 
                         int32_t status=m_oss_task_mng->can_create_this_task(); //创建容器授权
+                        if(E_SUCCESS!=status) {
+                            status=m_oss_task_mng->can_create_this_task(); //创建容器授权
+                        }
                         if(E_SUCCESS==status) {
 
                             LOG_INFO << "ref_task ref_task2 == nullptr";
@@ -384,6 +390,9 @@ namespace ai
                             if (!resp->id.empty())
                             {
                                 int32_t status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
+                                if(E_SUCCESS!=status) {
+                                    status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
+                                }
                                 if(E_SUCCESS==status) {
                                     task->__set_container_id(resp->id);
                                     LOG_INFO << "req container_name: " << req->body.container_name;
@@ -551,6 +560,9 @@ namespace ai
             {
 
                 int32_t status=m_oss_task_mng->can_restart_this_task(req->body.task_id); //重启授权
+                if(E_SUCCESS!=status) {
+                    status=m_oss_task_mng->can_restart_this_task(req->body.task_id); //重启授权
+                }
                if(E_SUCCESS==status) {
                    return task_restart(req);
                }
@@ -606,7 +618,9 @@ namespace ai
 
                 int32_t status=m_oss_task_mng->can_stop_this_task(task_id);
                 LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
-
+                if(E_SUCCESS!=status){
+                    status=m_oss_task_mng->can_stop_this_task(task_id);
+                }
                 if(E_SUCCESS==status){
 
                     if(sp_task->status == task_stopped ){
