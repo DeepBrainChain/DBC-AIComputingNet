@@ -12,11 +12,11 @@ fi
 
 
 ubuntu_version=`lsb_release -r --short`
-if [ $ubuntu_version != "19.04" ] && [ $ubuntu_version != "18.04" ] && [ $ubuntu_version != "16.04" ] ; then
-   echo "dismatch ubuntu19.04 or ubuntu18.04 or ubuntu16.04 version"
-   exit
-fi
-echo "***check ubuntu version success***"
+#if [ $ubuntu_version != "19.04" ] && [ $ubuntu_version != "18.04" ] && [ $ubuntu_version != "16.04" ] ; then
+ #  echo "dismatch ubuntu19.04 or ubuntu18.04 or ubuntu16.04 version"
+ #  exit
+#fi
+#echo "***check ubuntu version success***"
 
 function version_lt() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" != "$1"; }
 minimum_version="3.10.0"
