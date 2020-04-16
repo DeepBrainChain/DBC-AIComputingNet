@@ -911,7 +911,7 @@ namespace matrix
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
             http_response resp;
-         //   int32_t ret = E_SUCCESS;
+            int32_t ret = E_SUCCESS;
 
             try
             {
