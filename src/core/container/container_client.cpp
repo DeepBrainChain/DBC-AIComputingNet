@@ -911,7 +911,7 @@ namespace matrix
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
             http_response resp;
-            int32_t ret = E_SUCCESS;
+         //   int32_t ret = E_SUCCESS;
 
             try
             {
@@ -935,7 +935,7 @@ namespace matrix
                 return E_IMAGE_NOT_FOUND;
             }
 
-            return ret;
+            return E_IMAGE_NOT_FOUND;
         }
 
         std::shared_ptr<docker_info> container_client::get_docker_info()
@@ -1865,6 +1865,17 @@ namespace matrix
                     rapidjson::Value::ConstMemberIterator id = itr->FindMember("Id");
                     std::string Id_string=id->value.GetString();
                     LOG_INFO << "get all containers success Id_string : " << Id_string;
+
+                    rapidjson::Value::ConstMemberIterator state = itr->FindMember("State");
+                    std::string state_string=state->value.GetString();
+                    if(state_string.compare("Created")==0)
+                    {
+                        LOG_INFO << "will start container: " << task_id;
+                        start_container(task_id);
+                        sleep(10);
+                        stop_container(task_id);
+                        LOG_INFO << "will stop container: " << task_id;
+                    }
                     return Id_string;
                 }
 
