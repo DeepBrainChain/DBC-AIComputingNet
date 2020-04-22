@@ -102,6 +102,7 @@ start_nextcloud()
     sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip#g" /var/www/nextcloud/config/config.php
    # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
     service mysql stop
+    sleep 3s
     service mysql start
     sleep 10s
     redis-server /etc/redis/redis.conf
