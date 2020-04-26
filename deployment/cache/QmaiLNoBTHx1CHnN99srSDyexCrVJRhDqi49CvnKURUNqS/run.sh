@@ -7,8 +7,8 @@ DEFAULT_PWD=""
 SSH_INFO=""
 jupyter_url=""
 nextcloud_url=""
-nextcloud_url=""
 tensorboard_url=""
+vnc_url=""
 parse_arg()
 {
     test -f ./jq && chmod +x ./jq
