@@ -90,6 +90,8 @@ namespace ai
             std::shared_ptr<container_client> get_worer_if() { return m_container_client;}
             int32_t can_pull_image();
             std::string get_operation(std::shared_ptr<ai_training_task> task);
+            std::string get_old_gpu_id(std::shared_ptr<ai_training_task> task);
+            std::string get_new_gpu_id(std::shared_ptr<ai_training_task> task);
             std::shared_ptr<update_container_config> get_update_container_config(std::shared_ptr<ai_training_task> task);
             std::shared_ptr<container_config> get_container_config_from_image(std::shared_ptr<ai_training_task> task);
             std::string get_autodbcimage_version(std::shared_ptr<ai_training_task> task);

@@ -270,6 +270,79 @@ namespace ai
             return rt;
         }
 
+        int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task)
+        {
+
+            std::string change_gpu_id_file_name = env_manager::get_home_path().generic_string() + "/tool/change_gpu_id.sh";
+            std::string task_id=task->task_id;
+
+            std::string old_gpu_id = m_container_worker->get_old_gpu_id(task);
+            std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
+
+            std::string container_id=task->container_id;
+            std::string m_change_gpu_id_cmd="";
+            #ifdef __linux__
+                    try
+                    {
+                        m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %d %d") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
+                    }
+                    catch (...)
+                    {
+                        return E_DEFAULT;
+                    }
+            #endif
+
+            if (m_change_gpu_id_cmd.empty())
+            {
+                LOG_ERROR << "m_change_gpu_id_cmd command is empty";
+                return E_DEFAULT;
+            }
+            try
+            {
+                std::error_code ec;
+                std::future<std::string> fut;
+                std::future<std::string> fut_err;
+                int32_t ret = bp::system(bp::cmd=m_change_gpu_id_cmd, bp::std_out > fut, bp::std_err > fut_err, ec);
+                std::string m_change_gpu_id_cmd_log = "m_change_gpu_id_cmd info.";
+                if (ec)
+                {
+                    m_change_gpu_id_cmd_log +=ec.message();
+                }
+
+                if (fut.valid())
+                {
+                    m_change_gpu_id_cmd_log += fut.get();
+                }
+                if (fut_err.valid())
+                {
+                    m_change_gpu_id_cmd_log += fut_err.get();
+                }
+
+                LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
+
+
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "m_change_gpu_id_cmd error" << e.what();
+                return E_DEFAULT;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "m_change_gpu_id_cmd error";
+                return E_DEFAULT;
+            }
+
+            task->__set_status(task_running);
+            task->error_times = 0;
+            return E_SUCCESS;
+
+        }
+
+
+
+
+
        //from new image
         int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version,std::string training_engine_new)
         {
