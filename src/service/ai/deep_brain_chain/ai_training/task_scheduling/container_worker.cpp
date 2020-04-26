@@ -239,6 +239,80 @@ namespace ai
             return operation;
         }
 
+        std::string container_worker::get_old_gpu_id(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string old_gpu_id ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"old_gpu_id\"):" << pt.count("old_gpu_id");
+                    if(pt.count("old_gpu_id")!=0){
+                        old_gpu_id = pt.get<std::string>("old_gpu_id");
+                        LOG_INFO<< "old_gpu_id: " << old_gpu_id ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "old_gpu_id: " << "error" ;
+                }
+            }
+
+            return old_gpu_id;
+        }
+
+        std::string container_worker::get_new_gpu_id(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+                LOG_ERROR << "ai power provider service get container config task or nv_config is nullptr";
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string new_gpu_id ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"new_gpu_id\"):" << pt.count("new_gpu_id");
+                    if(pt.count("new_gpu_id")!=0){
+                        new_gpu_id = pt.get<std::string>("new_gpu_id");
+                        LOG_INFO<< "operation: " << new_gpu_id ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "new_gpu_id: " << "error" ;
+                }
+            }
+
+            return new_gpu_id;
+        }
+
         std::string container_worker::get_autodbcimage_version(std::shared_ptr<ai_training_task> task)
         {
             if (nullptr == task)

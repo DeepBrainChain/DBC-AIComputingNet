@@ -64,6 +64,7 @@ namespace ai
             int32_t init_db(std::string db_name);
             virtual int32_t load_task() { return E_SUCCESS; }
             std::string get_gpu_spec(std::string s);
+            int32_t change_gpu_id(std::shared_ptr<ai_training_task> task);
             int32_t update_task(std::shared_ptr<ai_training_task> task);
             vector<string> split(const string& str, const string& delim);
             int32_t update_task_commit_image(std::shared_ptr<ai_training_task> task);

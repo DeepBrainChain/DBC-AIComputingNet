@@ -232,8 +232,9 @@ namespace ai
                 }
                // auto task2= find_task(task->task_id);
 
-                ret = update_task_commit_image(task);
+              //  ret = update_task_commit_image(task);
                // m_training_tasks[task2->task_id]=task2;
+                ret =  change_gpu_id(task);
 
               //  task=task2;
 
