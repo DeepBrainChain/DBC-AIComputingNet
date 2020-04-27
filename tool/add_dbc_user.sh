@@ -18,4 +18,4 @@ useradd -g $USER_NAME -d /home/$USER_NAME -s /bin/bash -m $USER_NAME
 
 
 passwd $USER_NAME
-echo "$USER_NAME    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+echo "$USER_NAME    ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers

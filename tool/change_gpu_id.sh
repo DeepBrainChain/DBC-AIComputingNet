@@ -9,12 +9,7 @@ echo ${task_id}
 echo ${container_id}
 
 sudo docker stop ${task_id}
-
-users=$(ss -tnlp |grep dockerd | awk '{print $6}')
-pid_fd=$(echo ${users#*=})
-pid=$(echo ${pid_fd%,*})
-echo ${pid}
-sudo kill -9 ${pid}
+ps -ef|grep dockerd | awk '{print $2}' |sudo xargs kill -9
 
 sudo sed -i "s/NVIDIA_VISIBLE_DEVICES=${gpu_id_old}/NVIDIA_VISIBLE_DEVICES=${gpu_id_new}/g" /data/docker_data/containers/${container_id}/config.v2.json
 
