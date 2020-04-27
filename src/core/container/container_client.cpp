@@ -2186,15 +2186,13 @@ namespace matrix
                 //message
                 if (!doc.HasMember("Config"))
                 {
+                    LOG_INFO << "!doc.HasMember(Config) " ;
                     return "";
                 }
                 try
                 {
                     rapidjson::Value &Config = doc["Config"];
 
-                    //running HostConfig
-                    if (Config.HasMember("Config"))
-                    {
 
                         if (Config.HasMember("Env"))
                         {
@@ -2217,7 +2215,7 @@ namespace matrix
 
                         }
 
-                    }
+                    
                 }
 
                 catch (const std::exception & e)
