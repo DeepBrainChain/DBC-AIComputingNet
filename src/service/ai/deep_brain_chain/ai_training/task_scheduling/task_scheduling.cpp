@@ -284,7 +284,7 @@ namespace ai
             #ifdef __linux__
                     try
                     {
-                        m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %d %d") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
+                        m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %d %d %d %d") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
                     }
                     catch (...)
                     {
