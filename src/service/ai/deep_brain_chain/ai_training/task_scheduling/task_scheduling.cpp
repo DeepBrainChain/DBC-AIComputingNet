@@ -272,59 +272,146 @@ namespace ai
 
         int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task)
         {
+            if (task->status!=task_creating_image ) { //刚开始创建
 
-            std::string change_gpu_id_file_name = env_manager::get_home_path().generic_string() + "/tool/change_gpu_id.sh";
-            std::string task_id=task->task_id;
+                std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(
+                        task->container_id);//需要查询一下task中的镜像名字是否和真正的容器id一致
 
-            std::string old_gpu_id = m_container_worker->get_old_gpu_id(task);
-            std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
-
-            std::string container_id=task->container_id;
-            std::string m_change_gpu_id_cmd="";
-            m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
-
-            LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
-
-            if (m_change_gpu_id_cmd.empty())
-            {
-                LOG_ERROR << "m_change_gpu_id_cmd command is empty";
-                return E_DEFAULT;
-            }
-            try
-            {
-                std::error_code ec;
-                std::future<std::string> fut;
-                std::future<std::string> fut_err;
-                int32_t ret = bp::system(bp::cmd=m_change_gpu_id_cmd, bp::std_out > fut, bp::std_err > fut_err, ec);
-                std::string m_change_gpu_id_cmd_log = "m_change_gpu_id_cmd info.";
-                if (ec)
+                if (resp == nullptr) //说明之前创建新的容器出问题了，没有保存container_id
                 {
-                    m_change_gpu_id_cmd_log +=ec.message();
+                    std::string container_id = CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                    if (container_id.empty()) {
+                        container_id = CONTAINER_WORKER_IF->get_container_id_current(task->task_id);
+                    }
+
+                    if (!container_id.empty()) {
+                        resp = CONTAINER_WORKER_IF->inspect_container(container_id);
+                    }
+
+                    if (resp == nullptr) {
+                        return E_DEFAULT;
+                    }
+
+                    task->__set_container_id(container_id);
                 }
 
-                if (fut.valid())
+
+                std::string change_gpu_id_file_name = env_manager::get_home_path().generic_string() + "/tool/change_gpu_id.sh";
+                std::string task_id=task->task_id;
+
+                std::string old_gpu_id = m_container_worker->get_old_gpu_id(task);
+                std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
+
+                std::string container_id=task->container_id;
+                std::string m_change_gpu_id_cmd="";
+                m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
+
+                LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
+
+                if (m_change_gpu_id_cmd.empty())
                 {
-                    m_change_gpu_id_cmd_log += fut.get();
+                    LOG_ERROR << "m_change_gpu_id_cmd command is empty";
+                    return E_DEFAULT;
                 }
-                if (fut_err.valid())
+                try
                 {
-                    m_change_gpu_id_cmd_log += fut_err.get();
+                    std::error_code ec;
+                    std::future<std::string> fut;
+                    std::future<std::string> fut_err;
+                    int32_t ret = bp::system(bp::cmd=m_change_gpu_id_cmd, bp::std_out > fut, bp::std_err > fut_err, ec);
+                    std::string m_change_gpu_id_cmd_log = "m_change_gpu_id_cmd info.";
+                    if (ec)
+                    {
+                        m_change_gpu_id_cmd_log +=ec.message();
+                    }
+
+                    if (fut.valid())
+                    {
+                        m_change_gpu_id_cmd_log += fut.get();
+                    }
+                    if (fut_err.valid())
+                    {
+                        m_change_gpu_id_cmd_log += fut_err.get();
+                    }
+
+                    // LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
+                    sleep(40);
+
+                }
+                catch (const std::exception & e)
+                {
+                    LOG_ERROR << "m_change_gpu_id_cmd error" << e.what();
+                    return E_DEFAULT;
+                }
+                catch (...)
+                {
+                    LOG_ERROR << "m_change_gpu_id_cmd error";
+                    return E_DEFAULT;
                 }
 
-               // LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
+                int64_t sleep_time=m_container_worker->get_sleep_time(task);
+                task->__set_start_time(time_util::get_time_stamp_ms());
+                LOG_INFO << "sleep_time waiting :" << sleep_time << "s" ;
+                task->__set_status(task_creating_image);
+                return E_SUCCESS;
+
+            }else if (task->status==task_creating_image){ //正在创建中
+
+                std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
+                if (true == resp->state.running) {
+
+                    std::string gpu_id=CONTAINER_WORKER_IF->get_gpu_id(task->container_id);
+                    if(gpu_id.find("NVIDIA_VISIBLE_DEVICES=")!= string::npos){ //如果gpu id 没有修改过来
+                        LOG_INFO << "update_task_error";
+                        task->__set_status(update_task_error);
+                        task->error_times = 0;
+                        return E_DEFAULT;
+                    }else{
+
+                        std::vector<std::string> list;
+                        string_util::split( gpu_id, "=", list);
+                        std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
+                        if(new_gpu_id.compare(list[1])!=0){//说明没有设置成功
+                            LOG_INFO << "update_task_error new_gpu_id !=inspect " <<gpu_id;
+                            task->__set_status(update_task_error);
+                            task->error_times = 0;
+                            return E_DEFAULT;
+                        }
+                    }
+
+                }else
+                {
+                    int64_t real_time=time_util::get_time_stamp_ms();
+                    int64_t sleep_time=m_container_worker->get_sleep_time(task);
+                    int64_t sub_time=real_time - task->start_time;
+
+                    LOG_INFO << "real_time  ：" << real_time;
+                    LOG_INFO << "task  start_time：" << task->start_time;
+                    LOG_INFO << "sub_time：" << sub_time;
+
+                    if(sub_time>60*1000){//是否创建时间已经超过60s
+
+                        CONTAINER_WORKER_IF->start_container(task->container_id);//说明脚本没有启动容器成功，再次启动
+                        sleep(15);
+                    }
+
+                    if(sub_time>sleep_time*1000){//是否创建时间已经超过sleep_time
+
+                        LOG_INFO << "update_task_error ：can not start container  ";
+                        task->__set_status(update_task_error);
+                        task->error_times = 0;
+                        return E_DEFAULT;
+
+                    }
+
+                    return E_SUCCESS;
+
+                }
 
 
             }
-            catch (const std::exception & e)
-            {
-                LOG_ERROR << "m_change_gpu_id_cmd error" << e.what();
-                return E_DEFAULT;
-            }
-            catch (...)
-            {
-                LOG_ERROR << "m_change_gpu_id_cmd error";
-                return E_DEFAULT;
-            }
+
+            task->__set_gpus(get_gpu_spec(task->server_specification));
 
             task->__set_status(task_running);
 

@@ -437,7 +437,7 @@ namespace service
             }
 
 
-            if(k.find("=")!= string::npos){
+            if(k.find("=")!= string::npos){ //通过容器id获取运行中的容器大小
 
                 LOG_INFO << "come in  get container size "<< k ;
                 std::vector<std::string> list;
@@ -446,13 +446,22 @@ namespace service
                 return get_container_size( list[1]);
             }
 
-            if(k.find("$")!= string::npos){
+            if(k.find("$")!= string::npos){ //通过容器名字得到容器大小
 
                 LOG_INFO << "task_id  come in  get container size "<< k ;
                 std::vector<std::string> list;
                 string_util::split(k, "$", list);
 
                 return get_container_size_by_task_id( list[1]);
+            }
+
+            if(k.find("&")!= string::npos){ //获取更新的容器gpu_id，用来判断是否更新成功
+
+                LOG_INFO << "task_id  come in  get gpu id "<< k ;
+                std::vector<std::string> list;
+                string_util::split(k, "&", list);
+
+                return get_gpu_id(list[1]);
             }
 
             // support debug commands
@@ -561,6 +570,14 @@ namespace service
             return m_container_client->get_images_original();
         }
 
+        std::string node_info_collection::get_gpu_id(std::string id){
+
+            std::shared_ptr<container_client> m_container_client = nullptr;
+            std::string m_container_ip=DEFAULT_LOCAL_IP;
+            uint16_t m_container_port=(uint16_t)std::stoi(DEFAULT_CONTAINER_LISTEN_PORT);
+            m_container_client=std::make_shared<container_client>(m_container_ip, m_container_port);
+            return m_container_client->get_gpu_id(id);
+        }
 
         std::string node_info_collection::get_gpu_usage_in_total()
         {
