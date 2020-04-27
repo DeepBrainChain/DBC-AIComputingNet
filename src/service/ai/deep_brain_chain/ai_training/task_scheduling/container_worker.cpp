@@ -298,7 +298,7 @@ namespace ai
                     LOG_INFO<< "pt.count(\"new_gpu_id\"):" << pt.count("new_gpu_id");
                     if(pt.count("new_gpu_id")!=0){
                         new_gpu_id = pt.get<std::string>("new_gpu_id");
-                        LOG_INFO<< "operation: " << new_gpu_id ;
+                        LOG_INFO<< "new_gpu_id: " << new_gpu_id ;
 
                     }
 
