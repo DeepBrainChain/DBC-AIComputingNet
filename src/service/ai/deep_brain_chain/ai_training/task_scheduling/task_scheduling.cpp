@@ -281,7 +281,9 @@ namespace ai
 
             std::string container_id=task->container_id;
             std::string m_change_gpu_id_cmd="";
-            #ifdef __linux__
+            m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
+
+            /* #ifdef __linux__
                     try
                     {
                         m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
@@ -290,7 +292,7 @@ namespace ai
                     {
                         return E_DEFAULT;
                     }
-            #endif
+            #endif */
 
             if (m_change_gpu_id_cmd.empty())
             {
