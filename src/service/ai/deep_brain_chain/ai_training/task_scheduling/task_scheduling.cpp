@@ -311,7 +311,7 @@ namespace ai
                     m_change_gpu_id_cmd_log += fut_err.get();
                 }
 
-                LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
+               // LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
 
 
             }

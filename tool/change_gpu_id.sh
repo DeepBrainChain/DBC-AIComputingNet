@@ -4,6 +4,7 @@ task_id=$1
 gpu_id_old=$2
 gpu_id_new=$3
 container_id=$4
+
 echo ${task_id}
 echo ${container_id}
 
