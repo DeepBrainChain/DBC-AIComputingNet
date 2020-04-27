@@ -75,6 +75,7 @@ namespace service
             std::string get_container_size(std::string id);
             std::string get_container_size_by_task_id(std::string id);
             std::string get_images();
+            std::string get_gpu_id(std::string id);
         private:
             std::map<std::string, std::string> m_kvs;
 

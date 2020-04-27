@@ -2033,14 +2033,14 @@ namespace matrix
             catch (const std::exception & e)
             {
                 LOG_ERROR << "get images error: " << endpoint<<e.what();
-                return nullptr;
+                return "";
             }
             LOG_INFO << "get images success: " << endpoint;
 
             if (E_SUCCESS != ret)
             {
                 LOG_DEBUG << "get images info failed: " << resp.body;
-                return nullptr;
+                return "";
             }
 
 
@@ -2131,6 +2131,103 @@ namespace matrix
 
 
         }
+
+
+        std::string container_client::get_gpu_id(std::string container_id)
+        {
+            //endpoint
+            std::string endpoint = "/containers/";
+            if (container_id.empty())
+            {
+                return "";
+            }
+
+            endpoint += container_id;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.get_sleep(endpoint, headers, resp,30);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect container error: " << e.what();
+                return "";
+            }
+
+            if (E_SUCCESS != ret)
+            {
+
+                return "";
+            }
+            else
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
+                    return nullptr;
+                }
+
+                if (resp.body.empty()){
+                    return "";
+                }
+
+
+                LOG_INFO << "parse inspect_container success: " ;
+
+                //message
+                if (!doc.HasMember("HostConfig"))
+                {
+                    return nullptr;
+                }
+                try
+                {
+                    rapidjson::Value &HostConfig = doc["HostConfig"];
+
+                    //running HostConfig
+                    if (HostConfig.HasMember("Config"))
+                    {
+                        rapidjson::Value &Config = HostConfig["Config"];
+                        if (Config.HasMember("Env"))
+                        {
+                            rapidjson::Value &Env = Config["Env"];
+                            for (rapidjson::Value::ConstValueIterator itr = Env.Begin(); itr != Env.End(); ++itr)
+                            {
+                                if(itr!= nullptr&&itr->IsString())
+                                {
+                                    std::string gpu_id=itr->GetString();
+                                    if(gpu_id.find("NVIDIA_VISIBLE_DEVICES=")!= std::string::npos)
+                                    {
+
+                                        LOG_INFO << "NVIDIA_VISIBLE_DEVICES: " <<gpu_id ;
+                                        return gpu_id;
+                                    }
+                                }
+
+                            }
+
+
+                        }
+
+                    }
+                }
+
+                catch (const std::exception & e)
+                {
+                    LOG_ERROR << "get HostConfig error: " << endpoint<<e.what();
+                    return "";
+                }
+            }
+        }
+
 
 
 
