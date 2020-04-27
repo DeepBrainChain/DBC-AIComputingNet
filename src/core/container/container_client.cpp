@@ -2184,18 +2184,18 @@ namespace matrix
                 LOG_INFO << "parse inspect_container success: " <<resp.body ;
 
                 //message
-                if (!doc.HasMember("HostConfig"))
+                if (!doc.HasMember("Config"))
                 {
                     return "";
                 }
                 try
                 {
-                    rapidjson::Value &HostConfig = doc["HostConfig"];
+                    rapidjson::Value &Config = doc["Config"];
 
                     //running HostConfig
-                    if (HostConfig.HasMember("Config"))
+                    if (Config.HasMember("Config"))
                     {
-                        rapidjson::Value &Config = HostConfig["Config"];
+
                         if (Config.HasMember("Env"))
                         {
                             rapidjson::Value &Env = Config["Env"];
@@ -2226,6 +2226,8 @@ namespace matrix
                     return "";
                 }
             }
+
+            return "";
         }
 
 
