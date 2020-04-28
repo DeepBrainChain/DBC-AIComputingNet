@@ -96,6 +96,14 @@ namespace ai
             std::shared_ptr<container_config> get_container_config_from_image(std::shared_ptr<ai_training_task> task);
             std::string get_autodbcimage_version(std::shared_ptr<ai_training_task> task);
             int64_t get_sleep_time(std::shared_ptr<ai_training_task> task);
+            std::string get_old_memory(std::shared_ptr<ai_training_task> task);
+            std::string get_new_memory(std::shared_ptr<ai_training_task> task);
+            std::string get_old_memory_swap(std::shared_ptr<ai_training_task> task);
+            std::string get_new_memory_swap(std::shared_ptr<ai_training_task> task);
+            int32_t get_old_cpu_shares(std::shared_ptr<ai_training_task> task);
+            int32_t get_new_cpu_shares(std::shared_ptr<ai_training_task> task);
+            int32_t get_old_cpu_quota(std::shared_ptr<ai_training_task> task);
+            int32_t get_new_cpu_quota(std::shared_ptr<ai_training_task> task);
         private:
             int32_t load_container_config();
             int32_t check_cpu_config(const int16_t & cpu_info);

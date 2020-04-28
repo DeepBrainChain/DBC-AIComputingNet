@@ -314,9 +314,25 @@ namespace ai
                 std::string old_gpu_id = m_container_worker->get_old_gpu_id(task);
                 std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
 
+                int32_t old_cpu_shares=m_container_worker->get_old_cpu_shares(task);
+                int32_t new_cpu_shares=m_container_worker->get_new_cpu_shares(task);
+
+                int32_t old_cpu_quota=m_container_worker->get_old_cpu_quota( task);
+                int32_t new_cpu_quota=m_container_worker->get_new_cpu_quota(task);
+
+                std::string old_memory = m_container_worker->get_old_memory(task);
+                std::string new_memory=m_container_worker->get_new_memory(task);
+
+                std::string old_memory_swap=m_container_worker->get_old_memory_swap(task);
+                std::string new_memory_swap=m_container_worker->get_new_memory_swap(task);
+
+
+
                 std::string container_id=task->container_id;
                 std::string m_change_gpu_id_cmd="";
-                m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
+                m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s %d %d %d %d %s %s %s %s %s")
+                        % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id % old_gpu_id % new_gpu_id % old_cpu_shares % new_cpu_shares
+                        % old_memory % new_memory % old_memory_swap % new_memory_swap);
 
                 LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
                 LOG_INFO << " m_change_gpu_id_cmd  will commit" ;
@@ -402,7 +418,7 @@ namespace ai
                     LOG_INFO << "task  start_time：" << task->start_time;
                     LOG_INFO << "sub_time：" << sub_time;
 
-                    if(sub_time>180*1000 ){//是否创建时间已经超过sleep_time
+                    if(sub_time>300*1000 ){//是否创建时间已经超过sleep_time
 
                         LOG_INFO << "update_task_error ：can not start container  ";
                         task->__set_status(update_task_error);
