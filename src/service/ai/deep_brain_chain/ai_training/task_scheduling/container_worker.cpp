@@ -1188,7 +1188,7 @@ namespace ai
             if (nullptr == task)
             {
 
-                return nullptr;
+                return "";
             }
             auto customer_setting=task->server_specification;
             std::string old_memory ="";
@@ -1225,7 +1225,7 @@ namespace ai
             if (nullptr == task)
             {
 
-                return nullptr;
+                return "";
             }
             auto customer_setting=task->server_specification;
             std::string memory ="";
@@ -1263,7 +1263,7 @@ namespace ai
             if (nullptr == task)
             {
 
-                return nullptr;
+                return "";
             }
             auto customer_setting=task->server_specification;
             std::string old_memory_swap ="";
@@ -1300,7 +1300,7 @@ namespace ai
             if (nullptr == task)
             {
 
-                return nullptr;
+                return "";
             }
             auto customer_setting=task->server_specification;
             std::string memory_swap ="";
