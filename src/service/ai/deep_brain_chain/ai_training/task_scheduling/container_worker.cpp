@@ -1182,5 +1182,305 @@ namespace ai
 
             return E_SUCCESS;
         }
+
+        std::string container_worker::get_old_memory(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string old_memory ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"old_memory\"):" << pt.count("old_memory");
+                    if(pt.count("old_memory")!=0){
+                        old_memory = pt.get<std::string>("old_memory");
+                        LOG_INFO<< "old_memory: " << old_memory ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "old_memory: " << "error" ;
+                }
+            }
+
+            return old_memory;
+        }
+
+        std::string container_worker::get_new_memory(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string memory ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"memory\"):" << pt.count("memory");
+                    if(pt.count("memory")!=0){
+                        memory = pt.get<std::string>("memory");
+                        LOG_INFO<< "memory: " << memory ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "memory: " << "error" ;
+                }
+            }
+
+            return memory;
+        }
+
+
+        std::string container_worker::get_old_memory_swap(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string old_memory_swap ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"old_memory_swap\"):" << pt.count("old_memory_swap");
+                    if(pt.count("old_memory_swap")!=0){
+                        old_memory_swap = pt.get<std::string>("old_memory_swap");
+                        LOG_INFO<< "old_memory_swap: " << old_memory_swap ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "old_memory_swap: " << "error" ;
+                }
+            }
+
+            return old_memory_swap;
+        }
+
+        std::string container_worker::get_new_memory_swap(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return nullptr;
+            }
+            auto customer_setting=task->server_specification;
+            std::string memory_swap ="";
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"memory_swap\"):" << pt.count("memory_swap");
+                    if(pt.count("memory_swap")!=0){
+                        memory_swap = pt.get<std::string>("memory_swap");
+                        LOG_INFO<< "memory_swap: " << memory_swap ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "memory_swap: " << "error" ;
+                }
+            }
+
+            return memory_swap;
+        }
+
+
+        int32_t container_worker::get_old_cpu_shares(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return 0;
+            }
+            auto customer_setting=task->server_specification;
+            int32_t old_cpu_shares =0;
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"old_cpu_shares\"):" << pt.count("old_cpu_shares");
+                    if(pt.count("old_cpu_shares")!=0){
+                        old_cpu_shares = pt.get<int32_t>("old_cpu_shares");
+                        LOG_INFO<< "old_cpu_shares: " << old_cpu_shares ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "old_cpu_shares: " << "error" ;
+                }
+            }
+
+            return old_cpu_shares;
+        }
+
+        int32_t container_worker::get_new_cpu_shares(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return 0;
+            }
+            auto customer_setting=task->server_specification;
+            int32_t cpu_shares =0;
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"cpu_shares\"):" << pt.count("cpu_shares");
+                    if(pt.count("cpu_shares")!=0){
+                        cpu_shares = pt.get<int32_t>("cpu_shares");
+                        LOG_INFO<< "cpu_shares: " << cpu_shares ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "cpu_shares: " << "error" ;
+                }
+            }
+
+            return cpu_shares;
+        }
+
+
+        int32_t container_worker::get_old_cpu_quota(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return 0;
+            }
+            auto customer_setting=task->server_specification;
+            int32_t old_cpu_quota =0;
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"old_cpu_quota\"):" << pt.count("old_cpu_quota");
+                    if(pt.count("old_cpu_quota")!=0){
+                        old_cpu_quota = pt.get<int32_t>("old_cpu_quota");
+                        LOG_INFO<< "old_cpu_quota: " << old_cpu_quota ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "old_cpu_quota: " << "error" ;
+                }
+            }
+
+            return old_cpu_quota;
+        }
+
+        int32_t container_worker::get_new_cpu_quota(std::shared_ptr<ai_training_task> task)
+        {
+            if (nullptr == task)
+            {
+
+                return 0;
+            }
+            auto customer_setting=task->server_specification;
+            int32_t cpu_quota =0;
+            if (!customer_setting.empty())
+            {
+                std::stringstream ss;
+                ss << customer_setting;
+                boost::property_tree::ptree pt;
+
+                try
+                {
+                    boost::property_tree::read_json(ss, pt);
+                    LOG_INFO<< "task->server_specification" << task->server_specification;
+                    LOG_INFO<< "pt.count(\"cpu_quota\"):" << pt.count("cpu_quota");
+                    if(pt.count("cpu_quota")!=0){
+                        cpu_quota = pt.get<int32_t>("cpu_quota");
+                        LOG_INFO<< "cpu_quota: " << cpu_quota ;
+
+                    }
+
+
+                }
+                catch (...)
+                {
+                    LOG_INFO<< "cpu_quota: " << "error" ;
+                }
+            }
+
+            return cpu_quota;
+        }
+
     }
 }
