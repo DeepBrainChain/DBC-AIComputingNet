@@ -330,7 +330,7 @@ namespace ai
 
                 std::string container_id=task->container_id;
                 std::string m_change_gpu_id_cmd="";
-                m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s %d %d %d %d %s %s %s %s %s")
+                m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s %d %d %d %d %s %s %s %s")
                         % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id % old_gpu_id % new_gpu_id % old_cpu_shares % new_cpu_shares
                         % old_memory % new_memory % old_memory_swap % new_memory_swap);
 
