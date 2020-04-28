@@ -281,8 +281,6 @@ namespace ai
             {
                 LOG_DEBUG << "task config error.";
                 task->__set_status(update_task_error);
-                task->error_times = 0;
-
                 return E_DEFAULT;
             }
 
@@ -348,7 +346,7 @@ namespace ai
                         m_change_gpu_id_cmd_log += fut_err.get();
                     }
 
-                    // LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
+                     LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " ;
 
 
                 }
@@ -362,7 +360,7 @@ namespace ai
                     LOG_ERROR << "m_change_gpu_id_cmd error";
                     return E_DEFAULT;
                 }
-
+                LOG_INFO << "sleep_time waiting"  ;
                 int64_t sleep_time=m_container_worker->get_sleep_time(task);
                 task->__set_start_time(time_util::get_time_stamp_ms());
                 LOG_INFO << "sleep_time waiting :" << sleep_time << "s" ;
