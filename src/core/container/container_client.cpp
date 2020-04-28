@@ -2133,8 +2133,9 @@ namespace matrix
         }
 
 
-        std::string container_client::get_gpu_id(std::string container_id)
+        std::string container_client::get_gpu_id(std::string task_id)
         {
+            std::string container_id=get_container_id_current(task_id);
             //endpoint
             std::string endpoint = "/containers/";
             if (container_id.empty())
@@ -2215,7 +2216,7 @@ namespace matrix
 
                         }
 
-                    
+
                 }
 
                 catch (const std::exception & e)
