@@ -2182,7 +2182,7 @@ namespace matrix
                 }
 
 
-                LOG_INFO << "parse inspect_container success: " <<resp.body ;
+             //   LOG_INFO << "parse inspect_container success: " <<resp.body ;
 
                 //message
                 if (!doc.HasMember("Config"))
