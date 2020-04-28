@@ -319,7 +319,7 @@ namespace ai
                 m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s") % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id);
 
                 LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
-
+                LOG_INFO << " m_change_gpu_id_cmd  will commit" ;
                 if (m_change_gpu_id_cmd.empty())
                 {
                     LOG_ERROR << "m_change_gpu_id_cmd command is empty";
