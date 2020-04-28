@@ -230,13 +230,13 @@ namespace ai
                     LOG_INFO<< "task will update, allocate m_gpu_pool:" << m_gpu_pool.toString();
                     //m_running_tasks.erase(task->task_id);//防止自动检测任务，将任务关闭
                 }
-               // auto task2= find_task(task->task_id);
+
 
               //  ret = update_task_commit_image(task);
-               // m_training_tasks[task2->task_id]=task2;
+
                 ret =  change_gpu_id(task);
 
-              //  task=task2;
+
 
 
                 if(task->status != task_creating_image){

@@ -272,6 +272,20 @@ namespace ai
 
         int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task)
         {
+            if (nullptr == task)
+            {
+                return E_DEFAULT;
+            }
+
+            if (task->task_id.empty())
+            {
+                LOG_DEBUG << "task config error.";
+                task->__set_status(update_task_error);
+                task->error_times = 0;
+
+                return E_DEFAULT;
+            }
+
             if (task->status!=task_creating_image ) { //刚开始创建
 
                 std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(
@@ -358,7 +372,7 @@ namespace ai
             }else if (task->status==task_creating_image){ //正在创建中
 
                 std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
-                if (true == resp->state.running) {
+                if (resp!= nullptr && true == resp->state.running) {
 
                     std::string sub_task_id=task->task_id.substr(0,12);
                     std::string gpu_id=CONTAINER_WORKER_IF->get_gpu_id(sub_task_id);
