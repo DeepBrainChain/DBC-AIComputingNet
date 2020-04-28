@@ -335,7 +335,7 @@ namespace ai
                     }
 
                     // LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " << m_change_gpu_id_cmd_log ;
-                    sleep(40);
+
 
                 }
                 catch (const std::exception & e)
@@ -360,7 +360,8 @@ namespace ai
                 std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
                 if (true == resp->state.running) {
 
-                    std::string gpu_id=CONTAINER_WORKER_IF->get_gpu_id(task->container_id);
+                    std::string sub_task_id=task->task_id.substr(0,12);
+                    std::string gpu_id=CONTAINER_WORKER_IF->get_gpu_id(sub_task_id);
                     if(gpu_id.find("NVIDIA_VISIBLE_DEVICES=")!= string::npos){ //如果gpu id 没有修改过来
                         LOG_INFO << "update_task_error";
                         task->__set_status(update_task_error);
@@ -389,13 +390,7 @@ namespace ai
                     LOG_INFO << "task  start_time：" << task->start_time;
                     LOG_INFO << "sub_time：" << sub_time;
 
-                    if(sub_time>60*1000){//是否创建时间已经超过60s
-
-                        CONTAINER_WORKER_IF->start_container(task->container_id);//说明脚本没有启动容器成功，再次启动
-                        sleep(15);
-                    }
-
-                    if(sub_time>sleep_time*1000){//是否创建时间已经超过sleep_time
+                    if(sub_time>180*1000 ){//是否创建时间已经超过sleep_time
 
                         LOG_INFO << "update_task_error ：can not start container  ";
                         task->__set_status(update_task_error);
@@ -403,6 +398,14 @@ namespace ai
                         return E_DEFAULT;
 
                     }
+
+                    if(sub_time>60*1000){//是否创建时间已经超过60s
+
+                       // CONTAINER_WORKER_IF->start_container(task->container_id);//说明脚本没有启动容器成功，再次启动
+                       // sleep(15);
+                    }
+
+
 
                     return E_SUCCESS;
 
