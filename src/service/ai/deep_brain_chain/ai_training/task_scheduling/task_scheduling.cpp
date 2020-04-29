@@ -314,11 +314,11 @@ namespace ai
                 std::string old_gpu_id = m_container_worker->get_old_gpu_id(task);
                 std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
 
-                int32_t old_cpu_shares=m_container_worker->get_old_cpu_shares(task);
-                int32_t new_cpu_shares=m_container_worker->get_new_cpu_shares(task);
+                std::string old_cpu_shares=std::to_string(m_container_worker->get_old_cpu_shares(task));
+                std::string new_cpu_shares=std::to_string(m_container_worker->get_new_cpu_shares(task));
 
-                int32_t old_cpu_quota=m_container_worker->get_old_cpu_quota( task);
-                int32_t new_cpu_quota=m_container_worker->get_new_cpu_quota(task);
+                std::string old_cpu_quota=std::to_string(m_container_worker->get_old_cpu_quota( task));
+                std::string new_cpu_quota=std::to_string(m_container_worker->get_new_cpu_quota(task));
 
                 std::string old_memory = m_container_worker->get_old_memory(task);
                 std::string new_memory=m_container_worker->get_new_memory(task);
@@ -331,7 +331,7 @@ namespace ai
                 std::string container_id=task->container_id;
                 std::string m_change_gpu_id_cmd="";
                 m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s %s %s %s %s %s %s %s %s")
-                        % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id % old_gpu_id % new_gpu_id % old_cpu_shares % new_cpu_shares
+                        % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id % old_cpu_shares % new_cpu_shares % old_cpu_quota % new_cpu_quota
                         % old_memory % new_memory % old_memory_swap % new_memory_swap);
 
                 LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
