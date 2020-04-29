@@ -425,7 +425,6 @@ namespace ai
 
                         LOG_INFO << "update_task_error ：can not start container  ";
                         task->__set_status(update_task_error);
-                        t
                         return E_DEFAULT;
 
                     }
