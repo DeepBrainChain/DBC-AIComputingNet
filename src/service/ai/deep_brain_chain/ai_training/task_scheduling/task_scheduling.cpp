@@ -330,55 +330,24 @@ namespace ai
                 std::string new_memory_swap=m_container_worker->get_new_memory_swap(task);
                 std::string memory_swap=old_memory_swap+","+new_memory_swap;
 
-
+                std::string docker_dir=CONTAINER_WORKER_IF->get_docker_dir(task->container_id);
+                if (docker_dir.empty())
+                {
+                    LOG_ERROR << "docker_dir is empty";
+                    return E_DEFAULT;
+                }
                 std::string container_id=task->container_id;
                 std::string m_change_gpu_id_cmd="";
-                m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s %s %s %s %s")
-                        % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id % cpu_shares  % cpu_quota
-                        % memory  % memory_swap);
 
-                LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
-                LOG_INFO << " m_change_gpu_id_cmd  will commit" ;
-                if (m_change_gpu_id_cmd.empty())
-                {
-                    LOG_ERROR << "m_change_gpu_id_cmd command is empty";
-                    return E_DEFAULT;
+                int32_t reslut =commit_change_gpu_id_bash(change_gpu_id_file_name, task_id , old_gpu_id , new_gpu_id
+                        , container_id , cpu_shares  ,cpu_quota
+                        , memory  , memory_swap , docker_dir);
+
+                if (reslut ==E_DEFAULT){
+
+                   return  E_DEFAULT;
                 }
-                try
-                {
-                    std::error_code ec;
-                    std::future<std::string> fut;
-                    std::future<std::string> fut_err;
-                    int32_t ret = bp::system(bp::cmd=m_change_gpu_id_cmd, bp::std_out > fut, bp::std_err > fut_err, ec);
-                    std::string m_change_gpu_id_cmd_log = "m_change_gpu_id_cmd info.";
-                    if (ec)
-                    {
-                        m_change_gpu_id_cmd_log +=ec.message();
-                    }
 
-                    if (fut.valid())
-                    {
-                        m_change_gpu_id_cmd_log += fut.get();
-                    }
-                    if (fut_err.valid())
-                    {
-                        m_change_gpu_id_cmd_log += fut_err.get();
-                    }
-
-                     LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " ;
-
-
-                }
-                catch (const std::exception & e)
-                {
-                    LOG_ERROR << "m_change_gpu_id_cmd error" << e.what();
-                    return E_DEFAULT;
-                }
-                catch (...)
-                {
-                    LOG_ERROR << "m_change_gpu_id_cmd error";
-                    return E_DEFAULT;
-                }
                 LOG_INFO << "sleep_time waiting"  ;
                 int64_t sleep_time=m_container_worker->get_sleep_time(task);
                 task->__set_start_time(time_util::get_time_stamp_ms());
@@ -429,11 +398,6 @@ namespace ai
 
                     }
 
-                    if(sub_time>60*1000){//是否创建时间已经超过60s
-
-                       // CONTAINER_WORKER_IF->start_container(task->container_id);//说明脚本没有启动容器成功，再次启动
-                       // sleep(15);
-                    }
 
 
 
@@ -452,7 +416,59 @@ namespace ai
 
         }
 
+        int32_t  task_scheduling::commit_change_gpu_id_bash(std::string change_gpu_id_file_name, std::string task_id ,std::string old_gpu_id ,std::string new_gpu_id
+                ,std::string container_id ,std::string cpu_shares  ,std::string cpu_quota
+                ,std::string memory  ,std::string memory_swap ,std::string docker_dir)
+        {
+            std::string m_change_gpu_id_cmd = boost::str(boost::format("/bin/bash %s %s %s %s %s %s %s %s %s %s")
+                                             % change_gpu_id_file_name % task_id % old_gpu_id % new_gpu_id % container_id % cpu_shares  % cpu_quota
+                                             % memory  % memory_swap % docker_dir);
 
+            LOG_INFO << "m_change_gpu_id_cmd " << m_change_gpu_id_cmd;
+            LOG_INFO << " m_change_gpu_id_cmd  will commit" ;
+            if (m_change_gpu_id_cmd.empty())
+            {
+                LOG_ERROR << "m_change_gpu_id_cmd command is empty";
+                return E_DEFAULT;
+            }
+            try
+            {
+                std::error_code ec;
+                std::future<std::string> fut;
+                std::future<std::string> fut_err;
+                int32_t ret = bp::system(bp::cmd=m_change_gpu_id_cmd, bp::std_out > fut, bp::std_err > fut_err, ec);
+                std::string m_change_gpu_id_cmd_log = "m_change_gpu_id_cmd info.";
+                if (ec)
+                {
+                    m_change_gpu_id_cmd_log +=ec.message();
+                }
+
+                if (fut.valid())
+                {
+                    m_change_gpu_id_cmd_log += fut.get();
+                }
+                if (fut_err.valid())
+                {
+                    m_change_gpu_id_cmd_log += fut_err.get();
+                }
+
+                LOG_INFO << " m_change_gpu_id_cmd ret code:" << ret << ". " ;
+
+
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "m_change_gpu_id_cmd error" << e.what();
+                return E_DEFAULT;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "m_change_gpu_id_cmd error";
+                return E_DEFAULT;
+            }
+
+            return E_SUCCESS;
+        }
 
 
 

@@ -65,6 +65,9 @@ namespace ai
             virtual int32_t load_task() { return E_SUCCESS; }
             std::string get_gpu_spec(std::string s);
             int32_t change_gpu_id(std::shared_ptr<ai_training_task> task);
+            int32_t  commit_change_gpu_id_bash(std::string change_gpu_id_file_name, std::string task_id ,std::string old_gpu_id ,std::string new_gpu_id
+                    ,std::string container_id ,std::string cpu_shares  ,std::string cpu_quota
+                    ,std::string memory  ,std::string memory_swap ,std::string docker_dir);
             int32_t update_task(std::shared_ptr<ai_training_task> task);
             vector<string> split(const string& str, const string& delim);
             int32_t update_task_commit_image(std::shared_ptr<ai_training_task> task);
@@ -76,6 +79,7 @@ namespace ai
             int32_t restart_task(std::shared_ptr<ai_training_task> task);
             int32_t stop_task_only_id(std::string task_id);
             std::string get_pull_log(std::string training_engine) { return m_pull_image_mng->get_out_log(training_engine); }
+
         protected:
             int32_t start_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t stop_pull_image(std::shared_ptr<ai_training_task> task);
