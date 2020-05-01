@@ -133,7 +133,8 @@ auto_scan_nextcloud()
             rm /autoshell/scan.cron
         fi
         touch /autoshell/scan.cron
-        echo '*/1 * * * *  sh /autoshell/scannextcloud.sh' >> /autoshell/scan.cron
+        echo '*/1 * * * *  sh /autoshell/scan_nextcloud.sh' >> /autoshell/scan.cron
+        echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
         crontab /autoshell/scan.cron
     fi
 

@@ -237,7 +237,8 @@ auto_scan_nextcloud()
         fi
 
         touch /autoshell/scan.cron
-        echo "*/1 * * * *  sh /autoshell/scannextcloud.sh" >> /autoshell/scan.cron
+        echo "*/1 * * * *  sh /autoshell/scan_nextcloud.sh" >> /autoshell/scan.cron
+        echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
 
     fi
 
@@ -406,7 +407,7 @@ setup_ngrok_connection()
 
                     fi
 
-                    crontab /autoshell/scan.cron
+
 
                 ;;
                 *)
@@ -446,6 +447,11 @@ main_loop()
 
     setup_ngrok_connection
 
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+            echo " crontab /autoshell/scan.cron has been created"
+    else
+            crontab /autoshell/scan.cron
+    fi
 
     run_jupyter
 
