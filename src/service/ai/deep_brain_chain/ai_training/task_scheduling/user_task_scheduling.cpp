@@ -286,7 +286,7 @@ namespace ai
                    // m_task_db.write_task_to_db(task);
 
                     //inspect container
-               /*     LOG_ERROR << "user task update_task_error, start inspect_container container id: " << task->container_id;
+                    LOG_ERROR << "user task update_task_error, start inspect_container container id: " << task->container_id;
                     std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task->container_id);
                     if (nullptr == resp)
                     {
@@ -305,7 +305,6 @@ namespace ai
                     {
                         m_running_tasks.erase(task->task_id);//
                     }
-*/
                     return E_DEFAULT;
 
                 }
