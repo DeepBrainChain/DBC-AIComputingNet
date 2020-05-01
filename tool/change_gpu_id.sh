@@ -27,6 +27,10 @@ cpu_memory_swap_old=${cpu_memory_swap_array[0]}
 cpu_memory_swap_new=${cpu_memory_swap_array[1]}
 
 docker_dir=$9
+
+sudo docker stop ${task_id}
+ps  -ef|grep dockerd | awk '{print $2}' | sudo xargs kill -9
+
 sudo  sed -i "s/NVIDIA_VISIBLE_DEVICES=[0-9]\{0,\}[,0-9]\{0,\}\",\"PATH=/NVIDIA_VISIBLE_DEVICES=${gpu_id_new}\",\"PATH=/g" ${docker_dir}containers/${container_id}/config.v2.json
 sudo sed -i "s/NVIDIA_VISIBLE_DEVICES=none\",\"PATH=/NVIDIA_VISIBLE_DEVICES=${gpu_id_new}\",\"PATH=/g" ${docker_dir}containers/${container_id}/config.v2.json
 
