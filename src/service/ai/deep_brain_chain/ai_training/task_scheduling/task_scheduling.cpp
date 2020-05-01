@@ -344,7 +344,7 @@ namespace ai
                         , memory  , memory_swap , docker_dir);
 
                 if (reslut ==E_DEFAULT){
-
+                    task->__set_status(update_task_error);
                    return  E_DEFAULT;
                 }
 
@@ -390,7 +390,7 @@ namespace ai
                     LOG_INFO << "task  start_time：" << task->start_time;
                     LOG_INFO << "sub_time：" << sub_time;
 
-                    if(sub_time>300*1000 ){//是否创建时间已经超过sleep_time
+                    if(sub_time>360*1000 ){//是否创建时间已经超过sleep_time
 
                         LOG_INFO << "update_task_error ：can not start container  ";
                         task->__set_status(update_task_error);
