@@ -71,6 +71,23 @@ namespace matrix
         {
         public:
 
+            static void str_split(const std::string & src, const std::string & sep, std::vector<std::string> & vec_str)
+            {
+                std::string::size_type start = 0;
+                for(std::string::size_type end = src.find(sep, start); end != std::string::npos; end = src.find(sep, start))
+                {
+                    if(end > start)
+                    {
+                        vec_str.push_back(src.substr(start, end - start));
+                    }
+                    start = end + sep.length();
+                }
+                if(start < src.length())
+                {
+                    vec_str.push_back(src.substr(start, src.length() - start));
+                }
+            }
+
             static void split(const std::string& str, const std::string& delim, std::vector<std::string>& vec)
             {
                 size_t pos = 0;

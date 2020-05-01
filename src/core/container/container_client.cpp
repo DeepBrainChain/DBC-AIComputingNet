@@ -2273,7 +2273,7 @@ namespace matrix
                     return "";
                 }
 
-                std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
+
 
                 //message
                 if (!doc.HasMember("HostnamePath"))
@@ -2284,8 +2284,9 @@ namespace matrix
 
                     rapidjson::Value &HostnamePath = doc["HostnamePath"];
                     std::string host = HostnamePath.GetString();
+                LOG_INFO << "host :" <<host;
                     std::vector<std::string> list;
-                    string_util::split(host, "containers", list);
+                    string_util::str_split(host, "containers", list);
                     LOG_INFO << "docke dir :" <<list[0];
 
                 return list[0];
