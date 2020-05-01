@@ -482,21 +482,21 @@ namespace service
         std::string node_info_collection::get_tasks_runing()
         {
 
+            try{
 
+                rapidjson::Document document;
+                rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
-            rapidjson::Document document;
-            rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-
-            rapidjson::Value root(rapidjson::kArrayType);
-            for (auto& each : m_running_tasks)
-            {
-
-                auto task = each.second;
-                //
-                // support tasks run concurrently
-                //
-                 if (4 == task->status )//runing
+                rapidjson::Value root(rapidjson::kArrayType);
+                for (auto& each : m_running_tasks)
                 {
+
+                    auto task = each.second;
+                    //
+                    // support tasks run concurrently
+                    //
+                    if (4 == task->status )//runing
+                    {
 
                         if (!task->task_id.empty())
                         {
@@ -508,18 +508,24 @@ namespace service
 
                         }
 
+                    }
                 }
+
+
+
+
+                std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
+                rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
+                root.Accept(writer);
+                std::string tasks_runing=std::string(buffer->GetString());
+                LOG_INFO << "get_tasks_runing " <<tasks_runing;
+                return tasks_runing;
+            } catch (...)
+            {
+                return "";
             }
+            return "";
 
-
-
-
-            std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();
-            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(*buffer);
-            root.Accept(writer);
-            std::string tasks_runing=std::string(buffer->GetString());
-            LOG_INFO << "get_tasks_runing " <<tasks_runing;
-            return tasks_runing;
         }
 
 
