@@ -9,6 +9,7 @@ jupyter_url=""
 nextcloud_url=""
 tensorboard_url=""
 vnc_url=""
+
 parse_arg()
 {
     test -f ./jq && chmod +x ./jq
@@ -247,12 +248,7 @@ setup_ngrok_connection()
 {
     test -f ./ngrok && chmod +x ./ngrok
 
-    if [  -f "create_ngrok.sh" ]; then
-        rm    create_ngrok.sh
-        touch create_ngrok.sh
-    else
-        touch create_ngrok.sh
-    fi
+
 
     # for each server, for each port, do port proxy
     for i in "${!server_ips[@]}"
@@ -283,8 +279,7 @@ setup_ngrok_connection()
             screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token
 
 
-            echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_ngrok.sh
-            echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ngrok.sh
+
 
             if print_tcp_port $port_http; then
                 echo "map $service to ${server_ip}:${port}"
@@ -306,27 +301,112 @@ setup_ngrok_connection()
                     SSH_INFO="ssh_login_info: ssh -p ${port} root@${server_ip}; pwd:"${DEFAULT_PWD}
 
                     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
-                        echo "autoshell expect check_ngrok.exp has been created"
+                        echo "autoshell expect check_ssh_ngrok.exp has been created"
                     else
+                        ssh_port=${port}
+                        if [  -f "create_ssh_ngrok.sh" ]; then
+                                 rm    create_ssh_ngrok.sh
+                                 touch create_ssh_ngrok.sh
+                        else
+                            touch create_ssh_ngrok.sh
+                        fi
 
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_ngrok.exp ${server_ip} ${port}" >> /autoshell/scan.cron
-                        crontab /autoshell/scan.cron
+                        echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_ssh_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ssh_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ssh_ngrok.sh
+                        echo "sleep 8s" >>  create_ngrok.sh
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_ssh_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
+
                     fi
 
                 ;;
                 jupyter)
+                    jupyter_port=${port}
                     jupyter_url="jupyter url:  http://${server_ip}:${port}  "
+                    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+                        echo "autoshell expect check_jupyter_ngrok.exp has been created"
+                    else
+                        ssh_port=${port}
+                        if [  -f "create_jupyter_ngrok.sh" ]; then
+                                 rm    create_jupyter_ngrok.sh
+                                 touch create_jupyter_ngrok.sh
+                        else
+                            touch create_jupyter_ngrok.sh
+                        fi
+
+                        echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_jupyter_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_jupyter_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_jupyter_ngrok.sh
+                        echo "sleep 8s" >>  create_jupyter_ngrok.sh
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_jupyter_ngrok.exp ${server_ip}  ${port} " >> /autoshell/scan.cron
+
+                    fi
                 ;;
                 nextcloud)
+                    nextcloud_port=${port}
                     nextcloud_url="nextcloud_url:  http://${server_ip}:${port}  "
+                    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+                        echo "autoshell expect check_nextcloud_ssh_ngrok.exp has been created"
+                    else
+                        ssh_port=${port}
+                        if [  -f "create_nextcloud_ngrok.sh" ]; then
+                                 rm    create_nextcloud_ngrok.sh
+                                 touch create_nextcloud_ngrok.sh
+                        else
+                            touch create_nextcloud_ngrok.sh
+                        fi
+
+                        echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_nextcloud_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_nextcloud_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_nextcloud_ngrok.sh
+                        echo "sleep 8s" >>  create_nextcloud_ngrok.sh
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_nextcloud_ngrok.exp ${server_ip}  ${port}" >> /autoshell/scan.cron
+
+                    fi
                 ;;
                 tensorboard)
                     tensorboard_url="tensorboard_url:  http://${server_ip}:${port}  "
+                    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+                        echo "autoshell expect check_tensorboard_ngrok.exp has been created"
+                    else
+                        ssh_port=${port}
+                        if [  -f "create_tensorboard_ngrok.sh" ]; then
+                                 rm    create_tensorboard_ngrok.sh
+                                 touch create_tensorboard_ngrok.sh
+                        else
+                            touch create_tensorboard_ngrok.sh
+                        fi
+
+                        echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_tensorboard_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_tensorboard_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_tensorboard_ngrok.sh
+                        echo "sleep 8s" >>  create_tensorboard_ngrok.sh
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_tensorboard_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
+
+                    fi
                 ;;
                 vnc)
                     vnc_url="vnc_url:  http://${server_ip}:${port}  "
-                    echo "sleep 8s" >>  create_ngrok.sh
+                    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+                        echo "autoshell expect check_vnc_ngrok.exp has been created"
+                    else
+                        ssh_port=${port}
+                        if [  -f "create_vnc_ngrok.sh" ]; then
+                                 rm    create_vnc_ngrok.sh
+                                 touch create_vnc_ngrok.sh
+                        else
+                            touch create_vnc_ngrok.sh
+                        fi
 
+                        echo  " ps -ef|grep \"ngrok -config=/dbc/code/bin/$service.yml\" | awk '{print  \$2}'| xargs  kill -9"  >> create_vnc_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_vnc_ngrok.sh
+                        echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_vnc_ngrok.sh
+                        echo "sleep 8s" >>  create_vnc_ngrok.sh
+                        echo "*/1 * * * *  expect /dbc/code/bin/check_vnc_ngrok.exp ${server_ip}  ${port}" >> /autoshell/scan.cron
+
+                    fi
+
+                    crontab /autoshell/scan.cron
 
                 ;;
                 *)
@@ -365,6 +445,8 @@ main_loop()
     cd `dirname $0`/bin
 
     setup_ngrok_connection
+
+
     run_jupyter
 
     echo "support nextcloud"
