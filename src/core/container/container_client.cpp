@@ -2230,6 +2230,67 @@ namespace matrix
         }
 
 
+        std::string container_client::get_docker_dir(std::string container_id)
+        {
+            //endpoint
+            std::string endpoint = "/containers/";
+            if (container_id.empty())
+            {
+                return "";
+            }
+
+            endpoint += container_id;
+            endpoint += "/json";
+
+            //headers, resp
+            kvs headers;
+            headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
+            http_response resp;
+            int32_t ret = E_SUCCESS;
+
+            try
+            {
+                ret = m_http_client.get_sleep(endpoint, headers, resp,30);
+            }
+            catch (const std::exception & e)
+            {
+                LOG_ERROR << "container client inspect container error: " << e.what();
+                return "";
+            }
+
+            if (E_SUCCESS != ret)
+            {
+
+                return "";
+            }
+            else
+            {
+                rapidjson::Document doc;
+                //doc.Parse<0>(resp.body.c_str());
+                if (doc.Parse<0>(resp.body.c_str()).HasParseError())
+                {
+                    LOG_ERROR << "parse inspect_container file error:" << GetParseError_En(doc.GetParseError());
+                    return "";
+                }
+
+                std::shared_ptr<container_inspect_response> inspect_resp = std::make_shared<container_inspect_response>();
+
+                //message
+                if (!doc.HasMember("HostnamePath"))
+                {
+                    return "";
+                }
+
+
+                    rapidjson::Value &HostnamePath = doc["HostnamePath"];
+                    std::string host = HostnamePath.GetString();
+                    std::vector<std::string> list;
+                    string_util::split(host, "containers", list);
+                    LOG_INFO << "docke dir :" <<list[0];
+
+                return list[0];
+            }
+        }
 
 
 

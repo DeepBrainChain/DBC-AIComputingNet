@@ -92,6 +92,7 @@ namespace matrix
             std::string get_container_size_by_task_id(std::string id);
             std::string get_images_original();
             std::string get_gpu_id(std::string container_id);
+            std::string get_docker_dir(std::string container_id);
         protected:
 
             http_client m_http_client;
