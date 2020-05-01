@@ -27,12 +27,11 @@ cpu_memory_swap_old=${cpu_memory_swap_array[0]}
 cpu_memory_swap_new=${cpu_memory_swap_array[1]}
 
 docker_dir=$9
-sudo docker stop ${task_id}
-ps  -ef|grep dockerd | awk '{print $2}' | sudo xargs kill -9
-sudo sed -i "s/NVIDIA_VISIBLE_DEVICES=.*\"/NVIDIA_VISIBLE_DEVICES=${gpu_id_new}\"/g" ${docker_dir}containers/${container_id}/config.v2.json
+sudo  sed -i "s/NVIDIA_VISIBLE_DEVICES=[0-9]\{0,\}[,0-9]\{0,\}\",\"PATH=/NVIDIA_VISIBLE_DEVICES=${gpu_id_new}\",\"PATH=/g" ${docker_dir}containers/${container_id}/config.v2.json
+sudo sed -i "s/NVIDIA_VISIBLE_DEVICES=none\",\"PATH=/NVIDIA_VISIBLE_DEVICES=${gpu_id_new}\",\"PATH=/g" ${docker_dir}containers/${container_id}/config.v2.json
 
-sudo sed -i "s/CpuShares\":.*,/CpuShares\":${cpu_shares_new},/g" ${docker_dir}containers/${container_id}/hostconfig.json
-sudo sed -i "s/CpuQuota\":.*,/CpuQuota\":${cpu_quota_new},/g" ${docker_dir}containers/${container_id}/hostconfig.json
-sudo sed -i "s/Memory\":.*,/Memory\":${cpu_memory_new},/g" ${docker_dir}containers/${container_id}/hostconfig.json
-sudo sed -i "s/MemorySwap\":.*,/MemorySwap\":${cpu_memory_swap_new},/g" ${docker_dir}containers/${container_id}/hostconfig.json
+sudo sed -i "s/\"CpuShares\":[0-9]\{1,\},\"Memory\"/\"CpuShares\":${cpu_shares_new},\"Memory\"/g" ${docker_dir}containers/${container_id}/hostconfig.json
+sudo sed -i "s/\"CpuQuota\":[0-9]\{1,\},\"CpuRealtimePeriod\"/\"CpuQuota\":${cpu_quota_new},\"CpuRealtimePeriod\"/g" ${docker_dir}containers/${container_id}/hostconfig.json
+sudo sed -i "s/\"Memory\":[0-9]\{1,\},\"NanoCpus\"/\"Memory\":${cpu_memory_new},\"NanoCpus\"/g" ${docker_dir}containers/${container_id}/hostconfig.json
+sudo sed -i "s/\"MemorySwap\":[0-9]\{1,\},\"MemorySwappiness\"/\"MemorySwap\":${cpu_memory_swap_new},\"MemorySwappiness\"/g" ${docker_dir}containers/${container_id}/hostconfig.json
 exit

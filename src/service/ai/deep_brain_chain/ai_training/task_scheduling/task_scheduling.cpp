@@ -431,6 +431,32 @@ namespace ai
                 LOG_ERROR << "m_change_gpu_id_cmd command is empty";
                 return E_DEFAULT;
             }
+
+            if(!std::regex_match(new_gpu_id,std::regex("[0-9]{0,}[,0-9]{0,}")) && ! std::regex_match(new_gpu_id,std::regex("none")))
+            {
+                LOG_ERROR << "new_gpu_id is error ";
+                return E_DEFAULT;
+            }
+            if(!std::regex_match(cpu_shares,std::regex("[0-9]{1,},[0-9]{1,}")) )
+            {
+                LOG_ERROR << "cpu_shares is error ";
+                return E_DEFAULT;
+            }
+            if(!std::regex_match(cpu_quota,std::regex("[0-9]{1,},[0-9]{1,}")) )
+            {
+                LOG_ERROR << "cpu_quota is error ";
+                return E_DEFAULT;
+            }
+            if(!std::regex_match(memory,std::regex("[0-9]{1,},[0-9]{1,}")) )
+            {
+                LOG_ERROR << "memory is error ";
+                return E_DEFAULT;
+            }
+            if(!std::regex_match(memory_swap,std::regex("[0-9]{1,},[0-9]{1,}")) )
+            {
+                LOG_ERROR << "memory_swap is error ";
+                return E_DEFAULT;
+            }
             try
             {
                 std::error_code ec;
