@@ -76,7 +76,11 @@ run_jupyter()
         export GPU_SERVER_RESTART="yes"
         expect /chjupyter.exp $JUPYTER_PASSWD
     fi
-    nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
+
+   jupyter_number=`ps -ef |grep -w jupyter-lab|grep -v grep|wc -l`
+   if [ $jupyter_number -le 0 ];then
+      sudo nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
+   fi
 }
 
 
