@@ -4,16 +4,27 @@ args="$@"
 echo $args
 
 
-#parse_arg()
-#{
-#    test -f ./jq && chmod +x ./jq
-#
-#    debug=($(echo $args | ./jq -r .debug?))
-#
-#    if [ "$debug" == "true" ]; then
-#        set -x
-#    fi
-#}
+parse_arg()
+{
+    test -f ./jq && chmod +x ./jq
+
+    # format check
+    if ! echo $args | ./jq -r .debug? ; then
+        echo "json format error: $args"
+        exit 1
+    fi
+
+    debug=($(echo $args | ./jq -r .debug?))
+
+    if [ "$debug" == "true" ]; then
+        set -x
+    fi
+
+    # mandatory
+    server_ip=($(echo $args | ./jq -r .dns_server[].ip?))
+
+}
+
 run_jupyter()
 {
     #JUPYTER_TOKEN=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c64; echo)
@@ -97,7 +108,8 @@ update_path()
 start_nextcloud()
 {
 
-    ip=$(curl ip.sb)
+  #  ip=$(curl ip.sb)
+    ip=${server_ip}
     sed -i "s/0 => '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => '$ip/g" /var/www/nextcloud/config/config.php
     sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip#g" /var/www/nextcloud/config/config.php
    # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
@@ -145,7 +157,7 @@ auto_scan_nextcloud()
 main_loop()
 {
     # step 1
-#    parse_arg
+    parse_arg
 
     # update .basrc
     append_to_bashrc "export IPFS_PATH=/dbc/.ipfs"
