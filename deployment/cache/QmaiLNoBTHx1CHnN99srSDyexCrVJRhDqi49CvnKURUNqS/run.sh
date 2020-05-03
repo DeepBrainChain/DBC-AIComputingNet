@@ -77,10 +77,10 @@ run_jupyter()
         expect /chjupyter.exp $JUPYTER_PASSWD
     fi
 
-   jupyter_number=`ps -ef |grep -w jupyter-lab|grep -v grep|wc -l`
-   if [ $jupyter_number -le 0 ];then
-      sudo nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
-   fi
+   ps -ef|grep jupyter-lab | awk '{print  \$2}'| xargs  kill -9
+
+   sudo nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
+
 }
 
 
