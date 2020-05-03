@@ -73,7 +73,7 @@ run_jupyter()
     else
         JUPYTER_PASSWD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c8; echo)
         echo "JUPYTER_PASSWD:"$JUPYTER_PASSWD
-        export GPU_SERVER_RESTART="yes"
+   #     export GPU_SERVER_RESTART="yes"
         expect /chjupyter.exp $JUPYTER_PASSWD
     fi
 
@@ -475,6 +475,15 @@ main_loop()
     run_jupyter
     sleep 3s
     auto_check_process
+
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+        echo "GPU_SERVER_RESTART "
+    else
+
+        export GPU_SERVER_RESTART="yes"
+
+    fi
+
     echo "support nextcloud"
     echo "gpu server is ready"
 
