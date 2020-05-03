@@ -39,7 +39,7 @@ run_jupyter()
         expect /chjupyter.exp $JUPYTER_PASSWD
     fi
 
-    ps -ef|grep jupyter-lab | awk '{print  \$2}'| sudo xargs  kill -9
+    ps -ef|grep jupyter-lab | awk '{print  $2}'| sudo xargs  kill -9
 
     sudo nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
 }
