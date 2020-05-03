@@ -469,7 +469,7 @@ main_loop()
 
 
     run_jupyter
-    sleep 3s
+    sleep 5s
     auto_check_process
 
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then

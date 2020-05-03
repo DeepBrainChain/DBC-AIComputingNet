@@ -188,7 +188,7 @@ main_loop()
     start_nextcloud
     run_jupyter
 
-    sleep 3s
+    sleep 5s
     auto_check_process
 
     set_passwd
