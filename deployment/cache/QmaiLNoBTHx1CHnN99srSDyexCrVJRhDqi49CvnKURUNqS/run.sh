@@ -466,15 +466,17 @@ main_loop()
 
     setup_ngrok_connection
 
+
+
+    run_jupyter
+    sleep 3s
+    auto_check_process
+
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
             echo " crontab /autoshell/scan.cron has been created"
     else
             crontab /autoshell/scan.cron
     fi
-
-    run_jupyter
-    sleep 3s
-    auto_check_process
 
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
         echo "GPU_SERVER_RESTART "
