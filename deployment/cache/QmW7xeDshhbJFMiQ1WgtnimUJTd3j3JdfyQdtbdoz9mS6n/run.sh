@@ -151,7 +151,7 @@ auto_scan_nextcloud()
         touch /autoshell/scan.cron
         echo '*/1 * * * *  sh /autoshell/scan_nextcloud.sh' >> /autoshell/scan.cron
      #   echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
-        crontab /autoshell/scan.cron
+     #   crontab /autoshell/scan.cron
     fi
 
     service cron restart
@@ -193,6 +193,12 @@ main_loop()
     auto_check_process
 
     set_passwd
+
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+            echo " crontab /autoshell/scan.cron has been created"
+    else
+            crontab /autoshell/scan.cron
+    fi
 
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
         echo "GPU_SERVER_RESTART "
