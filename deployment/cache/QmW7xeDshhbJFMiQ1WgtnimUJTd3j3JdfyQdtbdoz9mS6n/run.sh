@@ -86,7 +86,7 @@ set_passwd()
         if [ "$default_pwd" != "null" ]; then
             echo root:$default_pwd|chpasswd
             echo "pwd: $default_pwd"
-            export GPU_SERVER_RESTART="yes"
+         #   export GPU_SERVER_RESTART="yes"
         else
             echo "fail to set passwword"
         fi
@@ -194,7 +194,13 @@ main_loop()
 
     set_passwd
 
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+        echo "GPU_SERVER_RESTART "
+    else
 
+        export GPU_SERVER_RESTART="yes"
+
+    fi
      echo "support nextcloud"
      echo "gpu server is ready"
 
