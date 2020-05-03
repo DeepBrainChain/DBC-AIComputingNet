@@ -242,12 +242,27 @@ auto_scan_nextcloud()
 
         touch /autoshell/scan.cron
         echo "*/1 * * * *  sh /autoshell/scan_nextcloud.sh" >> /autoshell/scan.cron
-        echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
+     #   echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
 
     fi
 
     service cron restart
 }
+
+auto_check_process()
+{
+    if [ "$GPU_SERVER_RESTART" == "yes" ]; then
+       echo "check_process has been created"
+    else
+
+        echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
+
+    fi
+
+
+}
+
+
 
 setup_ngrok_connection()
 {
@@ -458,7 +473,8 @@ main_loop()
     fi
 
     run_jupyter
-
+    sleep 3s
+    auto_check_process
     echo "support nextcloud"
     echo "gpu server is ready"
 
