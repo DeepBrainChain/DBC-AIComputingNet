@@ -280,7 +280,7 @@ namespace ai
             if (task->task_id.empty())
             {
                 LOG_DEBUG << "task config error.";
-            //    task->__set_status(update_task_error);
+               task->__set_status(update_task_error);
                 return E_DEFAULT;
             }
 
@@ -301,6 +301,7 @@ namespace ai
                     }
 
                     if (resp == nullptr) {
+                        task->__set_status(update_task_error);
                         return E_DEFAULT;
                     }
 
@@ -334,6 +335,7 @@ namespace ai
                 if (docker_dir.empty())
                 {
                     LOG_ERROR << "docker_dir is empty";
+                    task->__set_status(update_task_error);
                     return E_DEFAULT;
                 }
                 std::string container_id=task->container_id;
@@ -344,7 +346,7 @@ namespace ai
                         , memory  , memory_swap , docker_dir);
 
                 if (reslut ==E_DEFAULT){
-                //    task->__set_status(update_task_error);
+                    task->__set_status(update_task_error);
                    return  E_DEFAULT;
                 }
 
@@ -364,7 +366,7 @@ namespace ai
                     std::string gpu_id=CONTAINER_WORKER_IF->get_gpu_id(sub_task_id);
                     if(gpu_id.find("NVIDIA_VISIBLE_DEVICES=")== string::npos){ //如果gpu id 没有修改过来
                         LOG_INFO << "update_task_error";
-                      //  task->__set_status(update_task_error);
+                        task->__set_status(update_task_error);
 
                         return E_DEFAULT;
                     }else{
@@ -374,7 +376,7 @@ namespace ai
                         std::string new_gpu_id = m_container_worker->get_new_gpu_id(task);
                         if(new_gpu_id.compare(list[1])!=0){//说明没有设置成功
                             LOG_INFO << "update_task_error new_gpu_id !=inspect " <<gpu_id;
-                          //  task->__set_status(update_task_error);
+                            task->__set_status(update_task_error);
 
                             return E_DEFAULT;
                         }
@@ -393,7 +395,7 @@ namespace ai
                     if(sub_time>360*1000 ){//是否创建时间已经超过sleep_time
 
                         LOG_INFO << "update_task_error ：can not start container  ";
-                     //   task->__set_status(update_task_error);
+                        task->__set_status(update_task_error);
                         return E_DEFAULT;
 
                     }

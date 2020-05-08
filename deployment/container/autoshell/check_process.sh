@@ -33,6 +33,9 @@ fi
 
 apache2_number=`ps -ef |grep -w apache2|grep -v grep|wc -l`
 if [ $apache2_number -le 0 ];then
+
+   sudo rm /var/run/apache2/apache2.pid
+   ps  -ef|grep apache2 | awk '{print $2}' | sudo xargs kill -9
    sudo  service apache2 restart
 fi
 
