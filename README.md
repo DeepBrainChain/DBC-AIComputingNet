@@ -1,9 +1,9 @@
 # deepbrainchain
 Artificial Intelligence Computing Platform Driven By BlockChain
 
-If you want to add your machine to the DBC network, go straight to the “install DBC computing node” and ignore the rest
+If you want to add your machine to the DBC network, go straight to the “ https://kdocs.cn/l/sCsGPLlCl?f=111” and ignore the rest
 如果你想要添加机器到DBC网络中，直接查看 https://kdocs.cn/l/sCsGPLlCl?f=111
-[文档] DBC_install.docx
+
 
 # build dbc in linux os with dbc compile container
 Suppose download dbc source code locates into ~/deepbrainchain folder.
