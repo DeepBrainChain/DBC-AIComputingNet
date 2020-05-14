@@ -177,8 +177,8 @@ main_loop()
     # update .basrc
     append_to_bashrc "export IPFS_PATH=/dbc/.ipfs"
     append_to_bashrc "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
-    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin"
-    update_path "/usr/local/nvidia/bin"
+    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin:/usr/local/nvidia/bin:/dbc/code/bin:/root/anaconda3/bin"
+
 
     source ~/.bashrc
 
@@ -206,6 +206,7 @@ main_loop()
         export GPU_SERVER_RESTART="yes"
 
     fi
+
      echo "support nextcloud"
      echo "gpu server is ready"
 
