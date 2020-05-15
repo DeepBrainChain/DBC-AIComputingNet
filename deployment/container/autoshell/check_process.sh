@@ -10,7 +10,7 @@ jupyter_number=`ps -ef |grep -w jupyter-lab|grep -v grep|wc -l`
 if [ $jupyter_number -le 0 ] || [ $jupyter_number -ge 4 ];then
 
    ps -ef|grep jupyter-lab | awk '{print  $2}'| sudo xargs  kill -9
-   nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
+   nohup /usr/local/bin/jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
 fi
 
 
