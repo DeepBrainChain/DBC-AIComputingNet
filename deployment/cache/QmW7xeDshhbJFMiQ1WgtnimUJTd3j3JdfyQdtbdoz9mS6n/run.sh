@@ -41,7 +41,7 @@ run_jupyter()
 
     ps -ef|grep jupyter-lab | awk '{print  $2}'| sudo xargs  kill -9
 
-    sudo nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
+    nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
 }
 setup_ssh_service()
 {

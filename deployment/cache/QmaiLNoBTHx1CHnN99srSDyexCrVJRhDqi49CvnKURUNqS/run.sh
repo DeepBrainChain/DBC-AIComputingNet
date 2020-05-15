@@ -79,7 +79,7 @@ run_jupyter()
 
    ps -ef|grep jupyter-lab | awk '{print  $2}'| sudo xargs  kill -9
 
-   sudo nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
+   nohup jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root &
 
 }
 
@@ -335,9 +335,10 @@ setup_ngrok_connection()
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ssh_ngrok.sh
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_ssh_ngrok.sh
                         echo "sleep 8s" >>  create_ngrok.sh
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_ssh_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
+
 
                     fi
+                    echo "*/1 * * * *  expect /dbc/code/bin/check_ssh_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
 
                 ;;
                 jupyter)
@@ -358,9 +359,10 @@ setup_ngrok_connection()
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_jupyter_ngrok.sh
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_jupyter_ngrok.sh
                         echo "sleep 8s" >>  create_jupyter_ngrok.sh
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_jupyter_ngrok.exp ${server_ip}  ${port} " >> /autoshell/scan.cron
+
 
                     fi
+                    echo "*/1 * * * *  expect /dbc/code/bin/check_jupyter_ngrok.exp ${server_ip}  ${port} " >> /autoshell/scan.cron
                 ;;
                 nextcloud)
                     nextcloud_port=${port}
@@ -380,9 +382,10 @@ setup_ngrok_connection()
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_nextcloud_ngrok.sh
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_nextcloud_ngrok.sh
                         echo "sleep 8s" >>  create_nextcloud_ngrok.sh
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_nextcloud_ngrok.exp ${server_ip}  ${port}" >> /autoshell/scan.cron
+
 
                     fi
+                    echo "*/1 * * * *  expect /dbc/code/bin/check_nextcloud_ngrok.exp ${server_ip}  ${port}" >> /autoshell/scan.cron
                 ;;
                 tensorboard)
                     tensorboard_url="tensorboard_url:  http://${server_ip}:${port}  "
@@ -401,9 +404,10 @@ setup_ngrok_connection()
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_tensorboard_ngrok.sh
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_tensorboard_ngrok.sh
                         echo "sleep 8s" >>  create_tensorboard_ngrok.sh
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_tensorboard_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
+
 
                     fi
+                     echo "*/1 * * * *  expect /dbc/code/bin/check_tensorboard_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
                 ;;
                 vnc)
                     vnc_url="vnc_url:  http://${server_ip}:${port}  "
@@ -422,10 +426,10 @@ setup_ngrok_connection()
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_vnc_ngrok.sh
                         echo  " screen -d -m bash /dbc/code/bin/startapp /dbc/code/bin/${service}.yml $service $token"  >> create_vnc_ngrok.sh
                         echo "sleep 8s" >>  create_vnc_ngrok.sh
-                        echo "*/1 * * * *  expect /dbc/code/bin/check_vnc_ngrok.exp ${server_ip}  ${port}" >> /autoshell/scan.cron
+
 
                     fi
-
+                    echo "*/1 * * * *  expect /dbc/code/bin/check_vnc_ngrok.exp ${server_ip}  ${port}" >> /autoshell/scan.cron
 
 
                 ;;
