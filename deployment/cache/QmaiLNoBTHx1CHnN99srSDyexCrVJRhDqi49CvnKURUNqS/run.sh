@@ -86,17 +86,17 @@ run_jupyter()
 
 append_to_bashrc()
 {
-	s=$1
+
 	if ! grep "$1" ~/.bashrc; then
-		echo "$1" >> ~/.bashrc
+		echo "$2" >> ~/.bashrc
 	fi
 }
 
 update_path()
 {
-    path=$1
-	if ! grep PATH ~/.bashrc | grep $1; then
-        echo "export PATH=$PATH:$1" >> ~/.bashrc
+
+	if ! grep $1 ~/.bashrc; then
+        echo "export PATH=/$PATH:$1" >> ~/.bashrc
 	fi
 }
 
@@ -447,14 +447,17 @@ main_loop()
     # step 1
     parse_arg
 
-    # update .basrc
-    append_to_bashrc "export IPFS_PATH=/dbc/.ipfs"
-    append_to_bashrc "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
-    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin:/usr/local/nvidia/bin:/dbc/code/bin:/root/anaconda3/bin"
+    if [ "$GPU_SERVER_RESTART" != "yes" ]; then
+
+        # update .basrc
+        append_to_bashrc "IPFS_PATH"  "export IPFS_PATH=/dbc/.ipfs"
+        append_to_bashrc "CUDA_HOME"  "export CUDA_HOME=/usr/local/cuda"
+        append_to_bashrc "LD_LIBRARY_PATH" "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib:/usr/local/cuda/lib64"
+        update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin:/usr/local/nvidia/bin:/dbc/code/bin:/root/anaconda3/bin:/usr/local/cuda/bin"
 
 
-    source ~/.bashrc
-
+        source ~/.bashrc
+    fi
     auto_scan_nextcloud
 
 
