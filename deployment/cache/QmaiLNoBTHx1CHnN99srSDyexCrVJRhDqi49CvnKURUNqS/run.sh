@@ -96,7 +96,7 @@ update_path()
 {
 
 	if ! grep $1 ~/.bashrc; then
-        echo "export PATH=/$PATH:$1" >> ~/.bashrc
+        echo "export PATH=\$PATH:$1" >> ~/.bashrc
 	fi
 }
 
