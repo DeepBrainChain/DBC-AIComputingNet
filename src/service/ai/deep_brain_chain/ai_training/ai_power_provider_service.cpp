@@ -149,6 +149,36 @@ namespace ai
             assert(INVALID_TIMER_ID != m_prune_task_timer_id);
         }
 
+        std::string get_gpu_spec(std::string s)
+        {
+            if (s.empty())
+            {
+                return "";
+            }
+
+            std::string rt;
+            std::stringstream ss;
+            ss << s;
+            boost::property_tree::ptree pt;
+
+            try
+            {
+                boost::property_tree::read_json(ss, pt);
+                rt = pt.get<std::string>("env.NVIDIA_VISIBLE_DEVICES");
+
+                if ( !rt.empty())
+                {
+                    matrix::core::string_util::trim(rt);
+                    LOG_DEBUG << "gpus requirement: " << rt;
+                }
+            }
+            catch (...)
+            {
+
+            }
+
+            return rt;
+        }
 
         int32_t ai_power_provider_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req )
         {
@@ -157,6 +187,43 @@ namespace ai
             auto task = m_user_task_ptr->find_task(req->body.task_id);
             if (nullptr == task)
             {
+                std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(req->body.task_id);
+
+                if (nullptr != resp) {
+
+                    if (!resp->id.empty()) {
+                        std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
+                        if (nullptr == task)
+                        {
+                            return E_DEFAULT;
+                        }
+                        task->__set_task_id(req->body.task_id);
+                        task->__set_select_mode(req->body.select_mode);
+                        task->__set_master(req->body.master);
+                        task->__set_peer_nodes_list(req->body.peer_nodes_list);
+
+                        task->__set_server_count(req->body.server_count);
+                        task->__set_training_engine(req->body.training_engine);
+                        task->__set_code_dir(req->body.code_dir);
+                        task->__set_entry_file(req->body.entry_file);
+                        task->__set_data_dir(req->body.data_dir);
+                        task->__set_checkpoint_dir(req->body.checkpoint_dir);
+                        task->__set_hyper_parameters(req->body.hyper_parameters);
+                        task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
+                        task->__set_error_times(0);
+
+                        task->__set_container_id(resp->id);
+                        LOG_INFO << "req container_name: " << req->body.container_name;
+
+                        task->__set_gpus(get_gpu_spec(task->server_specification));
+                        LOG_INFO << "set_server_specification: " << task->server_specification;
+                        task->__set_received_time_stamp(std::time(nullptr));
+                        task->__set_status(task_queueing);
+                        task->__set_server_specification("restart");
+                        m_user_task_ptr->add_task(task);
+                        return E_SUCCESS;
+                    }
+                }
                 LOG_ERROR << "restart training: task absent: " << req->body.task_id;
                 return E_DEFAULT;
             }
@@ -214,36 +281,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        std::string get_gpu_spec(std::string s)
-        {
-            if (s.empty())
-            {
-                return "";
-            }
 
-            std::string rt;
-            std::stringstream ss;
-            ss << s;
-            boost::property_tree::ptree pt;
-
-            try
-            {
-                boost::property_tree::read_json(ss, pt);
-                rt = pt.get<std::string>("env.NVIDIA_VISIBLE_DEVICES");
-
-                if ( !rt.empty())
-                {
-                    matrix::core::string_util::trim(rt);
-                    LOG_DEBUG << "gpus requirement: " << rt;
-                }
-            }
-            catch (...)
-            {
-
-            }
-
-            return rt;
-        }
 
         std::string get_is_update(std::string s)
         {
