@@ -213,7 +213,8 @@ start_nextcloud()
     service mysql restart
     sleep 10s
     redis-server /etc/redis/redis.conf
-
+    sudo rm /var/run/apache2/apache2.pid
+    ps -ef|grep apache2 | awk '{print $2}' | sudo xargs kill -9
     service apache2 restart
     sleep 10s
 

@@ -94,17 +94,17 @@ set_passwd()
 
 append_to_bashrc()
 {
-	s=$1
+
 	if ! grep "$1" ~/.bashrc; then
-		echo "$1" >> ~/.bashrc
+		echo "$2" >> ~/.bashrc
 	fi
 }
 
 update_path()
 {
-    path=$1
-	if ! grep PATH ~/.bashrc | grep $1; then
-        echo "export PATH=$PATH:$1" >> ~/.bashrc
+
+	if ! grep $1 ~/.bashrc; then
+        echo "export PATH=\$PATH:$1" >> ~/.bashrc
 	fi
 }
 
@@ -116,13 +116,14 @@ start_nextcloud()
     sed -i "s/0 => '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/0 => '$ip/g" /var/www/nextcloud/config/config.php
     sed -i "s#http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}#http://$ip#g" /var/www/nextcloud/config/config.php
    # sed -i "s/ipaddress/$ip/g" /var/www/nextcloud/config/config.php
-    service mysql stop
-    sleep 3s
-    service mysql start
+
+    service mysql restart
     sleep 10s
     redis-server /etc/redis/redis.conf
-    service apache2 stop
-    service apache2 start
+    sudo rm /var/run/apache2/apache2.pid
+    ps -ef|grep apache2 | awk '{print $2}' | sudo xargs kill -9
+
+    service apache2 restart
 
     if [ "$GPU_SERVER_RESTART" == "yes" ]; then
         echo "keep nextcloud current password"
@@ -175,12 +176,17 @@ main_loop()
     parse_arg
 
     # update .basrc
-    append_to_bashrc "export IPFS_PATH=/dbc/.ipfs"
-    append_to_bashrc "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
-    update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin:/usr/local/nvidia/bin:/dbc/code/bin:/root/anaconda3/bin"
+    if [ "$GPU_SERVER_RESTART" != "yes" ]; then
+
+        # update .basrc
+        append_to_bashrc "IPFS_PATH"  "export IPFS_PATH=/dbc/.ipfs"
+        append_to_bashrc "CUDA_HOME"  "export CUDA_HOME=/usr/local/cuda"
+        append_to_bashrc "LD_LIBRARY_PATH" "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib:/usr/local/cuda/lib64"
+        update_path "/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/anaconda3/bin:/usr/local/nvidia/bin:/dbc/code/bin:/root/anaconda3/bin:/usr/local/cuda/bin"
 
 
-    source ~/.bashrc
+        source ~/.bashrc
+    fi
 
     auto_scan_nextcloud
 
