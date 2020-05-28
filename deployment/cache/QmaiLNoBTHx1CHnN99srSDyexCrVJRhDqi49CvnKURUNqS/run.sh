@@ -340,6 +340,7 @@ setup_ngrok_connection()
 
                     fi
                     echo "*/1 * * * *  expect /dbc/code/bin/check_ssh_ngrok.exp ${server_ip} ${port} " >> /autoshell/scan.cron
+                    echo "*/1 * * * *  chown -R www-data:www-data /data/nextcloud/" >> /autoshell/scan.cron
 
                 ;;
                 jupyter)

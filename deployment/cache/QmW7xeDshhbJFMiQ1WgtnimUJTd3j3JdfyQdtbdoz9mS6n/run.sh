@@ -150,8 +150,7 @@ auto_scan_nextcloud()
         fi
         touch /autoshell/scan.cron
         echo '*/1 * * * *  sh /autoshell/scan_nextcloud.sh' >> /autoshell/scan.cron
-     #   echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
-     #   crontab /autoshell/scan.cron
+    
     fi
 
     service cron restart
@@ -164,7 +163,7 @@ auto_check_process()
     else
 
         echo "*/1 * * * *  sh /autoshell/check_process.sh" >> /autoshell/scan.cron
-
+        echo "*/1 * * * *  chown -R www-data:www-data /data/nextcloud/" >> /autoshell/scan.cron
     fi
 
 
