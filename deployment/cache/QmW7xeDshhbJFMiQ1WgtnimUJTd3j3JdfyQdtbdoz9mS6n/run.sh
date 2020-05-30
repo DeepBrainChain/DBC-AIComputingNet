@@ -150,7 +150,7 @@ auto_scan_nextcloud()
         fi
         touch /autoshell/scan.cron
         echo '*/1 * * * *  sh /autoshell/scan_nextcloud.sh' >> /autoshell/scan.cron
-    
+
     fi
 
     service cron restart
