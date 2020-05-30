@@ -40,7 +40,7 @@ namespace service
     {
 
         #define NODE_INFO_QUERY_TIMER                       "node_info_query_timer"
-        #define TIMER_INTERVAL_NODE_INFO_COLLECTION           (10*1000)
+        #define TIMER_INTERVAL_NODE_INFO_COLLECTION           (20*1000)
 
         #define NODE_INFO_COLLECTION_TIMER                  "node_info_collection_timer"
         //#define TIMER_INTERVAL_SERVICE_BROADCAST              (30*1000)
