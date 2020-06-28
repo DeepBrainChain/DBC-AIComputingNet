@@ -39,5 +39,11 @@ if [ $apache2_number -le 0 ];then
    sudo  service apache2 restart
 fi
 
+if [  -d "/root/.local/share/Trash" ]; then
+            rm -r /root/.local/share/Trash
+fi
+
+
+
 
 exit
