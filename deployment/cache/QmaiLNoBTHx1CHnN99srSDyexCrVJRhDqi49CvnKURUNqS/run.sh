@@ -494,10 +494,10 @@ main_loop()
 
     fi
 
-    if [  -f "/root/filecoin/DBC-FileCoin-Snark/target/release/filecoin-webapi" ]; then
-           ~/filecoin/DBC-FileCoin-Snark/target/release/filecoin-webapi 0.0.0.0:6006
+  #  if [  -f "/root/filecoin/DBC-FileCoin-Snark/target/release/filecoin-webapi" ]; then
+  #         ~/filecoin/DBC-FileCoin-Snark/target/release/filecoin-webapi 0.0.0.0:6006
 
-    fi
+ #   fi
 
     echo "support nextcloud"
     echo "gpu server is ready"
