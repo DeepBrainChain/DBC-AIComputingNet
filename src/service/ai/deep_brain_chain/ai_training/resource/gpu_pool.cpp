@@ -295,11 +295,13 @@ namespace ai
                 if (v.empty() || v == "Unknown")
                 {
                     return  std::string("");
+
                 }
 
                 return v;
             };
 
+            int count=0;
             for (int i=0; i+1 < vec.size(); i+=2)
             {
                 // Model: GeForce 940MX
@@ -309,16 +311,21 @@ namespace ai
 
                 if (model.empty() || uuid.empty())
                 {
-                    return false;
+                    continue;
                 }
 
                 if(model.compare("Unknown")==0){
                     continue;
                 }
 
+                count++;
                 gpus.insert(gpu(i/2,model,uuid));
             }
 
+            if(count=0){
+
+                return false;
+            }
 
             pool.init(gpus);
 
