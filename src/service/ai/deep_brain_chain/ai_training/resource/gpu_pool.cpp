@@ -312,6 +312,10 @@ namespace ai
                     return false;
                 }
 
+                if(model.compare("Unknown")==0){
+                    continue;
+                }
+
                 gpus.insert(gpu(i/2,model,uuid));
             }
 
