@@ -3,7 +3,7 @@
 
 #include <boost/format.hpp>
 #include <iostream>
-
+#include "log.h"
 
 using namespace matrix::core;
 
@@ -311,10 +311,12 @@ namespace ai
 
                 if (model.empty() || uuid.empty())
                 {
+                    LOG_INFO << "model is empty" ;
                     continue;
                 }
 
                 if(model.compare("Unknown")==0){
+                    LOG_INFO << "model is Unknown" ;
                     continue;
                 }
 
@@ -322,7 +324,7 @@ namespace ai
                 gpus.insert(gpu(i/2,model,uuid));
             }
 
-            if(count=0){
+            if(count==0){
 
                 return false;
             }
