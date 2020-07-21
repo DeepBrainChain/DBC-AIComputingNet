@@ -498,7 +498,6 @@ namespace ai
                         }
 
 
-
                     }
                     catch (...)
                     {
@@ -808,6 +807,23 @@ namespace ai
                         }
 
 
+                        LOG_INFO<< "pt.count(\"privileged\"):" << pt.count("privileged");
+                        if(pt.count("privileged")!=0){
+
+
+
+                            std::string privileged = pt.get<std::string>("privileged");
+                            if(privileged.compare("false")==0){
+                                config->host_config.privileged =false;
+                            } else{
+
+                                config->host_config.privileged =true;
+
+                            }
+
+                        }
+
+
 
                     }
                     catch (...)
@@ -1098,6 +1114,22 @@ namespace ai
                             int64_t disk_quota = pt.get<int64_t>("disk_quota");
                             config->host_config.disk_quota = disk_quota;
                             LOG_INFO<< "disk_quota: " << disk_quota;
+                        }
+
+                        LOG_INFO<< "pt.count(\"privileged\"):" << pt.count("privileged");
+                        if(pt.count("privileged")!=0){
+
+
+
+                            std::string privileged = pt.get<std::string>("privileged");
+                            if(privileged.compare("false")==0){
+                                config->host_config.privileged =false;
+                            } else{
+
+                                config->host_config.privileged =true;
+
+                            }
+
                         }
 
                     }
