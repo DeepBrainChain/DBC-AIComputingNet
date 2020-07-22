@@ -1127,7 +1127,7 @@ namespace ai
                             } else{
 
                                 config->host_config.privileged =true;
-                              //  config->entry_point.push_back("/sbin/init");
+                                config->entry_point.push_back("/sbin/init;");
 
                             }
 
