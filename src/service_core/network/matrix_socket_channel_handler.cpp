@@ -99,7 +99,7 @@ namespace matrix
             }
 
             uint32_t path_len=path.size();
-            if (path_len == 0 || path_len > 20)
+            if (path_len == 0 || path_len > 100)
             {
                 LOG_ERROR << "path length invalid "<< path_len << endl;
                 return false;
