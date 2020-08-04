@@ -25,8 +25,9 @@ namespace matrix
             { "114.116.41.44", 11107 },
             { "114.116.21.175", 11107 },
             { "114.115.219.202", 11107 },
-            { "fe80::f816:3eff:fe44:afc9", 11107 },
-            { "fe80::f816:3eff:fe33:d8db", 11107 }
+            { "111.44.254.164", 11107 },
+            { "114.44.254.170", 11107 }
+
         };
 
         static peer_seeds g_test_peer_seeds[] =
@@ -43,7 +44,7 @@ namespace matrix
 
         static const char* g_main_dns_seeds[] = 
         {
-            "seed.dbccloud.io",
+            "seed.dbchain.ai",
             "seed.deepbrainchain.org"
         };
 
