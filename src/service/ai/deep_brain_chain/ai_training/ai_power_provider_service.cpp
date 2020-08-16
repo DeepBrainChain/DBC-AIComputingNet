@@ -681,12 +681,12 @@ namespace ai
                // LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
                // LOG_INFO << "force stop training:" << task_id << endl;
                // return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
-              //  srand((int)time(0));
-             //   int32_t count=(rand()%(10-1)+1);
-             //   if(count==6){
+                srand((int)time(0));
+                int32_t count=(rand()%(10-1)+1);
+                if(count==6){
 
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-             //   }
+                }
 
 
             }
@@ -908,12 +908,12 @@ namespace ai
                 LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
 
                 req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
-              //  srand((int)time(0));
-              //  int32_t count=(rand()%(10-1)+1);
-              //  if(count==8){
+                srand((int)time(0));
+                int32_t count=(rand()%(10-1)+1);
+                if(count==8){
 
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-              //  }
+               }
 
 
                 return E_SUCCESS;
