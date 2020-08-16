@@ -47,8 +47,8 @@ setup_ssh_service()
 {
     if ! which sshd
     then
-        echo "apt update"
-        apt update >/dev/null
+      #  echo "apt update"
+      #  apt update >/dev/null
         echo "apt install openssh-server vim screen"
         apt install openssh-server vim screen -y >/dev/null
     fi
