@@ -36,7 +36,7 @@ if [ -f /etc/centos-release ]; then
     yum -y install curl wget vim openssl openssh-server passwd net-tools &>/dev/null
 else
     echo "install common tools for ubutu"
-    apt-get update
+    #apt-get update
     apt-get install --yes wget curl >/dev/null
 fi
 
