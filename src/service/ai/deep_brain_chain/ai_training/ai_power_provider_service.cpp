@@ -577,8 +577,13 @@ namespace ai
             {
                 LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
                 //relay start training in network
-                LOG_DEBUG << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
-                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                LOG_INFO << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
+                srand((int)time(0));
+                int32_t count=(rand()%(20-1)+1);
+                if(count==15) {
+                    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                }
+
             }
 
             if (it == peer_nodes.end())
@@ -682,7 +687,7 @@ namespace ai
                // LOG_INFO << "force stop training:" << task_id << endl;
                // return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
                 srand((int)time(0));
-                int32_t count=(rand()%(10-1)+1);
+                int32_t count=(rand()%(20-1)+1);
                 if(count==15){
 
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
@@ -739,9 +744,10 @@ namespace ai
             req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
 
             srand((int)time(0));
-            int32_t count=(rand()%(10-1)+1);
+            int32_t count=(rand()%(20-1)+1);
             if(count==15) {
 
+                LOG_INFO << "broadcast ai power provider service training task";
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             }
@@ -910,13 +916,13 @@ namespace ai
             if (nullptr == task)
             {
                 //relay msg to network
-                LOG_DEBUG << "ai power provider service on logs req does not have task: " << task_id;
+
 
                 req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
                 srand((int)time(0));
-                int32_t count=(rand()%(10-1)+1);
+                int32_t count=(rand()%(20-1)+1);
                 if(count==15){
-
+                    LOG_DEBUG << "broadcast_message ai power provider service on logs req does not have task" << task_id;
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                }
 
