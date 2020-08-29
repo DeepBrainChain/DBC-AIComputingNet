@@ -683,7 +683,7 @@ namespace ai
                // return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
                 srand((int)time(0));
                 int32_t count=(rand()%(10-1)+1);
-                if(count==6){
+                if(count==15){
 
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                 }
@@ -738,8 +738,13 @@ namespace ai
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
             req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
 
-            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+            srand((int)time(0));
+            int32_t count=(rand()%(10-1)+1);
+            if(count==15) {
 
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
+            }
             if (0 == m_user_task_ptr->get_total_user_task_size())
             {
                 LOG_INFO << "ai power provider service training task is empty";
@@ -910,7 +915,7 @@ namespace ai
                 req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
                 srand((int)time(0));
                 int32_t count=(rand()%(10-1)+1);
-                if(count==8){
+                if(count==15){
 
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                }
