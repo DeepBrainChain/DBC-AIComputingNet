@@ -748,7 +748,7 @@ namespace ai
             if(count==15) {
 
                 LOG_INFO << "broadcast ai power provider service training task";
-             //   CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
             }
             if (0 == m_user_task_ptr->get_total_user_task_size())
