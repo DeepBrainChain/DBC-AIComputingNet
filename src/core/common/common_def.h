@@ -17,7 +17,7 @@
 
 #define MAIN_NET                                                           0xF1E1B0A8
 #define TEST_NET                                                           0XE1D1A098
-#define MAIN_NET_TYPE                                                      "main1"
+#define MAIN_NET_TYPE                                                      "main2"
 #define TEST_NET_TYPE                                                      "test"
 #define DEFAULT_NET_TYPE                                                   TEST_NET_TYPE
 #define DEFAULT_LOG_LEVEL                                                  2

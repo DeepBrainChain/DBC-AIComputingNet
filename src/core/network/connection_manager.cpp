@@ -543,13 +543,13 @@ namespace matrix
             
             if (msg->content->header.nonce.length() == 0)
             {
-                LOG_DEBUG << "nonce is null. not broadcast. " << msg->get_name();
+                LOG_INFO << "nonce is null. not broadcast. " << msg->get_name();
                 return E_NONCE;
             }
 
             if (! have_active_channel())
             {
-                LOG_WARNING << "connection manager broadcast message error, no active channel";
+                LOG_INFO << "connection manager broadcast message error, no active channel";
                 return E_INACTIVE_CHANNEL;
             }
 
@@ -567,12 +567,12 @@ namespace matrix
                     //not login success or stopped, continue
                     if (!it->second->is_channel_ready())
                     {
-                        LOG_DEBUG << "connection manager broadcast message, but peer socket id: " << it->first.get_id()
+                        LOG_INFO << "connection manager broadcast message, but peer socket id: " << it->first.get_id()
                                   << " not logined.";
                         continue;
                     }
 
-                    LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string()
+                    LOG_INFO << "connection manager send message to socket, " << it->first.to_string()
                               << ", message name: " << msg->get_name();
                     it->second->write(msg);
                 }
@@ -602,7 +602,7 @@ namespace matrix
                     auto tcp_ch = std::dynamic_pointer_cast<tcp_socket_channel>(it->second);
                     if (tcp_ch && tcp_ch->get_remote_node_id() == node_id)
                     {
-                        LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string();
+                        LOG_INFO << "connection manager send message to socket, " << it->first.to_string();
                         is_next_node_found = true;
                         c = it->second;
                         break;
