@@ -578,11 +578,11 @@ namespace ai
                 LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id << " is not self and exit function";
                 //relay start training in network
                 LOG_INFO << "ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
-                srand((int)time(0));
-                int32_t count=(rand()%(600-1)+1);
-                if(count==15) {
+              //  srand((int)time(0));
+              //  int32_t count=(rand()%(600-1)+1);
+              //  if(count==15) {
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-                }
+              //  }
 
             }
 
@@ -686,12 +686,12 @@ namespace ai
                // LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
                // LOG_INFO << "force stop training:" << task_id << endl;
                // return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
-                srand((int)time(0));
-                int32_t count=(rand()%(600-1)+1);
-                if(count==15){
+              //  srand((int)time(0));
+             //   int32_t count=(rand()%(600-1)+1);
+             //   if(count==15){
 
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-                }
+             //   }
 
 
             }
@@ -743,14 +743,14 @@ namespace ai
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
             req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
 
-            srand((int)time(0));
-            int32_t count=(rand()%(600-1)+1);
-           if(count==15) {
+          //  srand((int)time(0));
+          //  int32_t count=(rand()%(600-1)+1);
+          // if(count==15) {
 
                 LOG_INFO << "broadcast ai power provider service training task";
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
-           }
+         //  }
             if (0 == m_user_task_ptr->get_total_user_task_size())
             {
                 LOG_INFO << "ai power provider service training task is empty";
@@ -919,12 +919,12 @@ namespace ai
 
 
                 req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
-                srand((int)time(0));
-                int32_t count=(rand()%(600-1)+1);
-                if(count==15){
+              //  srand((int)time(0));
+              //  int32_t count=(rand()%(600-1)+1);
+              //  if(count==15){
                     LOG_DEBUG << "broadcast_message ai power provider service on logs req does not have task" << task_id;
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-               }
+             //  }
 
 
                 return E_SUCCESS;
