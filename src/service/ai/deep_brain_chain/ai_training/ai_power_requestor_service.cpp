@@ -378,6 +378,7 @@ FINAL_PROC:
                 // add path
                 msg->content->header.path.push_back(CONF_MANAGER->get_node_id());
 
+                LOG_INFO << "broadcast_message binary forward msg";
                 CONNECTION_MANAGER->broadcast_message(msg);
             }
             else
