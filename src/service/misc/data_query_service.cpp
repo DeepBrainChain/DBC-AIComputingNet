@@ -401,7 +401,12 @@ namespace service
                 LOG_DEBUG << "data_query_service::on_net_show_req relay show_req to neighbor";
 
                 content->header.path.push_back(m_own_node_id); //add this node id into path
-                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
+                srand((int)time(0));
+                int32_t count=(rand()%(600-1)+1);
+                if(count==15) {
+                    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                }
             }
             else
             {
