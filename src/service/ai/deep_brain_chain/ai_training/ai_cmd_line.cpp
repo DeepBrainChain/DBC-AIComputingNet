@@ -589,7 +589,7 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            LOG_DEBUG << "ai power requester service list training add session: " << session->get_session_id();
+            LOG_INFO << "ai power requester service list training add session: " << session->get_session_id();
 
             //ok, broadcast
             CONNECTION_MANAGER->broadcast_message(req_msg);

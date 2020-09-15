@@ -856,7 +856,7 @@ namespace ai
 
                 status_list.clear();
 
-                LOG_DEBUG << "on_list_training_req send resp, nonce: " << rsp_content->header.nonce << ", session: " << rsp_content->header.session_id
+                LOG_INFO << "on_list_training_req send resp, nonce: " << rsp_content->header.nonce << ", session: " << rsp_content->header.session_id
                     << "task cnt: " << rsp_content->body.task_status_list.size();
             }
 
