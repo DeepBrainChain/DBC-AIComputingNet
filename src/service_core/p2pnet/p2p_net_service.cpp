@@ -1256,13 +1256,6 @@ namespace matrix
                     LOG_DEBUG << "p2p net service relay peer node " << node.addr.ip << ":" << (uint16_t)node.addr.port
                         << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
 
-                    //find in neighbor node
-                    //if (nullptr != get_peer_node(node.peer_node_id))           //neighbor node already existed
-                    //{
-                    //    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-                    //    return E_SUCCESS;
-                    //}
-
                     if (net_address::is_rfc1918(ep))
                     {
                         LOG_ERROR << "Peer Ip address is RFC1918 prive network. ip: " << ep.address().to_string();
@@ -1384,7 +1377,6 @@ namespace matrix
                 resp_content->body.peer_nodes_list.push_back(std::move(info));
                 resp_msg->set_content(resp_content);
 
-//                CONNECTION_MANAGER->broadcast_message(resp_msg, node->m_sid);
                 CONNECTION_MANAGER->send_message(node->m_sid,resp_msg);
             }
             else// broadcast all nodes
