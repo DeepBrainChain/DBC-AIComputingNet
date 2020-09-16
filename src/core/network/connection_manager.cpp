@@ -572,10 +572,11 @@ namespace matrix
                         continue;
                     }
 
-                    LOG_INFO << "connection manager send message to socket, " << it->first.to_string()
-                              << ", message name: " << msg->get_name();
+
                     it->second->write(msg);
                 }
+                LOG_INFO << "connection manager send message to socket, " << it->first.to_string()
+                         << ", message name: " << msg->get_name();
             }
 
             return E_SUCCESS;
