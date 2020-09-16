@@ -402,7 +402,19 @@ namespace service
 
                 content->header.path.push_back(m_own_node_id); //add this node id into path
 
-                if(CONF_MANAGER->get_node_id()=="2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF")
+                if(CONF_MANAGER->get_node_id()=="2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
+                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
+                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
+                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4CdhXs56P4UwtTauGcWcMbnBJhF6qWAWQD"
+                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43V9jndyUdKAeU6qAQ1kFRw3WX3rqqfmKj"
+                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4Bx3W6xH62YicCj2rsaBCk6ujeC11MooaQ"
+                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB488Ut5nduiiZ33dJmvS6txstdRPeHZ7Kkf"
+                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3x6jBqi8S2jaoC6yAc5MSVvjUDStUdLqpm"
+                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3vc4tVLHb1D4iacrTmzsQ3NzGE7HS5pnfw"
+                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
+                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
+                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                )
                 {
                     LOG_INFO << "0 data_query_service::on_net_show_req relay show_req to neighbor";
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
