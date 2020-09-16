@@ -653,11 +653,11 @@ namespace ai
 
             if (sp_task) //found
             {
-                if (sp_task->ai_user_node_id != req->header.exten_info["origin_id"])
-                {
-                    LOG_ERROR << "bad user try to stop task" << endl;
-                    return E_DEFAULT;
-                }
+               // if (sp_task->ai_user_node_id != req->header.exten_info["origin_id"])
+               // {
+               //     LOG_ERROR << "bad user try to stop task" << endl;
+               //     return E_DEFAULT;
+              //  }
 
                 int32_t status=m_oss_task_mng->can_stop_this_task(task_id);
                 LOG_INFO << "stop training, task_status: " << to_training_task_status_string(sp_task->status) << endl;
