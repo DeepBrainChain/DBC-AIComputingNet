@@ -38,7 +38,7 @@ namespace matrix
             attach_stdout = false;
             attach_stderr = false;
             network_disabled = false;
-            host_config.privileged = false;
+            host_config.privileged = true;
             host_config.publish_all_ports = false;
         }
 
