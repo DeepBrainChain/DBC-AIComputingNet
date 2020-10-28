@@ -15,9 +15,9 @@
 #include <vector>
 
 
-#define MAIN_NET                                                           0xF1E1B0A9 //每次需要修改
+#define MAIN_NET                                                           0xF1E1B0B9 //每次需要修改
 #define TEST_NET                                                           0XE1D1A098
-#define MAIN_NET_TYPE                                                      "main2"
+#define MAIN_NET_TYPE                                                      "main3"
 #define TEST_NET_TYPE                                                      "test"
 #define DEFAULT_NET_TYPE                                                   TEST_NET_TYPE
 #define DEFAULT_LOG_LEVEL                                                  2
