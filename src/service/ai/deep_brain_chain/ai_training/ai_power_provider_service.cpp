@@ -599,8 +599,8 @@ namespace ai
                 {
                     LOG_INFO << "1 ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
                     srand((int)time(0));
-                    int32_t count=(rand()%(10-1)+1);
-                    if(count==6) {
+                    int32_t count=(rand()%(3-1)+1);
+                    if(count==1) {
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
                 }
@@ -805,8 +805,8 @@ namespace ai
             } else
             {
                 srand((int)time(0));
-                int32_t count=(rand()%(10-1)+1);
-                if(count==6) {
+                int32_t count=(rand()%(3-1)+1);
+                if(count==1) {
 
                     LOG_INFO << "1 broadcast ai power provider service training task";
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
@@ -1002,8 +1002,8 @@ namespace ai
                 } else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(10-1)+1);
-                    if(count==6){
+                    int32_t count=(rand()%(3-1)+1);
+                    if(count==1){
                         LOG_DEBUG << "1 broadcast_message ai power provider service on logs req does not have task" << task_id;
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
