@@ -422,8 +422,8 @@ namespace service
                 } else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(600-1)+1);
-                    if(count==15) {
+                    int32_t count=(rand()%(10-1)+1);
+                    if(count==6) {
                         LOG_INFO << "1 data_query_service::on_net_show_req relay show_req to neighbor";
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
