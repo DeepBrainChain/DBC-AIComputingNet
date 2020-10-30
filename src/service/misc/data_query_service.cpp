@@ -414,6 +414,10 @@ namespace service
                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB46CvvAn4tZAkkKZofyGA9yW8fKjDv8CN2D"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
                 )
                 {
                     LOG_INFO << "0 data_query_service::on_net_show_req relay show_req to neighbor";
@@ -422,8 +426,8 @@ namespace service
                 } else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(50-1)+1);
-                    if(count==6) {
+                    int32_t count=(rand()%(5-1)+1);
+                    if(count==3) {
                         LOG_INFO << "1 data_query_service::on_net_show_req relay show_req to neighbor";
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
