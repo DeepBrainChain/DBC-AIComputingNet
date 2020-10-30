@@ -591,6 +591,10 @@ namespace ai
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB46CvvAn4tZAkkKZofyGA9yW8fKjDv8CN2D"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
+                         ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
+                           ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
                         )
                 {
                     LOG_INFO << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
@@ -720,6 +724,10 @@ namespace ai
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB46CvvAn4tZAkkKZofyGA9yW8fKjDv8CN2D"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
                         )
                 {
                     LOG_INFO << "0 stop training, broadcast_message task: " << task_id << endl;
@@ -727,8 +735,8 @@ namespace ai
                 }else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(10-1)+1);
-                    if(count==6){
+                    int32_t count=(rand()%(5-1)+1);
+                    if(count==2){
                         LOG_INFO << "1 stop training, broadcast_message task: " << task_id << endl;
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
@@ -797,6 +805,10 @@ namespace ai
                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
                ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                 ||CONF_MANAGER->get_node_id()=="2gfpp3MAB46CvvAn4tZAkkKZofyGA9yW8fKjDv8CN2D"
+                 ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
+                 ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
+                 ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
                     )
             {
                 LOG_INFO << "0 broadcast ai power provider service training task";
@@ -994,6 +1006,10 @@ namespace ai
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
                    ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB46CvvAn4tZAkkKZofyGA9yW8fKjDv8CN2D"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
+                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
                         )
                 {
                     LOG_DEBUG << "0 broadcast_message ai power provider service on logs req does not have task" << task_id;
