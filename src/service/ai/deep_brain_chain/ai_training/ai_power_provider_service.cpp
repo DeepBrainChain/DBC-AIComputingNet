@@ -595,6 +595,12 @@ namespace ai
                        ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
                          ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
                            ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
+                             ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
+                             ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
+                             ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4GaGfS4fj1Z8rXjkHLcF4ifNB2EMWPpKL2"
+                             ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
+                             ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
+                             ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
                         )
                 {
                     LOG_INFO << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
@@ -603,8 +609,8 @@ namespace ai
                 {
                     LOG_INFO << "1 ai power provider service relay broadcast start training req to neighbor peer nodes: " << req->body.task_id;
                     srand((int)time(0));
-                    int32_t count=(rand()%(3-1)+1);
-                    if(count==1) {
+                    int32_t count=(rand()%(10-1)+1);
+                    if(count==6) {
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
                 }
@@ -728,6 +734,12 @@ namespace ai
                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4GaGfS4fj1Z8rXjkHLcF4ifNB2EMWPpKL2"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
                         )
                 {
                     LOG_INFO << "0 stop training, broadcast_message task: " << task_id << endl;
@@ -735,8 +747,8 @@ namespace ai
                 }else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(5-1)+1);
-                    if(count==2){
+                    int32_t count=(rand()%(10-1)+1);
+                    if(count==6){
                         LOG_INFO << "1 stop training, broadcast_message task: " << task_id << endl;
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
@@ -809,6 +821,12 @@ namespace ai
                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
                  ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
+                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
+                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
+                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4GaGfS4fj1Z8rXjkHLcF4ifNB2EMWPpKL2"
+                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
+                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
+                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
                     )
             {
                 LOG_INFO << "0 broadcast ai power provider service training task";
@@ -817,8 +835,8 @@ namespace ai
             } else
             {
                 srand((int)time(0));
-                int32_t count=(rand()%(3-1)+1);
-                if(count==1) {
+                int32_t count=(rand()%(10-1)+1);
+                if(count==6) {
 
                     LOG_INFO << "1 broadcast ai power provider service training task";
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
@@ -1010,6 +1028,12 @@ namespace ai
                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4GaGfS4fj1Z8rXjkHLcF4ifNB2EMWPpKL2"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
+                       ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
                         )
                 {
                     LOG_DEBUG << "0 broadcast_message ai power provider service on logs req does not have task" << task_id;
@@ -1018,8 +1042,8 @@ namespace ai
                 } else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(3-1)+1);
-                    if(count==1){
+                    int32_t count=(rand()%(10-1)+1);
+                    if(count==6){
                         LOG_DEBUG << "1 broadcast_message ai power provider service on logs req does not have task" << task_id;
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
