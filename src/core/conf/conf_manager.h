@@ -20,7 +20,7 @@
 using namespace boost::program_options;
 
 #define NODE_FILE_NAME                               "node.dat"
-#define DEFAULT_MAIN_NET_LISTEN_PORT                 "11111" //ai:11111,fc1:12111
+#define DEFAULT_MAIN_NET_LISTEN_PORT                 "12111" //ai:11111,fc1:12111
 #define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
 
 extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
