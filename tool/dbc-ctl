@@ -11,7 +11,7 @@ workspace=`pwd`
 USERID=`id -u`
 PROC_NAME="dbc"
 ps_="ps -e -o uid -o pid -o command"
-listen_port="21107\|12111"
+listen_port="21107\|12112"
 os_name=`uname`
 
 
