@@ -1,11 +1,11 @@
 /*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
+*  Copyright (c) 2017-2021 DeepBrainChain core team
 *  Distributed under the MIT software license, see the accompanying
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name         :  tcp_acceptor.cpp
 * description    :   tcp acceptor for nio server listening
-* date                  :   2018.01.20
-* author             :   Bruce Feng
+* date                  :   2020.11.06
+* author             :   Feng
 **********************************************************************************/
 #include "tcp_acceptor.h"
 #include "tcp_socket_channel.h"
