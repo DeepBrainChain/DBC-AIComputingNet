@@ -36,9 +36,9 @@ using namespace std;
 #endif
 
 /** Maximum number of automatic outgoing nodes */
-static const int MAX_OUTBOUND_CONNECTIONS = 68;
+static const int MAX_OUTBOUND_CONNECTIONS = 168;
 /** Maximum number of addnode outgoing nodes */
-static const int MAX_ADDNODE_CONNECTIONS = 68;
+static const int MAX_ADDNODE_CONNECTIONS = 168;
 
 #ifdef FD_SETSIZE
 #undef FD_SETSIZE // prevent redefinition compiler warning
