@@ -2091,7 +2091,7 @@ namespace matrix
 
                             std::string tag = tags->value[0].GetString();
                             //LOG_INFO << "tag : " << tag;
-                            if (tag.find("dbc-ai-training") !=string::npos)
+                            if ( tag.find("dbc-ai-training") !=string::npos)
                             {
 
 

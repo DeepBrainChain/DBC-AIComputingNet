@@ -425,6 +425,10 @@ namespace service
                         ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
                         ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
                         ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
+                          ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4Gxw9JXAkccZJCsLqZJ9T77W5JjQdbhLK7"
+                          ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3yFm6vwKzL2jtiTPbzZRiHXuZFQM7i6aZ8"
+                          ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4C8RrFLupsM4SBBiDfHWmPSZ29zSiPDMx6"
+                          ||CONF_MANAGER->get_node_id()=="2gfpp3MAB47xpUSdgv2oMbeYvbMTfnF7TRhRPtwMDpM"
 
                 )
                 {
