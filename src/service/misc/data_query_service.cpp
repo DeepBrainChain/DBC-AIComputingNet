@@ -414,10 +414,9 @@ namespace service
                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
                   ||CONF_MANAGER->get_node_id()=="2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
                     ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
-                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB46CvvAn4tZAkkKZofyGA9yW8fKjDv8CN2D"
-                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB43QeH1TxGgegPmxGpd4Zryr5rK6Tcfo9gg"
-                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB48onbcj22RfJ5YCTaY4WA1J4dBsLht4Vfw"
-                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB42n4QKZZtKas1QRE4BMeaimiGwduiKwh5w"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4AMdYxL74z7kq6y1zD7AgJtwRmuv4mUf9p"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB414gDp7YY9afeVwptEp4hf8MWtfE8Pp3zE"
+                      ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3zQYp35EGQeGwMcEAvE2PBsk9shwL7gyWA"
 
                         ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
                         ||CONF_MANAGER->get_node_id()=="2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
@@ -438,8 +437,8 @@ namespace service
                 } else
                 {
                     srand((int)time(0));
-                    int32_t count=(rand()%(100-1)+1);
-                    if(count==88) {
+                    int32_t count=(rand()%(30-1)+1);
+                    if(count==18) {
                         LOG_INFO << "1 data_query_service::on_net_show_req relay show_req to neighbor";
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
