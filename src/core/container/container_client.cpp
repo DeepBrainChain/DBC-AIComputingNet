@@ -4,8 +4,8 @@
 *  file COPYING or http://www.opensource.org/licenses/mit-license.php
 * file name        :   container_client.cpp
 * description    :   container client for definition
-* date                  :   2018.04.04
-* author            :   Bruce Feng
+* date                  :   2020.08.08
+* author            :   Feng
 **********************************************************************************/
 
 #include "container_client.h"

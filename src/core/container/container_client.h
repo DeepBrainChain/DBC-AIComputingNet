@@ -5,7 +5,7 @@
 * file name        :   container_client.h
 * description    :   container client for definition
 * date                  :   2018.04.04
-* author            :   Bruce Feng
+* author            :    Feng
 **********************************************************************************/
 
 #pragma once
