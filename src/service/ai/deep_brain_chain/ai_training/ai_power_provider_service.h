@@ -92,7 +92,7 @@ namespace ai
 
             std::shared_ptr<user_task_scheduling> m_user_task_ptr = nullptr;
             std::shared_ptr<container_worker> m_container_worker = nullptr;
-
+			std::shared_ptr<vm_worker> m_vm_worker = nullptr;
             // urgent task
             std::shared_ptr<ai_training_task> m_urgent_task = nullptr;
         };

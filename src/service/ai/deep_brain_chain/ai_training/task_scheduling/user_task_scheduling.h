@@ -41,7 +41,7 @@ namespace ai
             using auth_task_handler = typename std::function<int32_t(shared_ptr<ai_training_task>)>;
             using stop_idle_task_handler = typename std::function<int32_t()>;
         public:
-            user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr);
+            user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr, std::shared_ptr<vm_worker> vm_worker_ptr);
             user_task_scheduling() = default;
             virtual ~user_task_scheduling() = default;
            
@@ -61,7 +61,7 @@ namespace ai
             size_t get_user_cur_task_size() {return m_queueing_tasks.size() + m_running_tasks.size();}
             size_t get_total_user_task_size() { return m_training_tasks.size(); }
 
-            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status);
+            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status , bool is_docker);
 
             void set_auth_handler(auth_task_handler handler) { m_auth_task_handler = handler; }
             void set_stop_idle_task_handler(stop_idle_task_handler handler) { m_stop_idle_task_handler = handler; }

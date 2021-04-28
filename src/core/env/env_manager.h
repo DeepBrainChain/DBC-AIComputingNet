@@ -24,7 +24,8 @@ extern void signal_usr1_handler(int);
 #define TOOL_DIR_NAME                           "tool"
 #define CONF_FILE_NAME                          "core.conf"
 #define PEER_FILE_NAME                          "peer.conf"
-#define CONTAINER_FILE_NAME                         "container.conf"
+#define CONTAINER_FILE_NAME                     "container.conf"
+#define VM_FILE_NAME                            "vm.conf"
 
 #define DEFAULT_PATH_BUF_LEN                    512
 
@@ -63,6 +64,8 @@ namespace matrix
             static const fs::path & get_peer_path() { return m_peer_path; }
 
             static const fs::path & get_container_path() { return m_container_path; }
+
+			static const fs::path & get_vm_path() { return m_vm_path; }
 
             static const fs::path & get_home_path() { return m_home_path;}
             static const fs::path & get_tool_path() {return m_tool_path;}
@@ -104,6 +107,8 @@ namespace matrix
             static fs::path m_tool_path;
 
             static fs::path m_container_path;
+
+			static fs::path m_vm_path;
 
             static endian_type m_endian_type;
 

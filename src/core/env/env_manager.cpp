@@ -63,6 +63,8 @@ namespace matrix
 
         fs::path env_manager::m_container_path;
 
+		fs::path env_manager::m_vm_path;
+
         fs::path env_manager::m_home_path;
         fs::path env_manager::m_tool_path;
 
@@ -125,6 +127,11 @@ namespace matrix
             m_container_path = m_home_path;
             m_container_path /= fs::path(CONF_DIR_NAME);
             m_container_path /= fs::path(CONTAINER_FILE_NAME);
+
+
+			m_vm_path = m_home_path;
+			m_vm_path /= fs::path(CONF_DIR_NAME);
+			m_vm_path /= fs::path(VM_FILE_NAME);
 
             m_tool_path  = m_home_path;
             m_tool_path /= fs::path(TOOL_DIR_NAME);

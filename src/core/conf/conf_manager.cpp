@@ -16,6 +16,7 @@
 #include "utilstrencodings.h"
 #include <boost/format.hpp>
 
+std::string DEFAULT_VM_LISTEN_PORT("16509");
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
 std::string DEFAULT_REST_PORT("41107");
 std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
