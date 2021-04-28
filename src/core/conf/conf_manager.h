@@ -23,6 +23,7 @@ using namespace boost::program_options;
 #define DEFAULT_MAIN_NET_LISTEN_PORT                 "12112" //ai:11111,fc2:12112
 #define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
 
+extern std::string DEFAULT_VM_LISTEN_PORT;
 extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
 extern std::string DEFAULT_CONTAINER_IMAGE_NAME;
 extern const int32_t DEFAULT_MAX_CONNECTION_NUM;
@@ -88,6 +89,10 @@ namespace matrix
             const std::string & get_container_ip() { return m_args.count("container_ip") ? m_args["container_ip"].as<std::string>() : DEFAULT_LOCAL_IP; }
 
             const std::string & get_container_port() { return m_args.count("container_port") ? m_args["container_port"].as<std::string>() : DEFAULT_CONTAINER_LISTEN_PORT; }
+
+			const std::string & get_vm_ip() { return m_args.count("virt_ip") ? m_args["virt_ip"].as<std::string>() : DEFAULT_LOCAL_IP; }
+
+			const std::string & get_vm_port() { return m_args.count("virt_port") ? m_args["virt_port"].as<std::string>() : DEFAULT_VM_LISTEN_PORT; }
 
             const int32_t & get_max_connect() {return m_args.count("max_connect") ? m_args["max_connect"].as<int32_t>() : DEFAULT_MAX_CONNECTION_NUM;}
 

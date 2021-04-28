@@ -23,9 +23,10 @@ namespace ai
 {
     namespace dbc
     {
-        task_scheduling::task_scheduling(std::shared_ptr<container_worker> container_worker_ptr)
+        task_scheduling::task_scheduling(std::shared_ptr<container_worker> container_worker_ptr, std::shared_ptr<vm_worker> vm_worker_ptr)
         {
             m_container_worker = container_worker_ptr;
+			m_vm_worker = vm_worker_ptr;
         }
 
 
@@ -728,7 +729,7 @@ namespace ai
         }
 
 
-        int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
             if (nullptr == task)
             {
@@ -741,49 +742,71 @@ namespace ai
                 return E_DEFAULT;
             }
 
-            if(CONTAINER_WORKER_IF->exist_container(task->task_id)!=E_CONTAINER_NOT_FOUND){
-                CONTAINER_WORKER_IF->remove_container(task->task_id);
-            }
-
-            std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
-            std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id,"");
-            if (resp != nullptr && !resp->container_id.empty())
-            {
-                task->__set_container_id(resp->container_id);
-                LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
-
-                return E_SUCCESS;
-            }
-            else
-            {
-                sleep(60);
-                std::string container_name=task->task_id;
-                LOG_INFO << "exist_container ?" ;
-                std::string container_id=CONTAINER_WORKER_IF->get_container_id(container_name);
-
-                if(container_id.compare("error")!=0){
-                    LOG_INFO << "exist_container yes" ;
-                    task->__set_container_id(container_id);
+			if(is_docker)
+			{ 
+				if (CONTAINER_WORKER_IF->exist_container(task->task_id) != E_CONTAINER_NOT_FOUND) {
+					CONTAINER_WORKER_IF->remove_container(task->task_id);
+				}
+                std::shared_ptr<container_config> config = m_container_worker->get_container_config(task);
+                std::shared_ptr<container_create_resp> resp = CONTAINER_WORKER_IF->create_container(config, task->task_id,"");
+                if (resp != nullptr && !resp->container_id.empty())
+                {
+                    task->__set_container_id(resp->container_id);
                     LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
 
                     return E_SUCCESS;
-                }else{
-                    LOG_INFO << "exist_container no" ;
-                    LOG_ERROR << "create task failed. task id:" << task->task_id;
                 }
+                else
+                {
+                    sleep(60);
+                    std::string container_name=task->task_id;
+                    LOG_INFO << "exist_container ?" ;
+                    std::string container_id=CONTAINER_WORKER_IF->get_container_id(container_name);
 
+                    if(container_id.compare("error")!=0){
+                        LOG_INFO << "exist_container yes" ;
+                        task->__set_container_id(container_id);
+                        LOG_INFO << "create task success. task id:" << task->task_id << " container id:" << task->container_id;
+
+                        return E_SUCCESS;
+                    }else{
+                        LOG_INFO << "exist_container no" ;
+                        LOG_ERROR << "create task failed. task id:" << task->task_id;
+                    }
+
+                }
+			}
+			else
+			{
+					
+					if (VM_WORKER_IF->existDomain(task->task_id))
+					{
+						VM_WORKER_IF->destoryDomain(task->task_id);
+					}
+					//std::shared_ptr<vm_config> config = m_vm_worker->get_vm_config(task);
+
+					int32_t  ret = VM_WORKER_IF->createDomain( task->task_id, "");
+					if ( ret == E_SUCCESS)
+					{
+						LOG_INFO << "create vm task success. task id:" << task->task_id ;
+						return E_SUCCESS;
+					}
+					else
+					{
+						LOG_ERROR << "create vm task failed. task id:" << task->task_id << " ret:" << ret;
+					}
             }
             return E_DEFAULT;
         }
 
-        int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
             if (nullptr == task)
             {
                 return E_SUCCESS;
             }
 
-            auto state = get_task_state(task);
+            auto state = get_task_state(task, is_docker);
             if (DBC_TASK_RUNNING == state)
             {
                 if (task->status != task_running)
@@ -792,7 +815,12 @@ namespace ai
                     m_task_db.write_task_to_db(task);
                 }
 
-                int32_t ret = CONTAINER_WORKER_IF->restart_container(task->container_id);
+                int32_t ret = E_EXIT_FAILURE;
+
+				if (is_docker)
+					ret = CONTAINER_WORKER_IF->restart_container(task->container_id);
+				else
+					ret = VM_WORKER_IF->rebootDomain(task->task_id);
 
                 if (ret != E_SUCCESS)
                 {
@@ -811,53 +839,66 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            //if image do not exist, then pull it
-            if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine,15))
-            {
-                return start_pull_image(task);
-            }
+			if (is_docker)
+			{
+				//if image do not exist, then pull it
+				if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine, 15))
+				{
+					return start_pull_image(task);
+				}
 
-            bool is_container_existed = (!task->container_id.empty());
-            if (!is_container_existed)
-            {
-                //if container_id does not exist, means dbc need to create container
-                if (E_SUCCESS != create_task(task))
-                {
-                    LOG_ERROR << "create task error";
-                    return E_DEFAULT;
-                }
-            }
-
-
-            // update container's parameter if
-            std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";
-            std::string text = "task_id=" + task->task_id + "\n";
-
-            LOG_INFO << " container_id: " << task->container_id << " task_id: " << task->task_id;
-
-            //  if (is_container_existed)
-            //  {
-            // server_specification indicates the container to be reused for this task
-            // needs to indicate container run with different parameters
-            // text += ("code_dir=" + task->code_dir + "\n");
-
-            //  if (task->server_specification == "restart")
-            // {
-            // use case: restart a task
-            //      text += ("restart=true\n");
-            //  }
-            // }
+				bool is_container_existed = (!task->container_id.empty());
+				if (!is_container_existed)
+				{
+					//if container_id does not exist, means dbc need to create container
+					if (E_SUCCESS != create_task(task, is_docker))
+					{
+						LOG_ERROR << "create task error";
+						return E_DEFAULT;
+					}
+				}
 
 
-            if (!file_util::write_file(path, text))
-            {
-                LOG_ERROR << "fail to refresh task's code_dir before reusing existing container for new task "
-                          << task->task_id;
-                return E_DEFAULT;
-            }
+				// update container's parameter if
+				std::string path = env_manager::get_home_path().generic_string() + "/container/parameters";
+				std::string text = "task_id=" + task->task_id + "\n";
+
+				LOG_INFO << " container_id: " << task->container_id << " task_id: " << task->task_id;
+
+				//  if (is_container_existed)
+				//  {
+				// server_specification indicates the container to be reused for this task
+				// needs to indicate container run with different parameters
+				// text += ("code_dir=" + task->code_dir + "\n");
+
+				//  if (task->server_specification == "restart")
+				// {
+				// use case: restart a task
+				//      text += ("restart=true\n");
+				//  }
+				// }
 
 
-            int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);
+				if (!file_util::write_file(path, text))
+				{
+					LOG_ERROR << "fail to refresh task's code_dir before reusing existing container for new task "
+						<< task->task_id;
+					return E_DEFAULT;
+			    }
+			}
+			else 
+			{
+				//not exsit, create
+				if ( !VM_WORKER_IF->existDomain(task->task_id) )
+					create_task(task, is_docker);
+			}
+
+			int32_t ret = E_EXIT_FAILURE;
+
+			if (is_docker)
+				ret = CONTAINER_WORKER_IF->start_container(task->container_id);
+			else
+				ret = VM_WORKER_IF->startDomain(task->task_id);
 
             if (ret != E_SUCCESS)
             {
@@ -876,12 +917,13 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
             if (nullptr == task)
             {
                 return E_SUCCESS;
-            }if (task->status == update_task_error)//如果任务是升级错误状态，则只修改任务状态为running
+            }
+			if (task->status == update_task_error)//如果任务是升级错误状态，则只修改任务状态为running
             {
                 LOG_INFO << "update task status success. Task id:" << task->task_id;
                 task->__set_start_time(time_util::get_time_stamp_ms());
@@ -894,7 +936,7 @@ namespace ai
                 return E_SUCCESS;
             }
 
-            auto state = get_task_state(task);
+            auto state = get_task_state(task, is_docker);
             if (DBC_TASK_RUNNING == state)
             {
                 if (task->status != task_running)
@@ -902,8 +944,12 @@ namespace ai
                     task->__set_status(task_running);
                     m_task_db.write_task_to_db(task);
                 }
+				int32_t ret = E_EXIT_FAILURE;
 
-                int32_t ret = CONTAINER_WORKER_IF->restart_container(task->container_id);
+				if(is_docker)
+                    ret = CONTAINER_WORKER_IF->restart_container(task->container_id);
+				else
+					ret = VM_WORKER_IF->rebootDomain(task->task_id);
 
                 if (ret != E_SUCCESS)
                 {
@@ -914,16 +960,23 @@ namespace ai
                 LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
 
                 return E_SUCCESS;
-            } else if(DBC_TASK_STOPPED == state)
+            } 
+			else if(DBC_TASK_STOPPED == state)
             {
-                int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);
+                int32_t ret = E_EXIT_FAILURE;
+
+				if (is_docker)
+					ret = CONTAINER_WORKER_IF->start_container(task->container_id);
+				else
+					ret = VM_WORKER_IF->startDomain(task->task_id);
 
                 if (ret != E_SUCCESS)
                 {
                     LOG_ERROR << "Start task error. Task id:" << task->task_id;
                     return E_DEFAULT;
                 }
-            } else
+            } 
+			else
             {
                 LOG_ERROR << "Start task error. Task id:" << task->task_id;
                 return E_DEFAULT;
@@ -941,7 +994,7 @@ namespace ai
             return E_SUCCESS;
         }
 
-        int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
             if (nullptr == task || task->container_id.empty())
             {
@@ -950,23 +1003,32 @@ namespace ai
             LOG_INFO << "stop task " << task->task_id;
             task->__set_end_time(time_util::get_time_stamp_ms());
             m_task_db.write_task_to_db(task);
-            if(task->container_id.empty()){
-                return CONTAINER_WORKER_IF->stop_container(task->task_id);
-            }else{
-                return CONTAINER_WORKER_IF->stop_container(task->container_id);
+            
+			if(is_docker)
+			{
+				if (task->container_id.empty()) {
+					return CONTAINER_WORKER_IF->stop_container(task->task_id);
+				}
+				else {
+					return CONTAINER_WORKER_IF->stop_container(task->container_id);
+				}
+            }else
+			{
+                return VM_WORKER_IF->shutdownDomain(task->task_id);
             }
 
         }
 
-        int32_t task_scheduling::stop_task_only_id(std::string task_id)
+        int32_t task_scheduling::stop_task_only_id(std::string task_id, bool is_docker)
         {
-
-            return CONTAINER_WORKER_IF->stop_container(task_id);
-
+			if(is_docker)
+                return CONTAINER_WORKER_IF->stop_container(task_id);
+			else
+				return VM_WORKER_IF->shutdownDomain(task_id);
 
         }
 
-        int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task)
+        int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
             if (nullptr == task)
             {
@@ -975,16 +1037,21 @@ namespace ai
 
             try
             {
-                if (DBC_TASK_RUNNING == get_task_state(task))
+                if (DBC_TASK_RUNNING == get_task_state(task, is_docker))
                 {
-                    stop_task(task);
+                    stop_task(task, is_docker);
                 }
-
-                if (!task->container_id.empty())
-                {
-                    CONTAINER_WORKER_IF->remove_container(task->container_id);
-                }
-
+				if (is_docker)
+				{
+					if (!task->container_id.empty())
+					{
+						CONTAINER_WORKER_IF->remove_container(task->container_id);
+					}
+				}
+				else
+				{
+					VM_WORKER_IF->destoryDomain(task->task_id);
+				}
                 m_task_db.delete_task(task);
             }
             catch (...)
@@ -997,42 +1064,58 @@ namespace ai
         }
 
 
-        TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> task)
+        TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
             if (nullptr == task || task->task_id.empty())
             {
                 return DBC_TASK_NULL;
             }
+			if (is_docker)
+			{
+				// inspect container
+				std::string container_id = task->container_id;
 
-            // inspect container
-            std::string container_id = task->container_id;
+				// container can be started again by task delivered latter,
+				// in that case, the container's id and name keeps the original value, then new task's id and container's name does not equal any more.
+				if (!task->container_id.empty())
+				{
+					container_id = task->container_id;
+				}
 
-            // container can be started again by task delivered latter,
-            // in that case, the container's id and name keeps the original value, then new task's id and container's name does not equal any more.
-            if(!task->container_id.empty())
-            {
-                container_id = task->container_id;
-            }
+				std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(container_id);
+				if (nullptr == resp)
+				{
+					// LOG_ERROR << "set_container_id:" << "null";
+					 //task->__set_container_id("");
+					return DBC_TASK_NOEXIST;
+				}
 
-            std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(container_id);
-            if (nullptr == resp)
-            {
-               // LOG_ERROR << "set_container_id:" << "null";
-                //task->__set_container_id("");
-                return DBC_TASK_NOEXIST;
-            }
-            
-            //local db may be deleted, but task is running, then container_id is empty.
-            if (!resp->id.empty() && ( task->container_id.empty() || resp->id != task->container_id))
-            {
-                task->__set_container_id(resp->id);
-            }
+				//local db may be deleted, but task is running, then container_id is empty.
+				if (!resp->id.empty() && (task->container_id.empty() || resp->id != task->container_id))
+				{
+					task->__set_container_id(resp->id);
+				}
 
-            if (true == resp->state.running)
-            {
-                return DBC_TASK_RUNNING;
-            }
+				if (true == resp->state.running)
+				{
+					return DBC_TASK_RUNNING;
+				}
+			}
+			else 
+			{
+				string task_id  = task->task_id;
+				if ( !VM_WORKER_IF->existDomain(task_id) )
+				{
+					return DBC_TASK_NOEXIST;
+				}
 
+				vm_status status = VM_WORKER_IF->getDomainStatus(task_id) ;
+				if (status == vm_running)
+				{
+					return DBC_TASK_RUNNING;
+				}
+				
+			}
             return DBC_TASK_STOPPED;
         }
 
@@ -1111,5 +1194,6 @@ namespace ai
 
             return E_SUCCESS;
         }
+    
     }
 }

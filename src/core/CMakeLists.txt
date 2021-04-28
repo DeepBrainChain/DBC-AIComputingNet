@@ -22,6 +22,7 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/snappy
         ${SRC_PATH}/3rd
         ${SRC_PATH}/core
+        ${SRC_PATH}/xml
 )
 
 
@@ -29,7 +30,7 @@ INCLUDE_DIRECTORIES(
 set(SRC_FOLDER_LIST codec common conf conf/validataor
         crypto crypto/ctaes container oss oss/bill oss/idle_task env
         initiator log math memory module monitor mutex
-        network service_bus service_module
+        network service_bus service_module vm
         service_module/pc storage timer_service filter compress)
 
 set(SRC_LIST)

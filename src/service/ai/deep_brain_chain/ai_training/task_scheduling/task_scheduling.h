@@ -24,9 +24,11 @@
 //#include <boost/program_options/variables_map.hpp>
 #include "service_module.h"
 #include "container_worker.h"
+#include "vm_worker.h"
 #include "db/ai_provider_task_db.h"
 
 #define CONTAINER_WORKER_IF m_container_worker->get_worer_if()
+#define VM_WORKER_IF m_vm_worker->get_worker_if()
 
 using namespace std;
 using namespace matrix::core;
@@ -57,7 +59,8 @@ namespace ai
         class task_scheduling
         {
         public:
-            task_scheduling(std::shared_ptr<container_worker> m_container_worker);
+            task_scheduling(std::shared_ptr<container_worker> m_container_worker, std::shared_ptr<vm_worker> m_vm_worker);
+
             task_scheduling() = default;
             ~task_scheduling() = default;
             
@@ -71,26 +74,27 @@ namespace ai
             int32_t update_task(std::shared_ptr<ai_training_task> task);
             vector<string> split(const string& str, const string& delim);
             int32_t update_task_commit_image(std::shared_ptr<ai_training_task> task);
-            int32_t start_task(std::shared_ptr<ai_training_task> task);
-            int32_t stop_task(std::shared_ptr<ai_training_task> task);
+            int32_t start_task(std::shared_ptr<ai_training_task> task, bool is_docker);
+            int32_t stop_task(std::shared_ptr<ai_training_task> task, bool is_docker);
             int32_t start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version,std::string training_engine_new);
             int32_t create_task_from_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version);
-            TASK_STATE get_task_state(std::shared_ptr<ai_training_task> task);
-            int32_t restart_task(std::shared_ptr<ai_training_task> task);
-            int32_t stop_task_only_id(std::string task_id);
+            TASK_STATE get_task_state(std::shared_ptr<ai_training_task> task, bool is_docker);
+            int32_t restart_task(std::shared_ptr<ai_training_task> task, bool is_docker);
+            int32_t stop_task_only_id(std::string task_id, bool is_docker);
             std::string get_pull_log(std::string training_engine) { return m_pull_image_mng->get_out_log(training_engine); }
 
         protected:
             int32_t start_pull_image(std::shared_ptr<ai_training_task> task);
             int32_t stop_pull_image(std::shared_ptr<ai_training_task> task);
-            int32_t delete_task(std::shared_ptr<ai_training_task> task);
+            int32_t delete_task(std::shared_ptr<ai_training_task> task, bool is_docker);
         private:
-            int32_t create_task(std::shared_ptr<ai_training_task> task);
+            int32_t create_task(std::shared_ptr<ai_training_task> task, bool is_docker);
 
         protected:
             ai_provider_task_db m_task_db;
             std::shared_ptr<image_manager> m_pull_image_mng = nullptr;
             std::shared_ptr<container_worker> m_container_worker = nullptr;
+			std::shared_ptr<vm_worker> m_vm_worker = nullptr;
         };
     }
 }

@@ -33,5 +33,10 @@
 #define E_NO_START_CONTAINER                                -18                 //create new container from  new images ,but no start container
 #define E_CONTAINER_NOT_FOUND                                   -19                  // docker container not found
 
+#define E_VIRT_CONNECT_ERROR                                -20                  // libvirt  conn error
+#define E_VIRT_DOMAIN_NOT_FOUND                             -21                  // libvirt  domain not found
+#define E_VIRT_INTERNAL_ERROR                               -22                  // vm get system info error
+#define E_VIRT_DOMAIN_EXIST                                 -23                  // libvirt  domain alread exist
+
 #endif
 

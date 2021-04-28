@@ -24,8 +24,8 @@ namespace ai
 {
     namespace dbc
     {
-        user_task_scheduling::user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr)
-                : task_scheduling(container_worker_ptr)
+        user_task_scheduling::user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr, std::shared_ptr<vm_worker> vm_worker_ptr)
+                : task_scheduling(container_worker_ptr, vm_worker_ptr)
         {
         }
 
@@ -98,7 +98,12 @@ namespace ai
                         LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id
                                   << ", gpu requirement "
                                   << task->gpus << ", gpu state " << m_gpu_pool.toString();
-                        stop_task(task, task_out_of_gpu_resource);
+
+						bool is_docker = false;
+						if (task->server_specification.find("docker") != task->server_specification.npos)
+							is_docker = true;
+
+                        stop_task(task, task_out_of_gpu_resource, is_docker);
                     }
                     else
                     {
@@ -125,12 +130,16 @@ namespace ai
         {
             auto task = m_queueing_tasks.front();
 
+			bool is_docker = false;
+			if (task->server_specification.find("docker") != task->server_specification.npos)
+				is_docker = true;
+
             //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES)
             {
-                stop_task(task, task_abnormally_closed);
+                stop_task(task, task_abnormally_closed, is_docker);
 
-                LOG_WARNING << "ai power provider service restart container too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
+                LOG_WARNING << "ai power provider service restart container/vm too many times and close task, " << "task id: " << task->task_id << " container id: " << task->container_id;
                 return E_DEFAULT;
             }
 
@@ -142,7 +151,7 @@ namespace ai
             else
             {
                 LOG_ERROR << "auth failed. " << " drop task:" << task->task_id;
-                stop_task(task, task_overdue_closed);
+                stop_task(task, task_overdue_closed, is_docker);
                 return E_SUCCESS;
             }
 
@@ -154,12 +163,15 @@ namespace ai
             LOG_INFO << "exec_task start" ;
             int32_t ret ;
 
-             if(task->server_specification=="restart")
+            if(task->server_specification=="restart_docker" || task->server_specification == "restart_vm")
             {
 
-
-                ret = restart_task(task);
-                m_queueing_tasks.remove(task);
+				if(task->server_specification == "restart_docker")
+                    ret = restart_task(task, true);
+				else
+					ret = restart_task(task, false);
+                
+				m_queueing_tasks.remove(task);
                 LOG_INFO << "move restart task from waiting queue map" << task->task_id;
 
                 LOG_INFO << "restart_task over,ret:"<< ret;
@@ -309,10 +321,9 @@ namespace ai
 
                 }
 
-
-
-
-            }else{
+            }
+            else
+            {
 
                 // feng: validate task's gpu requirement
                 if (task_queueing == task->status)
@@ -321,12 +332,12 @@ namespace ai
                     {
                         LOG_ERROR << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
                                   << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
-                        stop_task(task, task_out_of_gpu_resource);
+                        stop_task(task, task_out_of_gpu_resource, is_docker);
                         return E_DEFAULT;
                     }
                 }
 
-                ret = start_task(task);
+                ret = start_task(task, is_docker);
                 if(task->status != task_pulling_image){
                     m_queueing_tasks.remove(task);
                 }
@@ -338,11 +349,11 @@ namespace ai
                     switch (ret)
                     {
                         case E_NO_DISK_SPACE:
-                            stop_task(task, task_nospace_closed);
+                            stop_task(task, task_nospace_closed, is_docker);
                             break;
                         case E_PULLING_IMAGE:
                         case E_IMAGE_NOT_FOUND:
-                            stop_task(task, task_noimage_closed);
+                            stop_task(task, task_noimage_closed, is_docker);
                             break;
                         default:
                             m_task_db.write_task_to_db(task);
@@ -367,7 +378,7 @@ namespace ai
                             // is supposed never happen because gpu check passed before
                             LOG_INFO << "out of gpu resource, " << "task id: " << task->task_id << ", gpu requirement "
                                      << task->gpus << ", gpu remainder " << m_gpu_pool.toString();
-                            stop_task(task, task_out_of_gpu_resource);
+                            stop_task(task, task_out_of_gpu_resource, is_docker);
                             return E_DEFAULT;
                         }
                         else
@@ -394,14 +405,14 @@ namespace ai
 
 
 
-        int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status)
+        int32_t user_task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status, bool is_docker)
         {
 
             // case 1: stop a task from running set
             if (task->status == task_running || task->status == update_task_error ||task->status > task_stopped ||task->status == task_queueing)
             {
 
-                int32_t ret = task_scheduling::stop_task(task);
+                int32_t ret = task_scheduling::stop_task(task, is_docker);
                 if (E_SUCCESS != ret)
                 {
                     LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
@@ -447,7 +458,7 @@ namespace ai
 
 //            if (task_running == task->status)
 //            {
-//                int32_t ret = task_scheduling::stop_task(task);
+//                int32_t ret = task_scheduling::stop_task(task, is_docker);
 //                if (E_SUCCESS != ret)
 //                {
 //                    LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:" << task->task_id;
@@ -558,6 +569,10 @@ namespace ai
                 return E_DEFAULT;
             }
 
+			bool is_docker = false;
+			if (task->server_specification.find("docker") != task->server_specification.npos)
+				is_docker = true;
+
             if (m_pull_image_mng != nullptr && m_pull_image_mng->get_pull_image_name() == task->training_engine)
             {
                 //cost time too long to pull image.
@@ -565,7 +580,7 @@ namespace ai
                 {
                     //pull error
                     LOG_ERROR << "pull image too long." << " engine image:" << task->training_engine;
-                    stop_task(task, task_noimage_closed);
+                    stop_task(task, task_noimage_closed, is_docker);
                     return E_PULLING_IMAGE;
                 }
                 else
@@ -586,7 +601,7 @@ namespace ai
                         {
                             LOG_DEBUG << "docker pull image fail. engine: " << task->training_engine;
                             LOG_WARNING << "ai power provider service pull image failed";
-                            stop_task(task, task_noimage_closed);
+                            stop_task(task, task_noimage_closed, is_docker);
                             return E_PULLING_IMAGE;
                         }
 
@@ -623,7 +638,12 @@ namespace ai
             if (E_SUCCESS != ret && task->status < task_stopped)
             {
                 LOG_ERROR << "auth failed. " << "drop task:" << task->task_id;
-                stop_task(task, task_overdue_closed);
+
+				bool is_docker = false;
+				if (task->server_specification.find("docker") != task->server_specification.npos)
+					is_docker = true;
+
+                stop_task(task, task_overdue_closed, is_docker);
             }
             return ret;
         }
@@ -675,7 +695,12 @@ namespace ai
             {
                 LOG_INFO << "inspect container not running, " << "task id: " << task->task_id << " container id: " << task->container_id << " exit_code" << resp->state.exit_code;
                // stop_task(task, task_abnormally_closed);
-                start_task(task);
+				
+				bool is_docker = false;
+				if (task->server_specification.find("docker") != task->server_specification.npos)
+					is_docker = true;
+
+                start_task(task, is_docker);
                 return E_SUCCESS;
             }
          //   else

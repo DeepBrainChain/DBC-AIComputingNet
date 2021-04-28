@@ -70,14 +70,22 @@ namespace ai
                 return ret;
             }
             
-            m_user_task_ptr = std::make_shared<user_task_scheduling>(m_container_worker);
+			m_vm_worker = std::make_shared<vm_worker>();
+			ret = m_vm_worker->init();
+			if (E_SUCCESS != ret)
+			{
+				LOG_ERROR << "ai power provider service init vm worker error";
+				return ret;
+			}
+
+            m_user_task_ptr = std::make_shared<user_task_scheduling>(m_container_worker, m_vm_worker);
             if (E_SUCCESS != m_user_task_ptr->init(options))
             {
                 return E_DEFAULT;
             }
             
             m_user_task_ptr->set_auth_handler(std::bind(&oss_task_manager::auth_task, m_oss_task_mng, std::placeholders::_1));
-            m_idle_task_ptr = std::make_shared<idle_task_scheduling>(m_container_worker);
+            m_idle_task_ptr = std::make_shared<idle_task_scheduling>(m_container_worker, m_vm_worker);
             if (E_SUCCESS != m_idle_task_ptr->init())
             {
                 return E_DEFAULT;
@@ -219,7 +227,8 @@ namespace ai
                         LOG_INFO << "set_server_specification: " << task->server_specification;
                         task->__set_received_time_stamp(std::time(nullptr));
                         task->__set_status(task_queueing);
-                        task->__set_server_specification("restart");
+						task->__set_server_specification(req->body.server_specification);
+
                         m_user_task_ptr->add_task(task);
                         return E_SUCCESS;
                     }
@@ -240,7 +249,7 @@ namespace ai
             task->__set_status(task_queueing);
 
             // hack: restart task
-            task->__set_server_specification("restart");
+            task->__set_server_specification(req->body.server_specification);
             LOG_INFO << "set_server_specification: " << task->server_specification;
             m_user_task_ptr->add_task(task);
 
@@ -352,8 +361,9 @@ namespace ai
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
             task->__set_error_times(0);
 
-            std::string update="update";
-            if(update.compare(get_is_update(task->server_specification))!=0)
+            std::string update="update_docker";
+			std::string update1 = "update_vm";
+            if(update.compare(get_is_update(task->server_specification))!=0 && update1.compare(get_is_update(task->server_specification)) != 0)
             {
                 task->__set_gpus(get_gpu_spec(task->server_specification));
             }
@@ -372,7 +382,7 @@ namespace ai
 
                 if (ref_task2 != nullptr )
                 {
-                    if(update.compare(get_is_update(task->server_specification))==0){// update
+                    if(update.compare(get_is_update(task->server_specification))==0 || update1.compare(get_is_update(task->server_specification)) == 0){// update
 
                         int32_t status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
                         if(E_SUCCESS!=status) {
@@ -400,7 +410,7 @@ namespace ai
                     //no need add task
                 } else
                 {
-                    if(update.compare(get_is_update(task->server_specification))!=0){// only create new task
+                    if(update.compare(get_is_update(task->server_specification))!=0 && update1.compare(get_is_update(task->server_specification)) != 0){// only create new task
 
                         int32_t status=m_oss_task_mng->can_create_this_task(); //创建容器授权
                         if(E_SUCCESS!=status) {
@@ -700,14 +710,21 @@ namespace ai
                 if(E_SUCCESS!=status){
                     status=m_oss_task_mng->can_stop_this_task(task_id);
                 }
-                if(E_SUCCESS==status){
 
-                    if(sp_task->status == task_stopped ){
-                        m_user_task_ptr->stop_task_only_id(task_id);//强制停止
+				bool is_docker = false;
+				if (sp_task->server_specification.find("docker") != sp_task->server_specification.npos )
+				{
+					is_docker = true;
+				}
+
+                if(E_SUCCESS==status)
+				{
+                    if(sp_task->status == task_stopped )
+					{
+                        m_user_task_ptr->stop_task_only_id(task_id, is_docker);//强制停止
                     }else{
-                        m_user_task_ptr->stop_task(sp_task, task_stopped);
+                        m_user_task_ptr->stop_task(sp_task, task_stopped, is_docker);
                     }
-
 
                 }
 
