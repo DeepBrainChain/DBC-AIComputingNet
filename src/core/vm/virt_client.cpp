@@ -49,7 +49,7 @@ namespace matrix
             return sstream.str();
         }
 
-        int32_t  virt_client::shutdownDomain(std::string  domainName) 
+        int32_t  virt_client::shutdownDomain(const std::string&  domainName) 
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
@@ -96,7 +96,7 @@ namespace matrix
         }
 
 
-        int32_t  virt_client::rebootDomain(std::string  domainName)
+        int32_t  virt_client::rebootDomain(const std::string&  domainName)
         {
 
             virConnectPtr conn = NULL;
@@ -144,7 +144,7 @@ namespace matrix
            return  errorNum;
         }
 
-        int32_t  virt_client::suspendDomain(std::string  domainName)
+        int32_t  virt_client::suspendDomain(const std::string&  domainName)
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
@@ -191,7 +191,7 @@ namespace matrix
            return  errorNum;        
         }
 
-        int32_t  virt_client::resumeDomain( std::string  domainName)
+        int32_t  virt_client::resumeDomain(const std::string&  domainName)
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
@@ -240,7 +240,7 @@ namespace matrix
 
 
 
-        int32_t  virt_client::startDomain(std::string  domainName)
+        int32_t  virt_client::startDomain(const std::string&  domainName)
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
@@ -354,7 +354,7 @@ namespace matrix
         }
 
 
-        int32_t  virt_client::destoryDomain(std::string  domainName, bool force)
+        int32_t  virt_client::destoryDomain(const std::string&  domainName, bool force)
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
@@ -436,7 +436,8 @@ namespace matrix
                               int32_t memeory,
                               int32_t max_memory,
                               int32_t cpunum,  
-                              const std::string &  vedio_pci)
+                              const std::string &  vedio_pci,
+                              const std::string & image_path)
         {
             //生成xml格式配置文件
             tinyxml2::XMLDocument doc;
@@ -516,7 +517,13 @@ namespace matrix
                 for(int i=0; i<vedios.size(); ++i)
                 {
                     std::vector<std::string> infos = SplitStr(vedios[i], ':');
-                    if(infos.size() != 3)
+                    if(infos.size() != 2)
+                    {
+                       std::cout << vedios[i]<< "  error" << endl;
+                       continue;
+                    }
+                    std::vector<std::string> infos2 = SplitStr(infos[1], '.');
+                    if(infos2.size() != 2)
                     {
                        std::cout << vedios[i]<< "  error" << endl;
                        continue;
@@ -525,12 +532,35 @@ namespace matrix
                     address_node->SetAttribute("type", "pci");
                     address_node->SetAttribute("domain", "0x0000");
                     address_node->SetAttribute("bus", ("0x"+infos[0]).c_str());
-                    address_node->SetAttribute("slot", ("0x"+infos[1]).c_str());
-                    address_node->SetAttribute("function", ("0x"+infos[2]).c_str());
+                    address_node->SetAttribute("slot", ("0x"+infos2[0]).c_str());
+                    address_node->SetAttribute("function", ("0x"+infos2[1]).c_str());
                     vedio_node->LinkEndChild(address_node);
                 }
 
                 dev_node->LinkEndChild(vedio_node);
+
+
+                tinyxml2::XMLElement* image_node = doc.NewElement("disk");
+                image_node->SetAttribute("type", "file");
+                image_node->SetAttribute("device", "disk");
+                
+                tinyxml2::XMLElement* driver_node = doc.NewElement("driver");
+                driver_node->SetAttribute("name", "qemu");
+                driver_node->SetAttribute("type", "qcow2");
+                image_node->LinkEndChild(driver_node);
+                
+                tinyxml2::XMLElement* source_node = doc.NewElement("source");
+                source_node->SetAttribute("file", image_path.c_str());
+                image_node->LinkEndChild(source_node);
+
+                tinyxml2::XMLElement* target_node = doc.NewElement("target");
+                target_node->SetAttribute("dev", "hda");
+                target_node->SetAttribute("bus", "ide");
+                image_node->LinkEndChild(target_node);
+                
+                dev_node->LinkEndChild(image_node);
+
+                
                 root->LinkEndChild(dev_node);
             }
             
@@ -540,7 +570,7 @@ namespace matrix
             return printer.CStr();//转换成const char*类型
         }
 
-        int32_t virt_client::createDomain(std::string  name, std::string  vedio_pci)
+        int32_t virt_client::createDomain(const std::string& name, const std::string&  vedio_pci, const std::string& image_path)
         {
             int cpuNumTotal = sysconf(_SC_NPROCESSORS_CONF);
 
@@ -557,25 +587,27 @@ namespace matrix
             uuid_generate(uu);
             uuid_unparse(uu,buf);
             
-            createDomain(std::string(buf),
+            return createDomainImp(std::string(buf),
                         name, 
                         memoryTotal*DEFAULT_PERCENTAGE, 
                         memoryTotal*DEFAULT_PERCENTAGE,
                         cpuNumTotal * DEFAULT_PERCENTAGE,
-                        vedio_pci);
+                        vedio_pci,
+                        image_path);
         }
 
-        int32_t  virt_client::createDomain(std::string uuid,
+        int32_t  virt_client::createDomainImp(std::string uuid,
                               std::string  name,
                               int32_t memeory,
                               int32_t max_memory,
                               int32_t cpunum,  
-                              std::string  vedio_pci)
+                              const std::string&  vedio_pci,
+                              const std::string& image_path)
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
             int32_t errorNum = E_SUCCESS;
-            std::string xmlStr = createXmlStr(uuid, name, memeory, max_memory, cpunum, vedio_pci);
+            std::string xmlStr = createXmlStr(uuid, name, memeory, max_memory, cpunum, vedio_pci, image_path);
 
             do
             {
@@ -591,12 +623,24 @@ namespace matrix
                 if (NULL == domain)
                 {
                     virErrorPtr error = virGetLastError();
+                    if(std::string(error->message).find("already exists with") != std::string::npos)
+                    {
+                        domain = virDomainLookupByName(conn, name.c_str());
+                        if(domain  == NULL)
+                        {
                     cout << error->message << endl;
                     errorNum = E_VIRT_DOMAIN_EXIST;
                     break;
                 }
-                else
-                {
+                    }
+                    else
+                    {
+                        cout << error->message << endl;
+                        errorNum = E_VIRT_DOMAIN_EXIST;
+                        break;
+                    }
+                }
+                
                     std::cout << "define persistent domain success." << std::endl;
                     if (virDomainCreate(domain) < 0) 
                     {
@@ -607,7 +651,7 @@ namespace matrix
                     {
                         std::cout << "Boot the persistent defined guest ..." << std::endl;
                     }
-                }
+
                  
             } while(0);
            if (NULL != domain)
@@ -623,7 +667,7 @@ namespace matrix
 
         
         
-        int32_t  virt_client::createDomainByXML(std::string  filepath)
+        int32_t  virt_client::createDomainByXML(const std::string&  filepath)
         {
             virConnectPtr conn = NULL;
             virDomainPtr domain = NULL;
@@ -682,7 +726,7 @@ namespace matrix
             return errorNum;
         }
 
-		bool virt_client::existDomain(std::string  domainName) 
+		bool virt_client::existDomain(std::string&  domainName) 
 		{
 			std::vector<std::string> nameArray;
 			listAllDomain(nameArray);
@@ -696,7 +740,7 @@ namespace matrix
 			return false;
 		}
 
-		vm_status virt_client::getDomainStatus(std::string  domainName) 
+		vm_status virt_client::getDomainStatus(std::string&  domainName) 
 		{
 			std::vector<std::string> nameArray;
 			listAllRunningDomain(nameArray);

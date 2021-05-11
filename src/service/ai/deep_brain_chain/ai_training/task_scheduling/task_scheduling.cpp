@@ -785,7 +785,7 @@ namespace ai
 					}
 					//std::shared_ptr<vm_config> config = m_vm_worker->get_vm_config(task);
 
-					int32_t  ret = VM_WORKER_IF->createDomain( task->task_id, "");
+					int32_t  ret = VM_WORKER_IF->createDomain( task->task_id, "", "/data/" + task->training_engine);
 					if ( ret == E_SUCCESS)
 					{
 						LOG_INFO << "create vm task success. task id:" << task->task_id ;
