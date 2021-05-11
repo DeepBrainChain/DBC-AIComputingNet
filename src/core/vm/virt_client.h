@@ -65,29 +65,29 @@ namespace matrix
             std::string getUrl();
 
         public:
-          int32_t  shutdownDomain(std::string  domainName); 
+          int32_t  shutdownDomain(const std::string&  domainName); 
 
-          int32_t  rebootDomain( std::string  domainName); 
+          int32_t  rebootDomain( const std::string&  domainName); 
 
-          int32_t  startDomain( std::string  domainName); 
+          int32_t  startDomain( const std::string&  domainName); 
 
-          int32_t  destoryDomain(std::string  domainName, bool force = true); 
+          int32_t  destoryDomain(const std::string& domainName, bool force = true); 
 
-          int32_t  createDomainByXML(std::string  filepath); 
+          int32_t  createDomainByXML(const std::string&  filepath); 
 
-          int32_t createDomain(std::string  name, std::string  vedio_pci);
+          int32_t createDomain(const std::string& name, const std::string&  vedio_pci, const std::string& image_path);
 
-          int32_t  createDomain(std::string uuid,
+          int32_t  createDomainImp(std::string uuid,
                                 std::string  domainName,
                                 int32_t memeory,
                                 int32_t max_memory,
                                 int32_t cpunum,  
-                                std::string  
-		  ); 
+                                const std::string&  vedio_pci,
+                                const std::string& image_path); 
 
-          int32_t  suspendDomain( std::string  domainName);
+          int32_t  suspendDomain( const std::string&  domainName);
 
-          int32_t  resumeDomain( std::string  domainName);
+          int32_t  resumeDomain( const std::string&  domainName);
 
 
           int32_t  listAllDomain(std::vector<std::string> & nameArray);
@@ -97,9 +97,9 @@ namespace matrix
 
           int32_t  listDomainByFlags(unsigned int flags, std::vector<std::string> & nameArray);
 
-		  bool existDomain(std::string  domainName);
+		  bool existDomain(std::string&  domainName);
 
-		  vm_status getDomainStatus(std::string  domainName);
+		  vm_status getDomainStatus(std::string&  domainName);
         
 		private:
            std::string  m_ip;
