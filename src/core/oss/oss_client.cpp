@@ -67,6 +67,8 @@ namespace matrix
         //idle_task
         std::shared_ptr<idle_task_resp> oss_client::post_idle_task(std::shared_ptr<idle_task_req> req)
         {
+            return OSS_SUCCESS_TASK;
+
             //req content, headers, resp
             std::string && req_content = req->to_string();
 
@@ -103,10 +105,11 @@ namespace matrix
             return task_resp;
         }
 
-
         //auth_stop_task
         int32_t oss_client::post_auth_stop_task(std::shared_ptr<auth_task_req> req)
         {
+            return OSS_SUCCESS_TASK;
+
             //req content, headers, resp
             std::string && req_content = req->to_string_task("stop_task");
 
@@ -182,6 +185,8 @@ namespace matrix
         //auth_stop_task
         int32_t oss_client::post_auth_restart_task(std::shared_ptr<auth_task_req> req)
         {
+            return OSS_SUCCESS_TASK;
+
             //req content, headers, resp
             std::string && req_content = req->to_string_task("restart_task");
 
@@ -257,6 +262,8 @@ namespace matrix
 //auth_stop_task
         int32_t oss_client::post_auth_create_task(std::shared_ptr<auth_task_req> req)
         {
+            return OSS_SUCCESS_TASK;
+
             //req content, headers, resp
             std::string && req_content = req->to_string_task("create_task");
 
@@ -331,6 +338,8 @@ namespace matrix
 
         int32_t oss_client::post_auth_update_task(std::shared_ptr<auth_task_req> req)
         {
+            return OSS_SUCCESS_TASK;
+
             //req content, headers, resp
             std::string && req_content = req->to_string_task("update_task");
 
