@@ -67,8 +67,6 @@ namespace matrix
         //idle_task
         std::shared_ptr<idle_task_resp> oss_client::post_idle_task(std::shared_ptr<idle_task_req> req)
         {
-            return OSS_SUCCESS_TASK;
-
             //req content, headers, resp
             std::string && req_content = req->to_string();
 
