@@ -1003,7 +1003,7 @@ namespace ai
 
         int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
-            if (nullptr == task || task->container_id.empty())
+            if (nullptr == task)
             {
                 return E_SUCCESS;
             }

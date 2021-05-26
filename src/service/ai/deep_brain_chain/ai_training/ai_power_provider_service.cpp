@@ -188,53 +188,51 @@ namespace ai
             return rt;
         }
 
-        int32_t ai_power_provider_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req )
+        int32_t ai_power_provider_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req, bool is_docker)
         {
             LOG_INFO << "restart training " << req->body.task_id << endl;
 
             auto task = m_user_task_ptr->find_task(req->body.task_id);
             if (nullptr == task)
             {
-                std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(req->body.task_id);
+                std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
 
-                if (nullptr != resp) {
-
-                    if (!resp->id.empty()) {
-                        std::shared_ptr<ai_training_task> task = std::make_shared<ai_training_task>();
-                        if (nullptr == task)
-                        {
-                            return E_DEFAULT;
+                if (is_docker) {
+                    std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(
+                            req->body.task_id);
+                    if (nullptr != resp) {
+                        if (!resp->id.empty()) {
+                            task->__set_container_id(resp->id);
+                            LOG_INFO << "req container_name: " << req->body.container_name;
                         }
-                        task->__set_task_id(req->body.task_id);
-                        task->__set_select_mode(req->body.select_mode);
-                        task->__set_master(req->body.master);
-                        task->__set_peer_nodes_list(req->body.peer_nodes_list);
-
-                        task->__set_server_count(req->body.server_count);
-                        task->__set_training_engine(req->body.training_engine);
-                        task->__set_code_dir(req->body.code_dir);
-                        task->__set_entry_file(req->body.entry_file);
-                        task->__set_data_dir(req->body.data_dir);
-                        task->__set_checkpoint_dir(req->body.checkpoint_dir);
-                        task->__set_hyper_parameters(req->body.hyper_parameters);
-                        task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
-                        task->__set_error_times(0);
-
-                        task->__set_container_id(resp->id);
-                        LOG_INFO << "req container_name: " << req->body.container_name;
-
-                        task->__set_gpus(get_gpu_spec(task->server_specification));
-                        LOG_INFO << "set_server_specification: " << task->server_specification;
-                        task->__set_received_time_stamp(std::time(nullptr));
-                        task->__set_status(task_queueing);
-						task->__set_server_specification(req->body.server_specification);
-
-                        m_user_task_ptr->add_task(task);
-                        return E_SUCCESS;
                     }
                 }
-                LOG_ERROR << "restart training: task absent: " << req->body.task_id;
-                return E_DEFAULT;
+
+                task->__set_task_id(req->body.task_id);
+                task->__set_select_mode(req->body.select_mode);
+                task->__set_master(req->body.master);
+                task->__set_peer_nodes_list(req->body.peer_nodes_list);
+
+                task->__set_server_count(req->body.server_count);
+                task->__set_training_engine(req->body.training_engine);
+                task->__set_code_dir(req->body.code_dir);
+                task->__set_entry_file(req->body.entry_file);
+                task->__set_data_dir(req->body.data_dir);
+                task->__set_checkpoint_dir(req->body.checkpoint_dir);
+                task->__set_hyper_parameters(req->body.hyper_parameters);
+                task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
+                task->__set_error_times(0);
+
+                task->__set_gpus(get_gpu_spec(task->server_specification));
+                LOG_INFO << "set_server_specification: " << task->server_specification;
+                task->__set_received_time_stamp(std::time(nullptr));
+                task->__set_status(task_queueing);
+                task->__set_server_specification(req->body.server_specification);
+
+                LOG_ERROR << "restart training task: " << req->body.task_id;
+                m_user_task_ptr->add_task(task);
+
+                return E_SUCCESS;
             }
 
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT)
@@ -383,11 +381,14 @@ namespace ai
                 if (ref_task2 != nullptr )
                 {
                     if(update.compare(get_is_update(task->server_specification))==0 || update1.compare(get_is_update(task->server_specification)) == 0){// update
-
+                        /*
                         int32_t status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
                         if(E_SUCCESS!=status) {
                             status=m_oss_task_mng->can_update_this_task(task_id); //升级容器授权
                         }
+                        */
+                        int32_t status = E_SUCCESS;
+
                         if(E_SUCCESS==status) {
                             LOG_INFO << "ref_task2 container_id: " << ref_task2->container_id;
 
@@ -651,13 +652,21 @@ namespace ai
             // restart a user task
             if(req->body.code_dir == std::string(TASK_RESTART))
             {
-
+                /*
                 int32_t status=m_oss_task_mng->can_restart_this_task(req->body.task_id); //重启授权
                 if(E_SUCCESS!=status) {
                     status=m_oss_task_mng->can_restart_this_task(req->body.task_id); //重启授权
                 }
+                */
+
+                int32_t status = E_SUCCESS;
                if(E_SUCCESS==status) {
-                   return task_restart(req);
+                   bool is_docker = false;
+                   if (req->body.server_specification.find("docker") != std::string::npos ) {
+                       is_docker = true;
+                   }
+
+                   return task_restart(req, is_docker);
                }
 
             }
