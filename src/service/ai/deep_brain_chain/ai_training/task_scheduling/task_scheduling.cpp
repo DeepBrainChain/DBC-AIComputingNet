@@ -13,12 +13,12 @@
 #include "utilstrencodings.h"
 #include "task_common_def.h"
 #include "server.h"
-
 #include <regex>
 #include "time_util.h"
 #include "url_validator.h"
 #include <boost/property_tree/json_parser.hpp>
 #include <unistd.h>
+
 namespace ai
 {
     namespace dbc
@@ -28,7 +28,6 @@ namespace ai
             m_container_worker = container_worker_ptr;
 			m_vm_worker = vm_worker_ptr;
         }
-
 
         int32_t task_scheduling::init_db(std::string db_name)
         {
@@ -51,7 +50,6 @@ namespace ai
             return E_SUCCESS;
 
         }
-
 
         int32_t task_scheduling::update_task(std::shared_ptr<ai_training_task> task)
         {
@@ -499,9 +497,6 @@ namespace ai
             return E_SUCCESS;
         }
 
-
-
-       //from new image
         int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task,std::string autodbcimage_version,std::string training_engine_new)
         {
             if (nullptr == task)
@@ -681,7 +676,6 @@ namespace ai
             return res;
         }
 
-
         int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task> task,std::string  autodbcimage_version)
         {
             if (nullptr == task)
@@ -727,7 +721,6 @@ namespace ai
             }
             return E_DEFAULT;
         }
-
 
         int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
@@ -778,24 +771,36 @@ namespace ai
 			}
 			else
 			{
-					
-					if (VM_WORKER_IF->existDomain(task->task_id))
-					{
-						VM_WORKER_IF->destoryDomain(task->task_id);
-					}
-					//std::shared_ptr<vm_config> config = m_vm_worker->get_vm_config(task);
+                if (VM_WORKER_IF->existDomain(task->task_id)) {
+                    VM_WORKER_IF->destoryDomain(task->task_id);
+                }
 
-					int32_t  ret = VM_WORKER_IF->createDomain( task->task_id, "", "/data/" + task->training_engine);
-					if ( ret == E_SUCCESS)
-					{
-						LOG_INFO << "create vm task success. task id:" << task->task_id ;
-						return E_SUCCESS;
-					}
-					else
-					{
-						LOG_ERROR << "create vm task failed. task id:" << task->task_id << " ret:" << ret;
-					}
+                // 解析ip port
+                boost::property_tree::ptree pt;
+                std::string host_ip, transform_port;
+                try {
+                    boost::property_tree::read_json(task->server_specification, pt);
+                    if (pt.count("ip") != 0) {
+                        host_ip = pt.get<std::string>("ip");
+                    }
+
+                    if(pt.count("port") != 0) {
+                        transform_port = pt.get<std::string>("port.22");
+                    }
+                    LOG_DEBUG << "create_domain host_ip: " << host_ip << ", transform_port: " << transform_port;
+                } catch (...) {
+
+                }
+
+                int32_t  ret = VM_WORKER_IF->createDomain( task->task_id, host_ip, transform_port, "/data/" + task->training_engine);
+                if (ret == E_SUCCESS) {
+                    LOG_INFO << "create vm task success. task id:" << task->task_id ;
+                    return E_SUCCESS;
+                } else {
+                    LOG_ERROR << "create vm task failed. task id:" << task->task_id << " ret:" << ret;
+                }
             }
+
             return E_DEFAULT;
         }
 
@@ -1012,20 +1017,28 @@ namespace ai
 				else {
 					return CONTAINER_WORKER_IF->stop_container(task->container_id);
 				}
-            }else
-			{
-                return VM_WORKER_IF->shutdownDomain(task->task_id);
-            }
-
+            } else {
+			    VM_WORKER_IF->shutdownDomain(task->task_id);
+			    vm_status status = VM_WORKER_IF->getDomainStatus(task->task_id);
+                if (status == vm_running) {
+                    VM_WORKER_IF->destoryDomain(task->task_id);
+                }
+                return E_SUCCESS;
+			}
         }
 
         int32_t task_scheduling::stop_task_only_id(std::string task_id, bool is_docker)
         {
 			if(is_docker)
                 return CONTAINER_WORKER_IF->stop_container(task_id);
-			else
-				return VM_WORKER_IF->shutdownDomain(task_id);
-
+			else {
+                VM_WORKER_IF->shutdownDomain(task_id);
+                vm_status status = VM_WORKER_IF->getDomainStatus(task_id);
+                if (status == vm_running) {
+                    VM_WORKER_IF->destoryDomain(task_id);
+                }
+                return E_SUCCESS;
+			}
         }
 
         int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task, bool is_docker)
@@ -1062,7 +1075,6 @@ namespace ai
 
             return E_SUCCESS;
         }
-
 
         TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> task, bool is_docker)
         {
@@ -1118,8 +1130,6 @@ namespace ai
 			}
             return DBC_TASK_STOPPED;
         }
-
-
 
         int32_t task_scheduling::start_pull_image(std::shared_ptr<ai_training_task> task)
         {
@@ -1194,6 +1204,5 @@ namespace ai
 
             return E_SUCCESS;
         }
-    
     }
 }

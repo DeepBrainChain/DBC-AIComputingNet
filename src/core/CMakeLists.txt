@@ -22,7 +22,7 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/snappy
         ${SRC_PATH}/3rd
         ${SRC_PATH}/core
-        ${SRC_PATH}/xml
+        ${SRC_PATH}/3rd/xml
 )
 
 

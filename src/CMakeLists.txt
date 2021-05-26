@@ -122,6 +122,7 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/leveldb)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/readline)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/snappy)
+link_directories(${DBC_3RD_LIB_ROOT_PATH}/tinyxml2)
 
 #add target source
 ADD_EXECUTABLE(dbc

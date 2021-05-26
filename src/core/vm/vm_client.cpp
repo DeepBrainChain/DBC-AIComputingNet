@@ -20,6 +20,7 @@
 #include "error/en.h"
 #include "oss_common_def.h"
 #include <boost/format.hpp>
+#include "container_client.h"
 
 namespace matrix
 {
