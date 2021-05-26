@@ -269,6 +269,7 @@ namespace matrix {
             std::string vedio_pci = shell_vga_pci_list();
 
             long cpuNumTotal = sysconf(_SC_NPROCESSORS_CONF);
+            cpuNumTotal *= DEFAULT_PERCENTAGE;
 
             struct sysinfo info{};
             int iRetVal = sysinfo(&info);
@@ -277,7 +278,7 @@ namespace matrix {
             }
 
             uint64_t memoryTotal = info.totalram / 1024; //kb
-            memoryTotal = memoryTotal > 1000000000 ? 1000000000 : memoryTotal;
+            memoryTotal = (memoryTotal * DEFAULT_PERCENTAGE) > 1000000000 ? 1000000000 : (memoryTotal * DEFAULT_PERCENTAGE);
 
             uuid_t uu;
             char buf_uuid[1024];
