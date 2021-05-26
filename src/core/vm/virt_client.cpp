@@ -277,6 +277,7 @@ namespace matrix {
             }
 
             uint64_t memoryTotal = info.totalram / 1024; //kb
+            memoryTotal = memoryTotal > 1000000000 ? 1000000000 : memoryTotal;
 
             uuid_t uu;
             char buf_uuid[1024];

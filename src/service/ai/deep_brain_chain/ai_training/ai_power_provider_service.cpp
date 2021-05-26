@@ -412,10 +412,14 @@ namespace ai
                 {
                     if(update.compare(get_is_update(task->server_specification))!=0 && update1.compare(get_is_update(task->server_specification)) != 0){// only create new task
 
+                        /*
                         int32_t status=m_oss_task_mng->can_create_this_task(); //创建容器授权
                         if(E_SUCCESS!=status) {
                             status=m_oss_task_mng->can_create_this_task(); //创建容器授权
                         }
+                        */
+                        int32_t status = E_SUCCESS;
+
                         if(E_SUCCESS==status) {
 
                             LOG_INFO << "ref_task ref_task2 == nullptr";
