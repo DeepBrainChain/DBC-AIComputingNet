@@ -227,12 +227,12 @@ namespace matrix {
         void virt_client::shell_transform_port(const std::string &host_ip, const std::string &transform_port) {
             std::string cmd = "";
             cmd += "sudo iptables --table nat --append PREROUTING --protocol tcp --destination " + host_ip + " --destination-port " + transform_port + " --jump DNAT --to-destination 192.168.122.2:22";
-            cmd += "&& sudo iptables -t nat -A PREROUTING -p tcp --dport " + transform_port + " -j DNAT --to-destination 192.168.122.2:22";
-            cmd += "&& sudo iptables -t nat -A POSTROUTING -p tcp --dport " + transform_port + " -d 192.168.122.2 -j SNAT --to 192.168.122.1";
-            cmd += "&& sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination 192.168.122.2:20000-60000";
-            cmd += "&& sudo iptables -t nat -A PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination 192.168.122.2:20000-60000";
-            cmd += "&& sudo iptables -t nat -A POSTROUTING -d 192.168.122.2 -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
-            cmd += "&& sudo iptables -t nat -A POSTROUTING -d 192.168.122.2 -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+            cmd += " && sudo iptables -t nat -A PREROUTING -p tcp --dport " + transform_port + " -j DNAT --to-destination 192.168.122.2:22";
+            cmd += " && sudo iptables -t nat -A POSTROUTING -p tcp --dport " + transform_port + " -d 192.168.122.2 -j SNAT --to 192.168.122.1";
+            cmd += " && sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination 192.168.122.2:20000-60000";
+            cmd += " && sudo iptables -t nat -A PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination 192.168.122.2:20000-60000";
+            cmd += " && sudo iptables -t nat -A POSTROUTING -d 192.168.122.2 -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+            cmd += " && sudo iptables -t nat -A POSTROUTING -d 192.168.122.2 -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
 
             FILE * fp;
             char buffer[1024] = {0};

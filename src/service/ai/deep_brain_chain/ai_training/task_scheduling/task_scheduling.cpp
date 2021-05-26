@@ -779,7 +779,9 @@ namespace ai
                 boost::property_tree::ptree pt;
                 std::string host_ip, transform_port;
                 try {
-                    boost::property_tree::read_json(task->server_specification, pt);
+                    std::stringstream ss;
+                    ss << task->server_specification;
+                    boost::property_tree::read_json(ss, pt);
                     if (pt.count("ip") != 0) {
                         host_ip = pt.get<std::string>("ip");
                     }
