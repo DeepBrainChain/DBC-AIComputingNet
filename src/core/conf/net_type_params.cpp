@@ -22,9 +22,10 @@ namespace matrix
     {
         static peer_seeds g_main_peer_seeds[] = 
         {
-            { "111.44.254.139", 12112 },
-            { "111.44.254.140", 12112 },
-            { "114.116.41.44", 12112 },
+                {"111.44.254.182", 11118}
+            //{ "111.44.254.139", 12112 },
+            //{ "111.44.254.140", 12112 },
+            //{ "114.116.41.44", 12112 },
          //  { "114.116.21.175", 11111 },
          //   { "114.115.219.202", 11111 },
          //  { "111.44.254.141", 11111 },
@@ -34,7 +35,6 @@ namespace matrix
 
         static peer_seeds g_test_peer_seeds[] =
         {
-
             { "114.116.21.175", 21107 },
             { "114.116.41.44", 21107 },
             { "114.115.219.202", 21107 }
@@ -48,8 +48,8 @@ namespace matrix
 
         static const char* g_main_dns_seeds[] = 
         {
-            "seed.dbchain.ai",
-            "seed.deepbrainchain.org"
+            "seed10.dbchain.ai",
+            "seed10.deepbrainchain.org"
         };
 
         static const char* g_test_dns_seeds[] =
