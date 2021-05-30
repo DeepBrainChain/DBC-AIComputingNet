@@ -9,50 +9,37 @@
 **********************************************************************************/
 #pragma once
 
-
 #include "db/ai_db_types.h"
 #include <string>
 #include "service_module.h"
-
 #include "db/ai_requestor_task_db.h"
 
 using namespace matrix::core;
-
 namespace fs = boost::filesystem;
 
-
 #define LIST_TRAINING_TIMER                                         "list_training_timer"
-#define TASK_LOGS_TIMER                                                  "task_logs_timer"
+#define TASK_LOGS_TIMER                                             "task_logs_timer"
 
-
-namespace ai
-{
-    namespace dbc
-    {
-
-        class ai_power_requestor_service : public service_module
-        {
+namespace ai {
+    namespace dbc {
+        class ai_power_requestor_service : public service_module {
         public:
+            ai_power_requestor_service() = default;
 
-            ai_power_requestor_service();
+            ~ai_power_requestor_service() override = default;
 
-            virtual ~ai_power_requestor_service() = default;
-
-            virtual std::string module_name() const { return ai_power_requestor_service_name; }
-
-        protected:
-
-            int32_t init_conf();
-
-            void init_subscription();
-
-            void init_invoker();
-
-            void init_timer();
-
-            virtual int32_t service_init(bpo::variables_map &options);
+            std::string module_name() const override {
+                return ai_power_requestor_service_name;
+            }
 
         protected:
+            void init_timer() override;
+
+            void init_invoker() override;
+
+            void init_subscription() override;
+
+            int32_t service_init(bpo::variables_map &options) override;
 
             // cmd callbacks
 
@@ -68,13 +55,13 @@ namespace ai
 
             int32_t on_cmd_logs_req(const std::shared_ptr<message> &msg);
 
-            int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm, std::string& error);
+            int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm, std::string &error);
+
             int32_t validate_ipfs_path(const std::string &path_arg);
+
             int32_t validate_entry_file_name(const std::string &entry_file_name);
 
             int32_t on_cmd_task_clean(const std::shared_ptr<message> &msg);
-
-        protected:
 
             // thrift matrix message callbacks
 
@@ -94,19 +81,10 @@ namespace ai
 
             bool precheck_msg(std::shared_ptr<message> &msg);
 
-
-        protected:
-
-            std::shared_ptr<message> create_task_msg(const std::string &task_file, const bpo::options_description &opts, ai::dbc::cmd_task_info & task_info);
-
-            std::shared_ptr<message> create_task_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info);
-
+            std::shared_ptr<message> create_task_msg(bpo::variables_map &vm, ai::dbc::cmd_task_info &task_info);
 
         protected:
             ai::dbc::ai_requestor_task_db m_req_training_task_db;
         };
-
     }
-
 }
-

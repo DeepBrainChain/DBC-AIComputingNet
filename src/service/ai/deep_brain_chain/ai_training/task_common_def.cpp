@@ -61,7 +61,7 @@ namespace ai
             }
         }
         std::string engine_reg;
-        bool check_task_engine(std::string engine)
+        bool check_task_engine(const std::string& engine)
         {
             if (engine_reg.empty())
             {

@@ -811,7 +811,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            if (id_generator().check_base58_id(req_content->header.nonce) != true)
+            if (id_generator::check_base58_id(req_content->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service ver_req. nonce error ";
                 return E_DEFAULT;
@@ -860,7 +860,7 @@ namespace matrix
             //header
             resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             resp_content->header.__set_msg_name(VER_RESP);
-            resp_content->header.__set_nonce(id_generator().generate_nonce());
+            resp_content->header.__set_nonce(id_generator::generate_nonce());
 
             //capacity
             std::map<std::string, std::string> exten_info;
@@ -897,7 +897,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            if (id_generator().check_base58_id(resp_content->header.nonce) != true)
+            if (id_generator::check_base58_id(resp_content->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service ver_resp. nonce error ";
                 return E_DEFAULT;
@@ -1054,7 +1054,7 @@ namespace matrix
                 //header
                 req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
                 req_content->header.__set_msg_name(VER_REQ);
-                req_content->header.__set_nonce(id_generator().generate_nonce());
+                req_content->header.__set_nonce(id_generator::generate_nonce());
 
                 //capacity
                 std::map<std::string, std::string> exten_info;
@@ -1177,7 +1177,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            if (id_generator().check_base58_id(req->header.nonce) != true)
+            if (id_generator::check_base58_id(req->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service on_get_peer_nodes_req. nonce error ";
                 return E_DEFAULT;
@@ -1197,7 +1197,7 @@ namespace matrix
                 //header
                 resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
                 resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
-                resp_content->header.__set_nonce(id_generator().generate_nonce());
+                resp_content->header.__set_nonce(id_generator::generate_nonce());
 
                 for (uint32_t peer_cnt = 0; (it != m_peer_nodes_map.end()) && (peer_cnt < max_peer_cnt_per_pack); ++it)
                 {
@@ -1238,7 +1238,7 @@ namespace matrix
                 return E_DEFAULT;
             }
 
-            if (id_generator().check_base58_id(rsp->header.nonce) != true)
+            if (id_generator::check_base58_id(rsp->header.nonce) != true)
             {
                 LOG_DEBUG << "p2p_net_service on_get_peer_nodes_resp. nonce error ";
                 return E_SUCCESS;
@@ -1345,7 +1345,7 @@ namespace matrix
             std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             req_content->header.__set_msg_name(P2P_GET_PEER_NODES_REQ);
-            req_content->header.__set_nonce(id_generator().generate_nonce());
+            req_content->header.__set_nonce(id_generator::generate_nonce());
 
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             req_msg->set_name(P2P_GET_PEER_NODES_REQ);
@@ -1366,7 +1366,7 @@ namespace matrix
             //header
             resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
-            resp_content->header.__set_nonce(id_generator().generate_nonce());
+            resp_content->header.__set_nonce(id_generator::generate_nonce());
 
             if (node)//broadcast one node
             {
@@ -1585,7 +1585,7 @@ namespace matrix
                     }
 
                     //validate node id
-                    if (!db_candidate->node_id.empty() && !id_generator().check_base58_id(db_candidate->node_id))
+                    if (!db_candidate->node_id.empty() && !id_generator::check_base58_id(db_candidate->node_id))
                     {
                         LOG_ERROR << "p2p net service load peer candidate error: " << "node id: " << db_candidate->node_id << " is not Base58 code";
                         continue;

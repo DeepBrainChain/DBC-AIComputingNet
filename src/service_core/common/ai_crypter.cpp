@@ -21,7 +21,7 @@ int32_t ai_crypto_util::extra_sign_info(std::string &message, std::map <std::str
 {
     time_t cur = std::time(nullptr);
     std::string sign_message = boost::str(boost::format("%s%d") % message % cur);
-    std::string sign = id_generator().sign(sign_message, CONF_MANAGER->get_node_private_key());
+    std::string sign = id_generator::sign(sign_message, CONF_MANAGER->get_node_private_key());
     if (sign.empty())
     {
         return E_DEFAULT;
@@ -44,7 +44,7 @@ ai_crypto_util::derive_nodeid_bysign(std::string &message, std::map <std::string
     std::string sign_message = boost::str(boost::format("%s%s") % message % exten_info["sign_at"]);
     std::string derive_node_id;
 
-    id_generator().derive_node_id_by_sign(sign_message, exten_info["sign"], derive_node_id);
+    id_generator::derive_node_id_by_sign(sign_message, exten_info["sign"], derive_node_id);
 
     return derive_node_id;
 }
@@ -60,7 +60,7 @@ bool ai_crypto_util::derive_pub_key_bysign(std::string &message, std::map <std::
 
     std::string sign_message = boost::str(boost::format("%s%s") % message % exten_info["sign_at"]);
 
-    bool rtn = id_generator().derive_pub_key_by_sign(sign_message, exten_info["sign"], pub);
+    bool rtn = id_generator::derive_pub_key_by_sign(sign_message, exten_info["sign"], pub);
 
     return rtn;
 }
@@ -99,7 +99,7 @@ bool ai_crypto_util::get_local_node_private_key(CKey &key)
 
     std::string node_private_key = CONF_MANAGER->get_node_private_key();
     std::vector<unsigned char> vch;
-    if (!id_generator().decode_private_key(node_private_key, vch))
+    if (!id_generator::decode_private_key(node_private_key, vch))
     {
         LOG_ERROR << "decode_private_key fail";
         return false;

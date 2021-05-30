@@ -56,7 +56,7 @@ namespace service
             //header
             content->header.__set_magic(CONF_MANAGER->get_net_flag());
             content->header.__set_msg_name(SHOW_REQ);
-            content->header.__set_nonce(id_generator().generate_nonce());
+            content->header.__set_nonce(id_generator::generate_nonce());
             content->header.__set_session_id(session_id);
 
             //body
@@ -148,14 +148,14 @@ namespace service
 
 
             std::string o_node_id = content->body.o_node_id;
-            if (!id_generator().check_base58_id(o_node_id))
+            if (!id_generator::check_base58_id(o_node_id))
             {
                 LOG_WARNING << "invalid o_node_id ";
                 return false;
             }
 
             std::string d_node_id = content->body.d_node_id;
-            if (!id_generator().check_base58_id(d_node_id))
+            if (!id_generator::check_base58_id(d_node_id))
             {
                 LOG_WARNING << "invalid d_node_id ";
                 return false;

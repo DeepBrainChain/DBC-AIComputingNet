@@ -9,6 +9,7 @@
 **********************************************************************************/
 
 #pragma once
+
 #include "container_client.h"
 #include <memory>
 #include <string>
@@ -25,45 +26,53 @@
 #include "oss_task_manager.h"
 #include "resource/gpu_pool.h"
 #include "server_initiator.h"
+
 using namespace std;
 using namespace matrix::core;
 
 #define MAX_TASK_COUNT 200000
 #define MAX_PRUNE_TASK_COUNT 160000
-extern std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
-//used to interactive with remote system
-namespace ai
-{
-    namespace dbc
-    { 
-        class user_task_scheduling: public task_scheduling
-        {
+extern std::map<std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
+
+namespace ai {
+    namespace dbc {
+        class user_task_scheduling : public task_scheduling {
             using auth_task_handler = typename std::function<int32_t(shared_ptr<ai_training_task>)>;
             using stop_idle_task_handler = typename std::function<int32_t()>;
         public:
-            user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr, std::shared_ptr<vm_worker> vm_worker_ptr);
+            user_task_scheduling(std::shared_ptr<container_worker> container_worker_ptr,
+                                 std::shared_ptr<vm_worker> vm_worker_ptr);
+
             user_task_scheduling() = default;
-            virtual ~user_task_scheduling() = default;
-           
+
+            ~user_task_scheduling() override = default;
+
             int32_t init(bpo::variables_map &options);
-            int32_t load_task();
+
+
+
             int32_t exec_task();
 
             int32_t check_pull_image_state();
+
             int32_t check_training_task_status(std::shared_ptr<ai_training_task> task);
 
             //check the task is cached or not.
             //bool have_task(std::string task_id);
             int32_t add_task(std::shared_ptr<ai_training_task> task);
+
             int32_t add_update_task(std::shared_ptr<ai_training_task> task);
+
             std::shared_ptr<ai_training_task> find_task(std::string task_id);
 
-            size_t get_user_cur_task_size() {return m_queueing_tasks.size() + m_running_tasks.size();}
+            size_t get_user_cur_task_size() { return m_queueing_tasks.size() + m_running_tasks.size(); }
+
             size_t get_total_user_task_size() { return m_training_tasks.size(); }
 
-            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status , bool is_docker);
+            int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status, bool is_docker);
 
             void set_auth_handler(auth_task_handler handler) { m_auth_task_handler = handler; }
+
             void set_stop_idle_task_handler(stop_idle_task_handler handler) { m_stop_idle_task_handler = handler; }
 
             int32_t process_task();
@@ -73,30 +82,27 @@ namespace ai
             int32_t prune_task();
 
             std::string get_gpu_state();
+
             void update_gpu_info_from_proc();
 
             std::string get_active_tasks();
 
-       //     static  std::map< std::string, std::shared_ptr<ai_training_task> >  get_running_tasks() { return m_running_tasks; }
-       //     static std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
         private:
-            int32_t auth_task(std::shared_ptr<ai_training_task> task, bool is_normal_user_task=true);
+            int32_t load_task() override;
+
             int32_t prune_task(int16_t interval);
 
-        protected:
-            std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
-
-           // std::map< std::string, std::shared_ptr<ai_training_task> > m_running_tasks;
         private:
+            bool m_is_computing_node = false;
+
             auth_task_handler m_auth_task_handler;
             stop_idle_task_handler m_stop_idle_task_handler;
-            //std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
+
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;
+            std::list<std::shared_ptr<ai_training_task>> m_queueing_tasks;
+
             int16_t m_prune_intervel = 0;
-
             gpu_pool m_gpu_pool;
-
-            bool m_is_computing_node = false;
         };
     }
 }

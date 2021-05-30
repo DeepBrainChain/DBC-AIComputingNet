@@ -43,7 +43,7 @@ namespace service
             //header
             content->header.__set_magic(CONF_MANAGER->get_net_flag());
             content->header.__set_msg_name(SERVICE_BROADCAST_REQ);
-            content->header.__set_nonce(id_generator().generate_nonce());
+            content->header.__set_nonce(id_generator::generate_nonce());
             content->header.__set_session_id("");
 
             //body

@@ -155,12 +155,12 @@ namespace matrix
         {
             //id_generator gen;
 
-            if (id_generator().check_node_id(m_node_id) != true)
+            if (id_generator::check_node_id(m_node_id) != true)
             {
                 return false;
             }
             std::string node_derived;
-            bool derived = id_generator().derive_node_id_by_private_key(m_node_private_key, node_derived);
+            bool derived = id_generator::derive_node_id_by_private_key(m_node_private_key, node_derived);
             if (derived != true)
             {
                 return derived;
@@ -173,8 +173,7 @@ namespace matrix
         {
             //node info
             node_info info;
-            id_generator gen;
-            int32_t ret = gen.generate_node_info(info);                 //check: if exists, not init again and print promption.
+            int32_t ret = id_generator::generate_node_info(info);                 //check: if exists, not init again and print promption.
             if (E_SUCCESS != ret)
             {
                 LOG_ERROR << "dbc_server_initiator init node info error";

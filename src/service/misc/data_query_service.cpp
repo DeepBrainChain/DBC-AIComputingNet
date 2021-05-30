@@ -252,7 +252,7 @@ namespace service
             }
             else if (req->op == ai::dbc::OP_SHOW_NODE_INFO)
             {
-                if (id_generator().check_node_id(req->d_node_id) != true)
+                if (id_generator::check_node_id(req->d_node_id) != true)
                 {
 
                     cmd_resp->error("invalid node id: " + req->d_node_id);

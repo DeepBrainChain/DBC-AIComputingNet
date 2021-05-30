@@ -138,7 +138,7 @@ namespace ai
             req->time_stamp = boost::str(boost::format("%d") % time_util::get_time_stamp_ms());
             req->sign_type = ECDSA;
             std::string message = req->mining_node_id + req->time_stamp;
-            req->sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
+            req->sign = id_generator::sign(message, CONF_MANAGER->get_node_private_key());
 
             std::shared_ptr<idle_task_resp> resp = m_oss_client->post_idle_task(req);
             
@@ -185,7 +185,7 @@ namespace ai
 
             LOG_DEBUG << "sign message:" << message;
 
-            req->sign = id_generator().sign(message, CONF_MANAGER->get_node_private_key());
+            req->sign = id_generator::sign(message, CONF_MANAGER->get_node_private_key());
             return req;
         }
         int32_t oss_task_manager::can_stop_this_task(std::string task_id)
@@ -445,113 +445,12 @@ namespace ai
 
         int32_t oss_task_manager::auth_task(std::shared_ptr<ai_training_task> task)
         {
-            //dbc is setted to not need authentication
-//            if (!m_enable_billing)
             if (m_auth_mode == DBC_NO_AUTH)
             {
-//                return E_SUCCESS;
                 return E_BILL_DISABLE;
             }
 
-            if (false == task_need_auth(task))
-            {
-                return E_SUCCESS;
-            }
-
-            int32_t rtn = E_SUCCESS;
-            dbc_auth_mode mode = m_auth_mode;
-
-            // online auth
-      //      if( mode == DBC_ONLINE_AUTH)
-      //      {
-       //         rtn = auth_online(task);
-      //          if (rtn == E_NETWORK_FAILURE)
-      //          {
-                    //fallback to offline auth
-      //              mode = DBC_OFFLINE_AUTH;
-      //          }
-      //      }
-
-            // offline auth
-     //       if ( mode == DBC_OFFLINE_AUTH)
-     //       {
-     //           rtn = auth_offline(task);
-     //       }
-
-            return rtn;
-
-//            LOG_DEBUG << "auth task:" << task->task_id;
-//
-//            if (0 == task->start_time)
-//            {
-//                task->__set_start_time(time_util::get_time_stamp_ms());
-//            }
-//
-//            task->__set_end_time(time_util::get_time_stamp_ms());
-//
-//            if (nullptr == m_oss_client)
-//            {
-//                LOG_WARNING << "bill system is not config.";
-//                return E_SUCCESS;
-//            }
-//
-//            std::shared_ptr<auth_task_req> task_req = create_auth_task_req(task);
-//            if (nullptr == task_req)
-//            {
-//                return E_SUCCESS;
-//            }
-//
-//            if (task_req->sign.empty())
-//            {
-//                LOG_DEBUG << "sign error";
-//                return E_DEFAULT;
-//            }
-//
-//            if (task->status < task_stopped)
-//            {
-//                //if oss is abnormal, the value of m_auth_time_interval is default value.
-//                m_auth_time_interval = DEFAULT_AUTH_REPORT_INTERVAL;
-//            }
-//
-//            if (m_oss_client != nullptr)
-//            {
-//                std::shared_ptr<auth_task_resp> resp = m_oss_client->post_auth_task(task_req);
-//                if (nullptr == resp)
-//                {
-//                    LOG_WARNING << "bill system can not arrive." << " Next auth time:" << DEFAULT_AUTH_REPORT_CYTLE << "m";
-////                    return E_SUCCESS;
-//                    return E_NETWORK_FAILURE;
-//                }
-//
-//                if (OSS_SUCCESS == resp->status  && resp->contract_state == "Active"
-//                    && (task->status < task_stopped))
-//                {
-//                    LOG_INFO << "auth success " << " next auth time:" << resp->report_cycle << "m";
-//                    m_auth_time_interval = resp->report_cycle * 60 * 1000;
-//                    return E_SUCCESS;
-//                }
-//
-//                if (OSS_SUCCESS == resp->status  && "Active" == resp->contract_state)
-//                {
-//                    return E_SUCCESS;
-//                }
-//
-//                //if status=-1, means the rsp message is not real auth_resp
-//                if (OSS_NET_ERROR == resp->status)
-//                {
-//                    LOG_WARNING << "bill system can not arrive." << " Next auth time:" << DEFAULT_AUTH_REPORT_CYTLE << "m";
-//                    return E_NETWORK_FAILURE;
-////                    return E_SUCCESS;
-//                }
-//
-//                LOG_ERROR << "auth failed. auth_status:" << resp->status << " contract_state:" << resp->contract_state;
-//            }
-//            else
-//            {
-//                return E_SUCCESS;
-//            }
-
-//            return E_DEFAULT;
+            return E_SUCCESS;
         }
 
         bool oss_task_manager::task_need_auth(std::shared_ptr<ai_training_task> task)
@@ -571,36 +470,6 @@ namespace ai
                 return true;
             }
 
-/*
-            if (task->status < task_stopped)
-            {
-                ////dbc maybe restart and the task is  running state, at this time, dbc should send auth req
-                if (0 == m_auth_time_interval)
-                {
-                    return true;
-                }
-
-                if (task_queueing == task->status)
-                {
-                    return true;
-                }
-
-                int64_t interval = time_util::get_time_stamp_ms() - task->end_time;
-                if (interval >= m_auth_time_interval)
-                {
-                    return true;
-                }
-
-                return false;
-            }
-
-            //final state should report
-            if (task->status >= task_stopped)
-            {
-                return true;
-            }
-
- */
             return false;
         }
     }

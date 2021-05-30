@@ -40,17 +40,16 @@ namespace ai
 {
     namespace dbc
     {
-
         enum training_task_status
         {
             task_unknown =       1,
             task_queueing =      2,
             task_pulling_image = 3,
             task_running = 4,
-            update_task_error  =5,//代表从running的容器升级
-            task_creating_image = 6,
-          //  stop_update_task_error  =7,//代表从stop的容器升级
-            ///////////termianl state///////////////////////
+            update_task_error  =5,  //代表从running的容器升级
+            task_creating_image = 6,  //正在创建镜像
+            //stop_update_task_error  =7,   //代表从stop的容器升级
+            //termianl state
             task_stopped = 8,
             task_successfully_closed = 16,
             task_abnormally_closed = 32,
@@ -58,16 +57,11 @@ namespace ai
             task_noimage_closed     = 65,
             task_nospace_closed     = 66,
             task_out_of_gpu_resource    = 67
-
         };
 
-        //__BEGIN_DECLS
-
-        extern std::string to_training_task_status_string(int8_t status);
-        extern bool check_task_engine(std::string engine);
-        extern void set_task_engine(std::string engine);
-        //__END_DECLS;
-
+        std::string to_training_task_status_string(int8_t status);
+        bool check_task_engine(const std::string& engine);
+        void set_task_engine(std::string engine);
     }
 
 }

@@ -373,8 +373,7 @@ namespace ai
         {
             //node info
             node_info info;
-            id_generator gen;
-            int32_t ret = gen.generate_node_info(info);                 //check: if exists, not init again and print prompt.
+            int32_t ret = id_generator::generate_node_info(info);                 //check: if exists, not init again and print prompt.
             if (E_SUCCESS != ret)
             {
                 cout << "dbc init node info error" << endl;

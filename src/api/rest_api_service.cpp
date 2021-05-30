@@ -174,7 +174,7 @@ namespace matrix
         void rest_api_service::post_msg(std::shared_ptr<http_request>& hreq, std::shared_ptr<message>& req_msg)
         {
             std::string str_uri = hreq->get_uri();
-            std::string session_id = id_generator().generate_session_id();
+            std::string session_id = id_generator::generate_session_id();
             std::shared_ptr<msg_base> req_content = req_msg->get_content();
             req_content->header.__set_session_id(session_id);
 

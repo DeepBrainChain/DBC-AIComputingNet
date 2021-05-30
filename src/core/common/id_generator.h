@@ -22,12 +22,8 @@ namespace matrix
             std::string node_private_key;
         };
 
-        class id_generator
+        namespace id_generator
         {
-        public:
-            id_generator();
-            ~id_generator();
-
             int32_t generate_node_info(node_info &info);
 
             std::string generate_check_sum();
@@ -52,15 +48,12 @@ namespace matrix
             bool derive_node_id_by_sign(const std::string & message, const std::string & sign, std::string & node_id);
             bool derive_pub_key_by_sign(const std::string & message, const std::string & sign, CPubKey& pub);
 
-//        private:
-        public:
-
             bool decode_node_id(const std::string & node_id, std::vector<uint8_t> & vch);
             
             std::string encode_node_id(const CPubKey &pubkey);
             
             bool decode_private_key(const std::string & node_id, std::vector<uint8_t> & vch);
-        };
+        }
     }
 }
 
