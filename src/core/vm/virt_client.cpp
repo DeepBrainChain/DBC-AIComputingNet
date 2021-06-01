@@ -118,94 +118,102 @@ namespace matrix {
             clock_node->SetAttribute("offset", "utc");
             root->LinkEndChild(clock_node);
 
-            if(vedio_pci != "")
-            {
-                tinyxml2::XMLElement* dev_node = doc.NewElement("devices");
-                /*
-                tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
-                tinyxml2::XMLElement* model_node = doc.NewElement("model");
-                model_node->SetAttribute("type", "vga");
-                model_node->SetAttribute("vram", "16384");
-                model_node->SetAttribute("heads", "1");
-                vedio_node->LinkEndChild(model_node);
-                dev_node->LinkEndChild(vedio_node);
-                */
+            tinyxml2::XMLElement* dev_node = doc.NewElement("devices");
+            /*
+            tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
+            tinyxml2::XMLElement* model_node = doc.NewElement("model");
+            model_node->SetAttribute("type", "vga");
+            model_node->SetAttribute("vram", "16384");
+            model_node->SetAttribute("heads", "1");
+            vedio_node->LinkEndChild(model_node);
+            dev_node->LinkEndChild(vedio_node);
+            */
 
+            if(vedio_pci != "") {
                 std::vector<std::string> vedios = SplitStr(vedio_pci, '|');
-                for(int i=0; i<vedios.size(); ++i)
-                {
+                for (int i = 0; i < vedios.size(); ++i) {
                     std::vector<std::string> infos = SplitStr(vedios[i], ':');
-                    if(infos.size() != 2)
-                    {
-                        std::cout << vedios[i]<< "  error" << std::endl;
+                    if (infos.size() != 2) {
+                        std::cout << vedios[i] << "  error" << std::endl;
                         continue;
                     }
 
                     std::vector<std::string> infos2 = SplitStr(infos[1], '.');
-                    if(infos2.size() != 2)
-                    {
-                        std::cout << vedios[i]<< "  error" << std::endl;
+                    if (infos2.size() != 2) {
+                        std::cout << vedios[i] << "  error" << std::endl;
                         continue;
                     }
 
-                    tinyxml2::XMLElement* hostdev_node = doc.NewElement("hostdev");
+                    tinyxml2::XMLElement *hostdev_node = doc.NewElement("hostdev");
                     hostdev_node->SetAttribute("mode", "subsystem");
                     hostdev_node->SetAttribute("type", "pci");
                     hostdev_node->SetAttribute("managed", "yes");
 
-                    tinyxml2::XMLElement* source_node = doc.NewElement("source");
-                    tinyxml2::XMLElement* address_node = doc.NewElement("address");
+                    tinyxml2::XMLElement *source_node = doc.NewElement("source");
+                    tinyxml2::XMLElement *address_node = doc.NewElement("address");
                     address_node->SetAttribute("type", "pci");
                     address_node->SetAttribute("domain", "0x0000");
-                    address_node->SetAttribute("bus", ("0x"+infos[0]).c_str());
-                    address_node->SetAttribute("slot", ("0x"+infos2[0]).c_str());
-                    address_node->SetAttribute("function", ("0x"+infos2[1]).c_str());
+                    address_node->SetAttribute("bus", ("0x" + infos[0]).c_str());
+                    address_node->SetAttribute("slot", ("0x" + infos2[0]).c_str());
+                    address_node->SetAttribute("function", ("0x" + infos2[1]).c_str());
                     source_node->LinkEndChild(address_node);
 
                     hostdev_node->LinkEndChild(source_node);
                     dev_node->LinkEndChild(hostdev_node);
                 }
-
-                tinyxml2::XMLElement* image_node = doc.NewElement("disk");
-                image_node->SetAttribute("type", "file");
-                image_node->SetAttribute("device", "disk");
-
-                tinyxml2::XMLElement* driver_node = doc.NewElement("driver");
-                driver_node->SetAttribute("name", "qemu");
-                driver_node->SetAttribute("type", "qcow2");
-                image_node->LinkEndChild(driver_node);
-
-                tinyxml2::XMLElement* source_node = doc.NewElement("source");
-                source_node->SetAttribute("file", image_path.c_str());
-                image_node->LinkEndChild(source_node);
-
-                tinyxml2::XMLElement* target_node = doc.NewElement("target");
-                target_node->SetAttribute("dev", "hda");
-                target_node->SetAttribute("bus", "ide");
-                image_node->LinkEndChild(target_node);
-                dev_node->LinkEndChild(image_node);
-
-                tinyxml2::XMLElement* interface_node = doc.NewElement("interface");
-                interface_node->SetAttribute("type", "network");
-                tinyxml2::XMLElement* interface_source_node = doc.NewElement("source");
-                interface_source_node->SetAttribute("network", "default");
-                interface_node->LinkEndChild(interface_source_node);
-                dev_node->LinkEndChild(interface_node);
-
-                tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
-                graphics_node->SetAttribute("type", "vnc");
-                graphics_node->SetAttribute("port", "-1");
-                graphics_node->SetAttribute("autoport", "yes");
-                graphics_node->SetAttribute("listen", "0.0.0.0");
-                graphics_node->SetAttribute("keymap", "en-us");
-                tinyxml2::XMLElement* listen_node = doc.NewElement("listen");
-                listen_node->SetAttribute("type", "address");
-                listen_node->SetAttribute("address", "0.0.0.0");
-                graphics_node->LinkEndChild(listen_node);
-                dev_node->LinkEndChild(graphics_node);
-
-                root->LinkEndChild(dev_node);
             }
+
+            tinyxml2::XMLElement* image_node = doc.NewElement("disk");
+            image_node->SetAttribute("type", "file");
+            image_node->SetAttribute("device", "disk");
+
+            tinyxml2::XMLElement* driver_node = doc.NewElement("driver");
+            driver_node->SetAttribute("name", "qemu");
+            driver_node->SetAttribute("type", "qcow2");
+            image_node->LinkEndChild(driver_node);
+
+            tinyxml2::XMLElement* source_node = doc.NewElement("source");
+            source_node->SetAttribute("file", image_path.c_str());
+            image_node->LinkEndChild(source_node);
+
+            tinyxml2::XMLElement* target_node = doc.NewElement("target");
+            target_node->SetAttribute("dev", "hda");
+            target_node->SetAttribute("bus", "ide");
+            image_node->LinkEndChild(target_node);
+            dev_node->LinkEndChild(image_node);
+
+            tinyxml2::XMLElement* agent_node = doc.NewElement("channel");
+            agent_node->SetAttribute("type", "unix");
+            tinyxml2::XMLElement* agent_source_node = doc.NewElement("source");
+            agent_source_node->SetAttribute("mode", "bind");
+            agent_source_node->SetAttribute("path", "/tmp/channel.sock");
+            agent_node->LinkEndChild(agent_source_node);
+            tinyxml2::XMLElement* agent_target_node = doc.NewElement("target");
+            agent_target_node->SetAttribute("type", "virtio");
+            agent_target_node->SetAttribute("name", "org.qemu.guest_agent.0");
+            agent_node->LinkEndChild(agent_target_node);
+            dev_node->LinkEndChild(agent_node);
+
+            tinyxml2::XMLElement* interface_node = doc.NewElement("interface");
+            interface_node->SetAttribute("type", "network");
+            tinyxml2::XMLElement* interface_source_node = doc.NewElement("source");
+            interface_source_node->SetAttribute("network", "default");
+            interface_node->LinkEndChild(interface_source_node);
+            dev_node->LinkEndChild(interface_node);
+
+            tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
+            graphics_node->SetAttribute("type", "vnc");
+            graphics_node->SetAttribute("port", "-1");
+            graphics_node->SetAttribute("autoport", "yes");
+            graphics_node->SetAttribute("listen", "0.0.0.0");
+            graphics_node->SetAttribute("keymap", "en-us");
+            tinyxml2::XMLElement* listen_node = doc.NewElement("listen");
+            listen_node->SetAttribute("type", "address");
+            listen_node->SetAttribute("address", "0.0.0.0");
+            graphics_node->LinkEndChild(listen_node);
+            dev_node->LinkEndChild(graphics_node);
+
+            root->LinkEndChild(dev_node);
 
             //doc.SaveFile("domain.xml");
             tinyxml2::XMLPrinter printer;

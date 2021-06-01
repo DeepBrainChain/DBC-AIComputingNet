@@ -22,14 +22,14 @@ namespace ai
     namespace dbc
     {
 
-        std::shared_ptr<message> rest_task(HTTP_REQUEST_PTR httpReq, const std::string& path);
+        std::shared_ptr<message> rest_task(const HTTP_REQUEST_PTR& httpReq, const std::string& path);
 
-        std::shared_ptr<message> rest_task_list(HTTP_REQUEST_PTR httpReq, const std::string& path);
+        std::shared_ptr<message> rest_task_list(const HTTP_REQUEST_PTR& httpReq, const std::string& path);
         std::shared_ptr<message> rest_task_info(HTTP_REQUEST_PTR httpReq, const std::string& path);
 
         int32_t on_list_training_resp(HTTP_REQ_CTX_PTR hreq_context, std::shared_ptr<message>& resp_msg);
 
-        std::shared_ptr<message> rest_task_start(HTTP_REQUEST_PTR httpReq, const std::string& path);
+        std::shared_ptr<message> rest_task_start(const HTTP_REQUEST_PTR& httpReq, const std::string& path);
 
         int32_t on_start_training_resp(HTTP_REQ_CTX_PTR hreq_context, std::shared_ptr<message>& resp_msg);
 

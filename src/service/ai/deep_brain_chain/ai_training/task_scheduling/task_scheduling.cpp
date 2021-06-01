@@ -711,6 +711,61 @@ namespace ai {
 
                 }
 
+                //生成随即密钥
+                {
+                    char chr[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G',
+                                  'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                                  'O', 'P', 'Q', 'R', 'S', 'T',
+                                  'U', 'V', 'W', 'X', 'Y', 'Z',
+                                  'a', 'b', 'c', 'd', 'e', 'f', 'g',
+                                  'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                                  'o', 'p', 'q', 'r', 's', 't',
+                                  'u', 'v', 'w', 'x', 'y', 'z',
+                                  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                                  '+', '_', '@', '#', '!', '*', '%', '&', '$', '='
+                                  };
+                    srand(time(NULL));
+                    string strpwd;
+                    int nlen = 10; //10位密码
+                    char buf[3] = {0};
+                    int idx0 = rand() % 52;
+                    sprintf(buf, "%c", chr[idx0]);
+                    strpwd.append(buf);
+
+                    int idx_0 = rand() % nlen;
+                    int idx_1 = rand() % nlen;
+                    int idx_2 = rand() % nlen;
+
+                    for (int i=1; i<nlen; i++)
+                    {
+                        int idx;
+                        if (i == idx_0 || i == idx_1 || i == idx_2) {
+                            idx = rand() % 72;
+                        } else {
+                            idx = rand() % 62;
+                        }
+                        sprintf(buf, "%c", chr[idx]);
+                        strpwd.append(buf);
+                    }
+
+                    leveldb::DB *db = nullptr;
+                    leveldb::Options  options;
+                    options.create_if_missing = true;
+                    boost::filesystem::path pwd_db_path = env_manager::get_db_path();
+                    if (false == fs::exists(pwd_db_path)) {
+                        fs::create_directory(pwd_db_path);
+                    }
+                    pwd_db_path /= fs::path("pwd.db");
+                    leveldb::Status status = leveldb::DB::Open(options, pwd_db_path.generic_string(), &db);
+                    if (status.ok()) {
+                        leveldb::WriteOptions write_options;
+                        write_options.sync = true;
+                        db->Put(write_options, task->task_id, strpwd);
+                        db->Put(write_options, task->task_id + "_set", "0");
+                        LOG_INFO << "generate pwd: " << task->task_id << ":" << strpwd;
+                    }
+                }
+
                 int32_t ret = VM_WORKER_IF->createDomain(task->task_id, host_ip, transform_port, "/data/" + task->training_engine);
                 if (ret == E_SUCCESS) {
                     LOG_INFO << "create vm task success. task id:" << task->task_id;

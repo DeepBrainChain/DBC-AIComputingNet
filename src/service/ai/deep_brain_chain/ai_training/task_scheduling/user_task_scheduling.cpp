@@ -80,6 +80,29 @@ namespace ai {
             return E_SUCCESS;
         }
 
+        void set_vm_passwd(const std::string& vm_name, const std::string& username, const std::string& pwd) {
+            //连接到虚拟机监控程序(Hypervisor)
+            virConnectPtr conn_ptr = virConnectOpen("qemu+tcp://localhost/system");
+            if (conn_ptr == nullptr) {
+                virErrorPtr error = virGetLastError();
+                printf("connect virt error: %s\n", error->message);
+                virFreeError(error);
+                return;
+            }
+
+            virDomainPtr domain_ptr = virDomainLookupByName(conn_ptr, vm_name.c_str());
+            if (domain_ptr == nullptr) {
+                virErrorPtr error = virGetLastError();
+                printf("virDomainLookupByName error: %s\n", error->message);
+                virFreeError(error);
+                virConnectClose(conn_ptr);
+                return;
+            }
+
+            virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), VIR_DOMAIN_PASSWORD_ENCRYPTED);
+            LOG_INFO << "set_domain_pwd: " << username << ":" << pwd;
+        }
+
         int32_t user_task_scheduling::process_task() {
             if (!m_queueing_tasks.empty()) {
                 auto task = m_queueing_tasks.front();
@@ -105,6 +128,33 @@ namespace ai {
 
             for (auto &each : m_running_tasks) {
                 check_training_task_status(each.second);
+
+                {
+                    leveldb::DB *db = nullptr;
+                    leveldb::Options  options;
+                    options.create_if_missing = true;
+                    boost::filesystem::path pwd_db_path = env_manager::get_db_path();
+                    if (fs::exists(pwd_db_path)) {
+                        pwd_db_path /= fs::path("pwd.db");
+                        leveldb::Status status = leveldb::DB::Open(options, pwd_db_path.generic_string(), &db);
+                        if (status.ok()) {
+                            leveldb::WriteOptions write_options;
+                            write_options.sync = true;
+                            std::string set;
+                            db->Get(leveldb::ReadOptions(), each.second->task_id + "_set", &set);
+                            if (set == "0") {
+                                std::string pwd;
+                                db->Get(leveldb::ReadOptions(), each.second->task_id, &pwd);
+                                set_vm_passwd(each.second->task_id, "ubuntu", pwd);
+                                LOG_INFO << "set_vm_pwd:" << "ubuntu" << ":" << pwd;
+
+                                leveldb::WriteOptions write_options;
+                                write_options.sync = true;
+                                db->Put(write_options, each.second->task_id + "_set", "1");
+                            }
+                        }
+                    }
+                }
             }
 
             return E_SUCCESS;

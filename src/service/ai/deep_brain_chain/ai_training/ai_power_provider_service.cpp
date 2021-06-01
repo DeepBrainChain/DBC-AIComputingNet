@@ -675,6 +675,23 @@ namespace ai {
                 log_content = "task abnormal. get log content error";
             }
 
+            //添加密钥
+            {
+                leveldb::DB *db = nullptr;
+                leveldb::Options  options;
+                options.create_if_missing = true;
+                boost::filesystem::path pwd_db_path = env_manager::get_db_path();
+                if (fs::exists(pwd_db_path)) {
+                    pwd_db_path /= fs::path("pwd.db");
+                    leveldb::Status status = leveldb::DB::Open(options, pwd_db_path.generic_string(), &db);
+                    if (status.ok()) {
+                        std::string strpwd;
+                        db->Get(leveldb::ReadOptions(), task_id, &strpwd);
+                        container_resp->log_content += "vmpwd:\"" + strpwd + "\"";
+                    }
+                }
+            }
+
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();
             rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             rsp_content->header.__set_msg_name(LOGS_RESP);

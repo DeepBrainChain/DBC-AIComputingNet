@@ -29,7 +29,7 @@
 #include <ctime>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/map.hpp>
-
+#include "leveldb/db.h"
 #include "ai_crypter.h"
 
 using namespace matrix::service_core;
@@ -331,7 +331,7 @@ namespace service
                     return E_DEFAULT;
                 }
 
-                q->send();
+                q->send(); //broadcast
             }
             else
             {

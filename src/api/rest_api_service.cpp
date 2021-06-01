@@ -17,57 +17,44 @@
 #include "time_tick_notification.h"
 #include <chrono>
 #include <ctime>
+
 using namespace std::chrono;
 extern std::chrono::high_resolution_clock::time_point server_start_time;
-
 using namespace ai::dbc;
 
+#define SUBSCRIBE_RESP_MSG(cmd)  \
+TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){  \
+    std::shared_ptr<message> msg = std::make_shared<message>(); \
+    msg->set_name(typeid(cmd).name()); \
+    msg->set_content(rsp);\
+    send(msg);\
+});
 
-//
-//Turn the response package into a message and send it to the queue
-//
-
-#define SUBSCRIBE_RESP_MSG(cmd)  TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){  \
-std::shared_ptr<message> msg = std::make_shared<message>(); \
-msg->set_name(typeid(cmd).name()); \
-msg->set_content(rsp);\
-send(msg);\
-}); \
-\
-
-//
 //Bind Async Call Handler of Response Msg
-//
 #define BIND_RSP_HANDLER(cmd)  BIND_MESSAGE_INVOKER(typeid(cmd).name(),&rest_api_service::on_call_rsp_handler);
 
 #define HTTP_REQUEST_TIMEOUT_EVENT   "http_request_timeout_event"
 #define HTTP_REQUEST_KEY             "hreq_context"
 
-namespace matrix
-{
-    namespace core
-    {
-        int32_t rest_api_service::init(bpo::variables_map& options)
-        {
-
+namespace matrix {
+    namespace core {
+        int32_t rest_api_service::init(bpo::variables_map &options) {
             for (unsigned int i = 0; i < ARRAYLEN(uri_prefixes); i++) {
-
                 m_path_handlers.push_back(http_path_handler(REST_API_URI + uri_prefixes[i].m_prefix,
                                                             uri_prefixes[i].m_exact_match,
                                                             uri_prefixes[i].m_handler));
             }
+
             for (unsigned int i = 0; i < ARRAYLEN(rsp_handlers); i++) {
                 std::string name = rsp_handlers[i].name;
                 m_rsp_handlers[name] = rsp_handlers[i].handler;
             }
 
             service_module::init(options);
-
             return E_SUCCESS;
         }
 
-        void rest_api_service::init_subscription()
-        {
+        void rest_api_service::init_subscription() {
             SUBSCRIBE_RESP_MSG(cmd_start_training_resp);
             SUBSCRIBE_RESP_MSG(cmd_stop_training_resp);
             SUBSCRIBE_RESP_MSG(cmd_list_training_resp);
@@ -77,8 +64,7 @@ namespace matrix
             SUBSCRIBE_RESP_MSG(cmd_task_clean_resp);
         }
 
-        void rest_api_service::init_invoker()
-        {
+        void rest_api_service::init_invoker() {
             invoker_type invoker;
             BIND_RSP_HANDLER(cmd_start_training_resp);
             BIND_RSP_HANDLER(cmd_stop_training_resp);
@@ -90,16 +76,14 @@ namespace matrix
 
         }
 
-        void rest_api_service::init_timer()
-        {
+        void rest_api_service::init_timer() {
             m_timer_invokers[HTTP_REQUEST_TIMEOUT_EVENT] = std::bind(&rest_api_service::on_http_request_timeout_event,
                                                                      this,
                                                                      std::placeholders::_1);
 
         }
 
-        void rest_api_service::on_http_request_event(std::shared_ptr<http_request>& hreq)
-        {
+        void rest_api_service::on_http_request_event(std::shared_ptr<http_request> &hreq) {
             std::string str_uri = hreq->get_uri();
             if (check_invalid_http_request(hreq)) {
                 LOG_ERROR << "the request is invalid,so reject it," << str_uri;
@@ -113,11 +97,9 @@ namespace matrix
             }
 
             post_msg(hreq, req_msg);
-
         }
 
-        bool rest_api_service::check_invalid_http_request(std::shared_ptr<http_request>& hreq)
-        {
+        bool rest_api_service::check_invalid_http_request(std::shared_ptr<http_request> &hreq) {
             if (hreq->get_request_method() == http_request::UNKNOWN) {
                 hreq->reply_comm_rest_err(HTTP_BADMETHOD, RPC_METHOD_DEPRECATED, "not support method");
                 return true;
@@ -143,8 +125,7 @@ namespace matrix
             return false;
         }
 
-        std::shared_ptr<message> rest_api_service::parse_http_request(std::shared_ptr<http_request>& hreq)
-        {
+        std::shared_ptr<message> rest_api_service::parse_http_request(std::shared_ptr<http_request> &hreq) {
             std::string str_uri = hreq->get_uri();
             std::string path;
             bool match;
@@ -171,8 +152,7 @@ namespace matrix
             return i->m_handler(hreq, path);
         }
 
-        void rest_api_service::post_msg(std::shared_ptr<http_request>& hreq, std::shared_ptr<message>& req_msg)
-        {
+        void rest_api_service::post_msg(std::shared_ptr<http_request> &hreq, std::shared_ptr<message> &req_msg) {
             std::string str_uri = hreq->get_uri();
             std::string session_id = id_generator::generate_session_id();
             std::shared_ptr<msg_base> req_content = req_msg->get_content();
@@ -224,7 +204,7 @@ namespace matrix
                 }
 
                 LOG_INFO << "str_uri:" << str_uri << ";add_session:" << session_id << ";msg_name:"
-                          << req_msg->get_name();
+                         << req_msg->get_name();
             } while (0);
 
             TOPIC_MANAGER->publish<int32_t>(req_msg->get_name(), req_msg);
@@ -233,15 +213,14 @@ namespace matrix
         ///
         ///The worker thread retrieves a message to invoke this procedure for processing
         ///
-        int32_t rest_api_service::on_call_rsp_handler(std::shared_ptr<message>& msg)
-        {
+        int32_t rest_api_service::on_call_rsp_handler(std::shared_ptr<message> &msg) {
             int32_t ret_code = E_DEFAULT;
 
             std::shared_ptr<service_session> session = nullptr;
 
             do {
-                const std::string& name = msg->get_name();
-                const std::string& session_id = msg->get_content()->header.session_id;
+                const std::string &name = msg->get_name();
+                const std::string &session_id = msg->get_content()->header.session_id;
                 if (session_id.empty()) {
                     //on_call_rsp_handler | rsp name: N2ai3dbc13cmd_show_respE,but get null session_id
                     LOG_ERROR << "rsp name: " << name << ",but get null session_id";
@@ -260,7 +239,7 @@ namespace matrix
 
                 try {
                     remove_timer(session->get_timer_id());
-                    variables_map& vm = session->get_context().get_args();
+                    variables_map &vm = session->get_context().get_args();
 
                     if (0 == vm.count(HTTP_REQUEST_KEY)) {
                         LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null hreq_key";
@@ -269,7 +248,7 @@ namespace matrix
                     }
 
                     std::shared_ptr<http_request_context> hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<
-                        http_request_context>>();
+                            http_request_context>>();
 
                     if (nullptr == hreq_context) {
                         LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id
@@ -290,7 +269,7 @@ namespace matrix
                     auto func = it->second;
                     func(hreq_context, msg);
                     ret_code = E_SUCCESS;
-                } catch (system_error& e) {
+                } catch (system_error &e) {
                     LOG_ERROR << "error: " << e.what();
                 } catch (...) {
                     LOG_ERROR << "error: Unknown error.";
@@ -301,8 +280,7 @@ namespace matrix
 
         }
 
-        int32_t rest_api_service::on_http_request_timeout_event(std::shared_ptr<core_timer> timer)
-        {
+        int32_t rest_api_service::on_http_request_timeout_event(std::shared_ptr<core_timer> timer) {
 
             int32_t ret_code = E_SUCCESS;
             std::string session_id;
@@ -330,10 +308,10 @@ namespace matrix
                 }
 
                 try {
-                    variables_map& vm = session->get_context().get_args();
+                    variables_map &vm = session->get_context().get_args();
                     assert(vm.count(HTTP_REQUEST_KEY) > 0);
                     std::shared_ptr<http_request_context> hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<
-                        http_request_context>>();
+                            http_request_context>>();
                     if (nullptr == hreq_context) {
                         LOG_ERROR << "session_id:" << session_id << ",but get null hreq_context";
                         ret_code = E_NULL_POINTER;
@@ -342,7 +320,7 @@ namespace matrix
 
                     hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, RPC_RESPONSE_TIMEOUT, "Internal call "
                                                                                                    "timeout...");
-                } catch (system_error& e) {
+                } catch (system_error &e) {
                     LOG_ERROR << "error: " << e.what();
                 } catch (...) {
                     LOG_ERROR << "error: Unknown error.";
@@ -354,24 +332,22 @@ namespace matrix
 
         }
 
-        int32_t rest_api_service::get_session_count()
-        {
+        int32_t rest_api_service::get_session_count() {
             std::unique_lock<std::mutex> lock(m_session_lock);
             return m_sessions.size();
         }
 
-        int32_t rest_api_service::get_startup_time()
-        {
+        int32_t rest_api_service::get_startup_time() {
             auto time_span_ms = duration_cast<milliseconds>(high_resolution_clock::now() - server_start_time);
-            int32_t fractional_seconds = (int32_t) (time_span_ms.count()/1000);
+            int32_t fractional_seconds = (int32_t) (time_span_ms.count() / 1000);
             return fractional_seconds;
         }
 
-        int32_t rest_api_service::on_invoke(std::shared_ptr<message>& msg)
-        {
+        int32_t rest_api_service::on_invoke(std::shared_ptr<message> &msg) {
             //timer point notification trigger timer process
             if (msg->get_name() == TIMER_TICK_NOTIFICATION) {
-                std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
+                std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(
+                        msg->get_content());
                 assert(nullptr != content);
 
                 std::unique_lock<std::mutex> lock(m_timer_lock);
@@ -386,22 +362,19 @@ namespace matrix
         uint32_t rest_api_service::add_timer(std::string name,
                                              uint32_t period,
                                              uint64_t repeat_times,
-                                             const std::string& session_id)
-        {
+                                             const std::string &session_id) {
             std::unique_lock<std::mutex> lock(m_timer_lock);
             return m_timer_manager->add_timer(name, period, repeat_times, session_id);
         }
 
         //Thread safe to call remove_timer
-        void rest_api_service::remove_timer(uint32_t timer_id)
-        {
+        void rest_api_service::remove_timer(uint32_t timer_id) {
             std::unique_lock<std::mutex> lock(m_timer_lock);
             m_timer_manager->remove_timer(timer_id);
         }
 
         //Thread safe to call add_session
-        int32_t rest_api_service::add_session(std::string session_id, std::shared_ptr<service_session> session)
-        {
+        int32_t rest_api_service::add_session(std::string session_id, std::shared_ptr<service_session> session) {
             std::unique_lock<std::mutex> lock(m_session_lock);
             auto it = m_sessions.find(session_id);
             if (it != m_sessions.end()) {
@@ -413,8 +386,7 @@ namespace matrix
         }
 
         //Thread safe to call pop_session
-        std::shared_ptr<service_session> rest_api_service::pop_session(std::string session_id)
-        {
+        std::shared_ptr<service_session> rest_api_service::pop_session(std::string session_id) {
             std::shared_ptr<service_session> session = nullptr;
 
             std::unique_lock<std::mutex> lock(m_session_lock);
