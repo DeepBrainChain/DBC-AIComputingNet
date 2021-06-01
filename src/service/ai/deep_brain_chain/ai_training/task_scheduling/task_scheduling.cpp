@@ -813,6 +813,7 @@ namespace ai {
                 return E_SUCCESS;
             }
 
+            int32_t ret = E_EXIT_FAILURE;
             if (is_docker) {
                 //if image do not exist, then pull it
                 if (E_IMAGE_NOT_FOUND == CONTAINER_WORKER_IF->exist_docker_image(task->training_engine, 15)) {
@@ -840,18 +841,15 @@ namespace ai {
                               << task->task_id;
                     return E_DEFAULT;
                 }
+
+                ret = CONTAINER_WORKER_IF->start_container(task->container_id);
             } else {
                 //not exsit, create
                 if (!VM_WORKER_IF->existDomain(task->task_id))
-                    create_task(task, is_docker);
+                    ret = create_task(task, is_docker);
+                else
+                    ret = VM_WORKER_IF->startDomain(task->task_id);
             }
-
-            int32_t ret = E_EXIT_FAILURE;
-
-            if (is_docker)
-                ret = CONTAINER_WORKER_IF->start_container(task->container_id);
-            else
-                ret = VM_WORKER_IF->startDomain(task->task_id);
 
             if (ret != E_SUCCESS) {
                 LOG_ERROR << "Start task error. Task id:" << task->task_id;
