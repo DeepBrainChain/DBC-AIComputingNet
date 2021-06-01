@@ -401,7 +401,10 @@ namespace service
 
 
                 content->header.path.push_back(m_own_node_id); //add this node id into path
+                LOG_INFO << "0 data_query_service::on_net_show_req relay show_req to neighbor";
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
+                /*
                 if(CONF_MANAGER->get_node_id()=="2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
                 ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
                 ||CONF_MANAGER->get_node_id()=="2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
@@ -443,6 +446,7 @@ namespace service
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
                 }
+                */
 
             }
             else

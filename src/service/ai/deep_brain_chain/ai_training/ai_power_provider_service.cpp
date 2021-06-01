@@ -247,6 +247,11 @@ namespace ai {
                 LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id
                           << " is not self and exit function";
                 //relay start training in network
+                LOG_INFO
+                        << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                        << req->body.task_id;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                /*
                 if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
                     || CONF_MANAGER->get_node_id() == "2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
                     || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
@@ -286,6 +291,7 @@ namespace ai {
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
                 }
+                */
             }
 
             if (it == peer_nodes.end()) {
@@ -358,11 +364,15 @@ namespace ai {
             } else {
                 LOG_INFO << "stop training, not found task: " << task_id << endl;
 
+                LOG_INFO << "0 stop training, broadcast_message task: " << task_id << endl;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
                 // relay on stop_training to network
                 // not support task running on multiple nodes
                 // LOG_DEBUG << "ai power provider service relay broadcast stop_training req to neighbor peer nodes: " << req->body.task_id;
                 // LOG_INFO << "force stop training:" << task_id << endl;
                 // return  m_user_task_ptr->stop_task_only_id(task_id);//强制停止
+                /*
                 if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
                     || CONF_MANAGER->get_node_id() == "2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
                     || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
@@ -397,6 +407,7 @@ namespace ai {
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
                 }
+                */
             }
 
             return E_SUCCESS;
@@ -442,6 +453,10 @@ namespace ai {
             //relay list_training to network(maybe task running on multiple nodes, no mater I took this task)
             req_content->header.path.push_back(CONF_MANAGER->get_node_id()); //add this node id into path
 
+            LOG_INFO << "0 broadcast ai power provider service training task";
+            CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
+            /*
             if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
                 || CONF_MANAGER->get_node_id() == "2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
                 || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
@@ -477,6 +492,7 @@ namespace ai {
                     CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                 }
             }
+            */
 
             if (0 == m_user_task_ptr->get_total_user_task_size()) {
                 LOG_INFO << "ai power provider service training task is empty";
@@ -596,6 +612,11 @@ namespace ai {
             if (nullptr == task) {
                 req_content->header.path.push_back(CONF_MANAGER->get_node_id());
 
+                LOG_DEBUG << "0 broadcast_message ai power provider service on logs req does not have task"
+                          << task_id;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+
+                /*
                 if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
                     || CONF_MANAGER->get_node_id() == "2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
                     || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
@@ -633,6 +654,7 @@ namespace ai {
                         CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                     }
                 }
+                */
 
                 return E_SUCCESS;
             }
