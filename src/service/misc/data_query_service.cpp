@@ -639,8 +639,6 @@ namespace service
             std::shared_ptr<service_broadcast_req> content = std::dynamic_pointer_cast<service_broadcast_req>(
                     msg->get_content());
 
-            LOG_INFO << "broadcast_req_peer: " << msg->get_name() << "," << msg->header.src_sid << "," msg->header.dst_sid;
-
             if (content == nullptr || !service_broadcast_req_msg(msg).validate())
             {
                 LOG_ERROR << "invalid msg";
