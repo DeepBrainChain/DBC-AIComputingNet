@@ -38,11 +38,9 @@ namespace service
 {
     namespace misc
     {
-
-        #define NODE_INFO_QUERY_TIMER                       "node_info_query_timer"
+        #define NODE_INFO_QUERY_TIMER                         "node_info_query_timer"
         #define TIMER_INTERVAL_NODE_INFO_COLLECTION           (20*1000)
-
-        #define NODE_INFO_COLLECTION_TIMER                  "node_info_collection_timer"
+        #define NODE_INFO_COLLECTION_TIMER                    "node_info_collection_timer"
         //#define TIMER_INTERVAL_SERVICE_BROADCAST              (30*1000)
         #define SERVICE_BROADCAST_TIMER                     "service_broadcast_timer"
 
@@ -61,7 +59,6 @@ namespace service
             LOG_DEBUG << "data_query_service::int";
 
             m_own_node_id = CONF_MANAGER->get_node_id();
-
             m_service_info_collection.init(m_own_node_id);
 
             m_is_computing_node = false;
@@ -99,9 +96,7 @@ namespace service
             //add_timer(SERVICE_BROADCAST_TIMER, TIMER_INTERVAL_SERVICE_BROADCAST);
             add_timer(SERVICE_BROADCAST_TIMER, CONF_MANAGER->get_timer_service_broadcast_in_second() * 1000 );
 
-
             m_timer_invokers[NODE_INFO_QUERY_TIMER] = std::bind(&data_query_service::on_guard_timer_expired_for_node_info_query, this, std::placeholders::_1);
-
         }
 
         /**
@@ -350,16 +345,15 @@ namespace service
          */
         int32_t data_query_service::on_net_show_req(std::shared_ptr<message> &msg)
         {
-            //LOG_DEBUG << "data_query_service::on_net_show_req";
+            LOG_INFO << "data_query_service::on_net_show_req";
 
             std::shared_ptr<show_req> content = std::dynamic_pointer_cast<show_req>(msg->get_content());
 
             if (content == nullptr ||  !node_info_query_req_msg(msg).validate())
             {
-                LOG_DEBUG << "invalid msg";
+                LOG_INFO << "invalid msg";
                 return E_DEFAULT;
             }
-
 
             auto o_node_id = content->body.o_node_id;
             auto d_node_id = content->body.d_node_id;
@@ -586,7 +580,6 @@ namespace service
             LOG_DEBUG << "data_query_service::on_timer_service_broadcast";
 
             auto s_map_size = m_service_info_collection.size();
-
             if (s_map_size == 0)
             {
                 //LOG_DEBUG << "skip broadcast due to no valid service info in cache";
@@ -641,11 +634,12 @@ namespace service
         int32_t data_query_service::on_net_service_broadcast_req(std::shared_ptr<message> &msg)
         {
 
-            LOG_DEBUG << "data_query_service::on_net_broadcast_req enter";
+            LOG_INFO << "data_query_service::on_net_broadcast_req enter";
 
             std::shared_ptr<service_broadcast_req> content = std::dynamic_pointer_cast<service_broadcast_req>(
                     msg->get_content());
 
+            LOG_INFO << "broadcast_req_peer: " << msg->get_name() << "," << msg->header.src_sid << "," msg->header.dst_sid;
 
             if (content == nullptr || !service_broadcast_req_msg(msg).validate())
             {

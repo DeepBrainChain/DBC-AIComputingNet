@@ -35,9 +35,9 @@ namespace matrix
 
         static peer_seeds g_test_peer_seeds[] =
         {
-            { "114.116.21.175", 21107 },
-            { "114.116.41.44", 21107 },
-            { "114.115.219.202", 21107 }
+            //{ "114.116.21.175", 21107 },
+            //{ "114.116.41.44", 21107 },
+            //{ "114.115.219.202", 21107 }
 
 
             //{ "39.107.81.6", 21107 },
@@ -54,8 +54,8 @@ namespace matrix
 
         static const char* g_test_dns_seeds[] =
         {
-            "testnet-seed.dbccloud.io",
-            "testnet-seed.deepbrainchain.org"
+            "testnet-seed10.dbccloud.io",
+            "testnet-seed10.deepbrainchain.org"
         };  
 
 
