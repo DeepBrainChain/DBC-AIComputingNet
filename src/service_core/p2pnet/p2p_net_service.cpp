@@ -589,9 +589,8 @@ namespace matrix {
 
         // 1分钟执行一次
         int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer) {
-            //push
+            LOG_INFO << "exchange_peer_info all, " << time(nullptr);
             send_put_peer_nodes(nullptr);
-
             return E_SUCCESS;
         }
 
@@ -902,10 +901,10 @@ namespace matrix {
                 LOG_ERROR << "null ptr of err_msg: " << sid.to_string();
                 return E_NULL_POINTER;
             }
+
             LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string() << "---"
                       << err_msg->ep.address().to_string() << ":" << err_msg->ep.port()
                       << " msg_name:" << err_msg->header.msg_name;
-
 
             auto candidate = get_peer_candidate(err_msg->ep);
             if (nullptr != candidate) {
