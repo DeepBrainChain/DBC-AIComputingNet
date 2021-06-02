@@ -692,7 +692,7 @@ namespace matrix {
 
             m_peer_nodes_map[node->m_id] = node;
 
-            LOG_DEBUG << "add a new peer_node: " << node->m_id << ", remote addr: " << ep.address().to_string() << ":"
+            LOG_INFO << "add a new peer_node: " << node->m_id << ", remote addr: " << ep.address().to_string() << ":"
                       << ep.port() << sid.to_string();
 
             return true;
@@ -742,23 +742,17 @@ namespace matrix {
                 return E_DEFAULT;
             }
 
-            //if (!req_content->__isset.body)
-            //{
-            //    LOG_ERROR << "recv ver_req, but body of req_content is not set.";
-            //    return E_DEFAULT;
-            //}
-
-            LOG_DEBUG << "p2p net service received ver req, node id: " << req_content->body.node_id
-                      << ", core_ver=" << req_content->body.core_version
-                      << ", protocol_ver=" << req_content->body.protocol_version;
+            LOG_INFO << "recv ver_req, "
+                     << "local ip: " << req_content->body.addr_you.ip << ":" << req_content->body.addr_you.port
+                     << ", from: " << req_content->body.addr_me.ip << ":" << req_content->body.addr_me.port
+                     << ", req_node_id:" << req_content->body.node_id
+                     << ", time_stamp:" << req_content->body.time_stamp;
 
             //add new peer node
             if (!add_peer_node(msg)) {
-                LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed.";
-
-                LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
+                LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed."
+                          << " p2p net service stop channel" << msg->header.src_sid.to_string();
                 CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
-
                 return E_DEFAULT;
             }
 
@@ -979,7 +973,7 @@ namespace matrix {
                 req_content->body.__set_time_stamp(std::time(nullptr));
 
                 network_address addr_me;
-                addr_me.__set_ip(get_host_ip());
+                addr_me.__set_ip(CONF_MANAGER->get_public_ip());
                 addr_me.__set_port(get_net_listen_port());
                 req_content->body.__set_addr_me(addr_me);
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
