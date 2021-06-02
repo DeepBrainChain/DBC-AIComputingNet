@@ -412,9 +412,9 @@ namespace matrix {
             return E_SUCCESS;
         }
 
+        // 1分钟执行1次
+        // 检查与种子节点的连接
         int32_t p2p_net_service::on_timer_check_peer_candidates(std::shared_ptr<matrix::core::core_timer> timer) {
-//            assert(timer->get_timer_id() == m_timer_check_peer_candidates);
-
             //clear ns failed status candidates
             for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end();) {
                 if (ns_failed == (*it)->net_st && (*it)->reconn_cnt >= max_reconnect_times) {
@@ -473,6 +473,9 @@ namespace matrix {
                         }
 
                         //connect
+                        LOG_INFO << "on_timer start_connect_peer_node => addr:" << candidate->tcp_ep.address().to_string() << ":"
+                                 << candidate->tcp_ep.port() << ", " << "node_id:" << candidate->node_id;
+
                         int32_t ret = CONNECTION_MANAGER->start_connect(candidate->tcp_ep,
                                                                         &matrix_client_socket_channel_handler::create);
                         new_conn_cnt++;
@@ -493,6 +496,8 @@ namespace matrix {
             return E_SUCCESS;
         }
 
+        // 1分钟执行一次
+        //
         int32_t p2p_net_service::on_timer_dyanmic_adjust_network(std::shared_ptr<matrix::core::core_timer> timer) {
             uint32_t client_peer_nodes_count = get_peer_nodes_count_by_socket_type(CLIENT_SOCKET);
             LOG_DEBUG << "p2p net service peer nodes map count: " << m_peer_nodes_map.size()
@@ -582,6 +587,7 @@ namespace matrix {
             return E_SUCCESS;
         }
 
+        // 1分钟执行一次
         int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<matrix::core::core_timer> timer) {
             //push
             send_put_peer_nodes(nullptr);
@@ -948,6 +954,8 @@ namespace matrix {
                 return E_DEFAULT;
             }
 
+            LOG_INFO << "onClient ep: " << candidate->tcp_ep.address().to_string() << ":" << candidate->tcp_ep.port();
+
             if (CLIENT_CONNECT_SUCCESS == notification_content->status) {
                 //candidate->reconn_cnt = 0;//case: update when recv ver_resp
 
@@ -963,7 +971,6 @@ namespace matrix {
                 //capacity
                 std::map<std::string, std::string> exten_info;
                 exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
-
 
                 //body
                 req_content->body.__set_node_id(CONF_MANAGER->get_node_id());
@@ -989,11 +996,16 @@ namespace matrix {
                     return E_DEFAULT;
                 }
                 req_content->header.__set_exten_info(exten_info);
-                LOG_INFO << "send ver_req to peer, ip: " << addr_you.ip << ", port: " << addr_you.port;
 
                 req_msg->set_content(req_content);
                 req_msg->set_name(VER_REQ);
                 req_msg->header.dst_sid = msg->header.src_sid;
+
+                LOG_INFO << "send ver_req to peer, ip: " << addr_you.ip << ", port: " << addr_you.port
+                         << " node_id:" << req_content->body.node_id << ", time_stamp:" << req_content->body.time_stamp
+                         << " from: " << addr_me.ip << ":" << addr_me.port
+                         << " local_sid: " << msg->header.dst_sid.to_string()
+                         << ", remote_sid: " << msg->header.src_sid.to_string();
 
                 CONNECTION_MANAGER->send_message(req_msg->header.dst_sid, req_msg);
             } else {
@@ -1223,6 +1235,7 @@ namespace matrix {
             return E_SUCCESS;
         }
 
+        // req
         int32_t p2p_net_service::send_get_peer_nodes() {
             std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
@@ -1236,7 +1249,7 @@ namespace matrix {
 
             return E_SUCCESS;
         }
-
+        // rsp
         int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
             //common header
             std::shared_ptr<message> resp_msg = std::make_shared<message>();
@@ -1735,7 +1748,6 @@ namespace matrix {
                       << m_net_listen_port;
             send_put_peer_nodes(node);
         }
-
 
         std::shared_ptr<peer_candidate> p2p_net_service::get_peer_candidate(const tcp::endpoint &ep) {
             auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end(),

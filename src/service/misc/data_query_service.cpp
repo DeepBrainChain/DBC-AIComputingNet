@@ -570,11 +570,7 @@ namespace service
 
         }
 
-        /**
-         * callback when period timer event is raised: this event will trigger an service broadcast.
-         * @param timer
-         * @return
-         */
+
         int32_t data_query_service::on_timer_service_broadcast(std::shared_ptr<matrix::core::core_timer> timer)
         {
             LOG_DEBUG << "data_query_service::on_timer_service_broadcast";
@@ -605,11 +601,9 @@ namespace service
 
             m_service_info_collection.remove_unlived_nodes(CONF_MANAGER->get_timer_service_list_expired_in_second());
 
-
             auto s_map = m_service_info_collection.get_change_set();
-            if(s_map.size())
+            if(!s_map.empty())
             {
-                // broadcast
                 service_broadcast_req_msg req;
 
                 int32_t rtn = req.prepare(s_map);
@@ -620,20 +614,13 @@ namespace service
                 }
 
                 req.send();
-
             }
 
             return E_SUCCESS;
         }
 
-        /**
-         * callback when service broadcast request message is received from net.
-         * @param msg
-         * @return
-         */
         int32_t data_query_service::on_net_service_broadcast_req(std::shared_ptr<message> &msg)
         {
-
             LOG_INFO << "data_query_service::on_net_broadcast_req enter";
 
             std::shared_ptr<service_broadcast_req> content = std::dynamic_pointer_cast<service_broadcast_req>(
