@@ -903,7 +903,9 @@ namespace matrix {
                 return E_NULL_POINTER;
             }
             LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string() << "---"
-                      << err_msg->ep.address().to_string() << ":" << err_msg->ep.port();
+                      << err_msg->ep.address().to_string() << ":" << err_msg->ep.port()
+                      << " msg_name:" << err_msg->header.msg_name;
+
 
             auto candidate = get_peer_candidate(err_msg->ep);
             if (nullptr != candidate) {
