@@ -80,8 +80,6 @@ namespace matrix
 
             const std::string & get_host_ip() {return m_args.count("host_ip") ? m_args["host_ip"].as<std::string>() : DEFAULT_IP_V4;}
 
-            const std::string & get_public_ip() {return m_args.count("public_ip") ? m_args["public_ip"].as<std::string>() : DEFAULT_IP_V4;}
-
             const std::vector<std::string> & get_peers() { return m_args.count("peer") ? m_args["peer"].as<std::vector<std::string>>() : DEFAULT_VECTOR; }
 
             const std::vector<const char *> &get_dns_seeds() { return m_net_params->get_dns_seeds(); }

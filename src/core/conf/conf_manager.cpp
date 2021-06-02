@@ -93,7 +93,6 @@ namespace matrix
                 ("log_level", bpo::value<uint32_t>()->default_value(DEFAULT_LOG_LEVEL))
                 ("net_type", bpo::value<std::string>()->default_value(DEFAULT_NET_TYPE), "")
                 ("host_ip", bpo::value<std::string>()->default_value(DEFAULT_LOCAL_IP), "")
-                ("public_ip", bpo::value<std::string>()->default_value(DEFAULT_LOCAL_IP), "")
                 ("main_net_listen_port", bpo::value<std::string>()->default_value(DEFAULT_MAIN_NET_LISTEN_PORT), "")
                 ("test_net_listen_port", bpo::value<std::string>()->default_value(DEFAULT_TEST_NET_LISTEN_PORT), "")
                 ("container_ip", bpo::value<std::string>()->default_value(DEFAULT_LOCAL_IP), "")

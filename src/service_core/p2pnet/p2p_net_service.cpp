@@ -974,7 +974,7 @@ namespace matrix {
                 req_content->body.__set_time_stamp(std::time(nullptr));
 
                 network_address addr_me;
-                addr_me.__set_ip(CONF_MANAGER->get_public_ip());
+                addr_me.__set_ip(get_host_ip());
                 addr_me.__set_port(get_net_listen_port());
                 req_content->body.__set_addr_me(addr_me);
                 tcp::endpoint ep = std::dynamic_pointer_cast<client_tcp_connect_notification>(msg)->ep;
