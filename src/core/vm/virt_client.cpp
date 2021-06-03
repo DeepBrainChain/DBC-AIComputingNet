@@ -252,7 +252,7 @@ namespace matrix {
         }
 
         std::string virt_client::shell_vga_pci_list() {
-            const char* cmd = "lspci |grep NVIDIA |grep VGA |awk '{print $1}' |tr \"\n\" \"|\"";
+            const char* cmd = "lspci |grep NVIDIA |grep -E ‘VGA|Audio’ |awk '{print $1}' |tr \"\n\" \"|\"";
 
             FILE * fp;
             char buffer[1024] = {0};

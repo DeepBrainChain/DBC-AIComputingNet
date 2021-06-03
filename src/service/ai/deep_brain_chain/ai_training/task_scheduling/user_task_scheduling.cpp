@@ -18,6 +18,7 @@
 #include "url_validator.h"
 #include <stdlib.h>
 #include "service_name.h"
+#include <shadow.h>
 
 namespace ai {
     namespace dbc {
@@ -80,14 +81,60 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        void set_vm_passwd(const std::string& vm_name, const std::string& username, const std::string& pwd) {
+        // uname: 宿主机已存在的用户名
+        std::string genpasswd(const char* uname, const char* pwd) {
+            if (geteuid() != 0) {
+                fprintf(stderr, "must be setuid root");
+                return "";
+            }
+
+            struct spwd *shd= getspnam(uname);
+            if(shd != nullptr) {
+                static char crypt_char[1024] = {0};
+                strcpy(crypt_char, shd->sp_pwdp);
+                char salt[1024] = {0};
+                int i=0, j=0;
+                while(shd->sp_pwdp[i]!='\0')
+                {
+                    salt[i]=shd->sp_pwdp[i];
+                    if(salt[i]=='$')
+                    {
+                        j++;
+                        if(j==3)
+                        {
+                            salt[i+1]='\0';
+                            break;
+                        }
+                    }
+
+                    i++;
+                }
+
+                if(j<3) {
+                    printf("file error or user cannot use.");
+                    return "";
+                }
+
+                std::string crypt_pwd = crypt(pwd, salt);
+                //printf("salt: %s, crypt: %s\n", salt, crypt_pwd.c_str());
+                //printf("shadowd passwd: %s\n", shd->sp_pwdp);
+                return crypt_pwd;
+            } else {
+                printf("getspnam return nullptr: %d, %s\n", errno, strerror(errno));
+                return "";
+            }
+        }
+
+        // username1: 宿主机已经存在的用户名
+        // username2: 虚拟机的用户名
+        bool set_vm_passwd(const std::string& vm_name, const std::string& username1, const std::string& username2, const std::string& pwd) {
             //连接到虚拟机监控程序(Hypervisor)
             virConnectPtr conn_ptr = virConnectOpen("qemu+tcp://localhost/system");
             if (conn_ptr == nullptr) {
                 virErrorPtr error = virGetLastError();
                 printf("connect virt error: %s\n", error->message);
                 virFreeError(error);
-                return;
+                return false;
             }
 
             virDomainPtr domain_ptr = virDomainLookupByName(conn_ptr, vm_name.c_str());
@@ -96,11 +143,18 @@ namespace ai {
                 printf("virDomainLookupByName error: %s\n", error->message);
                 virFreeError(error);
                 virConnectClose(conn_ptr);
-                return;
+                return false;
             }
 
-            virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), VIR_DOMAIN_PASSWORD_ENCRYPTED);
-            LOG_INFO << "set_domain_pwd: " << username << ":" << pwd;
+            std::string crypt_pwd = genpasswd(username1.c_str(), pwd.c_str());
+            if (!crypt_pwd.empty()) {
+                virDomainSetUserPassword(domain_ptr, username2.c_str(), crypt_pwd.c_str(), VIR_DOMAIN_PASSWORD_ENCRYPTED);
+                LOG_INFO << "set_domain_pwd: " << username2 << ":" << pwd;
+                return true;
+            } else {
+                LOG_INFO << "set_domain_pwd: " << username2 << ":" << pwd;
+                return false;
+            }
         }
 
         int32_t user_task_scheduling::process_task() {
@@ -145,12 +199,12 @@ namespace ai {
                             if (set == "0") {
                                 std::string pwd;
                                 db->Get(leveldb::ReadOptions(), each.second->task_id, &pwd);
-                                set_vm_passwd(each.second->task_id, "ubuntu", pwd);
-                                LOG_INFO << "set_vm_pwd:" << "ubuntu" << ":" << pwd;
-
-                                leveldb::WriteOptions write_options;
-                                write_options.sync = true;
-                                db->Put(write_options, each.second->task_id + "_set", "1");
+                                bool set_success = set_vm_passwd(each.second->task_id, "dbc", "ubuntu", pwd);
+                                if (set_success) {
+                                    leveldb::WriteOptions write_options;
+                                    write_options.sync = true;
+                                    db->Put(write_options, each.second->task_id + "_set", "1");
+                                }
                             }
                         }
                     }
