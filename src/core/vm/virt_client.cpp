@@ -269,6 +269,8 @@ namespace matrix {
         // image_path: /data/**.qcow2
         int32_t virt_client::createDomain(const std::string &name, const std::string &host_ip,
                                           const std::string &transform_port, const std::string &image_path) {
+            LOG_INFO << "create => " << host_ip << ":" << transform_port;
+
             // 设置端口转发
             if (!host_ip.empty() && !transform_port.empty())
                 shell_transform_port(host_ip, transform_port);

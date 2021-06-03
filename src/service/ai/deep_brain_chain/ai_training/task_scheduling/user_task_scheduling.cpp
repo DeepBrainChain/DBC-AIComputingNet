@@ -158,31 +158,7 @@ namespace ai {
         }
 
         int32_t user_task_scheduling::process_task() {
-            if (!m_queueing_tasks.empty()) {
-                auto task = m_queueing_tasks.front();
-                if (task_queueing == task->status || task_creating_image == task->status) {
-                    return exec_task();
-                } else if (task_pulling_image == task->status) {
-                    return check_pull_image_state();
-                }
-                /*
-                else if (task_running == task->status)
-                {
-                    LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
-                    return check_training_task_status();
-                }
-                */
-                else {
-                    m_queueing_tasks.pop_front();
-                    LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: "
-                              << to_training_task_status_string(task->status);
-                    return E_DEFAULT;
-                }
-            }
-
             for (auto &each : m_running_tasks) {
-                check_training_task_status(each.second);
-
                 {
                     leveldb::DB *db = nullptr;
                     leveldb::Options  options;
@@ -209,6 +185,33 @@ namespace ai {
                         }
                     }
                 }
+            }
+
+            if (!m_queueing_tasks.empty()) {
+                auto task = m_queueing_tasks.front();
+
+                if (task_queueing == task->status || task_creating_image == task->status) {
+                    return exec_task();
+                } else if (task_pulling_image == task->status) {
+                    return check_pull_image_state();
+                }
+                /*
+                else if (task_running == task->status)
+                {
+                    LOG_DEBUG << "training start check ai training task: " << task->task_id << " status: " << to_training_task_status_string(task->status);;
+                    return check_training_task_status();
+                }
+                */
+                else {
+                    m_queueing_tasks.pop_front();
+                    LOG_ERROR << "training start exec ai training task: " << task->task_id << " invalid status: "
+                              << to_training_task_status_string(task->status);
+                    return E_DEFAULT;
+                }
+            }
+
+            for (auto &each : m_running_tasks) {
+                check_training_task_status(each.second);
             }
 
             return E_SUCCESS;
