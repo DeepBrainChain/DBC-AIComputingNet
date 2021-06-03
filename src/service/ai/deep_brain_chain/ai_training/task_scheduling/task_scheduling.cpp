@@ -764,6 +764,8 @@ namespace ai {
                         db->Put(write_options, task->task_id + "_set", "0");
                         LOG_INFO << "generate pwd: " << task->task_id << ":" << strpwd;
                     }
+
+                    delete db;
                 }
 
                 int32_t ret = VM_WORKER_IF->createDomain(task->task_id, host_ip, transform_port, "/data/" + task->training_engine);

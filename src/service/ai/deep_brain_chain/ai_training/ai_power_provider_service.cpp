@@ -709,9 +709,11 @@ namespace ai {
                     if (status.ok()) {
                         std::string strpwd;
                         db->Get(leveldb::ReadOptions(), task_id, &strpwd);
-                        log_content += "vmpwd:\"" + strpwd + "\"";
+                        log_content += "vmpwd:" + strpwd;
                     }
                 }
+
+                delete db;
             }
 
             std::shared_ptr<matrix::service_core::logs_resp> rsp_content = std::make_shared<matrix::service_core::logs_resp>();

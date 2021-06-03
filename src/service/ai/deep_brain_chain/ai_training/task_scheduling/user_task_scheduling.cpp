@@ -184,6 +184,8 @@ namespace ai {
                             }
                         }
                     }
+
+                    delete db;
                 }
             }
 
