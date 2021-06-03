@@ -709,7 +709,7 @@ namespace ai {
                     if (status.ok()) {
                         std::string strpwd;
                         db->Get(leveldb::ReadOptions(), task_id, &strpwd);
-                        container_resp->log_content += "vmpwd:\"" + strpwd + "\"";
+                        log_content += "vmpwd:\"" + strpwd + "\"";
                     }
                 }
             }
