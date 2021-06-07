@@ -14,6 +14,8 @@
 #include "module.h"
 #include "rw_lock.h"
 #include "function_traits.h"
+#include <functional>
+#include "service_message.h"
 
 using namespace std;
 
@@ -26,16 +28,12 @@ namespace matrix
         class topic_manager : public module
         {
         public:
+            //typedef std::multimap<std::string, std::function<int32_t(std::shared_ptr<message>&)>>::iterator iterator_type;
 
-            typedef std::multimap<std::string, boost::any>::iterator iterator_type;
+            ~topic_manager() override { write_lock_guard<rw_lock> lock_guard(m_lock); m_topic_registry.clear(); }
 
-            virtual ~topic_manager() { write_lock_guard<rw_lock> lock_guard(m_lock); m_topic_registry.clear(); }
+            std::string module_name() const override { return topic_manager_name; }
 
-            virtual std::string module_name() const { return topic_manager_name; }
-
-        public:
-
-            //subscribe topic from bus
             template<typename function_type>
             void subscribe(const std::string &topic, function_type &&f)
             {
@@ -63,7 +61,7 @@ namespace matrix
                     return;
                 }
 
-                for (iterator_type it = range.first; it != range.second; it++)
+                for (auto it = range.first; it != range.second; it++)
                 {
                     auto f = boost::any_cast<function_type>(it->second);
                     f(std::forward<args_type>(args)...);
@@ -85,7 +83,7 @@ namespace matrix
                     return;
                 }
 
-                for (iterator_type it = range.first; it != range.second; it++)
+                for (auto it = range.first; it != range.second; it++)
                 {
                     auto f = boost::any_cast<function_type>(it->second);
                     f();
@@ -121,11 +119,8 @@ namespace matrix
             }
 
         protected:
-
             rw_lock m_lock;
-
             std::multimap<std::string, boost::any> m_topic_registry;
-
         };
 
     }

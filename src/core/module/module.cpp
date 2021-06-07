@@ -16,7 +16,6 @@ const std::string env_manager_name = "env_manager";
 const std::string topic_manager_name = "topic_manager";
 const std::string connection_manager_name = "connection_manager";
 const std::string p2p_service_name = "p2p_net_service";
-const std::string ai_power_requestor_service_name = "ai_power_requestor_service";
 const std::string ai_power_provider_service_name = "ai_power_provider_service";
 const std::string common_service_name = "common_service";
 

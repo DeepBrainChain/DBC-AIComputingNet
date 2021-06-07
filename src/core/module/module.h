@@ -24,7 +24,6 @@ extern const std::string env_manager_name;
 extern const std::string topic_manager_name;
 extern const std::string connection_manager_name;
 extern const std::string p2p_service_name;
-extern const std::string ai_power_requestor_service_name;
 extern const std::string ai_power_provider_service_name;
 extern const std::string common_service_name;
 

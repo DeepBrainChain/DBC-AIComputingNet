@@ -1,9 +1,7 @@
-
 SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
-#include directory
-INCLUDE_DIRECTORIES(
-
+include_directories(
+        ${SRC_PATH}/core
         ${SRC_PATH}/core/codec
         ${SRC_PATH}/core/common
         ${SRC_PATH}/core/conf
@@ -24,13 +22,10 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
         ${SRC_PATH}/core/filter
-        ${SRC_PATH}/core
-        ${SRC_PATH}/
-        ${SRC_PATH}/service/topic
-
+        ${SRC_PATH}/3rd
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/crypto/secp256k1/contrib
-        ${SRC_PATH}/3rd/db/
+        ${SRC_PATH}/3rd/db
         ${SRC_PATH}/3rd/network/libevent
         ${SRC_PATH}/3rd/network/libevent/event2
         ${SRC_PATH}/3rd/network/openssl/internal
@@ -42,26 +37,11 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/3rd/snappy
 )
 
+set(service_core_src_dir common network p2pnet)
 
-set(SRC_FOLDER_LIST codec codec/thrift common network p2pnet)
-set(SRC_LIST)
+foreach (sub_dir ${service_core_src_dir})
+    AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/${sub_dir} service_core_src_files)
+    INCLUDE_DIRECTORIES(${SRC_PATH}/service_core/${sub_dir})
+endforeach ()
 
-foreach(f ${SRC_FOLDER_LIST})
-#    message(STATUS ${f})
-    AUX_SOURCE_DIRECTORY(${SRC_PATH}/service_core/${f} tmp)
-    list(APPEND SRC_LIST ${tmp})
-
-    INCLUDE_DIRECTORIES(  ${SRC_PATH}/service_core/${f})
-
-endforeach()
-
-
-############################################################################
-#SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-
-add_library(dbc_service_core STATIC
-        ${SRC_LIST}
-        )
-############################################################################
-
-SET(LIBRARIES)
+add_library(dbc_service_core STATIC ${service_core_src_files})

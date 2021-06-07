@@ -1,121 +1,86 @@
-############################################################################
-#
-# Copyright (c) 2017-2018 DeepBrainChain core team All rights reserved.
-#
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php
-#
-############################################################################
-
 message(STATUS "begin to cmake.........")
-
-
-############################################################################
 
 SET(HOME_PATH ${CMAKE_SOURCE_DIR})
 SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
-
-############################################################################
-
-#if (LINUX)
 SET(EXECUTABLE_OUTPUT_PATH ${HOME_PATH}/output/)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${HOME_PATH}/output)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${HOME_PATH}/output)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${HOME_PATH}/output)
-#endif()
 
-
-#include directory
 INCLUDE_DIRECTORIES(
-${SRC_PATH}
-
-${SRC_PATH}/api 
-${SRC_PATH}/core/codec 
-${SRC_PATH}/core/common 
-${SRC_PATH}/core/conf 
-${SRC_PATH}/core/conf/validator
-${SRC_PATH}/core/container
-${SRC_PATH}/core/oss
-${SRC_PATH}/core/crypto
-${SRC_PATH}/core/env 
-${SRC_PATH}/core/initiator 
-${SRC_PATH}/core/log 
-${SRC_PATH}/core/math 
-${SRC_PATH}/core/memory 
-${SRC_PATH}/core/module 
-${SRC_PATH}/core/mutex 
-${SRC_PATH}/core/network 
-${SRC_PATH}/core/service_bus 
-${SRC_PATH}/core/service_module 
-${SRC_PATH}/core/service_module/pc 
-${SRC_PATH}/core/storage 
-${SRC_PATH}/core/timer_service
-${SRC_PATH}/core/vm
-${SRC_PATH}/core
-
-${SRC_PATH}/service_core/codec
-${SRC_PATH}/service_core/codec/thrift
-${SRC_PATH}/service_core/common
-${SRC_PATH}/service_core/network
-${SRC_PATH}/service_core/p2pnet
-
-
-${SRC_PATH}/service/misc
-${SRC_PATH}/service/topic
-
-${SRC_PATH}/service/ai/deep_brain_chain/conf
-${SRC_PATH}/service/ai/deep_brain_chain/initiator
-${SRC_PATH}/service/ai/deep_brain_chain/ai_training
-${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_scheduling
-
-${SRC_PATH}/3rd/crypto/secp256k1/include
-${SRC_PATH}/3rd/crypto/secp256k1/contrib
-${SRC_PATH}/3rd/db/
-${SRC_PATH}/3rd/network/libevent
-${SRC_PATH}/3rd/network/libevent/event2
-${SRC_PATH}/3rd/network/openssl
-${SRC_PATH}/3rd/network/openssl/internal
-${SRC_PATH}/3rd/network/openssl/openssl
-${SRC_PATH}/3rd/network/rapidjson
-${SRC_PATH}/3rd/network/rapidjson/internal
-${SRC_PATH}/3rd/network/rapidjson/error
-${SRC_PATH}/3rd/cli
-${SRC_PATH}/3rd/snappy
-
-${SRC_PATH}/api
+        ${SRC_PATH}
+        ${SRC_PATH}/dbc
+        ${SRC_PATH}/dbc/common
+        ${SRC_PATH}/dbc/task
+        ${SRC_PATH}/dbc/db
+        ${SRC_PATH}/dbc/network
+        ${SRC_PATH}/dbc/network/p2pnet
+        ${SRC_PATH}/dbc/client
+        ${SRC_PATH}/dbc/client/http_server_service
+        ${SRC_PATH}/dbc/client/cmd_line_service
+        ${SRC_PATH}/dbc/client/message
+        ${SRC_PATH}/dbc/node_service
+        ${SRC_PATH}/dbc/node_service/task_schedule
+        ${SRC_PATH}/dbc/node_service/query
+        ${SRC_PATH}/dbc/node_service/message
+        ${SRC_PATH}/dbc/node_service/message/thrift
+        ${SRC_PATH}/core
+        ${SRC_PATH}/core/codec
+        ${SRC_PATH}/core/common
+        ${SRC_PATH}/core/conf
+        ${SRC_PATH}/core/conf/validator
+        ${SRC_PATH}/core/container
+        ${SRC_PATH}/core/oss
+        ${SRC_PATH}/core/crypto
+        ${SRC_PATH}/core/env
+        ${SRC_PATH}/core/initiator
+        ${SRC_PATH}/core/log
+        ${SRC_PATH}/core/math
+        ${SRC_PATH}/core/memory
+        ${SRC_PATH}/core/module
+        ${SRC_PATH}/core/mutex
+        ${SRC_PATH}/core/network
+        ${SRC_PATH}/core/service_bus
+        ${SRC_PATH}/core/service_module
+        ${SRC_PATH}/core/service_module/pc
+        ${SRC_PATH}/core/storage
+        ${SRC_PATH}/core/timer_service
+        ${SRC_PATH}/core/vm
+        ${SRC_PATH}/core/filter
+        ${SRC_PATH}/3rd
+        ${SRC_PATH}/3rd/crypto/secp256k1/include
+        ${SRC_PATH}/3rd/crypto/secp256k1/contrib
+        ${SRC_PATH}/3rd/db
+        ${SRC_PATH}/3rd/network/libevent
+        ${SRC_PATH}/3rd/network/libevent/event2
+        ${SRC_PATH}/3rd/network/openssl
+        ${SRC_PATH}/3rd/network/openssl/internal
+        ${SRC_PATH}/3rd/network/openssl/openssl
+        ${SRC_PATH}/3rd/network/rapidjson
+        ${SRC_PATH}/3rd/network/rapidjson/internal
+        ${SRC_PATH}/3rd/network/rapidjson/error
+        ${SRC_PATH}/3rd/cli
+        ${SRC_PATH}/3rd/snappy
 )
 
-#source directory
-AUX_SOURCE_DIRECTORY(${SRC_PATH} DIR_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/api API_SRCS)
+aux_source_directory(${SRC_PATH} dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/common dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/task dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/db dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/network dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/network/p2pnet dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/client dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/client/message dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/client/http_server_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/client/cmd_line_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/node_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/node_service/task_schedule dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/node_service/query dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/node_service/message dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/node_service/message/thrift dbc_src_files)
 
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/misc SERVICE_MISC_SRCS)
-
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/conf SERVICE_DBC_CONF_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/initiator SERVICE_DBC_INITIATOR_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training SERVICE_DBC_TRAINING_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training/task_scheduling SERVICE_DBC_TRAINING_TASK_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training/resource SERVICE_DBC_RESOURCE_SRCS)
-AUX_SOURCE_DIRECTORY(${SRC_PATH}/service/ai/deep_brain_chain/ai_training/db SERVICE_DBC_DB_SRCS)
-
-#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/db/leveldb THIRD_LEVEL_DB_SRCS)
-#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson THIRD_RAPIDJSON_SRCS)
-#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/internal THIRD_RAPIDJSON_INTERNAL_SRCS)
-#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/rapidjson/error THIRD_RAPIDJSON_ERROR_SRCS)
-#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent THIRD_LIBEVENT_SRCS)
-#AUX_SOURCE_DIRECTORY(${SRC_PATH}/3rd/network/libevent/event2 THIRD_LIBEVENT_EVENT2_SRCS)
-
-############################################################################
-
-
-
-#link_directories(${SRC_PATH}/core/lib)
-#link_directories(${SRC_PATH}/service_core/lib)
-# note: cmake link directories must be set before add_executable()!
-
-
-message(STATUS "DBC_3RD_LIB_ROOT_PATH ${DBC_3RD_LIB_ROOT_PATH}" )
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/leveldb)
@@ -124,46 +89,17 @@ link_directories(${DBC_3RD_LIB_ROOT_PATH}/readline)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/snappy)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/tinyxml2)
 
-#add target source
-ADD_EXECUTABLE(dbc
-${DIR_SRCS} 
-${API_SRCS}
-${SERVICE_DBC_CONF_SRCS} 
-${SERVICE_DBC_INITIATOR_SRCS}
-${SERVICE_DBC_TRAINING_TASK_SRCS}
-${SERVICE_DBC_TRAINING_SRCS}
-${SERVICE_DBC_RESOURCE_SRCS}
-${SERVICE_DBC_DB_SRCS}
-${SERVICE_MISC_SRCS})
-#${THIRD_LEVEL_DB_SRCS}
-#${THIRD_RAPIDJSON_SRCS}
-#${THIRD_RAPIDJSON_INTERNAL_SRCS}
-#${THIRD_RAPIDJSON_ERROR_SRCS}
-#${THIRD_LIBEVENT_SRCS}
-#${THIRD_LIBEVENT_EVENT2_SRCS})
+add_executable(dbc ${dbc_src_files})
 
-############################################################################
-
-#library 
-set(LIBRARIES)
-
-#set(dbclib ${SRC_PATH}/core/lib/libdbc_core.a ${SRC_PATH}/service_core/lib/libdbc_service_core.a)
-
-set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_service_core.a ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
-
+set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
 
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl)
-#    TARGET_LINK_LIBRARIES(dbc -ltinfo)
-endif()
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} ${dbclib} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl)
+endif ()
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc ${LIBRARIES} ${Boost_LIBRARIES} ${dbclib} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -ldl)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} ${dbclib} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -ldl)
     TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
-endif()
-
-############################################################################
-
+endif ()
 
 MESSAGE(STATUS "end to cmake.........")
-

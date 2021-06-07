@@ -29,8 +29,8 @@ using namespace std;
 
 #define DEFAULT_MESSAGE_COUNT               102400                     //default message count
 
-#define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)               invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
-#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                                    TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<message> &msg) {return send(msg);});
+#define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)              invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
+#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<message> &msg) {return send(msg);});
 #define USE_SIGN_TIME 1548777600
 
 namespace matrix
@@ -100,11 +100,11 @@ namespace matrix
 
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer) override final;
 
-            uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times = ULLONG_MAX, const std::string & session_id = DEFAULT_STRING);                         //period, unit: ms
+            virtual uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id);                         //period, unit: ms
 
-            void remove_timer(uint32_t timer_id);
+            virtual void remove_timer(uint32_t timer_id);
 
-            int32_t add_session(std::string session_id, std::shared_ptr<service_session> session);
+            virtual int32_t add_session(std::string session_id, std::shared_ptr<service_session> session);
 
             std::shared_ptr<service_session> get_session(std::string session_id);
 
