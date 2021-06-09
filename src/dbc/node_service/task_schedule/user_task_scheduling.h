@@ -71,8 +71,6 @@ namespace ai {
 
             int32_t stop_task(std::shared_ptr<ai_training_task> task, training_task_status end_status, bool is_docker);
 
-            void set_auth_handler(auth_task_handler handler) { m_auth_task_handler = handler; }
-
             void set_stop_idle_task_handler(stop_idle_task_handler handler) { m_stop_idle_task_handler = handler; }
 
             int32_t process_task();
@@ -95,7 +93,6 @@ namespace ai {
         private:
             bool m_is_computing_node = false;
 
-            auth_task_handler m_auth_task_handler;
             stop_idle_task_handler m_stop_idle_task_handler;
 
             std::unordered_map<std::string, std::shared_ptr<ai_training_task>> m_training_tasks;

@@ -188,6 +188,7 @@ namespace ai
             req->sign = id_generator::sign(message, CONF_MANAGER->get_node_private_key());
             return req;
         }
+
         int32_t oss_task_manager::can_stop_this_task(std::string task_id)
         {
             LOG_DEBUG << "can_stop_this_task:" <<task_id;
@@ -302,7 +303,6 @@ namespace ai
 
         }
 
-
         int32_t oss_task_manager::can_update_this_task(std::string task_id)
         {
             LOG_DEBUG << "can_restart_this_task:" <<task_id;
@@ -340,8 +340,6 @@ namespace ai
             return E_DEFAULT;
 
         }
-
-
 
         int32_t oss_task_manager::auth_online(std::shared_ptr<ai_training_task> task)
         {
@@ -441,7 +439,6 @@ namespace ai
             return E_DEFAULT;
 
         }
-
 
         int32_t oss_task_manager::auth_task(std::shared_ptr<ai_training_task> task)
         {

@@ -30,7 +30,6 @@
 #define AI_PRUNE_TASK_TIMER_INTERVAL                             (10 * 60 * 1000)                                                 //10min timer
 
 using namespace matrix::core;
-//namespace image_rj = rapidjson;
 namespace bp = boost::process;
 
 namespace ai {
@@ -41,17 +40,16 @@ namespace ai {
 
             ~node_request_service() override = default;
 
-            std::string module_name() const override { return ai_power_provider_service_name; }
+            std::string module_name() const override { return "node_request_service"; }
 
         protected:
-            // init
-            int32_t service_init(bpo::variables_map &options) override;
-
-            void init_subscription() override;
+            void init_timer() override;
 
             void init_invoker() override;
 
-            void init_timer() override;
+            void init_subscription() override;
+
+            int32_t service_init(bpo::variables_map &options) override;
 
             int32_t service_exit() override;
 
@@ -73,12 +71,12 @@ namespace ai {
 
             std::string format_logs(const std::string &raw_logs, uint16_t max_lines);
 
-            int32_t check_sign(const std::string message, const std::string &sign, const std::string &origin_id,
+            int32_t check_sign(const std::string& message, const std::string &sign, const std::string &origin_id,
                                const std::string &sign_algo);
 
             std::string get_task_id(std::shared_ptr<matrix::service_core::start_training_req> req);
 
-            int32_t task_restart(std::shared_ptr<matrix::service_core::start_training_req> req, bool is_docker);
+            int32_t task_restart(std::shared_ptr<matrix::service_core::start_training_req> req);
 
             int32_t node_reboot(std::shared_ptr<matrix::service_core::start_training_req> req);
 
@@ -87,14 +85,15 @@ namespace ai {
         protected:
             std::shared_ptr<idle_task_scheduling> m_idle_task_ptr = nullptr;
             std::shared_ptr<user_task_scheduling> m_user_task_ptr = nullptr;
+
             std::shared_ptr<container_worker> m_container_worker = nullptr;
             std::shared_ptr<vm_worker> m_vm_worker = nullptr;
 
             std::shared_ptr<ai_training_task> m_urgent_task = nullptr;
 
-            //allow dbc to exec idle task, when dbc is not running ai user's task
             std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
 
+            // timer
             uint32_t m_training_task_timer_id;
             uint32_t m_prune_task_timer_id;
         };

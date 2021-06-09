@@ -31,14 +31,13 @@
 #include <boost/algorithm/string/join.hpp>
 #include "ai_crypter.h"
 
-using namespace std;
 using namespace matrix::core;
 using namespace matrix::service_core;
 using namespace ai::dbc;
 
 namespace ai {
     namespace dbc {
-        std::string get_gpu_spec(const std::string& s) {
+        std::string get_gpu_spec(const std::string &s) {
             if (s.empty()) {
                 return "";
             }
@@ -63,6 +62,59 @@ namespace ai {
         node_request_service::node_request_service()
                 : m_training_task_timer_id(INVALID_TIMER_ID), m_prune_task_timer_id(INVALID_TIMER_ID) {
 
+        }
+
+        void node_request_service::init_timer() {
+            // 配置文件：timer_ai_training_task_schedule_in_second（15秒）
+            m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
+                                                                 this, std::placeholders::_1);
+            m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
+                                                       CONF_MANAGER->get_timer_ai_training_task_schedule_in_second() *
+                                                       1000, ULLONG_MAX, DEFAULT_STRING);
+
+            // 10分钟
+            m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
+                                                              std::placeholders::_1);
+            m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
+                                                    DEFAULT_STRING);
+
+            assert(INVALID_TIMER_ID != m_training_task_timer_id);
+            assert(INVALID_TIMER_ID != m_prune_task_timer_id);
+        }
+
+        void node_request_service::init_invoker() {
+            invoker_type invoker;
+            BIND_MESSAGE_INVOKER("start_training_req", &node_request_service::on_start_training_req);
+
+            //stop training
+            BIND_MESSAGE_INVOKER(STOP_TRAINING_REQ, &node_request_service::on_stop_training_req);
+
+            //list training req
+            BIND_MESSAGE_INVOKER(LIST_TRAINING_REQ, &node_request_service::on_list_training_req);
+
+            //task logs req
+            BIND_MESSAGE_INVOKER(LOGS_REQ, &node_request_service::on_logs_req);
+
+            //task queue size req
+            BIND_MESSAGE_INVOKER(typeid(service::get_task_queue_size_req_msg).name(),
+                                 &node_request_service::on_get_task_queue_size_req);
+        }
+
+        void node_request_service::init_subscription() {
+            //ai training
+            SUBSCRIBE_BUS_MESSAGE("start_training_req");
+
+            //stop training
+            SUBSCRIBE_BUS_MESSAGE(STOP_TRAINING_REQ);
+
+            //list training req
+            SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_REQ);
+
+            //task logs req
+            SUBSCRIBE_BUS_MESSAGE(LOGS_REQ);
+
+            //task queue size query
+            SUBSCRIBE_BUS_MESSAGE(typeid(service::get_task_queue_size_req_msg).name());
         }
 
         int32_t node_request_service::service_init(bpo::variables_map &options) {
@@ -95,9 +147,6 @@ namespace ai {
                 return E_DEFAULT;
             }
 
-            m_user_task_ptr->set_auth_handler(
-                    std::bind(&oss_task_manager::auth_task, m_oss_task_mng, std::placeholders::_1));
-
             m_idle_task_ptr = std::make_shared<idle_task_scheduling>(m_container_worker, m_vm_worker);
             if (E_SUCCESS != m_idle_task_ptr->init()) {
                 return E_DEFAULT;
@@ -119,64 +168,10 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        void node_request_service::init_subscription() {
-            //ai training
-            SUBSCRIBE_BUS_MESSAGE(AI_TRAINING_NOTIFICATION_REQ);
-
-            //stop training
-            SUBSCRIBE_BUS_MESSAGE(STOP_TRAINING_REQ);
-
-            //list training req
-            SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_REQ);
-
-            //task logs req
-            SUBSCRIBE_BUS_MESSAGE(LOGS_REQ);
-
-            //task queue size query
-            SUBSCRIBE_BUS_MESSAGE(typeid(service::get_task_queue_size_req_msg).name());
-        }
-
-        void node_request_service::init_invoker() {
-            invoker_type invoker;
-
-            //ai training
-            BIND_MESSAGE_INVOKER(AI_TRAINING_NOTIFICATION_REQ, &node_request_service::on_start_training_req);
-
-            //stop training
-            BIND_MESSAGE_INVOKER(STOP_TRAINING_REQ, &node_request_service::on_stop_training_req);
-
-            //list training req
-            BIND_MESSAGE_INVOKER(LIST_TRAINING_REQ, &node_request_service::on_list_training_req);
-
-            //task logs req
-            BIND_MESSAGE_INVOKER(LOGS_REQ, &node_request_service::on_logs_req);
-
-            //task queue size req
-            BIND_MESSAGE_INVOKER(typeid(service::get_task_queue_size_req_msg).name(),
-                                 &node_request_service::on_get_task_queue_size_req);
-        }
-
-        void node_request_service::init_timer() {
-            m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
-                                                                 this, std::placeholders::_1);
-            //配置文件：timer_ai_training_task_schedule_in_second（15秒）
-            m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
-                                                       CONF_MANAGER->get_timer_ai_training_task_schedule_in_second() *
-                                                       1000, ULLONG_MAX, DEFAULT_STRING);
-
-            m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
-                                                              std::placeholders::_1);
-            m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX, DEFAULT_STRING); //10分钟
-
-            assert(INVALID_TIMER_ID != m_training_task_timer_id);
-            assert(INVALID_TIMER_ID != m_prune_task_timer_id);
-        }
-
         int32_t node_request_service::on_start_training_req(std::shared_ptr<message> &msg) {
             std::shared_ptr<matrix::service_core::start_training_req> req =
                     std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
             if (req == nullptr) return E_DEFAULT;
-            LOG_INFO << "start: " << req->body.task_id << endl;
 
             if (!id_generator::check_base58_id(req->header.nonce)) {
                 LOG_ERROR << "ai power provider service nonce error ";
@@ -188,23 +183,13 @@ namespace ai {
                 return E_DEFAULT;
             }
 
-            if (req->body.entry_file.empty()) {
-                LOG_ERROR << "entry_file non exist in task.";
+            if (req->body.entry_file.empty() || req->body.entry_file.size() > MAX_ENTRY_FILE_NAME_LEN) {
+                LOG_ERROR << "entry_file is invalid";
                 return E_DEFAULT;
             }
 
-            if (req->body.entry_file.size() > MAX_ENTRY_FILE_NAME_LEN) {
-                LOG_ERROR << "entry_file name lenth is too long." << req->body.entry_file.size();
-                return E_DEFAULT;
-            }
-
-            if (req->body.training_engine.empty()) {
-                LOG_ERROR << "training_engine not exist in task";
-                return E_DEFAULT;
-            }
-
-            if (req->body.training_engine.size() > MAX_ENGINE_IMGE_NAME_LEN) {
-                LOG_ERROR << "engine image lenth is too long." << req->body.training_engine.size();
+            if (req->body.training_engine.empty() || req->body.training_engine.size() > MAX_ENGINE_IMGE_NAME_LEN) {
+                LOG_ERROR << "training_engine is invalid";
                 return E_DEFAULT;
             }
 
@@ -230,7 +215,7 @@ namespace ai {
             const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
             auto it = peer_nodes.begin();
             for (; it != peer_nodes.end(); it++) {
-                if (id_generator::check_node_id((*it)) != true) {
+                if (!id_generator::check_node_id((*it))) {
                     LOG_ERROR << "ai power provider service node_id error " << (*it);
                     return E_DEFAULT;
                 }
@@ -242,14 +227,9 @@ namespace ai {
                 }
             }
 
-            //not find self; or find self, but designate more than one node
             if (it == peer_nodes.end() || peer_nodes.size() > 1) {
-                LOG_DEBUG << "ai power provider service found start training req " << req->body.task_id
-                          << " is not self and exit function";
-                //relay start training in network
-                LOG_INFO
-                        << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
-                        << req->body.task_id;
+                LOG_INFO << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                         << req->body.task_id;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
                 /*
                 if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
@@ -295,25 +275,16 @@ namespace ai {
             }
 
             if (it == peer_nodes.end()) {
-                return E_SUCCESS; //not find self, return
+                return E_SUCCESS;
             }
 
-            // reboot node
             if (req->body.code_dir == std::string(NODE_REBOOT) && CONF_MANAGER->get_enable_node_reboot()) {
                 return node_reboot(req);
+            } else if (req->body.code_dir == std::string(TASK_RESTART)) {
+                return task_restart(req);
+            } else {
+                return task_start(req);
             }
-
-            // restart a user task
-            if (req->body.code_dir == std::string(TASK_RESTART)) {
-                bool is_docker = false;
-                if (req->body.server_specification.find("docker") != std::string::npos) {
-                    is_docker = true;
-                }
-
-                return task_restart(req, is_docker);
-            }
-
-            return task_start(req);
         }
 
         int32_t node_request_service::on_stop_training_req(std::shared_ptr<message> &msg) {
@@ -435,7 +406,7 @@ namespace ai {
                 return E_DEFAULT;
             }
 
-            for (auto & it : req_content->body.task_list) {
+            for (auto &it : req_content->body.task_list) {
                 if (!id_generator::check_base58_id(it)) {
                     LOG_ERROR << "ai power provider service taskid error: " << it;
                     return E_DEFAULT;
@@ -700,7 +671,7 @@ namespace ai {
             //添加密钥
             {
                 leveldb::DB *db = nullptr;
-                leveldb::Options  options;
+                leveldb::Options options;
                 options.create_if_missing = true;
                 boost::filesystem::path pwd_db_path = env_manager::get_db_path();
                 if (fs::exists(pwd_db_path)) {
@@ -785,10 +756,9 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req,
-                                                        bool is_docker) {
+        int32_t node_request_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req) {
             if (req == nullptr) return E_DEFAULT;
-            LOG_INFO << "restart: " << req->body.task_id << endl;
+            LOG_INFO << "task_restart " << req->body.task_id << endl;
 
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT) {
                 LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
@@ -798,9 +768,11 @@ namespace ai {
 
             auto task = m_user_task_ptr->find_task(req->body.task_id);
             if (nullptr == task) {
+                return E_DEFAULT;
+                /*
                 task = std::make_shared<ai_training_task>();
 
-                if (is_docker) {
+                if (req->body.server_specification.find("docker") != std::string::npos) {
                     std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(
                             req->body.task_id);
                     if (nullptr != resp && !resp->id.empty()) {
@@ -828,6 +800,7 @@ namespace ai {
                 m_user_task_ptr->add_task(task);
 
                 return E_SUCCESS;
+                */
             } else {
                 task->__set_error_times(0);
                 task->__set_received_time_stamp(std::time(nullptr));
@@ -888,11 +861,9 @@ namespace ai {
             return operation;
         }
 
-        //start new task or update task
-        int32_t node_request_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req)
-        {
+        int32_t node_request_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req) {
             if (req == nullptr) return E_DEFAULT;
-            LOG_INFO << "reboot: " << req->body.task_id << endl;
+            LOG_INFO << "task_start: " << req->body.task_id << endl;
 
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT) {
                 LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
@@ -900,6 +871,7 @@ namespace ai {
                 return E_DEFAULT;
             }
 
+            //todo: 暂不支持更新
             if (m_user_task_ptr->find_task(req->body.task_id)) {
                 LOG_ERROR << "ai power provider service on start training already has task: " << req->body.task_id;
                 return E_DEFAULT;
@@ -960,7 +932,8 @@ namespace ai {
 
                         return m_user_task_ptr->add_task(task);
                     } else {
-                        std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(task_id);
+                        std::shared_ptr<container_inspect_response> resp = CONTAINER_WORKER_IF->inspect_container(
+                                task_id);
                         if (nullptr != resp) {
                             if (!resp->id.empty()) {
                                 //update to old task id
@@ -1116,8 +1089,8 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::check_sign(const std::string message, const std::string &sign,
-                                                      const std::string &origin_id, const std::string &sign_algo) {
+        int32_t node_request_service::check_sign(const std::string &message, const std::string &sign,
+                                                 const std::string &origin_id, const std::string &sign_algo) {
             if (sign_algo != ECDSA) {
                 LOG_ERROR << "sign_algorithm error.";
                 return E_DEFAULT;
