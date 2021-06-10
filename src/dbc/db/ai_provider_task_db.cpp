@@ -64,13 +64,13 @@ namespace ai
             return E_SUCCESS;
         }
 
-
+        // 只读取一个idle_task
         std::shared_ptr<ai_training_task>  ai_provider_task_db::load_idle_task()
         {
             std::shared_ptr<ai_training_task> idle_task=nullptr;
+
             try
             {
-                //iterate task in db
                 std::unique_ptr<leveldb::Iterator> it;
                 it.reset(m_task_db->NewIterator(leveldb::ReadOptions()));
                 for (it->SeekToFirst(); it->Valid(); it->Next())
@@ -80,7 +80,6 @@ namespace ai
                         idle_task = std::make_shared<ai_training_task>();
                     }
 
-                    //deserialization
                     std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
                     task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
                     binary_protocol proto(task_buf.get());
@@ -94,6 +93,7 @@ namespace ai
                 LOG_ERROR << "load idle task from db exception";
                 return nullptr;
             }
+
             return idle_task;
         }
 
@@ -139,7 +139,6 @@ namespace ai
 
                 }
             }
-
             catch (...)
             {
                 LOG_ERROR << "user task scheduling load task from db exception";

@@ -140,14 +140,6 @@ namespace ai {
         int32_t node_request_service::service_init(bpo::variables_map &options) {
             int32_t ret = E_SUCCESS;
 
-            //oss验证
-            m_oss_task_mng = std::make_shared<oss_task_manager>();
-            ret = m_oss_task_mng->init();
-            if (E_SUCCESS != ret) {
-                LOG_ERROR << "ai power provider service init oss error";
-                return ret;
-            }
-
             m_container_worker = std::make_shared<container_worker>();
             ret = m_container_worker->init();
             if (E_SUCCESS != ret) {
@@ -162,22 +154,10 @@ namespace ai {
                 return ret;
             }
 
-            m_user_task_ptr = std::make_shared<user_task_scheduling>(m_container_worker, m_vm_worker);
+            m_user_task_ptr = std::make_shared<task_scheduling>(m_container_worker, m_vm_worker);
             if (E_SUCCESS != m_user_task_ptr->init(options)) {
                 return E_DEFAULT;
             }
-
-            m_idle_task_ptr = std::make_shared<idle_task_scheduling>(m_container_worker, m_vm_worker);
-            if (E_SUCCESS != m_idle_task_ptr->init()) {
-                return E_DEFAULT;
-            }
-            m_idle_task_ptr->set_fetch_handler(std::bind(&oss_task_manager::fetch_idle_task, m_oss_task_mng));
-
-            //user_task_scheduling is repo for all ai user tasks's schedling
-            //before task running, task should auth by oss
-            //after auth success, dbc can exec task. Before exec task, dbc should stop idle task.
-            //set_stop_idle_task_handler is used to reg stop_idle_task_hadler.
-            m_user_task_ptr->set_stop_idle_task_handler(std::bind(&idle_task_scheduling::stop_task, m_idle_task_ptr));
 
             return E_SUCCESS;
         }
@@ -361,7 +341,7 @@ namespace ai {
                     if (update.compare(get_is_update(server_specification)) == 0 ||
                         update1.compare(get_is_update(server_specification)) == 0) {
                         ref_container_id = ref_task2->container_id;
-                        task->__set_status(task_queueing);
+                        task->__set_status(task_status_queueing);
                         task->__set_gpus(get_gpu_spec(task->server_specification));
                         task->__set_task_id(task_id); //update to old task id
                         task->__set_container_id(ref_container_id);
@@ -375,7 +355,7 @@ namespace ai {
                         update1.compare(get_is_update(task->server_specification)) != 0) {
                         // task->__set_container_id(ref_container_id);
                         task->__set_received_time_stamp(std::time(nullptr));
-                        task->__set_status(task_queueing);
+                        task->__set_status(task_status_queueing);
 
                         return m_user_task_ptr->add_task(task);
                     } else {
@@ -387,7 +367,7 @@ namespace ai {
                                 task->__set_container_id(resp->id);
                                 task->__set_task_id(task_id);
                                 task->__set_received_time_stamp(std::time(nullptr));
-                                task->__set_status(task_queueing);
+                                task->__set_status(task_status_queueing);
 
                                 return m_user_task_ptr->add_update_task(task);
                             }
@@ -438,7 +418,7 @@ namespace ai {
                 task->__set_error_times(0);
                 task->__set_gpus(get_gpu_spec(task->server_specification));
                 task->__set_received_time_stamp(std::time(nullptr));
-                task->__set_status(task_queueing);
+                task->__set_status(task_status_queueing);
                 task->__set_server_specification(req->body.server_specification);
                 m_user_task_ptr->add_task(task);
 
@@ -447,7 +427,7 @@ namespace ai {
             } else {
                 task->__set_error_times(0);
                 task->__set_received_time_stamp(std::time(nullptr));
-                task->__set_status(task_queueing);
+                task->__set_status(task_status_queueing);
                 task->__set_server_specification(req->body.server_specification);
                 m_user_task_ptr->add_task(task);
 
@@ -476,10 +456,10 @@ namespace ai {
             task->__set_error_times(0);
             task->__set_container_id("");
             task->__set_received_time_stamp(std::time(nullptr));
-            task->__set_status(task_queueing);
+            task->__set_status(task_status_queueing);
             // task->__set_memory(req->body.memory);
             // task->__set_memory_swap(req->body.memory_swap);
-            m_urgent_task = task;
+            m_reboot_task = task;
 
             return E_SUCCESS;
         }
@@ -579,10 +559,10 @@ namespace ai {
                     is_docker = true;
                 }
 
-                if (sp_task->status == task_stopped) {
+                if (sp_task->status == task_status_stopped) {
                     m_user_task_ptr->stop_task_only_id(task_id, is_docker);//强制停止
                 } else {
-                    m_user_task_ptr->stop_task(sp_task, task_stopped, is_docker);
+                    m_user_task_ptr->stop_task(sp_task, task_status_stopped);
                 }
             }
 
@@ -710,14 +690,14 @@ namespace ai {
                     LOG_ERROR << "ai power provider service get container logs error: " << task_id;
                     log_content = "get log content error.";
                     time_t cur = time_util::get_time_stamp_ms();
-                    if (task->status >= task_stopped &&
+                    if (task->status >= task_status_stopped &&
                         cur - task->end_time > CONF_MANAGER->get_prune_container_stop_interval()) {
                         log_content += " the task may have been cleared";
                     }
                 }
-            } else if (task->status == task_queueing) {
+            } else if (task->status == task_status_queueing) {
                 log_content = "task is waiting for schedule";
-            } else if (task->status == task_pulling_image) {
+            } else if (task->status == task_status_pulling_image) {
                 log_content = m_user_task_ptr->get_pull_log(task->training_engine);
             } else {
                 log_content = "task abnormal. get log content error";
@@ -818,7 +798,7 @@ namespace ai {
                     msg->get_content());
             if (req_content == nullptr) return E_DEFAULT;
             LOG_INFO << "on_list_training_req:" << req_content->header.nonce << ", session: "
-                      << req_content->header.session_id;
+                     << req_content->header.session_id;
 
             if (!id_generator::check_base58_id(req_content->header.nonce)) {
                 LOG_ERROR << "ai power provider service nonce error ";
@@ -1052,31 +1032,20 @@ namespace ai {
             return formatted_str;
         }
 
-        int32_t node_request_service::on_training_task_timer(std::shared_ptr<core_timer> timer) {
-            if (m_user_task_ptr != nullptr && m_urgent_task) {
-                m_user_task_ptr->process_urgent_task(m_urgent_task);
-                m_urgent_task = nullptr;
+        int32_t node_request_service::on_training_task_timer(const std::shared_ptr<core_timer> &timer) {
+            if (m_reboot_task != nullptr) {
+                m_user_task_ptr->process_reboot_task(m_reboot_task);
+                m_reboot_task = nullptr;
             }
 
-            if (m_idle_task_ptr != nullptr) {
-                m_idle_task_ptr->update_idle_task();
-            }
-
-            if (m_user_task_ptr != nullptr) {
-                if (0 == m_user_task_ptr->get_user_cur_task_size()) {
-                    if (m_oss_task_mng->can_exec_idle_task()) {
-                        m_idle_task_ptr->exec_task();
-                    }
-                } else {
-                    m_user_task_ptr->process_task();
-                }
+            if (m_user_task_ptr->get_user_cur_task_size() > 0) {
+                m_user_task_ptr->process_task();
             }
 
             static int count = 0;
             count++;
             if ((count % 10) == 0) {
-                if (m_user_task_ptr != nullptr)
-                    m_user_task_ptr->update_gpu_info_from_proc();
+                m_user_task_ptr->update_gpu_info_from_proc();
             }
 
             return E_SUCCESS;
@@ -1086,10 +1055,6 @@ namespace ai {
             auto resp = std::make_shared<get_task_queue_size_resp_msg>();
 
             auto task_num = m_user_task_ptr->get_user_cur_task_size();
-
-            if (m_idle_task_ptr && m_idle_task_ptr->get_status() == task_running) {
-                task_num = -1; // task_num(-1) means idle task is running.
-            }
 
             resp->set_task_size(task_num);
             resp->set_gpu_state(m_user_task_ptr->get_gpu_state());

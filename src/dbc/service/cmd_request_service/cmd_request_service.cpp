@@ -95,7 +95,7 @@ namespace ai {
             cmd_resp->result = E_SUCCESS;
             cmd_resp->task_info.task_id = "";
             cmd_resp->task_info.create_time = time(nullptr);
-            cmd_resp->task_info.status = task_unknown;
+            cmd_resp->task_info.status = task_status_unknown;
 
             if (cmd_req_msg == nullptr)
             {
@@ -286,10 +286,10 @@ namespace ai {
                 try
                 {
                     bool cleanable = (cmd_req_content->clean_all)
-                                     || (cmd_req_content->task_id.empty() && task.status == task_unknown)
+                                     || (cmd_req_content->task_id.empty() && task.status == task_status_unknown)
                                      || (cmd_req_content->task_id == task.task_id &&
-                                         (task.status != task_running && task.status != task_pulling_image &&
-                                          task.status != task_queueing));
+                                         (task.status != task_status_running && task.status != task_status_pulling_image &&
+                                          task.status != task_status_queueing));
 
                     if (cleanable)
                     {
@@ -720,7 +720,7 @@ namespace ai {
             auto vec_task_infos_to_show = std::make_shared<std::vector<ai::dbc::cmd_task_info> >();
             for (const auto& info : vec_task_infos)
             {
-                if (info.status < task_stopped)
+                if (info.status < task_status_stopped)
                 {
                     if (vec_task_infos_to_show->size() < MAX_TASK_SHOWN_ON_LIST)
                     {
@@ -743,7 +743,7 @@ namespace ai {
                     if (vec_task_infos_to_show->size() >= MAX_TASK_SHOWN_ON_LIST)
                         break;
 
-                    if (info.status & (task_stopped | task_successfully_closed | task_abnormally_closed | task_overdue_closed))
+                    if (info.status & (task_status_stopped | task_successfully_closed | task_abnormally_closed | task_overdue_closed))
                     {
                         vec_task_infos_to_show->push_back(info);
                     }
@@ -894,7 +894,7 @@ namespace ai {
                     // fetch old status value from db
                     ai::dbc::cmd_task_info task_info_in_db;
                     if (m_req_training_task_db.read_task_info_from_db(info.task_id, task_info_in_db)) {
-                        if (task_info_in_db.status != info.status && info.status != task_unknown) {
+                        if (task_info_in_db.status != info.status && info.status != task_status_unknown) {
                             m_req_training_task_db.write_task_info_to_db(info);
                         }
                     }
@@ -974,7 +974,7 @@ namespace ai {
                         // fetch old status value from db, then update it
                         ai::dbc::cmd_task_info task_info_in_db;
                         if (m_req_training_task_db.read_task_info_from_db(info.task_id, task_info_in_db)) {
-                            if (task_info_in_db.status != info.status && info.status != task_unknown) {
+                            if (task_info_in_db.status != info.status && info.status != task_status_unknown) {
                                 m_req_training_task_db.write_task_info_to_db(info);
                             }
                         }

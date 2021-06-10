@@ -544,7 +544,7 @@ namespace dbc {
                         cout << "warning: fail to fetch the task status" << endl;
                     } else if (resp->task_status_list.size() == 1) {
                         auto it = resp->task_status_list.begin();
-                        if (it->status == ai::dbc::task_unknown) {
+                        if (it->status == ai::dbc::task_status_unknown) {
                             cout << "warning: fail to fetch the task status" << endl;
                         } else {
                             cout << "task status: " << ai::dbc::to_training_task_status_string(it->status) << endl;
@@ -986,7 +986,7 @@ namespace dbc {
                         cout << "warning: fail to fetch the task status" << endl;
                     } else if (resp->task_status_list.size() == 1) {
                         auto it = resp->task_status_list.begin();
-                        if (it->status == ai::dbc::task_unknown) {
+                        if (it->status == ai::dbc::task_status_unknown) {
                             cout << "warning: fail to fetch the task status" << endl;
                         } else {
                             cout << "task status: " << ai::dbc::to_training_task_status_string(it->status) << endl;

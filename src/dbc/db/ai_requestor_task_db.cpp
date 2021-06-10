@@ -202,9 +202,9 @@ namespace ai
             ai::dbc::cmd_task_info task_info_in_db;
             if(read_task_info_from_db(task_id, task_info_in_db))
             {
-                if(task_info_in_db.status != task_unknown)
+                if(task_info_in_db.status != task_status_unknown)
                 {
-                    task_info_in_db.__set_status(task_unknown);
+                    task_info_in_db.__set_status(task_status_unknown);
                     write_task_info_to_db(task_info_in_db);
                 }
             }

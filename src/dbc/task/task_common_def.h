@@ -42,21 +42,21 @@ namespace ai
     {
         enum training_task_status
         {
-            task_unknown =       1,
-            task_queueing =      2,
-            task_pulling_image = 3,
-            task_running = 4,
-            update_task_error  =5,  //代表从running的容器升级
-            task_creating_image = 6,  //正在创建镜像
+            task_status_unknown =       1,
+            task_status_queueing =      2,
+            task_status_pulling_image = 3,
+            task_status_running = 4,
+            task_status_update_error  =5,  //代表从running的容器升级
+            task_status_creating_image = 6,  //正在创建镜像
             //stop_update_task_error  =7,   //代表从stop的容器升级
             //termianl state
-            task_stopped = 8,
+            task_status_stopped = 8,
             task_successfully_closed = 16,
             task_abnormally_closed = 32,
             task_overdue_closed     = 64,
             task_noimage_closed     = 65,
             task_nospace_closed     = 66,
-            task_out_of_gpu_resource    = 67
+            task_status_out_of_gpu_resource    = 67
         };
 
         std::string to_training_task_status_string(int8_t status);

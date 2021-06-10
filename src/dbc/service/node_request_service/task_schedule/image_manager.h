@@ -16,10 +16,12 @@
 #include <set>
 
 namespace bp = boost::process;
+
 namespace ai
 {
     namespace dbc
-    { 
+    {
+        // 镜像拉取时的状态
         enum pull_state
         {
             PREPARE,

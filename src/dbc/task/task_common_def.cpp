@@ -20,19 +20,19 @@ namespace ai
         {
             switch (status)
             {
-            case task_unknown:
-                return "task_unknown";
-            case task_queueing:
-                return "task_queueing";
-            case task_running:
+            case task_status_unknown:
+                return "task_status_unknown";
+            case task_status_queueing:
+                return "task_status_queueing";
+            case task_status_running:
             {
                 //std::string task_state = { 0x1b,0x5b,0x33,0x32,0x6d};  //green
-                //task_state += "task_running";
+                //task_state += "task_status_running";
                 //task_state += {0x1b,0x5b,0x30,0x6d};
-                return "task_running";
+                return "task_status_running";
             }
-            case task_stopped:
-                return "task_stopped";
+            case task_status_stopped:
+                return "task_status_stopped";
             case task_successfully_closed:
                 return "task_successfully_closed";
             case task_abnormally_closed:
@@ -44,18 +44,18 @@ namespace ai
             }
             case task_overdue_closed:
                 return "task_overdue_closed";
-            case task_pulling_image:
-                return "task_pulling_image";
+            case task_status_pulling_image:
+                return "task_status_pulling_image";
             case task_noimage_closed:
                 return "task_noimage_closed";
             case task_nospace_closed:
                 return "task_nospace_closed";
-            case task_out_of_gpu_resource:
-                    return "task_out_of_gpu_resource";
-            case update_task_error:
-                    return "update_task_error";
-            case task_creating_image:
-                    return "task_creating_image";
+            case task_status_out_of_gpu_resource:
+                    return "task_status_out_of_gpu_resource";
+            case task_status_update_error:
+                    return "task_status_update_error";
+            case task_status_creating_image:
+                    return "task_status_creating_image";
             default:
                 return DEFAULT_STRING;
             }

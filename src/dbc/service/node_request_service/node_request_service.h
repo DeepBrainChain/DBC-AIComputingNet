@@ -19,9 +19,7 @@
 #include "oss_client.h"
 #include <boost/process.hpp>
 #include "image_manager.h"
-#include "oss_task_manager.h"
-#include "idle_task_scheduling.h"
-#include "user_task_scheduling.h"
+#include "task_scheduling.h"
 #include "container_worker.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
@@ -73,7 +71,7 @@ namespace ai {
 
             int32_t on_get_task_queue_size_req(std::shared_ptr<message> &msg);
 
-            int32_t on_training_task_timer(std::shared_ptr<core_timer> timer);
+            int32_t on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
             int32_t on_prune_task_timer(std::shared_ptr<core_timer> timer);
 
@@ -85,15 +83,13 @@ namespace ai {
             std::string get_task_id(std::shared_ptr<matrix::service_core::start_training_req> req);
 
         protected:
-            std::shared_ptr<idle_task_scheduling> m_idle_task_ptr = nullptr;
-            std::shared_ptr<user_task_scheduling> m_user_task_ptr = nullptr;
+            std::shared_ptr<task_scheduling> m_user_task_ptr = nullptr;
 
             std::shared_ptr<container_worker> m_container_worker = nullptr;
             std::shared_ptr<vm_worker> m_vm_worker = nullptr;
 
-            std::shared_ptr<ai_training_task> m_urgent_task = nullptr;
-
-            std::shared_ptr<oss_task_manager> m_oss_task_mng = nullptr;
+            // 重启宿主机
+            std::shared_ptr<ai_training_task> m_reboot_task = nullptr;
 
             uint32_t m_training_task_timer_id;
             uint32_t m_prune_task_timer_id;
