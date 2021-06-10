@@ -2,7 +2,7 @@ SET(HOME_PATH ${CMAKE_SOURCE_DIR})
 SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 
 INCLUDE_DIRECTORIES(
-        ${SRC_PATH}/core
+        .
         ${SRC_PATH}/3rd/crypto/secp256k1/include
         ${SRC_PATH}/3rd/crypto/secp256k1/contrib
         ${SRC_PATH}/3rd/db/
@@ -22,8 +22,8 @@ INCLUDE_DIRECTORIES(
 set(core_src_dir codec common conf conf/validataor
         crypto crypto/ctaes container oss oss/bill oss/idle_task env
         initiator log math memory module monitor mutex
-        network service_bus service_module vm
-        service_module/pc storage timer_service filter compress)
+        network service_bus vm
+        service_module storage timer_service filter compress)
 
 foreach(sub_dir ${core_src_dir})
     AUX_SOURCE_DIRECTORY(${SRC_PATH}/core/${sub_dir} core_src_files)

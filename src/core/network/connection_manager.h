@@ -9,7 +9,7 @@
 **********************************************************************************/
 #pragma once
 
-#include "service_module.h"
+#include "service_module/service_module.h"
 #include "nio_loop_group.h"
 #include "tcp_acceptor.h"
 #include "tcp_connector.h"

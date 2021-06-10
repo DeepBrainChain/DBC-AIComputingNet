@@ -17,7 +17,7 @@
 #include "net_message.h"
 #define MIN_MATRIX_MSG_CODE_LEN                         30                                //MIN MSG_LEN in code frame
 //#define MAX_MATRIX_MSG_CODE_LEN                            10240                              //MAX MSG_LEN in code frame
-using namespace matrix::service_core;
+//using namespace matrix::service_core;
 namespace matrix
 {
     namespace core

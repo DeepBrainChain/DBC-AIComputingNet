@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DBC_THRIFT_BINARY_H
+#define DBC_THRIFT_BINARY_H
 
 #include "protocol.h"
 
@@ -383,3 +384,5 @@ namespace matrix
 
     }
 }
+
+#endif

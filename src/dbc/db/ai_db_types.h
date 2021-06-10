@@ -12,7 +12,6 @@
 #include "service_message.h"
 #include "TToString.h"
 
-
 namespace ai {
     namespace dbc {
 
@@ -22,16 +21,13 @@ namespace ai {
 
         typedef struct _ai_training_task__isset {
             _ai_training_task__isset() : master(false), server_specification(false), server_count(false),
-                                         hyper_parameters(false),
-                                         gpus(false) {}
+                                         hyper_parameters(false), gpus(false) {}
 
             bool master: 1;
             bool server_specification: 1;
             bool server_count: 1;
             bool hyper_parameters: 1;
             bool gpus: 1;
-            // bool memory:1;
-            //  bool memory_swap:1;
         } _ai_training_task__isset;
 
         class ai_training_task : public virtual ::apache::thrift::TBase {
@@ -43,10 +39,9 @@ namespace ai {
 
             ai_training_task()
                     : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(),
-                      code_dir(),
-                      entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), ai_user_node_id(), start_time(0),
-                      end_time(0), gpus(),
-                      error_times(0), container_id(), received_time_stamp(0), status(0) {
+                      code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), ai_user_node_id(),
+                      start_time(0), end_time(0), gpus(), error_times(0), container_id(), received_time_stamp(0),
+                      status(0) {
             }
 
             virtual ~ai_training_task() throw();
@@ -65,15 +60,13 @@ namespace ai {
             std::string hyper_parameters;
             std::string ai_user_node_id;
             int64_t start_time;
-            //int64_t update_time;
             int64_t end_time;
             std::string gpus;
             int8_t error_times;
             std::string container_id;
             int64_t received_time_stamp;
             int8_t status;
-            //  int64_t memory;
-            //  int64_t memory_swap;
+
             _ai_training_task__isset __isset;
 
             void __set_task_id(const std::string &val);
@@ -103,7 +96,6 @@ namespace ai {
             void __set_ai_user_node_id(const std::string &val);
 
             void __set_start_time(const int64_t val);
-            // void __set_update_time(const int64_t val);
 
             void __set_end_time(const int64_t val);
 
@@ -116,9 +108,6 @@ namespace ai {
             void __set_received_time_stamp(const int64_t val);
 
             void __set_status(const int8_t val);
-            //  void __set_memory(const int64_t val);
-
-            //  void __set_memory_swap(const int64_t val);
 
             bool operator==(const ai_training_task &rhs) const {
                 if (!(task_id == rhs.task_id))
@@ -155,8 +144,6 @@ namespace ai {
                     return false;
                 if (!(ai_user_node_id == rhs.ai_user_node_id))
                     return false;
-                //  if (!(update_time == rhs.update_time))
-                //    return false;
                 if (!(start_time == rhs.start_time))
                     return false;
                 if (!(end_time == rhs.end_time))
@@ -173,7 +160,6 @@ namespace ai {
                     return false;
                 if (!(status == rhs.status))
                     return false;
-
                 return true;
             }
 
@@ -206,13 +192,12 @@ namespace ai {
 
         class cmd_task_info : public virtual ::apache::thrift::TBase {
         public:
+
             cmd_task_info(const cmd_task_info &);
 
             cmd_task_info &operator=(const cmd_task_info &);
 
-            cmd_task_info()
-                : task_id(), create_time(0), result(), status(0), description(), addr(), pwd(), raw() {
-
+            cmd_task_info() : task_id(), create_time(0), result(), status(0), description(), addr(), pwd(), raw() {
             }
 
             virtual ~cmd_task_info() throw();

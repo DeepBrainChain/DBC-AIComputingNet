@@ -28,7 +28,6 @@ namespace matrix
         class encoder
         {
         public:
-
             virtual encode_status encode(channel_handler_context &ctx, message &msg, byte_buf &out) = 0;
         };
 

@@ -7,8 +7,9 @@
 * date                  2018.01.20
 * author            Bruce Feng
 **********************************************************************************/
-#pragma once
 
+#ifndef DBC_PROTOCOL_H
+#define DBC_PROTOCOL_H
 
 #ifdef WIN32
 // Need to come before any Windows.h includes
@@ -26,7 +27,6 @@
 #include "protocol_def.h"
 
 using namespace std;
-
 
 namespace apache {
 
@@ -613,6 +613,7 @@ namespace apache {
 
 }
 
+#endif
 
 #include "thrift_binary.h"
 

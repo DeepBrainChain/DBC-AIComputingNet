@@ -16,15 +16,14 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/dbc/db
         ${SRC_PATH}/dbc/network
         ${SRC_PATH}/dbc/network/p2pnet
-        ${SRC_PATH}/dbc/client
-        ${SRC_PATH}/dbc/client/http_server_service
-        ${SRC_PATH}/dbc/client/cmd_line_service
-        ${SRC_PATH}/dbc/client/message
-        ${SRC_PATH}/dbc/node_service
-        ${SRC_PATH}/dbc/node_service/task_schedule
-        ${SRC_PATH}/dbc/node_service/query
-        ${SRC_PATH}/dbc/node_service/message
-        ${SRC_PATH}/dbc/node_service/message/thrift
+        ${SRC_PATH}/dbc/service
+        ${SRC_PATH}/dbc/service/message
+        ${SRC_PATH}/dbc/service/cmd_line_service
+        ${SRC_PATH}/dbc/service/cmd_request_service
+        ${SRC_PATH}/dbc/service/http_request_service
+        ${SRC_PATH}/dbc/service/node_request_service
+        ${SRC_PATH}/dbc/service/node_request_service/task_schedule
+        ${SRC_PATH}/dbc/service/node_info_exchange
         ${SRC_PATH}/core
         ${SRC_PATH}/core/codec
         ${SRC_PATH}/core/common
@@ -43,7 +42,6 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/core/network
         ${SRC_PATH}/core/service_bus
         ${SRC_PATH}/core/service_module
-        ${SRC_PATH}/core/service_module/pc
         ${SRC_PATH}/core/storage
         ${SRC_PATH}/core/timer_service
         ${SRC_PATH}/core/vm
@@ -71,15 +69,14 @@ aux_source_directory(${SRC_PATH}/dbc/task dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/db dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/network dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/network/p2pnet dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/client dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/client/message dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/client/http_server_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/client/cmd_line_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/node_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/node_service/task_schedule dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/node_service/query dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/node_service/message dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/node_service/message/thrift dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/message dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/cmd_line_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/cmd_request_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/http_request_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/node_request_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/node_request_service/task_schedule dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/node_info_exchange dbc_src_files)
 
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
 link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
