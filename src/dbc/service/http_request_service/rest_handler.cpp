@@ -834,8 +834,7 @@ namespace dbc {
         rest_util::split_path(path, path_list);
 
         if (path_list.size() > 2) {
-            ERROR_REPLY(HTTP_BADREQUEST,
-                        RPC_INVALID_PARAMS,
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
                         "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}/{key}")
             return nullptr;
         }
@@ -870,6 +869,7 @@ namespace dbc {
         std::shared_ptr<message> msg = std::make_shared<message>();
         msg->set_name(typeid(cmd_list_node_req).name());
         msg->set_content(req);
+        return msg;
     }
 
     void reply_show_nodeinfo(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
