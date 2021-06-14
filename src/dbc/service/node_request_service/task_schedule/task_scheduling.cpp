@@ -241,7 +241,7 @@ namespace ai {
                 auto task = m_queueing_tasks.front();
 
                 if (task_status_queueing == task->status || task_status_creating_image == task->status) {
-                    return exec_task();
+                    return exec_task(task);
                 } else if (task_status_pulling_image == task->status) {
                     return check_pull_image_state(task);
                 } else {
@@ -256,14 +256,11 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t task_scheduling::exec_task() {
-            auto task = m_queueing_tasks.front();
-
+        int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task) {
             bool is_docker = false;
             if (task->server_specification.find("docker") != std::string::npos)
                 is_docker = true;
 
-            //judge retry times
             if (task->error_times > AI_TRAINING_MAX_RETRY_TIMES) {
                 stop_task(task, task_abnormally_closed);
                 LOG_WARNING << "ai power provider service restart container/vm too many times and close task, "
@@ -291,6 +288,7 @@ namespace ai {
 
             // update
             std::string operation = m_container_worker->get_operation(task);
+
             if (operation == "update") {
                 auto old_task = m_running_tasks[task->task_id];
                 if (nullptr == old_task) {
@@ -381,6 +379,7 @@ namespace ai {
                 }
 
                 int ret = start_task(task, is_docker);
+
                 if (task->status != task_status_pulling_image) {
                     m_queueing_tasks.remove(task);
                 }
@@ -1355,6 +1354,7 @@ namespace ai {
                 }
 
                 //生成随即密钥
+                /*
                 {
                     char chr[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G',
                                   'H', 'I', 'J', 'K', 'L', 'M', 'N',
@@ -1409,6 +1409,7 @@ namespace ai {
 
                     delete db;
                 }
+                */
 
                 int32_t ret = VM_WORKER_IF->createDomain(task->task_id, host_ip, transform_port,
                                                          "/data/" + task->training_engine);

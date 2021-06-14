@@ -12,15 +12,15 @@
 #include "rest_handler.h"
 #include "rpc_error.h"
 #include "log.h"
-#include "api_call_handler.h"
 #include "service_message_id.h"
 #include "time_tick_notification.h"
 #include <chrono>
 #include <ctime>
+#include "message.h"
 
 using namespace std::chrono;
 extern std::chrono::high_resolution_clock::time_point server_start_time;
-using namespace ai::dbc;
+//using namespace ai::dbc;
 
 #define HTTP_REQUEST_TIMEOUT_EVENT   "http_request_timeout_event"
 #define HTTP_REQUEST_KEY             "hreq_context"
@@ -43,13 +43,15 @@ namespace dbc {
         }
 
         const response_msg_handler rsp_handlers[] = {
-                {typeid(cmd_get_peer_nodes_resp).name(), on_get_peer_nodes_resp},
-                {typeid(cmd_list_training_resp).name(),  on_list_training_resp},
-                {typeid(cmd_show_resp).name(),           on_show_resp},
-                {typeid(cmd_start_training_resp).name(), on_start_training_resp},
-                {typeid(cmd_stop_training_resp).name(),  on_stop_training_resp},
-                {typeid(cmd_logs_resp).name(),           on_logs_resp},
-                {typeid(cmd_task_clean_resp).name(),     on_task_clean},
+                {typeid(cmd_create_task_rsp).name(), on_cmd_create_task_rsp},
+                {typeid(cmd_start_task_rsp).name(), on_cmd_start_task_rsp},
+                {typeid(cmd_restart_task_rsp).name(), on_cmd_restart_task_rsp},
+                {typeid(cmd_stop_task_rsp).name(), on_cmd_stop_task_rsp},
+                {typeid(cmd_clean_task_rsp).name(), on_cmd_clean_task_rsp},
+                {typeid(cmd_task_logs_rsp).name(), on_cmd_task_logs_rsp},
+                {typeid(cmd_list_task_rsp).name(), on_cmd_list_task_rsp},
+                {typeid(cmd_get_peer_nodes_rsp).name(), on_cmd_get_peer_nodes_rsp},
+                {typeid(cmd_list_node_rsp).name(),           on_list_node_rsp}
         };
 
         for (const auto &rsp_handler : rsp_handlers) {
@@ -68,13 +70,15 @@ namespace dbc {
 
     void rest_api_service::init_invoker() {
         invoker_type invoker;
-        BIND_MESSAGE_INVOKER(typeid(cmd_start_training_resp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_stop_training_resp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_list_training_resp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_resp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_logs_resp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_show_resp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_task_clean_resp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_create_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_start_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_restart_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_stop_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_clean_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_task_logs_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_list_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_list_node_rsp).name(),&rest_api_service::on_call_rsp_handler);
     }
 
     #define SUBSCRIBE_RESP_MSG(cmd)  \
@@ -86,13 +90,15 @@ namespace dbc {
     });
 
     void rest_api_service::init_subscription() {
-        SUBSCRIBE_RESP_MSG(cmd_start_training_resp);
-        SUBSCRIBE_RESP_MSG(cmd_stop_training_resp);
-        SUBSCRIBE_RESP_MSG(cmd_list_training_resp);
-        SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_resp);
-        SUBSCRIBE_RESP_MSG(cmd_logs_resp);
-        SUBSCRIBE_RESP_MSG(cmd_show_resp);
-        SUBSCRIBE_RESP_MSG(cmd_task_clean_resp);
+        SUBSCRIBE_RESP_MSG(cmd_create_task_rsp)
+        SUBSCRIBE_RESP_MSG(cmd_start_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_restart_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_stop_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_clean_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_task_logs_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_list_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_list_node_rsp);
     }
 
     void rest_api_service::on_http_request_event(std::shared_ptr<http_request> &hreq) {

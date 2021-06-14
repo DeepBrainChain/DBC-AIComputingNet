@@ -10,8 +10,8 @@
 **********************************************************************************/
 
 #include "data_query_service.h"
+#include "message.h"
 #include "server.h"
-#include "api_call_handler.h"
 
 #include "service_message_id.h"
 #include "matrix_types.h"
@@ -178,7 +178,8 @@ namespace service
         {
             LOG_DEBUG << "data_query_service::init_subscription";
 
-            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_show_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_list_node_req).name());
+
             SUBSCRIBE_BUS_MESSAGE(SHOW_REQ);
             SUBSCRIBE_BUS_MESSAGE(SHOW_RESP);
             SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
@@ -202,7 +203,7 @@ namespace service
             m_invokers.insert({SHOW_RESP, {invoker}});
 
             invoker = std::bind(&data_query_service::on_cli_show_req, this, std::placeholders::_1);
-            m_invokers.insert({typeid(::cmd_show_req).name(), {invoker}});
+            m_invokers.insert({typeid(::cmd_list_node_req).name(), {invoker}});
 
             invoker = std::bind(&data_query_service::on_net_service_broadcast_req, this, std::placeholders::_1);
             m_invokers.insert({SERVICE_BROADCAST_REQ, {invoker}});
@@ -220,15 +221,15 @@ namespace service
         {
             LOG_DEBUG << "data_query_service::on_cli_show_req";
 
-            auto cmd_resp = std::make_shared<::cmd_show_resp>();
+            auto cmd_resp = std::make_shared<::cmd_list_node_rsp>();
             auto content = msg->get_content();
-            auto req = std::dynamic_pointer_cast<::cmd_show_req>(content);
+            auto req = std::dynamic_pointer_cast<::cmd_list_node_req>(content);
             COPY_MSG_HEADER(req,cmd_resp);
 
             if (!req || !content)
             {
                 cmd_resp->error("fatal: null ptr");
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
 
                 return E_DEFAULT;
             }
@@ -240,7 +241,7 @@ namespace service
                 cmd_resp->op = req->op;
                 cmd_resp->id_2_services = m_service_info_collection.get(cmd_resp->filter, cmd_resp->sort, req->num_lines);
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
 
                 return E_SUCCESS;
 
@@ -252,7 +253,7 @@ namespace service
 
                     cmd_resp->error("invalid node id: " + req->d_node_id);
 
-                    TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                    TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
                     return E_DEFAULT;
                 }
 
@@ -293,7 +294,7 @@ namespace service
 
                     //cmd_resp->error("do not query local node");
 
-                    TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                    TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
                     return E_SUCCESS;
 
                 }
@@ -322,7 +323,7 @@ namespace service
 
                     cmd_resp->error("internal error");
 
-                    TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                    TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
                     return E_DEFAULT;
                 }
 
@@ -331,7 +332,7 @@ namespace service
             else
             {
                 cmd_resp->error("unknown operation " + std::to_string(req->op));
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
                 return E_DEFAULT;
             }
 
@@ -534,7 +535,7 @@ namespace service
             {
                 // destination node
                 LOG_DEBUG << "data_query_service::on_net_show_resp destination reached";
-                std::shared_ptr<::cmd_show_resp> cmd_resp = std::make_shared<::cmd_show_resp>();
+                std::shared_ptr<::cmd_list_node_rsp> cmd_resp = std::make_shared<::cmd_list_node_rsp>();
                 COPY_MSG_HEADER(content,cmd_resp);
                 //get session
                 std::shared_ptr<service_session> session = get_session(content->header.session_id);
@@ -549,7 +550,7 @@ namespace service
                 cmd_resp->kvs = content->body.kvs;
                 cmd_resp->op = ::OP_SHOW_NODE_INFO;
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
                 rm_data_query_session(session);
 
                 return E_SUCCESS;
@@ -648,7 +649,7 @@ namespace service
             int32_t ret_code = E_SUCCESS;
             string session_id;
             std::shared_ptr<service_session> session;
-            std::shared_ptr<::cmd_show_resp> cmd_resp;
+            std::shared_ptr<::cmd_list_node_rsp> cmd_resp;
 
             if (nullptr == timer)
             {
@@ -665,10 +666,10 @@ namespace service
                 return E_NULL_POINTER;
             }
 
-            cmd_resp = std::make_shared<::cmd_show_resp>();
+            cmd_resp = std::make_shared<::cmd_list_node_rsp>();
             cmd_resp->header.__set_session_id( session_id );
             cmd_resp->error("time out");
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_show_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
 
             if (session)
             {

@@ -65,7 +65,7 @@ namespace matrix
 
         };
 
-        class cmd_get_peer_nodes_resp : public matrix::core::msg_base {
+        class cmd_get_peer_nodes_rsp : public matrix::core::msg_base {
         public:
             int32_t result;
 

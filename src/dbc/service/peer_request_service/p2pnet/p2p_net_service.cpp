@@ -1013,10 +1013,9 @@ namespace matrix {
             return E_SUCCESS;
         }
 
-#if 0
         int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<message> &msg)
         {
-            auto cmd_resp = std::make_shared<matrix::service_core::cmd_get_peer_nodes_resp>();
+            auto cmd_resp = std::make_shared<matrix::service_core::cmd_get_peer_nodes_rsp>();
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
 
@@ -1029,7 +1028,7 @@ namespace matrix {
                 LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "internal error";
-                TOPIC_MANAGER->publish<void>(typeid(matrix::service_core::cmd_get_peer_nodes_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(matrix::service_core::cmd_get_peer_nodes_rsp).name(), cmd_resp);
 
                 return E_DEFAULT;
             }
@@ -1067,11 +1066,10 @@ namespace matrix {
                 }
             }
 
-            TOPIC_MANAGER->publish<void>(typeid(matrix::service_core::cmd_get_peer_nodes_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(matrix::service_core::cmd_get_peer_nodes_rsp).name(), cmd_resp);
 
             return E_SUCCESS;
         }
-#endif
 
         int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<message> &msg) {
 #if 0

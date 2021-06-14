@@ -10,7 +10,6 @@
 
 #include <cassert>
 #include "server.h"
-#include "api_call_handler.h"
 #include "conf_manager.h"
 #include "service_message_id.h"
 #include "matrix_types.h"
@@ -25,6 +24,7 @@
 #include <boost/format.hpp>
 #include "ai_crypter.h"
 #include <sstream>
+#include "message.h"
 
 using namespace std;
 using namespace matrix::core;
@@ -38,43 +38,33 @@ namespace ai {
         }
 
         void cmd_request_service::init_subscription() {
-            //list training resp
-            SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_RESP);
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_create_task_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_start_task_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_restart_task_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_stop_task_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_clean_task_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_task_logs_req).name());
+            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_list_task_req).name());
 
-            //logs resp
-            SUBSCRIBE_BUS_MESSAGE(LOGS_RESP);
+            SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_RSP);
+            SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_RSP);
 
             //forward binary message
             SUBSCRIBE_BUS_MESSAGE(BINARY_FORWARD_MSG);
-
-            //cmd start training
-            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_start_training_req).name());
-
-            //cmd stop training
-            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_stop_training_req).name());
-
-            //cmd list training
-            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_list_training_req).name());
-
-            //cmd logs req
-            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_logs_req).name());
-
-            //cmd clean task req
-            SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_task_clean_req).name());
         }
 
         void cmd_request_service::init_invoker() {
             invoker_type invoker;
-            // 不需要返回值的
-            BIND_MESSAGE_INVOKER(typeid(::cmd_start_training_req).name(), &cmd_request_service::on_cmd_start_training_req);
-            BIND_MESSAGE_INVOKER(typeid(::cmd_stop_training_req).name(), &cmd_request_service::on_cmd_stop_training_req);
-            BIND_MESSAGE_INVOKER(typeid(::cmd_task_clean_req).name(), &cmd_request_service::on_cmd_task_clean);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_create_task_req).name(), &cmd_request_service::on_cmd_create_task_req);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_start_task_req).name(), &cmd_request_service::on_cmd_start_task_req);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_restart_task_req).name(), &cmd_request_service::on_cmd_restart_task_req);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_stop_task_req).name(), &cmd_request_service::on_cmd_stop_task_req);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_clean_task_req).name(), &cmd_request_service::on_cmd_clean_task_req);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_task_logs_req).name(), &cmd_request_service::on_cmd_task_logs_req);
+            BIND_MESSAGE_INVOKER(typeid(::cmd_list_task_req).name(), &cmd_request_service::on_cmd_list_task_req);
 
-            // 需要返回值的
-            BIND_MESSAGE_INVOKER(typeid(::cmd_logs_req).name(), &cmd_request_service::on_cmd_logs_req);
-            BIND_MESSAGE_INVOKER(typeid(::cmd_list_training_req).name(), &cmd_request_service::on_cmd_list_training_req);
-            BIND_MESSAGE_INVOKER(LIST_TRAINING_RESP, &cmd_request_service::on_list_training_resp);
-            BIND_MESSAGE_INVOKER(LOGS_RESP, &cmd_request_service::on_logs_resp);
+            BIND_MESSAGE_INVOKER(NODE_LIST_TASK_RSP, &cmd_request_service::on_list_training_resp);
+            BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_RSP, &cmd_request_service::on_logs_resp);
 
             BIND_MESSAGE_INVOKER(BINARY_FORWARD_MSG, &cmd_request_service::on_binary_forward);
         }
@@ -84,232 +74,160 @@ namespace ai {
             m_timer_invokers[TASK_LOGS_TIMER] = std::bind(&cmd_request_service::on_logs_timer, this, std::placeholders::_1);
         }
 
-        int32_t cmd_request_service::on_cmd_start_training_req(std::shared_ptr<message> &msg)
+        int32_t cmd_request_service::on_cmd_create_task_req(std::shared_ptr<message> &msg)
         {
-            LOG_INFO << "cmd_request_service => on_cmd_start_training_req";
+            LOG_INFO << "cmd_request_service => on_cmd_create_task_req";
 
-            std::shared_ptr<base> msg_content = msg->get_content();
-            std::shared_ptr<::cmd_start_training_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_start_training_req>(msg_content);
+            std::shared_ptr<::cmd_create_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_create_task_req>(msg->get_content());
 
-            std::shared_ptr<::cmd_start_training_resp> cmd_resp = std::make_shared<::cmd_start_training_resp>();
-            cmd_resp->result = E_SUCCESS;
-            cmd_resp->task_info.task_id = "";
-            cmd_resp->task_info.create_time = time(nullptr);
-            cmd_resp->task_info.status = task_status_unknown;
+            std::shared_ptr<::cmd_create_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_create_task_rsp>();
+            cmd_rsp_msg->result = E_SUCCESS;
+            cmd_rsp_msg->task_info.task_id = "";
+            cmd_rsp_msg->task_info.create_time = time(nullptr);
+            cmd_rsp_msg->task_info.status = task_status_unknown;
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
 
-            if (cmd_req_msg == nullptr)
+            auto node_req_msg = create_node_create_task_req_msg(cmd_req_msg->vm, cmd_rsp_msg->task_info);
+            if (nullptr == node_req_msg)
             {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "internal error";
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_start_training_resp).name(), cmd_resp);
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = cmd_rsp_msg->task_info.result;
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp_msg);
                 return E_DEFAULT;
             }
 
-            cmd_resp->header.__set_session_id(cmd_req_msg->header.session_id);
+            if (CONNECTION_MANAGER->broadcast_message(node_req_msg) != E_SUCCESS)
+            {
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = "submit error. pls check network";
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp_msg);
+                return E_DEFAULT;
+            }
 
-            auto task_req_msg = create_task_req_msg(cmd_req_msg->vm, cmd_resp->task_info);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp_msg);
+
+            std::string task_description;
+            try
+            {
+                std::vector<std::string> nodes = cmd_req_msg->vm["peer_nodes_list"].as<std::vector<std::string>>();
+                std::string node = nodes[0];
+                task_description = node;
+                cmd_rsp_msg->task_info.peer_nodes_list.push_back(node);
+            }
+            catch (const std::exception &e)
+            {
+
+            }
+
+            task_description += " : " + cmd_req_msg->vm["description"].as<std::string>();
+            cmd_rsp_msg->task_info.__set_description(task_description);
+
+            auto node_req_msg_content = std::dynamic_pointer_cast<matrix::service_core::node_create_task_req>(node_req_msg->content);
+            if (node_req_msg_content != nullptr)
+            {
+                std::ostringstream stream;
+                stream << node_req_msg_content->body;
+                cmd_rsp_msg->task_info.__set_raw(stream.str());
+            }
+
+            m_req_training_task_db.write_task_info_to_db(cmd_rsp_msg->task_info);
+
+            return E_SUCCESS;
+        }
+
+        int32_t cmd_request_service::on_cmd_start_task_req(std::shared_ptr<message> &msg)
+        {
+            LOG_INFO << "cmd_request_service => on_cmd_start_task_req";
+
+            std::shared_ptr<::cmd_start_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_start_task_req>(msg->get_content());
+
+            std::shared_ptr<::cmd_start_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_start_task_rsp>();
+            cmd_rsp_msg->result = E_SUCCESS;
+            cmd_rsp_msg->task_info.task_id = "";
+            cmd_rsp_msg->task_info.create_time = time(nullptr);
+            cmd_rsp_msg->task_info.status = task_status_unknown;
+
+            if (cmd_req_msg == nullptr)
+            {
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = "internal error";
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_start_task_rsp).name(), cmd_rsp_msg);
+                return E_DEFAULT;
+            }
+
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
+
+            auto node_req_msg = create_node_start_task_req_msg(cmd_req_msg->vm, cmd_rsp_msg->task_info);
+            if (nullptr == node_req_msg)
+            {
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = cmd_rsp_msg->task_info.result;
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_start_task_rsp).name(), cmd_rsp_msg);
+                return E_DEFAULT;
+            }
+
+            if (CONNECTION_MANAGER->broadcast_message(node_req_msg) != E_SUCCESS)
+            {
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = "submit error. pls check network";
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_start_task_rsp).name(), cmd_rsp_msg);
+                return E_DEFAULT;
+            }
+
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_start_task_rsp).name(), cmd_rsp_msg);
+
+            m_req_training_task_db.reset_task_status_to_db(cmd_rsp_msg->task_info.task_id);
+
+            return E_SUCCESS;
+        }
+
+        int32_t cmd_request_service::on_cmd_restart_task_req(std::shared_ptr<message> &msg)
+        {
+            LOG_INFO << "cmd_request_service => on_cmd_restart_task_req";
+
+            std::shared_ptr<::cmd_restart_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_restart_task_req>(msg->get_content());
+
+            std::shared_ptr<::cmd_restart_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_restart_task_rsp>();
+            cmd_rsp_msg->result = E_SUCCESS;
+            cmd_rsp_msg->task_info.task_id = "";
+            cmd_rsp_msg->task_info.create_time = time(nullptr);
+            cmd_rsp_msg->task_info.status = task_status_unknown;
+
+            if (cmd_req_msg == nullptr)
+            {
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = "internal error";
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
+                return E_DEFAULT;
+            }
+
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
+
+            auto task_req_msg = create_node_restart_task_req_msg(cmd_req_msg->vm, cmd_rsp_msg->task_info);
             if (nullptr == task_req_msg)
             {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = cmd_resp->task_info.result;
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_start_training_resp).name(), cmd_resp);
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = cmd_rsp_msg->task_info.result;
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
                 return E_DEFAULT;
             }
 
             if (CONNECTION_MANAGER->broadcast_message(task_req_msg) != E_SUCCESS)
             {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "submit error. pls check network";
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_start_training_resp).name(), cmd_resp);
+                cmd_rsp_msg->result = E_DEFAULT;
+                cmd_rsp_msg->result_info = "submit error. pls check network";
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
                 return E_DEFAULT;
             }
 
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_start_training_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
 
-            std::string code_dir = cmd_req_msg->vm["code_dir"].as<std::string>();
-            if (code_dir == NODE_REBOOT)
-            {
-                LOG_DEBUG << "not serialize for reboot task";
-            }
-            else if ( code_dir == TASK_RESTART )
-            {
-                m_req_training_task_db.reset_task_status_to_db(cmd_resp->task_info.task_id);
-            }
-            else
-            {
-                std::string task_description;
-                try
-                {
-                    std::vector<std::string> nodes = cmd_req_msg->vm["peer_nodes_list"].as<std::vector<std::string>>();
-                    std::string node = nodes[0];
-                    task_description = node;
-                    cmd_resp->task_info.peer_nodes_list.push_back(node);
-                }
-                catch (const std::exception &e)
-                {
-
-                }
-
-                task_description += " : " + cmd_req_msg->parameters["description"];
-                cmd_resp->task_info.__set_description(task_description);
-
-                auto msg_content = std::dynamic_pointer_cast<matrix::service_core::start_training_req>(task_req_msg->content);
-                if (msg_content != nullptr)
-                {
-                    std::ostringstream stream;
-                    stream << msg_content->body;
-                    cmd_resp->task_info.__set_raw(stream.str());
-                }
-
-                m_req_training_task_db.write_task_info_to_db(cmd_resp->task_info);
-            }
+            m_req_training_task_db.reset_task_status_to_db(cmd_rsp_msg->task_info.task_id);
 
             return E_SUCCESS;
         }
 
-        int32_t cmd_request_service::on_cmd_stop_training_req(const std::shared_ptr<message> &msg)
-        {
-            std::shared_ptr<::cmd_stop_training_req> cmd_req_content = std::dynamic_pointer_cast<::cmd_stop_training_req>(msg->get_content());
-            if (cmd_req_content == nullptr)
-            {
-                LOG_ERROR << "cmd_req_content is null";
-                return E_NULL_POINTER;
-            }
-
-            std::shared_ptr<::cmd_stop_training_resp> cmd_resp = std::make_shared<::cmd_stop_training_resp>();
-            cmd_resp->result = E_SUCCESS;
-            cmd_resp->result_info = "";
-
-            if (nullptr != cmd_req_content) {
-                cmd_resp->header.__set_session_id(cmd_req_content->header.session_id);
-            }
-
-            const std::string &task_id = cmd_req_content->task_id;
-
-            ai::dbc::cmd_task_info task_info_in_db;
-            if(!m_req_training_task_db.read_task_info_from_db(task_id, task_info_in_db))
-            {
-                LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "task id is invalid";
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_training_resp).name(), cmd_resp);
-                return E_DEFAULT;
-            }
-
-            std::shared_ptr<message> req_msg = std::make_shared<message>();
-            std::shared_ptr<matrix::service_core::stop_training_req> req_content = std::make_shared<matrix::service_core::stop_training_req>();
-
-            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-            req_content->header.__set_msg_name(STOP_TRAINING_REQ);
-            req_content->header.__set_nonce(id_generator::generate_nonce());
-
-            req_content->body.__set_task_id(task_id);
-
-            req_msg->set_content(req_content);
-            req_msg->set_name(req_content->header.msg_name);
-
-            std::map<std::string, std::string> exten_info;
-            std::string sign_msg = req_content->body.task_id + req_content->header.nonce;
-            if (!use_sign_verify())
-            {
-                std::string sign = id_generator::sign(sign_msg, CONF_MANAGER->get_node_private_key());
-                if (sign.empty())
-                {
-                    cmd_resp->result = E_DEFAULT;
-                    cmd_resp->result_info = "sign error. pls check node key or task property";
-                    TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_training_resp).name(), cmd_resp);
-                    return E_DEFAULT;
-                }
-
-                exten_info["sign"] = sign;
-                exten_info["sign_algo"] = ECDSA;
-                exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
-            } else {
-                if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
-                {
-                    return E_DEFAULT;
-                }
-            }
-
-            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-
-            if(!task_info_in_db.peer_nodes_list.empty()) {
-                exten_info["dest_id"] = task_info_in_db.peer_nodes_list[0];
-            }
-
-            req_content->header.__set_exten_info(exten_info);
-
-            if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
-            {
-                cmd_resp->result = E_INACTIVE_CHANNEL;
-                cmd_resp->result_info = "dbc node don't connect to network, pls check ";
-            }
-
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_training_resp).name(), cmd_resp);
-
-            return E_SUCCESS;
-        }
-
-        int32_t cmd_request_service::on_cmd_task_clean(const std::shared_ptr<message> &msg)
-        {
-            auto cmd_req_content = std::dynamic_pointer_cast<::cmd_task_clean_req>(msg->get_content());
-            if (!cmd_req_content)
-            {
-                LOG_ERROR << "cmd_req_content is null";
-                return E_NULL_POINTER;
-            }
-
-            std::vector<ai::dbc::cmd_task_info> vec_task_infos;
-            if (!m_req_training_task_db.read_task_info_from_db(vec_task_infos))
-            {
-                LOG_ERROR << "failed to load all task info from db.";
-            }
-
-            auto cmd_resp = std::make_shared<::cmd_task_clean_resp>();
-
-            if (nullptr != cmd_req_content) {
-                cmd_resp->header.__set_session_id(cmd_req_content->header.session_id);
-            }
-
-            if (vec_task_infos.empty())
-            {
-                cmd_resp->result = E_DEFAULT;
-                cmd_resp->result_info = "task list is empty";
-
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_task_clean_resp).name(), cmd_resp);
-                return E_SUCCESS;
-            }
-
-            cmd_resp->result_info = "\n";
-            for(auto& task: vec_task_infos)
-            {
-                try
-                {
-                    bool cleanable = (cmd_req_content->clean_all)
-                                     || (cmd_req_content->task_id.empty() && task.status == task_status_unknown)
-                                     || (cmd_req_content->task_id == task.task_id &&
-                                         (task.status != task_status_running && task.status != task_status_pulling_image &&
-                                          task.status != task_status_queueing));
-
-                    if (cleanable)
-                    {
-                        m_req_training_task_db.delete_task(task.task_id);
-                        cmd_resp->result_info += "\t" + task.task_id + "\n";
-                    }
-                }
-                catch(...)
-                {
-                    LOG_ERROR << "failed to delete task info from db; task_id:= " << task.task_id;
-                }
-            }
-
-            cmd_resp->result = E_SUCCESS;
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_task_clean_resp).name(), cmd_resp);
-
-            return E_SUCCESS;
-        }
-
-        std::shared_ptr<message> cmd_request_service::create_task_req_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info)
+        std::shared_ptr<message> cmd_request_service::create_node_create_task_req_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info)
         {
             std::string error;
             if (E_DEFAULT == validate_cmd_training_task_conf(vm,error))
@@ -318,9 +236,91 @@ namespace ai {
                 return nullptr;
             }
 
-            auto req_content = std::make_shared<matrix::service_core::start_training_req>();
+            auto req_content = std::make_shared<matrix::service_core::node_create_task_req>();
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-            req_content->header.__set_msg_name(AI_TRAINING_NOTIFICATION_REQ);
+            req_content->header.__set_msg_name(NODE_CREATE_TASK_REQ);
+            req_content->header.__set_nonce(id_generator::generate_nonce());
+
+            try
+            {
+                std::string task_id = id_generator::generate_task_id();
+
+                req_content->body.__set_task_id(task_id);
+                req_content->body.__set_select_mode(vm["select_mode"].as<int8_t>());
+                req_content->body.__set_master(vm["master"].as<std::string>());
+                req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
+                req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
+                req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
+                req_content->body.__set_training_engine(vm["training_engine"].as<std::string>());
+                req_content->body.__set_code_dir(vm["code_dir"].as<std::string>());
+                req_content->body.__set_entry_file(vm["entry_file"].as<std::string>());
+                req_content->body.__set_data_dir(vm["data_dir"].as<std::string>());
+                req_content->body.__set_checkpoint_dir(vm["checkpoint_dir"].as<std::string>());
+                req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
+                req_content->body.__set_container_name(vm["container_name"].as<std::string>());
+                req_content->body.__set_memory(vm["memory"].as<int64_t>());
+                req_content->body.__set_memory_swap(vm["memory_swap"].as<int64_t>());
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << "keys missing" ;
+                task_info.result = "parameters error: " + std::string(e.what());
+                return nullptr;
+            }
+
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            req_msg->set_name(NODE_CREATE_TASK_REQ);
+            req_msg->set_content(req_content);
+
+            task_info.task_id = req_content->body.task_id;
+
+            std::map<std::string, std::string> exten_info;
+            std::string message = req_content->body.task_id + req_content->body.code_dir + req_content->header.nonce;
+            if (!use_sign_verify())
+            {
+                std::string sign = id_generator::sign(message, CONF_MANAGER->get_node_private_key());
+                if (sign.empty())
+                {
+                    task_info.result = "sign error.pls check node key or task property";
+                    return nullptr;
+                }
+
+                exten_info["sign"] = sign;
+                exten_info["sign_algo"] = ECDSA;
+                exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                req_content->header.__set_exten_info(exten_info);
+            } else {
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(message, exten_info))
+                {
+                    task_info.result = "sign error.pls check node key or task property";
+                    return nullptr;
+                }
+            }
+
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            for(auto& each : req_content->body.peer_nodes_list)
+            {
+                exten_info["dest_id"] += each + " ";
+            }
+
+            req_content->header.__set_exten_info(exten_info);
+
+            return req_msg;
+        }
+
+        std::shared_ptr<message> cmd_request_service::create_node_start_task_req_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info)
+        {
+            std::string error;
+            if (E_DEFAULT == validate_cmd_training_task_conf(vm,error))
+            {
+                task_info.result = "parameter error: " + error;
+                return nullptr;
+            }
+
+            auto req_content = std::make_shared<matrix::service_core::node_start_task_req>();
+            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            req_content->header.__set_msg_name(NODE_START_TASK_REQ);
             req_content->header.__set_nonce(id_generator::generate_nonce());
 
             try
@@ -339,11 +339,8 @@ namespace ai {
                     std::vector<std::string> vec;
                     vec.push_back(node_id);
                     vm.at("peer_nodes_list").value() = vec;
-                }
-
-                if (task_id.empty())
-                {
-                    task_id = id_generator::generate_task_id();
+                } else {
+                    return nullptr;
                 }
 
                 req_content->body.__set_task_id(task_id);
@@ -371,7 +368,7 @@ namespace ai {
 
             // pack msg
             std::shared_ptr<message> req_msg = std::make_shared<message>();
-            req_msg->set_name(AI_TRAINING_NOTIFICATION_REQ);
+            req_msg->set_name(NODE_START_TASK_REQ);
             req_msg->set_content(req_content);
 
             task_info.task_id = req_content->body.task_id;
@@ -413,16 +410,259 @@ namespace ai {
             return req_msg;
         }
 
-        int32_t cmd_request_service::on_cmd_logs_req(const std::shared_ptr<message> &msg)
+        std::shared_ptr<message> cmd_request_service::create_node_restart_task_req_msg(bpo::variables_map& vm, ai::dbc::cmd_task_info & task_info)
         {
-            auto cmd_req = std::dynamic_pointer_cast<::cmd_logs_req>(msg->get_content());
+            std::string error;
+            if (E_DEFAULT == validate_cmd_training_task_conf(vm,error))
+            {
+                task_info.result = "parameter error: " + error;
+                return nullptr;
+            }
+
+            auto req_content = std::make_shared<matrix::service_core::node_restart_task_req>();
+            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            req_content->header.__set_msg_name(NODE_RESTART_TASK_REQ);
+            req_content->header.__set_nonce(id_generator::generate_nonce());
+
+            try
+            {
+                std::string task_id;
+                if(vm.count("task_id"))
+                {
+                    task_id = vm["task_id"].as<std::string>();
+                    std::string node_id = m_req_training_task_db.get_node_id_from_db(task_id);
+                    if(node_id.empty())
+                    {
+                        LOG_ERROR << "not found node id of given task from db";
+                        return nullptr;
+                    }
+
+                    std::vector<std::string> vec;
+                    vec.push_back(node_id);
+                    vm.at("peer_nodes_list").value() = vec;
+                } else {
+                    return nullptr;
+                }
+
+                req_content->body.__set_task_id(task_id);
+                req_content->body.__set_select_mode(vm["select_mode"].as<int8_t>());
+                req_content->body.__set_master(vm["master"].as<std::string>());
+                req_content->body.__set_peer_nodes_list(vm["peer_nodes_list"].as<std::vector<std::string>>());
+                req_content->body.__set_server_specification(vm["server_specification"].as<std::string>());
+                req_content->body.__set_server_count(vm["server_count"].as<int32_t>());
+                req_content->body.__set_training_engine(vm["training_engine"].as<std::string>());
+                req_content->body.__set_code_dir(vm["code_dir"].as<std::string>());
+                req_content->body.__set_entry_file(vm["entry_file"].as<std::string>());
+                req_content->body.__set_data_dir(vm["data_dir"].as<std::string>());
+                req_content->body.__set_checkpoint_dir(vm["checkpoint_dir"].as<std::string>());
+                req_content->body.__set_hyper_parameters(vm["hyper_parameters"].as<std::string>());
+                req_content->body.__set_container_name(vm["container_name"].as<std::string>());
+                req_content->body.__set_memory(vm["memory"].as<int64_t>());
+                req_content->body.__set_memory_swap(vm["memory_swap"].as<int64_t>());
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << "keys missing" ;
+                task_info.result = "parameters error: " + std::string(e.what());
+                return nullptr;
+            }
+
+            // pack msg
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            req_msg->set_name(NODE_RESTART_TASK_REQ);
+            req_msg->set_content(req_content);
+
+            task_info.task_id = req_content->body.task_id;
+
+            // 创建签名
+            std::map<std::string, std::string> exten_info;
+
+            std::string message = req_content->body.task_id + req_content->body.code_dir + req_content->header.nonce;
+            if (!use_sign_verify())
+            {
+                std::string sign = id_generator::sign(message, CONF_MANAGER->get_node_private_key());
+                if (sign.empty())
+                {
+                    task_info.result = "sign error.pls check node key or task property";
+                    return nullptr;
+                }
+
+                exten_info["sign"] = sign;
+                exten_info["sign_algo"] = ECDSA;
+                exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+                req_content->header.__set_exten_info(exten_info);
+            } else {
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(message, exten_info))
+                {
+                    task_info.result = "sign error.pls check node key or task property";
+                    return nullptr;
+                }
+            }
+
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            for(auto& each : req_content->body.peer_nodes_list)
+            {
+                exten_info["dest_id"] += each + " ";
+            }
+
+            req_content->header.__set_exten_info(exten_info);
+
+            return req_msg;
+        }
+
+        int32_t cmd_request_service::on_cmd_stop_task_req(const std::shared_ptr<message> &msg)
+        {
+            std::shared_ptr<::cmd_stop_task_req> cmd_req_content = std::dynamic_pointer_cast<::cmd_stop_task_req>(msg->get_content());
+            if (cmd_req_content == nullptr)
+            {
+                LOG_ERROR << "cmd_req_content is null";
+                return E_NULL_POINTER;
+            }
+
+            std::shared_ptr<::cmd_stop_task_rsp> cmd_resp = std::make_shared<::cmd_stop_task_rsp>();
+            cmd_resp->result = E_SUCCESS;
+            cmd_resp->result_info = "";
+
+            if (nullptr != cmd_req_content) {
+                cmd_resp->header.__set_session_id(cmd_req_content->header.session_id);
+            }
+
+            const std::string &task_id = cmd_req_content->task_id;
+
+            ai::dbc::cmd_task_info task_info_in_db;
+            if(!m_req_training_task_db.read_task_info_from_db(task_id, task_info_in_db))
+            {
+                LOG_ERROR << "ai power requester service cmd stop task, task id invalid: " << task_id;
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "task id is invalid";
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_task_rsp).name(), cmd_resp);
+                return E_DEFAULT;
+            }
+
+            std::shared_ptr<message> req_msg = std::make_shared<message>();
+            std::shared_ptr<matrix::service_core::node_stop_task_req> req_content = std::make_shared<matrix::service_core::node_stop_task_req>();
+
+            req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            req_content->header.__set_msg_name(NODE_STOP_TASK_REQ);
+            req_content->header.__set_nonce(id_generator::generate_nonce());
+
+            req_content->body.__set_task_id(task_id);
+
+            req_msg->set_content(req_content);
+            req_msg->set_name(req_content->header.msg_name);
+
+            std::map<std::string, std::string> exten_info;
+            std::string sign_msg = req_content->body.task_id + req_content->header.nonce;
+            if (!use_sign_verify())
+            {
+                std::string sign = id_generator::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+                if (sign.empty())
+                {
+                    cmd_resp->result = E_DEFAULT;
+                    cmd_resp->result_info = "sign error. pls check node key or task property";
+                    TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_task_rsp).name(), cmd_resp);
+                    return E_DEFAULT;
+                }
+
+                exten_info["sign"] = sign;
+                exten_info["sign_algo"] = ECDSA;
+                exten_info["sign_at"] = boost::str(boost::format("%d") %std::time(nullptr));
+            } else {
+                if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
+                {
+                    return E_DEFAULT;
+                }
+            }
+
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+
+            if(!task_info_in_db.peer_nodes_list.empty()) {
+                exten_info["dest_id"] = task_info_in_db.peer_nodes_list[0];
+            }
+
+            req_content->header.__set_exten_info(exten_info);
+
+            if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(req_msg))
+            {
+                cmd_resp->result = E_INACTIVE_CHANNEL;
+                cmd_resp->result_info = "dbc node don't connect to network, pls check ";
+            }
+
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_task_rsp).name(), cmd_resp);
+
+            return E_SUCCESS;
+        }
+
+        int32_t cmd_request_service::on_cmd_clean_task_req(const std::shared_ptr<message> &msg)
+        {
+            auto cmd_req_content = std::dynamic_pointer_cast<::cmd_clean_task_req>(msg->get_content());
+            if (!cmd_req_content)
+            {
+                LOG_ERROR << "cmd_req_content is null";
+                return E_NULL_POINTER;
+            }
+
+            std::vector<ai::dbc::cmd_task_info> vec_task_infos;
+            if (!m_req_training_task_db.read_task_info_from_db(vec_task_infos))
+            {
+                LOG_ERROR << "failed to load all task info from db.";
+            }
+
+            auto cmd_resp = std::make_shared<::cmd_clean_task_rsp>();
+
+            if (nullptr != cmd_req_content) {
+                cmd_resp->header.__set_session_id(cmd_req_content->header.session_id);
+            }
+
+            if (vec_task_infos.empty())
+            {
+                cmd_resp->result = E_DEFAULT;
+                cmd_resp->result_info = "task list is empty";
+
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_clean_task_rsp).name(), cmd_resp);
+                return E_SUCCESS;
+            }
+
+            cmd_resp->result_info = "\n";
+            for(auto& task: vec_task_infos)
+            {
+                try
+                {
+                    bool cleanable = (cmd_req_content->clean_all)
+                                     || (cmd_req_content->task_id.empty() && task.status == task_status_unknown)
+                                     || (cmd_req_content->task_id == task.task_id &&
+                                         (task.status != task_status_running && task.status != task_status_pulling_image &&
+                                          task.status != task_status_queueing));
+
+                    if (cleanable)
+                    {
+                        m_req_training_task_db.delete_task(task.task_id);
+                        cmd_resp->result_info += "\t" + task.task_id + "\n";
+                    }
+                }
+                catch(...)
+                {
+                    LOG_ERROR << "failed to delete task info from db; task_id:= " << task.task_id;
+                }
+            }
+
+            cmd_resp->result = E_SUCCESS;
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_clean_task_rsp).name(), cmd_resp);
+
+            return E_SUCCESS;
+        }
+
+        int32_t cmd_request_service::on_cmd_task_logs_req(const std::shared_ptr<message> &msg)
+        {
+            auto cmd_req = std::dynamic_pointer_cast<::cmd_task_logs_req>(msg->get_content());
             if (nullptr == cmd_req)
             {
                 LOG_ERROR << "ai power requester service cmd logs msg content nullptr";
                 return E_DEFAULT;
             }
 
-            std::shared_ptr<::cmd_logs_resp> cmd_resp = std::make_shared<::cmd_logs_resp>();
+            std::shared_ptr<::cmd_task_logs_rsp> cmd_resp = std::make_shared<::cmd_task_logs_rsp>();
             if (nullptr != cmd_req) {
                 cmd_resp->header.__set_session_id(cmd_req->header.session_id);
             }
@@ -433,7 +673,7 @@ namespace ai {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "task id not found error";
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
                 return E_SUCCESS;
             }
 
@@ -442,7 +682,7 @@ namespace ai {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "log direction error";
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
                 return E_SUCCESS;
             }
 
@@ -451,7 +691,7 @@ namespace ai {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "number of lines error: should less than " + std::to_string(cmd_req->number_of_lines);
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
                 return E_SUCCESS;
             }
 
@@ -459,7 +699,7 @@ namespace ai {
             auto req_content = std::make_shared<matrix::service_core::logs_req>();
 
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-            req_content->header.__set_msg_name(LOGS_REQ);
+            req_content->header.__set_msg_name(NODE_TASK_LOGS_REQ);
             req_content->header.__set_nonce(id_generator::generate_nonce());
             if (nullptr != cmd_req) {
                 req_content->header.__set_session_id(cmd_req->header.session_id);
@@ -507,7 +747,7 @@ namespace ai {
             {
                 cmd_resp->result = E_INACTIVE_CHANNEL;
                 cmd_resp->result_info = "dbc node do not connect to network, pls check.";
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
                 return E_DEFAULT;
             }
 
@@ -534,7 +774,7 @@ namespace ai {
                 cmd_resp->result = E_DEFAULT;
                 cmd_resp->result_info = "internal error while processing this cmd";
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
                 return E_DEFAULT;
             }
 
@@ -574,7 +814,7 @@ namespace ai {
                 return E_SUCCESS;
             }
 
-            std::shared_ptr<::cmd_logs_resp> cmd_resp = std::make_shared<::cmd_logs_resp>();
+            std::shared_ptr<::cmd_task_logs_rsp> cmd_resp = std::make_shared<::cmd_task_logs_rsp>();
             COPY_MSG_HEADER(rsp_content, cmd_resp);
 
             cmd_resp->result = E_SUCCESS;
@@ -643,7 +883,7 @@ namespace ai {
             }
 
             //return cmd resp
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
 
             //remember: remove timer
             this->remove_timer(session->get_timer_id());
@@ -655,10 +895,10 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t cmd_request_service::on_cmd_list_training_req(const std::shared_ptr<message> &msg)
+        int32_t cmd_request_service::on_cmd_list_task_req(const std::shared_ptr<message> &msg)
         {
-            auto cmd_resp = std::make_shared<::cmd_list_training_resp>();
-            auto cmd_req = std::dynamic_pointer_cast<::cmd_list_training_req>(msg->get_content());
+            auto cmd_resp = std::make_shared<::cmd_list_task_rsp>();
+            auto cmd_req = std::dynamic_pointer_cast<::cmd_list_task_req>(msg->get_content());
             if (nullptr != cmd_req) {
                 cmd_resp->header.__set_session_id(cmd_req->header.session_id);
             }
@@ -694,7 +934,7 @@ namespace ai {
                     cmd_resp->result_info = "task list is empty";
                 }
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
                 return E_SUCCESS;
             }
 
@@ -707,7 +947,7 @@ namespace ai {
             auto req_content = std::make_shared<matrix::service_core::list_training_req>();
 
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-            req_content->header.__set_msg_name(LIST_TRAINING_REQ);
+            req_content->header.__set_msg_name(NODE_LIST_TASK_REQ);
             req_content->header.__set_nonce(id_generator::generate_nonce());
             if (nullptr != cmd_req) {
                 req_content->header.__set_session_id(cmd_req->header.session_id);
@@ -765,7 +1005,7 @@ namespace ai {
                     cmd_resp->task_status_list.push_back(std::move(cts));
                 }
 
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
                 return E_SUCCESS;
             }
 
@@ -774,7 +1014,7 @@ namespace ai {
                 // early false response to avoid timer/session operations
                 cmd_resp->result = E_INACTIVE_CHANNEL;
                 cmd_resp->result_info = "dbc node do not connect to network, pls check.";
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
                 return E_DEFAULT;
             }
 
@@ -819,7 +1059,7 @@ namespace ai {
                 cmd_resp->result_info = "internal error while processing this cmd";
 
                 //return cmd resp
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
                 return E_DEFAULT;
             }
 
@@ -883,7 +1123,7 @@ namespace ai {
 
             auto vec_task_infos_to_show = vm["show_tasks"].as<std::shared_ptr<std::vector<ai::dbc::cmd_task_info>>>();
             //publish cmd resp
-            std::shared_ptr<::cmd_list_training_resp> cmd_resp = std::make_shared<::cmd_list_training_resp>();
+            std::shared_ptr<::cmd_list_task_rsp> cmd_resp = std::make_shared<::cmd_list_task_rsp>();
             COPY_MSG_HEADER(req_content, cmd_resp);
             cmd_resp->result = E_SUCCESS;
             cmd_resp->result_info = "";
@@ -911,7 +1151,7 @@ namespace ai {
             }
 
             //return cmd resp
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
 
             //remember: remove timer
             this->remove_timer(session->get_timer_id());
@@ -926,11 +1166,11 @@ namespace ai {
         int32_t cmd_request_service::on_list_training_timer(std::shared_ptr<core_timer> timer) {
             string session_id;
             std::shared_ptr<service_session> session;
-            std::shared_ptr<::cmd_list_training_resp> cmd_resp = std::make_shared<::cmd_list_training_resp>();
+            std::shared_ptr<::cmd_list_task_rsp> cmd_resp = std::make_shared<::cmd_list_task_rsp>();
 
             if (nullptr == timer) {
                 LOG_ERROR << "null ptr of timer.";
-                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+                TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
                 return E_NULL_POINTER;
             }
 
@@ -939,7 +1179,7 @@ namespace ai {
                 session = get_session(session_id);
                 if (nullptr == session) {
                     LOG_ERROR << "ai power requester service list training timer get session null: " << session_id;
-                    TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+                    TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
                     return E_DEFAULT;
                 }
 
@@ -992,7 +1232,7 @@ namespace ai {
                 LOG_ERROR << "error: Unknown error.";
             }
 
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_list_training_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
             if (session) {
                 LOG_DEBUG << "ai power requester service list training timer time out remove session: " << session_id;
                 session->clear();
@@ -1016,14 +1256,14 @@ namespace ai {
             std::shared_ptr<message> req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
             auto req_content = std::dynamic_pointer_cast<matrix::service_core::logs_req>(req_msg->get_content());
 
-            std::shared_ptr<::cmd_logs_resp> cmd_resp = std::make_shared<::cmd_logs_resp>();
+            std::shared_ptr<::cmd_task_logs_rsp> cmd_resp = std::make_shared<::cmd_task_logs_rsp>();
             if (nullptr != req_content)
                 cmd_resp->header.__set_session_id(req_content->header.session_id);
             cmd_resp->header.__set_session_id(session_id);
             cmd_resp->result = E_DEFAULT;
             cmd_resp->result_info = "get log time out";
 
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_logs_resp).name(), cmd_resp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
 
             session->clear();
             this->remove_session(session_id);

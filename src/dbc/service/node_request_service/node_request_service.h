@@ -21,6 +21,7 @@
 #include "image_manager.h"
 #include "task_scheduling.h"
 #include "container_worker.h"
+#include "message.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
@@ -51,23 +52,29 @@ namespace ai {
 
             int32_t service_exit() override;
 
-            int32_t on_start_training_req(std::shared_ptr<message> &msg);
+            int32_t on_node_create_task_req(std::shared_ptr<message> &msg);
 
-            int32_t task_start(std::shared_ptr<matrix::service_core::start_training_req> req);
+            int32_t on_node_start_task_req(std::shared_ptr<message> &msg);
 
-            int32_t task_restart(std::shared_ptr<matrix::service_core::start_training_req> req);
+            int32_t on_node_restart_task_req(std::shared_ptr<message> &msg);
 
-            int32_t task_reboot(std::shared_ptr<matrix::service_core::start_training_req> req);
+            int32_t task_create(std::shared_ptr<matrix::service_core::node_create_task_req> req);
 
-            int32_t on_stop_training_req(std::shared_ptr<message> &msg);
+            int32_t task_start(std::shared_ptr<matrix::service_core::node_start_task_req> req);
 
-            int32_t task_stop(std::shared_ptr<matrix::service_core::stop_training_req> req);
+            int32_t task_restart(std::shared_ptr<matrix::service_core::node_restart_task_req> req);
 
-            int32_t on_logs_req(const std::shared_ptr<message> &msg);
+            int32_t task_reboot(std::shared_ptr<matrix::service_core::node_restart_task_req> req);
+
+            int32_t on_node_stop_task_req(std::shared_ptr<message> &msg);
+
+            int32_t task_stop(std::shared_ptr<matrix::service_core::node_stop_task_req> req);
+
+            int32_t on_node_task_logs_req(const std::shared_ptr<message> &msg);
 
             int32_t task_logs(std::shared_ptr<matrix::service_core::logs_req> req);
 
-            int32_t on_list_training_req(std::shared_ptr<message> &msg);
+            int32_t on_node_list_task_req(std::shared_ptr<message> &msg);
 
             int32_t on_get_task_queue_size_req(std::shared_ptr<message> &msg);
 
@@ -80,7 +87,7 @@ namespace ai {
             int32_t check_sign(const std::string& message, const std::string &sign, const std::string &origin_id,
                                const std::string &sign_algo);
 
-            std::string get_task_id(std::shared_ptr<matrix::service_core::start_training_req> req);
+            std::string get_task_id(const std::string& server_specification);
 
         protected:
             std::shared_ptr<task_scheduling> m_user_task_ptr = nullptr;

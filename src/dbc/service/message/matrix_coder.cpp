@@ -41,8 +41,10 @@ namespace matrix {
 
             BIND_DECODE_INVOKER(peer_nodes_broadcast_req);
 
-            BIND_DECODE_INVOKER(start_training_req);
-            BIND_DECODE_INVOKER(stop_training_req);
+            BIND_DECODE_INVOKER(node_create_task_req);
+            BIND_DECODE_INVOKER(node_start_task_req);
+            BIND_DECODE_INVOKER(node_restart_task_req);
+            BIND_DECODE_INVOKER(node_stop_task_req);
 
             BIND_DECODE_INVOKER(list_training_req);
             BIND_DECODE_INVOKER(list_training_resp);
@@ -70,8 +72,10 @@ namespace matrix {
 
             BIND_ENCODE_INVOKER(peer_nodes_broadcast_req);
 
-            BIND_ENCODE_INVOKER(start_training_req);
-            BIND_ENCODE_INVOKER(stop_training_req);
+            BIND_ENCODE_INVOKER(node_create_task_req);
+            BIND_ENCODE_INVOKER(node_start_task_req);
+            BIND_ENCODE_INVOKER(node_restart_task_req);
+            BIND_ENCODE_INVOKER(node_stop_task_req);
 
             BIND_ENCODE_INVOKER(list_training_req);
             BIND_ENCODE_INVOKER(list_training_resp);

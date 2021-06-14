@@ -11,7 +11,6 @@
 #include <cassert>
 #include <boost/exception/all.hpp>
 #include "server.h"
-#include "api_call_handler.h"
 #include "conf_manager.h"
 #include "node_request_service.h"
 #include "service_message_id.h"
@@ -104,34 +103,24 @@ namespace ai {
 
         void node_request_service::init_invoker() {
             invoker_type invoker;
-            // task
-            BIND_MESSAGE_INVOKER("start_training_req", &node_request_service::on_start_training_req);
-
-            BIND_MESSAGE_INVOKER("stop_training_req", &node_request_service::on_stop_training_req);
-
-            BIND_MESSAGE_INVOKER("list_training_req", &node_request_service::on_list_training_req);
-
-            BIND_MESSAGE_INVOKER("logs_req", &node_request_service::on_logs_req);
+            BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req);
+            BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req);
+            BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req);
+            BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req);
+            BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
+            BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
 
             BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(),
                                  &node_request_service::on_get_task_queue_size_req);
-
-            // mining_nodes
-
         }
 
         void node_request_service::init_subscription() {
-            //ai training
-            SUBSCRIBE_BUS_MESSAGE("start_training_req");
-
-            //stop training
-            SUBSCRIBE_BUS_MESSAGE(STOP_TRAINING_REQ);
-
-            //list training req
-            SUBSCRIBE_BUS_MESSAGE(LIST_TRAINING_REQ);
-
-            //task logs req
-            SUBSCRIBE_BUS_MESSAGE(LOGS_REQ);
+            SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
+            SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
+            SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
+            SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
+            SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
+            SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
 
             //task queue size query
             SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_req_msg).name());
@@ -168,9 +157,237 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::on_start_training_req(std::shared_ptr<message> &msg) {
-            std::shared_ptr<matrix::service_core::start_training_req> req =
-                    std::dynamic_pointer_cast<matrix::service_core::start_training_req>(msg->get_content());
+        int32_t node_request_service::on_node_create_task_req(std::shared_ptr<message> &msg) {
+            std::shared_ptr<matrix::service_core::node_create_task_req> req =
+                    std::dynamic_pointer_cast<matrix::service_core::node_create_task_req>(msg->get_content());
+            if (req == nullptr) return E_DEFAULT;
+            LOG_INFO << "on_node_create_task_req task_id:" << req->body.task_id << std::endl;
+
+            if (!id_generator::check_base58_id(req->header.nonce)) {
+                LOG_ERROR << "ai power provider service nonce error ";
+                return E_DEFAULT;
+            }
+
+            if (!id_generator::check_base58_id(req->body.task_id)) {
+                LOG_ERROR << "ai power provider service task_id error ";
+                return E_DEFAULT;
+            }
+
+            if (req->body.entry_file.empty() || req->body.entry_file.size() > MAX_ENTRY_FILE_NAME_LEN) {
+                LOG_ERROR << "entry_file is invalid";
+                return E_DEFAULT;
+            }
+
+            if (req->body.training_engine.empty() || req->body.training_engine.size() > MAX_ENGINE_IMGE_NAME_LEN) {
+                LOG_ERROR << "training_engine is invalid";
+                return E_DEFAULT;
+            }
+
+            if (!check_task_engine(req->body.training_engine)) {
+                LOG_ERROR << "engine name is error." << req->body.training_engine.size();
+                return E_DEFAULT;
+            }
+
+            std::string sign_msg = req->body.task_id + req->body.code_dir + req->header.nonce;
+            if (req->header.exten_info.size() < 3) {
+                LOG_ERROR << "exten info error.";
+                return E_DEFAULT;
+            }
+
+            if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"],
+                                         req->header.exten_info["sign_algo"]))
+                &&
+                (!ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"]))) {
+                LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
+                return E_DEFAULT;
+            }
+
+            const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
+            auto it = peer_nodes.begin();
+            for (; it != peer_nodes.end(); it++) {
+                if (!id_generator::check_node_id((*it))) {
+                    LOG_ERROR << "ai power provider service node_id error " << (*it);
+                    return E_DEFAULT;
+                }
+
+                if ((*it) == CONF_MANAGER->get_node_id()) {
+                    LOG_DEBUG << "ai power provider service found self node id in on start training: "
+                              << req->body.task_id << " node id: " << (*it);
+                    break;
+                }
+            }
+
+            if (it == peer_nodes.end() || peer_nodes.size() > 1) {
+                LOG_INFO << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                         << req->body.task_id;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                /*
+                if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4CdhXs56P4UwtTauGcWcMbnBJhF6qWAWQD"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB43V9jndyUdKAeU6qAQ1kFRw3WX3rqqfmKj"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Bx3W6xH62YicCj2rsaBCk6ujeC11MooaQ"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB488Ut5nduiiZ33dJmvS6txstdRPeHZ7Kkf"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3x6jBqi8S2jaoC6yAc5MSVvjUDStUdLqpm"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3vc4tVLHb1D4iacrTmzsQ3NzGE7HS5pnfw"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4AMdYxL74z7kq6y1zD7AgJtwRmuv4mUf9p"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB414gDp7YY9afeVwptEp4hf8MWtfE8Pp3zE"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3zQYp35EGQeGwMcEAvE2PBsk9shwL7gyWA"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4GaGfS4fj1Z8rXjkHLcF4ifNB2EMWPpKL2"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Gxw9JXAkccZJCsLqZJ9T77W5JjQdbhLK7"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3yFm6vwKzL2jtiTPbzZRiHXuZFQM7i6aZ8"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4C8RrFLupsM4SBBiDfHWmPSZ29zSiPDMx6"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB47xpUSdgv2oMbeYvbMTfnF7TRhRPtwMDpM") {
+                    LOG_INFO
+                        << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                        << req->body.task_id;
+                    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                } else {
+                    LOG_INFO
+                        << "1 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                        << req->body.task_id;
+                    srand((int) time(0));
+                    int32_t count = (rand() % (10 - 1) + 1);
+                    if (count == 6) {
+                        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                    }
+                }
+                */
+            }
+
+            if (it == peer_nodes.end()) {
+                return E_SUCCESS;
+            }
+
+            return task_create(req);
+        }
+
+        int32_t node_request_service::on_node_start_task_req(std::shared_ptr<message> &msg) {
+            std::shared_ptr<matrix::service_core::node_start_task_req> req =
+                    std::dynamic_pointer_cast<matrix::service_core::node_start_task_req>(msg->get_content());
+            if (req == nullptr) return E_DEFAULT;
+            LOG_INFO << "on_node_start_task_req task_id:" << req->body.task_id << std::endl;
+
+            if (!id_generator::check_base58_id(req->header.nonce)) {
+                LOG_ERROR << "ai power provider service nonce error ";
+                return E_DEFAULT;
+            }
+
+            if (!id_generator::check_base58_id(req->body.task_id)) {
+                LOG_ERROR << "ai power provider service task_id error ";
+                return E_DEFAULT;
+            }
+
+            if (req->body.entry_file.empty() || req->body.entry_file.size() > MAX_ENTRY_FILE_NAME_LEN) {
+                LOG_ERROR << "entry_file is invalid";
+                return E_DEFAULT;
+            }
+
+            if (req->body.training_engine.empty() || req->body.training_engine.size() > MAX_ENGINE_IMGE_NAME_LEN) {
+                LOG_ERROR << "training_engine is invalid";
+                return E_DEFAULT;
+            }
+
+            if (!check_task_engine(req->body.training_engine)) {
+                LOG_ERROR << "engine name is error." << req->body.training_engine.size();
+                return E_DEFAULT;
+            }
+
+            std::string sign_msg = req->body.task_id + req->body.code_dir + req->header.nonce;
+            if (req->header.exten_info.size() < 3) {
+                LOG_ERROR << "exten info error.";
+                return E_DEFAULT;
+            }
+
+            if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"],
+                                         req->header.exten_info["sign_algo"]))
+                &&
+                (!ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"]))) {
+                LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
+                return E_DEFAULT;
+            }
+
+            const std::vector<std::string> &peer_nodes = req->body.peer_nodes_list;
+            auto it = peer_nodes.begin();
+            for (; it != peer_nodes.end(); it++) {
+                if (!id_generator::check_node_id((*it))) {
+                    LOG_ERROR << "ai power provider service node_id error " << (*it);
+                    return E_DEFAULT;
+                }
+
+                if ((*it) == CONF_MANAGER->get_node_id()) {
+                    LOG_DEBUG << "ai power provider service found self node id in on start training: "
+                              << req->body.task_id << " node id: " << (*it);
+                    break;
+                }
+            }
+
+            if (it == peer_nodes.end() || peer_nodes.size() > 1) {
+                LOG_INFO << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                         << req->body.task_id;
+                CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                /*
+                if (CONF_MANAGER->get_node_id() == "2gfpp3MAB489TcFSWfwvyXcgJKUcDWybSuPsi88SZQF"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4K4z1f3vyEUergJmjG64kXPFXNspBbhn3n"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Hta5wtuFv9Ef7Cg9ZkUamgxYh3UjTYsQ8"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4CdhXs56P4UwtTauGcWcMbnBJhF6qWAWQD"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB43V9jndyUdKAeU6qAQ1kFRw3WX3rqqfmKj"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Bx3W6xH62YicCj2rsaBCk6ujeC11MooaQ"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB488Ut5nduiiZ33dJmvS6txstdRPeHZ7Kkf"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3x6jBqi8S2jaoC6yAc5MSVvjUDStUdLqpm"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3vc4tVLHb1D4iacrTmzsQ3NzGE7HS5pnfw"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB432cJRdKhLd4cGZwpZjoE5PtxvEmHhWbp1"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB49V1bPqEXyuef2pThQWqN6sFij71m7epkd"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB42X3BJhQjmMe6HAFivnMVU5QXVC1nFfAK5"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4AMdYxL74z7kq6y1zD7AgJtwRmuv4mUf9p"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB414gDp7YY9afeVwptEp4hf8MWtfE8Pp3zE"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3zQYp35EGQeGwMcEAvE2PBsk9shwL7gyWA"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4HYkz2ezFwxa36mpCZzTGxXgg8TNrPynYo"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3vRQuPD23q8sBNHDn7jknCiqcx4NmoRWQY"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4GaGfS4fj1Z8rXjkHLcF4ifNB2EMWPpKL2"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB49qg5LJPE3pAXQULDP4aK2TQDc93edaG5i"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4F8a5dTsjo8qduNuWoQVWw1XJeRYL7rKiC"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB49pWqfvgTvKXArEU6wrp9UCYZi9hoR6sw1"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4Gxw9JXAkccZJCsLqZJ9T77W5JjQdbhLK7"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB3yFm6vwKzL2jtiTPbzZRiHXuZFQM7i6aZ8"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB4C8RrFLupsM4SBBiDfHWmPSZ29zSiPDMx6"
+                    || CONF_MANAGER->get_node_id() == "2gfpp3MAB47xpUSdgv2oMbeYvbMTfnF7TRhRPtwMDpM") {
+                    LOG_INFO
+                        << "0 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                        << req->body.task_id;
+                    CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                } else {
+                    LOG_INFO
+                        << "1 ai power provider service relay broadcast start training req to neighbor peer nodes: "
+                        << req->body.task_id;
+                    srand((int) time(0));
+                    int32_t count = (rand() % (10 - 1) + 1);
+                    if (count == 6) {
+                        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+                    }
+                }
+                */
+            }
+
+            if (it == peer_nodes.end()) {
+                return E_SUCCESS;
+            }
+
+            return task_start(req);
+        }
+
+        int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<message> &msg) {
+            std::shared_ptr<matrix::service_core::node_restart_task_req> req =
+                    std::dynamic_pointer_cast<matrix::service_core::node_restart_task_req>(msg->get_content());
             if (req == nullptr) return E_DEFAULT;
             LOG_INFO << "on_start_training_req task_id:" << req->body.task_id << std::endl;
 
@@ -279,18 +496,12 @@ namespace ai {
                 return E_SUCCESS;
             }
 
-            if (req->body.code_dir == std::string(NODE_REBOOT) && CONF_MANAGER->get_enable_node_reboot()) {
-                return task_reboot(req);
-            } else if (req->body.code_dir == std::string(TASK_RESTART)) {
-                return task_restart(req);
-            } else {
-                return task_start(req);
-            }
+            return task_restart(req);
         }
 
-        int32_t node_request_service::task_start(std::shared_ptr<matrix::service_core::start_training_req> req) {
+        int32_t node_request_service::task_create(std::shared_ptr<matrix::service_core::node_create_task_req> req) {
             if (req == nullptr) return E_DEFAULT;
-            LOG_INFO << "task_start: " << req->body.task_id << endl;
+            LOG_INFO << "task_create: " << req->body.task_id << endl;
 
             if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT) {
                 LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
@@ -298,7 +509,6 @@ namespace ai {
                 return E_DEFAULT;
             }
 
-            //todo: 暂不支持更新
             if (m_user_task_ptr->find_task(req->body.task_id)) {
                 LOG_ERROR << "ai power provider service on start training already has task: " << req->body.task_id;
                 return E_DEFAULT;
@@ -319,7 +529,13 @@ namespace ai {
             task->__set_hyper_parameters(req->body.hyper_parameters);
             task->__set_ai_user_node_id(req->header.exten_info["origin_id"]);
             task->__set_error_times(0);
+            // task->__set_container_id(ref_container_id);
+            task->__set_received_time_stamp(std::time(nullptr));
+            task->__set_status(task_status_queueing);
 
+            return m_user_task_ptr->add_task(task);
+
+            /*
             std::string update = "update_docker";
             std::string update1 = "update_vm";
             const std::string &server_specification = task->server_specification;
@@ -334,7 +550,8 @@ namespace ai {
             //      So the input container name also refer to a task id.
             std::string ref_container_id;
             {
-                std::string task_id = get_task_id(req);
+                auto server_specification = req->body.server_specification;
+                std::string task_id = get_task_id(server_specification);
                 auto ref_task2 = m_user_task_ptr->find_task(task_id);
                 if (ref_task2 != nullptr) {
                     // update
@@ -377,9 +594,34 @@ namespace ai {
             }
 
             return E_SUCCESS;
+            */
         }
 
-        int32_t node_request_service::task_restart(std::shared_ptr<matrix::service_core::start_training_req> req) {
+        int32_t node_request_service::task_start(std::shared_ptr<matrix::service_core::node_start_task_req> req) {
+            if (req == nullptr) return E_DEFAULT;
+            LOG_INFO << "task_start " << req->body.task_id << endl;
+
+            if (m_user_task_ptr->get_user_cur_task_size() >= AI_TRAINING_MAX_TASK_COUNT) {
+                LOG_ERROR << "ai power provider service on start training too many tasks, task id: "
+                          << req->body.task_id;
+                return E_DEFAULT;
+            }
+
+            auto task = m_user_task_ptr->find_task(req->body.task_id);
+            if (nullptr == task) {
+                return E_DEFAULT;
+            } else {
+                task->__set_error_times(0);
+                task->__set_received_time_stamp(std::time(nullptr));
+                task->__set_status(task_status_queueing);
+                task->__set_server_specification(req->body.server_specification);
+                m_user_task_ptr->add_task(task);
+
+                return E_SUCCESS;
+            }
+        }
+
+        int32_t node_request_service::task_restart(std::shared_ptr<matrix::service_core::node_restart_task_req> req) {
             if (req == nullptr) return E_DEFAULT;
             LOG_INFO << "task_restart " << req->body.task_id << endl;
 
@@ -435,7 +677,7 @@ namespace ai {
             }
         }
 
-        int32_t node_request_service::task_reboot(std::shared_ptr<matrix::service_core::start_training_req> req) {
+        int32_t node_request_service::task_reboot(std::shared_ptr<matrix::service_core::node_restart_task_req> req) {
             if (req == nullptr) return E_DEFAULT;
             LOG_INFO << "task_reboot: " << req->body.task_id << endl;
 
@@ -464,8 +706,8 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::on_stop_training_req(std::shared_ptr<message> &msg) {
-            std::shared_ptr<matrix::service_core::stop_training_req> req = std::dynamic_pointer_cast<matrix::service_core::stop_training_req>(
+        int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<message> &msg) {
+            std::shared_ptr<matrix::service_core::node_stop_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_stop_task_req>(
                     msg->get_content());
             if (req == nullptr) return E_DEFAULT;
             LOG_INFO << "on_stop_training_req task_id:" << req->body.task_id << std::endl;
@@ -500,7 +742,6 @@ namespace ai {
                 return task_stop(req);
             } else {
                 LOG_INFO << "stop training, not found task: " << task_id << endl;
-
                 LOG_INFO << "0 stop training, broadcast_message task: " << task_id << endl;
                 CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
 
@@ -550,7 +791,7 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::task_stop(std::shared_ptr<matrix::service_core::stop_training_req> req) {
+        int32_t node_request_service::task_stop(std::shared_ptr<matrix::service_core::node_stop_task_req> req) {
             const std::string &task_id = req->body.task_id;
             auto sp_task = m_user_task_ptr->find_task(task_id);
             if (sp_task) {
@@ -560,7 +801,7 @@ namespace ai {
                 }
 
                 if (sp_task->status == task_status_stopped) {
-                    m_user_task_ptr->stop_task_only_id(task_id, is_docker);//强制停止
+                    m_user_task_ptr->stop_task_only_id(task_id, is_docker); //强制停止
                 } else {
                     m_user_task_ptr->stop_task(sp_task, task_status_stopped);
                 }
@@ -569,7 +810,7 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::on_logs_req(const std::shared_ptr<message> &msg) {
+        int32_t node_request_service::on_node_task_logs_req(const std::shared_ptr<message> &msg) {
             std::shared_ptr<logs_req> req_content = std::dynamic_pointer_cast<logs_req>(msg->get_content());
             if (req_content == nullptr) return E_DEFAULT;
             LOG_INFO << "on_logs_req:" << req_content->body.task_id << endl;
@@ -793,7 +1034,7 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        int32_t node_request_service::on_list_training_req(std::shared_ptr<message> &msg) {
+        int32_t node_request_service::on_node_list_task_req(std::shared_ptr<message> &msg) {
             std::shared_ptr<list_training_req> req_content = std::dynamic_pointer_cast<list_training_req>(
                     msg->get_content());
             if (req_content == nullptr) return E_DEFAULT;
@@ -945,17 +1186,15 @@ namespace ai {
             return E_SUCCESS;
         }
 
-        std::string
-        node_request_service::get_task_id(std::shared_ptr<matrix::service_core::start_training_req> req) {
-            if (nullptr == req) {
+        std::string node_request_service::get_task_id(const std::string& server_specification) {
+            if (server_specification.empty()) {
                 return "";
             }
 
-            auto customer_setting = req->body.server_specification;
             std::string task_id;
-            if (!customer_setting.empty()) {
+            if (!server_specification.empty()) {
                 std::stringstream ss;
-                ss << customer_setting;
+                ss << server_specification;
                 boost::property_tree::ptree pt;
 
                 try {

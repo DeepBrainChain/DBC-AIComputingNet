@@ -25,14 +25,13 @@
 #include "p2p_net_service.h"
 #include "cmd_request_service.h"
 #include "node_request_service.h"
-#include "cmd_line_service.h"
 #include "common_service.h"
 #include "id_generator.h"
 #include "crypto_service.h"
 #include "timer_matrix_manager.h"
 #include "data_query_service.h"
 #include "http_server_service.h"
-#include "api_call_handler.h"
+//#include "api_call_handler.h"
 #include "rest_api_service.h"
 #include <boost/exception/all.hpp>
 
@@ -212,6 +211,7 @@ namespace ai
             LOG_INFO << "init p2p net service successfully";
 
             //cmd line service
+            /*
             ::dbc::g_api_call_handler->init_subscription();
 
             if (false == m_daemon)
@@ -228,7 +228,7 @@ namespace ai
                 mdl->start();
                 LOG_INFO << "init command line service successfully";
             }
-
+            */
 
             LOG_INFO << "begin to init rest api service";
             mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::rest_api_service>());

@@ -48,9 +48,17 @@ namespace matrix {
 
         class peer_nodes_broadcast_req;
 
-        class start_training_req_body;
+        class node_create_task_req_body;
 
-        class start_training_req;
+        class node_create_task_req;
+
+        class node_start_task_req_body;
+
+        class node_start_task_req;
+
+        class node_restart_task_req_body;
+
+        class node_restart_task_req;
 
         class stop_training_req_body;
 
@@ -793,38 +801,30 @@ namespace matrix {
 
         std::ostream &operator<<(std::ostream &out, const peer_nodes_broadcast_req &obj);
 
-        typedef struct _start_training_req_body__isset {
-            _start_training_req_body__isset() : master(false), server_specification(false), server_count(false),
-                                                hyper_parameters(false), container_name(false), memory(false),
-                                                memory_swap(false) {}
+        typedef struct _node_create_task_req_body__isset {
+            _node_create_task_req_body__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), container_name(false), memory(false), memory_swap(false) {}
+            bool master :1;
+            bool server_specification :1;
+            bool server_count :1;
+            bool hyper_parameters :1;
+            bool container_name :1;
+            bool memory :1;
+            bool memory_swap :1;
+        } _node_create_task_req_body__isset;
 
-            bool master: 1;
-            bool server_specification: 1;
-            bool server_count: 1;
-            bool hyper_parameters: 1;
-            bool container_name: 1;
-            bool memory: 1;
-            bool memory_swap: 1;
-        } _start_training_req_body__isset;
-
-        class start_training_req_body : public virtual ::apache::thrift::TBase {
+        class node_create_task_req_body : public virtual ::apache::thrift::TBase {
         public:
-            start_training_req_body(const start_training_req_body &);
 
-            start_training_req_body &operator=(const start_training_req_body &);
-
-            start_training_req_body()
-                    : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(),
-                      code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), container_name(),
-                      memory(0), memory_swap(0) {
+            node_create_task_req_body(const node_create_task_req_body&);
+            node_create_task_req_body& operator=(const node_create_task_req_body&);
+            node_create_task_req_body() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), container_name(), memory(0), memory_swap(0) {
             }
 
-            virtual ~start_training_req_body() throw();
-
+            virtual ~node_create_task_req_body() throw();
             std::string task_id;
             int8_t select_mode;
             std::string master;
-            std::vector<std::string> peer_nodes_list;
+            std::vector<std::string>  peer_nodes_list;
             std::string server_specification;
             int32_t server_count;
             std::string training_engine;
@@ -837,39 +837,40 @@ namespace matrix {
             int64_t memory;
             int64_t memory_swap;
 
-            _start_training_req_body__isset __isset;
+            _node_create_task_req_body__isset __isset;
 
-            void __set_task_id(const std::string &val);
+            void __set_task_id(const std::string& val);
 
             void __set_select_mode(const int8_t val);
 
-            void __set_master(const std::string &val);
+            void __set_master(const std::string& val);
 
-            void __set_peer_nodes_list(const std::vector<std::string> &val);
+            void __set_peer_nodes_list(const std::vector<std::string> & val);
 
-            void __set_server_specification(const std::string &val);
+            void __set_server_specification(const std::string& val);
 
             void __set_server_count(const int32_t val);
 
-            void __set_training_engine(const std::string &val);
+            void __set_training_engine(const std::string& val);
 
-            void __set_code_dir(const std::string &val);
+            void __set_code_dir(const std::string& val);
 
-            void __set_entry_file(const std::string &val);
+            void __set_entry_file(const std::string& val);
 
-            void __set_data_dir(const std::string &val);
+            void __set_data_dir(const std::string& val);
 
-            void __set_checkpoint_dir(const std::string &val);
+            void __set_checkpoint_dir(const std::string& val);
 
-            void __set_hyper_parameters(const std::string &val);
+            void __set_hyper_parameters(const std::string& val);
 
-            void __set_container_name(const std::string &val);
+            void __set_container_name(const std::string& val);
 
             void __set_memory(const int64_t val);
 
             void __set_memory_swap(const int64_t val);
 
-            bool operator==(const start_training_req_body &rhs) const {
+            bool operator == (const node_create_task_req_body & rhs) const
+            {
                 if (!(task_id == rhs.task_id))
                     return false;
                 if (!(select_mode == rhs.select_mode))
@@ -916,153 +917,489 @@ namespace matrix {
                     return false;
                 return true;
             }
-
-            bool operator!=(const start_training_req_body &rhs) const {
+            bool operator != (const node_create_task_req_body &rhs) const {
                 return !(*this == rhs);
             }
 
-            bool operator<(const start_training_req_body &) const;
+            bool operator < (const node_create_task_req_body & ) const;
 
-            uint32_t read(::apache::thrift::protocol::TProtocol *iprot);
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
-            uint32_t write(::apache::thrift::protocol::TProtocol *oprot) const;
-
-            virtual void printTo(std::ostream &out) const;
+            virtual void printTo(std::ostream& out) const;
         };
 
-        void swap(start_training_req_body &a, start_training_req_body &b);
+        void swap(node_create_task_req_body &a, node_create_task_req_body &b);
 
-        std::ostream &operator<<(std::ostream &out, const start_training_req_body &obj);
+        std::ostream& operator<<(std::ostream& out, const node_create_task_req_body& obj);
 
-        typedef struct _start_training_req__isset {
-            _start_training_req__isset() : body(false) {}
+        typedef struct _node_create_task_req__isset {
+            _node_create_task_req__isset() : body(false) {}
+            bool body :1;
+        } _node_create_task_req__isset;
 
-            bool body: 1;
-        } _start_training_req__isset;
-
-        class start_training_req : public virtual ::apache::thrift::TMsgBase {
+        class node_create_task_req : public virtual ::apache::thrift::TMsgBase {
         public:
-            start_training_req(const start_training_req &);
 
-            start_training_req &operator=(const start_training_req &);
-
-            start_training_req() {
+            node_create_task_req(const node_create_task_req&);
+            node_create_task_req& operator=(const node_create_task_req&);
+            node_create_task_req() {
             }
 
-            virtual ~start_training_req() throw();
+            virtual ~node_create_task_req() throw();
+            node_create_task_req_body body;
 
-            start_training_req_body body;
+            _node_create_task_req__isset __isset;
 
-            _start_training_req__isset __isset;
+            void __set_body(const node_create_task_req_body& val);
 
-            void __set_body(const start_training_req_body &val);
-
-            bool operator==(const start_training_req &rhs) const {
+            bool operator == (const node_create_task_req & rhs) const
+            {
                 if (!(body == rhs.body))
                     return false;
                 return true;
             }
-
-            bool operator!=(const start_training_req &rhs) const {
+            bool operator != (const node_create_task_req &rhs) const {
                 return !(*this == rhs);
             }
 
-            bool operator<(const start_training_req &) const;
+            bool operator < (const node_create_task_req & ) const;
 
-            uint32_t read(::apache::thrift::protocol::TProtocol *iprot);
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
-            uint32_t write(::apache::thrift::protocol::TProtocol *oprot) const;
-
-            virtual void printTo(std::ostream &out) const;
+            virtual void printTo(std::ostream& out) const;
         };
 
-        void swap(start_training_req &a, start_training_req &b);
+        void swap(node_create_task_req &a, node_create_task_req &b);
 
-        std::ostream &operator<<(std::ostream &out, const start_training_req &obj);
+        std::ostream& operator<<(std::ostream& out, const node_create_task_req& obj);
 
-        class stop_training_req_body : public virtual ::apache::thrift::TBase {
+        typedef struct _node_start_task_req_body__isset {
+            _node_start_task_req_body__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), container_name(false), memory(false), memory_swap(false) {}
+            bool master :1;
+            bool server_specification :1;
+            bool server_count :1;
+            bool hyper_parameters :1;
+            bool container_name :1;
+            bool memory :1;
+            bool memory_swap :1;
+        } _node_start_task_req_body__isset;
+
+        class node_start_task_req_body : public virtual ::apache::thrift::TBase {
         public:
-            stop_training_req_body(const stop_training_req_body &);
 
-            stop_training_req_body &operator=(const stop_training_req_body &);
-
-            stop_training_req_body() : task_id() {
+            node_start_task_req_body(const node_start_task_req_body&);
+            node_start_task_req_body& operator=(const node_start_task_req_body&);
+            node_start_task_req_body() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), container_name(), memory(0), memory_swap(0) {
             }
 
-            virtual ~stop_training_req_body() throw();
+            virtual ~node_start_task_req_body() throw();
+            std::string task_id;
+            int8_t select_mode;
+            std::string master;
+            std::vector<std::string>  peer_nodes_list;
+            std::string server_specification;
+            int32_t server_count;
+            std::string training_engine;
+            std::string code_dir;
+            std::string entry_file;
+            std::string data_dir;
+            std::string checkpoint_dir;
+            std::string hyper_parameters;
+            std::string container_name;
+            int64_t memory;
+            int64_t memory_swap;
 
+            _node_start_task_req_body__isset __isset;
+
+            void __set_task_id(const std::string& val);
+
+            void __set_select_mode(const int8_t val);
+
+            void __set_master(const std::string& val);
+
+            void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+            void __set_server_specification(const std::string& val);
+
+            void __set_server_count(const int32_t val);
+
+            void __set_training_engine(const std::string& val);
+
+            void __set_code_dir(const std::string& val);
+
+            void __set_entry_file(const std::string& val);
+
+            void __set_data_dir(const std::string& val);
+
+            void __set_checkpoint_dir(const std::string& val);
+
+            void __set_hyper_parameters(const std::string& val);
+
+            void __set_container_name(const std::string& val);
+
+            void __set_memory(const int64_t val);
+
+            void __set_memory_swap(const int64_t val);
+
+            bool operator == (const node_start_task_req_body & rhs) const
+            {
+                if (!(task_id == rhs.task_id))
+                    return false;
+                if (!(select_mode == rhs.select_mode))
+                    return false;
+                if (__isset.master != rhs.__isset.master)
+                    return false;
+                else if (__isset.master && !(master == rhs.master))
+                    return false;
+                if (!(peer_nodes_list == rhs.peer_nodes_list))
+                    return false;
+                if (__isset.server_specification != rhs.__isset.server_specification)
+                    return false;
+                else if (__isset.server_specification && !(server_specification == rhs.server_specification))
+                    return false;
+                if (__isset.server_count != rhs.__isset.server_count)
+                    return false;
+                else if (__isset.server_count && !(server_count == rhs.server_count))
+                    return false;
+                if (!(training_engine == rhs.training_engine))
+                    return false;
+                if (!(code_dir == rhs.code_dir))
+                    return false;
+                if (!(entry_file == rhs.entry_file))
+                    return false;
+                if (!(data_dir == rhs.data_dir))
+                    return false;
+                if (!(checkpoint_dir == rhs.checkpoint_dir))
+                    return false;
+                if (__isset.hyper_parameters != rhs.__isset.hyper_parameters)
+                    return false;
+                else if (__isset.hyper_parameters && !(hyper_parameters == rhs.hyper_parameters))
+                    return false;
+                if (__isset.container_name != rhs.__isset.container_name)
+                    return false;
+                else if (__isset.container_name && !(container_name == rhs.container_name))
+                    return false;
+                if (__isset.memory != rhs.__isset.memory)
+                    return false;
+                else if (__isset.memory && !(memory == rhs.memory))
+                    return false;
+                if (__isset.memory_swap != rhs.__isset.memory_swap)
+                    return false;
+                else if (__isset.memory_swap && !(memory_swap == rhs.memory_swap))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_start_task_req_body &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_start_task_req_body & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_start_task_req_body &a, node_start_task_req_body &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_start_task_req_body& obj);
+
+        typedef struct _node_start_task_req__isset {
+            _node_start_task_req__isset() : body(false) {}
+            bool body :1;
+        } _node_start_task_req__isset;
+
+        class node_start_task_req : public virtual ::apache::thrift::TMsgBase {
+        public:
+
+            node_start_task_req(const node_start_task_req&);
+            node_start_task_req& operator=(const node_start_task_req&);
+            node_start_task_req() {
+            }
+
+            virtual ~node_start_task_req() throw();
+            node_start_task_req_body body;
+
+            _node_start_task_req__isset __isset;
+
+            void __set_body(const node_start_task_req_body& val);
+
+            bool operator == (const node_start_task_req & rhs) const
+            {
+                if (!(body == rhs.body))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_start_task_req &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_start_task_req & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_start_task_req &a, node_start_task_req &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_start_task_req& obj);
+
+        typedef struct _node_restart_task_req_body__isset {
+            _node_restart_task_req_body__isset() : master(false), server_specification(false), server_count(false), hyper_parameters(false), container_name(false), memory(false), memory_swap(false) {}
+            bool master :1;
+            bool server_specification :1;
+            bool server_count :1;
+            bool hyper_parameters :1;
+            bool container_name :1;
+            bool memory :1;
+            bool memory_swap :1;
+        } _node_restart_task_req_body__isset;
+
+        class node_restart_task_req_body : public virtual ::apache::thrift::TBase {
+        public:
+
+            node_restart_task_req_body(const node_restart_task_req_body&);
+            node_restart_task_req_body& operator=(const node_restart_task_req_body&);
+            node_restart_task_req_body() : task_id(), select_mode(0), master(), server_specification(), server_count(0), training_engine(), code_dir(), entry_file(), data_dir(), checkpoint_dir(), hyper_parameters(), container_name(), memory(0), memory_swap(0) {
+            }
+
+            virtual ~node_restart_task_req_body() throw();
+            std::string task_id;
+            int8_t select_mode;
+            std::string master;
+            std::vector<std::string>  peer_nodes_list;
+            std::string server_specification;
+            int32_t server_count;
+            std::string training_engine;
+            std::string code_dir;
+            std::string entry_file;
+            std::string data_dir;
+            std::string checkpoint_dir;
+            std::string hyper_parameters;
+            std::string container_name;
+            int64_t memory;
+            int64_t memory_swap;
+
+            _node_restart_task_req_body__isset __isset;
+
+            void __set_task_id(const std::string& val);
+
+            void __set_select_mode(const int8_t val);
+
+            void __set_master(const std::string& val);
+
+            void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+            void __set_server_specification(const std::string& val);
+
+            void __set_server_count(const int32_t val);
+
+            void __set_training_engine(const std::string& val);
+
+            void __set_code_dir(const std::string& val);
+
+            void __set_entry_file(const std::string& val);
+
+            void __set_data_dir(const std::string& val);
+
+            void __set_checkpoint_dir(const std::string& val);
+
+            void __set_hyper_parameters(const std::string& val);
+
+            void __set_container_name(const std::string& val);
+
+            void __set_memory(const int64_t val);
+
+            void __set_memory_swap(const int64_t val);
+
+            bool operator == (const node_restart_task_req_body & rhs) const
+            {
+                if (!(task_id == rhs.task_id))
+                    return false;
+                if (!(select_mode == rhs.select_mode))
+                    return false;
+                if (__isset.master != rhs.__isset.master)
+                    return false;
+                else if (__isset.master && !(master == rhs.master))
+                    return false;
+                if (!(peer_nodes_list == rhs.peer_nodes_list))
+                    return false;
+                if (__isset.server_specification != rhs.__isset.server_specification)
+                    return false;
+                else if (__isset.server_specification && !(server_specification == rhs.server_specification))
+                    return false;
+                if (__isset.server_count != rhs.__isset.server_count)
+                    return false;
+                else if (__isset.server_count && !(server_count == rhs.server_count))
+                    return false;
+                if (!(training_engine == rhs.training_engine))
+                    return false;
+                if (!(code_dir == rhs.code_dir))
+                    return false;
+                if (!(entry_file == rhs.entry_file))
+                    return false;
+                if (!(data_dir == rhs.data_dir))
+                    return false;
+                if (!(checkpoint_dir == rhs.checkpoint_dir))
+                    return false;
+                if (__isset.hyper_parameters != rhs.__isset.hyper_parameters)
+                    return false;
+                else if (__isset.hyper_parameters && !(hyper_parameters == rhs.hyper_parameters))
+                    return false;
+                if (__isset.container_name != rhs.__isset.container_name)
+                    return false;
+                else if (__isset.container_name && !(container_name == rhs.container_name))
+                    return false;
+                if (__isset.memory != rhs.__isset.memory)
+                    return false;
+                else if (__isset.memory && !(memory == rhs.memory))
+                    return false;
+                if (__isset.memory_swap != rhs.__isset.memory_swap)
+                    return false;
+                else if (__isset.memory_swap && !(memory_swap == rhs.memory_swap))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_restart_task_req_body &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_restart_task_req_body & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_restart_task_req_body &a, node_restart_task_req_body &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_restart_task_req_body& obj);
+
+        typedef struct _node_restart_task_req__isset {
+            _node_restart_task_req__isset() : body(false) {}
+            bool body :1;
+        } _node_restart_task_req__isset;
+
+        class node_restart_task_req : public virtual ::apache::thrift::TMsgBase {
+        public:
+
+            node_restart_task_req(const node_restart_task_req&);
+            node_restart_task_req& operator=(const node_restart_task_req&);
+            node_restart_task_req() {
+            }
+
+            virtual ~node_restart_task_req() throw();
+            node_restart_task_req_body body;
+
+            _node_restart_task_req__isset __isset;
+
+            void __set_body(const node_restart_task_req_body& val);
+
+            bool operator == (const node_restart_task_req & rhs) const
+            {
+                if (!(body == rhs.body))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_restart_task_req &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_restart_task_req & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_restart_task_req &a, node_restart_task_req &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_restart_task_req& obj);
+
+        class node_stop_task_req_body : public virtual ::apache::thrift::TBase {
+        public:
+
+            node_stop_task_req_body(const node_stop_task_req_body&);
+            node_stop_task_req_body& operator=(const node_stop_task_req_body&);
+            node_stop_task_req_body() : task_id() {
+            }
+
+            virtual ~node_stop_task_req_body() throw();
             std::string task_id;
 
-            void __set_task_id(const std::string &val);
+            void __set_task_id(const std::string& val);
 
-            bool operator==(const stop_training_req_body &rhs) const {
+            bool operator == (const node_stop_task_req_body & rhs) const
+            {
                 if (!(task_id == rhs.task_id))
                     return false;
                 return true;
             }
-
-            bool operator!=(const stop_training_req_body &rhs) const {
+            bool operator != (const node_stop_task_req_body &rhs) const {
                 return !(*this == rhs);
             }
 
-            bool operator<(const stop_training_req_body &) const;
+            bool operator < (const node_stop_task_req_body & ) const;
 
-            uint32_t read(::apache::thrift::protocol::TProtocol *iprot);
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
-            uint32_t write(::apache::thrift::protocol::TProtocol *oprot) const;
-
-            virtual void printTo(std::ostream &out) const;
+            virtual void printTo(std::ostream& out) const;
         };
 
-        void swap(stop_training_req_body &a, stop_training_req_body &b);
+        void swap(node_stop_task_req_body &a, node_stop_task_req_body &b);
 
-        std::ostream &operator<<(std::ostream &out, const stop_training_req_body &obj);
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_req_body& obj);
 
-        typedef struct _stop_training_req__isset {
-            _stop_training_req__isset() : body(false) {}
+        typedef struct _node_stop_task_req__isset {
+            _node_stop_task_req__isset() : body(false) {}
+            bool body :1;
+        } _node_stop_task_req__isset;
 
-            bool body: 1;
-        } _stop_training_req__isset;
-
-        class stop_training_req : public virtual ::apache::thrift::TMsgBase {
+        class node_stop_task_req : public virtual ::apache::thrift::TMsgBase {
         public:
-            stop_training_req(const stop_training_req &);
 
-            stop_training_req &operator=(const stop_training_req &);
-
-            stop_training_req() {
+            node_stop_task_req(const node_stop_task_req&);
+            node_stop_task_req& operator=(const node_stop_task_req&);
+            node_stop_task_req() {
             }
 
-            virtual ~stop_training_req() throw();
+            virtual ~node_stop_task_req() throw();
+            node_stop_task_req_body body;
 
-            stop_training_req_body body;
+            _node_stop_task_req__isset __isset;
 
-            _stop_training_req__isset __isset;
+            void __set_body(const node_stop_task_req_body& val);
 
-            void __set_body(const stop_training_req_body &val);
-
-            bool operator==(const stop_training_req &rhs) const {
+            bool operator == (const node_stop_task_req & rhs) const
+            {
                 if (!(body == rhs.body))
                     return false;
                 return true;
             }
-
-            bool operator!=(const stop_training_req &rhs) const {
+            bool operator != (const node_stop_task_req &rhs) const {
                 return !(*this == rhs);
             }
 
-            bool operator<(const stop_training_req &) const;
+            bool operator < (const node_stop_task_req & ) const;
 
-            uint32_t read(::apache::thrift::protocol::TProtocol *iprot);
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
-            uint32_t write(::apache::thrift::protocol::TProtocol *oprot) const;
-
-            virtual void printTo(std::ostream &out) const;
+            virtual void printTo(std::ostream& out) const;
         };
 
-        void swap(stop_training_req &a, stop_training_req &b);
+        void swap(node_stop_task_req &a, node_stop_task_req &b);
 
-        std::ostream &operator<<(std::ostream &out, const stop_training_req &obj);
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_req& obj);
+
 
         class list_training_req_body : public virtual ::apache::thrift::TBase {
         public:

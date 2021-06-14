@@ -17,19 +17,14 @@ std::set<char> char_filter = {
 static std::string task_end_str = "task completed: ";
 static std::string task_sh_end_str = "end to exec dbc_task.sh";
 
-cmd_logs_resp::series cmd_logs_resp::m_series;
-
-cmd_show_resp::cmd_show_resp() :
-        op(OP_SHOW_UNKNOWN), err(""), sort("gpu") {
-
-}
+cmd_task_logs_rsp::series cmd_task_logs_rsp::m_series;
 
 /**
  *
  * @param s, one line of log text
  * @return timestamp in string or empty string if no valid timestamp found
  */
-std::string cmd_logs_resp::get_log_date(std::string &s) {
+std::string cmd_task_logs_rsp::get_log_date(std::string &s) {
     // timestamp pattern: 2018-08-14T13:
     if (s.length() > TIMESTAMP_STR_LENGTH && (s[0] == '2' && s[4] == '-' && s[7] == '-')) {
         return s.substr(0, TIMESTAMP_STR_LENGTH);
@@ -43,7 +38,7 @@ std::string cmd_logs_resp::get_log_date(std::string &s) {
  * @param s, one line of log text
  * @return true if it is a image download hash, otherwise return false
  */
-bool cmd_logs_resp::is_image_download_str(std::string &s) {
+bool cmd_task_logs_rsp::is_image_download_str(std::string &s) {
     // image download prefix
     // c6c4b840310b: Verifying Checksum
     // c6c4b840310b: Download complete
@@ -69,7 +64,7 @@ bool cmd_logs_resp::is_image_download_str(std::string &s) {
  * @param s logs text
  * @return  hash value or empty string if no hash found
  */
-std::string cmd_logs_resp::get_training_result_hash_from_log(std::string &s) {
+std::string cmd_task_logs_rsp::get_training_result_hash_from_log(std::string &s) {
 
     // check if task exec end
 
@@ -98,7 +93,7 @@ std::string cmd_logs_resp::get_training_result_hash_from_log(std::string &s) {
 
 }
 
-std::string cmd_logs_resp::get_value_from_log(std::string prefix) {
+std::string cmd_task_logs_rsp::get_value_from_log(std::string prefix) {
 
 //            std::string prefix = "pwd:";
 
@@ -122,7 +117,7 @@ std::string cmd_logs_resp::get_value_from_log(std::string prefix) {
 
 }
 
-void cmd_logs_resp::format_output_segment() {
+void cmd_task_logs_rsp::format_output_segment() {
     if (E_SUCCESS != result) {
         cout << result_info << endl;
         return;
@@ -149,7 +144,7 @@ void cmd_logs_resp::format_output_segment() {
     cout << "\n";
 }
 
-void cmd_logs_resp::format_output_series() {
+void cmd_task_logs_rsp::format_output_series() {
     if (E_SUCCESS != result) {
         cout << result_info << endl;
         return;
@@ -235,7 +230,7 @@ void cmd_logs_resp::format_output_series() {
     }
 }
 
-void cmd_logs_resp::format_output() {
+void cmd_task_logs_rsp::format_output() {
     // download taining result
     if (sub_op == std::string("result")) {
         download_training_result();
@@ -254,7 +249,7 @@ void cmd_logs_resp::format_output() {
 /**
  *  extract training result hash from log and then download to local disk.
  */
-void cmd_logs_resp::download_training_result() {
+void cmd_task_logs_rsp::download_training_result() {
     auto n = peer_node_logs.size();
 
     if (n == 0) {
@@ -285,11 +280,16 @@ void cmd_logs_resp::download_training_result() {
     system(cmd_.c_str());
 }
 
-void cmd_show_resp::error(std::string err_) {
+cmd_list_node_rsp::cmd_list_node_rsp() :
+        op(OP_SHOW_UNKNOWN), err(""), sort("gpu") {
+
+}
+
+void cmd_list_node_rsp::error(std::string err_) {
     err = err_;
 }
 
-std::string cmd_show_resp::to_string(std::vector<std::string> in) {
+std::string cmd_list_node_rsp::to_string(std::vector<std::string> in) {
     std::string out = "";
     for (auto &item: in) {
         if (out.length()) {
@@ -306,7 +306,7 @@ std::string cmd_show_resp::to_string(std::vector<std::string> in) {
  * @param t time in second
  * @return  <day>:<hour>.<minute>
  */
-std::string cmd_show_resp::to_time_str(time_t t) {
+std::string cmd_list_node_rsp::to_time_str(time_t t) {
     if (t == 0) {
         return "N/A";
     }
@@ -342,7 +342,7 @@ std::string cmd_show_resp::to_time_str(time_t t) {
     return std::string(p);
 }
 
-void cmd_show_resp::format_service_list() {
+void cmd_list_node_rsp::format_service_list() {
     dbc::console_printer printer;
 
     printer(dbc::LEFT_ALIGN, 6)(dbc::LEFT_ALIGN, 48)(dbc::LEFT_ALIGN, 17)(dbc::LEFT_ALIGN, 12)(dbc::LEFT_ALIGN, 32)(dbc::LEFT_ALIGN, 12)(
@@ -404,7 +404,7 @@ void cmd_show_resp::format_service_list() {
 
 }
 
-void cmd_show_resp::format_node_info() {
+void cmd_list_node_rsp::format_node_info() {
 
     auto it = kvs.begin();
     //cout << "node id: " << o_node_id << endl;
@@ -458,7 +458,7 @@ void cmd_show_resp::format_node_info() {
 
 }
 
-void cmd_show_resp::format_output() {
+void cmd_list_node_rsp::format_output() {
     if (err != "") {
         cout << err << endl;
         return;
@@ -476,7 +476,7 @@ void cmd_show_resp::format_output() {
     }
 }
 
-void cmd_list_training_resp::format_output_detail() {
+void cmd_list_task_rsp::format_output_detail() {
     if (E_SUCCESS != result) {
         cout << result_info << endl;
         return;
@@ -510,7 +510,7 @@ void cmd_list_training_resp::format_output_detail() {
     }
 }
 
-void cmd_list_training_resp::format_output() {
+void cmd_list_task_rsp::format_output() {
     if (E_SUCCESS != result) {
         cout << result_info << endl;
         return;

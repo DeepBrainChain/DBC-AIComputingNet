@@ -105,7 +105,7 @@ namespace ai {
         protected:
             int32_t init_db(const std::string &db_name);
 
-            int32_t exec_task();
+            int32_t exec_task(const std::shared_ptr<ai_training_task>& task);
 
             int32_t change_gpu_id(std::shared_ptr<ai_training_task> task);
 

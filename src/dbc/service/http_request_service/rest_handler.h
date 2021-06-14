@@ -12,8 +12,8 @@
 #define REST_HANDLER_H
 
 #include "http_server.h"
-#include "api_call_handler.h"
 #include "api_call.h"
+#include "message.h"
 
 using namespace matrix::core;
 
@@ -23,45 +23,63 @@ namespace dbc {
 
     std::shared_ptr<message> rest_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_task_list(const HTTP_REQUEST_PTR &httpReq, const std::string &path);
+    // create
+    std::shared_ptr<message> rest_create_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_task_info(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    int32_t on_cmd_create_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    int32_t on_list_training_resp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+    // start <task_id>
+    std::shared_ptr<message> rest_start_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_task_start(const HTTP_REQUEST_PTR &httpReq, const std::string &path);
+    int32_t on_cmd_start_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    int32_t on_start_training_resp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+    // restart <task_id>
+    std::shared_ptr<message> rest_restart_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_task_stop(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    int32_t on_cmd_restart_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    std::shared_ptr<message> rest_task_restart(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    // stop <task_id>
+    std::shared_ptr<message> rest_stop_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    int32_t on_stop_training_resp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+    int32_t on_cmd_stop_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
+    // clean
+    std::shared_ptr<message> rest_clean_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+
+    int32_t on_cmd_clean_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+
+    // result / trace
     std::shared_ptr<message> rest_task_result(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_log(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    std::shared_ptr<message> rest_task_trace(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    int32_t on_logs_resp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+    int32_t on_cmd_task_logs_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    std::shared_ptr<message> rest_api_version(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    // list
+    std::shared_ptr<message> rest_list_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_stat(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    std::shared_ptr<message> rest_show_task_info(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_mining_nodes(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    int32_t on_cmd_list_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    int32_t on_show_resp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
-
+    // peers
     std::shared_ptr<message> rest_peers(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    int32_t on_get_peer_nodes_resp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+    int32_t on_cmd_get_peer_nodes_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    std::shared_ptr<message> rest_task_clean(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    // /stat/
+    std::shared_ptr<message> rest_stat(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
+    // /mining_nodes/
+    std::shared_ptr<message> rest_mining_nodes(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+
+    int32_t on_list_node_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+
+    // /config/
     std::shared_ptr<message> rest_config(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    int32_t on_task_clean(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+    // /
+    std::shared_ptr<message> rest_api_version(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
 }
 
 #endif

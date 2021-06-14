@@ -1,4 +1,4 @@
-#ifndef DBC_MESSAGE_H
+#ifndef DBC_CMD_MESSAGE_H
 #define DBC_CMD_MESSAGE_H
 
 #include "common/comm.h"
@@ -21,75 +21,38 @@ public:
     virtual void format_output() {}
 };
 
-class cmd_get_peer_nodes_resp_formater : public outputter {
+// create task
+class cmd_create_task_req : public matrix::core::msg_base {
 public:
-    cmd_get_peer_nodes_resp_formater(std::shared_ptr<cmd_get_peer_nodes_resp> data) {
-        m_data = data;
-    };
-
-    void format_output(matrix::service_core::get_peers_flag flag) {
-        auto v = m_data.get();
-        if (v == nullptr) {
-            return;
-        }
-
-        dbc::console_printer printer;
-        if (matrix::service_core::flag_active == flag) {
-            //printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
-
-            //printer << matrix::core::init << "peer_id" <<  "service_list" << matrix::core::endl;
-
-            printer(dbc::LEFT_ALIGN, 32)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 48);
-
-            printer << dbc::init << "ip" << "port" << "nt" << "peer_id" << dbc::endl;
-
-        } else if (matrix::service_core::flag_global == flag) {
-            printer(dbc::LEFT_ALIGN, 32)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 30)(dbc::LEFT_ALIGN, 48);
-
-            printer << dbc::init << "ip" << "port" << "nt" << "status" << "peer_id"
-                    << dbc::endl;
-        }
-
-        auto it = v->peer_nodes_list.begin();
-        for (; it != v->peer_nodes_list.end(); ++it) {
-            if (matrix::service_core::flag_active == flag) {
-                //std::string svc_list;
-                //for (auto its = it->service_list.begin(); its != it->service_list.end(); ++its)
-                //{
-                //    svc_list += *its;
-                //    if (its + 1 != it->service_list.end())
-                //    {
-                //        svc_list += "|";
-                //    }
-                //}
-                printer << dbc::init << string_util::fuzz_ip(
-                        it->addr.ip) << it->addr.port << (int32_t) it->node_type
-                        //<< svc_list
-                        << it->peer_node_id << dbc::endl;
-            } else if (matrix::service_core::flag_global == flag) {
-                printer << dbc::init << string_util::fuzz_ip(
-                        it->addr.ip) << it->addr.port << (int32_t) it->node_type
-                        << matrix::service_core::net_state_2_string(
-                                it->net_st) << (it->peer_node_id.empty() ? "N/A" : it->peer_node_id)
-                        << dbc::endl;
-            }
-        }
-    }
-
-private:
-    std::shared_ptr<cmd_get_peer_nodes_resp> m_data;
-};
-
-class cmd_start_training_req : public matrix::core::msg_base {
-public:
-    std::string task_file_path;
-
-    std::map<std::string, std::string> parameters;
-
     bpo::variables_map vm;
 };
 
-class cmd_start_training_resp : public matrix::core::msg_base, public outputter {
+class cmd_create_task_rsp : public matrix::core::msg_base, public outputter {
+public:
+    int32_t result;
+    std::string result_info;
+
+    ai::dbc::cmd_task_info task_info;
+
+    void format_output() override {
+        if (E_SUCCESS != result) {
+            cout << result_info << endl;
+            return;
+        }
+
+        cout << "task id: " << task_info.task_id
+             << "       create_time: " << time_util::time_2_str(task_info.create_time)
+             << endl;
+    }
+};
+
+// start task
+class cmd_start_task_req : public matrix::core::msg_base {
+public:
+    bpo::variables_map vm;
+};
+
+class cmd_start_task_rsp : public matrix::core::msg_base, public outputter {
 public:
     int32_t result;
     std::string result_info;
@@ -107,12 +70,37 @@ public:
     }
 };
 
-class cmd_stop_training_req : public matrix::core::msg_base {
+// restart task
+class cmd_restart_task_req : public matrix::core::msg_base {
+public:
+    bpo::variables_map vm;
+};
+
+class cmd_restart_task_rsp : public matrix::core::msg_base, public outputter {
+public:
+    int32_t result;
+    std::string result_info;
+
+    ai::dbc::cmd_task_info task_info;
+
+    void format_output() {
+        if (E_SUCCESS != result) {
+            cout << result_info << endl;
+            return;
+        }
+
+        cout << "task id: " << task_info.task_id << "       create_time: " << time_util::time_2_str(
+                task_info.create_time) << endl;
+    }
+};
+
+// stop
+class cmd_stop_task_req : public matrix::core::msg_base {
 public:
     std::string task_id;
 };
 
-class cmd_stop_training_resp : public matrix::core::msg_base, public outputter {
+class cmd_stop_task_rsp : public matrix::core::msg_base, public outputter {
 public:
     int32_t result;
     std::string result_info;
@@ -127,13 +115,14 @@ public:
     }
 };
 
-class cmd_task_clean_req : public matrix::core::msg_base {
+// clean
+class cmd_clean_task_req : public matrix::core::msg_base {
 public:
     std::string task_id;
     bool clean_all;
 };
 
-class cmd_task_clean_resp : public matrix::core::msg_base, public outputter {
+class cmd_clean_task_rsp : public matrix::core::msg_base, public outputter {
 public:
     int32_t result;
     std::string result_info;
@@ -148,17 +137,16 @@ public:
     }
 };
 
-class cmd_list_training_req : public matrix::core::msg_base {
+// list
+class cmd_list_task_req : public matrix::core::msg_base {
 public:
-
     int8_t list_type;                                   //0: list all tasks; 1: list specific tasks
 
     std::list<std::string> task_list;
 };
 
-class cmd_list_training_resp : public matrix::core::msg_base, public outputter {
+class cmd_list_task_rsp : public matrix::core::msg_base, public outputter {
 public:
-
     int32_t result;
     std::string result_info;
 
@@ -167,10 +155,10 @@ public:
     void format_output();
 
     void format_output_detail();
-
 };
 
-class cmd_logs_req : public matrix::core::msg_base {
+// log
+class cmd_task_logs_req : public matrix::core::msg_base {
 public:
 
     std::string task_id;
@@ -187,7 +175,7 @@ public:
 
 };
 
-class cmd_logs_resp : public matrix::core::msg_base, public outputter {
+class cmd_task_logs_rsp : public matrix::core::msg_base, public outputter {
 public:
 
     int32_t result;
@@ -244,7 +232,68 @@ private:
 
 };
 
-class cmd_show_req : public matrix::core::msg_base {
+// peers
+class cmd_get_peer_nodes_resp_formater : public outputter {
+public:
+    cmd_get_peer_nodes_resp_formater(std::shared_ptr<cmd_get_peer_nodes_rsp> data) {
+        m_data = data;
+    };
+
+    void format_output(matrix::service_core::get_peers_flag flag) {
+        auto v = m_data.get();
+        if (v == nullptr) {
+            return;
+        }
+
+        dbc::console_printer printer;
+        if (matrix::service_core::flag_active == flag) {
+            //printer(LEFT_ALIGN, 64)(LEFT_ALIGN, 32)(LEFT_ALIGN, 10)(LEFT_ALIGN, 64);
+
+            //printer << matrix::core::init << "peer_id" <<  "service_list" << matrix::core::endl;
+
+            printer(dbc::LEFT_ALIGN, 32)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 48);
+
+            printer << dbc::init << "ip" << "port" << "nt" << "peer_id" << dbc::endl;
+
+        } else if (matrix::service_core::flag_global == flag) {
+            printer(dbc::LEFT_ALIGN, 32)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 10)(dbc::LEFT_ALIGN, 30)(dbc::LEFT_ALIGN, 48);
+
+            printer << dbc::init << "ip" << "port" << "nt" << "status" << "peer_id"
+                    << dbc::endl;
+        }
+
+        auto it = v->peer_nodes_list.begin();
+        for (; it != v->peer_nodes_list.end(); ++it) {
+            if (matrix::service_core::flag_active == flag) {
+                //std::string svc_list;
+                //for (auto its = it->service_list.begin(); its != it->service_list.end(); ++its)
+                //{
+                //    svc_list += *its;
+                //    if (its + 1 != it->service_list.end())
+                //    {
+                //        svc_list += "|";
+                //    }
+                //}
+                printer << dbc::init << string_util::fuzz_ip(
+                        it->addr.ip) << it->addr.port << (int32_t) it->node_type
+                        //<< svc_list
+                        << it->peer_node_id << dbc::endl;
+            } else if (matrix::service_core::flag_global == flag) {
+                printer << dbc::init << string_util::fuzz_ip(
+                        it->addr.ip) << it->addr.port << (int32_t) it->node_type
+                        << matrix::service_core::net_state_2_string(
+                                it->net_st) << (it->peer_node_id.empty() ? "N/A" : it->peer_node_id)
+                        << dbc::endl;
+            }
+        }
+    }
+
+private:
+    std::shared_ptr<cmd_get_peer_nodes_rsp> m_data;
+};
+
+// mining_nodes
+class cmd_list_node_req : public matrix::core::msg_base {
 public:
     std::string o_node_id;
     std::string d_node_id;
@@ -257,7 +306,7 @@ public:
     int32_t num_lines;
 
 public:
-    cmd_show_req() :
+    cmd_list_node_req() :
             op(OP_SHOW_UNKNOWN), sort("gpu"), num_lines(1000) {
 
     }
@@ -278,7 +327,7 @@ public:
     }
 };
 
-class cmd_show_resp : public matrix::core::msg_base, public outputter {
+class cmd_list_node_rsp : public matrix::core::msg_base, public outputter {
 public:
     std::string o_node_id;
     std::string d_node_id;
@@ -294,7 +343,7 @@ public:
 
 public:
 
-    cmd_show_resp();
+    cmd_list_node_rsp();
 
     void error(std::string err_);
 

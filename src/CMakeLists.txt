@@ -14,13 +14,12 @@ INCLUDE_DIRECTORIES(
         ${SRC_PATH}/dbc/common
         ${SRC_PATH}/dbc/task
         ${SRC_PATH}/dbc/db
-        ${SRC_PATH}/dbc/network
-        ${SRC_PATH}/dbc/network/p2pnet
         ${SRC_PATH}/dbc/service
         ${SRC_PATH}/dbc/service/message
-        ${SRC_PATH}/dbc/service/cmd_line_service
         ${SRC_PATH}/dbc/service/cmd_request_service
         ${SRC_PATH}/dbc/service/http_request_service
+        ${SRC_PATH}/dbc/service/peer_request_service
+        ${SRC_PATH}/dbc/service/peer_request_service/p2pnet
         ${SRC_PATH}/dbc/service/node_request_service
         ${SRC_PATH}/dbc/service/node_request_service/task_schedule
         ${SRC_PATH}/dbc/service/node_info_exchange
@@ -67,13 +66,12 @@ aux_source_directory(${SRC_PATH}/dbc dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/common dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/task dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/db dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/network dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/network/p2pnet dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service/message dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/cmd_line_service dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service/cmd_request_service dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service/http_request_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/peer_request_service dbc_src_files)
+aux_source_directory(${SRC_PATH}/dbc/service/peer_request_service/p2pnet dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service/node_request_service dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service/node_request_service/task_schedule dbc_src_files)
 aux_source_directory(${SRC_PATH}/dbc/service/node_info_exchange dbc_src_files)

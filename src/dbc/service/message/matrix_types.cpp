@@ -1770,85 +1770,82 @@ namespace matrix {
             out << ")";
         }
 
-
-        start_training_req_body::~start_training_req_body() throw() {
+        node_create_task_req_body::~node_create_task_req_body() throw() {
         }
 
-
-        void start_training_req_body::__set_task_id(const std::string &val) {
+        void node_create_task_req_body::__set_task_id(const std::string& val) {
             this->task_id = val;
         }
 
-        void start_training_req_body::__set_select_mode(const int8_t val) {
+        void node_create_task_req_body::__set_select_mode(const int8_t val) {
             this->select_mode = val;
         }
 
-        void start_training_req_body::__set_master(const std::string &val) {
+        void node_create_task_req_body::__set_master(const std::string& val) {
             this->master = val;
             __isset.master = true;
         }
 
-        void start_training_req_body::__set_peer_nodes_list(const std::vector<std::string> &val) {
+        void node_create_task_req_body::__set_peer_nodes_list(const std::vector<std::string> & val) {
             this->peer_nodes_list = val;
         }
 
-        void start_training_req_body::__set_server_specification(const std::string &val) {
+        void node_create_task_req_body::__set_server_specification(const std::string& val) {
             this->server_specification = val;
             __isset.server_specification = true;
         }
 
-        void start_training_req_body::__set_server_count(const int32_t val) {
+        void node_create_task_req_body::__set_server_count(const int32_t val) {
             this->server_count = val;
             __isset.server_count = true;
         }
 
-        void start_training_req_body::__set_training_engine(const std::string &val) {
+        void node_create_task_req_body::__set_training_engine(const std::string& val) {
             this->training_engine = val;
         }
 
-        void start_training_req_body::__set_code_dir(const std::string &val) {
+        void node_create_task_req_body::__set_code_dir(const std::string& val) {
             this->code_dir = val;
         }
 
-        void start_training_req_body::__set_entry_file(const std::string &val) {
+        void node_create_task_req_body::__set_entry_file(const std::string& val) {
             this->entry_file = val;
         }
 
-        void start_training_req_body::__set_data_dir(const std::string &val) {
+        void node_create_task_req_body::__set_data_dir(const std::string& val) {
             this->data_dir = val;
         }
 
-        void start_training_req_body::__set_checkpoint_dir(const std::string &val) {
+        void node_create_task_req_body::__set_checkpoint_dir(const std::string& val) {
             this->checkpoint_dir = val;
         }
 
-        void start_training_req_body::__set_hyper_parameters(const std::string &val) {
+        void node_create_task_req_body::__set_hyper_parameters(const std::string& val) {
             this->hyper_parameters = val;
             __isset.hyper_parameters = true;
         }
 
-        void start_training_req_body::__set_container_name(const std::string &val) {
+        void node_create_task_req_body::__set_container_name(const std::string& val) {
             this->container_name = val;
             __isset.container_name = true;
         }
 
-        void start_training_req_body::__set_memory(const int64_t val) {
+        void node_create_task_req_body::__set_memory(const int64_t val) {
             this->memory = val;
             __isset.memory = true;
         }
 
-        void start_training_req_body::__set_memory_swap(const int64_t val) {
+        void node_create_task_req_body::__set_memory_swap(const int64_t val) {
             this->memory_swap = val;
             __isset.memory_swap = true;
         }
-
-        std::ostream &operator<<(std::ostream &out, const start_training_req_body &obj) {
+        std::ostream& operator<<(std::ostream& out, const node_create_task_req_body& obj)
+        {
             obj.printTo(out);
             return out;
         }
 
-
-        uint32_t start_training_req_body::read(::apache::thrift::protocol::TProtocol *iprot) {
+        uint32_t node_create_task_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
             ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
             uint32_t xfer = 0;
@@ -1869,12 +1866,14 @@ namespace matrix {
             bool isset_data_dir = false;
             bool isset_checkpoint_dir = false;
 
-            while (true) {
+            while (true)
+            {
                 xfer += iprot->readFieldBegin(fname, ftype, fid);
                 if (ftype == ::apache::thrift::protocol::T_STOP) {
                     break;
                 }
-                switch (fid) {
+                switch (fid)
+                {
                     case 1:
                         if (ftype == ::apache::thrift::protocol::T_STRING) {
                             xfer += iprot->readString(this->task_id);
@@ -1908,7 +1907,8 @@ namespace matrix {
                                 xfer += iprot->readListBegin(_etype51, _size48);
                                 this->peer_nodes_list.resize(_size48);
                                 uint32_t _i52;
-                                for (_i52 = 0; _i52 < _size48; ++_i52) {
+                                for (_i52 = 0; _i52 < _size48; ++_i52)
+                                {
                                     xfer += iprot->readString(this->peer_nodes_list[_i52]);
                                 }
                                 xfer += iprot->readListEnd();
@@ -2034,10 +2034,10 @@ namespace matrix {
             return xfer;
         }
 
-        uint32_t start_training_req_body::write(::apache::thrift::protocol::TProtocol *oprot) const {
+        uint32_t node_create_task_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
             uint32_t xfer = 0;
             ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-            xfer += oprot->writeStructBegin("start_training_req_body");
+            xfer += oprot->writeStructBegin("node_create_task_req_body");
 
             xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
             xfer += oprot->writeString(this->task_id);
@@ -2054,10 +2054,10 @@ namespace matrix {
             }
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 4);
             {
-                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING,
-                                              static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string>::const_iterator _iter53;
-                for (_iter53 = this->peer_nodes_list.begin(); _iter53 != this->peer_nodes_list.end(); ++_iter53) {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+                std::vector<std::string> ::const_iterator _iter53;
+                for (_iter53 = this->peer_nodes_list.begin(); _iter53 != this->peer_nodes_list.end(); ++_iter53)
+                {
                     xfer += oprot->writeString((*_iter53));
                 }
                 xfer += oprot->writeListEnd();
@@ -2119,7 +2119,7 @@ namespace matrix {
             return xfer;
         }
 
-        void swap(start_training_req_body &a, start_training_req_body &b) {
+        void swap(node_create_task_req_body &a, node_create_task_req_body &b) {
             using ::std::swap;
             swap(a.task_id, b.task_id);
             swap(a.select_mode, b.select_mode);
@@ -2139,7 +2139,7 @@ namespace matrix {
             swap(a.__isset, b.__isset);
         }
 
-        start_training_req_body::start_training_req_body(const start_training_req_body &other54) {
+        node_create_task_req_body::node_create_task_req_body(const node_create_task_req_body& other54) {
             task_id = other54.task_id;
             select_mode = other54.select_mode;
             master = other54.master;
@@ -2157,8 +2157,7 @@ namespace matrix {
             memory_swap = other54.memory_swap;
             __isset = other54.__isset;
         }
-
-        start_training_req_body &start_training_req_body::operator=(const start_training_req_body &other55) {
+        node_create_task_req_body& node_create_task_req_body::operator=(const node_create_task_req_body& other55) {
             task_id = other55.task_id;
             select_mode = other55.select_mode;
             master = other55.master;
@@ -2177,51 +2176,40 @@ namespace matrix {
             __isset = other55.__isset;
             return *this;
         }
-
-        void start_training_req_body::printTo(std::ostream &out) const {
+        void node_create_task_req_body::printTo(std::ostream& out) const {
             using ::apache::thrift::to_string;
-            out << "start_training_req_body(";
+            out << "node_create_task_req_body(";
             out << "task_id=" << to_string(task_id);
             out << ", " << "select_mode=" << to_string(select_mode);
-            out << ", " << "master=";
-            (__isset.master ? (out << to_string(master)) : (out << "<null>"));
+            out << ", " << "master="; (__isset.master ? (out << to_string(master)) : (out << "<null>"));
             out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
-            out << ", " << "server_specification=";
-            (__isset.server_specification ? (out << to_string(server_specification)) : (out << "<null>"));
-            out << ", " << "server_count=";
-            (__isset.server_count ? (out << to_string(server_count)) : (out << "<null>"));
+            out << ", " << "server_specification="; (__isset.server_specification ? (out << to_string(server_specification)) : (out << "<null>"));
+            out << ", " << "server_count="; (__isset.server_count ? (out << to_string(server_count)) : (out << "<null>"));
             out << ", " << "training_engine=" << to_string(training_engine);
             out << ", " << "code_dir=" << to_string(code_dir);
             out << ", " << "entry_file=" << to_string(entry_file);
             out << ", " << "data_dir=" << to_string(data_dir);
             out << ", " << "checkpoint_dir=" << to_string(checkpoint_dir);
-            out << ", " << "hyper_parameters=";
-            (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
-            out << ", " << "container_name=";
-            (__isset.container_name ? (out << to_string(container_name)) : (out << "<null>"));
-            out << ", " << "memory=";
-            (__isset.memory ? (out << to_string(memory)) : (out << "<null>"));
-            out << ", " << "memory_swap=";
-            (__isset.memory_swap ? (out << to_string(memory_swap)) : (out << "<null>"));
+            out << ", " << "hyper_parameters="; (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
+            out << ", " << "container_name="; (__isset.container_name ? (out << to_string(container_name)) : (out << "<null>"));
+            out << ", " << "memory="; (__isset.memory ? (out << to_string(memory)) : (out << "<null>"));
+            out << ", " << "memory_swap="; (__isset.memory_swap ? (out << to_string(memory_swap)) : (out << "<null>"));
             out << ")";
         }
 
-
-        start_training_req::~start_training_req() throw() {
+        node_create_task_req::~node_create_task_req() throw() {
         }
 
-
-        void start_training_req::__set_body(const start_training_req_body &val) {
+        void node_create_task_req::__set_body(const node_create_task_req_body& val) {
             this->body = val;
         }
-
-        std::ostream &operator<<(std::ostream &out, const start_training_req &obj) {
+        std::ostream& operator<<(std::ostream& out, const node_create_task_req& obj)
+        {
             obj.printTo(out);
             return out;
         }
 
-
-        uint32_t start_training_req::read(::apache::thrift::protocol::TProtocol *iprot) {
+        uint32_t node_create_task_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
             ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
             uint32_t xfer = 0;
@@ -2234,12 +2222,14 @@ namespace matrix {
             using ::apache::thrift::protocol::TProtocolException;
 
 
-            while (true) {
+            while (true)
+            {
                 xfer += iprot->readFieldBegin(fname, ftype, fid);
                 if (ftype == ::apache::thrift::protocol::T_STOP) {
                     break;
                 }
-                switch (fid) {
+                switch (fid)
+                {
                     case 1:
                         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
                             xfer += this->body.read(iprot);
@@ -2260,10 +2250,10 @@ namespace matrix {
             return xfer;
         }
 
-        uint32_t start_training_req::write(::apache::thrift::protocol::TProtocol *oprot) const {
+        uint32_t node_create_task_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
             uint32_t xfer = 0;
             ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-            xfer += oprot->writeStructBegin("start_training_req");
+            xfer += oprot->writeStructBegin("node_create_task_req");
 
             xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
             xfer += this->body.write(oprot);
@@ -2274,46 +2264,1088 @@ namespace matrix {
             return xfer;
         }
 
-        void swap(start_training_req &a, start_training_req &b) {
+        void swap(node_create_task_req &a, node_create_task_req &b) {
             using ::std::swap;
             swap(a.body, b.body);
             swap(a.__isset, b.__isset);
         }
 
-        start_training_req::start_training_req(const start_training_req &other56) {
+        node_create_task_req::node_create_task_req(const node_create_task_req& other56) {
             body = other56.body;
             __isset = other56.__isset;
         }
-
-        start_training_req &start_training_req::operator=(const start_training_req &other57) {
+        node_create_task_req& node_create_task_req::operator=(const node_create_task_req& other57) {
             body = other57.body;
             __isset = other57.__isset;
             return *this;
         }
-
-        void start_training_req::printTo(std::ostream &out) const {
+        void node_create_task_req::printTo(std::ostream& out) const {
             using ::apache::thrift::to_string;
-            out << "start_training_req(";
+            out << "node_create_task_req(";
             out << "body=" << to_string(body);
             out << ")";
         }
 
 
-        stop_training_req_body::~stop_training_req_body() throw() {
+        node_start_task_req_body::~node_start_task_req_body() throw() {
         }
 
 
-        void stop_training_req_body::__set_task_id(const std::string &val) {
+        void node_start_task_req_body::__set_task_id(const std::string& val) {
             this->task_id = val;
         }
 
-        std::ostream &operator<<(std::ostream &out, const stop_training_req_body &obj) {
+        void node_start_task_req_body::__set_select_mode(const int8_t val) {
+            this->select_mode = val;
+        }
+
+        void node_start_task_req_body::__set_master(const std::string& val) {
+            this->master = val;
+            __isset.master = true;
+        }
+
+        void node_start_task_req_body::__set_peer_nodes_list(const std::vector<std::string> & val) {
+            this->peer_nodes_list = val;
+        }
+
+        void node_start_task_req_body::__set_server_specification(const std::string& val) {
+            this->server_specification = val;
+            __isset.server_specification = true;
+        }
+
+        void node_start_task_req_body::__set_server_count(const int32_t val) {
+            this->server_count = val;
+            __isset.server_count = true;
+        }
+
+        void node_start_task_req_body::__set_training_engine(const std::string& val) {
+            this->training_engine = val;
+        }
+
+        void node_start_task_req_body::__set_code_dir(const std::string& val) {
+            this->code_dir = val;
+        }
+
+        void node_start_task_req_body::__set_entry_file(const std::string& val) {
+            this->entry_file = val;
+        }
+
+        void node_start_task_req_body::__set_data_dir(const std::string& val) {
+            this->data_dir = val;
+        }
+
+        void node_start_task_req_body::__set_checkpoint_dir(const std::string& val) {
+            this->checkpoint_dir = val;
+        }
+
+        void node_start_task_req_body::__set_hyper_parameters(const std::string& val) {
+            this->hyper_parameters = val;
+            __isset.hyper_parameters = true;
+        }
+
+        void node_start_task_req_body::__set_container_name(const std::string& val) {
+            this->container_name = val;
+            __isset.container_name = true;
+        }
+
+        void node_start_task_req_body::__set_memory(const int64_t val) {
+            this->memory = val;
+            __isset.memory = true;
+        }
+
+        void node_start_task_req_body::__set_memory_swap(const int64_t val) {
+            this->memory_swap = val;
+            __isset.memory_swap = true;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_start_task_req_body& obj)
+        {
             obj.printTo(out);
             return out;
         }
 
 
-        uint32_t stop_training_req_body::read(::apache::thrift::protocol::TProtocol *iprot) {
+        uint32_t node_start_task_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+            bool isset_task_id = false;
+            bool isset_select_mode = false;
+            bool isset_peer_nodes_list = false;
+            bool isset_training_engine = false;
+            bool isset_code_dir = false;
+            bool isset_entry_file = false;
+            bool isset_data_dir = false;
+            bool isset_checkpoint_dir = false;
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->task_id);
+                            isset_task_id = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_BYTE) {
+                            xfer += iprot->readByte(this->select_mode);
+                            isset_select_mode = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 3:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->master);
+                            this->__isset.master = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 4:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
+                            {
+                                this->peer_nodes_list.clear();
+                                uint32_t _size58;
+                                ::apache::thrift::protocol::TType _etype61;
+                                xfer += iprot->readListBegin(_etype61, _size58);
+                                this->peer_nodes_list.resize(_size58);
+                                uint32_t _i62;
+                                for (_i62 = 0; _i62 < _size58; ++_i62)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i62]);
+                                }
+                                xfer += iprot->readListEnd();
+                            }
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 5:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->server_specification);
+                            this->__isset.server_specification = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 6:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->server_count);
+                            this->__isset.server_count = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 7:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->training_engine);
+                            isset_training_engine = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 8:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->code_dir);
+                            isset_code_dir = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 9:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->entry_file);
+                            isset_entry_file = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 10:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->data_dir);
+                            isset_data_dir = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 11:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->checkpoint_dir);
+                            isset_checkpoint_dir = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 12:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->hyper_parameters);
+                            this->__isset.hyper_parameters = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 13:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->container_name);
+                            this->__isset.container_name = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 14:
+                        if (ftype == ::apache::thrift::protocol::T_I64) {
+                            xfer += iprot->readI64(this->memory);
+                            this->__isset.memory = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 15:
+                        if (ftype == ::apache::thrift::protocol::T_I64) {
+                            xfer += iprot->readI64(this->memory_swap);
+                            this->__isset.memory_swap = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            if (!isset_task_id)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_select_mode)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_peer_nodes_list)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_training_engine)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_code_dir)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_entry_file)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_data_dir)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_checkpoint_dir)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            return xfer;
+        }
+
+        uint32_t node_start_task_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_start_task_req_body");
+
+            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
+            xfer += oprot->writeString(this->task_id);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("select_mode", ::apache::thrift::protocol::T_BYTE, 2);
+            xfer += oprot->writeByte(this->select_mode);
+            xfer += oprot->writeFieldEnd();
+
+            if (this->__isset.master) {
+                xfer += oprot->writeFieldBegin("master", ::apache::thrift::protocol::T_STRING, 3);
+                xfer += oprot->writeString(this->master);
+                xfer += oprot->writeFieldEnd();
+            }
+            xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 4);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+                std::vector<std::string> ::const_iterator _iter63;
+                for (_iter63 = this->peer_nodes_list.begin(); _iter63 != this->peer_nodes_list.end(); ++_iter63)
+                {
+                    xfer += oprot->writeString((*_iter63));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+
+            if (this->__isset.server_specification) {
+                xfer += oprot->writeFieldBegin("server_specification", ::apache::thrift::protocol::T_STRING, 5);
+                xfer += oprot->writeString(this->server_specification);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.server_count) {
+                xfer += oprot->writeFieldBegin("server_count", ::apache::thrift::protocol::T_I32, 6);
+                xfer += oprot->writeI32(this->server_count);
+                xfer += oprot->writeFieldEnd();
+            }
+            xfer += oprot->writeFieldBegin("training_engine", ::apache::thrift::protocol::T_STRING, 7);
+            xfer += oprot->writeString(this->training_engine);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("code_dir", ::apache::thrift::protocol::T_STRING, 8);
+            xfer += oprot->writeString(this->code_dir);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("entry_file", ::apache::thrift::protocol::T_STRING, 9);
+            xfer += oprot->writeString(this->entry_file);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("data_dir", ::apache::thrift::protocol::T_STRING, 10);
+            xfer += oprot->writeString(this->data_dir);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("checkpoint_dir", ::apache::thrift::protocol::T_STRING, 11);
+            xfer += oprot->writeString(this->checkpoint_dir);
+            xfer += oprot->writeFieldEnd();
+
+            if (this->__isset.hyper_parameters) {
+                xfer += oprot->writeFieldBegin("hyper_parameters", ::apache::thrift::protocol::T_STRING, 12);
+                xfer += oprot->writeString(this->hyper_parameters);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.container_name) {
+                xfer += oprot->writeFieldBegin("container_name", ::apache::thrift::protocol::T_STRING, 13);
+                xfer += oprot->writeString(this->container_name);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.memory) {
+                xfer += oprot->writeFieldBegin("memory", ::apache::thrift::protocol::T_I64, 14);
+                xfer += oprot->writeI64(this->memory);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.memory_swap) {
+                xfer += oprot->writeFieldBegin("memory_swap", ::apache::thrift::protocol::T_I64, 15);
+                xfer += oprot->writeI64(this->memory_swap);
+                xfer += oprot->writeFieldEnd();
+            }
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_start_task_req_body &a, node_start_task_req_body &b) {
+            using ::std::swap;
+            swap(a.task_id, b.task_id);
+            swap(a.select_mode, b.select_mode);
+            swap(a.master, b.master);
+            swap(a.peer_nodes_list, b.peer_nodes_list);
+            swap(a.server_specification, b.server_specification);
+            swap(a.server_count, b.server_count);
+            swap(a.training_engine, b.training_engine);
+            swap(a.code_dir, b.code_dir);
+            swap(a.entry_file, b.entry_file);
+            swap(a.data_dir, b.data_dir);
+            swap(a.checkpoint_dir, b.checkpoint_dir);
+            swap(a.hyper_parameters, b.hyper_parameters);
+            swap(a.container_name, b.container_name);
+            swap(a.memory, b.memory);
+            swap(a.memory_swap, b.memory_swap);
+            swap(a.__isset, b.__isset);
+        }
+
+        node_start_task_req_body::node_start_task_req_body(const node_start_task_req_body& other64) {
+            task_id = other64.task_id;
+            select_mode = other64.select_mode;
+            master = other64.master;
+            peer_nodes_list = other64.peer_nodes_list;
+            server_specification = other64.server_specification;
+            server_count = other64.server_count;
+            training_engine = other64.training_engine;
+            code_dir = other64.code_dir;
+            entry_file = other64.entry_file;
+            data_dir = other64.data_dir;
+            checkpoint_dir = other64.checkpoint_dir;
+            hyper_parameters = other64.hyper_parameters;
+            container_name = other64.container_name;
+            memory = other64.memory;
+            memory_swap = other64.memory_swap;
+            __isset = other64.__isset;
+        }
+        node_start_task_req_body& node_start_task_req_body::operator=(const node_start_task_req_body& other65) {
+            task_id = other65.task_id;
+            select_mode = other65.select_mode;
+            master = other65.master;
+            peer_nodes_list = other65.peer_nodes_list;
+            server_specification = other65.server_specification;
+            server_count = other65.server_count;
+            training_engine = other65.training_engine;
+            code_dir = other65.code_dir;
+            entry_file = other65.entry_file;
+            data_dir = other65.data_dir;
+            checkpoint_dir = other65.checkpoint_dir;
+            hyper_parameters = other65.hyper_parameters;
+            container_name = other65.container_name;
+            memory = other65.memory;
+            memory_swap = other65.memory_swap;
+            __isset = other65.__isset;
+            return *this;
+        }
+        void node_start_task_req_body::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_start_task_req_body(";
+            out << "task_id=" << to_string(task_id);
+            out << ", " << "select_mode=" << to_string(select_mode);
+            out << ", " << "master="; (__isset.master ? (out << to_string(master)) : (out << "<null>"));
+            out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+            out << ", " << "server_specification="; (__isset.server_specification ? (out << to_string(server_specification)) : (out << "<null>"));
+            out << ", " << "server_count="; (__isset.server_count ? (out << to_string(server_count)) : (out << "<null>"));
+            out << ", " << "training_engine=" << to_string(training_engine);
+            out << ", " << "code_dir=" << to_string(code_dir);
+            out << ", " << "entry_file=" << to_string(entry_file);
+            out << ", " << "data_dir=" << to_string(data_dir);
+            out << ", " << "checkpoint_dir=" << to_string(checkpoint_dir);
+            out << ", " << "hyper_parameters="; (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
+            out << ", " << "container_name="; (__isset.container_name ? (out << to_string(container_name)) : (out << "<null>"));
+            out << ", " << "memory="; (__isset.memory ? (out << to_string(memory)) : (out << "<null>"));
+            out << ", " << "memory_swap="; (__isset.memory_swap ? (out << to_string(memory_swap)) : (out << "<null>"));
+            out << ")";
+        }
+
+
+        node_start_task_req::~node_start_task_req() throw() {
+        }
+
+
+        void node_start_task_req::__set_body(const node_start_task_req_body& val) {
+            this->body = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_start_task_req& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_start_task_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                            xfer += this->body.read(iprot);
+                            this->__isset.body = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            return xfer;
+        }
+
+        uint32_t node_start_task_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_start_task_req");
+
+            xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+            xfer += this->body.write(oprot);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_start_task_req &a, node_start_task_req &b) {
+            using ::std::swap;
+            swap(a.body, b.body);
+            swap(a.__isset, b.__isset);
+        }
+
+        node_start_task_req::node_start_task_req(const node_start_task_req& other66) {
+            body = other66.body;
+            __isset = other66.__isset;
+        }
+        node_start_task_req& node_start_task_req::operator=(const node_start_task_req& other67) {
+            body = other67.body;
+            __isset = other67.__isset;
+            return *this;
+        }
+        void node_start_task_req::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_start_task_req(";
+            out << "body=" << to_string(body);
+            out << ")";
+        }
+
+
+        node_restart_task_req_body::~node_restart_task_req_body() throw() {
+        }
+
+
+        void node_restart_task_req_body::__set_task_id(const std::string& val) {
+            this->task_id = val;
+        }
+
+        void node_restart_task_req_body::__set_select_mode(const int8_t val) {
+            this->select_mode = val;
+        }
+
+        void node_restart_task_req_body::__set_master(const std::string& val) {
+            this->master = val;
+            __isset.master = true;
+        }
+
+        void node_restart_task_req_body::__set_peer_nodes_list(const std::vector<std::string> & val) {
+            this->peer_nodes_list = val;
+        }
+
+        void node_restart_task_req_body::__set_server_specification(const std::string& val) {
+            this->server_specification = val;
+            __isset.server_specification = true;
+        }
+
+        void node_restart_task_req_body::__set_server_count(const int32_t val) {
+            this->server_count = val;
+            __isset.server_count = true;
+        }
+
+        void node_restart_task_req_body::__set_training_engine(const std::string& val) {
+            this->training_engine = val;
+        }
+
+        void node_restart_task_req_body::__set_code_dir(const std::string& val) {
+            this->code_dir = val;
+        }
+
+        void node_restart_task_req_body::__set_entry_file(const std::string& val) {
+            this->entry_file = val;
+        }
+
+        void node_restart_task_req_body::__set_data_dir(const std::string& val) {
+            this->data_dir = val;
+        }
+
+        void node_restart_task_req_body::__set_checkpoint_dir(const std::string& val) {
+            this->checkpoint_dir = val;
+        }
+
+        void node_restart_task_req_body::__set_hyper_parameters(const std::string& val) {
+            this->hyper_parameters = val;
+            __isset.hyper_parameters = true;
+        }
+
+        void node_restart_task_req_body::__set_container_name(const std::string& val) {
+            this->container_name = val;
+            __isset.container_name = true;
+        }
+
+        void node_restart_task_req_body::__set_memory(const int64_t val) {
+            this->memory = val;
+            __isset.memory = true;
+        }
+
+        void node_restart_task_req_body::__set_memory_swap(const int64_t val) {
+            this->memory_swap = val;
+            __isset.memory_swap = true;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_restart_task_req_body& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_restart_task_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+            bool isset_task_id = false;
+            bool isset_select_mode = false;
+            bool isset_peer_nodes_list = false;
+            bool isset_training_engine = false;
+            bool isset_code_dir = false;
+            bool isset_entry_file = false;
+            bool isset_data_dir = false;
+            bool isset_checkpoint_dir = false;
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->task_id);
+                            isset_task_id = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_BYTE) {
+                            xfer += iprot->readByte(this->select_mode);
+                            isset_select_mode = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 3:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->master);
+                            this->__isset.master = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 4:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
+                            {
+                                this->peer_nodes_list.clear();
+                                uint32_t _size68;
+                                ::apache::thrift::protocol::TType _etype71;
+                                xfer += iprot->readListBegin(_etype71, _size68);
+                                this->peer_nodes_list.resize(_size68);
+                                uint32_t _i72;
+                                for (_i72 = 0; _i72 < _size68; ++_i72)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i72]);
+                                }
+                                xfer += iprot->readListEnd();
+                            }
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 5:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->server_specification);
+                            this->__isset.server_specification = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 6:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->server_count);
+                            this->__isset.server_count = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 7:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->training_engine);
+                            isset_training_engine = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 8:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->code_dir);
+                            isset_code_dir = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 9:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->entry_file);
+                            isset_entry_file = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 10:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->data_dir);
+                            isset_data_dir = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 11:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->checkpoint_dir);
+                            isset_checkpoint_dir = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 12:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->hyper_parameters);
+                            this->__isset.hyper_parameters = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 13:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->container_name);
+                            this->__isset.container_name = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 14:
+                        if (ftype == ::apache::thrift::protocol::T_I64) {
+                            xfer += iprot->readI64(this->memory);
+                            this->__isset.memory = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 15:
+                        if (ftype == ::apache::thrift::protocol::T_I64) {
+                            xfer += iprot->readI64(this->memory_swap);
+                            this->__isset.memory_swap = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            if (!isset_task_id)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_select_mode)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_peer_nodes_list)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_training_engine)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_code_dir)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_entry_file)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_data_dir)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_checkpoint_dir)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            return xfer;
+        }
+
+        uint32_t node_restart_task_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_restart_task_req_body");
+
+            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
+            xfer += oprot->writeString(this->task_id);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("select_mode", ::apache::thrift::protocol::T_BYTE, 2);
+            xfer += oprot->writeByte(this->select_mode);
+            xfer += oprot->writeFieldEnd();
+
+            if (this->__isset.master) {
+                xfer += oprot->writeFieldBegin("master", ::apache::thrift::protocol::T_STRING, 3);
+                xfer += oprot->writeString(this->master);
+                xfer += oprot->writeFieldEnd();
+            }
+            xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 4);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+                std::vector<std::string> ::const_iterator _iter73;
+                for (_iter73 = this->peer_nodes_list.begin(); _iter73 != this->peer_nodes_list.end(); ++_iter73)
+                {
+                    xfer += oprot->writeString((*_iter73));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+
+            if (this->__isset.server_specification) {
+                xfer += oprot->writeFieldBegin("server_specification", ::apache::thrift::protocol::T_STRING, 5);
+                xfer += oprot->writeString(this->server_specification);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.server_count) {
+                xfer += oprot->writeFieldBegin("server_count", ::apache::thrift::protocol::T_I32, 6);
+                xfer += oprot->writeI32(this->server_count);
+                xfer += oprot->writeFieldEnd();
+            }
+            xfer += oprot->writeFieldBegin("training_engine", ::apache::thrift::protocol::T_STRING, 7);
+            xfer += oprot->writeString(this->training_engine);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("code_dir", ::apache::thrift::protocol::T_STRING, 8);
+            xfer += oprot->writeString(this->code_dir);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("entry_file", ::apache::thrift::protocol::T_STRING, 9);
+            xfer += oprot->writeString(this->entry_file);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("data_dir", ::apache::thrift::protocol::T_STRING, 10);
+            xfer += oprot->writeString(this->data_dir);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("checkpoint_dir", ::apache::thrift::protocol::T_STRING, 11);
+            xfer += oprot->writeString(this->checkpoint_dir);
+            xfer += oprot->writeFieldEnd();
+
+            if (this->__isset.hyper_parameters) {
+                xfer += oprot->writeFieldBegin("hyper_parameters", ::apache::thrift::protocol::T_STRING, 12);
+                xfer += oprot->writeString(this->hyper_parameters);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.container_name) {
+                xfer += oprot->writeFieldBegin("container_name", ::apache::thrift::protocol::T_STRING, 13);
+                xfer += oprot->writeString(this->container_name);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.memory) {
+                xfer += oprot->writeFieldBegin("memory", ::apache::thrift::protocol::T_I64, 14);
+                xfer += oprot->writeI64(this->memory);
+                xfer += oprot->writeFieldEnd();
+            }
+            if (this->__isset.memory_swap) {
+                xfer += oprot->writeFieldBegin("memory_swap", ::apache::thrift::protocol::T_I64, 15);
+                xfer += oprot->writeI64(this->memory_swap);
+                xfer += oprot->writeFieldEnd();
+            }
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_restart_task_req_body &a, node_restart_task_req_body &b) {
+            using ::std::swap;
+            swap(a.task_id, b.task_id);
+            swap(a.select_mode, b.select_mode);
+            swap(a.master, b.master);
+            swap(a.peer_nodes_list, b.peer_nodes_list);
+            swap(a.server_specification, b.server_specification);
+            swap(a.server_count, b.server_count);
+            swap(a.training_engine, b.training_engine);
+            swap(a.code_dir, b.code_dir);
+            swap(a.entry_file, b.entry_file);
+            swap(a.data_dir, b.data_dir);
+            swap(a.checkpoint_dir, b.checkpoint_dir);
+            swap(a.hyper_parameters, b.hyper_parameters);
+            swap(a.container_name, b.container_name);
+            swap(a.memory, b.memory);
+            swap(a.memory_swap, b.memory_swap);
+            swap(a.__isset, b.__isset);
+        }
+
+        node_restart_task_req_body::node_restart_task_req_body(const node_restart_task_req_body& other74) {
+            task_id = other74.task_id;
+            select_mode = other74.select_mode;
+            master = other74.master;
+            peer_nodes_list = other74.peer_nodes_list;
+            server_specification = other74.server_specification;
+            server_count = other74.server_count;
+            training_engine = other74.training_engine;
+            code_dir = other74.code_dir;
+            entry_file = other74.entry_file;
+            data_dir = other74.data_dir;
+            checkpoint_dir = other74.checkpoint_dir;
+            hyper_parameters = other74.hyper_parameters;
+            container_name = other74.container_name;
+            memory = other74.memory;
+            memory_swap = other74.memory_swap;
+            __isset = other74.__isset;
+        }
+        node_restart_task_req_body& node_restart_task_req_body::operator=(const node_restart_task_req_body& other75) {
+            task_id = other75.task_id;
+            select_mode = other75.select_mode;
+            master = other75.master;
+            peer_nodes_list = other75.peer_nodes_list;
+            server_specification = other75.server_specification;
+            server_count = other75.server_count;
+            training_engine = other75.training_engine;
+            code_dir = other75.code_dir;
+            entry_file = other75.entry_file;
+            data_dir = other75.data_dir;
+            checkpoint_dir = other75.checkpoint_dir;
+            hyper_parameters = other75.hyper_parameters;
+            container_name = other75.container_name;
+            memory = other75.memory;
+            memory_swap = other75.memory_swap;
+            __isset = other75.__isset;
+            return *this;
+        }
+        void node_restart_task_req_body::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_restart_task_req_body(";
+            out << "task_id=" << to_string(task_id);
+            out << ", " << "select_mode=" << to_string(select_mode);
+            out << ", " << "master="; (__isset.master ? (out << to_string(master)) : (out << "<null>"));
+            out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+            out << ", " << "server_specification="; (__isset.server_specification ? (out << to_string(server_specification)) : (out << "<null>"));
+            out << ", " << "server_count="; (__isset.server_count ? (out << to_string(server_count)) : (out << "<null>"));
+            out << ", " << "training_engine=" << to_string(training_engine);
+            out << ", " << "code_dir=" << to_string(code_dir);
+            out << ", " << "entry_file=" << to_string(entry_file);
+            out << ", " << "data_dir=" << to_string(data_dir);
+            out << ", " << "checkpoint_dir=" << to_string(checkpoint_dir);
+            out << ", " << "hyper_parameters="; (__isset.hyper_parameters ? (out << to_string(hyper_parameters)) : (out << "<null>"));
+            out << ", " << "container_name="; (__isset.container_name ? (out << to_string(container_name)) : (out << "<null>"));
+            out << ", " << "memory="; (__isset.memory ? (out << to_string(memory)) : (out << "<null>"));
+            out << ", " << "memory_swap="; (__isset.memory_swap ? (out << to_string(memory_swap)) : (out << "<null>"));
+            out << ")";
+        }
+
+
+        node_restart_task_req::~node_restart_task_req() throw() {
+        }
+
+
+        void node_restart_task_req::__set_body(const node_restart_task_req_body& val) {
+            this->body = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_restart_task_req& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_restart_task_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                            xfer += this->body.read(iprot);
+                            this->__isset.body = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            return xfer;
+        }
+
+        uint32_t node_restart_task_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_restart_task_req");
+
+            xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+            xfer += this->body.write(oprot);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_restart_task_req &a, node_restart_task_req &b) {
+            using ::std::swap;
+            swap(a.body, b.body);
+            swap(a.__isset, b.__isset);
+        }
+
+        node_restart_task_req::node_restart_task_req(const node_restart_task_req& other76) {
+            body = other76.body;
+            __isset = other76.__isset;
+        }
+        node_restart_task_req& node_restart_task_req::operator=(const node_restart_task_req& other77) {
+            body = other77.body;
+            __isset = other77.__isset;
+            return *this;
+        }
+        void node_restart_task_req::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_restart_task_req(";
+            out << "body=" << to_string(body);
+            out << ")";
+        }
+
+
+        node_stop_task_req_body::~node_stop_task_req_body() throw() {
+        }
+
+
+        void node_stop_task_req_body::__set_task_id(const std::string& val) {
+            this->task_id = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_req_body& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_stop_task_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
             ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
             uint32_t xfer = 0;
@@ -2327,12 +3359,14 @@ namespace matrix {
 
             bool isset_task_id = false;
 
-            while (true) {
+            while (true)
+            {
                 xfer += iprot->readFieldBegin(fname, ftype, fid);
                 if (ftype == ::apache::thrift::protocol::T_STOP) {
                     break;
                 }
-                switch (fid) {
+                switch (fid)
+                {
                     case 1:
                         if (ftype == ::apache::thrift::protocol::T_STRING) {
                             xfer += iprot->readString(this->task_id);
@@ -2355,10 +3389,10 @@ namespace matrix {
             return xfer;
         }
 
-        uint32_t stop_training_req_body::write(::apache::thrift::protocol::TProtocol *oprot) const {
+        uint32_t node_stop_task_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
             uint32_t xfer = 0;
             ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-            xfer += oprot->writeStructBegin("stop_training_req_body");
+            xfer += oprot->writeStructBegin("node_stop_task_req_body");
 
             xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
             xfer += oprot->writeString(this->task_id);
@@ -2369,43 +3403,41 @@ namespace matrix {
             return xfer;
         }
 
-        void swap(stop_training_req_body &a, stop_training_req_body &b) {
+        void swap(node_stop_task_req_body &a, node_stop_task_req_body &b) {
             using ::std::swap;
             swap(a.task_id, b.task_id);
         }
 
-        stop_training_req_body::stop_training_req_body(const stop_training_req_body &other58) {
-            task_id = other58.task_id;
+        node_stop_task_req_body::node_stop_task_req_body(const node_stop_task_req_body& other78) {
+            task_id = other78.task_id;
         }
-
-        stop_training_req_body &stop_training_req_body::operator=(const stop_training_req_body &other59) {
-            task_id = other59.task_id;
+        node_stop_task_req_body& node_stop_task_req_body::operator=(const node_stop_task_req_body& other79) {
+            task_id = other79.task_id;
             return *this;
         }
-
-        void stop_training_req_body::printTo(std::ostream &out) const {
+        void node_stop_task_req_body::printTo(std::ostream& out) const {
             using ::apache::thrift::to_string;
-            out << "stop_training_req_body(";
+            out << "node_stop_task_req_body(";
             out << "task_id=" << to_string(task_id);
             out << ")";
         }
 
 
-        stop_training_req::~stop_training_req() throw() {
+        node_stop_task_req::~node_stop_task_req() throw() {
         }
 
 
-        void stop_training_req::__set_body(const stop_training_req_body &val) {
+        void node_stop_task_req::__set_body(const node_stop_task_req_body& val) {
             this->body = val;
         }
-
-        std::ostream &operator<<(std::ostream &out, const stop_training_req &obj) {
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_req& obj)
+        {
             obj.printTo(out);
             return out;
         }
 
 
-        uint32_t stop_training_req::read(::apache::thrift::protocol::TProtocol *iprot) {
+        uint32_t node_stop_task_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
             ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
             uint32_t xfer = 0;
@@ -2418,12 +3450,14 @@ namespace matrix {
             using ::apache::thrift::protocol::TProtocolException;
 
 
-            while (true) {
+            while (true)
+            {
                 xfer += iprot->readFieldBegin(fname, ftype, fid);
                 if (ftype == ::apache::thrift::protocol::T_STOP) {
                     break;
                 }
-                switch (fid) {
+                switch (fid)
+                {
                     case 1:
                         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
                             xfer += this->body.read(iprot);
@@ -2444,10 +3478,10 @@ namespace matrix {
             return xfer;
         }
 
-        uint32_t stop_training_req::write(::apache::thrift::protocol::TProtocol *oprot) const {
+        uint32_t node_stop_task_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
             uint32_t xfer = 0;
             ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-            xfer += oprot->writeStructBegin("stop_training_req");
+            xfer += oprot->writeStructBegin("node_stop_task_req");
 
             xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
             xfer += this->body.write(oprot);
@@ -2458,26 +3492,24 @@ namespace matrix {
             return xfer;
         }
 
-        void swap(stop_training_req &a, stop_training_req &b) {
+        void swap(node_stop_task_req &a, node_stop_task_req &b) {
             using ::std::swap;
             swap(a.body, b.body);
             swap(a.__isset, b.__isset);
         }
 
-        stop_training_req::stop_training_req(const stop_training_req &other60) {
-            body = other60.body;
-            __isset = other60.__isset;
+        node_stop_task_req::node_stop_task_req(const node_stop_task_req& other80) {
+            body = other80.body;
+            __isset = other80.__isset;
         }
-
-        stop_training_req &stop_training_req::operator=(const stop_training_req &other61) {
-            body = other61.body;
-            __isset = other61.__isset;
+        node_stop_task_req& node_stop_task_req::operator=(const node_stop_task_req& other81) {
+            body = other81.body;
+            __isset = other81.__isset;
             return *this;
         }
-
-        void stop_training_req::printTo(std::ostream &out) const {
+        void node_stop_task_req::printTo(std::ostream& out) const {
             using ::apache::thrift::to_string;
-            out << "stop_training_req(";
+            out << "node_stop_task_req(";
             out << "body=" << to_string(body);
             out << ")";
         }
