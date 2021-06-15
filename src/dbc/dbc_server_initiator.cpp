@@ -34,6 +34,7 @@
 //#include "api_call_handler.h"
 #include "rest_api_service.h"
 #include <boost/exception/all.hpp>
+#include "ai_crypter.h"
 
 using namespace std::chrono;
 using namespace matrix::core;

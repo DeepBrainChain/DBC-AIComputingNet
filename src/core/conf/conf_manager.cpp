@@ -35,12 +35,10 @@ const int16_t DEFAULT_PRUNE_CONTAINER_INTERVAL=240; //48 hours,test:1 hours
 const int16_t DEFAULT_PRUNE_TASK_INTERVAL=2400;     //100 days
 const int16_t DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO=5;
 
-
 namespace matrix
 {
     namespace core
     {
-
         conf_manager::conf_manager() 
             : m_log_level(1)
             , m_net_params(std::make_shared<net_type_params>())
@@ -149,7 +147,6 @@ namespace matrix
 
             return E_SUCCESS;
         }
-
 
         bool conf_manager::check_node_info()
         {
@@ -422,7 +419,5 @@ namespace matrix
                 return (uint16_t)std::stoi(DEFAULT_MAIN_NET_LISTEN_PORT);
             }
         }
-
     }
-
 }

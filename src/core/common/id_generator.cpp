@@ -12,25 +12,17 @@ namespace matrix
             int32_t generate_node_info(node_info &info) {
                 CKey secret;
 
-                //private key
                 bool fCompressed = true;
                 secret.MakeNewKey(fCompressed);
                 assert(secret.size() > 0);
 
                 //public key
                 CPubKey pubkey = secret.GetPubKey();
-
-                //encode node id
+                //private key
                 CPrivKey private_key = secret.GetPrivKey();
-                info.node_id = encode_node_id(pubkey);
 
-                //encode node private key
-                std::vector<unsigned char> private_key_data;
-                std::vector<unsigned char> private_key_prefix = {PRIVATE_KEY_VERSION, '.'};
-                private_key_data.reserve(private_key_prefix.size() + private_key.size());
-                private_key_data.insert(private_key_data.end(), private_key_prefix.begin(), private_key_prefix.end());
-                private_key_data.insert(private_key_data.end(), private_key.begin(), private_key.end());
-                info.node_private_key = EncodeBase58Check(private_key_data);
+                info.node_id = encode_node_id(pubkey);
+                info.node_private_key = encode_private_key(private_key);
 
                 return E_SUCCESS;
             }
@@ -127,14 +119,14 @@ namespace matrix
             }
 
             bool decode_node_id(const std::string &node_id, std::vector<uint8_t> &vch_node) {
-                if (DecodeBase58Check(SanitizeString(node_id), vch_node) != true) {
+                if (!DecodeBase58Check(SanitizeString(node_id), vch_node)) {
                     return false;
                 }
+
                 std::vector<unsigned char> id_prefix = {'n', 'o', 'd', 'e', '.', NODE_ID_VERSION, '.'};
                 std::vector<unsigned char>::iterator it1;
                 std::vector<unsigned char>::iterator it2;
-                for (it1 = id_prefix.begin(), it2 = vch_node.begin();
-                     it1 != id_prefix.end() && it2 != vch_node.end();) {
+                for (it1 = id_prefix.begin(), it2 = vch_node.begin(); it1 != id_prefix.end() && it2 != vch_node.end();) {
                     if (*it1 != *it2) {
                         return false;
                     }
@@ -173,9 +165,18 @@ namespace matrix
                 return true;
             }
 
+            std::string encode_private_key(const CPrivKey &private_key) {
+                std::vector<unsigned char> private_key_data;
+                std::vector<unsigned char> private_key_prefix = {PRIVATE_KEY_VERSION, '.'};
+                private_key_data.reserve(private_key_prefix.size() + private_key.size());
+                private_key_data.insert(private_key_data.end(), private_key_prefix.begin(), private_key_prefix.end());
+                private_key_data.insert(private_key_data.end(), private_key.begin(), private_key.end());
+                return EncodeBase58Check(private_key_data);
+            }
+
             std::string sign(const std::string &message, const std::string &node_private_key) {
                 std::vector<unsigned char> vch;
-                if (false == decode_private_key(node_private_key, vch)) {
+                if (!decode_private_key(node_private_key, vch)) {
                     return DEFAULT_STRING;
                 }
 
@@ -204,8 +205,7 @@ namespace matrix
                 return sig_hex;
             }
 
-            bool derive_node_id_by_sign(const std::string &message, const std::string &sign,
-                                                      std::string &node_id) {
+            bool derive_node_id_by_sign(const std::string &message, const std::string &sign, std::string &node_id) {
                 uint256 hash;
                 CHash256().Write((unsigned char *) message.data(), message.size()).Finalize(hash.begin());
                 std::vector<unsigned char> vchSig = ParseHex(sign);
@@ -217,8 +217,7 @@ namespace matrix
                 return true;
             }
 
-            bool
-            derive_pub_key_by_sign(const std::string &message, const std::string &sign, CPubKey &pub) {
+            bool derive_pub_key_by_sign(const std::string &message, const std::string &sign, CPubKey &pub) {
                 uint256 hash;
                 CHash256().Write((unsigned char *) message.data(), message.size()).Finalize(hash.begin());
                 std::vector<unsigned char> vchSig = ParseHex(sign);
@@ -229,5 +228,3 @@ namespace matrix
         }
     }
 }
-
-

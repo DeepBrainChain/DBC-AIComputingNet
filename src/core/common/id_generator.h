@@ -18,7 +18,6 @@ namespace matrix
         struct node_info
         {
             std::string node_id;
-
             std::string node_private_key;
         };
 
@@ -53,6 +52,8 @@ namespace matrix
             std::string encode_node_id(const CPubKey &pubkey);
             
             bool decode_private_key(const std::string & node_id, std::vector<uint8_t> & vch);
+
+            std::string encode_private_key(const CPrivKey &private_key);
         }
     }
 }
