@@ -40,5 +40,18 @@ public:
 
 };
 
+static std::string run_shell(const char* cmd) {
+    if (cmd == nullptr) return "";
+
+    FILE * fp;
+    char buffer[1024] = {0};
+    fp = popen(cmd, "r");
+    if (fp != nullptr) {
+        fgets(buffer, sizeof(buffer), fp);
+        pclose(fp);
+    }
+
+    return std::string(buffer);
+}
 
 #endif //DBC_COMM_H

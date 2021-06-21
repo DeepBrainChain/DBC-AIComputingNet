@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "service_name.h"
 #include <shadow.h>
+#include "comm.h"
 
 namespace ai {
     namespace dbc {
@@ -1341,13 +1342,12 @@ namespace ai {
                     std::stringstream ss;
                     ss << task->server_specification;
                     boost::property_tree::read_json(ss, pt);
-                    if (pt.count("ip") != 0) {
-                        host_ip = pt.get<std::string>("ip");
-                    }
 
                     if (pt.count("port") != 0) {
                         transform_port = pt.get<std::string>("port.22");
                     }
+
+                    host_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
                     LOG_DEBUG << "create_domain host_ip: " << host_ip << ", transform_port: " << transform_port;
                 } catch (...) {
 
