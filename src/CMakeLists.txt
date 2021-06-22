@@ -1,100 +1,88 @@
-message(STATUS "begin to cmake.........")
+cmake_minimum_required (VERSION 3.2)
+project("dbc")
 
-SET(HOME_PATH ${CMAKE_SOURCE_DIR})
-SET(SRC_PATH ${CMAKE_SOURCE_DIR}/src)
+set(CMAKE_CXX_FLAGS "-fPIC -w -DEVENT__HAVE_OPENSSL")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
 
-SET(EXECUTABLE_OUTPUT_PATH ${HOME_PATH}/output/)
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${HOME_PATH}/output)
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${HOME_PATH}/output)
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${HOME_PATH}/output)
+set(CMAKE_CXX_STANDARD 11)
 
-INCLUDE_DIRECTORIES(
-        ${SRC_PATH}
-        ${SRC_PATH}/dbc
-        ${SRC_PATH}/dbc/common
-        ${SRC_PATH}/dbc/task
-        ${SRC_PATH}/dbc/db
-        ${SRC_PATH}/dbc/service
-        ${SRC_PATH}/dbc/service/message
-        ${SRC_PATH}/dbc/service/cmd_request_service
-        ${SRC_PATH}/dbc/service/http_request_service
-        ${SRC_PATH}/dbc/service/peer_request_service
-        ${SRC_PATH}/dbc/service/peer_request_service/p2pnet
-        ${SRC_PATH}/dbc/service/node_request_service
-        ${SRC_PATH}/dbc/service/node_request_service/task_schedule
-        ${SRC_PATH}/dbc/service/node_info_exchange
-        ${SRC_PATH}/core
-        ${SRC_PATH}/core/codec
-        ${SRC_PATH}/core/common
-        ${SRC_PATH}/core/conf
-        ${SRC_PATH}/core/conf/validator
-        ${SRC_PATH}/core/container
-        ${SRC_PATH}/core/oss
-        ${SRC_PATH}/core/crypto
-        ${SRC_PATH}/core/env
-        ${SRC_PATH}/core/initiator
-        ${SRC_PATH}/core/log
-        ${SRC_PATH}/core/math
-        ${SRC_PATH}/core/memory
-        ${SRC_PATH}/core/module
-        ${SRC_PATH}/core/mutex
-        ${SRC_PATH}/core/network
-        ${SRC_PATH}/core/service_bus
-        ${SRC_PATH}/core/service_module
-        ${SRC_PATH}/core/storage
-        ${SRC_PATH}/core/timer_service
-        ${SRC_PATH}/core/vm
-        ${SRC_PATH}/core/filter
-        ${SRC_PATH}/3rd
-        ${SRC_PATH}/3rd/crypto/secp256k1/include
-        ${SRC_PATH}/3rd/crypto/secp256k1/contrib
-        ${SRC_PATH}/3rd/db
-        ${SRC_PATH}/3rd/network/libevent
-        ${SRC_PATH}/3rd/network/libevent/event2
-        ${SRC_PATH}/3rd/network/openssl
-        ${SRC_PATH}/3rd/network/openssl/internal
-        ${SRC_PATH}/3rd/network/openssl/openssl
-        ${SRC_PATH}/3rd/network/rapidjson
-        ${SRC_PATH}/3rd/network/rapidjson/internal
-        ${SRC_PATH}/3rd/network/rapidjson/error
-        ${SRC_PATH}/3rd/cli
-        ${SRC_PATH}/3rd/snappy
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+
+include_directories(
+        ./3rd
+        ./3rd/crypto/secp256k1/include
+        ./3rd/crypto/secp256k1/contrib
+        ./3rd/db
+        ./3rd/network/libevent
+        ./3rd/network/libevent/event2
+        ./3rd/network/openssl
+        ./3rd/network/openssl/internal
+        ./3rd/network/openssl/openssl
+        ./3rd/network/rapidjson
+        ./3rd/network/rapidjson/internal
+        ./3rd/network/rapidjson/error
+        ./3rd/cli
+        ./3rd/snappy
+        ./3rd/xml
+        ./3rd/substrate
 )
 
-aux_source_directory(${SRC_PATH} dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/common dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/task dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/db dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/message dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/cmd_request_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/http_request_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/peer_request_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/peer_request_service/p2pnet dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/node_request_service dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/node_request_service/task_schedule dbc_src_files)
-aux_source_directory(${SRC_PATH}/dbc/service/node_info_exchange dbc_src_files)
+#common
+set(core_src_dir core core/codec core/common core/conf core/conf/validator core/crypto core/crypto/ctaes
+        core/container core/oss core/oss/bill core/oss/idle_task core/env core/initiator core/log
+        core/math core/memory core/module core/monitor core/mutex core/network core/service_bus
+        core/vm core/service_module core/storage core/timer_service core/filter core/compress)
 
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/secp256k1)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/openssl)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/leveldb)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/libevent)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/readline)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/snappy)
-link_directories(${DBC_3RD_LIB_ROOT_PATH}/tinyxml2)
+foreach(sub_dir ${core_src_dir})
+    aux_source_directory(dbc/${sub_dir} dbc_src_files)
+    include_directories(dbc/${sub_dir})
+endforeach()
+
+# service
+set(service_src_dir . common task db
+        service
+        service/message
+        service/cmd_request_service
+        service/http_request_service
+        service/peer_request_service
+        service/peer_request_service/p2pnet
+        service/node_request_service
+        service/node_request_service/task_schedule
+        service/node_info_exchange)
+
+foreach(sub_dir ${service_src_dir})
+    aux_source_directory(dbc/${sub_dir} dbc_src_files)
+    include_directories(dbc/${sub_dir})
+endforeach()
+
+include_directories(.)
+aux_source_directory(. dbc_src_files)
+
+link_directories(${3RD_LIB_PATH}/secp256k1)
+link_directories(${3RD_LIB_PATH}/openssl)
+link_directories(${3RD_LIB_PATH}/leveldb)
+link_directories(${3RD_LIB_PATH}/libevent)
+link_directories(${3RD_LIB_PATH}/readline)
+link_directories(${3RD_LIB_PATH}/snappy)
+link_directories(${3RD_LIB_PATH}/tinyxml2)
+link_directories(${3RD_LIB_PATH}/substrate)
 
 add_executable(dbc ${dbc_src_files})
 
-set(dbclib ${LIBRARY_OUTPUT_PATH}/libdbc_core.a)
-
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} ${dbclib} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 endif ()
 
 if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} ${dbclib} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -ldl)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -ldl -lz)
     TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
 endif ()
 
-MESSAGE(STATUS "end to cmake.........")
+###########################
+## test
+###########################
+add_subdirectory(unittest/tests/test_keypair)
+
