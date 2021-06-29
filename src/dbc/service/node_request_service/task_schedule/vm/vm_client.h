@@ -13,13 +13,7 @@ using namespace matrix::core;
 //#define DEFAULT_STOP_VM_TIME  2
 
 namespace dbc
-{ 
-	enum EVmStatus {
-        VS_SHUT_OFF,
-		VS_PAUSED,
-		VS_RUNNING
-	};
-
+{
 	class VmClient {
 	public:
 		VmClient();

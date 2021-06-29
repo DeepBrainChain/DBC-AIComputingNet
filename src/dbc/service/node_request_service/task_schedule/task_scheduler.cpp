@@ -202,7 +202,9 @@ namespace dbc {
 	}
 
 	void TaskScheduler::ListAllTask(std::vector<std::shared_ptr<TaskInfo>> &vec) {
-
+        for (auto& task : m_tasks) {
+            vec.push_back(task.second);
+        }
 	}
 
 	EVmStatus TaskScheduler::GetTaskStatus(const std::string& task_id) {

@@ -437,10 +437,9 @@ namespace dbc {
             rapidjson::Value task_status_list(rapidjson::kArrayType);
             for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++) {
                 rapidjson::Value st(rapidjson::kObjectType);
-
                 st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
-                st.AddMember("create_time", (int64_t) it->create_time, allocator);
-                st.AddMember("status", STRING_DUP(dbc::to_training_task_status_string(it->status)), allocator);
+                st.AddMember("login_password", STRING_DUP(it->pwd), allocator);
+                st.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
 
                 task_status_list.PushBack(st, allocator);
             }
@@ -448,22 +447,15 @@ namespace dbc {
             SUCC_REPLY(data)
             return E_SUCCESS;
         } else {
-            if (resp->task_status_list.size() != 1) {
-                ERROR_REPLY(HTTP_OK, RPC_RESPONSE_TIMEOUT, "The task is not found")
-                return E_DEFAULT;
-            }
-
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
-            auto it = resp->task_status_list.begin();
-
-            data.AddMember("task_id", STRING_REF(it->task_id), allocator);
-            data.AddMember("create_time", (int64_t) it->create_time, allocator);
-            data.AddMember("status", STRING_DUP(dbc::to_training_task_status_string(it->status)), allocator);
-            data.AddMember("desc", STRING_DUP(it->description), allocator);
-            data.AddMember("pwd", STRING_DUP(it->pwd), allocator);
-            data.AddMember("raw", STRING_DUP(it->raw), allocator);
+            if (resp->task_status_list.size() >= 1) {
+                auto it = resp->task_status_list.begin();
+                data.AddMember("task_id", STRING_REF(it->task_id), allocator);
+                data.AddMember("login_password", STRING_DUP(it->pwd), allocator);
+                data.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
+            }
 
             SUCC_REPLY(data)
             return E_SUCCESS;

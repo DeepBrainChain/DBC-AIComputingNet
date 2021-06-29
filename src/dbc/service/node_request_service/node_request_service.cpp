@@ -451,36 +451,33 @@ namespace dbc {
 				}
 			}
 
-			if (status_list.size() > 0) {
-				std::shared_ptr<matrix::service_core::node_list_task_rsp> rsp_content =
-					std::make_shared<matrix::service_core::node_list_task_rsp>();
+            std::shared_ptr<matrix::service_core::node_list_task_rsp> rsp_content =
+                    std::make_shared<matrix::service_core::node_list_task_rsp>();
 
-				rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-				rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
-				rsp_content->header.__set_nonce(id_generator::generate_nonce());
-				rsp_content->header.__set_session_id(req_content->header.session_id);
-				rsp_content->header.__set_path(req_content->header.path);
+            rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+            rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
+            rsp_content->header.__set_nonce(id_generator::generate_nonce());
+            rsp_content->header.__set_session_id(req_content->header.session_id);
+            rsp_content->header.__set_path(req_content->header.path);
+            rsp_content->body.task_status_list.swap(status_list);
 
-				rsp_content->body.task_status_list.swap(status_list);
+            std::string task_status_msg;
+            for (auto& ts : status_list) {
+                task_status_msg = task_status_msg + ts.task_id + boost::str(boost::format("%d") % ts.status);
+            }
+            std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
+            std::map<std::string, std::string> exten_info;
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info)) {
+                return E_DEFAULT;
+            }
+            rsp_content->header.__set_exten_info(exten_info);
 
-				std::string task_status_msg;
-				for (auto t : rsp_content->body.task_status_list) {
-					task_status_msg = task_status_msg + t.task_id + boost::str(boost::format("%d") % t.status);
-				}
-				std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
-				std::map<std::string, std::string> exten_info;
-				exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-				if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info)) {
-					return E_DEFAULT;
-				}
-				rsp_content->header.__set_exten_info(exten_info);
-
-				//rsp msg
-				std::shared_ptr<message> resp_msg = std::make_shared<message>();
-				resp_msg->set_name(NODE_LIST_TASK_RSP);
-				resp_msg->set_content(rsp_content);
-				CONNECTION_MANAGER->send_resp_message(resp_msg);
-			}
+            //rsp msg
+            std::shared_ptr<message> resp_msg = std::make_shared<message>();
+            resp_msg->set_name(NODE_LIST_TASK_RSP);
+            resp_msg->set_content(rsp_content);
+            CONNECTION_MANAGER->send_resp_message(resp_msg);
 
 			return E_SUCCESS;
 		}

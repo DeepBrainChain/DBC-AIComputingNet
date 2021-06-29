@@ -43,7 +43,13 @@ namespace dbc
         LD_Tail
     };
 
+    enum EVmStatus {
+        VS_SHUT_OFF,
+        VS_PAUSED,
+        VS_RUNNING
+    };
 
+    std::string task_status_string(int32_t status);
 
 
 

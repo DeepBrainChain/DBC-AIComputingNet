@@ -820,11 +820,11 @@ namespace dbc {
         cmd_resp->result = E_SUCCESS;
         cmd_resp->result_info = "";
 
-        for (auto info : rsp_content->body.task_status_list) {
+        for (auto& ts : rsp_content->body.task_status_list) {
             ::cmd_task_status cts;
-            cts.task_id = info.task_id;
-            cts.status = info.status;
-            cts.pwd = info.pwd;
+            cts.task_id = ts.task_id;
+            cts.status = ts.status;
+            cts.pwd = ts.pwd;
             cmd_resp->task_status_list.push_back(std::move(cts));
         }
 
