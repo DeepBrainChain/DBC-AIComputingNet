@@ -476,6 +476,7 @@ void cmd_list_node_rsp::format_output() {
     }
 }
 
+
 void cmd_list_task_rsp::format_output_detail() {
     if (E_SUCCESS != result) {
         cout << result_info << endl;
@@ -500,7 +501,7 @@ void cmd_list_task_rsp::format_output_detail() {
 
         std::cout << "id    : " << it->task_id << std::endl;
         std::cout << "time  : " << time_util::time_2_str(it->create_time) << std::endl;
-        std::cout << "status: " << ai::dbc::to_training_task_status_string(it->status) << std::endl;
+        std::cout << "status: " << dbc::to_training_task_status_string(it->status) << std::endl;
         std::cout << "descri: " << description << std::endl;
         std::cout << "pwd   : " << it->pwd << std::endl;
         std::cout << "raw   : " << it->raw << std::endl;
@@ -543,7 +544,7 @@ void cmd_list_task_rsp::format_output() {
         }
 
         printer << dbc::init << i << it->task_id << time_util::time_2_str(
-                it->create_time) << ai::dbc::to_training_task_status_string(it->status)
+                it->create_time) << dbc::to_training_task_status_string(it->status)
                 << description << dbc::endl;
     }
 }

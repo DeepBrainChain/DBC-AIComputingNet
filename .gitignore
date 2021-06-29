@@ -6,7 +6,7 @@ output/
 *.idb
 *.pdb
 .idea
-//*.cmake
+*.cmake
 CMakeFiles/
 CMakeCache.txt
 Makefile
@@ -21,3 +21,6 @@ src/service_core/lib/*.a
 *.pyc
 deployment/package
 .DS_Store
+
+/proto/thrift/db_thrift_cpp
+

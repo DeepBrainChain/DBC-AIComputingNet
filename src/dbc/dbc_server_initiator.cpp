@@ -16,6 +16,7 @@
 #include <sys/stat.h>  
 #include <fcntl.h>  
 #include <stdio.h>
+#include <byteswap.h>
 #endif
 #include "server.h"
 #include "connection_manager.h"
@@ -65,7 +66,6 @@ namespace ai
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)
             {
-                //logging
                 return ret;
             }
             mdl->start();
@@ -148,7 +148,7 @@ namespace ai
 
             //ai power requestor service
             LOG_INFO << "begin to init ai power requestor service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<cmd_request_service>());
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::cmd_request_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)
@@ -161,7 +161,7 @@ namespace ai
 
             //ai power provider service
             LOG_INFO << "begin to init ai power provider service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<node_request_service>());
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::node_request_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)

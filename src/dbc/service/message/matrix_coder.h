@@ -1,12 +1,3 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   dbc_decoder.h
-* description    :   dbc decoder for network transport
-* date                  :   2018.01.20
-* author            :   Bruce Feng
-**********************************************************************************/
 #ifndef DBC_MATRIX_CODER_H
 #define DBC_MATRIX_CODER_H
 

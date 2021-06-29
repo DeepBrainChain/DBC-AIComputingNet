@@ -43,24 +43,15 @@ namespace dbc {
 
     int32_t on_cmd_stop_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
-    // clean
-    std::shared_ptr<message> rest_clean_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
-
-    int32_t on_cmd_clean_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
-
-    // result / trace
-    std::shared_ptr<message> rest_task_result(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
-
-    std::shared_ptr<message> rest_task_trace(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
-
-    int32_t on_cmd_task_logs_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
-
     // list
     std::shared_ptr<message> rest_list_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path);
 
-    std::shared_ptr<message> rest_show_task_info(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
-
     int32_t on_cmd_list_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
+
+    // logs
+    std::shared_ptr<message> rest_task_logs(const HTTP_REQUEST_PTR& httpReq, const std::string &path);
+
+    int32_t on_cmd_task_logs_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg);
 
     // peers
     std::shared_ptr<message> rest_peers(const HTTP_REQUEST_PTR& httpReq, const std::string &path);

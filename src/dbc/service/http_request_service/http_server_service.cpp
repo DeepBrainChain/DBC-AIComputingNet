@@ -23,8 +23,6 @@
 #include "http_server_service.h"
 #include "rest_handler.h"
 
-using namespace ai::dbc;
-
 namespace dbc {
     int32_t http_server_service::init(bpo::variables_map &options) {
         int32_t ret = load_rest_config(options);

@@ -78,7 +78,7 @@ namespace dbc {
                 return rest_create_task(httpReq, path);
             }
 
-            return rest_show_task_info(httpReq, path);
+            return rest_list_task(httpReq, path);
         }
 
         if (path_list.size() == 2) {
@@ -98,19 +98,9 @@ namespace dbc {
                 return rest_stop_task(httpReq, path);
             }
 
-            // /tasks/<task_id>/clean
-            if (second_param == "clean") {
-                return rest_clean_task(httpReq, path);
-            }
-
             // /tasks/<task_id>/result
-            if (second_param == "result") {
-                return rest_task_result(httpReq, path);
-            }
-
-            // /tasks/<task_id>/trace
-            if (second_param == "trace") {
-                return rest_task_trace(httpReq, path);
+            if (second_param == "logs") {
+                return rest_task_logs(httpReq, path);
             }
         }
 
@@ -133,6 +123,9 @@ namespace dbc {
             return nullptr;
         }
 
+        std::shared_ptr<cmd_create_task_req> cmd_req = std::make_shared<cmd_create_task_req>();
+
+        // parse body
         std::string body = httpReq->read_body();
         if (body.empty()) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
@@ -146,64 +139,17 @@ namespace dbc {
             return nullptr;
         }
 
-        std::string data_dir;
-        std::string hyper_parameters;
-        std::string entry_file;
-        std::string code_dir;
-        std::string training_engine;
-        std::string master;
-        std::string checkpoint_dir;
-        std::string server_specification;
-        std::string container_name;
-        int32_t server_count = 0;
-        int64_t memory = 0;
-        int64_t memory_swap = 0;
-        int8_t select_mode = 0;
-        std::vector<std::string> peer_nodes_list;
-        std::string description;
-
-        JSON_PARSE_STRING(doc, "code_dir", code_dir)
-        JSON_PARSE_STRING(doc, "data_dir", data_dir)
-        JSON_PARSE_STRING(doc, "hyper_parameters", hyper_parameters)
-        JSON_PARSE_STRING(doc, "entry_file", entry_file)
-        JSON_PARSE_STRING(doc, "training_engine", training_engine)
-        JSON_PARSE_STRING(doc, "master", master)
-        JSON_PARSE_STRING(doc, "checkpoint_dir", checkpoint_dir)
-        JSON_PARSE_STRING(doc, "container_name", container_name)
-        JSON_PARSE_STRING(doc, "description", description)
-        JSON_PARSE_UINT(doc, "select_mode", select_mode)
-        JSON_PARSE_UINT(doc, "server_count", server_count)
-        JSON_PARSE_UINT(doc, "memory", memory)
-        JSON_PARSE_UINT(doc, "memory_swap", memory_swap)
-        JSON_PARSE_STRING(doc, "server_specification", server_specification)
-
+        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
                     std::string node(doc["peer_nodes_list"][i].GetString());
-                    peer_nodes_list.push_back(node);
+                    cmd_req->peer_nodes_list.push_back(node);
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
                 }
             }
         }
-
-        std::shared_ptr<cmd_create_task_req> cmd_req = std::make_shared<cmd_create_task_req>();
-        bpo::variables_map &vm = cmd_req->vm;
-        INSERT_VARIABLE(vm, peer_nodes_list)
-        INSERT_VARIABLE(vm, code_dir)
-        INSERT_VARIABLE(vm, data_dir)
-        INSERT_VARIABLE(vm, hyper_parameters)
-        INSERT_VARIABLE(vm, entry_file)
-        INSERT_VARIABLE(vm, training_engine)
-        INSERT_VARIABLE(vm, master)
-        INSERT_VARIABLE(vm, checkpoint_dir)
-        INSERT_VARIABLE(vm, server_specification)
-        INSERT_VARIABLE(vm, container_name)
-        INSERT_VARIABLE(vm, select_mode)
-        INSERT_VARIABLE(vm, server_count)
-        INSERT_VARIABLE(vm, memory)
-        INSERT_VARIABLE(vm, memory_swap)
-        INSERT_VARIABLE(vm, description)
-        bpo::notify(vm);
 
         std::shared_ptr<message> msg = std::make_shared<message>();
         msg->set_name(typeid(cmd_create_task_req).name());
@@ -219,15 +165,12 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        ai::dbc::cmd_task_info &task_info = resp->task_info;
+        data.AddMember("task_id", STRING_REF(resp->task_id), allocator);
+        data.AddMember("password", STRING_REF(resp->login_password), allocator);
 
-        data.AddMember("task_id", STRING_REF(task_info.task_id), allocator);
-        data.AddMember("create_time", task_info.create_time, allocator);
-        data.AddMember("status", STRING_DUP(ai::dbc::to_training_task_status_string(task_info.status)), allocator);
+        httpReq->reply_comm_rest_succ(data);
 
-        SUCC_REPLY(data)
         return E_SUCCESS;
-
     }
 
     // start
@@ -248,82 +191,39 @@ namespace dbc {
 
         const std::string &task_id = path_list[0];
 
+        std::shared_ptr<cmd_start_task_req> cmd_req = std::make_shared<cmd_start_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
         std::string body = httpReq->read_body();
         if (body.empty()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/<task_id>/start")
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
             return nullptr;
         }
 
         rapidjson::Document doc;
         doc.Parse(body.c_str());
         if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/<task_id>/start")
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
             return nullptr;
         }
 
-        std::vector<std::string> peer_nodes_list;
-        std::string code_dir;
-        std::string data_dir;
-        std::string hyper_parameters;
-        std::string entry_file;
-        std::string training_engine;
-        std::string master;
-        std::string checkpoint_dir;
-        std::string server_specification;
-        std::string container_name;
-        int8_t select_mode = 0;
-        int32_t server_count = 0;
-        int64_t memory = 0;
-        int64_t memory_swap = 0;
-        std::string description;
-
-        JSON_PARSE_STRING(doc, "code_dir", code_dir)
-        JSON_PARSE_STRING(doc, "data_dir", data_dir)
-        JSON_PARSE_STRING(doc, "hyper_parameters", hyper_parameters)
-        JSON_PARSE_STRING(doc, "entry_file", entry_file)
-        JSON_PARSE_STRING(doc, "training_engine", training_engine)
-        JSON_PARSE_STRING(doc, "master", master)
-        JSON_PARSE_STRING(doc, "checkpoint_dir", checkpoint_dir)
-        JSON_PARSE_STRING(doc, "container_name", container_name)
-        JSON_PARSE_STRING(doc, "description", description)
-        JSON_PARSE_UINT(doc, "select_mode", select_mode)
-        JSON_PARSE_UINT(doc, "server_count", server_count)
-        JSON_PARSE_UINT(doc, "memory", memory)
-        JSON_PARSE_UINT(doc, "memory_swap", memory_swap)
-        JSON_PARSE_STRING(doc, "server_specification", server_specification)
-
+        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
                     std::string node(doc["peer_nodes_list"][i].GetString());
-                    peer_nodes_list.push_back(node);
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
                 }
             }
         }
 
-        std::shared_ptr<cmd_start_task_req> req = std::make_shared<cmd_start_task_req>();
-        bpo::variables_map &vm = req->vm;
-        INSERT_VARIABLE(vm, task_id)
-        INSERT_VARIABLE(vm, peer_nodes_list)
-        INSERT_VARIABLE(vm, code_dir)
-        INSERT_VARIABLE(vm, data_dir)
-        INSERT_VARIABLE(vm, hyper_parameters)
-        INSERT_VARIABLE(vm, entry_file)
-        INSERT_VARIABLE(vm, training_engine)
-        INSERT_VARIABLE(vm, master)
-        INSERT_VARIABLE(vm, checkpoint_dir)
-        INSERT_VARIABLE(vm, server_specification)
-        INSERT_VARIABLE(vm, container_name)
-        INSERT_VARIABLE(vm, select_mode)
-        INSERT_VARIABLE(vm, server_count)
-        INSERT_VARIABLE(vm, memory)
-        INSERT_VARIABLE(vm, memory_swap)
-        INSERT_VARIABLE(vm, description)
-        bpo::notify(vm);
-
         std::shared_ptr<message> msg = std::make_shared<message>();
         msg->set_name(typeid(cmd_start_task_req).name());
-        msg->set_content(req);
+        msg->set_content(cmd_req);
         return msg;
     }
 
@@ -334,12 +234,6 @@ namespace dbc {
             ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
             return E_DEFAULT;
         }
-
-        ai::dbc::cmd_task_info &task_info = resp->task_info;
-
-        data.AddMember("task_id", STRING_REF(task_info.task_id), allocator);
-        data.AddMember("create_time", task_info.create_time, allocator);
-        data.AddMember("status", STRING_DUP(ai::dbc::to_training_task_status_string(task_info.status)), allocator);
 
         SUCC_REPLY(data)
         return E_SUCCESS;
@@ -363,82 +257,39 @@ namespace dbc {
 
         const std::string &task_id = path_list[0];
 
+        std::shared_ptr<cmd_restart_task_req> cmd_req = std::make_shared<cmd_restart_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
         std::string body = httpReq->read_body();
         if (body.empty()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/<task_id>/start")
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
             return nullptr;
         }
 
         rapidjson::Document doc;
         doc.Parse(body.c_str());
         if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/<task_id>/start")
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
             return nullptr;
         }
 
-        std::string code_dir;
-        std::string data_dir;
-        std::string hyper_parameters;
-        std::string entry_file;
-        std::string training_engine;
-        std::string master;
-        std::string checkpoint_dir;
-        std::string server_specification;
-        std::string container_name;
-        int8_t select_mode = 0;
-        int32_t server_count = 0;
-        int64_t memory = 0;
-        int64_t memory_swap = 0;
-        std::vector<std::string> peer_nodes_list;
-        std::string description;
-
-        JSON_PARSE_STRING(doc, "code_dir", code_dir)
-        JSON_PARSE_STRING(doc, "data_dir", data_dir)
-        JSON_PARSE_STRING(doc, "hyper_parameters", hyper_parameters)
-        JSON_PARSE_STRING(doc, "entry_file", entry_file)
-        JSON_PARSE_STRING(doc, "training_engine", training_engine)
-        JSON_PARSE_STRING(doc, "master", master)
-        JSON_PARSE_STRING(doc, "checkpoint_dir", checkpoint_dir)
-        JSON_PARSE_STRING(doc, "container_name", container_name)
-        JSON_PARSE_STRING(doc, "description", description)
-        JSON_PARSE_UINT(doc, "select_mode", select_mode)
-        JSON_PARSE_UINT(doc, "server_count", server_count)
-        JSON_PARSE_UINT(doc, "memory", memory)
-        JSON_PARSE_UINT(doc, "memory_swap", memory_swap)
-        JSON_PARSE_STRING(doc, "server_specification", server_specification)
-
+        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
                     std::string node(doc["peer_nodes_list"][i].GetString());
-                    peer_nodes_list.push_back(node);
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
                 }
             }
         }
 
-        std::shared_ptr<cmd_restart_task_req> req = std::make_shared<cmd_restart_task_req>();
-        bpo::variables_map &vm = req->vm;
-        INSERT_VARIABLE(vm, task_id)
-        INSERT_VARIABLE(vm, peer_nodes_list)
-        INSERT_VARIABLE(vm, code_dir)
-        INSERT_VARIABLE(vm, data_dir)
-        INSERT_VARIABLE(vm, hyper_parameters)
-        INSERT_VARIABLE(vm, entry_file)
-        INSERT_VARIABLE(vm, training_engine)
-        INSERT_VARIABLE(vm, master)
-        INSERT_VARIABLE(vm, checkpoint_dir)
-        INSERT_VARIABLE(vm, server_specification)
-        INSERT_VARIABLE(vm, container_name)
-        INSERT_VARIABLE(vm, select_mode)
-        INSERT_VARIABLE(vm, server_count)
-        INSERT_VARIABLE(vm, memory)
-        INSERT_VARIABLE(vm, memory_swap)
-        INSERT_VARIABLE(vm, description)
-        bpo::notify(vm);
-
         std::shared_ptr<message> msg = std::make_shared<message>();
         msg->set_name(typeid(cmd_restart_task_req).name());
-        msg->set_content(req);
+        msg->set_content(cmd_req);
         return msg;
     }
 
@@ -450,18 +301,18 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        ai::dbc::cmd_task_info &task_info = resp->task_info;
-
-        data.AddMember("task_id", STRING_REF(task_info.task_id), allocator);
-        data.AddMember("create_time", task_info.create_time, allocator);
-        data.AddMember("status", STRING_DUP(ai::dbc::to_training_task_status_string(task_info.status)), allocator);
-
         SUCC_REPLY(data)
         return E_SUCCESS;
     }
 
     // stop
     std::shared_ptr<message> rest_stop_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks/<task_id>/stop")
+            return nullptr;
+        }
+
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
 
@@ -473,12 +324,39 @@ namespace dbc {
 
         const std::string &task_id = path_list[0];
 
-        std::shared_ptr<cmd_stop_task_req> req = std::make_shared<cmd_stop_task_req>();
-        req->task_id = task_id;
+        std::shared_ptr<cmd_stop_task_req> cmd_req = std::make_shared<cmd_stop_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        doc.Parse(body.c_str());
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
 
         std::shared_ptr<message> msg = std::make_shared<message>();
         msg->set_name(typeid(cmd_stop_task_req).name());
-        msg->set_content(req);
+        msg->set_content(cmd_req);
         return msg;
     }
 
@@ -494,69 +372,112 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    // clean
-    std::shared_ptr<message> rest_clean_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-        if (path_list.size() != 2) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                        "Invalid path_list. POST /api/v1/tasks/<task_id>/clean")
+    // list tasks
+    std::shared_ptr<message> rest_list_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks")
             return nullptr;
         }
 
-        const std::string &task_id = path_list[0];
+        std::shared_ptr<cmd_list_task_req> cmd_req = std::make_shared<cmd_list_task_req>();
 
-        std::shared_ptr<cmd_clean_task_req> req = std::make_shared<cmd_clean_task_req>();
-        req->task_id = task_id;
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() == 1) {
+            cmd_req->task_id = path_list[0];
+        } else {
+            cmd_req->task_id = "";
+        }
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        doc.Parse(body.c_str());
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
 
         std::shared_ptr<message> msg = std::make_shared<message>();
-        msg->set_name(typeid(cmd_clean_task_req).name());
-        msg->set_content(req);
+        msg->set_name(typeid(cmd_list_task_req).name());
+        msg->set_content(cmd_req);
+
         return msg;
     }
 
-    int32_t on_cmd_clean_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
-        INIT_RSP_CONTEXT(cmd_clean_task_req, cmd_clean_task_rsp)
+    int32_t on_cmd_list_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_list_task_req, cmd_list_task_rsp)
 
         if (resp->result != 0) {
             ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-            return E_DEFAULT;
+            return 0;
         }
 
-        SUCC_REPLY(data)
-        return E_SUCCESS;
+        if (req->task_id == "") {
+            rapidjson::Value task_status_list(rapidjson::kArrayType);
+            for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++) {
+                rapidjson::Value st(rapidjson::kObjectType);
+
+                st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
+                st.AddMember("create_time", (int64_t) it->create_time, allocator);
+                st.AddMember("status", STRING_DUP(dbc::to_training_task_status_string(it->status)), allocator);
+
+                task_status_list.PushBack(st, allocator);
+            }
+            data.AddMember("task_status_list", task_status_list, allocator);
+            SUCC_REPLY(data)
+            return E_SUCCESS;
+        } else {
+            if (resp->task_status_list.size() != 1) {
+                ERROR_REPLY(HTTP_OK, RPC_RESPONSE_TIMEOUT, "The task is not found")
+                return E_DEFAULT;
+            }
+
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
+
+            auto it = resp->task_status_list.begin();
+
+            data.AddMember("task_id", STRING_REF(it->task_id), allocator);
+            data.AddMember("create_time", (int64_t) it->create_time, allocator);
+            data.AddMember("status", STRING_DUP(dbc::to_training_task_status_string(it->status)), allocator);
+            data.AddMember("desc", STRING_DUP(it->description), allocator);
+            data.AddMember("pwd", STRING_DUP(it->pwd), allocator);
+            data.AddMember("raw", STRING_DUP(it->raw), allocator);
+
+            SUCC_REPLY(data)
+            return E_SUCCESS;
+        }
     }
 
-    // result / trace
-    std::shared_ptr<message> rest_task_result(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-        if (path_list.size() != 2) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                        "Invalid path_list. GET /api/v1/tasks/<task_id>/result")
+    // logs
+    std::shared_ptr<message> rest_task_logs(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks/<task_id>/logs")
             return nullptr;
         }
 
-        const std::string &task_id = path_list[0];
-
-        std::shared_ptr<cmd_task_logs_req> req = std::make_shared<cmd_task_logs_req>();
-        req->task_id = task_id;
-        req->head_or_tail = GET_LOG_TAIL;
-        req->number_of_lines = 100;
-        req->sub_op = "result";
-#if  defined(__linux__) || defined(MAC_OSX)
-        req->dest_folder = "/tmp";
-#elif defined(WIN32)
-        req->dest_folder = "%TMP%";
-#endif
-
-        std::shared_ptr<message> msg = std::make_shared<message>();
-        msg->set_name(typeid(cmd_task_logs_req).name());
-        msg->set_content(req);
-        return msg;
-    }
-
-    std::shared_ptr<message> rest_task_trace(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
         if (path_list.size() != 2) {
@@ -586,25 +507,52 @@ namespace dbc {
             return nullptr;
         }
 
-        std::shared_ptr<cmd_task_logs_req> req = std::make_shared<cmd_task_logs_req>();
-        req->task_id = task_id;
+        std::shared_ptr<cmd_task_logs_req> cmd_req = std::make_shared<cmd_task_logs_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        doc.Parse(body.c_str());
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
 
         auto lines = (uint64_t) std::stoull(number_of_lines);
         if (lines > MAX_NUMBER_OF_LINES) {
             lines = MAX_NUMBER_OF_LINES - 1;
         }
-        req->number_of_lines = (uint16_t) lines;
+        cmd_req->number_of_lines = (uint16_t) lines;
 
         //tail or head
         if (head_or_tail == "tail") {
-            req->head_or_tail = GET_LOG_TAIL;
+            cmd_req->head_or_tail = GET_LOG_TAIL;
         } else if (head_or_tail == "head") {
-            req->head_or_tail = GET_LOG_HEAD;
+            cmd_req->head_or_tail = GET_LOG_HEAD;
         }
 
         std::shared_ptr<message> msg = std::make_shared<message>();
         msg->set_name(typeid(cmd_task_logs_req).name());
-        msg->set_content(req);
+        msg->set_content(cmd_req);
         return msg;
     }
 
@@ -616,216 +564,20 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        if (req->sub_op == "result") {
-            auto n = resp->peer_node_logs.size();
+        rapidjson::Value peer_node_logs(rapidjson::kArrayType);
+        for (auto s = resp->peer_node_logs.begin(); s != resp->peer_node_logs.end(); s++) {
+            rapidjson::Value log(rapidjson::kObjectType);
+            log.AddMember("peer_node_id", STRING_REF(s->peer_node_id), allocator);
+            log.AddMember("log_content", STRING_REF(s->log_content), allocator);
 
-            if (n == 0) {
-
-                ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, "training result is empty")
-                return E_DEFAULT;
-            }
-
-            if (n != 1) {
-
-                ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, "training result is invalid")
-                return E_DEFAULT;
-            }
-
-            auto hash = resp->get_training_result_hash_from_log(resp->peer_node_logs[0].log_content);
-
-            if (hash.empty()) {
-
-                ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, "not find training result hash")
-                return E_DEFAULT;
-            }
-            data.AddMember("training_result_file", STRING_REF(hash), allocator);
-
-            SUCC_REPLY(data)
-            return E_SUCCESS;
-        } else {
-            rapidjson::Value peer_node_logs(rapidjson::kArrayType);
-            for (auto s = resp->peer_node_logs.begin(); s != resp->peer_node_logs.end(); s++) {
-                rapidjson::Value log(rapidjson::kObjectType);
-                log.AddMember("peer_node_id", STRING_REF(s->peer_node_id), allocator);
-                log.AddMember("log_content", STRING_REF(s->log_content), allocator);
-
-                peer_node_logs.PushBack(log, allocator);
-            }
-            data.AddMember("peer_node_logs", peer_node_logs, allocator);
-            SUCC_REPLY(data)
-            return E_SUCCESS;
-        }
-    }
-
-    // list
-    std::shared_ptr<message> rest_list_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path) {
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-
-        std::shared_ptr<cmd_list_task_req> req = std::make_shared<cmd_list_task_req>();
-        req->list_type = LIST_ALL_TASKS;
-
-        std::shared_ptr<message> msg = std::make_shared<message>();
-        msg->set_name(typeid(cmd_list_task_req).name());
-        msg->set_content(req);
-        return msg;
-    }
-
-    std::shared_ptr<message> rest_show_task_info(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-
-        if (path_list.size() != 1) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid path_list. GET /api/v1/tasks/{task_id}")
-            return nullptr;
+            peer_node_logs.PushBack(log, allocator);
         }
 
-        const std::string task_id = path_list[0];
+        data.AddMember("peer_node_logs", peer_node_logs, allocator);
 
-        std::shared_ptr<cmd_list_task_req> req = std::make_shared<cmd_list_task_req>();
+        httpReq->reply_comm_rest_succ(data);
 
-        req->list_type = LIST_SPECIFIC_TASKS;
-        std::vector<std::string> task_vector;
-        task_vector.push_back(task_id);
-
-        std::copy(std::make_move_iterator(task_vector.begin()),
-                  std::make_move_iterator(task_vector.end()),
-                  std::back_inserter(req->task_list));
-
-        std::shared_ptr<message> msg = std::make_shared<message>();
-        msg->set_name(typeid(cmd_list_task_req).name());
-        msg->set_content(req);
-        return msg;
-    }
-
-    int32_t on_cmd_list_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
-        INIT_RSP_CONTEXT(cmd_list_task_req, cmd_list_task_rsp)
-
-        if (resp->result != 0) {
-            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-            return 0;
-        }
-
-        if (req->list_type == LIST_ALL_TASKS) {
-            rapidjson::Value task_status_list(rapidjson::kArrayType);
-            for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++) {
-                rapidjson::Value st(rapidjson::kObjectType);
-
-                st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
-                st.AddMember("create_time", (int64_t) it->create_time, allocator);
-                st.AddMember("status", STRING_DUP(ai::dbc::to_training_task_status_string(it->status)), allocator);
-
-                task_status_list.PushBack(st, allocator);
-            }
-            data.AddMember("task_status_list", task_status_list, allocator);
-            SUCC_REPLY(data)
-            return E_SUCCESS;
-        } else {
-
-            if (resp->task_status_list.size() != 1) {
-                ERROR_REPLY(HTTP_OK, RPC_RESPONSE_TIMEOUT, "The task is not found")
-                return E_DEFAULT;
-            }
-
-            rapidjson::Document document;
-            rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-
-            auto it = resp->task_status_list.begin();
-
-            data.AddMember("task_id", STRING_REF(it->task_id), allocator);
-            data.AddMember("create_time", (int64_t) it->create_time, allocator);
-            data.AddMember("status", STRING_DUP(ai::dbc::to_training_task_status_string(it->status)), allocator);
-            data.AddMember("desc", STRING_DUP(it->description), allocator);
-            data.AddMember("pwd", STRING_DUP(it->pwd), allocator);
-            data.AddMember("raw", STRING_DUP(it->raw), allocator);
-
-            SUCC_REPLY(data)
-            return E_SUCCESS;
-        }
-    }
-
-    // /peers/
-    std::shared_ptr<message> rest_peers(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-
-        if (path_list.size() != 1) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                        "No option count specified. Use /api/v1/peers/{option}")
-            return nullptr;
-        }
-
-        const std::string &option = path_list[0];
-        std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
-        req->flag = matrix::service_core::flag_active;
-
-        if (option == "active") {
-            req->flag = matrix::service_core::flag_active;
-        } else if (option == "global") {
-            req->flag = matrix::service_core::flag_global;
-        } else {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid option. The option is active or global.")
-            return nullptr;
-
-        }
-
-        std::shared_ptr<message> msg = std::make_shared<message>();
-        msg->set_name(typeid(cmd_get_peer_nodes_req).name());
-        msg->set_content(req);
-        return msg;
-    }
-
-    int32_t on_cmd_get_peer_nodes_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
-        INIT_RSP_CONTEXT(cmd_get_peer_nodes_req, cmd_get_peer_nodes_rsp)
-
-        if (resp->result != 0) {
-            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-            return E_DEFAULT;
-        }
-
-        rapidjson::Value peer_nodes_list(rapidjson::kArrayType);
-        for (auto it = resp->peer_nodes_list.begin(); it != resp->peer_nodes_list.end(); it++) {
-            rapidjson::Value cmd_peer_node_info(rapidjson::kObjectType);
-
-            cmd_peer_node_info.AddMember("peer_node_id", STRING_REF(it->peer_node_id), allocator);
-            cmd_peer_node_info.AddMember("live_time_stamp", it->live_time_stamp, allocator);
-
-            cmd_peer_node_info.AddMember("net_st", STRING_DUP(net_state_2_string(it->net_st)), allocator);
-            cmd_peer_node_info.AddMember("ip", STRING_DUP(string_util::fuzz_ip(it->addr.ip)), allocator);
-            cmd_peer_node_info.AddMember("port", it->addr.port, allocator);
-            cmd_peer_node_info.AddMember("node_type", STRING_DUP(node_type_2_string(it->node_type)), allocator);
-
-            rapidjson::Value service_list(rapidjson::kArrayType);
-            for (auto & s : it->service_list) {
-                service_list.PushBack(rapidjson::StringRef(s.c_str(), s.length()), allocator);
-            }
-            cmd_peer_node_info.AddMember("service_list", service_list, allocator);
-
-            peer_nodes_list.PushBack(cmd_peer_node_info, allocator);
-        }
-
-        data.AddMember("peer_nodes_list", peer_nodes_list, allocator);
-
-        SUCC_REPLY(data)
         return E_SUCCESS;
-    }
-
-    // /stat/
-    std::shared_ptr<message> rest_stat(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        rapidjson::Document document;
-        rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-
-        rapidjson::Value data(rapidjson::kObjectType);
-        std::string node_id = CONF_MANAGER->get_node_id();
-
-        shared_ptr<module_manager> mdls = g_server->get_module_manager();
-        dbc::rest_api_service *s = (dbc::rest_api_service *) mdls->get(REST_API_SERVICE_MODULE).get();
-
-        data.AddMember("node_id", STRING_REF(node_id), allocator);
-        data.AddMember("session_count", s->get_session_count(), allocator);
-        data.AddMember("startup_time", s->get_startup_time(), allocator);
-        SUCC_REPLY(data)
-        return nullptr;
     }
 
     // /mining_nodes/
@@ -1139,6 +891,88 @@ namespace dbc {
 
         SUCC_REPLY(data)
         return E_SUCCESS;
+    }
+
+    // /peers/
+    std::shared_ptr<message> rest_peers(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() != 1) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                        "No option count specified. Use /api/v1/peers/{option}")
+            return nullptr;
+        }
+
+        const std::string &option = path_list[0];
+        std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
+        req->flag = matrix::service_core::flag_active;
+
+        if (option == "active") {
+            req->flag = matrix::service_core::flag_active;
+        } else if (option == "global") {
+            req->flag = matrix::service_core::flag_global;
+        } else {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid option. The option is active or global.")
+            return nullptr;
+        }
+
+        std::shared_ptr<message> msg = std::make_shared<message>();
+        msg->set_name(typeid(cmd_get_peer_nodes_req).name());
+        msg->set_content(req);
+        return msg;
+    }
+
+    int32_t on_cmd_get_peer_nodes_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_get_peer_nodes_req, cmd_get_peer_nodes_rsp)
+
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+            return E_DEFAULT;
+        }
+
+        rapidjson::Value peer_nodes_list(rapidjson::kArrayType);
+        for (auto it = resp->peer_nodes_list.begin(); it != resp->peer_nodes_list.end(); it++) {
+            rapidjson::Value cmd_peer_node_info(rapidjson::kObjectType);
+            cmd_peer_node_info.AddMember("peer_node_id", STRING_REF(it->peer_node_id), allocator);
+            cmd_peer_node_info.AddMember("live_time_stamp", it->live_time_stamp, allocator);
+            cmd_peer_node_info.AddMember("net_st", STRING_DUP(net_state_2_string(it->net_st)), allocator);
+            cmd_peer_node_info.AddMember("ip", STRING_DUP(string_util::fuzz_ip(it->addr.ip)), allocator);
+            cmd_peer_node_info.AddMember("port", it->addr.port, allocator);
+            cmd_peer_node_info.AddMember("node_type", STRING_DUP(node_type_2_string(it->node_type)), allocator);
+
+            rapidjson::Value service_list(rapidjson::kArrayType);
+            for (auto & s : it->service_list) {
+                service_list.PushBack(rapidjson::StringRef(s.c_str(), s.length()), allocator);
+            }
+            cmd_peer_node_info.AddMember("service_list", service_list, allocator);
+
+            peer_nodes_list.PushBack(cmd_peer_node_info, allocator);
+        }
+
+        data.AddMember("peer_nodes_list", peer_nodes_list, allocator);
+
+        httpReq->reply_comm_rest_succ(data);
+
+        return E_SUCCESS;
+    }
+
+    // /stat/
+    std::shared_ptr<message> rest_stat(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        rapidjson::Document document;
+        rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
+
+        rapidjson::Value data(rapidjson::kObjectType);
+        std::string node_id = CONF_MANAGER->get_node_id();
+
+        shared_ptr<module_manager> mdls = g_server->get_module_manager();
+        dbc::rest_api_service *s = (dbc::rest_api_service *) mdls->get(REST_API_SERVICE_MODULE).get();
+
+        data.AddMember("node_id", STRING_REF(node_id), allocator);
+        data.AddMember("session_count", s->get_session_count(), allocator);
+        data.AddMember("startup_time", s->get_startup_time(), allocator);
+        SUCC_REPLY(data)
+        return nullptr;
     }
 
     // /config/

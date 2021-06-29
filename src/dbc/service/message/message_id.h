@@ -20,6 +20,9 @@
 #define NODE_LIST_TASK_REQ      "node_list_task_req"
 #define NODE_LIST_TASK_RSP      "node_list_task_rsp"
 
+#define NODE_LIST_TASK_TIMER    "node_list_task_timer"
+#define NODE_TASK_LOGS_TIMER    "node_task_logs_timer"
+
 
 // def
 #define LIST_ALL_TASKS            0

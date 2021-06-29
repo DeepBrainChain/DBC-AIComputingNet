@@ -6,5 +6,4 @@
 #include "matrix_types.h"
 #include "service_topic.h"
 
-
 #endif //DBC_MESSAGE_H

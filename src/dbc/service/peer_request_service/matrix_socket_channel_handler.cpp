@@ -13,7 +13,7 @@
 #include "service_proto_filter.h"
 #include "compress/matrix_compress.h"
 #include <algorithm>
-
+#include "message_id.h"
 
 namespace matrix
 {
@@ -63,8 +63,8 @@ namespace matrix
 
         bool matrix_socket_channel_handler::validate_resp_path(std::string msg_name, std::vector<std::string>& path)
         {
-            if (msg_name != LIST_TRAINING_RESP &&
-                msg_name != LOGS_RESP &&
+            if (msg_name != NODE_LIST_TASK_RSP &&
+                msg_name != NODE_TASK_LOGS_RSP &&
                 msg_name != SHOW_RESP)
             {
                 return true;
@@ -91,8 +91,8 @@ namespace matrix
 
         bool matrix_socket_channel_handler::validate_req_path(std::string msg_name, std::vector<std::string>& path)
         {
-            if( msg_name != LIST_TRAINING_REQ &&
-                msg_name != LOGS_REQ &&
+            if( msg_name != NODE_LIST_TASK_REQ &&
+                msg_name != NODE_TASK_LOGS_REQ &&
                 msg_name != SHOW_REQ)
             {
                 return true;

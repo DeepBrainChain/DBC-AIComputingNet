@@ -26,16 +26,16 @@
 #define CLIENT_CONNECT_NOTIFICATION                             "client_connect_notification"                      //client tcp connect remote notification
 #define TCP_CHANNEL_ERROR                                       "tcp_socket_channel_error"                         //network transport error
 
-#define STOP_TRAINING_REQ                                       "stop_training_req"
-#define LIST_TRAINING_REQ                                       "list_training_req"
-#define LIST_TRAINING_RESP                                      "list_training_resp"
+//#define STOP_TRAINING_REQ                                       "stop_training_req"
+//#define LIST_TRAINING_REQ                                       "list_training_req"
+//#define LIST_TRAINING_RESP                                      "list_training_resp"
 
-#define LOGS_REQ                                                 "logs_req"
-#define LOGS_RESP                                            "logs_resp"
+//#define LOGS_REQ                                                 "logs_req"
+//#define LOGS_RESP                                            "logs_resp"
 
 #define CMD_AI_TRAINING_NOTIFICATION_REQ                            "cmd_start_training_req"
-#define AI_TRAINING_NOTIFICATION_REQ                                "start_training_req"
-#define AI_TRAINGING_NOTIFICATION_RESP                              "start_training_resp"
+//#define AI_TRAINING_NOTIFICATION_REQ                                "start_training_req"
+//#define AI_TRAINGING_NOTIFICATION_RESP                              "start_training_resp"
 
 #define CMD_GET_PEER_NODES_REQ								"cmd_get_peer_nodes_req"
 #define CMD_GET_PEER_NODES_RESP								"cmd_get_peer_nodes_resp"

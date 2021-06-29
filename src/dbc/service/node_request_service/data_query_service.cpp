@@ -1,14 +1,3 @@
-/*********************************************************************************
-
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         : data_query_service.cpp
-* description       :
-* date              : 2018/6/13
-* author            : Jimmy Kuang
-**********************************************************************************/
-
 #include "data_query_service.h"
 #include "message.h"
 #include "server.h"
@@ -16,8 +5,7 @@
 #include "service_message_id.h"
 #include "matrix_types.h"
 
-#include "node_info_query_req_msg.h"
-#include "node_info_query_resp_msg.h"
+#include "node_info_message.h"
 
 #include "service_module.h"
 #include "node_info_collection.h"
@@ -49,11 +37,6 @@ namespace service
 
         }
 
-        /**
-         * init
-         * @param options
-         * @return
-         */
         int32_t data_query_service::init(bpo::variables_map &options)
         {
             LOG_DEBUG << "data_query_service::int";
@@ -77,38 +60,13 @@ namespace service
                 cfg_own_node(options, m_own_node_id);
             }
 
-
-
             return service_module::init(options);
         }
 
-        /**
-         * init timer
-         */
-        void data_query_service::init_timer()
-        {
-            m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&data_query_service::on_timer_node_info_collection,
-                                                                     this, std::placeholders::_1);
-            add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
-
-            m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&data_query_service::on_timer_service_broadcast, this,
-                                                                  std::placeholders::_1);
-            //add_timer(SERVICE_BROADCAST_TIMER, TIMER_INTERVAL_SERVICE_BROADCAST);
-            add_timer(SERVICE_BROADCAST_TIMER, CONF_MANAGER->get_timer_service_broadcast_in_second() * 1000, ULLONG_MAX, DEFAULT_STRING);
-
-            m_timer_invokers[NODE_INFO_QUERY_TIMER] = std::bind(&data_query_service::on_guard_timer_expired_for_node_info_query, this, std::placeholders::_1);
-        }
-
-        /**
-         * add own node info into service info collection
-         * @param options
-         * @param own_id
-         */
         void data_query_service::cfg_own_node(bpo::variables_map &options, std::string own_id)
         {
             node_service_info info;
             info.service_list.push_back(SERVICE_NAME_AI_TRAINING);
-
 
             if (options.count("name"))
             {
@@ -157,11 +115,22 @@ namespace service
             m_service_info_collection.add(own_id, info);
         }
 
-        /**
-         *
-         * @param timer
-         * @return
-         */
+        void data_query_service::init_timer()
+        {
+            // 定期更新本地 node_info
+            m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&data_query_service::on_timer_node_info_collection,
+                                                                     this, std::placeholders::_1);
+            add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
+
+            m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&data_query_service::on_timer_service_broadcast, this,
+                                                                  std::placeholders::_1);
+            //add_timer(SERVICE_BROADCAST_TIMER, TIMER_INTERVAL_SERVICE_BROADCAST);
+            add_timer(SERVICE_BROADCAST_TIMER, CONF_MANAGER->get_timer_service_broadcast_in_second() * 1000, ULLONG_MAX, DEFAULT_STRING);
+
+            m_timer_invokers[NODE_INFO_QUERY_TIMER] = std::bind(&data_query_service::on_guard_timer_expired_for_node_info_query, this, std::placeholders::_1);
+        }
+
+
         int32_t data_query_service::on_timer_node_info_collection(std::shared_ptr<matrix::core::core_timer> timer)
         {
             if(m_is_computing_node)
@@ -170,14 +139,8 @@ namespace service
             return E_SUCCESS;
         }
 
-
-        /**
-         * add topic subscription
-         */
         void data_query_service::init_subscription()
         {
-            LOG_DEBUG << "data_query_service::init_subscription";
-
             SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_list_node_req).name());
 
             SUBSCRIBE_BUS_MESSAGE(SHOW_REQ);
@@ -187,14 +150,14 @@ namespace service
             SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_resp_msg).name());
         }
 
-        /**
-         * add topic handler
-         */
         void data_query_service::init_invoker()
         {
             LOG_DEBUG << "data_query_service::init_invoker";
 
             invoker_type invoker;
+
+            invoker = std::bind(&data_query_service::on_cli_show_req, this, std::placeholders::_1);
+            m_invokers.insert({typeid(::cmd_list_node_req).name(), {invoker}});
 
             invoker = std::bind(&data_query_service::on_net_show_req, this, std::placeholders::_1);
             m_invokers.insert({SHOW_REQ, {invoker}});
@@ -202,21 +165,12 @@ namespace service
             invoker = std::bind(&data_query_service::on_net_show_resp, this, std::placeholders::_1);
             m_invokers.insert({SHOW_RESP, {invoker}});
 
-            invoker = std::bind(&data_query_service::on_cli_show_req, this, std::placeholders::_1);
-            m_invokers.insert({typeid(::cmd_list_node_req).name(), {invoker}});
-
             invoker = std::bind(&data_query_service::on_net_service_broadcast_req, this, std::placeholders::_1);
             m_invokers.insert({SERVICE_BROADCAST_REQ, {invoker}});
 
             BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &data_query_service::on_get_task_queue_size_resp);
         }
 
-
-        /**
-         * callback when show req is received from command line
-         * @param msg the show requrest content
-         * @return error code
-         */
         int32_t data_query_service::on_cli_show_req(std::shared_ptr<message> &msg)
         {
             LOG_DEBUG << "data_query_service::on_cli_show_req";
@@ -339,11 +293,6 @@ namespace service
             return E_SUCCESS;
         }
 
-        /**
-         * callback when show req from network is received
-         * @param msg
-         * @return
-         */
         int32_t data_query_service::on_net_show_req(std::shared_ptr<message> &msg)
         {
             LOG_INFO << "data_query_service::on_net_show_req";
@@ -454,12 +403,6 @@ namespace service
 
         }
 
-        /**
-         * create session for an ongoing data query:  add a guard timer and add one session record in cache
-         * @param session_id
-         * @param q
-         * @return
-         */
         int32_t data_query_service::create_data_query_session(std::string session_id, std::shared_ptr<node_info_query_req_msg> q)
         {
             //guard timer
@@ -487,10 +430,6 @@ namespace service
             return ret;
         }
 
-        /**
-         * remove an ongoing data query session
-         * @param session
-         */
         void data_query_service::rm_data_query_session(std::shared_ptr<service_session> session)
         {
             if (nullptr == session)
@@ -503,11 +442,6 @@ namespace service
             remove_session(session->get_session_id());
         }
 
-        /**
-         * callback when show resp is received from net
-         * @param msg
-         * @return
-         */
         int32_t data_query_service::on_net_show_resp(std::shared_ptr<message> &msg)
         {
             //LOG_DEBUG << "data_query_service::on_net_show_resp";
@@ -570,7 +504,6 @@ namespace service
             return E_SUCCESS;
 
         }
-
 
         int32_t data_query_service::on_timer_service_broadcast(std::shared_ptr<matrix::core::core_timer> timer)
         {
@@ -639,11 +572,6 @@ namespace service
 
         }
 
-        /**
-         * callback for guard timer expired: It indicates a node_info_query_resp has not been received in time.
-         * @param timer
-         * @return
-         */
         int32_t data_query_service::on_guard_timer_expired_for_node_info_query(std::shared_ptr<core_timer> timer)
         {
             int32_t ret_code = E_SUCCESS;
@@ -680,12 +608,6 @@ namespace service
             return ret_code;
         }
 
-
-        /**
-         * callback when topic "get_task_queue_size_resp" is received. This is a internal topic between ai_power_provider and data_query.
-         * @param msg
-         * @return
-         */
         int32_t data_query_service::on_get_task_queue_size_resp(std::shared_ptr<message> &msg)
         {
             std::shared_ptr<get_task_queue_size_resp_msg> resp =
@@ -705,6 +627,5 @@ namespace service
 
             return E_SUCCESS;
         }
-
     }
 }

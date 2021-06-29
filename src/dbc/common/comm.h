@@ -40,18 +40,19 @@ public:
 
 };
 
-static std::string run_shell(const char* cmd) {
+static std::string run_shell(const char* cmd, const char* modes = "r") {
     if (cmd == nullptr) return "";
 
-    FILE * fp;
+    FILE * fp = nullptr;
     char buffer[1024] = {0};
-    fp = popen(cmd, "r");
+    fp = popen(cmd, modes);
     if (fp != nullptr) {
         fgets(buffer, sizeof(buffer), fp);
         pclose(fp);
+        return std::string(buffer);
+    } else {
+        return std::string("run_shell failed! ") + cmd + std::string(" ") + std::to_string(errno) + ":" + strerror(errno);
     }
-
-    return std::string(buffer);
 }
 
 #endif //DBC_COMM_H

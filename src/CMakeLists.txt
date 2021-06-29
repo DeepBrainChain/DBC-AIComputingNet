@@ -42,7 +42,7 @@ foreach(sub_dir ${core_src_dir})
 endforeach()
 
 # service
-set(service_src_dir . common task db
+set(service_src_dir . common task
         service
         service/message
         service/cmd_request_service
@@ -51,7 +51,9 @@ set(service_src_dir . common task db
         service/peer_request_service/p2pnet
         service/node_request_service
         service/node_request_service/task_schedule
-        service/node_info_exchange)
+        service/node_request_service/task_schedule/db
+        service/node_request_service/task_schedule/vm
+        service/node_request_service/node_info)
 
 foreach(sub_dir ${service_src_dir})
     aux_source_directory(dbc/${sub_dir} dbc_src_files)
@@ -84,5 +86,5 @@ endif ()
 ###########################
 ## test
 ###########################
-add_subdirectory(unittest/tests/test_keypair)
+#add_subdirectory(unittest/tests/test_keypair)
 

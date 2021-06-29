@@ -1,12 +1,3 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        dbc_decoder.cpp
-* description    dbc decoder for network transport
-* date                  2018.01.20
-* author            Bruce Feng
-**********************************************************************************/
 #include "matrix_coder.h"
 #include "compress/matrix_compress.h"
 #include "service_message_id.h"
@@ -45,12 +36,10 @@ namespace matrix {
             BIND_DECODE_INVOKER(node_start_task_req);
             BIND_DECODE_INVOKER(node_restart_task_req);
             BIND_DECODE_INVOKER(node_stop_task_req);
-
-            BIND_DECODE_INVOKER(list_training_req);
-            BIND_DECODE_INVOKER(list_training_resp);
-
-            BIND_DECODE_INVOKER(logs_req);
-            BIND_DECODE_INVOKER(logs_resp);
+            BIND_DECODE_INVOKER(node_list_task_req);
+            BIND_DECODE_INVOKER(node_list_task_rsp);
+            BIND_DECODE_INVOKER(node_task_logs_req);
+            BIND_DECODE_INVOKER(node_task_logs_rsp);
 
             BIND_DECODE_INVOKER(show_req);
             BIND_DECODE_INVOKER(show_resp);
@@ -76,12 +65,10 @@ namespace matrix {
             BIND_ENCODE_INVOKER(node_start_task_req);
             BIND_ENCODE_INVOKER(node_restart_task_req);
             BIND_ENCODE_INVOKER(node_stop_task_req);
-
-            BIND_ENCODE_INVOKER(list_training_req);
-            BIND_ENCODE_INVOKER(list_training_resp);
-
-            BIND_ENCODE_INVOKER(logs_req);
-            BIND_ENCODE_INVOKER(logs_resp);
+            BIND_ENCODE_INVOKER(node_list_task_req);
+            BIND_ENCODE_INVOKER(node_list_task_rsp);
+            BIND_ENCODE_INVOKER(node_task_logs_req);
+            BIND_ENCODE_INVOKER(node_task_logs_rsp);
 
             BIND_ENCODE_INVOKER(show_req);
             BIND_ENCODE_INVOKER(show_resp);

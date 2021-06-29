@@ -15,7 +15,7 @@
 #include <string>
 #include "service_module.h"
 #include "handler_create_functor.h"
-#include "node_info_query_req_msg.h"
+#include "node_info_message.h"
 #include "service_info_collection.h"
 #include "node_info_collection.h"
 
@@ -30,14 +30,9 @@ namespace service
 {
     namespace misc
     {
-
-        /**
-         *
-         */
         class data_query_service : public service_module
         {
         public:
-
             data_query_service();
 
             virtual ~data_query_service() = default;
@@ -46,10 +41,7 @@ namespace service
 
             virtual int32_t init(bpo::variables_map &options);
 
-
-
         protected:
-
             enum {
                 MAX_NAME_STR_LENGTH = 16
             };
@@ -86,7 +78,5 @@ namespace service
             service_info_collection m_service_info_collection;
             node_info_collection m_node_info_collection;
         };
-
     }
-
 }
