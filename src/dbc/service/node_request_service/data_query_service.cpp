@@ -1,12 +1,9 @@
 #include "data_query_service.h"
 #include "message.h"
 #include "server.h"
-
 #include "service_message_id.h"
 #include "matrix_types.h"
-
 #include "node_info_message.h"
-
 #include "service_module.h"
 #include "node_info_collection.h"
 #include "service_info_collection.h"
@@ -18,7 +15,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include "leveldb/db.h"
-#include "ai_crypter.h"
+#include <boost/format.hpp>
 
 using namespace matrix::service_core;
 
@@ -122,6 +119,7 @@ namespace service
                                                                      this, std::placeholders::_1);
             add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
 
+            // 定期
             m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&data_query_service::on_timer_service_broadcast, this,
                                                                   std::placeholders::_1);
             //add_timer(SERVICE_BROADCAST_TIMER, TIMER_INTERVAL_SERVICE_BROADCAST);
@@ -202,15 +200,6 @@ namespace service
             }
             else if (req->op == ::OP_SHOW_NODE_INFO)
             {
-                if (id_generator::check_node_id(req->d_node_id) != true)
-                {
-
-                    cmd_resp->error("invalid node id: " + req->d_node_id);
-
-                    TOPIC_MANAGER->publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
-                    return E_DEFAULT;
-                }
-
                 if(req->d_node_id == req->o_node_id)
                 {
 
@@ -311,7 +300,7 @@ namespace service
             std::string sign_msg = content->header.nonce 
                                      + content->header.session_id
                                      +d_node_id+boost::algorithm::join(content->body.keys, "");
-            if (! ai_crypto_util::verify_sign(sign_msg, content->header.exten_info,o_node_id))
+            if (!dbc::verify_sign(content->header.exten_info["sign"], sign_msg, o_node_id))
             {
                 LOG_ERROR << "fake message. " << o_node_id;
                 return E_DEFAULT;
@@ -457,9 +446,9 @@ namespace service
             auto o_node_id = content->body.o_node_id;
             auto d_node_id = content->body.d_node_id;
 
-            std::string sign_msg = content->header.nonce + content->header.session_id+d_node_id 
+            std::string sign_msg = content->header.nonce + content->header.session_id+d_node_id
                                      + boost::algorithm::join(content->body.kvs | boost::adaptors::map_values, "");
-            if (! ai_crypto_util::verify_sign(sign_msg, content->header.exten_info,o_node_id))
+            if (!dbc::verify_sign(content->header.exten_info["sign"], sign_msg, o_node_id))
             {
                 LOG_ERROR << "fake message. " << o_node_id;
                 return E_DEFAULT;

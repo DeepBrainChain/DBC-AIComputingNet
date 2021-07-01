@@ -22,7 +22,7 @@
 #include "ip_validator.h"
 #include "port_validator.h"
 #include "api_call.h"
-#include "id_generator.h"
+#include "crypt_util.h"
 #include "common/version.h"
 #include "tcp_socket_channel.h"
 #include "timer_def.h"
@@ -30,8 +30,6 @@
 #include "peers_db_types.h"
 #include <leveldb/write_batch.h>
 #include <boost/format.hpp>
-
-#include "ai_crypter.h"
 
 using namespace std;
 using namespace matrix::core;
@@ -736,7 +734,7 @@ namespace matrix {
                 return E_DEFAULT;
             }
 
-            if (id_generator::check_base58_id(req_content->header.nonce) != true) {
+            if (!dbc::check_id(req_content->header.nonce)) {
                 LOG_DEBUG << "p2p_net_service ver_req. nonce error ";
                 return E_DEFAULT;
             }
@@ -764,7 +762,7 @@ namespace matrix {
             std::string sign_req_msg = boost::str(
                     boost::format("%s%s%d%d") % req_content->header.nonce % req_content->body.node_id
                     % req_content->body.core_version % req_content->body.protocol_version);
-            if (!ai_crypto_util::verify_sign(sign_req_msg, req_content->header.exten_info, req_content->body.node_id)) {
+            if (!dbc::verify_sign(req_content->header.exten_info["sign"], sign_req_msg, req_content->body.node_id)) {
                 LOG_ERROR << "fake message. " << req_content->body.node_id;
                 return E_DEFAULT;
             }
@@ -776,7 +774,7 @@ namespace matrix {
             //header
             resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             resp_content->header.__set_msg_name(VER_RESP);
-            resp_content->header.__set_nonce(id_generator::generate_nonce());
+            resp_content->header.__set_nonce(dbc::create_nonce());
 
             //capacity
             std::map<std::string, std::string> exten_info;
@@ -791,9 +789,13 @@ namespace matrix {
             std::string sign_msg = boost::str(
                     boost::format("%s%s%d%d") % resp_content->header.nonce % CONF_MANAGER->get_node_id() %
                     CORE_VERSION % PROTOCO_VERSION);
-            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info)) {
-                return E_DEFAULT;
-            }
+
+            std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+            exten_info["sign"] = sign;
+            exten_info["sign_algo"] = ECDSA;
+            time_t cur = std::time(nullptr);
+            exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
             resp_content->header.__set_exten_info(exten_info);
 
             resp_msg->set_content(resp_content);
@@ -813,7 +815,7 @@ namespace matrix {
                 return E_DEFAULT;
             }
 
-            if (id_generator::check_base58_id(resp_content->header.nonce) != true) {
+            if (dbc::check_id(resp_content->header.nonce) != true) {
                 LOG_DEBUG << "p2p_net_service ver_resp. nonce error ";
                 return E_DEFAULT;
             }
@@ -821,7 +823,7 @@ namespace matrix {
             std::string sign_msg = boost::str(
                     boost::format("%s%s%d%d") % resp_content->header.nonce % resp_content->body.node_id %
                     resp_content->body.core_version % resp_content->body.protocol_version);
-            if (!ai_crypto_util::verify_sign(sign_msg, resp_content->header.exten_info, resp_content->body.node_id)) {
+            if (!dbc::verify_sign(resp_content->header.exten_info["sign"], sign_msg, resp_content->body.node_id)) {
                 LOG_ERROR << "fake message. " << resp_content->body.node_id;
                 return E_DEFAULT;
             }
@@ -961,7 +963,7 @@ namespace matrix {
                 //header
                 req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
                 req_content->header.__set_msg_name(VER_REQ);
-                req_content->header.__set_nonce(id_generator::generate_nonce());
+                req_content->header.__set_nonce(dbc::create_nonce());
 
                 //capacity
                 std::map<std::string, std::string> exten_info;
@@ -987,9 +989,14 @@ namespace matrix {
                 std::string sign_msg = boost::str(
                         boost::format("%s%s%d%d") % req_content->header.nonce % CONF_MANAGER->get_node_id() %
                         CORE_VERSION % PROTOCO_VERSION);
-                if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info)) {
-                    return E_DEFAULT;
-                }
+
+                std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+                exten_info["sign"] = sign;
+                exten_info["sign_algo"] = ECDSA;
+                time_t cur = std::time(nullptr);
+                exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+                exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+
                 req_content->header.__set_exten_info(exten_info);
 
                 req_msg->set_content(req_content);
@@ -1144,7 +1151,7 @@ namespace matrix {
                 return E_DEFAULT;
             }
 
-            if (id_generator::check_base58_id(rsp->header.nonce) != true) {
+            if (dbc::check_id(rsp->header.nonce) != true) {
                 LOG_DEBUG << "p2p_net_service on_get_peer_nodes_resp. nonce error ";
                 return E_SUCCESS;
             }
@@ -1233,7 +1240,7 @@ namespace matrix {
             std::shared_ptr<matrix::service_core::get_peer_nodes_req> req_content = std::make_shared<matrix::service_core::get_peer_nodes_req>();
             req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             req_content->header.__set_msg_name(P2P_GET_PEER_NODES_REQ);
-            req_content->header.__set_nonce(id_generator::generate_nonce());
+            req_content->header.__set_nonce(dbc::create_nonce());
 
             std::shared_ptr<message> req_msg = std::make_shared<message>();
             req_msg->set_name(P2P_GET_PEER_NODES_REQ);
@@ -1253,7 +1260,7 @@ namespace matrix {
             //header
             resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
-            resp_content->header.__set_nonce(id_generator::generate_nonce());
+            resp_content->header.__set_nonce(dbc::create_nonce());
 
             if (node)//broadcast one node
             {
@@ -1449,7 +1456,7 @@ namespace matrix {
                     }
 
                     //validate node id
-                    if (!db_candidate->node_id.empty() && !id_generator::check_base58_id(db_candidate->node_id)) {
+                    if (!db_candidate->node_id.empty()) {
                         LOG_ERROR << "p2p net service load peer candidate error: " << "node id: "
                                   << db_candidate->node_id << " is not Base58 code";
                         continue;

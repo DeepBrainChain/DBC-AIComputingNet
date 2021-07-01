@@ -7,13 +7,11 @@
 #include "matrix_coder.h"
 #include "ip_validator.h"
 #include <boost/exception/all.hpp>
-#include "id_generator.h"
+#include "crypt_util.h"
 #include "task_common_def.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/format.hpp>
-#include "ai_crypter.h"
-#include <sstream>
 #include "message.h"
 
 using namespace matrix::core;
@@ -108,14 +106,14 @@ namespace dbc {
         }
 
         // 生成task_id
-        task_id = id_generator::generate_task_id();
+        task_id = dbc::create_task_id();
         login_password = generate_pwd();
 
         // 创建 node_ 请求
         auto req_content = std::make_shared<matrix::service_core::node_create_task_req>();
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_CREATE_TASK_REQ);
-        req_content->header.__set_nonce(id_generator::generate_nonce());
+        req_content->header.__set_nonce(dbc::create_nonce());
         req_content->body.__set_task_id(task_id);
         req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
         // password
@@ -138,7 +136,7 @@ namespace dbc {
         // 签名
         std::map<std::string, std::string> exten_info;
         std::string sign_message = req_content->body.task_id + req_content->header.nonce + req_content->body.additional;
-        std::string signature = id_generator::sign(sign_message, CONF_MANAGER->get_node_private_key());
+        std::string signature = dbc::sign(sign_message, CONF_MANAGER->get_node_private_key());
         if (signature.empty()) {
             LOG_ERROR << "sign error.pls check node key or task property";
             return nullptr;
@@ -217,7 +215,7 @@ namespace dbc {
         auto req_content = std::make_shared<matrix::service_core::node_start_task_req>();
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_START_TASK_REQ);
-        req_content->header.__set_nonce(id_generator::generate_nonce());
+        req_content->header.__set_nonce(dbc::create_nonce());
         req_content->body.__set_task_id(cmd_req->task_id);
         req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
         req_content->body.__set_additional(cmd_req->additional);
@@ -225,7 +223,7 @@ namespace dbc {
         // 创建签名
         std::map<std::string, std::string> exten_info;
         std::string sign_message = req_content->body.task_id + req_content->header.nonce + req_content->body.additional;
-        std::string signature = id_generator::sign(sign_message, CONF_MANAGER->get_node_private_key());
+        std::string signature = dbc::sign(sign_message, CONF_MANAGER->get_node_private_key());
         if (signature.empty()) {
             LOG_ERROR << "sign error.pls check node key or task property";
             return nullptr;
@@ -298,7 +296,7 @@ namespace dbc {
         auto req_content = std::make_shared<matrix::service_core::node_restart_task_req>();
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_RESTART_TASK_REQ);
-        req_content->header.__set_nonce(id_generator::generate_nonce());
+        req_content->header.__set_nonce(dbc::create_nonce());
         req_content->body.__set_task_id(cmd_req->task_id);
         req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
         req_content->body.__set_additional(cmd_req->additional);
@@ -306,7 +304,7 @@ namespace dbc {
         // 创建签名
         std::map<std::string, std::string> exten_info;
         std::string sign_message = req_content->body.task_id + req_content->header.nonce + req_content->body.additional;
-        std::string signature = id_generator::sign(sign_message, CONF_MANAGER->get_node_private_key());
+        std::string signature = dbc::sign(sign_message, CONF_MANAGER->get_node_private_key());
         if (signature.empty()) {
             LOG_ERROR << "sign error.pls check node key or task property";
             return nullptr;
@@ -378,7 +376,7 @@ namespace dbc {
         std::shared_ptr<matrix::service_core::node_stop_task_req> req_content = std::make_shared<matrix::service_core::node_stop_task_req>();
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_STOP_TASK_REQ);
-        req_content->header.__set_nonce(id_generator::generate_nonce());
+        req_content->header.__set_nonce(dbc::create_nonce());
 
         req_content->body.__set_task_id(cmd_req->task_id);
         req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
@@ -387,7 +385,7 @@ namespace dbc {
         // 签名
         std::map<std::string, std::string> exten_info;
         std::string sign_msg = req_content->body.task_id + req_content->header.nonce + req_content->body.additional;
-        std::string signature = id_generator::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+        std::string signature = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
         if (signature.empty()) {
             LOG_ERROR << "sign error. pls check node key or task property";
             return nullptr;
@@ -469,7 +467,7 @@ namespace dbc {
         auto req_content = std::make_shared<matrix::service_core::node_task_logs_req>();
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_TASK_LOGS_REQ);
-        req_content->header.__set_nonce(id_generator::generate_nonce());
+        req_content->header.__set_nonce(dbc::create_nonce());
         req_content->header.__set_session_id(cmd_req->header.session_id);
         std::vector<std::string> path;
         path.push_back(CONF_MANAGER->get_node_id());
@@ -487,12 +485,13 @@ namespace dbc {
             exten_info["dest_id"] += peer_node + " ";
         }
 
-        std::string sign_message = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id +
+        std::string sig_msg = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id +
                 req_content->body.additional;
-        if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_message, exten_info)) {
-            LOG_ERROR << "signature failed!";
-            return nullptr;
-        }
+        std::string signature = dbc::sign(sig_msg, CONF_MANAGER->get_node_private_key());
+        exten_info["sign"] = signature;
+        exten_info["sign_algo"] = ECDSA;
+        time_t cur = std::time(nullptr);
+        exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
         req_content->header.__set_exten_info(exten_info);
 
         std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -571,8 +570,8 @@ namespace dbc {
         std::string sign_msg =
                 rsp_content->body.log.peer_node_id + rsp_content->header.nonce + rsp_content->header.session_id +
                 rsp_content->body.log.log_content;
-        if (!ai_crypto_util::verify_sign(sign_msg, rsp_content->header.exten_info,
-                                         rsp_content->body.log.peer_node_id)) {
+        if (!dbc::verify_sign(rsp_content->header.exten_info["sign"], sign_msg,
+                              rsp_content->body.log.peer_node_id)) {
             LOG_ERROR << "fake message. " << rsp_content->header.exten_info["origin_id"];
             return E_DEFAULT;
         }
@@ -598,27 +597,7 @@ namespace dbc {
         //just support single machine + multi GPU now
         ::cmd_peer_node_log log;
         log.peer_node_id = rsp_content->body.log.peer_node_id;
-
-        // jimmy: decrypt log_content
-        ai_ecdh_cipher cipher;
-        cipher.m_pub = rsp_content->header.exten_info["ecdh_pub"];
-        if (!cipher.m_pub.empty()) {
-            LOG_DEBUG << " decrypt logs content ";
-            cipher.m_data = std::move(rsp_content->body.log.log_content);
-
-            ai_ecdh_crypter crypter(static_cast<secp256k1_context *>(get_context_sign()));
-
-            CKey key;
-            if (!ai_crypto_util::get_local_node_private_key(key)) {
-                LOG_ERROR << " fail to get local node's private key";
-            } else {
-                if (!crypter.decrypt(cipher, key, log.log_content)) {
-                    LOG_ERROR << "fail to decrypt log content";
-                }
-            }
-        } else {
-            log.log_content = std::move(rsp_content->body.log.log_content);
-        }
+        log.log_content = std::move(rsp_content->body.log.log_content);
 
         cmd_resp->peer_node_logs.push_back(std::move(log));
 
@@ -704,7 +683,7 @@ namespace dbc {
         auto req_content = std::make_shared<matrix::service_core::node_list_task_req>();
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_LIST_TASK_REQ);
-        req_content->header.__set_nonce(id_generator::generate_nonce());
+        req_content->header.__set_nonce(dbc::create_nonce());
         req_content->header.__set_session_id(cmd_req->header.session_id);
         std::vector<std::string> path;
         path.push_back(CONF_MANAGER->get_node_id());
@@ -723,10 +702,11 @@ namespace dbc {
 
         std::string sign_message = req_content->body.task_id + req_content->header.nonce +
                 req_content->header.session_id + req_content->body.additional;
-        if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_message, exten_info)) {
-            LOG_ERROR << "signature failed!";
-            return nullptr;
-        }
+        std::string sign = dbc::sign(sign_message, CONF_MANAGER->get_node_private_key());
+        exten_info["sign"] = sign;
+        exten_info["sign_algo"] = ECDSA;
+        time_t cur = std::time(nullptr);
+        exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
         req_content->header.__set_exten_info(exten_info);
 
         std::shared_ptr<message> req_msg = std::make_shared<message>();
@@ -927,11 +907,6 @@ namespace dbc {
             for (auto &node_id : nodes) {
                 if (node_id.empty())
                     continue;
-
-                if (!id_generator::check_base58_id(node_id)) {
-                    error = "node value does not match the Base58 code format";
-                    return E_DEFAULT;
-                }
             }
         }
 
@@ -976,12 +951,12 @@ namespace dbc {
             return false;
         }
 
-        if (!id_generator::check_base58_id(base->header.nonce)) {
+        if (!dbc::check_id(base->header.nonce)) {
             LOG_ERROR << "nonce error ";
             return false;
         }
 
-        if (!id_generator::check_base58_id(base->header.session_id)) {
+        if (!dbc::check_id(base->header.session_id)) {
             LOG_ERROR << "ai power requster service on_list_training_resp. session_id error ";
             return false;
         }

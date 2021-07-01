@@ -1,13 +1,3 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   env_manager.cpp
-* description    :   env manager for dbc core
-* date                  :   2018.01.20
-* author             :   Bruce Feng
-**********************************************************************************/
-
 #include "env_manager.h"
 #include "server.h"
 #include "common/util.h"
@@ -52,7 +42,6 @@ namespace matrix
 {
     namespace core
     {
-
         fs::path env_manager::m_conf_path;
 
         fs::path env_manager::m_dat_path;
@@ -246,6 +235,5 @@ namespace matrix
             return;
         #endif
         }
-
     }
 }

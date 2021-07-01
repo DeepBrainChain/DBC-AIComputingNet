@@ -28,6 +28,7 @@ include_directories(
         ./3rd/snappy
         ./3rd/xml
         ./3rd/substrate
+        ./3rd/sr25519crust
 )
 
 #common
@@ -71,11 +72,12 @@ link_directories(${3RD_LIB_PATH}/readline)
 link_directories(${3RD_LIB_PATH}/snappy)
 link_directories(${3RD_LIB_PATH}/tinyxml2)
 link_directories(${3RD_LIB_PATH}/substrate)
+link_directories(${3RD_LIB_PATH}/sr25519)
 
 add_executable(dbc ${dbc_src_files})
 
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 endif ()
 
 if (APPLE)

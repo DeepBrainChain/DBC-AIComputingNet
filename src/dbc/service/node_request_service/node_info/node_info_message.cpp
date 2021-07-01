@@ -2,13 +2,12 @@
 #include "matrix_types.h"
 #include "log.h"
 #include "server.h"
-#include "id_generator.h"
+#include "crypt_util.h"
 #include "service_message_id.h"
 #include "node_info_collection.h"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/map.hpp>
-#include "ai_crypter.h"
-
+#include <boost/format.hpp>
 
 
 using namespace matrix::service_core;
@@ -47,7 +46,7 @@ namespace service
             //header
             content->header.__set_magic(CONF_MANAGER->get_net_flag());
             content->header.__set_msg_name(SHOW_REQ);
-            content->header.__set_nonce(id_generator::generate_nonce());
+            content->header.__set_nonce(dbc::create_nonce());
             content->header.__set_session_id(session_id);
 
             //body
@@ -64,14 +63,17 @@ namespace service
                                    + content->header.session_id+d_node_id
                                    +boost::algorithm::join(content->body.keys, "");
             std::map<std::string, std::string> exten_info;
-            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info))
-            {
-                return;
-            }
+            std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+            exten_info["sign"] = sign;
+            exten_info["sign_algo"] = ECDSA;
+            time_t cur = std::time(nullptr);
+            exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+
             content->header.__set_exten_info(exten_info);
 
             msg->set_content(content);
-            msg->set_name(content->header.msg_name);
+            msg->set_name(SHOW_REQ);
 
             m_msg = msg;
         }
@@ -137,22 +139,6 @@ namespace service
                 }
             }
 
-
-            std::string o_node_id = content->body.o_node_id;
-            if (!id_generator::check_base58_id(o_node_id))
-            {
-                LOG_WARNING << "invalid o_node_id ";
-                return false;
-            }
-
-            std::string d_node_id = content->body.d_node_id;
-            if (!id_generator::check_base58_id(d_node_id))
-            {
-                LOG_WARNING << "invalid d_node_id ";
-                return false;
-            }
-
-
             return true;
 
         }
@@ -200,7 +186,7 @@ namespace service
             //header
             content->header.__set_magic(CONF_MANAGER->get_net_flag());
             content->header.__set_msg_name(SHOW_RESP);
-            content->header.__set_nonce(id_generator::generate_nonce());
+            content->header.__set_nonce(dbc::create_nonce());
             content->header.__set_session_id(session_id);
 
             //body
@@ -211,10 +197,13 @@ namespace service
             std::string message = content->header.nonce + content->header.session_id+d_node_id
                                   + boost::algorithm::join(kvs | boost::adaptors::map_values, "");
             std::map<std::string, std::string> exten_info;
-            if (E_SUCCESS != ai_crypto_util::extra_sign_info(message,exten_info))
-            {
-                return E_DEFAULT;
-            }
+            std::string sign = dbc::sign(message, CONF_MANAGER->get_node_private_key());
+            exten_info["sign"] = sign;
+            exten_info["sign_algo"] = ECDSA;
+            time_t cur = std::time(nullptr);
+            exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+
             content->header.__set_exten_info(exten_info);
 
             msg->set_content(content);
@@ -268,24 +257,6 @@ namespace service
                     kv.second = kv.second.substr(0,MAX_NODE_INFO_VALUE_LEN);
                 }
             }
-
-
-            auto o_node_id = content->body.o_node_id;
-            auto d_node_id = content->body.d_node_id;
-
-            if (!id_generator::check_base58_id(o_node_id))
-            {
-                LOG_WARNING << "invalid o_node_id ";
-                return false;
-            }
-
-            if (!id_generator::check_base58_id(d_node_id))
-            {
-                LOG_WARNING << "invalid d_node_id ";
-                return false;
-            }
-
-
 
             return true;
 

@@ -1,10 +1,13 @@
+#ifndef DBC_SUBSTRATE_H
+#define DBC_SUBSTRATE_H
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
 #include <ostream>
 #include <new>
 
-struct substrate_WalletKepai {
+struct substrate_WalletKepair {
     const char *secret_phrase;
     const char *secret_seed;
     const char *public_key;
@@ -19,9 +22,9 @@ struct substrate_SignData {
 
 extern "C" {
 
-substrate_WalletKepai *create_keypair();
+substrate_WalletKepair *create_keypair();
 
-void free_keypair(substrate_WalletKepai *ptr);
+void free_keypair(substrate_WalletKepair *ptr);
 
 substrate_SignData *secret_sign(const char *c_seed, const char *c_message);
 
@@ -29,4 +32,8 @@ void free_signdata(substrate_SignData *ptr);
 
 bool public_verify(const char *c_signature, const char *c_message, const char *c_pub_key);
 
+substrate_WalletKepair *inspect_key(const char *c_seed);
+
 } // extern "C"
+
+#endif

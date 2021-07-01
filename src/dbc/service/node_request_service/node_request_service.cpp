@@ -19,7 +19,6 @@
 #include "time_util.h"
 #include <stdlib.h>
 #include <boost/algorithm/string/join.hpp>
-#include "ai_crypter.h"
 
 using namespace matrix::core;
 using namespace matrix::service_core;
@@ -136,10 +135,6 @@ namespace dbc {
 		bool hit = false;
 		auto it = peer_node_list.begin();
 		for (; it != peer_node_list.end(); it++) {
-			if (!id_generator::check_node_id((*it))) {
-				continue;
-			}
-
 			if ((*it) == node_id) {
 				hit = true;
 				break;
@@ -150,7 +145,7 @@ namespace dbc {
 	}
 
 	bool node_request_service::check_nonce(const std::string& nonce) {
-		if (!id_generator::check_base58_id(nonce)) {
+		if (!dbc::check_id(nonce)) {
 			return false;
 		}
 
@@ -175,7 +170,7 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req->body.task_id)) {
+		if (!dbc::check_id(req->body.task_id)) {
 			LOG_ERROR << "ai power provider service task_id error ";
 			return E_DEFAULT;
 		}
@@ -186,11 +181,7 @@ namespace dbc {
 			LOG_ERROR << "exten info error.";
 			return E_DEFAULT;
 		}
-
-		if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"],
-			req->header.exten_info["sign_algo"]))
-			&&
-			(!ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"]))) {
+		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
@@ -218,7 +209,7 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req->body.task_id)) {
+		if (!dbc::check_id(req->body.task_id)) {
 			LOG_ERROR << "ai power provider service task_id error ";
 			return E_DEFAULT;
 		}
@@ -228,11 +219,7 @@ namespace dbc {
 			LOG_ERROR << "exten info error.";
 			return E_DEFAULT;
 		}
-
-		if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"],
-			req->header.exten_info["sign_algo"]))
-			&&
-			(!ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"]))) {
+		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
@@ -260,7 +247,7 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req->body.task_id)) {
+		if (!dbc::check_id(req->body.task_id)) {
 			LOG_ERROR << "ai power provider service on_stop_training_req task_id error ";
 			return E_DEFAULT;
 		}
@@ -270,11 +257,7 @@ namespace dbc {
 			LOG_ERROR << "exten info error.";
 			return E_DEFAULT;
 		}
-
-		if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"],
-			req->header.exten_info["sign_algo"]))
-			&&
-			(!ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"]))) {
+		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
@@ -303,7 +286,7 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req->body.task_id)) {
+		if (!dbc::check_id(req->body.task_id)) {
 			LOG_ERROR << "ai power provider service task_id error ";
 			return E_DEFAULT;
 		}
@@ -313,11 +296,7 @@ namespace dbc {
 			LOG_ERROR << "exten info error.";
 			return E_DEFAULT;
 		}
-
-		if ((E_SUCCESS != check_sign(sign_msg, req->header.exten_info["sign"], req->header.exten_info["origin_id"],
-			req->header.exten_info["sign_algo"]))
-			&&
-			(!ai_crypto_util::verify_sign(sign_msg, req->header.exten_info, req->header.exten_info["origin_id"]))) {
+		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
@@ -344,12 +323,12 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req_content->header.session_id)) {
+		if (!dbc::check_id(req_content->header.session_id)) {
 			LOG_ERROR << "ai power provider service session_id error ";
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req_content->body.task_id)) {
+		if (!dbc::check_id(req_content->body.task_id)) {
 			LOG_ERROR << "taskid error ";
 			return E_DEFAULT;
 		}
@@ -370,8 +349,7 @@ namespace dbc {
 		std::string sign_req_msg =
 			req_content->body.task_id + req_content->header.nonce + req_content->header.session_id +
 			req_content->body.additional;
-		if (!ai_crypto_util::verify_sign(sign_req_msg, req_content->header.exten_info,
-			req_content->header.exten_info["origin_id"])) {
+		if (!dbc::verify_sign(req_content->header.exten_info["sign"], sign_req_msg, req_content->header.exten_info["origin_id"])) {
 			LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
@@ -400,20 +378,19 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		if (!id_generator::check_base58_id(req_content->header.session_id)) {
+		if (!dbc::check_id(req_content->header.session_id)) {
 			LOG_ERROR << "ai power provider service sessionid error ";
 			return E_DEFAULT;
 		}
 
-		if (!req_content->body.task_id.empty() && !id_generator::check_base58_id(req_content->body.task_id)) {
+		if (!req_content->body.task_id.empty() && !dbc::check_id(req_content->body.task_id)) {
 			LOG_ERROR << "ai power provider service taskid error: " << req_content->body.task_id;
 			return E_DEFAULT;
 		}
 
 		std::string sign_msg = req_content->body.task_id + req_content->header.nonce +
 			req_content->header.session_id + req_content->body.additional;
-		if (!ai_crypto_util::verify_sign(sign_msg, req_content->header.exten_info,
-			req_content->header.exten_info["origin_id"])) {
+		if (!dbc::verify_sign(req_content->header.exten_info["sign"], sign_msg, req_content->header.exten_info["origin_id"])) {
 			LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
@@ -456,7 +433,7 @@ namespace dbc {
 
             rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
             rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
-            rsp_content->header.__set_nonce(id_generator::generate_nonce());
+            rsp_content->header.__set_nonce(dbc::create_nonce());
             rsp_content->header.__set_session_id(req_content->header.session_id);
             rsp_content->header.__set_path(req_content->header.path);
             rsp_content->body.task_status_list.swap(status_list);
@@ -468,9 +445,12 @@ namespace dbc {
             std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
             std::map<std::string, std::string> exten_info;
             exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-            if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info)) {
-                return E_DEFAULT;
-            }
+            std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+            exten_info["sign"] = sign;
+            exten_info["sign_algo"] = ECDSA;
+            time_t cur = std::time(nullptr);
+            exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+
             rsp_content->header.__set_exten_info(exten_info);
 
             //rsp msg
@@ -523,7 +503,7 @@ namespace dbc {
 		std::shared_ptr<matrix::service_core::node_task_logs_rsp> rsp_content = std::make_shared<matrix::service_core::node_task_logs_rsp>();
 		rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
 		rsp_content->header.__set_msg_name(NODE_TASK_LOGS_RSP);
-		rsp_content->header.__set_nonce(id_generator::generate_nonce());
+		rsp_content->header.__set_nonce(dbc::create_nonce());
 		rsp_content->header.__set_session_id(req->header.session_id);
 		rsp_content->header.__set_path(req->header.path);
 
@@ -550,10 +530,12 @@ namespace dbc {
 			CONF_MANAGER->get_node_id() + rsp_content->header.nonce + rsp_content->header.session_id +
 			rsp_content->body.log.log_content;
 
-		if (E_SUCCESS != ai_crypto_util::extra_sign_info(sign_msg, exten_info)) {
-			return E_DEFAULT;
-		}
-
+        std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+        exten_info["sign"] = sign;
+        exten_info["sign_algo"] = ECDSA;
+        time_t cur = std::time(nullptr);
+        exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+        exten_info["origin_id"] = CONF_MANAGER->get_node_id();
 		rsp_content->header.__set_exten_info(exten_info);
 
 		//resp msg
@@ -591,13 +573,6 @@ namespace dbc {
 
         if (origin_id.empty() || sign.empty()) {
             LOG_ERROR << "sign error.";
-            return E_DEFAULT;
-        }
-
-        std::string derive_node_id;
-        id_generator::derive_node_id_by_sign(message, sign, derive_node_id);
-        if (derive_node_id != origin_id) {
-            LOG_ERROR << "sign check error";
             return E_DEFAULT;
         }
 

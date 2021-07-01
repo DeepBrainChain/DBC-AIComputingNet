@@ -1,12 +1,3 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   dbc_server_initiator.cpp
-* description    :   dbc server initiator for dbc core
-* date                  :   2018.01.20
-* author             :   Bruce Feng
-**********************************************************************************/
 #include "dbc_server_initiator.h"
 #if defined(__linux__) || defined(MAC_OSX)
 #include <unistd.h>
@@ -27,30 +18,26 @@
 #include "cmd_request_service.h"
 #include "node_request_service.h"
 #include "common_service.h"
-#include "id_generator.h"
+#include "crypt_util.h"
 #include "crypto_service.h"
 #include "timer_matrix_manager.h"
 #include "data_query_service.h"
 #include "http_server_service.h"
-//#include "api_call_handler.h"
 #include "rest_api_service.h"
 #include <boost/exception/all.hpp>
-#include "ai_crypter.h"
+#include "crypt_util.h"
 
 using namespace std::chrono;
 using namespace matrix::core;
 using namespace matrix::service_core;
 using namespace ai::dbc;
 
-
 extern std::chrono::high_resolution_clock::time_point server_start_time;
-
 
 namespace ai
 {
     namespace dbc
     {
-
         int32_t dbc_server_initiator::init(int argc, char* argv[])
         {
             LOG_INFO << "begin to init dbc core";
@@ -76,7 +63,6 @@ namespace ai
             ret = parse_command_line(argc, argv, vm);
             if (E_SUCCESS != ret)
             {
-                //logging
                 return ret;
             }
             LOG_INFO << "parse command line successfully";
@@ -88,7 +74,6 @@ namespace ai
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)
             {
-                //logging
                 return ret;
             }
             mdl->start();
@@ -268,7 +253,6 @@ namespace ai
             return E_SUCCESS;
         }
 
-        //parse command line
         int32_t dbc_server_initiator::parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm)
         {
             options_description opts("dbc command options");
@@ -371,8 +355,8 @@ namespace ai
         int32_t dbc_server_initiator::on_cmd_init()
         {
             //node info
-            node_info info;
-            int32_t ret = id_generator::generate_node_info(info);                 //check: if exists, not init again and print prompt.
+            ::dbc::machine_node_info info;
+            int32_t ret = ::dbc::create_node_info(info);                 //check: if exists, not init again and print prompt.
             if (E_SUCCESS != ret)
             {
                 cout << "dbc init node info error" << endl;
@@ -426,11 +410,5 @@ namespace ai
             return E_DEFAULT;
 #endif
         }
-
     }
 }
-
-
-
-
-
