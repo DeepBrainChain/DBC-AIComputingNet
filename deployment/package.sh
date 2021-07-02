@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 base_dir=..
 
 os_name=`uname -a | awk '{print $1}'`
@@ -25,7 +24,7 @@ remove_leading_zero()
 
 get_version()
 {
-    version_file=$base_dir/src/core/common/version.h
+    version_file=$base_dir/src/dbc/core/common/version.h
 
     ver=$(grep "#define CORE_VERSION" $version_file  | awk '{print $3}')
 
@@ -52,19 +51,11 @@ if [ -z "$version" ]; then
     echo "verson: $version"
 fi
 
-
 if [ "$os_name" == "macos" ]; then
     bash ./package_imp.sh $version "client"
 fi
-
 
 if [ "$os_name" == "linux" ]; then
     bash ./package_imp.sh $version "client"
     bash ./package_imp.sh $version "mining"
 fi
-
-
-
-
-
-
