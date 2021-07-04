@@ -1,14 +1,5 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   tcp_acceptor.h
-* description      :   tcp acceptor for nio server listening
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
-
+#ifndef DBC_NETWORK_TCP_ACCEPTOR_H
+#define DBC_NETWORK_TCP_ACCEPTOR_H
 
 #include <memory>
 #include <boost/asio.hpp>
@@ -17,28 +8,21 @@
 #include "log.h"
 #include "handler_create_functor.h"
 
-
 using namespace boost::asio;
-// using namespace boost::asio::ip;
-
 
 #define DEFAULT_LISTEN_BACKLOG                          8                               //default listen backlog
 
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         class tcp_acceptor : public std::enable_shared_from_this<tcp_acceptor>, boost::noncopyable
         {
-
             //using ios_ptr = typename std::shared_ptr<io_service>;
             using ios_weak_ptr = typename std::weak_ptr<io_service>;
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
 
         public:
-
             //tcp_acceptor(ios_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
             tcp_acceptor(ios_weak_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func);
 
@@ -70,7 +54,7 @@ namespace matrix
             handler_create_functor m_handler_create_func;
 
         };
-
     }
-
 }
+
+#endif

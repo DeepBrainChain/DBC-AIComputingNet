@@ -1,29 +1,15 @@
 ﻿#include "server.h"
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   server.cpp
-* description    :   core is abstracted into server, server is responsible for init and exit
-* date                  : 2017.01.23
-* author            :   Bruce Feng
-**********************************************************************************/
 #include <memory>
 #include <cassert>
 #include <thread>
 #include "common.h"
 #include "server_initiator.h"
 
-
-//extern matrix::core::server_initiator * create_initiator();
-
 namespace matrix
 {
     namespace core
     {
-
         std::unique_ptr<server> g_server(new server());
-
 
         void dummy_idle_task()
         {
@@ -70,8 +56,5 @@ namespace matrix
 
             return E_SUCCESS;                           //release resources with smart pointer
         }
-
     }
-
 }
-

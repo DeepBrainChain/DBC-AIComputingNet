@@ -172,7 +172,7 @@ namespace ai
 
             //connection_manager
             LOG_INFO << "begin to init connection manager";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<connection_manager>());
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::network::connection_manager>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)
@@ -226,7 +226,7 @@ namespace ai
             }
             mdl->start();
 
-            std::shared_ptr<http_request_event> hreq_event = std::dynamic_pointer_cast<http_request_event>(mdl);
+            std::shared_ptr<::dbc::network::http_request_event> hreq_event = std::dynamic_pointer_cast<::dbc::network::http_request_event>(mdl);
 
 
             LOG_INFO << "begin to init http server service";

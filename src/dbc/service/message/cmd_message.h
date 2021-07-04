@@ -17,13 +17,13 @@ using namespace matrix::core;
 using namespace matrix::service_core;
 
 // create task
-class cmd_create_task_req : public matrix::core::msg_base {
+class cmd_create_task_req : public dbc::network::msg_base {
 public:
     std::vector<std::string> peer_nodes_list;
     std::string additional;
 };
 
-class cmd_create_task_rsp : public matrix::core::msg_base {
+class cmd_create_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
@@ -33,49 +33,49 @@ public:
 };
 
 // start task
-class cmd_start_task_req : public matrix::core::msg_base {
+class cmd_start_task_req : public dbc::network::msg_base {
 public:
     std::string task_id;
     std::vector<std::string> peer_nodes_list;
     std::string additional;
 };
 
-class cmd_start_task_rsp : public matrix::core::msg_base {
+class cmd_start_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
 };
 
 // restart task
-class cmd_restart_task_req : public matrix::core::msg_base {
+class cmd_restart_task_req : public dbc::network::msg_base {
 public:
     std::string task_id;
     std::vector<std::string> peer_nodes_list;
     std::string additional;
 };
 
-class cmd_restart_task_rsp : public matrix::core::msg_base {
+class cmd_restart_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
 };
 
 // stop
-class cmd_stop_task_req : public matrix::core::msg_base {
+class cmd_stop_task_req : public dbc::network::msg_base {
 public:
     std::string task_id;
     std::vector<std::string> peer_nodes_list;
     std::string additional;
 };
 
-class cmd_stop_task_rsp : public matrix::core::msg_base {
+class cmd_stop_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
 };
 
 // log
-class cmd_task_logs_req : public matrix::core::msg_base {
+class cmd_task_logs_req : public dbc::network::msg_base {
 public:
     std::string task_id;
     std::vector<std::string> peer_nodes_list;
@@ -84,7 +84,7 @@ public:
     std::string additional;
 };
 
-class cmd_task_logs_rsp : public matrix::core::msg_base {
+class cmd_task_logs_rsp : public dbc::network::msg_base {
 public:
 
     int32_t result;
@@ -142,14 +142,14 @@ private:
 };
 
 // list task
-class cmd_list_task_req : public matrix::core::msg_base {
+class cmd_list_task_req : public dbc::network::msg_base {
 public:
     std::string task_id;
     std::vector<std::string> peer_nodes_list;
     std::string additional;
 };
 
-class cmd_list_task_rsp : public matrix::core::msg_base {
+class cmd_list_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
@@ -173,7 +173,7 @@ private:
 };
 
 // mining_nodes
-class cmd_list_node_req : public matrix::core::msg_base {
+class cmd_list_node_req : public dbc::network::msg_base {
 public:
     std::string o_node_id;
     std::string d_node_id;
@@ -207,7 +207,7 @@ public:
     }
 };
 
-class cmd_list_node_rsp : public matrix::core::msg_base {
+class cmd_list_node_rsp : public dbc::network::msg_base {
 public:
     std::string o_node_id;
     std::string d_node_id;

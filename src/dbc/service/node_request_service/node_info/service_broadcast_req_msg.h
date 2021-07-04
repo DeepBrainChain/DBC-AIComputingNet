@@ -23,7 +23,7 @@ namespace service
         {
         public:
             service_broadcast_req_msg();
-            service_broadcast_req_msg(std::shared_ptr<message>);
+            service_broadcast_req_msg(std::shared_ptr<dbc::network::message>);
             int32_t prepare(service_info_map m);
             void send();
 
@@ -39,7 +39,7 @@ namespace service
                 MAX_NDOE_INFO_KVS_SIZE = 10
             };
         private:
-            std::shared_ptr<message> m_msg;
+            std::shared_ptr<dbc::network::message> m_msg;
         };
     }
 }

@@ -1,37 +1,28 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   tcp_socket_channel.h
-* description    :   tcp socket channel for nio socket transport
-* date                  :   2018.01.20
-* description    :   Bruce Feng
-**********************************************************************************/
-#pragma once
-
+#ifndef DBC_NETWORK_TCP_SOCKET_CHANNEL_H
+#define DBC_NETWORK_TCP_SOCKET_CHANNEL_H
 
 #include <memory>
 #include <boost/asio.hpp>
 #include "common.h"
 #include "channel.h"
-#include "byte_buf.h"
-#include "server.h"
-#include "service_message.h"
-
 #include "socket_channel_handler.h"
-#include "compress/matrix_capacity.h"
+#include "handler_create_functor.h"
+#include "matrix_capacity.h"
+#include "byte_buf.h"
 
+//#include "server.h"
+//#include "service_message.h"
+//#include "compress/matrix_capacity.h"
 
 using namespace std;
 using namespace boost::asio;
-// using namespace boost::asio::ip;
 
 #define DEFAULT_TCP_SOCKET_SEND_BUF_LEN                  (32 * 1024)
 #define DEFAULT_TCP_SOCKET_RECV_BUF_LEN                  (32 * 1024)
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         class tcp_socket_channel : public channel, public std::enable_shared_from_this<tcp_socket_channel>, public boost::noncopyable
         {
@@ -88,7 +79,7 @@ namespace matrix
 
             virtual void on_read(const boost::system::error_code& error, size_t bytes_transferred);
 
-            void async_write(std::shared_ptr<byte_buf> &msg_buf);
+            void async_write(std::shared_ptr<matrix::core::byte_buf> &msg_buf);
 
             virtual void on_write(const boost::system::error_code& error, size_t bytes_transferred);
 
@@ -102,13 +93,13 @@ namespace matrix
 
             socket_id m_sid;
 
-            byte_buf m_recv_buf;
+            matrix::core::byte_buf m_recv_buf;
 
             std::mutex m_queue_mutex;
 
             std::list<std::shared_ptr<message>> m_send_queue;
 
-            std::shared_ptr<byte_buf> m_send_buf;
+            std::shared_ptr<matrix::core::byte_buf> m_send_buf;
 
             std::shared_ptr<socket_channel_handler> m_socket_handler;
 
@@ -125,7 +116,7 @@ namespace matrix
             matrix_capacity m_proto_capacity; //for protocol selection
 
         };
-
     }
-
 }
+
+#endif

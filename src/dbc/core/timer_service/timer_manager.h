@@ -40,7 +40,7 @@ namespace matrix
 
             void remove_timer(uint32_t timer_id);
 
-            void on_time_point_notification(std::shared_ptr<message> msg);
+            void on_time_point_notification(std::shared_ptr<dbc::network::message> msg);
 
             int32_t process(uint64_t time_tick);
 

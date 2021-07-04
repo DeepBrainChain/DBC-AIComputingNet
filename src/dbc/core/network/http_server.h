@@ -1,31 +1,18 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         : http_server.h
-* description       : http server request process
-* date              : 2018.11.9
-* author            : tower
-**********************************************************************************/
-
-#ifndef HTTP_SERVER_H
-#define HTTP_SERVER_H
+#ifndef DBC_NETWORK_HTTP_SERVER_H
+#define DBC_NETWORK_HTTP_SERVER_H
 
 #include <event2/util.h>
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/http.h>
-
 #include "endpoint_address.h"
 #include "json_util.h"
 #include "service_message.h"
 
-
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         class http_request
         {
@@ -125,12 +112,7 @@ namespace matrix
             struct event* m_ev;
         };
 
-
-        //
         //Record requests for a channel for easy storage in session
-        //
-        //
-
         struct http_request_context
         {
             std::shared_ptr<http_request> m_hreq;
@@ -144,11 +126,8 @@ namespace matrix
         typedef std::shared_ptr<http_request>  HTTP_REQUEST_PTR;
         typedef std::shared_ptr<http_request_context> HTTP_REQ_CTX_PTR;
 
-
         typedef std::function<std::shared_ptr<message>(HTTP_REQUEST_PTR  ,const std::string& )> http_request_handler;
         typedef std::function<int32_t(HTTP_REQ_CTX_PTR,  std::shared_ptr<message>& )> response_call_handler;
-
-
 
         struct http_path_handler
         {
@@ -161,7 +140,6 @@ namespace matrix
             bool m_exact_match;
             http_request_handler m_handler;
         };
-
 
         struct response_msg_handler
         {
@@ -182,8 +160,6 @@ namespace matrix
          public:
             virtual void on_http_request_event(std::shared_ptr<http_request>& hreq)=0;
         };
-
-
     }  // namespce core
 }  // namespace matrix
 

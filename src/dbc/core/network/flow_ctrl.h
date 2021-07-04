@@ -1,19 +1,12 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   net_address.h
-* description      :   p2p network address
-* date             :   2018.07.29
-* author           :   Regulus Chan
-**********************************************************************************/
+#ifndef DBC_NETWORK_FLOW_CTRL_H
+#define DBC_NETWORK_FLOW_CTRL_H
 
-#pragma once
 #include "common.h"
 #include "nio_loop_group.h"
-namespace matrix
+
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         class flow_ctrl: public std::enable_shared_from_this<flow_ctrl>, public boost::noncopyable
         {
@@ -39,3 +32,5 @@ namespace matrix
         };
     }
 }
+
+#endif

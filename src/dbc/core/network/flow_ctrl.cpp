@@ -1,7 +1,8 @@
 #include "flow_ctrl.h"
-namespace matrix
+
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         flow_ctrl::flow_ctrl(int32_t max_num, int32_t cycle, int32_t slice, io_service *io):
             m_max_num(max_num)

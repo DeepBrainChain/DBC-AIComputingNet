@@ -1,15 +1,5 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   http_client.h
-* description      :   http client for rpc
-* date             :   2018.04.07
-* author           :   Bruce Feng
-**********************************************************************************/
-
-#pragma once
-
+#ifndef DBC_NETWORK_HTTP_CLIENT_H
+#define DBC_NETWORK_HTTP_CLIENT_H
 
 #include <utility>
 #include "common.h"
@@ -118,11 +108,10 @@ inline bufferevent * obtain_evhttp_bev(struct event_base* base, SSL *ssl)
     return bev;
 }
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         struct http_response
         {
             http_response() : status(0), error(-1) {}
@@ -180,7 +169,7 @@ namespace matrix
             SSL* m_ssl = nullptr;
             std::string m_crt;
         };
-
     }
-
 }
+
+#endif

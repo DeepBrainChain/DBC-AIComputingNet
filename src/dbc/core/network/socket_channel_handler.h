@@ -1,24 +1,14 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   socket_channel_handler.h
-* description      :   socket channel handler for protocol layer
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
+#ifndef DBC_NETWORK_SOCKET_CHANNEL_HANDLER_H
+#define DBC_NETWORK_SOCKET_CHANNEL_HANDLER_H
 
 #include <boost/enable_shared_from_this.hpp>
 #include "byte_buf.h"
 #include "service_message.h"
 #include "channel_handler_context.h"
 
-
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
 
         class socket_channel_handler : public std::enable_shared_from_this<socket_channel_handler>, public boost::noncopyable
@@ -33,9 +23,9 @@ namespace matrix
 
         public:
 
-            virtual int32_t on_read(channel_handler_context &ctx, byte_buf &in) = 0;
+            virtual int32_t on_read(channel_handler_context &ctx, matrix::core::byte_buf &in) = 0;
 
-            virtual int32_t on_write(channel_handler_context &ctx, message &msg, byte_buf &buf) = 0;
+            virtual int32_t on_write(channel_handler_context &ctx, message &msg, matrix::core::byte_buf &buf) = 0;
 
             virtual int32_t on_error() = 0;
 
@@ -57,3 +47,4 @@ namespace matrix
 
 }
 
+#endif

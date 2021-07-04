@@ -1,26 +1,17 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   channel.h
-* description      :   channle is abstract concept for network transmission
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
+#ifndef DBC_NETWORK_CHANNEL_H
+#define DBC_NETWORK_CHANNEL_H
 
 #include <memory>
 #include <boost/asio.hpp>
 #include "service_message.h"
 
-
 #define MAX_SEND_QUEUE_MSG_COUNT            204800
 
 using namespace boost::asio;
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         enum channel_type
         {
@@ -66,3 +57,5 @@ namespace matrix
         };
     }
 }
+
+#endif

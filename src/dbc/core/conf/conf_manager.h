@@ -133,7 +133,7 @@ namespace matrix
             const bool & get_enable_node_reboot() { return m_args.count("enable_node_reboot") > 0 ? m_args["enable_node_reboot"].as<bool>() : DEFAULT_DISABLE; }
             const bool & get_enable_billing() { return m_args.count("enable_billing") > 0 ? m_args["enable_billing"].as<bool>() : DEFAULT_ENABLE; }
             const int32_t & get_update_idle_task_cycle() { return m_args.count("update_idle_task_cycle") > 0 ? m_args["update_idle_task_cycle"].as<int32_t>() : DEFAULT_UPDATE_IDLE_TASK_CYCLE; }
-            const matrix_capacity & get_proto_capacity()
+            const dbc::network::matrix_capacity & get_proto_capacity()
             {
                 return m_proto_capacity;
             }
@@ -203,7 +203,7 @@ namespace matrix
             std::shared_ptr<net_type_params> m_net_params;
 
             //protocol capacity
-            matrix_capacity m_proto_capacity;
+            dbc::network::matrix_capacity m_proto_capacity;
         };
     }
 }

@@ -1,26 +1,15 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         :   socket_id.hpp
-* description     :   socket id for each socket channel
-* date                  :   2018.01.20
-* author             :   Bruce Feng
-**********************************************************************************/
-#pragma once
+#ifndef DBC_NETWORK_SOCKET_ID_H
+#define DBC_NETWORK_SOCKET_ID_H
 
 #include <atomic>
 #include <boost/serialization/singleton.hpp>
 
-
 using namespace boost::serialization;
 
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         enum socket_type
         {
             SERVER_SOCKET = 0,
@@ -109,7 +98,7 @@ namespace matrix
             std::atomic<std::uint64_t> m_cur_idx;
 #endif
         };
-
     }
-
 }
+
+#endif

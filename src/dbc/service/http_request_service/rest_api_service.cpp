@@ -15,8 +15,7 @@
 #include "service_message_id.h"
 #include "time_tick_notification.h"
 #include <chrono>
-#include <ctime>
-#include "message.h"
+#include "cmd_message.h"
 
 using namespace std::chrono;
 extern std::chrono::high_resolution_clock::time_point server_start_time;
@@ -27,7 +26,7 @@ extern std::chrono::high_resolution_clock::time_point server_start_time;
 
 namespace dbc {
     int32_t rest_api_service::init(bpo::variables_map &options) {
-        const http_path_handler uri_prefixes[] = {
+        const dbc::network::http_path_handler uri_prefixes[] = {
                 {"/peers",        false, rest_peers},
                 {"/stat",         false, rest_stat},
                 {"/mining_nodes", false, rest_mining_nodes},
@@ -42,7 +41,7 @@ namespace dbc {
                                          uri_prefixe.m_handler);
         }
 
-        const response_msg_handler rsp_handlers[] = {
+        const dbc::network::response_msg_handler rsp_handlers[] = {
                 {typeid(cmd_create_task_rsp).name(), on_cmd_create_task_rsp},
                 {typeid(cmd_start_task_rsp).name(), on_cmd_start_task_rsp},
                 {typeid(cmd_restart_task_rsp).name(), on_cmd_restart_task_rsp},
@@ -81,7 +80,7 @@ namespace dbc {
 
     #define SUBSCRIBE_RESP_MSG(cmd)  \
     TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){  \
-        std::shared_ptr<message> msg = std::make_shared<message>(); \
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>(); \
         msg->set_name(typeid(cmd).name()); \
         msg->set_content(rsp);\
         this->send(msg);\
@@ -98,14 +97,14 @@ namespace dbc {
         SUBSCRIBE_RESP_MSG(cmd_list_node_rsp);
     }
 
-    void rest_api_service::on_http_request_event(std::shared_ptr<http_request> &hreq) {
+    void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) {
         std::string str_uri = hreq->get_uri();
         if (check_invalid_http_request(hreq)) {
             LOG_ERROR << "the request is invalid,so reject it," << str_uri;
             return;
         }
 
-        std::shared_ptr<message> req_msg = parse_http_request(hreq);
+        std::shared_ptr<dbc::network::message> req_msg = parse_http_request(hreq);
         if (nullptr == req_msg) {
             LOG_ERROR << "parse_http_request,there was an error," << str_uri;
             return;
@@ -114,8 +113,8 @@ namespace dbc {
         post_cmd_request_msg(hreq, req_msg);
     }
 
-    bool rest_api_service::check_invalid_http_request(std::shared_ptr<http_request> &hreq) {
-        if (hreq->get_request_method() == http_request::UNKNOWN) {
+    bool rest_api_service::check_invalid_http_request(std::shared_ptr<dbc::network::http_request> &hreq) {
+        if (hreq->get_request_method() == dbc::network::http_request::UNKNOWN) {
             hreq->reply_comm_rest_err(HTTP_BADMETHOD, RPC_METHOD_DEPRECATED, "not support method");
             return true;
         }
@@ -140,12 +139,12 @@ namespace dbc {
         return false;
     }
 
-    std::shared_ptr<message> rest_api_service::parse_http_request(std::shared_ptr<http_request> &hreq) {
+    std::shared_ptr<dbc::network::message> rest_api_service::parse_http_request(std::shared_ptr<dbc::network::http_request> &hreq) {
         std::string str_uri = hreq->get_uri();
         std::string path;
         bool match;
-        std::vector<http_path_handler>::const_iterator i = m_path_handlers.begin();
-        std::vector<http_path_handler>::const_iterator iend = m_path_handlers.end();
+        std::vector<dbc::network::http_path_handler>::const_iterator i = m_path_handlers.begin();
+        std::vector<dbc::network::http_path_handler>::const_iterator iend = m_path_handlers.end();
         for (; i != iend; ++i) {
             match = false;
             if (i->m_exact_match) {
@@ -167,13 +166,13 @@ namespace dbc {
         return i->m_handler(hreq, path);
     }
 
-    void rest_api_service::post_cmd_request_msg(std::shared_ptr<http_request> &hreq, std::shared_ptr<message> &req_msg) {
+    void rest_api_service::post_cmd_request_msg(std::shared_ptr<dbc::network::http_request> &hreq, std::shared_ptr<dbc::network::message> &req_msg) {
         std::string str_uri = hreq->get_uri();
         std::string session_id = dbc::create_session_id();
-        std::shared_ptr<msg_base> req_content = req_msg->get_content();
+        std::shared_ptr<dbc::network::msg_base> req_content = req_msg->get_content();
         req_content->header.__set_session_id(session_id);
 
-        std::shared_ptr<http_request_context> hreq_context = std::make_shared<http_request_context>();
+        std::shared_ptr<dbc::network::http_request_context> hreq_context = std::make_shared<dbc::network::http_request_context>();
         hreq_context->m_hreq = hreq;
         hreq_context->m_req_msg = req_msg;
 
@@ -225,7 +224,7 @@ namespace dbc {
         TOPIC_MANAGER->publish<int32_t>(req_msg->get_name(), req_msg);
     }
 
-    int32_t rest_api_service::on_call_rsp_handler(std::shared_ptr<message> &msg) {
+    int32_t rest_api_service::on_call_rsp_handler(std::shared_ptr<dbc::network::message> &msg) {
         int32_t ret_code = E_DEFAULT;
 
         std::shared_ptr<service_session> session = nullptr;
@@ -259,8 +258,8 @@ namespace dbc {
                     break;
                 }
 
-                std::shared_ptr<http_request_context> hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<
-                        http_request_context>>();
+                std::shared_ptr<dbc::network::http_request_context> hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<
+                        dbc::network::http_request_context>>();
 
                 if (nullptr == hreq_context) {
                     LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id
@@ -322,8 +321,8 @@ namespace dbc {
             try {
                 variables_map &vm = session->get_context().get_args();
                 assert(vm.count(HTTP_REQUEST_KEY) > 0);
-                std::shared_ptr<http_request_context> hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<
-                        http_request_context>>();
+                std::shared_ptr<dbc::network::http_request_context> hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<
+                        dbc::network::http_request_context>>();
                 if (nullptr == hreq_context) {
                     LOG_ERROR << "session_id:" << session_id << ",but get null hreq_context";
                     ret_code = E_NULL_POINTER;
@@ -355,7 +354,7 @@ namespace dbc {
         return fractional_seconds;
     }
 
-    int32_t rest_api_service::on_invoke(std::shared_ptr<message> &msg) {
+    int32_t rest_api_service::on_invoke(std::shared_ptr<dbc::network::message> &msg) {
         //timer point notification trigger timer process
         if (msg->get_name() == TIMER_TICK_NOTIFICATION) {
             std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(

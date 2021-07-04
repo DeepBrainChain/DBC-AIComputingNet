@@ -9,14 +9,13 @@
 **********************************************************************************/
 
 #include <assert.h>
-#include "container_message.h"
 #include "log.h"
 #include "rpc_error.h"
 #include "http_server.h"
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         http_request::http_request(struct evhttp_request* req_, struct event_base* event_base_)
             : m_req(req_), m_reply_sent(false), m_event_base_ptr(event_base_)
@@ -31,7 +30,7 @@ namespace matrix
 
                 // Keep track of whether reply was sent to avoid request leaks
                 LOG_DEBUG << "Unhandled request";
-                reply_comm_rest_err(HTTP_INTERNAL, RPC_RESPONSE_ERROR, "Unhandled request");
+                reply_comm_rest_err(HTTP_INTERNAL, matrix::core::RPC_RESPONSE_ERROR, "Unhandled request");
             }
             // evhttpd cleans up the request, as long as a reply was sent.
         }
@@ -183,7 +182,7 @@ namespace matrix
             rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
             rapidjson::Value root(rapidjson::kObjectType);
-            root.AddMember("error_code", RPC_RESPONSE_SUCCESS, allocator);
+            root.AddMember("error_code", matrix::core::RPC_RESPONSE_SUCCESS, allocator);
             root.AddMember("data", data, allocator);
 
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();

@@ -1,14 +1,5 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   nio_loop_group.h
-* description      :   nio thread loop group for network connection
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
-
+#ifndef DBC_NETWORK_NIO_LOOP_GROUP_H
+#define DBC_NETWORK_NIO_LOOP_GROUP_H
 
 #include <thread>
 #include <vector>
@@ -16,14 +7,13 @@
 #include <boost/bind.hpp>
 #include "io_service_wrapper.h"
 
-
 using namespace std;
 
 #define MAX_LOOP_GROUP_THREAD_SIZE                         64
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         class nio_loop_group
         {
@@ -55,7 +45,7 @@ namespace matrix
 
             std::vector<shared_ptr<io_service_wrapper>> m_io_services;
         };
-
     }
-
 }
+
+#endif

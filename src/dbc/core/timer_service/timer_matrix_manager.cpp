@@ -23,7 +23,7 @@ namespace matrix
         tick_type timer_matrix_manager::m_cur_tick = {0};
 
         timer_matrix_manager::timer_matrix_manager()
-            : m_timer_group(new nio_loop_group())
+            : m_timer_group(new dbc::network::nio_loop_group())
         {
 
         }
@@ -114,7 +114,7 @@ namespace matrix
             ++m_cur_tick;
 
             //publish notification
-            std::shared_ptr<message> msg = make_time_tick_notification();
+            std::shared_ptr<dbc::network::message> msg = make_time_tick_notification();
             TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
 
             //next
@@ -138,14 +138,14 @@ namespace matrix
             }
         }
 
-        std::shared_ptr<message> timer_matrix_manager::make_time_tick_notification()
+        std::shared_ptr<dbc::network::message> timer_matrix_manager::make_time_tick_notification()
         {
             //notification
             std::shared_ptr<time_tick_notification> content(new time_tick_notification);
             content->time_tick = m_cur_tick;
 
             //message
-            std::shared_ptr<message> msg = std::make_shared<message>();
+            std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
             msg->set_content(content);
             msg->set_name(TIMER_TICK_NOTIFICATION);
 

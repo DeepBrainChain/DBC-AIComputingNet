@@ -14,7 +14,7 @@ namespace service
         {
         public:
             node_info_query_req_msg();
-            node_info_query_req_msg(std::shared_ptr<message> msg);
+            node_info_query_req_msg(std::shared_ptr<dbc::network::message> msg);
             int32_t send();
             void prepare(std::string o_node_id, std::string d_node_id, std::vector<std::string> key,std::string
             session_id);
@@ -23,7 +23,7 @@ namespace service
             bool validate();
 
         private:
-            std::shared_ptr<message> m_msg;
+            std::shared_ptr<dbc::network::message> m_msg;
         };
 
         class node_info_query_sessions
@@ -40,7 +40,7 @@ namespace service
         class node_info_query_resp_msg
         {
         public:
-            node_info_query_resp_msg(std::shared_ptr<message> msg);
+            node_info_query_resp_msg(std::shared_ptr<dbc::network::message> msg);
             node_info_query_resp_msg();
 
             int32_t send();
@@ -53,7 +53,7 @@ namespace service
             bool validate();
 
         private:
-            std::shared_ptr<message> m_msg;
+            std::shared_ptr<dbc::network::message> m_msg;
         };
     }
 }

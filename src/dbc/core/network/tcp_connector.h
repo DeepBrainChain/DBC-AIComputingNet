@@ -1,14 +1,5 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   tcp_connector.hpp
-* description      :   tcp connector for nio client socket
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
-
+#ifndef DBC_NETWORK_TCP_CONNECTOR_H
+#define DBC_NETWORK_TCP_CONNECTOR_H
 
 #include <memory>
 #include <boost/asio.hpp>
@@ -22,17 +13,13 @@
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-
 #define RECONNECT_INTERVAL                     2                    //2->4->8->16->32->64...
 #define MAX_RECONNECT_TIMES                  2
 
-
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         class tcp_connector : public std::enable_shared_from_this<tcp_connector>, boost::noncopyable
         {
             using ios_ptr = typename std::shared_ptr<io_service>;
@@ -88,7 +75,7 @@ namespace matrix
 
             steady_timer m_reconnect_timer;
         };
-
     }
-
 }
+
+#endif

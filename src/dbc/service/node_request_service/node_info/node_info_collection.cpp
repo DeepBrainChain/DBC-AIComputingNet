@@ -260,7 +260,7 @@ namespace service
             //async invoke
             auto req = std::make_shared<get_task_queue_size_req_msg>();
 
-            auto msg = std::dynamic_pointer_cast<message>(req);
+            auto msg = std::dynamic_pointer_cast<dbc::network::message>(req);
             TOPIC_MANAGER->publish<int32_t>(typeid(get_task_queue_size_req_msg).name(), msg);
         }
 

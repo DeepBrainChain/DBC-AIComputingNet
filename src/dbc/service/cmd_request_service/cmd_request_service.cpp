@@ -12,7 +12,7 @@
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/format.hpp>
-#include "message.h"
+#include "message_id.h"
 
 using namespace matrix::core;
 
@@ -97,7 +97,7 @@ namespace dbc {
         return strpwd;
     }
 
-    static std::shared_ptr<message> create_node_create_task_req_msg(
+    static std::shared_ptr<dbc::network::message> create_node_create_task_req_msg(
             const std::shared_ptr<::cmd_create_task_req> &cmd_req, std::string& task_id, std::string& login_password) {
         // check
         if (cmd_req->peer_nodes_list.empty()) {
@@ -152,14 +152,14 @@ namespace dbc {
 
         req_content->header.__set_exten_info(exten_info);
 
-        std::shared_ptr<message> req_msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_CREATE_TASK_REQ);
         req_msg->set_content(req_content);
 
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_create_task_req(std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_cmd_create_task_req(std::shared_ptr<dbc::network::message> &msg) {
         std::shared_ptr<::cmd_create_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_create_task_req>(
                 msg->get_content());
         if (cmd_req_msg == nullptr) {
@@ -198,7 +198,7 @@ namespace dbc {
     }
 
     // start task
-    static std::shared_ptr<message> create_node_start_task_req_msg(
+    static std::shared_ptr<dbc::network::message> create_node_start_task_req_msg(
             const std::shared_ptr<::cmd_start_task_req> &cmd_req) {
         // check
         if (cmd_req->task_id.empty()) {
@@ -238,14 +238,14 @@ namespace dbc {
         }
         req_content->header.__set_exten_info(exten_info);
 
-        std::shared_ptr<message> req_msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_START_TASK_REQ);
         req_msg->set_content(req_content);
 
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_start_task_req(std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_cmd_start_task_req(std::shared_ptr<dbc::network::message> &msg) {
         std::shared_ptr<::cmd_start_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_start_task_req>(
                 msg->get_content());
         if (cmd_req_msg == nullptr) {
@@ -279,7 +279,7 @@ namespace dbc {
     }
 
     // restart task
-    static std::shared_ptr<message> create_node_restart_task_req_msg(
+    static std::shared_ptr<dbc::network::message> create_node_restart_task_req_msg(
             const std::shared_ptr<::cmd_restart_task_req> &cmd_req) {
         // check
         if (cmd_req->task_id.empty()) {
@@ -319,14 +319,14 @@ namespace dbc {
         }
         req_content->header.__set_exten_info(exten_info);
 
-        std::shared_ptr<message> req_msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_RESTART_TASK_REQ);
         req_msg->set_content(req_content);
 
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_restart_task_req(std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_cmd_restart_task_req(std::shared_ptr<dbc::network::message> &msg) {
         std::shared_ptr<::cmd_restart_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_restart_task_req>(
                 msg->get_content());
         if (cmd_req_msg == nullptr) {
@@ -360,7 +360,7 @@ namespace dbc {
     }
 
     // stop task
-    static std::shared_ptr<message> create_node_stop_task_req_msg(const std::shared_ptr<::cmd_stop_task_req> &cmd_req) {
+    static std::shared_ptr<dbc::network::message> create_node_stop_task_req_msg(const std::shared_ptr<::cmd_stop_task_req> &cmd_req) {
         // check
         if (cmd_req->task_id.empty()) {
             LOG_ERROR << "restart failed: task_id is empty!";
@@ -400,14 +400,14 @@ namespace dbc {
         }
         req_content->header.__set_exten_info(exten_info);
 
-        std::shared_ptr<message> req_msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_STOP_TASK_REQ);
         req_msg->set_content(req_content);
 
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_stop_task_req(const std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_cmd_stop_task_req(const std::shared_ptr<dbc::network::message> &msg) {
         std::shared_ptr<::cmd_stop_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_stop_task_req>(
                 msg->get_content());
         if (cmd_req_msg == nullptr) {
@@ -441,7 +441,7 @@ namespace dbc {
     }
 
     // task logs
-    std::shared_ptr<message>
+    std::shared_ptr<dbc::network::message>
     cmd_request_service::create_node_task_logs_req_msg(const std::shared_ptr<::cmd_task_logs_req> &cmd_req) {
         // check
         if (cmd_req->task_id.empty()) {
@@ -494,7 +494,7 @@ namespace dbc {
         exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
         req_content->header.__set_exten_info(exten_info);
 
-        std::shared_ptr<message> req_msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_TASK_LOGS_REQ);
         req_msg->set_content(req_content);
 
@@ -523,7 +523,7 @@ namespace dbc {
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_task_logs_req(const std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_cmd_task_logs_req(const std::shared_ptr<dbc::network::message> &msg) {
         auto cmd_req_msg = std::dynamic_pointer_cast<::cmd_task_logs_req>(msg->get_content());
         if (nullptr == cmd_req_msg) {
             LOG_ERROR << "ai power requester service cmd logs msg content nullptr";
@@ -554,7 +554,7 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    int32_t cmd_request_service::on_node_task_logs_rsp(std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_node_task_logs_rsp(std::shared_ptr<dbc::network::message> &msg) {
         if (!precheck_msg(msg)) {
             LOG_ERROR << "msg precheck fail";
             return E_DEFAULT;
@@ -655,7 +655,7 @@ namespace dbc {
         }
 
         variables_map &vm = session->get_context().get_args();
-        std::shared_ptr<message> req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+        std::shared_ptr<dbc::network::message> req_msg = vm["req_msg"].as<std::shared_ptr<dbc::network::message>>();
         auto req_content = std::dynamic_pointer_cast<matrix::service_core::node_task_logs_req>(req_msg->get_content());
         if (nullptr != req_content)
             cmd_resp->header.__set_session_id(req_content->header.session_id);
@@ -672,7 +672,7 @@ namespace dbc {
     }
 
     // list tasks
-    std::shared_ptr<message> cmd_request_service::create_node_list_task_req_msg(
+    std::shared_ptr<dbc::network::message> cmd_request_service::create_node_list_task_req_msg(
             const std::shared_ptr<::cmd_list_task_req> &cmd_req) {
         // check
         if (cmd_req->peer_nodes_list.empty()) {
@@ -709,7 +709,7 @@ namespace dbc {
         exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
         req_content->header.__set_exten_info(exten_info);
 
-        std::shared_ptr<message> req_msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_LIST_TASK_REQ);
         req_msg->set_content(req_content);
 
@@ -735,7 +735,7 @@ namespace dbc {
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_list_task_req(const std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_cmd_list_task_req(const std::shared_ptr<dbc::network::message> &msg) {
         auto cmd_req_msg = std::dynamic_pointer_cast<::cmd_list_task_req>(msg->get_content());
         if (nullptr == cmd_req_msg) {
             LOG_ERROR << "ai power requester service cmd logs msg content nullptr";
@@ -766,7 +766,7 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    int32_t cmd_request_service::on_node_list_task_rsp(std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_node_list_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
         if (!precheck_msg(msg)) {
             LOG_ERROR << "msg precheck fail";
             return E_DEFAULT;
@@ -791,7 +791,7 @@ namespace dbc {
         }
 
         variables_map &vm = session->get_context().get_args();
-        std::shared_ptr<message> req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+        std::shared_ptr<dbc::network::message> req_msg = vm["req_msg"].as<std::shared_ptr<dbc::network::message>>();
 
         std::shared_ptr<::cmd_list_task_rsp> cmd_resp = std::make_shared<::cmd_list_task_rsp>();
         auto req_content = std::dynamic_pointer_cast<matrix::service_core::node_list_task_req>(req_msg->get_content());
@@ -840,7 +840,7 @@ namespace dbc {
         }
 
         variables_map &vm = session->get_context().get_args();
-        std::shared_ptr<message> req_msg = vm["req_msg"].as<std::shared_ptr<message>>();
+        std::shared_ptr<dbc::network::message> req_msg = vm["req_msg"].as<std::shared_ptr<dbc::network::message>>();
         auto req_content = std::dynamic_pointer_cast<matrix::service_core::node_list_task_req>(req_msg->get_content());
         if (req_content != nullptr)
             cmd_resp->header.__set_session_id(req_content->header.session_id);
@@ -939,13 +939,13 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    bool cmd_request_service::precheck_msg(std::shared_ptr<message> &msg) {
+    bool cmd_request_service::precheck_msg(std::shared_ptr<dbc::network::message> &msg) {
         if (!msg) {
             LOG_ERROR << "msg is nullptr";
             return false;
         }
 
-        std::shared_ptr<msg_base> base = msg->content;
+        std::shared_ptr<dbc::network::msg_base> base = msg->content;
         if (!base) {
             LOG_ERROR << "containt is nullptr";
             return false;
@@ -964,14 +964,14 @@ namespace dbc {
         return true;
     }
 
-    int32_t cmd_request_service::on_binary_forward(std::shared_ptr<message> &msg) {
+    int32_t cmd_request_service::on_binary_forward(std::shared_ptr<dbc::network::message> &msg) {
         if (!msg) {
             LOG_ERROR << "recv logs_resp but msg is nullptr";
             return E_DEFAULT;
         }
 
 
-        std::shared_ptr<matrix::core::msg_forward> content = std::dynamic_pointer_cast<matrix::core::msg_forward>(
+        std::shared_ptr<dbc::network::msg_forward> content = std::dynamic_pointer_cast<dbc::network::msg_forward>(
                 msg->content);
 
         if (!content) {

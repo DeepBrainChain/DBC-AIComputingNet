@@ -41,7 +41,7 @@ namespace matrix
             ~oss_client() = default;
         protected:
 
-            http_client m_http_client;
+            dbc::network::http_client m_http_client;
 
             std::string m_url;
             std::string m_crt;

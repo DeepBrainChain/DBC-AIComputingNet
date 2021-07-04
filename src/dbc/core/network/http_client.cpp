@@ -15,11 +15,10 @@
 #include <boost/format.hpp>
 #include "openssl_hostname_validation.h"
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         const char *http_errorstring(int code)
         {
             switch (code) 
@@ -717,5 +716,4 @@ namespace matrix
             m_remote_port = remote_port;
         }
     }
-
 }

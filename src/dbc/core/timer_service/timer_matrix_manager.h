@@ -63,13 +63,13 @@ namespace matrix
 
             void stop_timer();
 
-            std::shared_ptr<message> make_time_tick_notification();
+            std::shared_ptr<dbc::network::message> make_time_tick_notification();
 
             void on_timer_expired(const boost::system::error_code& error);
 
         protected:
 
-            std::shared_ptr<nio_loop_group> m_timer_group;
+            std::shared_ptr<dbc::network::nio_loop_group> m_timer_group;
 
             //std::function<timer_handler_type> m_timer_handler;
 

@@ -10,12 +10,10 @@
 
 #include "net_address.h"
 
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         bool net_address::is_rfc1918(tcp::endpoint tcp_ep)
         {
             if (tcp_ep.address().is_v4())
@@ -32,7 +30,5 @@ namespace matrix
 
             return false;
         }
-
     }
-
 }

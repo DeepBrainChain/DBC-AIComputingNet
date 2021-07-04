@@ -63,7 +63,7 @@ namespace matrix
             }
         }
 
-        void timer_manager::on_time_point_notification(std::shared_ptr<message> msg)
+        void timer_manager::on_time_point_notification(std::shared_ptr<dbc::network::message> msg)
         {
             std::shared_ptr<time_tick_notification> notification = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
             assert(nullptr != notification);

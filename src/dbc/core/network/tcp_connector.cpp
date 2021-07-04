@@ -14,9 +14,9 @@
 #include <boost/exception/all.hpp>
 
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
 
         tcp_connector::tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func)

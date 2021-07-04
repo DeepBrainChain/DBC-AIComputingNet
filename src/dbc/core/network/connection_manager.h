@@ -1,30 +1,20 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   connection_manager.h
-* description      :   connection manager as controller class for dbc core connection
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
+#ifndef DBC_NETWORK_CONNECTION_MANAGER_H
+#define DBC_NETWORK_CONNECTION_MANAGER_H
 
-#include "service_module/service_module.h"
 #include "nio_loop_group.h"
 #include "tcp_acceptor.h"
 #include "tcp_connector.h"
 #include "rw_lock.h"
 #include "channel.h"
 #include "compress/matrix_capacity.h"
+#include "service_module/service_module.h"
 
 using namespace std;
 
-
-#define DEFAULT_ACCEPTOR_THREAD_COUNT            1
-#define DEFAULT_CONNECTOR_THREAD_COUNT        1
+#define DEFAULT_ACCEPTOR_THREAD_COUNT             1
+#define DEFAULT_CONNECTOR_THREAD_COUNT            1
 #define DEFAULT_WORKER_THREAD_COUNT               8
 #define MIN_RELEASE_CHANNEL_USE_COUNT             2
-
 
 #ifdef WIN32
 // Win32 LevelDB doesn't use filedescriptors, and the ones used for
@@ -45,32 +35,27 @@ static const int MAX_ADDNODE_CONNECTIONS = 168;
 #endif
 #define FD_SETSIZE 1024 // max number of fds in fd_set
 
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-        class connection_manager : public service_module
+        class connection_manager : public matrix::core::service_module
         {
-
-            using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
-
         public:
+            using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
 
             connection_manager();
 
-            virtual ~connection_manager() = default;
+            ~connection_manager() override = default;
 
-            virtual std::string module_name() const { return connection_manager_name; }
+            std::string module_name() const override { return connection_manager_name; }
 
-        public:
+            void set_proto_capacity(socket_id sid, std::string c);
 
-            //listen
             int32_t start_listen(tcp::endpoint ep, handler_create_functor func);
 
             int32_t stop_listen(tcp::endpoint ep);
 
-            //connect
             int32_t start_connect(tcp::endpoint connect_addr, handler_create_functor func);
 
             int32_t stop_connect(tcp::endpoint connect_addr);
@@ -85,31 +70,28 @@ namespace matrix
 
 			shared_ptr<channel> get_channel(socket_id sid);
 
+            size_t get_connection_num() { return m_channels.size();}
+
+            bool have_active_channel();
+
+            shared_ptr<channel> find_fast_path(std::vector<std::string>& path);
+
             int32_t send_message(socket_id sid, std::shared_ptr<message> msg);
 
 			int32_t broadcast_message(std::shared_ptr<message> msg, socket_id id = socket_id());
 
-            size_t get_connection_num() { return m_channels.size();}
-
             bool send_resp_message(std::shared_ptr<message> msg, socket_id id = socket_id());
 
-            shared_ptr<channel> find_fast_path(std::vector<std::string>& path);
-
-            bool have_active_channel();
-
-            void set_proto_capacity(socket_id sid, std::string c);
-
         protected:
+            int32_t service_init(bpo::variables_map &options) override;
 
-            virtual int32_t service_init(bpo::variables_map &options);
+            int32_t service_exit() override;
 
-            int32_t service_exit();
+            void init_invoker() override;
 
-            void init_invoker();
+            void init_timer() override;
 
-            virtual void init_timer();
-
-            void init_subscription();
+            void init_subscription() override;
 
             virtual int32_t init_io_services();
 
@@ -144,42 +126,30 @@ namespace matrix
             int32_t load_max_connect(bpo::variables_map &options);
 
         protected:
+            uint32_t m_channel_recycle_timer = INVALID_TIMER_ID;
 
-            uint32_t m_channel_recycle_timer;
-
-			//mutex
             rw_lock m_lock_conn;//connector
-
 			rw_lock m_lock_accp;//acceptor
-
 			rw_lock m_lock_chnl;//channels
-
             rw_lock m_lock_recycle;     //recycle channels
 
             //io service group
             nio_loop_ptr m_worker_group;
-
             nio_loop_ptr m_acceptor_group;
-
             nio_loop_ptr m_connector_group;
 
             //acceptor
             list<shared_ptr<tcp_acceptor>> m_acceptors;
-
             //connector
             list<shared_ptr<tcp_connector>> m_connectors;
 
             //socket channel
             std::map<socket_id, shared_ptr<channel>, cmp_key> m_channels;
-
-
-            int32_t m_max_connect;
-
+            int32_t m_max_connect = 512;
             //recycle channel for exception tcp socket channel
             std::map<socket_id, shared_ptr<channel>, cmp_key> m_recycle_channels;
         };
-
     }
-
 }
 
+#endif

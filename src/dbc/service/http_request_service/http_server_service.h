@@ -28,7 +28,7 @@ namespace dbc {
 
     class http_server_service : public module {
     public:
-        explicit http_server_service(std::shared_ptr<http_request_event> hreq_event) : m_http_req_event(std::move(hreq_event)) {}
+        explicit http_server_service(std::shared_ptr<dbc::network::http_request_event> hreq_event) : m_http_req_event(std::move(hreq_event)) {}
 
         ~http_server_service() override = default;
 
@@ -99,7 +99,7 @@ namespace dbc {
         std::string m_listen_ip = "127.0.0.1";
         uint16_t m_listen_port = 0;
 
-        std::shared_ptr<http_request_event> m_http_req_event;
+        std::shared_ptr<dbc::network::http_request_event> m_http_req_event;
         struct event_base *m_event_base = nullptr;
         struct evhttp *m_event_http = nullptr;
         std::vector<evhttp_bound_socket *> m_bound_sockets;

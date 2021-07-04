@@ -95,7 +95,7 @@ namespace matrix
             std::string get_docker_dir(std::string container_id);
         protected:
 
-            http_client m_http_client;
+            dbc::network::http_client m_http_client;
 
             std::string m_remote_ip;
 

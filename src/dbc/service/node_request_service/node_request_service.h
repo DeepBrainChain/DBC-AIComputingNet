@@ -11,7 +11,6 @@
 #include <boost/process.hpp>
 #include "image_manager.h"
 #include "task_scheduler.h"
-#include "message.h"
 #include "LruCache.hpp"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
@@ -42,17 +41,17 @@ namespace dbc {
 
 		int32_t service_exit() override;
 
-		int32_t on_node_create_task_req(std::shared_ptr<message>& msg);
+		int32_t on_node_create_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-		int32_t on_node_start_task_req(std::shared_ptr<message>& msg);
+		int32_t on_node_start_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-		int32_t on_node_restart_task_req(std::shared_ptr<message>& msg);
+		int32_t on_node_restart_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-		int32_t on_node_stop_task_req(std::shared_ptr<message>& msg);
+		int32_t on_node_stop_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-		int32_t on_node_task_logs_req(const std::shared_ptr<message>& msg);
+		int32_t on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
 
-		int32_t on_node_list_task_req(std::shared_ptr<message>& msg);
+		int32_t on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg);
 
 		int32_t task_create(const std::shared_ptr<matrix::service_core::node_create_task_req>& req);
 
@@ -64,7 +63,7 @@ namespace dbc {
 
 		int32_t task_logs(const std::shared_ptr<matrix::service_core::node_task_logs_req>& req);
 
-		int32_t on_get_task_queue_size_req(std::shared_ptr<message>& msg);
+		int32_t on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg);
 
 		int32_t on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 

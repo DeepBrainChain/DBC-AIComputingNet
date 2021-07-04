@@ -15,6 +15,7 @@
 #include "rpc_error.h"
 #include "server.h"
 #include "rest_api_service.h"
+#include "cmd_message.h"
 
 /*
  * Unified successful response method
@@ -35,8 +36,8 @@
  * Initialize the context information that handles a response
  * */
 #define INIT_RSP_CONTEXT(CMD_REQ, CMD_RSP) \
-std::shared_ptr<http_request>& httpReq=hreq_context->m_hreq;\
-std::shared_ptr<message>& req_msg=hreq_context->m_req_msg;\
+std::shared_ptr<dbc::network::http_request>& httpReq=hreq_context->m_hreq;\
+std::shared_ptr<dbc::network::message>& req_msg=hreq_context->m_req_msg;\
 std::shared_ptr<CMD_REQ> req = std::dynamic_pointer_cast<CMD_REQ>(req_msg->content);\
 std::shared_ptr<CMD_RSP> resp = std::dynamic_pointer_cast<CMD_RSP>(resp_msg->content);\
 rapidjson::Document document;\
@@ -44,7 +45,7 @@ rapidjson::Document::AllocatorType& allocator = document.GetAllocator();\
 rapidjson::Value data(rapidjson::kObjectType);
 
 #define RETURN_REQ_MSG(cmd)\
-std::shared_ptr<message> msg = std::make_shared<message>();\
+std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();\
 msg->set_name(typeid(cmd).name());\
 msg->set_content(req);\
 return msg;
@@ -62,7 +63,7 @@ namespace dbc {
     }
 
     // /tasks/
-    std::shared_ptr<message> rest_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path) {
+    std::shared_ptr<dbc::network::message> rest_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
 
@@ -109,8 +110,8 @@ namespace dbc {
     }
 
     // create
-    std::shared_ptr<message> rest_create_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != http_request::POST) {
+    std::shared_ptr<dbc::network::message> rest_create_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks/start")
             return nullptr;
@@ -151,13 +152,13 @@ namespace dbc {
             }
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_create_task_req).name());
         msg->set_content(cmd_req);
         return msg;
     }
 
-    int32_t on_cmd_create_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_create_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_create_task_req, cmd_create_task_rsp)
 
         if (resp->result != 0) {
@@ -174,8 +175,8 @@ namespace dbc {
     }
 
     // start
-    std::shared_ptr<message> rest_start_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != http_request::POST) {
+    std::shared_ptr<dbc::network::message> rest_start_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks/<task_id>/start")
             return nullptr;
@@ -221,13 +222,13 @@ namespace dbc {
             }
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_start_task_req).name());
         msg->set_content(cmd_req);
         return msg;
     }
 
-    int32_t on_cmd_start_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_start_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_start_task_req, cmd_start_task_rsp)
 
         if (resp->result != 0) {
@@ -240,8 +241,8 @@ namespace dbc {
     }
 
     // restart
-    std::shared_ptr<message> rest_restart_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != http_request::POST) {
+    std::shared_ptr<dbc::network::message> rest_restart_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks/<task_id>/start")
             return nullptr;
@@ -287,13 +288,13 @@ namespace dbc {
             }
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_restart_task_req).name());
         msg->set_content(cmd_req);
         return msg;
     }
 
-    int32_t on_cmd_restart_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_restart_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_restart_task_req, cmd_restart_task_rsp)
 
         if (resp->result != 0) {
@@ -306,8 +307,8 @@ namespace dbc {
     }
 
     // stop
-    std::shared_ptr<message> rest_stop_task(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != http_request::POST) {
+    std::shared_ptr<dbc::network::message> rest_stop_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks/<task_id>/stop")
             return nullptr;
@@ -354,13 +355,13 @@ namespace dbc {
             }
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_stop_task_req).name());
         msg->set_content(cmd_req);
         return msg;
     }
 
-    int32_t on_cmd_stop_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_stop_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_stop_task_req, cmd_stop_task_rsp)
 
         if (resp->result != 0) {
@@ -373,8 +374,8 @@ namespace dbc {
     }
 
     // list tasks
-    std::shared_ptr<message> rest_list_task(const HTTP_REQUEST_PTR &httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != http_request::POST) {
+    std::shared_ptr<dbc::network::message> rest_list_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks")
             return nullptr;
@@ -418,14 +419,14 @@ namespace dbc {
             }
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_list_task_req).name());
         msg->set_content(cmd_req);
 
         return msg;
     }
 
-    int32_t on_cmd_list_task_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_list_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_list_task_req, cmd_list_task_rsp)
 
         if (resp->result != 0) {
@@ -463,8 +464,8 @@ namespace dbc {
     }
 
     // logs
-    std::shared_ptr<message> rest_task_logs(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != http_request::POST) {
+    std::shared_ptr<dbc::network::message> rest_task_logs(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks/<task_id>/logs")
             return nullptr;
@@ -542,13 +543,13 @@ namespace dbc {
             cmd_req->head_or_tail = GET_LOG_HEAD;
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_task_logs_req).name());
         msg->set_content(cmd_req);
         return msg;
     }
 
-    int32_t on_cmd_task_logs_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_task_logs_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_task_logs_req, cmd_task_logs_rsp)
 
         if (resp->result != 0) {
@@ -573,7 +574,7 @@ namespace dbc {
     }
 
     // /mining_nodes/
-    std::shared_ptr<message> rest_mining_nodes(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+    std::shared_ptr<dbc::network::message> rest_mining_nodes(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
 
@@ -610,7 +611,7 @@ namespace dbc {
             req->op = OP_SHOW_SERVICE_LIST;
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_list_node_req).name());
         msg->set_content(req);
         return msg;
@@ -867,7 +868,7 @@ namespace dbc {
         data.AddMember("mining_nodes", mining_nodes, allocator);
     }
 
-    int32_t on_list_node_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_list_node_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_list_node_req, cmd_list_node_rsp)
 
         if (!resp->err.empty()) {
@@ -886,7 +887,7 @@ namespace dbc {
     }
 
     // /peers/
-    std::shared_ptr<message> rest_peers(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+    std::shared_ptr<dbc::network::message> rest_peers(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
 
@@ -909,13 +910,13 @@ namespace dbc {
             return nullptr;
         }
 
-        std::shared_ptr<message> msg = std::make_shared<message>();
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_get_peer_nodes_req).name());
         msg->set_content(req);
         return msg;
     }
 
-    int32_t on_cmd_get_peer_nodes_rsp(const HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<message> &resp_msg) {
+    int32_t on_cmd_get_peer_nodes_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_get_peer_nodes_req, cmd_get_peer_nodes_rsp)
 
         if (resp->result != 0) {
@@ -950,7 +951,7 @@ namespace dbc {
     }
 
     // /stat/
-    std::shared_ptr<message> rest_stat(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+    std::shared_ptr<dbc::network::message> rest_stat(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         rapidjson::Document document;
         rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
@@ -968,7 +969,7 @@ namespace dbc {
     }
 
     // /config/
-    std::shared_ptr<message> rest_config(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+    std::shared_ptr<dbc::network::message> rest_config(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
 
@@ -1032,7 +1033,7 @@ namespace dbc {
     }
 
     // /
-    std::shared_ptr<message> rest_api_version(const HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+    std::shared_ptr<dbc::network::message> rest_api_version(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         rapidjson::Document document;
         rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 

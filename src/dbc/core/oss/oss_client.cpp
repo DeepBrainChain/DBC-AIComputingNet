@@ -36,7 +36,7 @@ namespace matrix
             kvs headers;
             headers.push_back({ "Content-Type", "application/json;charset=UTF-8" });
             headers.push_back({ "Host", m_http_client.get_remote_host()});
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/auth_task";
             try
@@ -75,7 +75,7 @@ namespace matrix
             kvs headers;
             headers.push_back({ "Content-Type", "application/json;charset=UTF-8" });
             headers.push_back({ "Host", m_http_client.get_remote_host() });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/idle_task";
             try
@@ -119,7 +119,7 @@ namespace matrix
             headers.push_back({ "Host", m_http_client.get_remote_host()});
             LOG_INFO << "auth get_remote_host :" << m_http_client.get_remote_host() ;
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/auth_task?";
             end_point +="machine_id="+req->mining_node_id;
@@ -196,7 +196,7 @@ namespace matrix
             headers.push_back({ "Host", m_http_client.get_remote_host()});
             LOG_INFO << "auth get_remote_host :" << m_http_client.get_remote_host() ;
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/auth_task?";
             end_point +="machine_id="+req->mining_node_id;
@@ -273,7 +273,7 @@ namespace matrix
             headers.push_back({ "Host", m_http_client.get_remote_host()});
             LOG_INFO << "auth get_remote_host :" << m_http_client.get_remote_host() ;
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/auth_task?";
             end_point +="machine_id="+req->mining_node_id;
@@ -349,7 +349,7 @@ namespace matrix
             headers.push_back({ "Host", m_http_client.get_remote_host()});
             LOG_INFO << "auth get_remote_host :" << m_http_client.get_remote_host() ;
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string end_point = m_http_client.get_uri() + "/auth_task?";
             end_point +="machine_id="+req->mining_node_id;

@@ -1,12 +1,3 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   connection_manager.cpp
-* description      :   connection manager as controller class for dbc core connection
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
 #include "connection_manager.h"
 #include <boost/exception/all.hpp>
 #include "log.h"
@@ -18,19 +9,15 @@
 #include "common/util.h"
 #include <algorithm>
 
-
-using namespace matrix::core;
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-        connection_manager::connection_manager() 
-            : m_channel_recycle_timer(INVALID_TIMER_ID)
-            , m_worker_group(std::make_shared<nio_loop_group>())
-            , m_acceptor_group(std::make_shared<nio_loop_group>())
-            , m_connector_group(std::make_shared<nio_loop_group>())
+        connection_manager::connection_manager()
         {
+            m_worker_group = std::make_shared<nio_loop_group>();
+            m_acceptor_group = std::make_shared<nio_loop_group>();
+            m_connector_group = std::make_shared<nio_loop_group>();
         }
 
         int32_t connection_manager::service_init(bpo::variables_map &options)
@@ -477,7 +464,7 @@ namespace matrix
 
             LOG_DEBUG << "channel add channel begin use count " << channel.use_count() << channel->id().to_string();
 
-            std::pair<std::map<socket_id, shared_ptr<matrix::core::channel>, cmp_key>::iterator, bool> ret = m_channels.insert(make_pair(sid, channel));
+            std::pair<std::map<socket_id, shared_ptr<dbc::network::channel>, cmp_key>::iterator, bool> ret = m_channels.insert(make_pair(sid, channel));
             if (!ret.second)
             {
                 LOG_ERROR << "connection manager add channel error, maybe duplicated " << sid.to_string();
@@ -582,7 +569,6 @@ namespace matrix
             return E_SUCCESS;
 		}
 
-
         shared_ptr<channel> connection_manager::find_fast_path(std::vector<std::string>& path)
         {
             int i = 0;
@@ -646,7 +632,6 @@ namespace matrix
             }
             return false;
         }
-
 
         bool connection_manager::send_resp_message(std::shared_ptr<message> msg, socket_id id)
         {
@@ -883,7 +868,5 @@ namespace matrix
             ch->set_proto_capacity(c);
 
         }
-    
     }
-
 }

@@ -1,14 +1,5 @@
-﻿/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   server.h
-* description    :   core is abstracted into server, server is responsible for init and exit
-* date                  : 2017.01.23
-* author            :   Bruce Feng
-**********************************************************************************/
-
-#pragma once
+﻿#ifndef DBC_SERVER_H
+#define DBC_SERVER_H
 
 #include <memory>
 #include <functional>
@@ -22,23 +13,24 @@
 
 using namespace std;
 
-
-#define TOPIC_MANAGER                                (g_server->get_topic_manager())
-#define CONF_MANAGER                                 (g_server->get_conf_manager())
-#define CONNECTION_MANAGER                 (g_server->get_connection_manager())
-#define P2P_SERVICE                                        (g_server->get_p2p_net_service())
-
-
 #define DEFAULT_SLEEP_MILLI_SECONDS                 1000
 
+#define TOPIC_MANAGER                                (matrix::core::g_server->get_topic_manager())
+#define CONF_MANAGER                                 (matrix::core::g_server->get_conf_manager())
+#define CONNECTION_MANAGER                           (matrix::core::g_server->get_connection_manager())
+#define P2P_SERVICE                                  (matrix::core::g_server->get_p2p_net_service())
+
+namespace dbc {
+    namespace network {
+        class conf_manager;
+    }
+}
 
 namespace matrix
 {
 	namespace core
 	{
-
-		class server;
-		class conf_manager;
+        class server;
 		class server_initiator;
 		class server_initiator_factory;
 		class topic_manager;
@@ -49,12 +41,10 @@ namespace matrix
 
 		class server
 		{
-
 			using init_factory = server_initiator_factory;
 			using idle_task_functor_type = std::function<void()>;
 
 		public:
-
             server();
 
 			virtual ~server() = default;
@@ -79,17 +69,15 @@ namespace matrix
 
 			topic_manager *get_topic_manager() { return (topic_manager *)(m_module_manager->get(topic_manager_name).get()); }
 
-			connection_manager *get_connection_manager() { return (connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
+			dbc::network::connection_manager *get_connection_manager() { return (dbc::network::connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
 
             server_info& get_server_info() { return m_server_info; }
 			void add_service_list(std::string s)  { m_server_info.add_service_list(s); }
 
 		protected:
-
 			virtual void do_cycle_task();
 
 		protected:
-
 			int32_t m_init_result;
 
 			bool m_exited;
@@ -104,10 +92,7 @@ namespace matrix
 
 			server_info m_server_info;  // provide infomation like service list, of the computer node that dbc program controlls.
 		};
-
 	}
-
 }
 
-
-
+#endif

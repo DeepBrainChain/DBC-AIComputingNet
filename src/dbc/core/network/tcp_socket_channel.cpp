@@ -10,12 +10,15 @@
 #include "tcp_socket_channel.h"
 #include "service_message_id.h"
 #include <boost/exception/all.hpp>
+#include "service_message_def.h"
+#include <boost/bind.hpp>
+#include "server.h"
 
 //#pragma warning(disable : 4996)
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
 
         tcp_socket_channel::tcp_socket_channel(ios_ptr ios, socket_id sid, handler_create_functor func, int32_t len)
@@ -23,7 +26,7 @@ namespace matrix
             , m_ios(ios)
             , m_sid(sid)
             , m_recv_buf(len)
-            , m_send_buf(new byte_buf(DEFAULT_BUF_LEN))
+            , m_send_buf(new matrix::core::byte_buf(DEFAULT_BUF_LEN))
             , m_socket(*ios)
             , m_handler_functor(func)
             , m_remote_node_id("")
@@ -345,7 +348,7 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        void tcp_socket_channel::async_write(std::shared_ptr<byte_buf> &msg_buf)
+        void tcp_socket_channel::async_write(std::shared_ptr<matrix::core::byte_buf> &msg_buf)
         {
             if (CHANNEL_STOPPED == m_state)
             {

@@ -31,11 +31,35 @@ include_directories(
         ./3rd/sr25519crust
 )
 
-#common
-set(core_src_dir core core/codec core/common core/conf core/conf/validator core/crypto core/crypto/ctaes
-        core/container core/oss core/oss/bill core/oss/idle_task core/env core/initiator core/log
-        core/math core/memory core/module core/monitor core/mutex core/network core/service_bus
-        core/vm core/service_module core/storage core/timer_service core/filter core/compress)
+#core
+set(core_src_dir
+        core
+        core/common
+        core/conf
+        core/conf/validator
+        core/crypto
+        core/crypto/ctaes
+        core/container
+        core/oss
+        core/oss/bill
+        core/oss/idle_task
+        core/env
+        core/initiator
+        core/log
+        core/math
+        core/memory
+        core/module
+        core/monitor
+        core/mutex
+        core/network
+        core/network/compress
+        core/network/protocol
+        core/service_bus
+        core/vm
+        core/service_module
+        core/storage
+        core/timer_service
+        core/filter)
 
 foreach(sub_dir ${core_src_dir})
     aux_source_directory(dbc/${sub_dir} dbc_src_files)
@@ -49,7 +73,8 @@ set(service_src_dir . common task
         service/cmd_request_service
         service/http_request_service
         service/peer_request_service
-        service/peer_request_service/p2pnet
+        service/peer_request_service/protocol_coder
+        service/peer_request_service/socket_channel_handler
         service/node_request_service
         service/node_request_service/task_schedule
         service/node_request_service/task_schedule/db

@@ -19,7 +19,7 @@ namespace matrix
     namespace core
     {
 
-        class time_tick_notification : public matrix::core::msg_base
+        class time_tick_notification : public dbc::network::msg_base
         {
         public:
 

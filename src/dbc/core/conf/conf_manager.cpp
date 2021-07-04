@@ -6,6 +6,7 @@
 #include "common/util.h"
 #include "utilstrencodings.h"
 #include <boost/format.hpp>
+#include "thrift_compact.h"
 
 std::string DEFAULT_VM_LISTEN_PORT("16509");
 std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
@@ -38,9 +39,9 @@ namespace matrix
         conf_manager::conf_manager()
         {
             m_net_params = std::make_shared<net_type_params>();
-            m_proto_capacity.add(matrix_capacity::THRIFT_BINARY_C_NAME);
-            m_proto_capacity.add(matrix_capacity::THRIFT_COMPACT_C_NAME);
-            m_proto_capacity.add(matrix_capacity::SNAPPY_RAW_C_NAME);
+            m_proto_capacity.add(dbc::network::matrix_capacity::THRIFT_BINARY_C_NAME);
+            m_proto_capacity.add(dbc::network::matrix_capacity::THRIFT_COMPACT_C_NAME);
+            m_proto_capacity.add(dbc::network::matrix_capacity::SNAPPY_RAW_C_NAME);
         }
 
         int32_t conf_manager::init(bpo::variables_map &options)

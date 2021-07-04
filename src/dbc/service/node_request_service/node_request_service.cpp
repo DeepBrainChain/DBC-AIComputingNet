@@ -19,6 +19,7 @@
 #include "time_util.h"
 #include <stdlib.h>
 #include <boost/algorithm/string/join.hpp>
+#include "message_id.h"
 
 using namespace matrix::core;
 using namespace matrix::service_core;
@@ -159,7 +160,7 @@ namespace dbc {
 		return true;
 	}
 
-	int32_t node_request_service::on_node_create_task_req(std::shared_ptr<message>& msg) {
+	int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::network::message>& msg) {
 		std::shared_ptr<matrix::service_core::node_create_task_req> req =
 			std::dynamic_pointer_cast<matrix::service_core::node_create_task_req>(msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
@@ -198,7 +199,7 @@ namespace dbc {
 		}
 	}
 
-	int32_t node_request_service::on_node_start_task_req(std::shared_ptr<message>& msg) {
+	int32_t node_request_service::on_node_start_task_req(std::shared_ptr<dbc::network::message>& msg) {
 		std::shared_ptr<matrix::service_core::node_start_task_req> req =
 			std::dynamic_pointer_cast<matrix::service_core::node_start_task_req>(msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
@@ -236,7 +237,7 @@ namespace dbc {
 		}
 	}
 
-	int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<message>& msg) {
+	int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<dbc::network::message>& msg) {
 		std::shared_ptr<matrix::service_core::node_stop_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_stop_task_req>(
 			msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
@@ -275,7 +276,7 @@ namespace dbc {
 		}
 	}
 
-	int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<message>& msg) {
+	int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<dbc::network::message>& msg) {
 		std::shared_ptr<matrix::service_core::node_restart_task_req> req =
 			std::dynamic_pointer_cast<matrix::service_core::node_restart_task_req>(msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
@@ -313,7 +314,7 @@ namespace dbc {
 		}
 	}
 
-	int32_t node_request_service::on_node_task_logs_req(const std::shared_ptr<message>& msg) {
+	int32_t node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg) {
 		std::shared_ptr<node_task_logs_req> req_content = std::dynamic_pointer_cast<node_task_logs_req>(msg->get_content());
 		if (req_content == nullptr) return E_DEFAULT;
 
@@ -367,7 +368,7 @@ namespace dbc {
 		}
 	}
 
-	int32_t node_request_service::on_node_list_task_req(std::shared_ptr<message>& msg) {
+	int32_t node_request_service::on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg) {
 		std::shared_ptr<node_list_task_req> req_content = std::dynamic_pointer_cast<node_list_task_req>(
 			msg->get_content());
 		if (req_content == nullptr) return E_DEFAULT;
@@ -454,7 +455,7 @@ namespace dbc {
             rsp_content->header.__set_exten_info(exten_info);
 
             //rsp msg
-            std::shared_ptr<message> resp_msg = std::make_shared<message>();
+            std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
             resp_msg->set_name(NODE_LIST_TASK_RSP);
             resp_msg->set_content(rsp_content);
             CONNECTION_MANAGER->send_resp_message(resp_msg);
@@ -463,7 +464,7 @@ namespace dbc {
 		}
 	}
 
-    int32_t node_request_service::on_get_task_queue_size_req(std::shared_ptr<message>& msg) {
+    int32_t node_request_service::on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg) {
         auto resp = std::make_shared<get_task_queue_size_resp_msg>();
 
         /*
@@ -473,7 +474,7 @@ namespace dbc {
         resp->set_active_tasks(m_task_scheduler.get_active_tasks());
         */
 
-        auto resp_msg = std::dynamic_pointer_cast<message>(resp);
+        auto resp_msg = std::dynamic_pointer_cast<dbc::network::message>(resp);
 
         TOPIC_MANAGER->publish<int32_t>(typeid(get_task_queue_size_resp_msg).name(), resp_msg);
 
@@ -539,7 +540,7 @@ namespace dbc {
 		rsp_content->header.__set_exten_info(exten_info);
 
 		//resp msg
-		std::shared_ptr<message> resp_msg = std::make_shared<message>();
+		std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
 		resp_msg->set_name(NODE_TASK_LOGS_RSP);
 		resp_msg->set_content(rsp_content);
 		CONNECTION_MANAGER->send_resp_message(resp_msg);

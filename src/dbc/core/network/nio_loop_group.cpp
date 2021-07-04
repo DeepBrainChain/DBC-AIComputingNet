@@ -10,9 +10,9 @@
 #include "nio_loop_group.h"
 #include "common.h"
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         nio_loop_group::~nio_loop_group()
             {

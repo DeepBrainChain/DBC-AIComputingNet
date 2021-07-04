@@ -1,5 +1,4 @@
 #include "data_query_service.h"
-#include "message.h"
 #include "server.h"
 #include "service_message_id.h"
 #include "matrix_types.h"
@@ -16,6 +15,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include "leveldb/db.h"
 #include <boost/format.hpp>
+#include "cmd_message.h"
 
 using namespace matrix::service_core;
 
@@ -169,7 +169,7 @@ namespace service
             BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &data_query_service::on_get_task_queue_size_resp);
         }
 
-        int32_t data_query_service::on_cli_show_req(std::shared_ptr<message> &msg)
+        int32_t data_query_service::on_cli_show_req(std::shared_ptr<dbc::network::message> &msg)
         {
             LOG_DEBUG << "data_query_service::on_cli_show_req";
 
@@ -282,7 +282,7 @@ namespace service
             return E_SUCCESS;
         }
 
-        int32_t data_query_service::on_net_show_req(std::shared_ptr<message> &msg)
+        int32_t data_query_service::on_net_show_req(std::shared_ptr<dbc::network::message> &msg)
         {
             LOG_INFO << "data_query_service::on_net_show_req";
 
@@ -431,7 +431,7 @@ namespace service
             remove_session(session->get_session_id());
         }
 
-        int32_t data_query_service::on_net_show_resp(std::shared_ptr<message> &msg)
+        int32_t data_query_service::on_net_show_resp(std::shared_ptr<dbc::network::message> &msg)
         {
             //LOG_DEBUG << "data_query_service::on_net_show_resp";
 
@@ -542,7 +542,7 @@ namespace service
             return E_SUCCESS;
         }
 
-        int32_t data_query_service::on_net_service_broadcast_req(std::shared_ptr<message> &msg)
+        int32_t data_query_service::on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg)
         {
             LOG_INFO << "data_query_service::on_net_broadcast_req enter";
 
@@ -597,7 +597,7 @@ namespace service
             return ret_code;
         }
 
-        int32_t data_query_service::on_get_task_queue_size_resp(std::shared_ptr<message> &msg)
+        int32_t data_query_service::on_get_task_queue_size_resp(std::shared_ptr<dbc::network::message> &msg)
         {
             std::shared_ptr<get_task_queue_size_resp_msg> resp =
                     std::dynamic_pointer_cast<get_task_queue_size_resp_msg>(

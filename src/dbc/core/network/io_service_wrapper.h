@@ -1,26 +1,15 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   io_service_wrapper.h
-* description      :   wrap io_service into io_service::work
-* date             :   2018.01.20
-* author           :   Bruce Feng
-**********************************************************************************/
-#pragma once
-
+#ifndef DBC_NETWORK_IO_SERVICE_WRAPPER_H
+#define DBC_NETWORK_IO_SERVICE_WRAPPER_H
 
 #include <memory>
 #include <boost/asio.hpp>
 
-
 using namespace std;
 using namespace boost::asio;
 
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
         class io_service_wrapper
         {
@@ -44,7 +33,7 @@ namespace matrix
 
             std::shared_ptr<io_service::work> m_io_service_work;
         };
-
     }
-
 }
+
+#endif

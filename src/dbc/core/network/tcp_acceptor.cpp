@@ -1,20 +1,12 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2021 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         :  tcp_acceptor.cpp
-* description    :   tcp acceptor for nio server listening
-* date                  :   2020.11.06
-* author             :   Feng
-**********************************************************************************/
 #include "tcp_acceptor.h"
 #include "tcp_socket_channel.h"
-#include "server.h"
 #include <boost/exception/all.hpp>
+#include "server.h"
+#include "connection_manager.h"
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
 
         tcp_acceptor::tcp_acceptor(ios_weak_ptr io_service, nio_loop_ptr worker_group, tcp::endpoint endpoint, handler_create_functor func)
@@ -127,7 +119,8 @@ namespace matrix
             }
 			
             //add to connection manager
-            int32_t ret = CONNECTION_MANAGER->add_channel(socket_channel->id(), socket_channel->shared_from_this());
+            dbc::network::connection_manager* mgr = matrix::core::g_server->get_connection_manager();
+            int32_t ret = mgr->add_channel(socket_channel->id(), socket_channel->shared_from_this());
             //assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
             if (ret != E_SUCCESS)
             {

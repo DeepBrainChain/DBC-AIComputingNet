@@ -25,7 +25,7 @@ namespace service
 
         }
 
-        node_info_query_req_msg::node_info_query_req_msg(std::shared_ptr<message> msg):
+        node_info_query_req_msg::node_info_query_req_msg(std::shared_ptr<dbc::network::message> msg):
                 m_msg(msg)
         {
 
@@ -40,7 +40,7 @@ namespace service
         void node_info_query_req_msg::prepare(std::string o_node_id, std::string d_node_id, std::vector<std::string>
         keys,std::string   session_id)
         {
-            auto msg = std::make_shared<message>();
+            auto msg = std::make_shared<dbc::network::message>();
             auto content = std::make_shared<matrix::service_core::show_req>();
 
             //header
@@ -152,7 +152,7 @@ namespace service
 
         }
 
-        node_info_query_resp_msg::node_info_query_resp_msg(std::shared_ptr<message> msg):
+        node_info_query_resp_msg::node_info_query_resp_msg(std::shared_ptr<dbc::network::message> msg):
                 m_msg(msg)
         {
 
@@ -180,7 +180,7 @@ namespace service
         int32_t node_info_query_resp_msg::prepare(std::string o_node_id, std::string d_node_id, std::string session_id,
                                                   std::map<std::string, std::string> kvs)
         {
-            auto msg = std::make_shared<message>();
+            auto msg = std::make_shared<dbc::network::message>();
             auto content = std::make_shared<show_resp>();
 
             //header

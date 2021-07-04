@@ -28,7 +28,7 @@ namespace service
 
         }
 
-        service_broadcast_req_msg::service_broadcast_req_msg(std::shared_ptr<message> msg):m_msg(msg)
+        service_broadcast_req_msg::service_broadcast_req_msg(std::shared_ptr<dbc::network::message> msg):m_msg(msg)
         {
 
         }
@@ -37,7 +37,7 @@ namespace service
         {
             LOG_DEBUG<<"service_broadcast_req::prepare";
 
-            auto msg = std::make_shared<message>();
+            auto msg = std::make_shared<dbc::network::message>();
             auto content = std::make_shared<matrix::service_core::service_broadcast_req>();
 
             //header

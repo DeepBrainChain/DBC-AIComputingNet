@@ -136,7 +136,7 @@ namespace dbc {
     }
 
     void http_server_service::on_http_request_event(struct evhttp_request *req) {
-        std::shared_ptr<http_request> hreq(new http_request(req, m_event_base));
+        std::shared_ptr<dbc::network::http_request> hreq(new dbc::network::http_request(req, m_event_base));
 
         LOG_DEBUG << "Received a " << hreq->request_method_string(hreq->get_request_method()) << ", request for "
                   << hreq->get_uri() << " from " << hreq->get_peer().get_ip() << std::endl;

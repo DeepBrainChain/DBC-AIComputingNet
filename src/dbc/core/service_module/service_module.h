@@ -30,7 +30,7 @@ using namespace std;
 #define DEFAULT_MESSAGE_COUNT               102400                     //default message count
 
 #define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)              invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
-#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<message> &msg) {return send(msg);});
+#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg);});
 #define USE_SIGN_TIME 1548777600
 
 namespace matrix
@@ -38,7 +38,7 @@ namespace matrix
     namespace core
     {
 
-        using invoker_type = typename std::function<int32_t(std::shared_ptr<message> &msg)>;
+        using invoker_type = typename std::function<int32_t(std::shared_ptr<dbc::network::message> &msg)>;
 
         using timer_invoker_type = typename std::function<int32_t(std::shared_ptr<core_timer> timer)>;
         const std::string ECDSA = "ecdsa";
@@ -53,7 +53,7 @@ namespace matrix
         public:
 
             typedef std::function<void(void *)> task_functor;
-            typedef std::queue<std::shared_ptr<message>> queue_type;
+            typedef std::queue<std::shared_ptr<dbc::network::message>> queue_type;
 
             friend class timer_manager;
 
@@ -73,13 +73,13 @@ namespace matrix
 
             virtual int32_t run();
 
-            virtual int32_t send(std::shared_ptr<message> msg);
+            virtual int32_t send(std::shared_ptr<dbc::network::message> msg);
 
             bool is_empty() const { return m_msg_queue.empty(); }
 
         protected:
 
-            virtual int32_t on_invoke(std::shared_ptr<message> &msg);
+            virtual int32_t on_invoke(std::shared_ptr<dbc::network::message> &msg);
 
             virtual void init_invoker() {}
 
@@ -96,7 +96,7 @@ namespace matrix
 
             virtual int32_t service_exit() { return E_SUCCESS; }
 
-            virtual int32_t service_msg(std::shared_ptr<message> &msg);
+            virtual int32_t service_msg(std::shared_ptr<dbc::network::message> &msg);
 
             virtual int32_t on_time_out(std::shared_ptr<core_timer> timer) override final;
 

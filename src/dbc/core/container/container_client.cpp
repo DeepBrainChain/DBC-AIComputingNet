@@ -66,7 +66,7 @@ namespace matrix
             headers.push_back({"Content-Type", "application/json"});
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             
             try
@@ -112,7 +112,7 @@ namespace matrix
             headers.push_back({"Content-Type", "application/json"});
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret ;
 
             try
@@ -151,7 +151,7 @@ namespace matrix
 
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -218,7 +218,7 @@ namespace matrix
 
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -263,7 +263,7 @@ namespace matrix
             }
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -336,7 +336,7 @@ namespace matrix
             }
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -399,7 +399,7 @@ namespace matrix
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
 
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -446,7 +446,7 @@ namespace matrix
             std::string req_content;
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -523,7 +523,7 @@ namespace matrix
             //req content, headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -566,7 +566,7 @@ namespace matrix
             endpoint += image_id;
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -612,7 +612,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -697,7 +697,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             std::string image_id ="";
             try
@@ -760,7 +760,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
             bool can_delete_image=false;
             try
@@ -862,7 +862,7 @@ namespace matrix
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
             //headers.push_back({"Accept-Charset", "utf-8"});
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -910,7 +910,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -946,7 +946,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -990,7 +990,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -1016,7 +1016,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1055,7 +1055,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1088,7 +1088,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1114,7 +1114,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1150,7 +1150,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1270,7 +1270,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1405,7 +1405,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -1449,7 +1449,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1518,7 +1518,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -1560,7 +1560,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1681,7 +1681,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -1803,7 +1803,7 @@ namespace matrix
         //headers, resp
         kvs headers;
         headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-        http_response resp;
+        dbc::network::http_response resp;
         int32_t ret;
         std::string Id_string="";
         try
@@ -1904,7 +1904,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -2023,7 +2023,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret;
 
             try
@@ -2149,7 +2149,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try
@@ -2245,7 +2245,7 @@ namespace matrix
             //headers, resp
             kvs headers;
             headers.push_back({ "Host", m_remote_ip + ":" + std::to_string(m_remote_port) });
-            http_response resp;
+            dbc::network::http_response resp;
             int32_t ret = E_SUCCESS;
 
             try

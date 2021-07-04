@@ -1,24 +1,13 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   endpoint_address.h
-* description      :   p2p network endpoint address
-* date             :   2018.03.29
-* author           :   Bruce Feng
-**********************************************************************************/
-
-#pragma once
+#ifndef DBC_NETWORK_ENDPOINT_ADDRESS_H
+#define DBC_NETWORK_ENDPOINT_ADDRESS_H
 
 #include "net_address.h"
 #include "boost/asio.hpp"
 
-
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         class endpoint_address : public net_address
         {
         public:
@@ -49,7 +38,7 @@ namespace matrix
 
             uint16_t m_port;
         };
-
     }
-
 }
+
+#endif

@@ -1,26 +1,15 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   net_address.h
-* description      :   p2p network address
-* date             :   2018.03.29
-* author           :   Bruce Feng
-**********************************************************************************/
-
-#pragma once
-
+#ifndef DBC_NETWORK_NET_ADDRESS_H
+#define DBC_NETWORK_NET_ADDRESS_H
 
 #include <string>
 #include <boost/asio.hpp>
 
 using namespace boost::asio::ip;
 
-namespace matrix
+namespace dbc
 {
-    namespace core
+    namespace network
     {
-
         class net_address
         {
         public:
@@ -40,7 +29,7 @@ namespace matrix
             std::string m_ip;
 
         };
-
     }
-
 }
+
+#endif

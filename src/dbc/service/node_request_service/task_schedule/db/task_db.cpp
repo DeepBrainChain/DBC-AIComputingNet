@@ -2,6 +2,7 @@
 #include "log.h"
 #include "core/memory/byte_buf.h"
 #include "task_common_def.h"
+#include "thrift_binary.h"
 
 using namespace matrix::core;
 namespace fs = boost::filesystem;
@@ -49,7 +50,7 @@ namespace dbc
 			std::shared_ptr<TaskInfo> task = std::make_shared<TaskInfo>();
             std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
             task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-            binary_protocol proto(task_buf.get());
+            dbc::network::binary_protocol proto(task_buf.get());
             task->read(&proto);
 
             tasks.insert({ task->task_id, task });
@@ -82,7 +83,7 @@ namespace dbc
 			std::shared_ptr<TaskInfo> task = std::make_shared<TaskInfo>();
             std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
             task_buf->write_to_byte_buf(val.c_str(), val.size());
-            binary_protocol proto(task_buf.get());
+            dbc::network::binary_protocol proto(task_buf.get());
             task->read(&proto);
             return task;
 		}
@@ -94,7 +95,7 @@ namespace dbc
 	bool TaskDB::write_task(const std::shared_ptr<TaskInfo>& task)
 	{
         std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-        binary_protocol proto(out_buf.get());
+        dbc::network::binary_protocol proto(out_buf.get());
         task->write(&proto);
 
 		leveldb::WriteOptions write_options;

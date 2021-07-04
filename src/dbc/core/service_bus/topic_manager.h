@@ -15,7 +15,7 @@
 #include "rw_lock.h"
 #include "function_traits.h"
 #include <functional>
-#include "service_module/service_message.h"
+#include "service_message.h"
 
 using namespace std;
 

@@ -66,7 +66,7 @@ namespace matrix
 
         void service_module::init_time_tick_subscription()
         {
-            TOPIC_MANAGER->subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<message> &msg) {return send(msg); });
+            TOPIC_MANAGER->subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg); });
         }
 
         int32_t service_module::start()
@@ -92,7 +92,7 @@ namespace matrix
                 }
 
                 //invoke each
-                std::shared_ptr<message> msg;
+                std::shared_ptr<dbc::network::message> msg;
                 while (!tmp_msg_queue.empty())
                 {
                     //pop msg
@@ -136,7 +136,7 @@ namespace matrix
             return service_exit();
         }
 
-        int32_t service_module::on_invoke(std::shared_ptr<message> &msg)
+        int32_t service_module::on_invoke(std::shared_ptr<dbc::network::message> &msg)
         {
             //timer point notification trigger timer process
             if (msg->get_name() == TIMER_TICK_NOTIFICATION)
@@ -153,7 +153,7 @@ namespace matrix
             }
         }
 
-        int32_t service_module::send(std::shared_ptr<message> msg)
+        int32_t service_module::send(std::shared_ptr<dbc::network::message> msg)
         {
             std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -175,7 +175,7 @@ namespace matrix
             return E_SUCCESS;
         }
 
-        int32_t service_module::service_msg(std::shared_ptr<message> &msg)
+        int32_t service_module::service_msg(std::shared_ptr<dbc::network::message> &msg)
         {
             auto it = m_invokers.find(msg->get_name());
             if (it == m_invokers.end())
