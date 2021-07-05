@@ -33,24 +33,24 @@ namespace service
         class data_query_service : public service_module
         {
         public:
-            data_query_service();
+            data_query_service() = default;
 
-            virtual ~data_query_service() = default;
+            ~data_query_service() override = default;
 
-            virtual std::string module_name() const { return "net_query"; }
+            std::string module_name() const override { return "net_query"; }
 
-            virtual int32_t init(bpo::variables_map &options);
+            int32_t init(bpo::variables_map &options) override;
 
         protected:
             enum {
                 MAX_NAME_STR_LENGTH = 16
             };
 
-            void init_subscription();
+            void init_subscription() override;
 
-            void init_invoker();
+            void init_invoker() override;
 
-            void init_timer();
+            void init_timer() override;
 
             int32_t on_timer_node_info_collection(std::shared_ptr<matrix::core::core_timer> timer);
 
@@ -64,6 +64,7 @@ namespace service
 
         private:
             int32_t on_cli_show_req(std::shared_ptr<dbc::network::message> &msg);
+
             int32_t on_net_show_req(std::shared_ptr<dbc::network::message> &msg);
             int32_t on_net_show_resp(std::shared_ptr<dbc::network::message> &msg);
             int32_t on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg);

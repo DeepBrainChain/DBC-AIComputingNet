@@ -8,7 +8,6 @@
 #include "service_info_collection.h"
 #include "service_broadcast_req_msg.h"
 #include "service_name.h"
-
 #include "service_topic.h"
 #include <ctime>
 #include <boost/algorithm/string/join.hpp>
@@ -28,11 +27,6 @@ namespace service
         #define NODE_INFO_COLLECTION_TIMER                    "node_info_collection_timer"
         //#define TIMER_INTERVAL_SERVICE_BROADCAST              (30*1000)
         #define SERVICE_BROADCAST_TIMER                     "service_broadcast_timer"
-
-        data_query_service::data_query_service()
-        {
-
-        }
 
         int32_t data_query_service::init(bpo::variables_map &options)
         {
@@ -91,12 +85,9 @@ namespace service
             std::map<std::string, std::string> kvs;
 
             const char* ATTRS[] = {
-                    "gpu",
-                    "gpu_usage",
                     "state",
                     "version",
-                    "startup_time",
-                    "gpu_state"
+                    "startup_time"
             };
 
             int num_of_attrs = sizeof(ATTRS)/sizeof(char*);

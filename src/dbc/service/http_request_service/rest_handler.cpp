@@ -641,6 +641,7 @@ namespace dbc {
 
                     data.AddMember("images", images, allocator);
                 } else if (kv.first == std::string("gpu_usage")) {
+                    /*
                     //   gpu_usage_str:
                     //"gpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\n"
                     //
@@ -667,6 +668,8 @@ namespace dbc {
                     }
 
                     data.AddMember("gpu_usage", gpu_usage, allocator);
+                    */
+                } else if (kv.first == std::string("gpu")) {
 
                 } else {
                     fill_json_filed_string(data, allocator, kv.first, kv.second);
@@ -858,9 +861,9 @@ namespace dbc {
             node_info.AddMember("nodeid", STRING_DUP(nid), allocator);
             node_info.AddMember("name", STRING_DUP(it.second.name), allocator);
             node_info.AddMember("time_stamp", STRING_DUP(online_time), allocator);
-            node_info.AddMember("gpu", STRING_DUP(gpu), allocator);
+            //node_info.AddMember("gpu", STRING_DUP(gpu), allocator);
             node_info.AddMember("ver", STRING_DUP(ver), allocator);
-            node_info.AddMember("gpu_usage", STRING_DUP(gpu_usage), allocator);
+            //node_info.AddMember("gpu_usage", STRING_DUP(gpu_usage), allocator);
             node_info.AddMember("state", STRING_DUP(it.second.kvs["state"]), allocator);
             mining_nodes.PushBack(node_info, allocator);
         }
