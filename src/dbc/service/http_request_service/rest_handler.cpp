@@ -16,6 +16,12 @@
 #include "server.h"
 #include "rest_api_service.h"
 #include "cmd_message.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/error.h"
 
 /*
  * Unified successful response method
@@ -134,13 +140,21 @@ namespace dbc {
         }
 
         rapidjson::Document doc;
-        doc.Parse(body.c_str());
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
             return nullptr;
         }
 
-        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
@@ -269,13 +283,21 @@ namespace dbc {
         }
 
         rapidjson::Document doc;
-        doc.Parse(body.c_str());
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
             return nullptr;
         }
 
-        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
@@ -336,13 +358,21 @@ namespace dbc {
         }
 
         rapidjson::Document doc;
-        doc.Parse(body.c_str());
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
             return nullptr;
         }
 
-        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
@@ -400,13 +430,21 @@ namespace dbc {
         }
 
         rapidjson::Document doc;
-        doc.Parse(body.c_str());
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
             return nullptr;
         }
 
-        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
@@ -511,13 +549,21 @@ namespace dbc {
         }
 
         rapidjson::Document doc;
-        doc.Parse(body.c_str());
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON. Use /api/v1/tasks/start")
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
             return nullptr;
         }
 
-        JSON_PARSE_STRING(doc, "additional", cmd_req->additional)
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
         if (doc.HasMember("peer_nodes_list")) {
             if (doc["peer_nodes_list"].IsArray()) {
                 for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {

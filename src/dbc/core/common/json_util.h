@@ -26,6 +26,18 @@
 
 #define SHORT_JSON_STRING_SIZE      256
 
+#define JSON_PARSE_OBJECT_TO_STRING(_doc, _name, _out_val) \
+    do {                                                   \
+        if (!_doc.HasMember(_name))                        \
+            break;                                         \
+        if (!_doc[_name].IsObject())                       \
+            break;                                         \
+        const rapidjson::Value& obj = doc[_name];          \
+        rapidjson::StringBuffer buffer;                    \
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer); \
+        obj.Accept(writer);                                \
+        _out_val = buffer.GetString();                     \
+    } while(0);
 
 #define JSON_PARSE_STRING(d, NAME, VAL)\
     do {\

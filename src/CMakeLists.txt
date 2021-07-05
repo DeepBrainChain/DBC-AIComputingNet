@@ -16,6 +16,7 @@ include_directories(
         ./3rd/crypto/secp256k1/include
         ./3rd/crypto/secp256k1/contrib
         ./3rd/db
+        ./3rd/network
         ./3rd/network/libevent
         ./3rd/network/libevent/event2
         ./3rd/network/openssl
