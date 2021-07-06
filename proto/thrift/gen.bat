@@ -1,2 +1,2 @@
-.\thrift.exe --gen cpp -out .\db_thrift_cpp task.thrift
-.\thrift.exe --gen cpp -out .\db_thrift_cpp matrix.thrift
+.\thrift.exe --gen cpp -out .\cpp task.thrift
+.\thrift.exe --gen cpp -out .\cpp matrix.thrift

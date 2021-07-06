@@ -34,7 +34,11 @@ namespace dbc
 		int32_t ShutdownDomain(const std::string& domain_name);
 
 		int32_t DestoryDomain(const std::string& domain_name);
- 
+
+		int32_t ResetDomain(const std::string& domain_name);
+
+		int32_t UndefineDomain(const std::string& domain_name);
+
 		void ListAllDomains(std::vector<std::string>& domains);
 
 		void ListAllRunningDomains(std::vector<std::string>& domains);

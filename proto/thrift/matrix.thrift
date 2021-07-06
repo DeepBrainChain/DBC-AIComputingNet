@@ -74,17 +74,30 @@ struct peer_nodes_broadcast_req {
 
 //////////////////////////////////////////////////////////////////////////
 // create task
+// request
 struct node_create_task_req_body {
-  1: required string task_id,
-  3: required list<string> peer_nodes_list,
-  4: required string additional
+  1: required list<string> peer_nodes_list,
+  2: required string additional
 }
 
 struct node_create_task_req {
   1: node_create_task_req_body body
 }
+// response
+struct node_create_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg,
+
+  3: required string task_id,
+  4: required string login_password
+}
+
+struct node_create_task_rsp {
+  1: node_create_task_rsp_body body
+}
 //////////////////////////////////////////////////////////////////////////
 // start task
+// request
 struct node_start_task_req_body {
     1: required string task_id,
     2: required list<string> peer_nodes_list,
@@ -93,6 +106,15 @@ struct node_start_task_req_body {
 
 struct node_start_task_req {
   1: node_start_task_req_body body
+}
+// response
+struct node_start_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg
+}
+
+struct node_start_task_rsp {
+  1: node_start_task_rsp_body body
 }
 ////////////////////////////////////////////////////////////////////////////
 // restart task
@@ -116,7 +138,28 @@ struct node_stop_task_req_body {
 struct node_stop_task_req {
   1: node_stop_task_req_body body
 }
+//////////////////////////////////////////////////////////////////////////
+//reset task
+struct node_reset_task_req_body {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional
+}
 
+struct node_reset_task_req {
+  1: node_reset_task_req_body body
+}
+//////////////////////////////////////////////////////////////////////////
+//destroy task
+struct node_destroy_task_req_body {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional
+}
+
+struct node_destroy_task_req {
+  1: node_destroy_task_req_body body
+}
 //////////////////////////////////////////////////////////////////////////
 //task logs
 struct node_task_logs_req_body {

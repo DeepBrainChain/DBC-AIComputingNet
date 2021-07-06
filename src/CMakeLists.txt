@@ -71,10 +71,10 @@ endforeach()
 set(service_src_dir . common task
         service
         service/message
+        service/message/protocol_coder
         service/cmd_request_service
         service/http_request_service
         service/peer_request_service
-        service/peer_request_service/protocol_coder
         service/peer_request_service/socket_channel_handler
         service/node_request_service
         service/node_request_service/task_schedule

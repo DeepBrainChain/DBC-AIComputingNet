@@ -49,17 +49,25 @@ namespace dbc {
 
 		int32_t on_node_stop_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-		int32_t on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
+        int32_t on_node_reset_task_req(std::shared_ptr<dbc::network::message>& msg);
+
+        int32_t on_node_destroy_task_req(std::shared_ptr<dbc::network::message>& msg);
+
+        int32_t on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
 
 		int32_t on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg);
 
 		int32_t task_create(const std::shared_ptr<matrix::service_core::node_create_task_req>& req);
 
-		int32_t task_start(const std::string& task_id);
+		int32_t task_start(const std::shared_ptr<matrix::service_core::node_start_task_req>& req);
 
 		int32_t task_stop(const std::string& task_id);
 
-		int32_t task_restart(const std::string& task_id);
+        int32_t task_reset(const std::string& task_id);
+
+        int32_t task_destroy(const std::string& task_id);
+
+        int32_t task_restart(const std::string& task_id);
 
 		int32_t task_logs(const std::shared_ptr<matrix::service_core::node_task_logs_req>& req);
 

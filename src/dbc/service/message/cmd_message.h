@@ -74,6 +74,34 @@ public:
     std::string result_info;
 };
 
+// reset
+class cmd_reset_task_req : public dbc::network::msg_base {
+public:
+    std::string task_id;
+    std::vector<std::string> peer_nodes_list;
+    std::string additional;
+};
+
+class cmd_reset_task_rsp : public dbc::network::msg_base {
+public:
+    int32_t result;
+    std::string result_info;
+};
+
+// destroy
+class cmd_destroy_task_req : public dbc::network::msg_base {
+public:
+    std::string task_id;
+    std::vector<std::string> peer_nodes_list;
+    std::string additional;
+};
+
+class cmd_destroy_task_rsp : public dbc::network::msg_base {
+public:
+    int32_t result;
+    std::string result_info;
+};
+
 // log
 class cmd_task_logs_req : public dbc::network::msg_base {
 public:

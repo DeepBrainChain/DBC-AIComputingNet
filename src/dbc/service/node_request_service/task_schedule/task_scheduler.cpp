@@ -66,7 +66,7 @@ namespace dbc {
 		return E_SUCCESS;
 	}
 
-    int32_t TaskScheduler::CreateTask(const std::string& task_id, const std::string& additional) {
+    int32_t TaskScheduler::CreateTask(const std::string& task_id, const std::string& login_password, const std::string& additional) {
         auto it = m_tasks.find(task_id);
         if (it != m_tasks.end()) {
             LOG_ERROR << "create failed: task_id already exist " << task_id;
@@ -86,10 +86,9 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        std::string image, login_password, ssh_port;
+        std::string image, ssh_port;
         JSON_PARSE_STRING(doc, "image_name", image)
         JSON_PARSE_STRING(doc, "ssh_port", ssh_port)
-        JSON_PARSE_STRING(doc, "login_password", login_password);
 
         if (image.empty() || ssh_port.empty() || login_password.empty()) {
             LOG_ERROR << "create failed: params is invalid";
@@ -159,6 +158,52 @@ namespace dbc {
             return E_DEFAULT;
         }
 	}
+
+    int32_t TaskScheduler::ResetTask(const std::string& task_id) {
+        auto it = m_tasks.find(task_id);
+        if (it == m_tasks.end()) {
+            LOG_ERROR << "stop failed: task_id not exist " << task_id;
+            return E_DEFAULT;
+        }
+
+        auto taskinfo = it->second;
+
+        EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+        if (vm_status == VS_RUNNING) {
+            taskinfo->__set_operation(T_OP_Reset);
+            taskinfo->__set_last_start_time(time(nullptr));
+            m_process_tasks.push_back(taskinfo);
+            m_task_db.write_task(taskinfo);
+            return E_SUCCESS;
+        }
+        else {
+            LOG_ERROR << "reset failed: task not running " << task_id;
+            return E_DEFAULT;
+        }
+    }
+
+    int32_t TaskScheduler::DestroyTask(const std::string& task_id) {
+        auto it = m_tasks.find(task_id);
+        if (it == m_tasks.end()) {
+            LOG_ERROR << "stop failed: task_id not exist " << task_id;
+            return E_DEFAULT;
+        }
+
+        auto taskinfo = it->second;
+
+        EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+        if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+            taskinfo->__set_operation(T_OP_Destroy);
+            taskinfo->__set_last_stop_time(time(nullptr));
+            m_process_tasks.push_back(taskinfo);
+            m_task_db.write_task(taskinfo);
+            return E_SUCCESS;
+        }
+        else {
+            LOG_ERROR << "stop failed: task not running " << task_id;
+            return E_DEFAULT;
+        }
+    }
 
     int32_t TaskScheduler::RestartTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
@@ -234,6 +279,18 @@ namespace dbc {
         return (ret == 0);
     }
 
+    void delete_image_file(const std::string& image, const std::string& task_id) {
+        auto pos = image.find('.');
+        std::string real_image_name = image;
+        std::string ext;
+        if (pos != std::string::npos) {
+            real_image_name = image.substr(0, pos);
+            ext = image.substr(pos + 1);
+        }
+        std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
+        remove(real_image_name.c_str());
+	}
+
 	void TaskScheduler::ProcessTask() {
 	    LOG_INFO << "TaskScheduler::ProcessTask (" << m_process_tasks.size() << ")";
 
@@ -253,7 +310,6 @@ namespace dbc {
                         count++;
                         sleep(3);
                     }
-
                     LOG_INFO << "create task " << taskinfo->task_id << " successful";
                 } else {
                     LOG_ERROR << "create task " << taskinfo->task_id << " failed";
@@ -283,6 +339,39 @@ namespace dbc {
                         LOG_INFO << "restart task " << taskinfo->task_id << " successful";
                     } else {
                         LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
+                    }
+                }
+            } else if (taskinfo->operation == T_OP_Reset) {
+                EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+                if (vm_status == VS_RUNNING) {
+                    if (E_SUCCESS == m_vm_client.ResetDomain(taskinfo->task_id)) {
+                        LOG_INFO << "reset task " << taskinfo->task_id << " successful";
+                    } else {
+                        LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
+                    }
+                }
+            } else if (taskinfo->operation == T_OP_Destroy) {
+                EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+                if (vm_status == VS_SHUT_OFF) {
+                    if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
+                        sleep(1);
+                        delete_image_file(taskinfo->image, taskinfo->task_id);
+                        LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
+                    } else {
+                        LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
+                    }
+                } else if (vm_status == VS_RUNNING) {
+                    if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
+                        sleep(1);
+                        if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
+                            sleep(1);
+                            delete_image_file(taskinfo->image, taskinfo->task_id);
+                            LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
+                        } else {
+                            LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
+                        }
+                    } else {
+                        LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
                     }
                 }
             }

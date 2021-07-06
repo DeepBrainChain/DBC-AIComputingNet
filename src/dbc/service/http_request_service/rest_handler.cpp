@@ -105,6 +105,16 @@ namespace dbc {
                 return rest_stop_task(httpReq, path);
             }
 
+            // /tasks/<task_id>/reset
+            if (second_param == "reset") {
+                return rest_reset_task(httpReq, path);
+            }
+
+            // /tasks/<task_id>/destroy
+            if (second_param == "destroy") {
+                return rest_destroy_task(httpReq, path);
+            }
+
             // /tasks/<task_id>/result
             if (second_param == "logs") {
                 return rest_task_logs(httpReq, path);
@@ -181,7 +191,7 @@ namespace dbc {
         }
 
         data.AddMember("task_id", STRING_REF(resp->task_id), allocator);
-        data.AddMember("password", STRING_REF(resp->login_password), allocator);
+        data.AddMember("login_password", STRING_REF(resp->login_password), allocator);
 
         httpReq->reply_comm_rest_succ(data);
 
@@ -403,6 +413,156 @@ namespace dbc {
         return E_SUCCESS;
     }
 
+    // reset
+    std::shared_ptr<dbc::network::message> rest_reset_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks/<task_id>/reset")
+            return nullptr;
+        }
+
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() != 2) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                        "Invalid path_list. POST /api/v1/tasks/<task_id>/reset")
+            return nullptr;
+        }
+
+        const std::string &task_id = path_list[0];
+
+        std::shared_ptr<cmd_reset_task_req> cmd_req = std::make_shared<cmd_reset_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
+            return nullptr;
+        }
+
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
+
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
+        msg->set_name(typeid(cmd_reset_task_req).name());
+        msg->set_content(cmd_req);
+        return msg;
+    }
+
+    int32_t on_cmd_reset_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_reset_task_req, cmd_reset_task_rsp)
+
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+            return E_DEFAULT;
+        }
+
+        SUCC_REPLY(data)
+        return E_SUCCESS;
+    }
+
+    // destroy
+    std::shared_ptr<dbc::network::message> rest_destroy_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks/<task_id>/stop")
+            return nullptr;
+        }
+
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() != 2) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                        "Invalid path_list. POST /api/v1/tasks/<task_id>/stop")
+            return nullptr;
+        }
+
+        const std::string &task_id = path_list[0];
+
+        std::shared_ptr<cmd_destroy_task_req> cmd_req = std::make_shared<cmd_destroy_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
+            return nullptr;
+        }
+
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
+
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
+        msg->set_name(typeid(cmd_destroy_task_req).name());
+        msg->set_content(cmd_req);
+        return msg;
+    }
+
+    int32_t on_cmd_destroy_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_destroy_task_req, cmd_destroy_task_rsp)
+
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+            return E_DEFAULT;
+        }
+
+        SUCC_REPLY(data)
+        return E_SUCCESS;
+    }
+
     // list tasks
     std::shared_ptr<dbc::network::message> rest_list_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
         if (httpReq->get_request_method() != dbc::network::http_request::POST) {
@@ -501,7 +661,7 @@ namespace dbc {
         }
     }
 
-    // logs
+    // logssession_id
     std::shared_ptr<dbc::network::message> rest_task_logs(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,

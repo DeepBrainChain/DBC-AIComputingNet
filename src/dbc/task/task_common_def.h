@@ -35,6 +35,8 @@ namespace dbc
         T_OP_Start, //启动中
         T_OP_Stop, //停止中
         T_OP_ReStart, //重启中
+        T_OP_Reset,
+        T_OP_Destroy,
         T_OP_PullingImage //正在拉取景象
     };
 

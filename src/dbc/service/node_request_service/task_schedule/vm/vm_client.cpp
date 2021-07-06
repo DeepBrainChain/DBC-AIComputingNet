@@ -254,14 +254,6 @@ namespace dbc {
     // image_path: /data/**.qcow2
     int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string& image,
                                    const std::string& transform_port) {
-        // 设置端口转发
-        std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
-        public_ip = string_util::rtrim(public_ip, '\n');
-        if (!public_ip.empty() && !transform_port.empty()) {
-            std::string ret = shell_transform_port(public_ip, transform_port);
-            LOG_INFO << "transform ssh port: " << public_ip << ":" << transform_port << " ret:" << ret;
-        }
-
         // 获取宿主机显卡列表
         std::string vedio_pci = shell_vga_pci_list();
         LOG_INFO << "\nvga_pci_list:\n" << vedio_pci;
@@ -283,13 +275,32 @@ namespace dbc {
         uuid_generate(uu);
         uuid_unparse(uu, buf_uuid);
 
-        int32_t errorNum = E_SUCCESS;
-        std::string image_path = "/data/" + image;
+        // 复制一份虚拟磁盘
+        std::string from_image_path = "/data/" + image;
+        auto pos = image.find('.');
+        std::string to_image_name = image;
+        std::string to_ext;
+        if (pos != std::string::npos) {
+            to_image_name = image.substr(0, pos);
+            to_ext = image.substr(pos + 1);
+        }
+        std::string to_image_path = "/data/" + to_image_name + "_" + domain_ame + "." + to_ext;
+        fs::copy_file(from_image_path, to_image_path);
+
         std::string xml_content = createXmlStr(buf_uuid, domain_ame, memoryTotal,
-                                               memoryTotal, cpuNumTotal, vedio_pci, image_path);
+                                               memoryTotal, cpuNumTotal, vedio_pci, to_image_path);
+
+        // 设置端口转发
+        std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
+        public_ip = string_util::rtrim(public_ip, '\n');
+        if (!public_ip.empty() && !transform_port.empty()) {
+            std::string ret = shell_transform_port(public_ip, transform_port);
+            LOG_INFO << "transform ssh port: " << public_ip << ":" << transform_port << " ret:" << ret;
+        }
 
         virConnectPtr connPtr = nullptr;
         virDomainPtr domainPtr = nullptr;
+        int32_t errorNum = E_SUCCESS;
         do {
             std::string url = getUrl();
             connPtr = virConnectOpen(url.c_str());
@@ -526,6 +537,78 @@ namespace dbc {
             }
 
             if (virDomainDestroy(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+                break;
+            }
+        } while(0);
+
+        if (nullptr != domainPtr) {
+            virDomainFree(domainPtr);
+        }
+
+        if (nullptr != connPtr) {
+            virConnectClose(connPtr);
+        }
+
+        return errorNum;
+    }
+
+    int32_t VmClient::UndefineDomain(const std::string &domain_name) {
+        virConnectPtr connPtr = nullptr;
+        virDomainPtr domainPtr = nullptr;
+        int32_t errorNum = E_SUCCESS;
+
+        do {
+            std::string url = getUrl();
+            connPtr = virConnectOpen(url.c_str());
+            if (nullptr == connPtr) {
+                errorNum = E_VIRT_CONNECT_ERROR;
+                break;
+            }
+
+            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+            if (nullptr == domainPtr) {
+                errorNum = E_VIRT_DOMAIN_NOT_FOUND;
+                break;
+            }
+
+            if (virDomainUndefine(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+                break;
+            }
+        } while(0);
+
+        if (nullptr != domainPtr) {
+            virDomainFree(domainPtr);
+        }
+
+        if (nullptr != connPtr) {
+            virConnectClose(connPtr);
+        }
+
+        return errorNum;
+    }
+
+    int32_t VmClient::ResetDomain(const std::string &domain_name) {
+        virConnectPtr connPtr = nullptr;
+        virDomainPtr domainPtr = nullptr;
+        int32_t errorNum = E_SUCCESS;
+
+        do {
+            std::string url = getUrl();
+            connPtr = virConnectOpen(url.c_str());
+            if (nullptr == connPtr) {
+                errorNum = E_VIRT_CONNECT_ERROR;
+                break;
+            }
+
+            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+            if (nullptr == domainPtr) {
+                errorNum = E_VIRT_DOMAIN_NOT_FOUND;
+                break;
+            }
+
+            if (virDomainReset(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
                 errorNum = E_DEFAULT;
                 break;
             }

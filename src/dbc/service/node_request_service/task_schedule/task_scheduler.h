@@ -36,11 +36,15 @@ namespace dbc {
 
         int32_t Init();
 
-        int32_t CreateTask(const std::string& task_id, const std::string& additional);
+        int32_t CreateTask(const std::string& task_id, const std::string& login_password, const std::string& additional);
 
         int32_t StartTask(const std::string& task_id);
 
         int32_t StopTask(const std::string& task_id);
+
+        int32_t ResetTask(const std::string& task_id);
+
+        int32_t DestroyTask(const std::string& task_id);
 
         int32_t RestartTask(const std::string& task_id);
         
