@@ -116,19 +116,9 @@ struct node_start_task_rsp_body {
 struct node_start_task_rsp {
   1: node_start_task_rsp_body body
 }
-////////////////////////////////////////////////////////////////////////////
-// restart task
-struct node_restart_task_req_body {
-    1: required string task_id,
-    2: required list<string> peer_nodes_list,
-    3: required string additional
-}
-
-struct node_restart_task_req {
-  1: node_restart_task_req_body body
-}
 //////////////////////////////////////////////////////////////////////////
-//stop task
+// stop task
+// request
 struct node_stop_task_req_body {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
@@ -138,8 +128,39 @@ struct node_stop_task_req_body {
 struct node_stop_task_req {
   1: node_stop_task_req_body body
 }
+// response
+struct node_stop_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg
+}
+
+struct node_stop_task_rsp {
+  1: node_stop_task_rsp_body body
+}
+////////////////////////////////////////////////////////////////////////////
+// restart task
+// request
+struct node_restart_task_req_body {
+    1: required string task_id,
+    2: required list<string> peer_nodes_list,
+    3: required string additional
+}
+
+struct node_restart_task_req {
+  1: node_restart_task_req_body body
+}
+// response
+struct node_restart_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg
+}
+
+struct node_restart_task_rsp {
+  1: node_restart_task_rsp_body body
+}
 //////////////////////////////////////////////////////////////////////////
-//reset task
+// reset task
+// request
 struct node_reset_task_req_body {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
@@ -149,8 +170,18 @@ struct node_reset_task_req_body {
 struct node_reset_task_req {
   1: node_reset_task_req_body body
 }
+// response
+struct node_reset_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg
+}
+
+struct node_reset_task_rsp {
+  1: node_reset_task_rsp_body body
+}
 //////////////////////////////////////////////////////////////////////////
-//destroy task
+// destroy task
+// request
 struct node_destroy_task_req_body {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
@@ -160,8 +191,18 @@ struct node_destroy_task_req_body {
 struct node_destroy_task_req {
   1: node_destroy_task_req_body body
 }
+// response
+struct node_destroy_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg
+}
+
+struct node_destroy_task_rsp {
+  1: node_destroy_task_rsp_body body
+}
 //////////////////////////////////////////////////////////////////////////
-//task logs
+// task logs
+// request
 struct node_task_logs_req_body {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
@@ -173,20 +214,16 @@ struct node_task_logs_req_body {
 struct node_task_logs_req {
   1: node_task_logs_req_body body
 }
-
-struct peer_node_log {
-  1: required string peer_node_id,
-  2: required string log_content
-}
-
+// response
 struct node_task_logs_rsp_body {
-  1: required peer_node_log log
+  1: required i32 result,
+  2: required string result_msg,
+  3: required string log_content
 }
 
 struct node_task_logs_rsp {
   1: node_task_logs_rsp_body body
 }
-
 //////////////////////////////////////////////////////////////////////////
 //list_task
 struct node_list_task_req_body {

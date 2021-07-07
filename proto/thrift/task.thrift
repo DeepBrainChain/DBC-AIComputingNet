@@ -1,8 +1,8 @@
 namespace cpp dbc
 
 struct TaskInfo {
-    1: required string task_id, //id
-    2: required string image, //镜像
+    1: required string task_id,
+    2: required string image_name, //镜像名字
     3: optional string login_password, //登录密码
     4: optional string ssh_port, //映射端口
     5: optional i32 operation, //操作
