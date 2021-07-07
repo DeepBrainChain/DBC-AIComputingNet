@@ -288,7 +288,7 @@ namespace dbc {
             ext = image.substr(pos + 1);
         }
         std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
-        remove(real_image_name.c_str());
+        remove(real_image_path.c_str());
 	}
 
 	void TaskScheduler::ProcessTask() {
@@ -356,6 +356,8 @@ namespace dbc {
                     if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
                         sleep(1);
                         delete_image_file(taskinfo->image, taskinfo->task_id);
+                        m_task_db.delete_task(taskinfo->task_id);
+                        m_tasks.erase(taskinfo->task_id);
                         LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
                     } else {
                         LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
@@ -366,6 +368,8 @@ namespace dbc {
                         if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
                             sleep(1);
                             delete_image_file(taskinfo->image, taskinfo->task_id);
+                            m_task_db.delete_task(taskinfo->task_id);
+                            m_tasks.erase(taskinfo->task_id);
                             LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
                         } else {
                             LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";

@@ -908,7 +908,7 @@ namespace dbc {
         path.push_back(CONF_MANAGER->get_node_id());
         req_content->header.__set_path(path);
         std::map<std::string, std::string> exten_info;
-        std::string sign_msg = req_content->body.task_id + req_content->header.nonce + req_content->body.additional;
+        std::string sign_msg = cmd_req->task_id + req_content->header.nonce + cmd_req->additional;
         std::string signature = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
         if (signature.empty()) return nullptr;
         exten_info["sign"] = signature;
