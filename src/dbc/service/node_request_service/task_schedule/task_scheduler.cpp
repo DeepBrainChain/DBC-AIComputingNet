@@ -159,6 +159,29 @@ namespace dbc {
         }
 	}
 
+    int32_t TaskScheduler::RestartTask(const std::string& task_id) {
+        auto it = m_tasks.find(task_id);
+        if (it == m_tasks.end()) {
+            LOG_ERROR << "restart failed: task_id not exist " << task_id;
+            return E_DEFAULT;
+        }
+
+        auto taskinfo = it->second;
+        EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+
+        if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+            taskinfo->__set_operation(T_OP_ReStart);
+            taskinfo->__set_last_start_time(time(nullptr));
+            m_process_tasks.push_back(taskinfo);
+            m_task_db.write_task(taskinfo);
+            return E_SUCCESS;
+        }
+        else {
+            LOG_ERROR << "restart failed: task already start " << task_id;
+            return E_DEFAULT;
+        }
+    }
+
     int32_t TaskScheduler::ResetTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
@@ -182,7 +205,7 @@ namespace dbc {
         }
     }
 
-    int32_t TaskScheduler::DestroyTask(const std::string& task_id) {
+    int32_t TaskScheduler::DeleteTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
             LOG_ERROR << "stop failed: task_id not exist " << task_id;
@@ -205,29 +228,6 @@ namespace dbc {
         }
     }
 
-    int32_t TaskScheduler::RestartTask(const std::string& task_id) {
-        auto it = m_tasks.find(task_id);
-        if (it == m_tasks.end()) {
-            LOG_ERROR << "restart failed: task_id not exist " << task_id;
-            return E_DEFAULT;
-        }
-
-        auto taskinfo = it->second;
-        EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-
-        if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
-            taskinfo->__set_operation(T_OP_ReStart);
-            taskinfo->__set_last_start_time(time(nullptr));
-            m_process_tasks.push_back(taskinfo);
-            m_task_db.write_task(taskinfo);
-            return E_SUCCESS;
-        }
-        else {
-            LOG_ERROR << "restart failed: task already start " << task_id;
-            return E_DEFAULT;
-        }
-	}
-
 	std::shared_ptr<TaskInfo> TaskScheduler::FindTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
@@ -237,12 +237,12 @@ namespace dbc {
         }
 	}
 
-	std::string TaskScheduler::GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t n) {
+	std::string TaskScheduler::GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t nlines) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
             return "";
         } else {
-            return m_vm_client.GetDomainLog(task_id, direction, n);
+            return m_vm_client.GetDomainLog(task_id, direction, nlines);
         }
 	}
 

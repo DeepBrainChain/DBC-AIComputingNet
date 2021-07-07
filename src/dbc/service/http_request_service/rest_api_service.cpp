@@ -37,17 +37,18 @@ namespace dbc {
 
         for (const auto &uri_prefixe : uri_prefixes) {
             m_path_handlers.emplace_back(REST_API_URI + uri_prefixe.m_prefix,
-                                         uri_prefixe.m_exact_match,
-                                         uri_prefixe.m_handler);
+                                         uri_prefixe.m_exact_match, uri_prefixe.m_handler);
         }
 
         const dbc::network::response_msg_handler rsp_handlers[] = {
                 {typeid(cmd_create_task_rsp).name(), on_cmd_create_task_rsp},
                 {typeid(cmd_start_task_rsp).name(), on_cmd_start_task_rsp},
-                {typeid(cmd_restart_task_rsp).name(), on_cmd_restart_task_rsp},
                 {typeid(cmd_stop_task_rsp).name(), on_cmd_stop_task_rsp},
+                {typeid(cmd_restart_task_rsp).name(), on_cmd_restart_task_rsp},
                 {typeid(cmd_task_logs_rsp).name(), on_cmd_task_logs_rsp},
                 {typeid(cmd_list_task_rsp).name(), on_cmd_list_task_rsp},
+                {typeid(cmd_reset_task_rsp).name(), on_cmd_reset_task_rsp},
+                {typeid(cmd_destroy_task_rsp).name(), on_cmd_destroy_task_rsp},
                 {typeid(cmd_get_peer_nodes_rsp).name(), on_cmd_get_peer_nodes_rsp},
                 {typeid(cmd_list_node_rsp).name(), on_list_node_rsp}
         };
@@ -70,10 +71,12 @@ namespace dbc {
         invoker_type invoker;
         BIND_MESSAGE_INVOKER(typeid(cmd_create_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_start_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_restart_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_stop_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_restart_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_task_logs_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_list_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_reset_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_destroy_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_list_node_rsp).name(),&rest_api_service::on_call_rsp_handler);
     }
@@ -93,6 +96,8 @@ namespace dbc {
         SUBSCRIBE_RESP_MSG(cmd_stop_task_rsp);
         SUBSCRIBE_RESP_MSG(cmd_task_logs_rsp);
         SUBSCRIBE_RESP_MSG(cmd_list_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_reset_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_destroy_task_rsp);
         SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_rsp);
         SUBSCRIBE_RESP_MSG(cmd_list_node_rsp);
     }

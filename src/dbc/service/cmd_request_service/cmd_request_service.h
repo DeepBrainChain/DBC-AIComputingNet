@@ -46,35 +46,67 @@ namespace dbc {
 
         int32_t on_node_start_task_timer(const std::shared_ptr<core_timer> &timer);
 
-
-        int32_t on_cmd_restart_task_req(std::shared_ptr<dbc::network::message> &msg);
-
+        // stop task
         int32_t on_cmd_stop_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
+        std::shared_ptr<dbc::network::message> create_node_stop_task_req_msg(const std::shared_ptr<::cmd_stop_task_req> &cmd_req);
+
+        int32_t on_node_stop_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_stop_task_timer(const std::shared_ptr<core_timer> &timer);
+
+
+        // restart task
+        int32_t on_cmd_restart_task_req(std::shared_ptr<dbc::network::message> &msg);
+
+        std::shared_ptr<dbc::network::message> create_node_restart_task_req_msg(const std::shared_ptr<::cmd_restart_task_req> &cmd_req);
+
+        int32_t on_node_restart_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_restart_task_timer(const std::shared_ptr<core_timer> &timer);
+
+
+        // reset task
         int32_t on_cmd_reset_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
+        std::shared_ptr<dbc::network::message> create_node_reset_task_req_msg(const std::shared_ptr<::cmd_reset_task_req> &cmd_req);
+
+        int32_t on_node_reset_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_reset_task_timer(const std::shared_ptr<core_timer> &timer);
+
+
+        // destroy task
         int32_t on_cmd_destroy_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
+        std::shared_ptr<dbc::network::message> create_node_destroy_task_req_msg(const std::shared_ptr<::cmd_destroy_task_req> &cmd_req);
+
+        int32_t on_node_destroy_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_destroy_task_timer(const std::shared_ptr<core_timer> &timer);
+
+
+        // task logs
         int32_t on_cmd_task_logs_req(const std::shared_ptr<dbc::network::message> &msg);
 
+        std::shared_ptr<dbc::network::message> create_node_task_logs_req_msg(const std::shared_ptr<::cmd_task_logs_req> &cmd_req);
+
         int32_t on_node_task_logs_rsp(std::shared_ptr<dbc::network::message> &msg);
-
-        int32_t on_cmd_list_task_req(const std::shared_ptr<dbc::network::message> &msg);
-
-        int32_t on_node_list_task_rsp(std::shared_ptr<dbc::network::message> &msg);
-
-        int32_t on_binary_forward(std::shared_ptr<dbc::network::message> &msg);
-
-
-        int32_t on_node_list_task_timer(const std::shared_ptr<core_timer> &timer);
 
         int32_t on_node_task_logs_timer(std::shared_ptr<core_timer> timer);
 
 
-        std::shared_ptr<dbc::network::message> create_node_task_logs_req_msg(const std::shared_ptr<::cmd_task_logs_req> &cmd_req);
+        // list task
+        int32_t on_cmd_list_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
         std::shared_ptr<dbc::network::message> create_node_list_task_req_msg(const std::shared_ptr<::cmd_list_task_req> &cmd_req);
 
+        int32_t on_node_list_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_list_task_timer(const std::shared_ptr<core_timer> &timer);
+
+
+        int32_t on_binary_forward(std::shared_ptr<dbc::network::message> &msg);
 
         int32_t validate_cmd_training_task_conf(const bpo::variables_map &vm, std::string &error);
 

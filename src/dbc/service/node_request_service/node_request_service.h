@@ -61,13 +61,13 @@ namespace dbc {
 
 		int32_t task_start(const std::shared_ptr<matrix::service_core::node_start_task_req>& req);
 
-		int32_t task_stop(const std::string& task_id);
+		int32_t task_stop(const std::shared_ptr<matrix::service_core::node_stop_task_req>& req);
 
-        int32_t task_reset(const std::string& task_id);
+        int32_t task_restart(const std::shared_ptr<matrix::service_core::node_restart_task_req>& req);
 
-        int32_t task_destroy(const std::string& task_id);
+        int32_t task_reset(const std::shared_ptr<matrix::service_core::node_reset_task_req>& req);
 
-        int32_t task_restart(const std::string& task_id);
+        int32_t task_destroy(const std::shared_ptr<matrix::service_core::node_destroy_task_req>& req);
 
 		int32_t task_logs(const std::shared_ptr<matrix::service_core::node_task_logs_req>& req);
 

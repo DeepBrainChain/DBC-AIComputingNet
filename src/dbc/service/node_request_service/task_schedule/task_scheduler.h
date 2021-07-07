@@ -42,15 +42,15 @@ namespace dbc {
 
         int32_t StopTask(const std::string& task_id);
 
+        int32_t RestartTask(const std::string& task_id);
+
         int32_t ResetTask(const std::string& task_id);
 
-        int32_t DestroyTask(const std::string& task_id);
+        int32_t DeleteTask(const std::string& task_id);
 
-        int32_t RestartTask(const std::string& task_id);
-        
         std::shared_ptr<TaskInfo> FindTask(const std::string& task_id);
 
-        std::string GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t n);
+        std::string GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t nlines);
 
         void ListAllTask(std::vector<std::shared_ptr<TaskInfo>>& vec);
 

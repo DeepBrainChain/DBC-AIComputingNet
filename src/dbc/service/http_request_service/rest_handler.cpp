@@ -264,80 +264,6 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    // restart
-    std::shared_ptr<dbc::network::message> rest_restart_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
-                        "Only support POST requests. POST /api/v1/tasks/<task_id>/start")
-            return nullptr;
-        }
-
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-
-        if (path_list.size() != 2) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid api. Use /api/v1/tasks/<task_id>/start")
-            return nullptr;
-        }
-
-        const std::string &task_id = path_list[0];
-
-        std::shared_ptr<cmd_restart_task_req> cmd_req = std::make_shared<cmd_restart_task_req>();
-        cmd_req->task_id = task_id;
-
-        // parse body
-        std::string body = httpReq->read_body();
-        if (body.empty()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
-            return nullptr;
-        }
-
-        rapidjson::Document doc;
-        rapidjson::ParseResult ok = doc.Parse(body.c_str());
-        if (!ok) {
-            std::stringstream ss;
-            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-            LOG_ERROR << ss.str();
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
-            return nullptr;
-        }
-
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
-            return nullptr;
-        }
-
-        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
-        if (doc.HasMember("peer_nodes_list")) {
-            if (doc["peer_nodes_list"].IsArray()) {
-                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
-                    std::string node(doc["peer_nodes_list"][i].GetString());
-                    cmd_req->peer_nodes_list.push_back(node);
-
-                    // todo: 暂时只支持一次操作1个节点
-                    break;
-                }
-            }
-        }
-
-        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
-        msg->set_name(typeid(cmd_restart_task_req).name());
-        msg->set_content(cmd_req);
-        return msg;
-    }
-
-    int32_t on_cmd_restart_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-        INIT_RSP_CONTEXT(cmd_restart_task_req, cmd_restart_task_rsp)
-
-        if (resp->result != 0) {
-            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-            return E_DEFAULT;
-        }
-
-        SUCC_REPLY(data)
-        return E_SUCCESS;
-    }
-
     // stop
     std::shared_ptr<dbc::network::message> rest_stop_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         if (httpReq->get_request_method() != dbc::network::http_request::POST) {
@@ -403,6 +329,80 @@ namespace dbc {
 
     int32_t on_cmd_stop_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_stop_task_req, cmd_stop_task_rsp)
+
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+            return E_DEFAULT;
+        }
+
+        SUCC_REPLY(data)
+        return E_SUCCESS;
+    }
+
+    // restart
+    std::shared_ptr<dbc::network::message> rest_restart_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks/<task_id>/start")
+            return nullptr;
+        }
+
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() != 2) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid api. Use /api/v1/tasks/<task_id>/start")
+            return nullptr;
+        }
+
+        const std::string &task_id = path_list[0];
+
+        std::shared_ptr<cmd_restart_task_req> cmd_req = std::make_shared<cmd_restart_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
+            return nullptr;
+        }
+
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
+
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
+        msg->set_name(typeid(cmd_restart_task_req).name());
+        msg->set_content(cmd_req);
+        return msg;
+    }
+
+    int32_t on_cmd_restart_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_restart_task_req, cmd_restart_task_rsp)
 
         if (resp->result != 0) {
             ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
@@ -563,105 +563,7 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    // list tasks
-    std::shared_ptr<dbc::network::message> rest_list_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
-        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
-                        "Only support POST requests. POST /api/v1/tasks")
-            return nullptr;
-        }
-
-        std::shared_ptr<cmd_list_task_req> cmd_req = std::make_shared<cmd_list_task_req>();
-
-        std::vector<std::string> path_list;
-        rest_util::split_path(path, path_list);
-
-        if (path_list.size() == 1) {
-            cmd_req->task_id = path_list[0];
-        } else {
-            cmd_req->task_id = "";
-        }
-
-        // parse body
-        std::string body = httpReq->read_body();
-        if (body.empty()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
-            return nullptr;
-        }
-
-        rapidjson::Document doc;
-        rapidjson::ParseResult ok = doc.Parse(body.c_str());
-        if (!ok) {
-            std::stringstream ss;
-            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-            LOG_ERROR << ss.str();
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
-            return nullptr;
-        }
-
-        if (!doc.IsObject()) {
-            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
-            return nullptr;
-        }
-
-        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
-        if (doc.HasMember("peer_nodes_list")) {
-            if (doc["peer_nodes_list"].IsArray()) {
-                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
-                    std::string node(doc["peer_nodes_list"][i].GetString());
-                    cmd_req->peer_nodes_list.push_back(node);
-
-                    // todo: 暂时只支持一次操作1个节点
-                    break;
-                }
-            }
-        }
-
-        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
-        msg->set_name(typeid(cmd_list_task_req).name());
-        msg->set_content(cmd_req);
-
-        return msg;
-    }
-
-    int32_t on_cmd_list_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-        INIT_RSP_CONTEXT(cmd_list_task_req, cmd_list_task_rsp)
-
-        if (resp->result != 0) {
-            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-            return 0;
-        }
-
-        if (req->task_id == "") {
-            rapidjson::Value task_status_list(rapidjson::kArrayType);
-            for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++) {
-                rapidjson::Value st(rapidjson::kObjectType);
-                st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
-                st.AddMember("login_password", STRING_DUP(it->pwd), allocator);
-                st.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
-
-                task_status_list.PushBack(st, allocator);
-            }
-            data.AddMember("task_status_list", task_status_list, allocator);
-            SUCC_REPLY(data)
-            return E_SUCCESS;
-        } else {
-            rapidjson::Document document;
-            rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-
-            if (resp->task_status_list.size() >= 1) {
-                auto it = resp->task_status_list.begin();
-                data.AddMember("task_id", STRING_REF(it->task_id), allocator);
-                data.AddMember("login_password", STRING_DUP(it->pwd), allocator);
-                data.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
-            }
-
-            SUCC_REPLY(data)
-            return E_SUCCESS;
-        }
-    }
-
-    // logssession_id
+    // task logs
     std::shared_ptr<dbc::network::message> rest_task_logs(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
@@ -763,23 +665,112 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        rapidjson::Value peer_node_logs(rapidjson::kArrayType);
-        for (auto s = resp->peer_node_logs.begin(); s != resp->peer_node_logs.end(); s++) {
-            rapidjson::Value log(rapidjson::kObjectType);
-            log.AddMember("peer_node_id", STRING_REF(s->peer_node_id), allocator);
-            log.AddMember("log_content", STRING_REF(s->log_content), allocator);
-
-            peer_node_logs.PushBack(log, allocator);
-        }
-
-        data.AddMember("peer_node_logs", peer_node_logs, allocator);
+        data.AddMember("log_content", STRING_REF(resp->log_content), allocator);
 
         httpReq->reply_comm_rest_succ(data);
 
         return E_SUCCESS;
     }
 
-    // /mining_nodes/
+    // list tasks
+    std::shared_ptr<dbc::network::message> rest_list_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks")
+            return nullptr;
+        }
+
+        std::shared_ptr<cmd_list_task_req> cmd_req = std::make_shared<cmd_list_task_req>();
+
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() == 1) {
+            cmd_req->task_id = path_list[0];
+        } else {
+            cmd_req->task_id = "";
+        }
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks/start")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
+            return nullptr;
+        }
+
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
+
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
+        msg->set_name(typeid(cmd_list_task_req).name());
+        msg->set_content(cmd_req);
+
+        return msg;
+    }
+
+    int32_t on_cmd_list_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_list_task_req, cmd_list_task_rsp)
+
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+            return 0;
+        }
+
+        if (req->task_id == "") {
+            rapidjson::Value task_status_list(rapidjson::kArrayType);
+            for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++) {
+                rapidjson::Value st(rapidjson::kObjectType);
+                st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
+                st.AddMember("login_password", STRING_DUP(it->pwd), allocator);
+                st.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
+
+                task_status_list.PushBack(st, allocator);
+            }
+            data.AddMember("task_status_list", task_status_list, allocator);
+            SUCC_REPLY(data)
+            return E_SUCCESS;
+        } else {
+            rapidjson::Document document;
+            rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
+
+            if (resp->task_status_list.size() >= 1) {
+                auto it = resp->task_status_list.begin();
+                data.AddMember("task_id", STRING_REF(it->task_id), allocator);
+                data.AddMember("login_password", STRING_DUP(it->pwd), allocator);
+                data.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
+            }
+
+            SUCC_REPLY(data)
+            return E_SUCCESS;
+        }
+    }
+
+    // mining_nodes/
     std::shared_ptr<dbc::network::message> rest_mining_nodes(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);

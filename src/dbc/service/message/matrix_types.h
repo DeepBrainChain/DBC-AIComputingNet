@@ -64,21 +64,37 @@ namespace matrix {
 
         class node_start_task_rsp;
 
+        class node_stop_task_req_body;
+
+        class node_stop_task_req;
+
+        class node_stop_task_rsp_body;
+
+        class node_stop_task_rsp;
+
         class node_restart_task_req_body;
 
         class node_restart_task_req;
 
-        class node_stop_task_req_body;
+        class node_restart_task_rsp_body;
 
-        class node_stop_task_req;
+        class node_restart_task_rsp;
 
         class node_reset_task_req_body;
 
         class node_reset_task_req;
 
+        class node_reset_task_rsp_body;
+
+        class node_reset_task_rsp;
+
         class node_destroy_task_req_body;
 
         class node_destroy_task_req;
+
+        class node_destroy_task_rsp_body;
+
+        class node_destroy_task_rsp;
 
         class node_list_task_req_body;
 
@@ -91,8 +107,6 @@ namespace matrix {
         class node_task_logs_req_body;
 
         class node_task_logs_req;
-
-        class peer_node_log;
 
         class node_task_logs_rsp_body;
 
@@ -1167,6 +1181,177 @@ namespace matrix {
         std::ostream& operator<<(std::ostream& out, const node_start_task_rsp& obj);
 
 
+        class node_stop_task_req_body : public virtual ::apache::thrift::TBase {
+        public:
+
+            node_stop_task_req_body(const node_stop_task_req_body&);
+            node_stop_task_req_body& operator=(const node_stop_task_req_body&);
+            node_stop_task_req_body() : task_id(), additional() {
+            }
+
+            virtual ~node_stop_task_req_body() throw();
+            std::string task_id;
+            std::vector<std::string>  peer_nodes_list;
+            std::string additional;
+
+            void __set_task_id(const std::string& val);
+
+            void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+            void __set_additional(const std::string& val);
+
+            bool operator == (const node_stop_task_req_body & rhs) const
+            {
+                if (!(task_id == rhs.task_id))
+                    return false;
+                if (!(peer_nodes_list == rhs.peer_nodes_list))
+                    return false;
+                if (!(additional == rhs.additional))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_stop_task_req_body &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_stop_task_req_body & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_stop_task_req_body &a, node_stop_task_req_body &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_req_body& obj);
+
+        typedef struct _node_stop_task_req__isset {
+            _node_stop_task_req__isset() : body(false) {}
+            bool body :1;
+        } _node_stop_task_req__isset;
+
+        class node_stop_task_req : public virtual ::apache::thrift::TMsgBase {
+        public:
+
+            node_stop_task_req(const node_stop_task_req&);
+            node_stop_task_req& operator=(const node_stop_task_req&);
+            node_stop_task_req() {
+            }
+
+            virtual ~node_stop_task_req() throw();
+            node_stop_task_req_body body;
+
+            _node_stop_task_req__isset __isset;
+
+            void __set_body(const node_stop_task_req_body& val);
+
+            bool operator == (const node_stop_task_req & rhs) const
+            {
+                if (!(body == rhs.body))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_stop_task_req &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_stop_task_req & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_stop_task_req &a, node_stop_task_req &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_req& obj);
+
+
+        class node_stop_task_rsp_body : public virtual ::apache::thrift::TBase {
+        public:
+
+            node_stop_task_rsp_body(const node_stop_task_rsp_body&);
+            node_stop_task_rsp_body& operator=(const node_stop_task_rsp_body&);
+            node_stop_task_rsp_body() : result(0), result_msg() {
+            }
+
+            virtual ~node_stop_task_rsp_body() throw();
+            int32_t result;
+            std::string result_msg;
+
+            void __set_result(const int32_t val);
+
+            void __set_result_msg(const std::string& val);
+
+            bool operator == (const node_stop_task_rsp_body & rhs) const
+            {
+                if (!(result == rhs.result))
+                    return false;
+                if (!(result_msg == rhs.result_msg))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_stop_task_rsp_body &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_stop_task_rsp_body & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_stop_task_rsp_body &a, node_stop_task_rsp_body &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_rsp_body& obj);
+
+        typedef struct _node_stop_task_rsp__isset {
+            _node_stop_task_rsp__isset() : body(false) {}
+            bool body :1;
+        } _node_stop_task_rsp__isset;
+
+        class node_stop_task_rsp : public virtual ::apache::thrift::TMsgBase {
+        public:
+
+            node_stop_task_rsp(const node_stop_task_rsp&);
+            node_stop_task_rsp& operator=(const node_stop_task_rsp&);
+            node_stop_task_rsp() {
+            }
+
+            virtual ~node_stop_task_rsp() throw();
+            node_stop_task_rsp_body body;
+
+            _node_stop_task_rsp__isset __isset;
+
+            void __set_body(const node_stop_task_rsp_body& val);
+
+            bool operator == (const node_stop_task_rsp & rhs) const
+            {
+                if (!(body == rhs.body))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_stop_task_rsp &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_stop_task_rsp & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_stop_task_rsp &a, node_stop_task_rsp &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_stop_task_rsp& obj);
+
+
         class node_restart_task_req_body : public virtual ::apache::thrift::TBase {
         public:
 
@@ -1255,40 +1440,35 @@ namespace matrix {
         std::ostream& operator<<(std::ostream& out, const node_restart_task_req& obj);
 
 
-        class node_stop_task_req_body : public virtual ::apache::thrift::TBase {
+        class node_restart_task_rsp_body : public virtual ::apache::thrift::TBase {
         public:
 
-            node_stop_task_req_body(const node_stop_task_req_body&);
-            node_stop_task_req_body& operator=(const node_stop_task_req_body&);
-            node_stop_task_req_body() : task_id(), additional() {
+            node_restart_task_rsp_body(const node_restart_task_rsp_body&);
+            node_restart_task_rsp_body& operator=(const node_restart_task_rsp_body&);
+            node_restart_task_rsp_body() : result(0), result_msg() {
             }
 
-            virtual ~node_stop_task_req_body() throw();
-            std::string task_id;
-            std::vector<std::string>  peer_nodes_list;
-            std::string additional;
+            virtual ~node_restart_task_rsp_body() throw();
+            int32_t result;
+            std::string result_msg;
 
-            void __set_task_id(const std::string& val);
+            void __set_result(const int32_t val);
 
-            void __set_peer_nodes_list(const std::vector<std::string> & val);
+            void __set_result_msg(const std::string& val);
 
-            void __set_additional(const std::string& val);
-
-            bool operator == (const node_stop_task_req_body & rhs) const
+            bool operator == (const node_restart_task_rsp_body & rhs) const
             {
-                if (!(task_id == rhs.task_id))
+                if (!(result == rhs.result))
                     return false;
-                if (!(peer_nodes_list == rhs.peer_nodes_list))
-                    return false;
-                if (!(additional == rhs.additional))
+                if (!(result_msg == rhs.result_msg))
                     return false;
                 return true;
             }
-            bool operator != (const node_stop_task_req_body &rhs) const {
+            bool operator != (const node_restart_task_rsp_body &rhs) const {
                 return !(*this == rhs);
             }
 
-            bool operator < (const node_stop_task_req_body & ) const;
+            bool operator < (const node_restart_task_rsp_body & ) const;
 
             uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
             uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -1296,41 +1476,41 @@ namespace matrix {
             virtual void printTo(std::ostream& out) const;
         };
 
-        void swap(node_stop_task_req_body &a, node_stop_task_req_body &b);
+        void swap(node_restart_task_rsp_body &a, node_restart_task_rsp_body &b);
 
-        std::ostream& operator<<(std::ostream& out, const node_stop_task_req_body& obj);
+        std::ostream& operator<<(std::ostream& out, const node_restart_task_rsp_body& obj);
 
-        typedef struct _node_stop_task_req__isset {
-            _node_stop_task_req__isset() : body(false) {}
+        typedef struct _node_restart_task_rsp__isset {
+            _node_restart_task_rsp__isset() : body(false) {}
             bool body :1;
-        } _node_stop_task_req__isset;
+        } _node_restart_task_rsp__isset;
 
-        class node_stop_task_req : public virtual ::apache::thrift::TMsgBase {
+        class node_restart_task_rsp : public virtual ::apache::thrift::TMsgBase {
         public:
 
-            node_stop_task_req(const node_stop_task_req&);
-            node_stop_task_req& operator=(const node_stop_task_req&);
-            node_stop_task_req() {
+            node_restart_task_rsp(const node_restart_task_rsp&);
+            node_restart_task_rsp& operator=(const node_restart_task_rsp&);
+            node_restart_task_rsp() {
             }
 
-            virtual ~node_stop_task_req() throw();
-            node_stop_task_req_body body;
+            virtual ~node_restart_task_rsp() throw();
+            node_restart_task_rsp_body body;
 
-            _node_stop_task_req__isset __isset;
+            _node_restart_task_rsp__isset __isset;
 
-            void __set_body(const node_stop_task_req_body& val);
+            void __set_body(const node_restart_task_rsp_body& val);
 
-            bool operator == (const node_stop_task_req & rhs) const
+            bool operator == (const node_restart_task_rsp & rhs) const
             {
                 if (!(body == rhs.body))
                     return false;
                 return true;
             }
-            bool operator != (const node_stop_task_req &rhs) const {
+            bool operator != (const node_restart_task_rsp &rhs) const {
                 return !(*this == rhs);
             }
 
-            bool operator < (const node_stop_task_req & ) const;
+            bool operator < (const node_restart_task_rsp & ) const;
 
             uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
             uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -1338,9 +1518,9 @@ namespace matrix {
             virtual void printTo(std::ostream& out) const;
         };
 
-        void swap(node_stop_task_req &a, node_stop_task_req &b);
+        void swap(node_restart_task_rsp &a, node_restart_task_rsp &b);
 
-        std::ostream& operator<<(std::ostream& out, const node_stop_task_req& obj);
+        std::ostream& operator<<(std::ostream& out, const node_restart_task_rsp& obj);
 
 
         class node_reset_task_req_body : public virtual ::apache::thrift::TBase {
@@ -1431,6 +1611,89 @@ namespace matrix {
         std::ostream& operator<<(std::ostream& out, const node_reset_task_req& obj);
 
 
+        class node_reset_task_rsp_body : public virtual ::apache::thrift::TBase {
+        public:
+
+            node_reset_task_rsp_body(const node_reset_task_rsp_body&);
+            node_reset_task_rsp_body& operator=(const node_reset_task_rsp_body&);
+            node_reset_task_rsp_body() : result(0), result_msg() {
+            }
+
+            virtual ~node_reset_task_rsp_body() throw();
+            int32_t result;
+            std::string result_msg;
+
+            void __set_result(const int32_t val);
+
+            void __set_result_msg(const std::string& val);
+
+            bool operator == (const node_reset_task_rsp_body & rhs) const
+            {
+                if (!(result == rhs.result))
+                    return false;
+                if (!(result_msg == rhs.result_msg))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_reset_task_rsp_body &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_reset_task_rsp_body & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_reset_task_rsp_body &a, node_reset_task_rsp_body &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_reset_task_rsp_body& obj);
+
+        typedef struct _node_reset_task_rsp__isset {
+            _node_reset_task_rsp__isset() : body(false) {}
+            bool body :1;
+        } _node_reset_task_rsp__isset;
+
+        class node_reset_task_rsp : public virtual ::apache::thrift::TMsgBase {
+        public:
+
+            node_reset_task_rsp(const node_reset_task_rsp&);
+            node_reset_task_rsp& operator=(const node_reset_task_rsp&);
+            node_reset_task_rsp() {
+            }
+
+            virtual ~node_reset_task_rsp() throw();
+            node_reset_task_rsp_body body;
+
+            _node_reset_task_rsp__isset __isset;
+
+            void __set_body(const node_reset_task_rsp_body& val);
+
+            bool operator == (const node_reset_task_rsp & rhs) const
+            {
+                if (!(body == rhs.body))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_reset_task_rsp &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_reset_task_rsp & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_reset_task_rsp &a, node_reset_task_rsp &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_reset_task_rsp& obj);
+
+
         class node_destroy_task_req_body : public virtual ::apache::thrift::TBase {
         public:
 
@@ -1517,6 +1780,89 @@ namespace matrix {
         void swap(node_destroy_task_req &a, node_destroy_task_req &b);
 
         std::ostream& operator<<(std::ostream& out, const node_destroy_task_req& obj);
+
+
+        class node_destroy_task_rsp_body : public virtual ::apache::thrift::TBase {
+        public:
+
+            node_destroy_task_rsp_body(const node_destroy_task_rsp_body&);
+            node_destroy_task_rsp_body& operator=(const node_destroy_task_rsp_body&);
+            node_destroy_task_rsp_body() : result(0), result_msg() {
+            }
+
+            virtual ~node_destroy_task_rsp_body() throw();
+            int32_t result;
+            std::string result_msg;
+
+            void __set_result(const int32_t val);
+
+            void __set_result_msg(const std::string& val);
+
+            bool operator == (const node_destroy_task_rsp_body & rhs) const
+            {
+                if (!(result == rhs.result))
+                    return false;
+                if (!(result_msg == rhs.result_msg))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_destroy_task_rsp_body &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_destroy_task_rsp_body & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_destroy_task_rsp_body &a, node_destroy_task_rsp_body &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_destroy_task_rsp_body& obj);
+
+        typedef struct _node_destroy_task_rsp__isset {
+            _node_destroy_task_rsp__isset() : body(false) {}
+            bool body :1;
+        } _node_destroy_task_rsp__isset;
+
+        class node_destroy_task_rsp : public virtual ::apache::thrift::TMsgBase {
+        public:
+
+            node_destroy_task_rsp(const node_destroy_task_rsp&);
+            node_destroy_task_rsp& operator=(const node_destroy_task_rsp&);
+            node_destroy_task_rsp() {
+            }
+
+            virtual ~node_destroy_task_rsp() throw();
+            node_destroy_task_rsp_body body;
+
+            _node_destroy_task_rsp__isset __isset;
+
+            void __set_body(const node_destroy_task_rsp_body& val);
+
+            bool operator == (const node_destroy_task_rsp & rhs) const
+            {
+                if (!(body == rhs.body))
+                    return false;
+                return true;
+            }
+            bool operator != (const node_destroy_task_rsp &rhs) const {
+                return !(*this == rhs);
+            }
+
+            bool operator < (const node_destroy_task_rsp & ) const;
+
+            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+            virtual void printTo(std::ostream& out) const;
+        };
+
+        void swap(node_destroy_task_rsp &a, node_destroy_task_rsp &b);
+
+        std::ostream& operator<<(std::ostream& out, const node_destroy_task_rsp& obj);
 
 
         class node_task_logs_req_body : public virtual ::apache::thrift::TBase {
@@ -1617,63 +1963,32 @@ namespace matrix {
         std::ostream& operator<<(std::ostream& out, const node_task_logs_req& obj);
 
 
-        class peer_node_log : public virtual ::apache::thrift::TBase {
-        public:
-
-            peer_node_log(const peer_node_log&);
-            peer_node_log& operator=(const peer_node_log&);
-            peer_node_log() : peer_node_id(), log_content() {
-            }
-
-            virtual ~peer_node_log() throw();
-            std::string peer_node_id;
-            std::string log_content;
-
-            void __set_peer_node_id(const std::string& val);
-
-            void __set_log_content(const std::string& val);
-
-            bool operator == (const peer_node_log & rhs) const
-            {
-                if (!(peer_node_id == rhs.peer_node_id))
-                    return false;
-                if (!(log_content == rhs.log_content))
-                    return false;
-                return true;
-            }
-            bool operator != (const peer_node_log &rhs) const {
-                return !(*this == rhs);
-            }
-
-            bool operator < (const peer_node_log & ) const;
-
-            uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-            uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-            virtual void printTo(std::ostream& out) const;
-        };
-
-        void swap(peer_node_log &a, peer_node_log &b);
-
-        std::ostream& operator<<(std::ostream& out, const peer_node_log& obj);
-
-
         class node_task_logs_rsp_body : public virtual ::apache::thrift::TBase {
         public:
 
             node_task_logs_rsp_body(const node_task_logs_rsp_body&);
             node_task_logs_rsp_body& operator=(const node_task_logs_rsp_body&);
-            node_task_logs_rsp_body() {
+            node_task_logs_rsp_body() : result(0), result_msg(), log_content() {
             }
 
             virtual ~node_task_logs_rsp_body() throw();
-            peer_node_log log;
+            int32_t result;
+            std::string result_msg;
+            std::string log_content;
 
-            void __set_log(const peer_node_log& val);
+            void __set_result(const int32_t val);
+
+            void __set_result_msg(const std::string& val);
+
+            void __set_log_content(const std::string& val);
 
             bool operator == (const node_task_logs_rsp_body & rhs) const
             {
-                if (!(log == rhs.log))
+                if (!(result == rhs.result))
+                    return false;
+                if (!(result_msg == rhs.result_msg))
+                    return false;
+                if (!(log_content == rhs.log_content))
                     return false;
                 return true;
             }

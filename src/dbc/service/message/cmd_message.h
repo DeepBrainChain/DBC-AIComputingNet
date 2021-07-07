@@ -46,20 +46,6 @@ public:
     std::string result_info;
 };
 
-// restart task
-class cmd_restart_task_req : public dbc::network::msg_base {
-public:
-    std::string task_id;
-    std::vector<std::string> peer_nodes_list;
-    std::string additional;
-};
-
-class cmd_restart_task_rsp : public dbc::network::msg_base {
-public:
-    int32_t result;
-    std::string result_info;
-};
-
 // stop
 class cmd_stop_task_req : public dbc::network::msg_base {
 public:
@@ -69,6 +55,20 @@ public:
 };
 
 class cmd_stop_task_rsp : public dbc::network::msg_base {
+public:
+    int32_t result;
+    std::string result_info;
+};
+
+// restart task
+class cmd_restart_task_req : public dbc::network::msg_base {
+public:
+    std::string task_id;
+    std::vector<std::string> peer_nodes_list;
+    std::string additional;
+};
+
+class cmd_restart_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
@@ -102,7 +102,7 @@ public:
     std::string result_info;
 };
 
-// log
+// task log
 class cmd_task_logs_req : public dbc::network::msg_base {
 public:
     std::string task_id;
@@ -114,59 +114,9 @@ public:
 
 class cmd_task_logs_rsp : public dbc::network::msg_base {
 public:
-
     int32_t result;
     std::string result_info;
-
-    std::vector<cmd_peer_node_log> peer_node_logs;
-
-    // for download training result
-    std::string sub_op;
-    std::string dest_folder;
-
-    // for log content check
-    std::string task_id;
-
-    // for duplicate log hiding
-    // each log start with date info, like 2018-08-14T06:53:19.274586607Z
-    enum {
-        TIMESTAMP_STR_LENGTH = 30,
-        IMAGE_HASH_STR_PREFIX_LENGTH = 12,
-        IMAGE_HASH_STR_MAX_LENGTH = 64,
-        MAX_NUM_IMAGE_HASH_LOG = 512
-
-    };
-    //bool no_duplicate;
-
-    class series {
-    public:
-        std::string last_log_date;
-        bool enable;
-        std::set<std::string> image_download_logs;
-    };
-
-    static series m_series;
-
-public:
-
-    void format_output();
-
-    std::string get_training_result_hash_from_log(std::string &s);
-
-    std::string get_value_from_log(std::string prefix);
-
-private:
-    void format_output_segment();
-
-    void format_output_series();
-
-    void download_training_result();
-
-    std::string get_log_date(std::string &s);
-
-
-    bool is_image_download_str(std::string &s);
-
+    std::string log_content;
 };
 
 // list task
