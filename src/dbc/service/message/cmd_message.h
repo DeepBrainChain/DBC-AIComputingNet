@@ -127,16 +127,35 @@ public:
     std::string additional;
 };
 
+class cmd_task_info {
+public:
+    std::string task_id;
+    time_t create_time;
+    int8_t status;
+    std::string description;
+    std::string raw;
+    std::string pwd;
+};
+
 class cmd_list_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
+    std::list<cmd_task_info> task_info_list;
+};
 
-    std::list<cmd_task_status> task_status_list;
+// task modify
+class cmd_modify_task_req : public dbc::network::msg_base {
+public:
+    std::string task_id;
+    std::vector<std::string> peer_nodes_list;
+    std::string additional;
+};
 
-    void format_output();
-
-    void format_output_detail();
+class cmd_modify_task_rsp : public dbc::network::msg_base {
+public:
+    int32_t result;
+    std::string result_info;
 };
 
 // list peer_nodes

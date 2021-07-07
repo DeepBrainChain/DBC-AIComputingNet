@@ -197,144 +197,6 @@ namespace matrix { namespace service_core {
         }
 
 
-        task_status::~task_status() throw() {
-        }
-
-
-        void task_status::__set_task_id(const std::string& val) {
-            this->task_id = val;
-        }
-
-        void task_status::__set_status(const int8_t val) {
-            this->status = val;
-        }
-
-        void task_status::__set_pwd(const std::string& val) {
-            this->pwd = val;
-        }
-        std::ostream& operator<<(std::ostream& out, const task_status& obj)
-        {
-            obj.printTo(out);
-            return out;
-        }
-
-
-        uint32_t task_status::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
-            uint32_t xfer = 0;
-            std::string fname;
-            ::apache::thrift::protocol::TType ftype;
-            int16_t fid;
-
-            xfer += iprot->readStructBegin(fname);
-
-            using ::apache::thrift::protocol::TProtocolException;
-
-            bool isset_task_id = false;
-            bool isset_status = false;
-            bool isset_pwd = false;
-
-            while (true)
-            {
-                xfer += iprot->readFieldBegin(fname, ftype, fid);
-                if (ftype == ::apache::thrift::protocol::T_STOP) {
-                    break;
-                }
-                switch (fid)
-                {
-                    case 1:
-                        if (ftype == ::apache::thrift::protocol::T_STRING) {
-                            xfer += iprot->readString(this->task_id);
-                            isset_task_id = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
-                        }
-                        break;
-                    case 2:
-                        if (ftype == ::apache::thrift::protocol::T_BYTE) {
-                            xfer += iprot->readByte(this->status);
-                            isset_status = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
-                        }
-                        break;
-                    case 3:
-                        if (ftype == ::apache::thrift::protocol::T_STRING) {
-                            xfer += iprot->readString(this->pwd);
-                            isset_pwd = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
-                        }
-                        break;
-                    default:
-                        xfer += iprot->skip(ftype);
-                        break;
-                }
-                xfer += iprot->readFieldEnd();
-            }
-
-            xfer += iprot->readStructEnd();
-
-            if (!isset_task_id)
-                throw TProtocolException(TProtocolException::INVALID_DATA);
-            if (!isset_status)
-                throw TProtocolException(TProtocolException::INVALID_DATA);
-            if (!isset_pwd)
-                throw TProtocolException(TProtocolException::INVALID_DATA);
-            return xfer;
-        }
-
-        uint32_t task_status::write(::apache::thrift::protocol::TProtocol* oprot) const {
-            uint32_t xfer = 0;
-            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-            xfer += oprot->writeStructBegin("task_status");
-
-            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
-            xfer += oprot->writeString(this->task_id);
-            xfer += oprot->writeFieldEnd();
-
-            xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_BYTE, 2);
-            xfer += oprot->writeByte(this->status);
-            xfer += oprot->writeFieldEnd();
-
-            xfer += oprot->writeFieldBegin("pwd", ::apache::thrift::protocol::T_STRING, 3);
-            xfer += oprot->writeString(this->pwd);
-            xfer += oprot->writeFieldEnd();
-
-            xfer += oprot->writeFieldStop();
-            xfer += oprot->writeStructEnd();
-            return xfer;
-        }
-
-        void swap(task_status &a, task_status &b) {
-            using ::std::swap;
-            swap(a.task_id, b.task_id);
-            swap(a.status, b.status);
-            swap(a.pwd, b.pwd);
-        }
-
-        task_status::task_status(const task_status& other4) {
-            task_id = other4.task_id;
-            status = other4.status;
-            pwd = other4.pwd;
-        }
-        task_status& task_status::operator=(const task_status& other5) {
-            task_id = other5.task_id;
-            status = other5.status;
-            pwd = other5.pwd;
-            return *this;
-        }
-        void task_status::printTo(std::ostream& out) const {
-            using ::apache::thrift::to_string;
-            out << "task_status(";
-            out << "task_id=" << to_string(task_id);
-            out << ", " << "status=" << to_string(status);
-            out << ", " << "pwd=" << to_string(pwd);
-            out << ")";
-        }
-
-
         peer_node_info::~peer_node_info() throw() {
         }
 
@@ -440,14 +302,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->service_list.clear();
-                                uint32_t _size6;
-                                ::apache::thrift::protocol::TType _etype9;
-                                xfer += iprot->readListBegin(_etype9, _size6);
-                                this->service_list.resize(_size6);
-                                uint32_t _i10;
-                                for (_i10 = 0; _i10 < _size6; ++_i10)
+                                uint32_t _size4;
+                                ::apache::thrift::protocol::TType _etype7;
+                                xfer += iprot->readListBegin(_etype7, _size4);
+                                this->service_list.resize(_size4);
+                                uint32_t _i8;
+                                for (_i8 = 0; _i8 < _size4; ++_i8)
                                 {
-                                    xfer += iprot->readString(this->service_list[_i10]);
+                                    xfer += iprot->readString(this->service_list[_i8]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -507,10 +369,10 @@ namespace matrix { namespace service_core {
                 xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 6);
                 {
                     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
-                    std::vector<std::string> ::const_iterator _iter11;
-                    for (_iter11 = this->service_list.begin(); _iter11 != this->service_list.end(); ++_iter11)
+                    std::vector<std::string> ::const_iterator _iter9;
+                    for (_iter9 = this->service_list.begin(); _iter9 != this->service_list.end(); ++_iter9)
                     {
-                        xfer += oprot->writeString((*_iter11));
+                        xfer += oprot->writeString((*_iter9));
                     }
                     xfer += oprot->writeListEnd();
                 }
@@ -532,23 +394,23 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        peer_node_info::peer_node_info(const peer_node_info& other12) {
-            peer_node_id = other12.peer_node_id;
-            core_version = other12.core_version;
-            protocol_version = other12.protocol_version;
-            live_time_stamp = other12.live_time_stamp;
-            addr = other12.addr;
-            service_list = other12.service_list;
-            __isset = other12.__isset;
+        peer_node_info::peer_node_info(const peer_node_info& other10) {
+            peer_node_id = other10.peer_node_id;
+            core_version = other10.core_version;
+            protocol_version = other10.protocol_version;
+            live_time_stamp = other10.live_time_stamp;
+            addr = other10.addr;
+            service_list = other10.service_list;
+            __isset = other10.__isset;
         }
-        peer_node_info& peer_node_info::operator=(const peer_node_info& other13) {
-            peer_node_id = other13.peer_node_id;
-            core_version = other13.core_version;
-            protocol_version = other13.protocol_version;
-            live_time_stamp = other13.live_time_stamp;
-            addr = other13.addr;
-            service_list = other13.service_list;
-            __isset = other13.__isset;
+        peer_node_info& peer_node_info::operator=(const peer_node_info& other11) {
+            peer_node_id = other11.peer_node_id;
+            core_version = other11.core_version;
+            protocol_version = other11.protocol_version;
+            live_time_stamp = other11.live_time_stamp;
+            addr = other11.addr;
+            service_list = other11.service_list;
+            __isset = other11.__isset;
             return *this;
         }
         void peer_node_info::printTo(std::ostream& out) const {
@@ -639,13 +501,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        shake_hand_req::shake_hand_req(const shake_hand_req& other14) {
-            body = other14.body;
-            __isset = other14.__isset;
+        shake_hand_req::shake_hand_req(const shake_hand_req& other12) {
+            body = other12.body;
+            __isset = other12.__isset;
         }
-        shake_hand_req& shake_hand_req::operator=(const shake_hand_req& other15) {
-            body = other15.body;
-            __isset = other15.__isset;
+        shake_hand_req& shake_hand_req::operator=(const shake_hand_req& other13) {
+            body = other13.body;
+            __isset = other13.__isset;
             return *this;
         }
         void shake_hand_req::printTo(std::ostream& out) const {
@@ -731,13 +593,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        shake_hand_resp::shake_hand_resp(const shake_hand_resp& other16) {
-            body = other16.body;
-            __isset = other16.__isset;
+        shake_hand_resp::shake_hand_resp(const shake_hand_resp& other14) {
+            body = other14.body;
+            __isset = other14.__isset;
         }
-        shake_hand_resp& shake_hand_resp::operator=(const shake_hand_resp& other17) {
-            body = other17.body;
-            __isset = other17.__isset;
+        shake_hand_resp& shake_hand_resp::operator=(const shake_hand_resp& other15) {
+            body = other15.body;
+            __isset = other15.__isset;
             return *this;
         }
         void shake_hand_resp::printTo(std::ostream& out) const {
@@ -823,13 +685,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        get_peer_nodes_req::get_peer_nodes_req(const get_peer_nodes_req& other18) {
-            body = other18.body;
-            __isset = other18.__isset;
+        get_peer_nodes_req::get_peer_nodes_req(const get_peer_nodes_req& other16) {
+            body = other16.body;
+            __isset = other16.__isset;
         }
-        get_peer_nodes_req& get_peer_nodes_req::operator=(const get_peer_nodes_req& other19) {
-            body = other19.body;
-            __isset = other19.__isset;
+        get_peer_nodes_req& get_peer_nodes_req::operator=(const get_peer_nodes_req& other17) {
+            body = other17.body;
+            __isset = other17.__isset;
             return *this;
         }
         void get_peer_nodes_req::printTo(std::ostream& out) const {
@@ -880,14 +742,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size20;
-                                ::apache::thrift::protocol::TType _etype23;
-                                xfer += iprot->readListBegin(_etype23, _size20);
-                                this->peer_nodes_list.resize(_size20);
-                                uint32_t _i24;
-                                for (_i24 = 0; _i24 < _size20; ++_i24)
+                                uint32_t _size18;
+                                ::apache::thrift::protocol::TType _etype21;
+                                xfer += iprot->readListBegin(_etype21, _size18);
+                                this->peer_nodes_list.resize(_size18);
+                                uint32_t _i22;
+                                for (_i22 = 0; _i22 < _size18; ++_i22)
                                 {
-                                    xfer += this->peer_nodes_list[_i24].read(iprot);
+                                    xfer += this->peer_nodes_list[_i22].read(iprot);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -918,10 +780,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<peer_node_info> ::const_iterator _iter25;
-                for (_iter25 = this->peer_nodes_list.begin(); _iter25 != this->peer_nodes_list.end(); ++_iter25)
+                std::vector<peer_node_info> ::const_iterator _iter23;
+                for (_iter23 = this->peer_nodes_list.begin(); _iter23 != this->peer_nodes_list.end(); ++_iter23)
                 {
-                    xfer += (*_iter25).write(oprot);
+                    xfer += (*_iter23).write(oprot);
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -937,11 +799,11 @@ namespace matrix { namespace service_core {
             swap(a.peer_nodes_list, b.peer_nodes_list);
         }
 
-        get_peer_nodes_resp_body::get_peer_nodes_resp_body(const get_peer_nodes_resp_body& other26) {
-            peer_nodes_list = other26.peer_nodes_list;
+        get_peer_nodes_resp_body::get_peer_nodes_resp_body(const get_peer_nodes_resp_body& other24) {
+            peer_nodes_list = other24.peer_nodes_list;
         }
-        get_peer_nodes_resp_body& get_peer_nodes_resp_body::operator=(const get_peer_nodes_resp_body& other27) {
-            peer_nodes_list = other27.peer_nodes_list;
+        get_peer_nodes_resp_body& get_peer_nodes_resp_body::operator=(const get_peer_nodes_resp_body& other25) {
+            peer_nodes_list = other25.peer_nodes_list;
             return *this;
         }
         void get_peer_nodes_resp_body::printTo(std::ostream& out) const {
@@ -1027,13 +889,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        get_peer_nodes_resp::get_peer_nodes_resp(const get_peer_nodes_resp& other28) {
-            body = other28.body;
-            __isset = other28.__isset;
+        get_peer_nodes_resp::get_peer_nodes_resp(const get_peer_nodes_resp& other26) {
+            body = other26.body;
+            __isset = other26.__isset;
         }
-        get_peer_nodes_resp& get_peer_nodes_resp::operator=(const get_peer_nodes_resp& other29) {
-            body = other29.body;
-            __isset = other29.__isset;
+        get_peer_nodes_resp& get_peer_nodes_resp::operator=(const get_peer_nodes_resp& other27) {
+            body = other27.body;
+            __isset = other27.__isset;
             return *this;
         }
         void get_peer_nodes_resp::printTo(std::ostream& out) const {
@@ -1084,14 +946,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size30;
-                                ::apache::thrift::protocol::TType _etype33;
-                                xfer += iprot->readListBegin(_etype33, _size30);
-                                this->peer_nodes_list.resize(_size30);
-                                uint32_t _i34;
-                                for (_i34 = 0; _i34 < _size30; ++_i34)
+                                uint32_t _size28;
+                                ::apache::thrift::protocol::TType _etype31;
+                                xfer += iprot->readListBegin(_etype31, _size28);
+                                this->peer_nodes_list.resize(_size28);
+                                uint32_t _i32;
+                                for (_i32 = 0; _i32 < _size28; ++_i32)
                                 {
-                                    xfer += this->peer_nodes_list[_i34].read(iprot);
+                                    xfer += this->peer_nodes_list[_i32].read(iprot);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -1122,10 +984,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<peer_node_info> ::const_iterator _iter35;
-                for (_iter35 = this->peer_nodes_list.begin(); _iter35 != this->peer_nodes_list.end(); ++_iter35)
+                std::vector<peer_node_info> ::const_iterator _iter33;
+                for (_iter33 = this->peer_nodes_list.begin(); _iter33 != this->peer_nodes_list.end(); ++_iter33)
                 {
-                    xfer += (*_iter35).write(oprot);
+                    xfer += (*_iter33).write(oprot);
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -1141,11 +1003,11 @@ namespace matrix { namespace service_core {
             swap(a.peer_nodes_list, b.peer_nodes_list);
         }
 
-        peer_nodes_broadcast_req_body::peer_nodes_broadcast_req_body(const peer_nodes_broadcast_req_body& other36) {
-            peer_nodes_list = other36.peer_nodes_list;
+        peer_nodes_broadcast_req_body::peer_nodes_broadcast_req_body(const peer_nodes_broadcast_req_body& other34) {
+            peer_nodes_list = other34.peer_nodes_list;
         }
-        peer_nodes_broadcast_req_body& peer_nodes_broadcast_req_body::operator=(const peer_nodes_broadcast_req_body& other37) {
-            peer_nodes_list = other37.peer_nodes_list;
+        peer_nodes_broadcast_req_body& peer_nodes_broadcast_req_body::operator=(const peer_nodes_broadcast_req_body& other35) {
+            peer_nodes_list = other35.peer_nodes_list;
             return *this;
         }
         void peer_nodes_broadcast_req_body::printTo(std::ostream& out) const {
@@ -1231,13 +1093,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        peer_nodes_broadcast_req::peer_nodes_broadcast_req(const peer_nodes_broadcast_req& other38) {
-            body = other38.body;
-            __isset = other38.__isset;
+        peer_nodes_broadcast_req::peer_nodes_broadcast_req(const peer_nodes_broadcast_req& other36) {
+            body = other36.body;
+            __isset = other36.__isset;
         }
-        peer_nodes_broadcast_req& peer_nodes_broadcast_req::operator=(const peer_nodes_broadcast_req& other39) {
-            body = other39.body;
-            __isset = other39.__isset;
+        peer_nodes_broadcast_req& peer_nodes_broadcast_req::operator=(const peer_nodes_broadcast_req& other37) {
+            body = other37.body;
+            __isset = other37.__isset;
             return *this;
         }
         void peer_nodes_broadcast_req::printTo(std::ostream& out) const {
@@ -1293,14 +1155,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size40;
-                                ::apache::thrift::protocol::TType _etype43;
-                                xfer += iprot->readListBegin(_etype43, _size40);
-                                this->peer_nodes_list.resize(_size40);
-                                uint32_t _i44;
-                                for (_i44 = 0; _i44 < _size40; ++_i44)
+                                uint32_t _size38;
+                                ::apache::thrift::protocol::TType _etype41;
+                                xfer += iprot->readListBegin(_etype41, _size38);
+                                this->peer_nodes_list.resize(_size38);
+                                uint32_t _i42;
+                                for (_i42 = 0; _i42 < _size38; ++_i42)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i44]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i42]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -1341,10 +1203,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter45;
-                for (_iter45 = this->peer_nodes_list.begin(); _iter45 != this->peer_nodes_list.end(); ++_iter45)
+                std::vector<std::string> ::const_iterator _iter43;
+                for (_iter43 = this->peer_nodes_list.begin(); _iter43 != this->peer_nodes_list.end(); ++_iter43)
                 {
-                    xfer += oprot->writeString((*_iter45));
+                    xfer += oprot->writeString((*_iter43));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -1365,13 +1227,13 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_create_task_req_body::node_create_task_req_body(const node_create_task_req_body& other46) {
-            peer_nodes_list = other46.peer_nodes_list;
-            additional = other46.additional;
+        node_create_task_req_body::node_create_task_req_body(const node_create_task_req_body& other44) {
+            peer_nodes_list = other44.peer_nodes_list;
+            additional = other44.additional;
         }
-        node_create_task_req_body& node_create_task_req_body::operator=(const node_create_task_req_body& other47) {
-            peer_nodes_list = other47.peer_nodes_list;
-            additional = other47.additional;
+        node_create_task_req_body& node_create_task_req_body::operator=(const node_create_task_req_body& other45) {
+            peer_nodes_list = other45.peer_nodes_list;
+            additional = other45.additional;
             return *this;
         }
         void node_create_task_req_body::printTo(std::ostream& out) const {
@@ -1458,13 +1320,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_create_task_req::node_create_task_req(const node_create_task_req& other48) {
-            body = other48.body;
-            __isset = other48.__isset;
+        node_create_task_req::node_create_task_req(const node_create_task_req& other46) {
+            body = other46.body;
+            __isset = other46.__isset;
         }
-        node_create_task_req& node_create_task_req::operator=(const node_create_task_req& other49) {
-            body = other49.body;
-            __isset = other49.__isset;
+        node_create_task_req& node_create_task_req::operator=(const node_create_task_req& other47) {
+            body = other47.body;
+            __isset = other47.__isset;
             return *this;
         }
         void node_create_task_req::printTo(std::ostream& out) const {
@@ -1612,17 +1474,17 @@ namespace matrix { namespace service_core {
             swap(a.login_password, b.login_password);
         }
 
-        node_create_task_rsp_body::node_create_task_rsp_body(const node_create_task_rsp_body& other50) {
-            result = other50.result;
-            result_msg = other50.result_msg;
-            task_id = other50.task_id;
-            login_password = other50.login_password;
+        node_create_task_rsp_body::node_create_task_rsp_body(const node_create_task_rsp_body& other48) {
+            result = other48.result;
+            result_msg = other48.result_msg;
+            task_id = other48.task_id;
+            login_password = other48.login_password;
         }
-        node_create_task_rsp_body& node_create_task_rsp_body::operator=(const node_create_task_rsp_body& other51) {
-            result = other51.result;
-            result_msg = other51.result_msg;
-            task_id = other51.task_id;
-            login_password = other51.login_password;
+        node_create_task_rsp_body& node_create_task_rsp_body::operator=(const node_create_task_rsp_body& other49) {
+            result = other49.result;
+            result_msg = other49.result_msg;
+            task_id = other49.task_id;
+            login_password = other49.login_password;
             return *this;
         }
         void node_create_task_rsp_body::printTo(std::ostream& out) const {
@@ -1711,13 +1573,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_create_task_rsp::node_create_task_rsp(const node_create_task_rsp& other52) {
-            body = other52.body;
-            __isset = other52.__isset;
+        node_create_task_rsp::node_create_task_rsp(const node_create_task_rsp& other50) {
+            body = other50.body;
+            __isset = other50.__isset;
         }
-        node_create_task_rsp& node_create_task_rsp::operator=(const node_create_task_rsp& other53) {
-            body = other53.body;
-            __isset = other53.__isset;
+        node_create_task_rsp& node_create_task_rsp::operator=(const node_create_task_rsp& other51) {
+            body = other51.body;
+            __isset = other51.__isset;
             return *this;
         }
         void node_create_task_rsp::printTo(std::ostream& out) const {
@@ -1786,14 +1648,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size54;
-                                ::apache::thrift::protocol::TType _etype57;
-                                xfer += iprot->readListBegin(_etype57, _size54);
-                                this->peer_nodes_list.resize(_size54);
-                                uint32_t _i58;
-                                for (_i58 = 0; _i58 < _size54; ++_i58)
+                                uint32_t _size52;
+                                ::apache::thrift::protocol::TType _etype55;
+                                xfer += iprot->readListBegin(_etype55, _size52);
+                                this->peer_nodes_list.resize(_size52);
+                                uint32_t _i56;
+                                for (_i56 = 0; _i56 < _size52; ++_i56)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i58]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i56]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -1840,10 +1702,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter59;
-                for (_iter59 = this->peer_nodes_list.begin(); _iter59 != this->peer_nodes_list.end(); ++_iter59)
+                std::vector<std::string> ::const_iterator _iter57;
+                for (_iter57 = this->peer_nodes_list.begin(); _iter57 != this->peer_nodes_list.end(); ++_iter57)
                 {
-                    xfer += oprot->writeString((*_iter59));
+                    xfer += oprot->writeString((*_iter57));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -1865,15 +1727,15 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_start_task_req_body::node_start_task_req_body(const node_start_task_req_body& other60) {
-            task_id = other60.task_id;
-            peer_nodes_list = other60.peer_nodes_list;
-            additional = other60.additional;
+        node_start_task_req_body::node_start_task_req_body(const node_start_task_req_body& other58) {
+            task_id = other58.task_id;
+            peer_nodes_list = other58.peer_nodes_list;
+            additional = other58.additional;
         }
-        node_start_task_req_body& node_start_task_req_body::operator=(const node_start_task_req_body& other61) {
-            task_id = other61.task_id;
-            peer_nodes_list = other61.peer_nodes_list;
-            additional = other61.additional;
+        node_start_task_req_body& node_start_task_req_body::operator=(const node_start_task_req_body& other59) {
+            task_id = other59.task_id;
+            peer_nodes_list = other59.peer_nodes_list;
+            additional = other59.additional;
             return *this;
         }
         void node_start_task_req_body::printTo(std::ostream& out) const {
@@ -1961,13 +1823,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_start_task_req::node_start_task_req(const node_start_task_req& other62) {
-            body = other62.body;
-            __isset = other62.__isset;
+        node_start_task_req::node_start_task_req(const node_start_task_req& other60) {
+            body = other60.body;
+            __isset = other60.__isset;
         }
-        node_start_task_req& node_start_task_req::operator=(const node_start_task_req& other63) {
-            body = other63.body;
-            __isset = other63.__isset;
+        node_start_task_req& node_start_task_req::operator=(const node_start_task_req& other61) {
+            body = other61.body;
+            __isset = other61.__isset;
             return *this;
         }
         void node_start_task_req::printTo(std::ostream& out) const {
@@ -2075,13 +1937,13 @@ namespace matrix { namespace service_core {
             swap(a.result_msg, b.result_msg);
         }
 
-        node_start_task_rsp_body::node_start_task_rsp_body(const node_start_task_rsp_body& other64) {
-            result = other64.result;
-            result_msg = other64.result_msg;
+        node_start_task_rsp_body::node_start_task_rsp_body(const node_start_task_rsp_body& other62) {
+            result = other62.result;
+            result_msg = other62.result_msg;
         }
-        node_start_task_rsp_body& node_start_task_rsp_body::operator=(const node_start_task_rsp_body& other65) {
-            result = other65.result;
-            result_msg = other65.result_msg;
+        node_start_task_rsp_body& node_start_task_rsp_body::operator=(const node_start_task_rsp_body& other63) {
+            result = other63.result;
+            result_msg = other63.result_msg;
             return *this;
         }
         void node_start_task_rsp_body::printTo(std::ostream& out) const {
@@ -2168,13 +2030,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_start_task_rsp::node_start_task_rsp(const node_start_task_rsp& other66) {
-            body = other66.body;
-            __isset = other66.__isset;
+        node_start_task_rsp::node_start_task_rsp(const node_start_task_rsp& other64) {
+            body = other64.body;
+            __isset = other64.__isset;
         }
-        node_start_task_rsp& node_start_task_rsp::operator=(const node_start_task_rsp& other67) {
-            body = other67.body;
-            __isset = other67.__isset;
+        node_start_task_rsp& node_start_task_rsp::operator=(const node_start_task_rsp& other65) {
+            body = other65.body;
+            __isset = other65.__isset;
             return *this;
         }
         void node_start_task_rsp::printTo(std::ostream& out) const {
@@ -2243,14 +2105,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size68;
-                                ::apache::thrift::protocol::TType _etype71;
-                                xfer += iprot->readListBegin(_etype71, _size68);
-                                this->peer_nodes_list.resize(_size68);
-                                uint32_t _i72;
-                                for (_i72 = 0; _i72 < _size68; ++_i72)
+                                uint32_t _size66;
+                                ::apache::thrift::protocol::TType _etype69;
+                                xfer += iprot->readListBegin(_etype69, _size66);
+                                this->peer_nodes_list.resize(_size66);
+                                uint32_t _i70;
+                                for (_i70 = 0; _i70 < _size66; ++_i70)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i72]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i70]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -2297,10 +2159,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter73;
-                for (_iter73 = this->peer_nodes_list.begin(); _iter73 != this->peer_nodes_list.end(); ++_iter73)
+                std::vector<std::string> ::const_iterator _iter71;
+                for (_iter71 = this->peer_nodes_list.begin(); _iter71 != this->peer_nodes_list.end(); ++_iter71)
                 {
-                    xfer += oprot->writeString((*_iter73));
+                    xfer += oprot->writeString((*_iter71));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -2322,15 +2184,15 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_stop_task_req_body::node_stop_task_req_body(const node_stop_task_req_body& other74) {
-            task_id = other74.task_id;
-            peer_nodes_list = other74.peer_nodes_list;
-            additional = other74.additional;
+        node_stop_task_req_body::node_stop_task_req_body(const node_stop_task_req_body& other72) {
+            task_id = other72.task_id;
+            peer_nodes_list = other72.peer_nodes_list;
+            additional = other72.additional;
         }
-        node_stop_task_req_body& node_stop_task_req_body::operator=(const node_stop_task_req_body& other75) {
-            task_id = other75.task_id;
-            peer_nodes_list = other75.peer_nodes_list;
-            additional = other75.additional;
+        node_stop_task_req_body& node_stop_task_req_body::operator=(const node_stop_task_req_body& other73) {
+            task_id = other73.task_id;
+            peer_nodes_list = other73.peer_nodes_list;
+            additional = other73.additional;
             return *this;
         }
         void node_stop_task_req_body::printTo(std::ostream& out) const {
@@ -2418,13 +2280,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_stop_task_req::node_stop_task_req(const node_stop_task_req& other76) {
-            body = other76.body;
-            __isset = other76.__isset;
+        node_stop_task_req::node_stop_task_req(const node_stop_task_req& other74) {
+            body = other74.body;
+            __isset = other74.__isset;
         }
-        node_stop_task_req& node_stop_task_req::operator=(const node_stop_task_req& other77) {
-            body = other77.body;
-            __isset = other77.__isset;
+        node_stop_task_req& node_stop_task_req::operator=(const node_stop_task_req& other75) {
+            body = other75.body;
+            __isset = other75.__isset;
             return *this;
         }
         void node_stop_task_req::printTo(std::ostream& out) const {
@@ -2532,13 +2394,13 @@ namespace matrix { namespace service_core {
             swap(a.result_msg, b.result_msg);
         }
 
-        node_stop_task_rsp_body::node_stop_task_rsp_body(const node_stop_task_rsp_body& other78) {
-            result = other78.result;
-            result_msg = other78.result_msg;
+        node_stop_task_rsp_body::node_stop_task_rsp_body(const node_stop_task_rsp_body& other76) {
+            result = other76.result;
+            result_msg = other76.result_msg;
         }
-        node_stop_task_rsp_body& node_stop_task_rsp_body::operator=(const node_stop_task_rsp_body& other79) {
-            result = other79.result;
-            result_msg = other79.result_msg;
+        node_stop_task_rsp_body& node_stop_task_rsp_body::operator=(const node_stop_task_rsp_body& other77) {
+            result = other77.result;
+            result_msg = other77.result_msg;
             return *this;
         }
         void node_stop_task_rsp_body::printTo(std::ostream& out) const {
@@ -2625,13 +2487,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_stop_task_rsp::node_stop_task_rsp(const node_stop_task_rsp& other80) {
-            body = other80.body;
-            __isset = other80.__isset;
+        node_stop_task_rsp::node_stop_task_rsp(const node_stop_task_rsp& other78) {
+            body = other78.body;
+            __isset = other78.__isset;
         }
-        node_stop_task_rsp& node_stop_task_rsp::operator=(const node_stop_task_rsp& other81) {
-            body = other81.body;
-            __isset = other81.__isset;
+        node_stop_task_rsp& node_stop_task_rsp::operator=(const node_stop_task_rsp& other79) {
+            body = other79.body;
+            __isset = other79.__isset;
             return *this;
         }
         void node_stop_task_rsp::printTo(std::ostream& out) const {
@@ -2700,14 +2562,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size82;
-                                ::apache::thrift::protocol::TType _etype85;
-                                xfer += iprot->readListBegin(_etype85, _size82);
-                                this->peer_nodes_list.resize(_size82);
-                                uint32_t _i86;
-                                for (_i86 = 0; _i86 < _size82; ++_i86)
+                                uint32_t _size80;
+                                ::apache::thrift::protocol::TType _etype83;
+                                xfer += iprot->readListBegin(_etype83, _size80);
+                                this->peer_nodes_list.resize(_size80);
+                                uint32_t _i84;
+                                for (_i84 = 0; _i84 < _size80; ++_i84)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i86]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i84]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -2754,10 +2616,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter87;
-                for (_iter87 = this->peer_nodes_list.begin(); _iter87 != this->peer_nodes_list.end(); ++_iter87)
+                std::vector<std::string> ::const_iterator _iter85;
+                for (_iter85 = this->peer_nodes_list.begin(); _iter85 != this->peer_nodes_list.end(); ++_iter85)
                 {
-                    xfer += oprot->writeString((*_iter87));
+                    xfer += oprot->writeString((*_iter85));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -2779,15 +2641,15 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_restart_task_req_body::node_restart_task_req_body(const node_restart_task_req_body& other88) {
-            task_id = other88.task_id;
-            peer_nodes_list = other88.peer_nodes_list;
-            additional = other88.additional;
+        node_restart_task_req_body::node_restart_task_req_body(const node_restart_task_req_body& other86) {
+            task_id = other86.task_id;
+            peer_nodes_list = other86.peer_nodes_list;
+            additional = other86.additional;
         }
-        node_restart_task_req_body& node_restart_task_req_body::operator=(const node_restart_task_req_body& other89) {
-            task_id = other89.task_id;
-            peer_nodes_list = other89.peer_nodes_list;
-            additional = other89.additional;
+        node_restart_task_req_body& node_restart_task_req_body::operator=(const node_restart_task_req_body& other87) {
+            task_id = other87.task_id;
+            peer_nodes_list = other87.peer_nodes_list;
+            additional = other87.additional;
             return *this;
         }
         void node_restart_task_req_body::printTo(std::ostream& out) const {
@@ -2875,13 +2737,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_restart_task_req::node_restart_task_req(const node_restart_task_req& other90) {
-            body = other90.body;
-            __isset = other90.__isset;
+        node_restart_task_req::node_restart_task_req(const node_restart_task_req& other88) {
+            body = other88.body;
+            __isset = other88.__isset;
         }
-        node_restart_task_req& node_restart_task_req::operator=(const node_restart_task_req& other91) {
-            body = other91.body;
-            __isset = other91.__isset;
+        node_restart_task_req& node_restart_task_req::operator=(const node_restart_task_req& other89) {
+            body = other89.body;
+            __isset = other89.__isset;
             return *this;
         }
         void node_restart_task_req::printTo(std::ostream& out) const {
@@ -2989,13 +2851,13 @@ namespace matrix { namespace service_core {
             swap(a.result_msg, b.result_msg);
         }
 
-        node_restart_task_rsp_body::node_restart_task_rsp_body(const node_restart_task_rsp_body& other92) {
-            result = other92.result;
-            result_msg = other92.result_msg;
+        node_restart_task_rsp_body::node_restart_task_rsp_body(const node_restart_task_rsp_body& other90) {
+            result = other90.result;
+            result_msg = other90.result_msg;
         }
-        node_restart_task_rsp_body& node_restart_task_rsp_body::operator=(const node_restart_task_rsp_body& other93) {
-            result = other93.result;
-            result_msg = other93.result_msg;
+        node_restart_task_rsp_body& node_restart_task_rsp_body::operator=(const node_restart_task_rsp_body& other91) {
+            result = other91.result;
+            result_msg = other91.result_msg;
             return *this;
         }
         void node_restart_task_rsp_body::printTo(std::ostream& out) const {
@@ -3082,13 +2944,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_restart_task_rsp::node_restart_task_rsp(const node_restart_task_rsp& other94) {
-            body = other94.body;
-            __isset = other94.__isset;
+        node_restart_task_rsp::node_restart_task_rsp(const node_restart_task_rsp& other92) {
+            body = other92.body;
+            __isset = other92.__isset;
         }
-        node_restart_task_rsp& node_restart_task_rsp::operator=(const node_restart_task_rsp& other95) {
-            body = other95.body;
-            __isset = other95.__isset;
+        node_restart_task_rsp& node_restart_task_rsp::operator=(const node_restart_task_rsp& other93) {
+            body = other93.body;
+            __isset = other93.__isset;
             return *this;
         }
         void node_restart_task_rsp::printTo(std::ostream& out) const {
@@ -3157,14 +3019,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size96;
-                                ::apache::thrift::protocol::TType _etype99;
-                                xfer += iprot->readListBegin(_etype99, _size96);
-                                this->peer_nodes_list.resize(_size96);
-                                uint32_t _i100;
-                                for (_i100 = 0; _i100 < _size96; ++_i100)
+                                uint32_t _size94;
+                                ::apache::thrift::protocol::TType _etype97;
+                                xfer += iprot->readListBegin(_etype97, _size94);
+                                this->peer_nodes_list.resize(_size94);
+                                uint32_t _i98;
+                                for (_i98 = 0; _i98 < _size94; ++_i98)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i100]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i98]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -3211,10 +3073,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter101;
-                for (_iter101 = this->peer_nodes_list.begin(); _iter101 != this->peer_nodes_list.end(); ++_iter101)
+                std::vector<std::string> ::const_iterator _iter99;
+                for (_iter99 = this->peer_nodes_list.begin(); _iter99 != this->peer_nodes_list.end(); ++_iter99)
                 {
-                    xfer += oprot->writeString((*_iter101));
+                    xfer += oprot->writeString((*_iter99));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -3236,15 +3098,15 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_reset_task_req_body::node_reset_task_req_body(const node_reset_task_req_body& other102) {
-            task_id = other102.task_id;
-            peer_nodes_list = other102.peer_nodes_list;
-            additional = other102.additional;
+        node_reset_task_req_body::node_reset_task_req_body(const node_reset_task_req_body& other100) {
+            task_id = other100.task_id;
+            peer_nodes_list = other100.peer_nodes_list;
+            additional = other100.additional;
         }
-        node_reset_task_req_body& node_reset_task_req_body::operator=(const node_reset_task_req_body& other103) {
-            task_id = other103.task_id;
-            peer_nodes_list = other103.peer_nodes_list;
-            additional = other103.additional;
+        node_reset_task_req_body& node_reset_task_req_body::operator=(const node_reset_task_req_body& other101) {
+            task_id = other101.task_id;
+            peer_nodes_list = other101.peer_nodes_list;
+            additional = other101.additional;
             return *this;
         }
         void node_reset_task_req_body::printTo(std::ostream& out) const {
@@ -3332,13 +3194,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_reset_task_req::node_reset_task_req(const node_reset_task_req& other104) {
-            body = other104.body;
-            __isset = other104.__isset;
+        node_reset_task_req::node_reset_task_req(const node_reset_task_req& other102) {
+            body = other102.body;
+            __isset = other102.__isset;
         }
-        node_reset_task_req& node_reset_task_req::operator=(const node_reset_task_req& other105) {
-            body = other105.body;
-            __isset = other105.__isset;
+        node_reset_task_req& node_reset_task_req::operator=(const node_reset_task_req& other103) {
+            body = other103.body;
+            __isset = other103.__isset;
             return *this;
         }
         void node_reset_task_req::printTo(std::ostream& out) const {
@@ -3446,13 +3308,13 @@ namespace matrix { namespace service_core {
             swap(a.result_msg, b.result_msg);
         }
 
-        node_reset_task_rsp_body::node_reset_task_rsp_body(const node_reset_task_rsp_body& other106) {
-            result = other106.result;
-            result_msg = other106.result_msg;
+        node_reset_task_rsp_body::node_reset_task_rsp_body(const node_reset_task_rsp_body& other104) {
+            result = other104.result;
+            result_msg = other104.result_msg;
         }
-        node_reset_task_rsp_body& node_reset_task_rsp_body::operator=(const node_reset_task_rsp_body& other107) {
-            result = other107.result;
-            result_msg = other107.result_msg;
+        node_reset_task_rsp_body& node_reset_task_rsp_body::operator=(const node_reset_task_rsp_body& other105) {
+            result = other105.result;
+            result_msg = other105.result_msg;
             return *this;
         }
         void node_reset_task_rsp_body::printTo(std::ostream& out) const {
@@ -3539,13 +3401,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_reset_task_rsp::node_reset_task_rsp(const node_reset_task_rsp& other108) {
-            body = other108.body;
-            __isset = other108.__isset;
+        node_reset_task_rsp::node_reset_task_rsp(const node_reset_task_rsp& other106) {
+            body = other106.body;
+            __isset = other106.__isset;
         }
-        node_reset_task_rsp& node_reset_task_rsp::operator=(const node_reset_task_rsp& other109) {
-            body = other109.body;
-            __isset = other109.__isset;
+        node_reset_task_rsp& node_reset_task_rsp::operator=(const node_reset_task_rsp& other107) {
+            body = other107.body;
+            __isset = other107.__isset;
             return *this;
         }
         void node_reset_task_rsp::printTo(std::ostream& out) const {
@@ -3614,14 +3476,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size110;
-                                ::apache::thrift::protocol::TType _etype113;
-                                xfer += iprot->readListBegin(_etype113, _size110);
-                                this->peer_nodes_list.resize(_size110);
-                                uint32_t _i114;
-                                for (_i114 = 0; _i114 < _size110; ++_i114)
+                                uint32_t _size108;
+                                ::apache::thrift::protocol::TType _etype111;
+                                xfer += iprot->readListBegin(_etype111, _size108);
+                                this->peer_nodes_list.resize(_size108);
+                                uint32_t _i112;
+                                for (_i112 = 0; _i112 < _size108; ++_i112)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i114]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i112]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -3668,10 +3530,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter115;
-                for (_iter115 = this->peer_nodes_list.begin(); _iter115 != this->peer_nodes_list.end(); ++_iter115)
+                std::vector<std::string> ::const_iterator _iter113;
+                for (_iter113 = this->peer_nodes_list.begin(); _iter113 != this->peer_nodes_list.end(); ++_iter113)
                 {
-                    xfer += oprot->writeString((*_iter115));
+                    xfer += oprot->writeString((*_iter113));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -3693,15 +3555,15 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_destroy_task_req_body::node_destroy_task_req_body(const node_destroy_task_req_body& other116) {
-            task_id = other116.task_id;
-            peer_nodes_list = other116.peer_nodes_list;
-            additional = other116.additional;
+        node_destroy_task_req_body::node_destroy_task_req_body(const node_destroy_task_req_body& other114) {
+            task_id = other114.task_id;
+            peer_nodes_list = other114.peer_nodes_list;
+            additional = other114.additional;
         }
-        node_destroy_task_req_body& node_destroy_task_req_body::operator=(const node_destroy_task_req_body& other117) {
-            task_id = other117.task_id;
-            peer_nodes_list = other117.peer_nodes_list;
-            additional = other117.additional;
+        node_destroy_task_req_body& node_destroy_task_req_body::operator=(const node_destroy_task_req_body& other115) {
+            task_id = other115.task_id;
+            peer_nodes_list = other115.peer_nodes_list;
+            additional = other115.additional;
             return *this;
         }
         void node_destroy_task_req_body::printTo(std::ostream& out) const {
@@ -3789,13 +3651,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_destroy_task_req::node_destroy_task_req(const node_destroy_task_req& other118) {
-            body = other118.body;
-            __isset = other118.__isset;
+        node_destroy_task_req::node_destroy_task_req(const node_destroy_task_req& other116) {
+            body = other116.body;
+            __isset = other116.__isset;
         }
-        node_destroy_task_req& node_destroy_task_req::operator=(const node_destroy_task_req& other119) {
-            body = other119.body;
-            __isset = other119.__isset;
+        node_destroy_task_req& node_destroy_task_req::operator=(const node_destroy_task_req& other117) {
+            body = other117.body;
+            __isset = other117.__isset;
             return *this;
         }
         void node_destroy_task_req::printTo(std::ostream& out) const {
@@ -3903,13 +3765,13 @@ namespace matrix { namespace service_core {
             swap(a.result_msg, b.result_msg);
         }
 
-        node_destroy_task_rsp_body::node_destroy_task_rsp_body(const node_destroy_task_rsp_body& other120) {
-            result = other120.result;
-            result_msg = other120.result_msg;
+        node_destroy_task_rsp_body::node_destroy_task_rsp_body(const node_destroy_task_rsp_body& other118) {
+            result = other118.result;
+            result_msg = other118.result_msg;
         }
-        node_destroy_task_rsp_body& node_destroy_task_rsp_body::operator=(const node_destroy_task_rsp_body& other121) {
-            result = other121.result;
-            result_msg = other121.result_msg;
+        node_destroy_task_rsp_body& node_destroy_task_rsp_body::operator=(const node_destroy_task_rsp_body& other119) {
+            result = other119.result;
+            result_msg = other119.result_msg;
             return *this;
         }
         void node_destroy_task_rsp_body::printTo(std::ostream& out) const {
@@ -3996,13 +3858,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_destroy_task_rsp::node_destroy_task_rsp(const node_destroy_task_rsp& other122) {
-            body = other122.body;
-            __isset = other122.__isset;
+        node_destroy_task_rsp::node_destroy_task_rsp(const node_destroy_task_rsp& other120) {
+            body = other120.body;
+            __isset = other120.__isset;
         }
-        node_destroy_task_rsp& node_destroy_task_rsp::operator=(const node_destroy_task_rsp& other123) {
-            body = other123.body;
-            __isset = other123.__isset;
+        node_destroy_task_rsp& node_destroy_task_rsp::operator=(const node_destroy_task_rsp& other121) {
+            body = other121.body;
+            __isset = other121.__isset;
             return *this;
         }
         void node_destroy_task_rsp::printTo(std::ostream& out) const {
@@ -4081,14 +3943,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size124;
-                                ::apache::thrift::protocol::TType _etype127;
-                                xfer += iprot->readListBegin(_etype127, _size124);
-                                this->peer_nodes_list.resize(_size124);
-                                uint32_t _i128;
-                                for (_i128 = 0; _i128 < _size124; ++_i128)
+                                uint32_t _size122;
+                                ::apache::thrift::protocol::TType _etype125;
+                                xfer += iprot->readListBegin(_etype125, _size122);
+                                this->peer_nodes_list.resize(_size122);
+                                uint32_t _i126;
+                                for (_i126 = 0; _i126 < _size122; ++_i126)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i128]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i126]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -4155,10 +4017,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter129;
-                for (_iter129 = this->peer_nodes_list.begin(); _iter129 != this->peer_nodes_list.end(); ++_iter129)
+                std::vector<std::string> ::const_iterator _iter127;
+                for (_iter127 = this->peer_nodes_list.begin(); _iter127 != this->peer_nodes_list.end(); ++_iter127)
                 {
-                    xfer += oprot->writeString((*_iter129));
+                    xfer += oprot->writeString((*_iter127));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -4190,19 +4052,19 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_task_logs_req_body::node_task_logs_req_body(const node_task_logs_req_body& other130) {
-            task_id = other130.task_id;
-            peer_nodes_list = other130.peer_nodes_list;
-            head_or_tail = other130.head_or_tail;
-            number_of_lines = other130.number_of_lines;
-            additional = other130.additional;
+        node_task_logs_req_body::node_task_logs_req_body(const node_task_logs_req_body& other128) {
+            task_id = other128.task_id;
+            peer_nodes_list = other128.peer_nodes_list;
+            head_or_tail = other128.head_or_tail;
+            number_of_lines = other128.number_of_lines;
+            additional = other128.additional;
         }
-        node_task_logs_req_body& node_task_logs_req_body::operator=(const node_task_logs_req_body& other131) {
-            task_id = other131.task_id;
-            peer_nodes_list = other131.peer_nodes_list;
-            head_or_tail = other131.head_or_tail;
-            number_of_lines = other131.number_of_lines;
-            additional = other131.additional;
+        node_task_logs_req_body& node_task_logs_req_body::operator=(const node_task_logs_req_body& other129) {
+            task_id = other129.task_id;
+            peer_nodes_list = other129.peer_nodes_list;
+            head_or_tail = other129.head_or_tail;
+            number_of_lines = other129.number_of_lines;
+            additional = other129.additional;
             return *this;
         }
         void node_task_logs_req_body::printTo(std::ostream& out) const {
@@ -4292,13 +4154,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_task_logs_req::node_task_logs_req(const node_task_logs_req& other132) {
-            body = other132.body;
-            __isset = other132.__isset;
+        node_task_logs_req::node_task_logs_req(const node_task_logs_req& other130) {
+            body = other130.body;
+            __isset = other130.__isset;
         }
-        node_task_logs_req& node_task_logs_req::operator=(const node_task_logs_req& other133) {
-            body = other133.body;
-            __isset = other133.__isset;
+        node_task_logs_req& node_task_logs_req::operator=(const node_task_logs_req& other131) {
+            body = other131.body;
+            __isset = other131.__isset;
             return *this;
         }
         void node_task_logs_req::printTo(std::ostream& out) const {
@@ -4426,15 +4288,15 @@ namespace matrix { namespace service_core {
             swap(a.log_content, b.log_content);
         }
 
-        node_task_logs_rsp_body::node_task_logs_rsp_body(const node_task_logs_rsp_body& other134) {
-            result = other134.result;
-            result_msg = other134.result_msg;
-            log_content = other134.log_content;
+        node_task_logs_rsp_body::node_task_logs_rsp_body(const node_task_logs_rsp_body& other132) {
+            result = other132.result;
+            result_msg = other132.result_msg;
+            log_content = other132.log_content;
         }
-        node_task_logs_rsp_body& node_task_logs_rsp_body::operator=(const node_task_logs_rsp_body& other135) {
-            result = other135.result;
-            result_msg = other135.result_msg;
-            log_content = other135.log_content;
+        node_task_logs_rsp_body& node_task_logs_rsp_body::operator=(const node_task_logs_rsp_body& other133) {
+            result = other133.result;
+            result_msg = other133.result_msg;
+            log_content = other133.log_content;
             return *this;
         }
         void node_task_logs_rsp_body::printTo(std::ostream& out) const {
@@ -4522,13 +4384,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_task_logs_rsp::node_task_logs_rsp(const node_task_logs_rsp& other136) {
-            body = other136.body;
-            __isset = other136.__isset;
+        node_task_logs_rsp::node_task_logs_rsp(const node_task_logs_rsp& other134) {
+            body = other134.body;
+            __isset = other134.__isset;
         }
-        node_task_logs_rsp& node_task_logs_rsp::operator=(const node_task_logs_rsp& other137) {
-            body = other137.body;
-            __isset = other137.__isset;
+        node_task_logs_rsp& node_task_logs_rsp::operator=(const node_task_logs_rsp& other135) {
+            body = other135.body;
+            __isset = other135.__isset;
             return *this;
         }
         void node_task_logs_rsp::printTo(std::ostream& out) const {
@@ -4597,14 +4459,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->peer_nodes_list.clear();
-                                uint32_t _size138;
-                                ::apache::thrift::protocol::TType _etype141;
-                                xfer += iprot->readListBegin(_etype141, _size138);
-                                this->peer_nodes_list.resize(_size138);
-                                uint32_t _i142;
-                                for (_i142 = 0; _i142 < _size138; ++_i142)
+                                uint32_t _size136;
+                                ::apache::thrift::protocol::TType _etype139;
+                                xfer += iprot->readListBegin(_etype139, _size136);
+                                this->peer_nodes_list.resize(_size136);
+                                uint32_t _i140;
+                                for (_i140 = 0; _i140 < _size136; ++_i140)
                                 {
-                                    xfer += iprot->readString(this->peer_nodes_list[_i142]);
+                                    xfer += iprot->readString(this->peer_nodes_list[_i140]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -4651,10 +4513,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-                std::vector<std::string> ::const_iterator _iter143;
-                for (_iter143 = this->peer_nodes_list.begin(); _iter143 != this->peer_nodes_list.end(); ++_iter143)
+                std::vector<std::string> ::const_iterator _iter141;
+                for (_iter141 = this->peer_nodes_list.begin(); _iter141 != this->peer_nodes_list.end(); ++_iter141)
                 {
-                    xfer += oprot->writeString((*_iter143));
+                    xfer += oprot->writeString((*_iter141));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -4676,15 +4538,15 @@ namespace matrix { namespace service_core {
             swap(a.additional, b.additional);
         }
 
-        node_list_task_req_body::node_list_task_req_body(const node_list_task_req_body& other144) {
-            task_id = other144.task_id;
-            peer_nodes_list = other144.peer_nodes_list;
-            additional = other144.additional;
+        node_list_task_req_body::node_list_task_req_body(const node_list_task_req_body& other142) {
+            task_id = other142.task_id;
+            peer_nodes_list = other142.peer_nodes_list;
+            additional = other142.additional;
         }
-        node_list_task_req_body& node_list_task_req_body::operator=(const node_list_task_req_body& other145) {
-            task_id = other145.task_id;
-            peer_nodes_list = other145.peer_nodes_list;
-            additional = other145.additional;
+        node_list_task_req_body& node_list_task_req_body::operator=(const node_list_task_req_body& other143) {
+            task_id = other143.task_id;
+            peer_nodes_list = other143.peer_nodes_list;
+            additional = other143.additional;
             return *this;
         }
         void node_list_task_req_body::printTo(std::ostream& out) const {
@@ -4772,13 +4634,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_list_task_req::node_list_task_req(const node_list_task_req& other146) {
-            body = other146.body;
-            __isset = other146.__isset;
+        node_list_task_req::node_list_task_req(const node_list_task_req& other144) {
+            body = other144.body;
+            __isset = other144.__isset;
         }
-        node_list_task_req& node_list_task_req::operator=(const node_list_task_req& other147) {
-            body = other147.body;
-            __isset = other147.__isset;
+        node_list_task_req& node_list_task_req::operator=(const node_list_task_req& other145) {
+            body = other145.body;
+            __isset = other145.__isset;
             return *this;
         }
         void node_list_task_req::printTo(std::ostream& out) const {
@@ -4789,12 +4651,158 @@ namespace matrix { namespace service_core {
         }
 
 
+        task_info::~task_info() throw() {
+        }
+
+
+        void task_info::__set_task_id(const std::string& val) {
+            this->task_id = val;
+        }
+
+        void task_info::__set_status(const int8_t val) {
+            this->status = val;
+        }
+
+        void task_info::__set_login_password(const std::string& val) {
+            this->login_password = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const task_info& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+            bool isset_task_id = false;
+            bool isset_status = false;
+            bool isset_login_password = false;
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->task_id);
+                            isset_task_id = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_BYTE) {
+                            xfer += iprot->readByte(this->status);
+                            isset_status = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 3:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->login_password);
+                            isset_login_password = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            if (!isset_task_id)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_status)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_login_password)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            return xfer;
+        }
+
+        uint32_t task_info::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("task_info");
+
+            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
+            xfer += oprot->writeString(this->task_id);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_BYTE, 2);
+            xfer += oprot->writeByte(this->status);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 3);
+            xfer += oprot->writeString(this->login_password);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(task_info &a, task_info &b) {
+            using ::std::swap;
+            swap(a.task_id, b.task_id);
+            swap(a.status, b.status);
+            swap(a.login_password, b.login_password);
+        }
+
+        task_info::task_info(const task_info& other146) {
+            task_id = other146.task_id;
+            status = other146.status;
+            login_password = other146.login_password;
+        }
+        task_info& task_info::operator=(const task_info& other147) {
+            task_id = other147.task_id;
+            status = other147.status;
+            login_password = other147.login_password;
+            return *this;
+        }
+        void task_info::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "task_info(";
+            out << "task_id=" << to_string(task_id);
+            out << ", " << "status=" << to_string(status);
+            out << ", " << "login_password=" << to_string(login_password);
+            out << ")";
+        }
+
+
         node_list_task_rsp_body::~node_list_task_rsp_body() throw() {
         }
 
 
-        void node_list_task_rsp_body::__set_task_status_list(const std::vector<task_status> & val) {
-            this->task_status_list = val;
+        void node_list_task_rsp_body::__set_result(const int32_t val) {
+            this->result = val;
+        }
+
+        void node_list_task_rsp_body::__set_result_msg(const std::string& val) {
+            this->result_msg = val;
+        }
+
+        void node_list_task_rsp_body::__set_task_info_list(const std::vector<task_info> & val) {
+            this->task_info_list = val;
         }
         std::ostream& operator<<(std::ostream& out, const node_list_task_rsp_body& obj)
         {
@@ -4815,7 +4823,9 @@ namespace matrix { namespace service_core {
 
             using ::apache::thrift::protocol::TProtocolException;
 
-            bool isset_task_status_list = false;
+            bool isset_result = false;
+            bool isset_result_msg = false;
+            bool isset_task_info_list = false;
 
             while (true)
             {
@@ -4826,21 +4836,37 @@ namespace matrix { namespace service_core {
                 switch (fid)
                 {
                     case 1:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->result);
+                            isset_result = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 3:
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                this->task_status_list.clear();
+                                this->task_info_list.clear();
                                 uint32_t _size148;
                                 ::apache::thrift::protocol::TType _etype151;
                                 xfer += iprot->readListBegin(_etype151, _size148);
-                                this->task_status_list.resize(_size148);
+                                this->task_info_list.resize(_size148);
                                 uint32_t _i152;
                                 for (_i152 = 0; _i152 < _size148; ++_i152)
                                 {
-                                    xfer += this->task_status_list[_i152].read(iprot);
+                                    xfer += this->task_info_list[_i152].read(iprot);
                                 }
                                 xfer += iprot->readListEnd();
                             }
-                            isset_task_status_list = true;
+                            isset_task_info_list = true;
                         } else {
                             xfer += iprot->skip(ftype);
                         }
@@ -4854,7 +4880,11 @@ namespace matrix { namespace service_core {
 
             xfer += iprot->readStructEnd();
 
-            if (!isset_task_status_list)
+            if (!isset_result)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_result_msg)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_task_info_list)
                 throw TProtocolException(TProtocolException::INVALID_DATA);
             return xfer;
         }
@@ -4864,11 +4894,19 @@ namespace matrix { namespace service_core {
             ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
             xfer += oprot->writeStructBegin("node_list_task_rsp_body");
 
-            xfer += oprot->writeFieldBegin("task_status_list", ::apache::thrift::protocol::T_LIST, 1);
+            xfer += oprot->writeFieldBegin("result", ::apache::thrift::protocol::T_I32, 1);
+            xfer += oprot->writeI32(this->result);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("result_msg", ::apache::thrift::protocol::T_STRING, 2);
+            xfer += oprot->writeString(this->result_msg);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("task_info_list", ::apache::thrift::protocol::T_LIST, 3);
             {
-                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->task_status_list.size()));
-                std::vector<task_status> ::const_iterator _iter153;
-                for (_iter153 = this->task_status_list.begin(); _iter153 != this->task_status_list.end(); ++_iter153)
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->task_info_list.size()));
+                std::vector<task_info> ::const_iterator _iter153;
+                for (_iter153 = this->task_info_list.begin(); _iter153 != this->task_info_list.end(); ++_iter153)
                 {
                     xfer += (*_iter153).write(oprot);
                 }
@@ -4883,20 +4921,28 @@ namespace matrix { namespace service_core {
 
         void swap(node_list_task_rsp_body &a, node_list_task_rsp_body &b) {
             using ::std::swap;
-            swap(a.task_status_list, b.task_status_list);
+            swap(a.result, b.result);
+            swap(a.result_msg, b.result_msg);
+            swap(a.task_info_list, b.task_info_list);
         }
 
         node_list_task_rsp_body::node_list_task_rsp_body(const node_list_task_rsp_body& other154) {
-            task_status_list = other154.task_status_list;
+            result = other154.result;
+            result_msg = other154.result_msg;
+            task_info_list = other154.task_info_list;
         }
         node_list_task_rsp_body& node_list_task_rsp_body::operator=(const node_list_task_rsp_body& other155) {
-            task_status_list = other155.task_status_list;
+            result = other155.result;
+            result_msg = other155.result_msg;
+            task_info_list = other155.task_info_list;
             return *this;
         }
         void node_list_task_rsp_body::printTo(std::ostream& out) const {
             using ::apache::thrift::to_string;
             out << "node_list_task_rsp_body(";
-            out << "task_status_list=" << to_string(task_status_list);
+            out << "result=" << to_string(result);
+            out << ", " << "result_msg=" << to_string(result_msg);
+            out << ", " << "task_info_list=" << to_string(task_info_list);
             out << ")";
         }
 
@@ -4988,6 +5034,463 @@ namespace matrix { namespace service_core {
         void node_list_task_rsp::printTo(std::ostream& out) const {
             using ::apache::thrift::to_string;
             out << "node_list_task_rsp(";
+            out << "body=" << to_string(body);
+            out << ")";
+        }
+
+
+        node_modify_task_req_body::~node_modify_task_req_body() throw() {
+        }
+
+
+        void node_modify_task_req_body::__set_task_id(const std::string& val) {
+            this->task_id = val;
+        }
+
+        void node_modify_task_req_body::__set_peer_nodes_list(const std::vector<std::string> & val) {
+            this->peer_nodes_list = val;
+        }
+
+        void node_modify_task_req_body::__set_additional(const std::string& val) {
+            this->additional = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_modify_task_req_body& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_modify_task_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+            bool isset_task_id = false;
+            bool isset_peer_nodes_list = false;
+            bool isset_additional = false;
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->task_id);
+                            isset_task_id = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
+                            {
+                                this->peer_nodes_list.clear();
+                                uint32_t _size158;
+                                ::apache::thrift::protocol::TType _etype161;
+                                xfer += iprot->readListBegin(_etype161, _size158);
+                                this->peer_nodes_list.resize(_size158);
+                                uint32_t _i162;
+                                for (_i162 = 0; _i162 < _size158; ++_i162)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i162]);
+                                }
+                                xfer += iprot->readListEnd();
+                            }
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 3:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->additional);
+                            isset_additional = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            if (!isset_task_id)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_peer_nodes_list)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_additional)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            return xfer;
+        }
+
+        uint32_t node_modify_task_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_modify_task_req_body");
+
+            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
+            xfer += oprot->writeString(this->task_id);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+                std::vector<std::string> ::const_iterator _iter163;
+                for (_iter163 = this->peer_nodes_list.begin(); _iter163 != this->peer_nodes_list.end(); ++_iter163)
+                {
+                    xfer += oprot->writeString((*_iter163));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 3);
+            xfer += oprot->writeString(this->additional);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_modify_task_req_body &a, node_modify_task_req_body &b) {
+            using ::std::swap;
+            swap(a.task_id, b.task_id);
+            swap(a.peer_nodes_list, b.peer_nodes_list);
+            swap(a.additional, b.additional);
+        }
+
+        node_modify_task_req_body::node_modify_task_req_body(const node_modify_task_req_body& other164) {
+            task_id = other164.task_id;
+            peer_nodes_list = other164.peer_nodes_list;
+            additional = other164.additional;
+        }
+        node_modify_task_req_body& node_modify_task_req_body::operator=(const node_modify_task_req_body& other165) {
+            task_id = other165.task_id;
+            peer_nodes_list = other165.peer_nodes_list;
+            additional = other165.additional;
+            return *this;
+        }
+        void node_modify_task_req_body::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_modify_task_req_body(";
+            out << "task_id=" << to_string(task_id);
+            out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+            out << ", " << "additional=" << to_string(additional);
+            out << ")";
+        }
+
+
+        node_modify_task_req::~node_modify_task_req() throw() {
+        }
+
+
+        void node_modify_task_req::__set_body(const node_modify_task_req_body& val) {
+            this->body = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_modify_task_req& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_modify_task_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                            xfer += this->body.read(iprot);
+                            this->__isset.body = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            return xfer;
+        }
+
+        uint32_t node_modify_task_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_modify_task_req");
+
+            xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+            xfer += this->body.write(oprot);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_modify_task_req &a, node_modify_task_req &b) {
+            using ::std::swap;
+            swap(a.body, b.body);
+            swap(a.__isset, b.__isset);
+        }
+
+        node_modify_task_req::node_modify_task_req(const node_modify_task_req& other166) {
+            body = other166.body;
+            __isset = other166.__isset;
+        }
+        node_modify_task_req& node_modify_task_req::operator=(const node_modify_task_req& other167) {
+            body = other167.body;
+            __isset = other167.__isset;
+            return *this;
+        }
+        void node_modify_task_req::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_modify_task_req(";
+            out << "body=" << to_string(body);
+            out << ")";
+        }
+
+
+        node_modify_task_rsp_body::~node_modify_task_rsp_body() throw() {
+        }
+
+
+        void node_modify_task_rsp_body::__set_result(const int32_t val) {
+            this->result = val;
+        }
+
+        void node_modify_task_rsp_body::__set_result_msg(const std::string& val) {
+            this->result_msg = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_modify_task_rsp_body& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_modify_task_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+            bool isset_result = false;
+            bool isset_result_msg = false;
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->result);
+                            isset_result = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            if (!isset_result)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_result_msg)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            return xfer;
+        }
+
+        uint32_t node_modify_task_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_modify_task_rsp_body");
+
+            xfer += oprot->writeFieldBegin("result", ::apache::thrift::protocol::T_I32, 1);
+            xfer += oprot->writeI32(this->result);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("result_msg", ::apache::thrift::protocol::T_STRING, 2);
+            xfer += oprot->writeString(this->result_msg);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_modify_task_rsp_body &a, node_modify_task_rsp_body &b) {
+            using ::std::swap;
+            swap(a.result, b.result);
+            swap(a.result_msg, b.result_msg);
+        }
+
+        node_modify_task_rsp_body::node_modify_task_rsp_body(const node_modify_task_rsp_body& other168) {
+            result = other168.result;
+            result_msg = other168.result_msg;
+        }
+        node_modify_task_rsp_body& node_modify_task_rsp_body::operator=(const node_modify_task_rsp_body& other169) {
+            result = other169.result;
+            result_msg = other169.result_msg;
+            return *this;
+        }
+        void node_modify_task_rsp_body::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_modify_task_rsp_body(";
+            out << "result=" << to_string(result);
+            out << ", " << "result_msg=" << to_string(result_msg);
+            out << ")";
+        }
+
+
+        node_modify_task_rsp::~node_modify_task_rsp() throw() {
+        }
+
+
+        void node_modify_task_rsp::__set_body(const node_modify_task_rsp_body& val) {
+            this->body = val;
+        }
+        std::ostream& operator<<(std::ostream& out, const node_modify_task_rsp& obj)
+        {
+            obj.printTo(out);
+            return out;
+        }
+
+
+        uint32_t node_modify_task_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+            ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+            uint32_t xfer = 0;
+            std::string fname;
+            ::apache::thrift::protocol::TType ftype;
+            int16_t fid;
+
+            xfer += iprot->readStructBegin(fname);
+
+            using ::apache::thrift::protocol::TProtocolException;
+
+
+            while (true)
+            {
+                xfer += iprot->readFieldBegin(fname, ftype, fid);
+                if (ftype == ::apache::thrift::protocol::T_STOP) {
+                    break;
+                }
+                switch (fid)
+                {
+                    case 1:
+                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                            xfer += this->body.read(iprot);
+                            this->__isset.body = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+                }
+                xfer += iprot->readFieldEnd();
+            }
+
+            xfer += iprot->readStructEnd();
+
+            return xfer;
+        }
+
+        uint32_t node_modify_task_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+            uint32_t xfer = 0;
+            ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+            xfer += oprot->writeStructBegin("node_modify_task_rsp");
+
+            xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+            xfer += this->body.write(oprot);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldStop();
+            xfer += oprot->writeStructEnd();
+            return xfer;
+        }
+
+        void swap(node_modify_task_rsp &a, node_modify_task_rsp &b) {
+            using ::std::swap;
+            swap(a.body, b.body);
+            swap(a.__isset, b.__isset);
+        }
+
+        node_modify_task_rsp::node_modify_task_rsp(const node_modify_task_rsp& other170) {
+            body = other170.body;
+            __isset = other170.__isset;
+        }
+        node_modify_task_rsp& node_modify_task_rsp::operator=(const node_modify_task_rsp& other171) {
+            body = other171.body;
+            __isset = other171.__isset;
+            return *this;
+        }
+        void node_modify_task_rsp::printTo(std::ostream& out) const {
+            using ::apache::thrift::to_string;
+            out << "node_modify_task_rsp(";
             out << "body=" << to_string(body);
             out << ")";
         }
@@ -5190,23 +5693,23 @@ namespace matrix { namespace service_core {
             swap(a.start_height, b.start_height);
         }
 
-        ver_req_body::ver_req_body(const ver_req_body& other158) {
-            node_id = other158.node_id;
-            core_version = other158.core_version;
-            protocol_version = other158.protocol_version;
-            time_stamp = other158.time_stamp;
-            addr_me = other158.addr_me;
-            addr_you = other158.addr_you;
-            start_height = other158.start_height;
+        ver_req_body::ver_req_body(const ver_req_body& other172) {
+            node_id = other172.node_id;
+            core_version = other172.core_version;
+            protocol_version = other172.protocol_version;
+            time_stamp = other172.time_stamp;
+            addr_me = other172.addr_me;
+            addr_you = other172.addr_you;
+            start_height = other172.start_height;
         }
-        ver_req_body& ver_req_body::operator=(const ver_req_body& other159) {
-            node_id = other159.node_id;
-            core_version = other159.core_version;
-            protocol_version = other159.protocol_version;
-            time_stamp = other159.time_stamp;
-            addr_me = other159.addr_me;
-            addr_you = other159.addr_you;
-            start_height = other159.start_height;
+        ver_req_body& ver_req_body::operator=(const ver_req_body& other173) {
+            node_id = other173.node_id;
+            core_version = other173.core_version;
+            protocol_version = other173.protocol_version;
+            time_stamp = other173.time_stamp;
+            addr_me = other173.addr_me;
+            addr_you = other173.addr_you;
+            start_height = other173.start_height;
             return *this;
         }
         void ver_req_body::printTo(std::ostream& out) const {
@@ -5298,13 +5801,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        ver_req::ver_req(const ver_req& other160) {
-            body = other160.body;
-            __isset = other160.__isset;
+        ver_req::ver_req(const ver_req& other174) {
+            body = other174.body;
+            __isset = other174.__isset;
         }
-        ver_req& ver_req::operator=(const ver_req& other161) {
-            body = other161.body;
-            __isset = other161.__isset;
+        ver_req& ver_req::operator=(const ver_req& other175) {
+            body = other175.body;
+            __isset = other175.__isset;
             return *this;
         }
         void ver_req::printTo(std::ostream& out) const {
@@ -5432,15 +5935,15 @@ namespace matrix { namespace service_core {
             swap(a.protocol_version, b.protocol_version);
         }
 
-        ver_resp_body::ver_resp_body(const ver_resp_body& other162) {
-            node_id = other162.node_id;
-            core_version = other162.core_version;
-            protocol_version = other162.protocol_version;
+        ver_resp_body::ver_resp_body(const ver_resp_body& other176) {
+            node_id = other176.node_id;
+            core_version = other176.core_version;
+            protocol_version = other176.protocol_version;
         }
-        ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other163) {
-            node_id = other163.node_id;
-            core_version = other163.core_version;
-            protocol_version = other163.protocol_version;
+        ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other177) {
+            node_id = other177.node_id;
+            core_version = other177.core_version;
+            protocol_version = other177.protocol_version;
             return *this;
         }
         void ver_resp_body::printTo(std::ostream& out) const {
@@ -5528,13 +6031,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        ver_resp::ver_resp(const ver_resp& other164) {
-            body = other164.body;
-            __isset = other164.__isset;
+        ver_resp::ver_resp(const ver_resp& other178) {
+            body = other178.body;
+            __isset = other178.__isset;
         }
-        ver_resp& ver_resp::operator=(const ver_resp& other165) {
-            body = other165.body;
-            __isset = other165.__isset;
+        ver_resp& ver_resp::operator=(const ver_resp& other179) {
+            body = other179.body;
+            __isset = other179.__isset;
             return *this;
         }
         void ver_resp::printTo(std::ostream& out) const {
@@ -5611,14 +6114,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->keys.clear();
-                                uint32_t _size166;
-                                ::apache::thrift::protocol::TType _etype169;
-                                xfer += iprot->readListBegin(_etype169, _size166);
-                                this->keys.resize(_size166);
-                                uint32_t _i170;
-                                for (_i170 = 0; _i170 < _size166; ++_i170)
+                                uint32_t _size180;
+                                ::apache::thrift::protocol::TType _etype183;
+                                xfer += iprot->readListBegin(_etype183, _size180);
+                                this->keys.resize(_size180);
+                                uint32_t _i184;
+                                for (_i184 = 0; _i184 < _size180; ++_i184)
                                 {
-                                    xfer += iprot->readString(this->keys[_i170]);
+                                    xfer += iprot->readString(this->keys[_i184]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -5661,10 +6164,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("keys", ::apache::thrift::protocol::T_LIST, 3);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->keys.size()));
-                std::vector<std::string> ::const_iterator _iter171;
-                for (_iter171 = this->keys.begin(); _iter171 != this->keys.end(); ++_iter171)
+                std::vector<std::string> ::const_iterator _iter185;
+                for (_iter185 = this->keys.begin(); _iter185 != this->keys.end(); ++_iter185)
                 {
-                    xfer += oprot->writeString((*_iter171));
+                    xfer += oprot->writeString((*_iter185));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -5682,15 +6185,15 @@ namespace matrix { namespace service_core {
             swap(a.keys, b.keys);
         }
 
-        show_req_body::show_req_body(const show_req_body& other172) {
-            o_node_id = other172.o_node_id;
-            d_node_id = other172.d_node_id;
-            keys = other172.keys;
+        show_req_body::show_req_body(const show_req_body& other186) {
+            o_node_id = other186.o_node_id;
+            d_node_id = other186.d_node_id;
+            keys = other186.keys;
         }
-        show_req_body& show_req_body::operator=(const show_req_body& other173) {
-            o_node_id = other173.o_node_id;
-            d_node_id = other173.d_node_id;
-            keys = other173.keys;
+        show_req_body& show_req_body::operator=(const show_req_body& other187) {
+            o_node_id = other187.o_node_id;
+            d_node_id = other187.d_node_id;
+            keys = other187.keys;
             return *this;
         }
         void show_req_body::printTo(std::ostream& out) const {
@@ -5778,13 +6281,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        show_req::show_req(const show_req& other174) {
-            body = other174.body;
-            __isset = other174.__isset;
+        show_req::show_req(const show_req& other188) {
+            body = other188.body;
+            __isset = other188.__isset;
         }
-        show_req& show_req::operator=(const show_req& other175) {
-            body = other175.body;
-            __isset = other175.__isset;
+        show_req& show_req::operator=(const show_req& other189) {
+            body = other189.body;
+            __isset = other189.__isset;
             return *this;
         }
         void show_req::printTo(std::ostream& out) const {
@@ -5861,17 +6364,17 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_MAP) {
                             {
                                 this->kvs.clear();
-                                uint32_t _size176;
-                                ::apache::thrift::protocol::TType _ktype177;
-                                ::apache::thrift::protocol::TType _vtype178;
-                                xfer += iprot->readMapBegin(_ktype177, _vtype178, _size176);
-                                uint32_t _i180;
-                                for (_i180 = 0; _i180 < _size176; ++_i180)
+                                uint32_t _size190;
+                                ::apache::thrift::protocol::TType _ktype191;
+                                ::apache::thrift::protocol::TType _vtype192;
+                                xfer += iprot->readMapBegin(_ktype191, _vtype192, _size190);
+                                uint32_t _i194;
+                                for (_i194 = 0; _i194 < _size190; ++_i194)
                                 {
-                                    std::string _key181;
-                                    xfer += iprot->readString(_key181);
-                                    std::string& _val182 = this->kvs[_key181];
-                                    xfer += iprot->readString(_val182);
+                                    std::string _key195;
+                                    xfer += iprot->readString(_key195);
+                                    std::string& _val196 = this->kvs[_key195];
+                                    xfer += iprot->readString(_val196);
                                 }
                                 xfer += iprot->readMapEnd();
                             }
@@ -5914,11 +6417,11 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("kvs", ::apache::thrift::protocol::T_MAP, 3);
             {
                 xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->kvs.size()));
-                std::map<std::string, std::string> ::const_iterator _iter183;
-                for (_iter183 = this->kvs.begin(); _iter183 != this->kvs.end(); ++_iter183)
+                std::map<std::string, std::string> ::const_iterator _iter197;
+                for (_iter197 = this->kvs.begin(); _iter197 != this->kvs.end(); ++_iter197)
                 {
-                    xfer += oprot->writeString(_iter183->first);
-                    xfer += oprot->writeString(_iter183->second);
+                    xfer += oprot->writeString(_iter197->first);
+                    xfer += oprot->writeString(_iter197->second);
                 }
                 xfer += oprot->writeMapEnd();
             }
@@ -5936,15 +6439,15 @@ namespace matrix { namespace service_core {
             swap(a.kvs, b.kvs);
         }
 
-        show_resp_body::show_resp_body(const show_resp_body& other184) {
-            o_node_id = other184.o_node_id;
-            d_node_id = other184.d_node_id;
-            kvs = other184.kvs;
+        show_resp_body::show_resp_body(const show_resp_body& other198) {
+            o_node_id = other198.o_node_id;
+            d_node_id = other198.d_node_id;
+            kvs = other198.kvs;
         }
-        show_resp_body& show_resp_body::operator=(const show_resp_body& other185) {
-            o_node_id = other185.o_node_id;
-            d_node_id = other185.d_node_id;
-            kvs = other185.kvs;
+        show_resp_body& show_resp_body::operator=(const show_resp_body& other199) {
+            o_node_id = other199.o_node_id;
+            d_node_id = other199.d_node_id;
+            kvs = other199.kvs;
             return *this;
         }
         void show_resp_body::printTo(std::ostream& out) const {
@@ -6032,13 +6535,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        show_resp::show_resp(const show_resp& other186) {
-            body = other186.body;
-            __isset = other186.__isset;
+        show_resp::show_resp(const show_resp& other200) {
+            body = other200.body;
+            __isset = other200.__isset;
         }
-        show_resp& show_resp::operator=(const show_resp& other187) {
-            body = other187.body;
-            __isset = other187.__isset;
+        show_resp& show_resp::operator=(const show_resp& other201) {
+            body = other201.body;
+            __isset = other201.__isset;
             return *this;
         }
         void show_resp::printTo(std::ostream& out) const {
@@ -6104,14 +6607,14 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
                                 this->service_list.clear();
-                                uint32_t _size188;
-                                ::apache::thrift::protocol::TType _etype191;
-                                xfer += iprot->readListBegin(_etype191, _size188);
-                                this->service_list.resize(_size188);
-                                uint32_t _i192;
-                                for (_i192 = 0; _i192 < _size188; ++_i192)
+                                uint32_t _size202;
+                                ::apache::thrift::protocol::TType _etype205;
+                                xfer += iprot->readListBegin(_etype205, _size202);
+                                this->service_list.resize(_size202);
+                                uint32_t _i206;
+                                for (_i206 = 0; _i206 < _size202; ++_i206)
                                 {
-                                    xfer += iprot->readString(this->service_list[_i192]);
+                                    xfer += iprot->readString(this->service_list[_i206]);
                                 }
                                 xfer += iprot->readListEnd();
                             }
@@ -6140,17 +6643,17 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_MAP) {
                             {
                                 this->kvs.clear();
-                                uint32_t _size193;
-                                ::apache::thrift::protocol::TType _ktype194;
-                                ::apache::thrift::protocol::TType _vtype195;
-                                xfer += iprot->readMapBegin(_ktype194, _vtype195, _size193);
-                                uint32_t _i197;
-                                for (_i197 = 0; _i197 < _size193; ++_i197)
+                                uint32_t _size207;
+                                ::apache::thrift::protocol::TType _ktype208;
+                                ::apache::thrift::protocol::TType _vtype209;
+                                xfer += iprot->readMapBegin(_ktype208, _vtype209, _size207);
+                                uint32_t _i211;
+                                for (_i211 = 0; _i211 < _size207; ++_i211)
                                 {
-                                    std::string _key198;
-                                    xfer += iprot->readString(_key198);
-                                    std::string& _val199 = this->kvs[_key198];
-                                    xfer += iprot->readString(_val199);
+                                    std::string _key212;
+                                    xfer += iprot->readString(_key212);
+                                    std::string& _val213 = this->kvs[_key212];
+                                    xfer += iprot->readString(_val213);
                                 }
                                 xfer += iprot->readMapEnd();
                             }
@@ -6181,10 +6684,10 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 1);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
-                std::vector<std::string> ::const_iterator _iter200;
-                for (_iter200 = this->service_list.begin(); _iter200 != this->service_list.end(); ++_iter200)
+                std::vector<std::string> ::const_iterator _iter214;
+                for (_iter214 = this->service_list.begin(); _iter214 != this->service_list.end(); ++_iter214)
                 {
-                    xfer += oprot->writeString((*_iter200));
+                    xfer += oprot->writeString((*_iter214));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -6204,11 +6707,11 @@ namespace matrix { namespace service_core {
                 xfer += oprot->writeFieldBegin("kvs", ::apache::thrift::protocol::T_MAP, 4);
                 {
                     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->kvs.size()));
-                    std::map<std::string, std::string> ::const_iterator _iter201;
-                    for (_iter201 = this->kvs.begin(); _iter201 != this->kvs.end(); ++_iter201)
+                    std::map<std::string, std::string> ::const_iterator _iter215;
+                    for (_iter215 = this->kvs.begin(); _iter215 != this->kvs.end(); ++_iter215)
                     {
-                        xfer += oprot->writeString(_iter201->first);
-                        xfer += oprot->writeString(_iter201->second);
+                        xfer += oprot->writeString(_iter215->first);
+                        xfer += oprot->writeString(_iter215->second);
                     }
                     xfer += oprot->writeMapEnd();
                 }
@@ -6228,19 +6731,19 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        node_service_info::node_service_info(const node_service_info& other202) {
-            service_list = other202.service_list;
-            name = other202.name;
-            time_stamp = other202.time_stamp;
-            kvs = other202.kvs;
-            __isset = other202.__isset;
+        node_service_info::node_service_info(const node_service_info& other216) {
+            service_list = other216.service_list;
+            name = other216.name;
+            time_stamp = other216.time_stamp;
+            kvs = other216.kvs;
+            __isset = other216.__isset;
         }
-        node_service_info& node_service_info::operator=(const node_service_info& other203) {
-            service_list = other203.service_list;
-            name = other203.name;
-            time_stamp = other203.time_stamp;
-            kvs = other203.kvs;
-            __isset = other203.__isset;
+        node_service_info& node_service_info::operator=(const node_service_info& other217) {
+            service_list = other217.service_list;
+            name = other217.name;
+            time_stamp = other217.time_stamp;
+            kvs = other217.kvs;
+            __isset = other217.__isset;
             return *this;
         }
         void node_service_info::printTo(std::ostream& out) const {
@@ -6294,17 +6797,17 @@ namespace matrix { namespace service_core {
                         if (ftype == ::apache::thrift::protocol::T_MAP) {
                             {
                                 this->node_service_info_map.clear();
-                                uint32_t _size204;
-                                ::apache::thrift::protocol::TType _ktype205;
-                                ::apache::thrift::protocol::TType _vtype206;
-                                xfer += iprot->readMapBegin(_ktype205, _vtype206, _size204);
-                                uint32_t _i208;
-                                for (_i208 = 0; _i208 < _size204; ++_i208)
+                                uint32_t _size218;
+                                ::apache::thrift::protocol::TType _ktype219;
+                                ::apache::thrift::protocol::TType _vtype220;
+                                xfer += iprot->readMapBegin(_ktype219, _vtype220, _size218);
+                                uint32_t _i222;
+                                for (_i222 = 0; _i222 < _size218; ++_i222)
                                 {
-                                    std::string _key209;
-                                    xfer += iprot->readString(_key209);
-                                    node_service_info& _val210 = this->node_service_info_map[_key209];
-                                    xfer += _val210.read(iprot);
+                                    std::string _key223;
+                                    xfer += iprot->readString(_key223);
+                                    node_service_info& _val224 = this->node_service_info_map[_key223];
+                                    xfer += _val224.read(iprot);
                                 }
                                 xfer += iprot->readMapEnd();
                             }
@@ -6335,11 +6838,11 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeFieldBegin("node_service_info_map", ::apache::thrift::protocol::T_MAP, 1);
             {
                 xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->node_service_info_map.size()));
-                std::map<std::string, node_service_info> ::const_iterator _iter211;
-                for (_iter211 = this->node_service_info_map.begin(); _iter211 != this->node_service_info_map.end(); ++_iter211)
+                std::map<std::string, node_service_info> ::const_iterator _iter225;
+                for (_iter225 = this->node_service_info_map.begin(); _iter225 != this->node_service_info_map.end(); ++_iter225)
                 {
-                    xfer += oprot->writeString(_iter211->first);
-                    xfer += _iter211->second.write(oprot);
+                    xfer += oprot->writeString(_iter225->first);
+                    xfer += _iter225->second.write(oprot);
                 }
                 xfer += oprot->writeMapEnd();
             }
@@ -6355,11 +6858,11 @@ namespace matrix { namespace service_core {
             swap(a.node_service_info_map, b.node_service_info_map);
         }
 
-        service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other212) {
-            node_service_info_map = other212.node_service_info_map;
+        service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other226) {
+            node_service_info_map = other226.node_service_info_map;
         }
-        service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other213) {
-            node_service_info_map = other213.node_service_info_map;
+        service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other227) {
+            node_service_info_map = other227.node_service_info_map;
             return *this;
         }
         void service_broadcast_req_body::printTo(std::ostream& out) const {
@@ -6445,13 +6948,13 @@ namespace matrix { namespace service_core {
             swap(a.__isset, b.__isset);
         }
 
-        service_broadcast_req::service_broadcast_req(const service_broadcast_req& other214) {
-            body = other214.body;
-            __isset = other214.__isset;
+        service_broadcast_req::service_broadcast_req(const service_broadcast_req& other228) {
+            body = other228.body;
+            __isset = other228.__isset;
         }
-        service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other215) {
-            body = other215.body;
-            __isset = other215.__isset;
+        service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other229) {
+            body = other229.body;
+            __isset = other229.__isset;
             return *this;
         }
         void service_broadcast_req::printTo(std::ostream& out) const {

@@ -57,6 +57,11 @@ namespace dbc {
 
     int32_t on_cmd_list_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
 
+    // modify <task_id>
+    std::shared_ptr<dbc::network::message> rest_modify_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path);
+
+    int32_t on_cmd_modify_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
+
     // logs
     std::shared_ptr<dbc::network::message> rest_task_logs(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path);
 

@@ -479,67 +479,11 @@ namespace dbc {
 		// 检查是否命中当前节点
 		const std::vector<std::string>& peer_nodes = req_content->body.peer_nodes_list;
 		bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
-		if (!hit_self) {
+		if (hit_self) {
+		    return task_list(req_content);
+		} else {
 			req_content->header.path.push_back(CONF_MANAGER->get_node_id());
 			CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
-			return E_SUCCESS;
-		}
-		else {
-            std::vector<matrix::service_core::task_status> status_list;
-
-			if (req_content->body.task_id.empty()) {
-                std::vector<std::shared_ptr<TaskInfo>> task_list;
-				m_task_scheduler.ListAllTask(task_list);
-				for (auto &task : task_list) {
-                    matrix::service_core::task_status ts;
-                    ts.__set_task_id(task->task_id);
-                    ts.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
-                    ts.__set_pwd(task->login_password);
-                    status_list.push_back(ts);
-				}
-			}
-			else {
-				auto task = m_task_scheduler.FindTask(req_content->body.task_id);
-				if (nullptr != task) {
-					matrix::service_core::task_status ts;
-					ts.__set_task_id(task->task_id);
-					ts.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
-					ts.__set_pwd(task->login_password);
-					status_list.push_back(ts);
-				}
-			}
-
-            std::shared_ptr<matrix::service_core::node_list_task_rsp> rsp_content =
-                    std::make_shared<matrix::service_core::node_list_task_rsp>();
-
-            rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-            rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
-            rsp_content->header.__set_nonce(dbc::create_nonce());
-            rsp_content->header.__set_session_id(req_content->header.session_id);
-            rsp_content->header.__set_path(req_content->header.path);
-            rsp_content->body.task_status_list.swap(status_list);
-
-            std::string task_status_msg;
-            for (auto& ts : status_list) {
-                task_status_msg = task_status_msg + ts.task_id + boost::str(boost::format("%d") % ts.status);
-            }
-            std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_status_msg;
-            std::map<std::string, std::string> exten_info;
-            exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-            std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
-            exten_info["sign"] = sign;
-            exten_info["sign_algo"] = ECDSA;
-            time_t cur = std::time(nullptr);
-            exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-
-            rsp_content->header.__set_exten_info(exten_info);
-
-            //rsp msg
-            std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
-            resp_msg->set_name(NODE_LIST_TASK_RSP);
-            resp_msg->set_content(rsp_content);
-            CONNECTION_MANAGER->send_resp_message(resp_msg);
-
 			return E_SUCCESS;
 		}
 	}
@@ -849,6 +793,63 @@ namespace dbc {
         rsp_msg->set_content(rsp_content);
 		CONNECTION_MANAGER->send_resp_message(rsp_msg);
 		return E_SUCCESS;
+	}
+
+	int32_t node_request_service::task_list(const std::shared_ptr<matrix::service_core::node_list_task_req> &req) {
+        std::string task_id = req->body.task_id;
+        if (!dbc::check_id(task_id)) return E_DEFAULT;
+
+        std::vector<matrix::service_core::task_info> info_list;
+        if (req->body.task_id.empty()) {
+            std::vector<std::shared_ptr<TaskInfo>> task_list;
+            m_task_scheduler.ListAllTask(task_list);
+            for (auto &task : task_list) {
+                matrix::service_core::task_info tinfo;
+                tinfo.__set_task_id(task->task_id);
+                tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
+                tinfo.__set_login_password(task->login_password);
+                info_list.push_back(tinfo);
+            }
+        }
+        else {
+            auto task = m_task_scheduler.FindTask(req->body.task_id);
+            if (nullptr != task) {
+                matrix::service_core::task_info tinfo;
+                tinfo.__set_task_id(task->task_id);
+                tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
+                tinfo.__set_login_password(task->login_password);
+                info_list.push_back(tinfo);
+            }
+        }
+
+        std::shared_ptr<matrix::service_core::node_list_task_rsp> rsp_content =
+                std::make_shared<matrix::service_core::node_list_task_rsp>();
+        // header
+        rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+        rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
+        rsp_content->header.__set_nonce(dbc::create_nonce());
+        rsp_content->header.__set_session_id(req->header.session_id);
+        rsp_content->header.__set_path(req->header.path);
+        std::map<std::string, std::string> exten_info;
+        std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
+        std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+        exten_info["sign"] = sign;
+        exten_info["sign_algo"] = ECDSA;
+        time_t cur = std::time(nullptr);
+        exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+        exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+        rsp_content->header.__set_exten_info(exten_info);
+        // body
+        rsp_content->body.__set_result(E_SUCCESS);
+        rsp_content->body.__set_result_msg("list task successful");
+        rsp_content->body.task_info_list.swap(info_list);
+
+        //rsp msg
+        std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
+        resp_msg->set_name(NODE_LIST_TASK_RSP);
+        resp_msg->set_content(rsp_content);
+        CONNECTION_MANAGER->send_resp_message(resp_msg);
+        return E_SUCCESS;
 	}
 
 	int32_t node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {

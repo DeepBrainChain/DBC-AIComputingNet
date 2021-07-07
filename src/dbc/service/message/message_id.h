@@ -41,6 +41,11 @@
 #define NODE_LIST_TASK_RSP      "node_list_task_rsp"
 #define NODE_LIST_TASK_TIMER    "node_list_task_timer"
 
+// modify task
+#define NODE_MODIFY_TASK_REQ      "node_modify_task_req"
+#define NODE_MODIFY_TASK_RSP      "node_modify_task_rsp"
+#define NODE_MODIFY_TASK_TIMER    "node_modify_task_timer"
+
 
 // def
 #define LIST_ALL_TASKS            0

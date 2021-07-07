@@ -23,12 +23,6 @@ struct network_address {
   2: required i16 port
 }
 
-struct task_status {
-  1: required string task_id,
-  2: required i8 status
-  3: required string pwd
-}
-
 struct peer_node_info {
   1: required string peer_node_id,
   2: required i32 core_version,
@@ -225,7 +219,8 @@ struct node_task_logs_rsp {
   1: node_task_logs_rsp_body body
 }
 //////////////////////////////////////////////////////////////////////////
-//list_task
+// list task
+// request
 struct node_list_task_req_body {
     1: required string task_id,
     2: required list<string> peer_nodes_list,
@@ -235,15 +230,43 @@ struct node_list_task_req_body {
 struct node_list_task_req {
   1: node_list_task_req_body body
 }
+// response
+struct task_info {
+  1: required string task_id,
+  2: required i8 status,
+  3: required string login_password
+}
 
 struct node_list_task_rsp_body {
-  1: required list<task_status> task_status_list
+  1: required i32 result,
+  2: required string result_msg,
+  3: required list<task_info> task_info_list
 }
 
 struct node_list_task_rsp {
   1: node_list_task_rsp_body body
 }
+//////////////////////////////////////////////////////////////////////////
+// modify task
+// request
+struct node_modify_task_req_body {
+    1: required string task_id,
+    2: required list<string> peer_nodes_list,
+    3: required string additional
+}
 
+struct node_modify_task_req {
+  1: node_modify_task_req_body body
+}
+// response
+struct node_modify_task_rsp_body {
+  1: required i32 result,
+  2: required string result_msg,
+}
+
+struct node_modify_task_rsp {
+  1: node_modify_task_rsp_body body
+}
 //////////////////////////////////////////////////////////////////////////
 //version
 struct ver_req_body {

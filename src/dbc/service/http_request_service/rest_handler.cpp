@@ -34,11 +34,6 @@
 #define SUCC_REPLY(data) httpReq->reply_comm_rest_succ(data);
 
 /*
- * Insert a spefic value in to  bpo::variables_map vm;
- * */
-#define INSERT_VARIABLE(vm, k) variable_value k##_;k##_.value() = k;vm.insert({ #k, k##_ });
-
-/*
  * Initialize the context information that handles a response
  * */
 #define INIT_RSP_CONTEXT(CMD_REQ, CMD_RSP) \
@@ -49,12 +44,6 @@ std::shared_ptr<CMD_RSP> resp = std::dynamic_pointer_cast<CMD_RSP>(resp_msg->con
 rapidjson::Document document;\
 rapidjson::Document::AllocatorType& allocator = document.GetAllocator();\
 rapidjson::Value data(rapidjson::kObjectType);
-
-#define RETURN_REQ_MSG(cmd)\
-std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();\
-msg->set_name(typeid(cmd).name());\
-msg->set_content(req);\
-return msg;
 
 namespace dbc {
     static void fill_json_filed_string(rapidjson::Value &data, rapidjson::Document::AllocatorType &allocator,
@@ -115,9 +104,14 @@ namespace dbc {
                 return rest_destroy_task(httpReq, path);
             }
 
-            // /tasks/<task_id>/result
+            // /tasks/<task_id>/logs
             if (second_param == "logs") {
                 return rest_task_logs(httpReq, path);
+            }
+
+            // /tasks/<task_id>/modify
+            if (second_param == "modify") {
+                return rest_modify_task(httpReq, path);
             }
         }
 
@@ -742,24 +736,24 @@ namespace dbc {
         }
 
         if (req->task_id == "") {
-            rapidjson::Value task_status_list(rapidjson::kArrayType);
-            for (auto it = resp->task_status_list.begin(); it != resp->task_status_list.end(); it++) {
+            rapidjson::Value task_info_list(rapidjson::kArrayType);
+            for (auto it = resp->task_info_list.begin(); it != resp->task_info_list.end(); it++) {
                 rapidjson::Value st(rapidjson::kObjectType);
                 st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
                 st.AddMember("login_password", STRING_DUP(it->pwd), allocator);
                 st.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
 
-                task_status_list.PushBack(st, allocator);
+                task_info_list.PushBack(st, allocator);
             }
-            data.AddMember("task_status_list", task_status_list, allocator);
+            data.AddMember("task_info_list", task_info_list, allocator);
             SUCC_REPLY(data)
             return E_SUCCESS;
         } else {
             rapidjson::Document document;
             rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
-            if (resp->task_status_list.size() >= 1) {
-                auto it = resp->task_status_list.begin();
+            if (resp->task_info_list.size() >= 1) {
+                auto it = resp->task_info_list.begin();
                 data.AddMember("task_id", STRING_REF(it->task_id), allocator);
                 data.AddMember("login_password", STRING_DUP(it->pwd), allocator);
                 data.AddMember("status", STRING_DUP(dbc::task_status_string(it->status)), allocator);
@@ -768,6 +762,81 @@ namespace dbc {
             SUCC_REPLY(data)
             return E_SUCCESS;
         }
+    }
+
+    // modify task
+    std::shared_ptr<dbc::network::message> rest_modify_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                        "Only support POST requests. POST /api/v1/tasks/<task_id>/stop")
+            return nullptr;
+        }
+
+        std::vector<std::string> path_list;
+        rest_util::split_path(path, path_list);
+
+        if (path_list.size() != 2) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                        "Invalid path_list. POST /api/v1/tasks/<task_id>/modify")
+            return nullptr;
+        }
+
+        const std::string &task_id = path_list[0];
+
+        std::shared_ptr<cmd_modify_task_req> cmd_req = std::make_shared<cmd_modify_task_req>();
+        cmd_req->task_id = task_id;
+
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks")
+            return nullptr;
+        }
+
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
+            return nullptr;
+        }
+
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
+            }
+        }
+
+        std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
+        msg->set_name(typeid(cmd_modify_task_req).name());
+        msg->set_content(cmd_req);
+        return msg;
+    }
+
+    int32_t on_cmd_modify_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_modify_task_req, cmd_modify_task_rsp)
+
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+            return E_DEFAULT;
+        }
+
+        SUCC_REPLY(data)
+        return E_SUCCESS;
     }
 
     // mining_nodes/

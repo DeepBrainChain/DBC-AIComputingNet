@@ -55,7 +55,6 @@ namespace dbc {
 
         int32_t on_node_stop_task_timer(const std::shared_ptr<core_timer> &timer);
 
-
         // restart task
         int32_t on_cmd_restart_task_req(std::shared_ptr<dbc::network::message> &msg);
 
@@ -64,7 +63,6 @@ namespace dbc {
         int32_t on_node_restart_task_rsp(std::shared_ptr<dbc::network::message> &msg);
 
         int32_t on_node_restart_task_timer(const std::shared_ptr<core_timer> &timer);
-
 
         // reset task
         int32_t on_cmd_reset_task_req(const std::shared_ptr<dbc::network::message> &msg);
@@ -75,7 +73,6 @@ namespace dbc {
 
         int32_t on_node_reset_task_timer(const std::shared_ptr<core_timer> &timer);
 
-
         // destroy task
         int32_t on_cmd_destroy_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
@@ -84,7 +81,6 @@ namespace dbc {
         int32_t on_node_destroy_task_rsp(std::shared_ptr<dbc::network::message> &msg);
 
         int32_t on_node_destroy_task_timer(const std::shared_ptr<core_timer> &timer);
-
 
         // task logs
         int32_t on_cmd_task_logs_req(const std::shared_ptr<dbc::network::message> &msg);
@@ -95,7 +91,6 @@ namespace dbc {
 
         int32_t on_node_task_logs_timer(std::shared_ptr<core_timer> timer);
 
-
         // list task
         int32_t on_cmd_list_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
@@ -104,6 +99,15 @@ namespace dbc {
         int32_t on_node_list_task_rsp(std::shared_ptr<dbc::network::message> &msg);
 
         int32_t on_node_list_task_timer(const std::shared_ptr<core_timer> &timer);
+
+        // modify task
+        int32_t on_cmd_modify_task_req(const std::shared_ptr<dbc::network::message> &msg);
+
+        std::shared_ptr<dbc::network::message> create_node_modify_task_req_msg(const std::shared_ptr<::cmd_modify_task_req> &cmd_req);
+
+        int32_t on_node_modify_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_modify_task_timer(const std::shared_ptr<core_timer> &timer);
 
 
         int32_t on_binary_forward(std::shared_ptr<dbc::network::message> &msg);

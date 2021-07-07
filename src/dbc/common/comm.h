@@ -15,22 +15,6 @@ enum {
     OP_SHOW_UNKNOWN = 0xff
 };
 
-class cmd_task_status {
-public:
-
-    std::string task_id;
-
-    time_t create_time;
-
-    int8_t status;
-
-    std::string description;
-
-    std::string raw;
-
-    std::string pwd;
-};
-
 class cmd_peer_node_log {
 public:
 

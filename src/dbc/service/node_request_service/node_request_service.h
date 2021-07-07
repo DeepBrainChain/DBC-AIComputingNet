@@ -71,7 +71,9 @@ namespace dbc {
 
 		int32_t task_logs(const std::shared_ptr<matrix::service_core::node_task_logs_req>& req);
 
-		int32_t on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg);
+        int32_t task_list(const std::shared_ptr<matrix::service_core::node_list_task_req>& req);
+
+        int32_t on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg);
 
 		int32_t on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
