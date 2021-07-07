@@ -31,12 +31,12 @@ namespace dbc {
 
         TaskInfo(const TaskInfo&);
         TaskInfo& operator=(const TaskInfo&);
-        TaskInfo() : task_id(), image(), login_password(), ssh_port(), operation(0), create_time(0), last_start_time(0), last_stop_time(0) {
+        TaskInfo() : task_id(), image_name(), login_password(), ssh_port(), operation(0), create_time(0), last_start_time(0), last_stop_time(0) {
         }
 
         virtual ~TaskInfo() throw();
         std::string task_id;
-        std::string image;
+        std::string image_name;
         std::string login_password;
         std::string ssh_port;
         int32_t operation;
@@ -48,7 +48,7 @@ namespace dbc {
 
         void __set_task_id(const std::string& val);
 
-        void __set_image(const std::string& val);
+        void __set_image_name(const std::string& val);
 
         void __set_login_password(const std::string& val);
 
@@ -66,7 +66,7 @@ namespace dbc {
         {
             if (!(task_id == rhs.task_id))
                 return false;
-            if (!(image == rhs.image))
+            if (!(image_name == rhs.image_name))
                 return false;
             if (__isset.login_password != rhs.__isset.login_password)
                 return false;

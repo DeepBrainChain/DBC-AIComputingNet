@@ -22,8 +22,8 @@ namespace dbc {
         this->task_id = val;
     }
 
-    void TaskInfo::__set_image(const std::string& val) {
-        this->image = val;
+    void TaskInfo::__set_image_name(const std::string& val) {
+        this->image_name = val;
     }
 
     void TaskInfo::__set_login_password(const std::string& val) {
@@ -75,7 +75,7 @@ namespace dbc {
         using ::apache::thrift::protocol::TProtocolException;
 
         bool isset_task_id = false;
-        bool isset_image = false;
+        bool isset_image_name = false;
 
         while (true)
         {
@@ -95,8 +95,8 @@ namespace dbc {
                     break;
                 case 2:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->image);
-                        isset_image = true;
+                        xfer += iprot->readString(this->image_name);
+                        isset_image_name = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -160,7 +160,7 @@ namespace dbc {
 
         if (!isset_task_id)
             throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_image)
+        if (!isset_image_name)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         return xfer;
     }
@@ -174,8 +174,8 @@ namespace dbc {
         xfer += oprot->writeString(this->task_id);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("image", ::apache::thrift::protocol::T_STRING, 2);
-        xfer += oprot->writeString(this->image);
+        xfer += oprot->writeFieldBegin("image_name", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->image_name);
         xfer += oprot->writeFieldEnd();
 
         if (this->__isset.login_password) {
@@ -216,7 +216,7 @@ namespace dbc {
     void swap(TaskInfo &a, TaskInfo &b) {
         using ::std::swap;
         swap(a.task_id, b.task_id);
-        swap(a.image, b.image);
+        swap(a.image_name, b.image_name);
         swap(a.login_password, b.login_password);
         swap(a.ssh_port, b.ssh_port);
         swap(a.operation, b.operation);
@@ -228,7 +228,7 @@ namespace dbc {
 
     TaskInfo::TaskInfo(const TaskInfo& other0) {
         task_id = other0.task_id;
-        image = other0.image;
+        image_name = other0.image_name;
         login_password = other0.login_password;
         ssh_port = other0.ssh_port;
         operation = other0.operation;
@@ -239,7 +239,7 @@ namespace dbc {
     }
     TaskInfo& TaskInfo::operator=(const TaskInfo& other1) {
         task_id = other1.task_id;
-        image = other1.image;
+        image_name = other1.image_name;
         login_password = other1.login_password;
         ssh_port = other1.ssh_port;
         operation = other1.operation;
@@ -253,7 +253,7 @@ namespace dbc {
         using ::apache::thrift::to_string;
         out << "TaskInfo(";
         out << "task_id=" << to_string(task_id);
-        out << ", " << "image=" << to_string(image);
+        out << ", " << "image_name=" << to_string(image_name);
         out << ", " << "login_password="; (__isset.login_password ? (out << to_string(login_password)) : (out << "<null>"));
         out << ", " << "ssh_port="; (__isset.ssh_port ? (out << to_string(ssh_port)) : (out << "<null>"));
         out << ", " << "operation="; (__isset.operation ? (out << to_string(operation)) : (out << "<null>"));

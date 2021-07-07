@@ -97,7 +97,7 @@ namespace dbc {
 
         std::shared_ptr<TaskInfo> taskinfo = std::make_shared<TaskInfo>();
         taskinfo->__set_task_id(task_id);
-        taskinfo->__set_image(image);
+        taskinfo->__set_image_name(image);
         taskinfo->__set_login_password(login_password);
         taskinfo->__set_ssh_port(ssh_port);
         taskinfo->__set_operation(T_OP_Create);
@@ -298,7 +298,7 @@ namespace dbc {
             auto taskinfo = m_process_tasks.front();
             m_process_tasks.pop_front();
             if (taskinfo->operation == T_OP_Create) {
-                if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image, taskinfo->ssh_port)) {
+                if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->ssh_port)) {
                     bool succ = false;
                     int count = 0, max_count = 30;
                     while (!succ && count < max_count) {
@@ -355,7 +355,7 @@ namespace dbc {
                 if (vm_status == VS_SHUT_OFF) {
                     if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
                         sleep(1);
-                        delete_image_file(taskinfo->image, taskinfo->task_id);
+                        delete_image_file(taskinfo->image_name, taskinfo->task_id);
                         m_task_db.delete_task(taskinfo->task_id);
                         m_tasks.erase(taskinfo->task_id);
                         LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
@@ -367,7 +367,7 @@ namespace dbc {
                         sleep(1);
                         if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
                             sleep(1);
-                            delete_image_file(taskinfo->image, taskinfo->task_id);
+                            delete_image_file(taskinfo->image_name, taskinfo->task_id);
                             m_task_db.delete_task(taskinfo->task_id);
                             m_tasks.erase(taskinfo->task_id);
                             LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
