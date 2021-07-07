@@ -13,7 +13,8 @@ Makefile
 
 build/*
 build-debug/*
-cmake-build-debug/*
+cmake-build-debug
+cmake-build-release
 make/cmake-build-debug
 
 src/core/lib/*.a
