@@ -1353,8 +1353,44 @@ namespace matrix { namespace service_core {
             this->task_id = val;
         }
 
+        void node_create_task_rsp_body::__set_user_name(const std::string& val) {
+            this->user_name = val;
+        }
+
         void node_create_task_rsp_body::__set_login_password(const std::string& val) {
             this->login_password = val;
+        }
+
+        void node_create_task_rsp_body::__set_ip(const std::string& val) {
+            this->ip = val;
+        }
+
+        void node_create_task_rsp_body::__set_ssh_port(const std::string& val) {
+            this->ssh_port = val;
+        }
+
+        void node_create_task_rsp_body::__set_create_time(const std::string& val) {
+            this->create_time = val;
+        }
+
+        void node_create_task_rsp_body::__set_system_storage(const std::string& val) {
+            this->system_storage = val;
+        }
+
+        void node_create_task_rsp_body::__set_data_storage(const std::string& val) {
+            this->data_storage = val;
+        }
+
+        void node_create_task_rsp_body::__set_cpu_cores(const std::string& val) {
+            this->cpu_cores = val;
+        }
+
+        void node_create_task_rsp_body::__set_gpu_count(const std::string& val) {
+            this->gpu_count = val;
+        }
+
+        void node_create_task_rsp_body::__set_mem_size(const std::string& val) {
+            this->mem_size = val;
         }
         std::ostream& operator<<(std::ostream& out, const node_create_task_rsp_body& obj)
         {
@@ -1378,7 +1414,16 @@ namespace matrix { namespace service_core {
             bool isset_result = false;
             bool isset_result_msg = false;
             bool isset_task_id = false;
+            bool isset_user_name = false;
             bool isset_login_password = false;
+            bool isset_ip = false;
+            bool isset_ssh_port = false;
+            bool isset_create_time = false;
+            bool isset_system_storage = false;
+            bool isset_data_storage = false;
+            bool isset_cpu_cores = false;
+            bool isset_gpu_count = false;
+            bool isset_mem_size = false;
 
             while (true)
             {
@@ -1414,8 +1459,80 @@ namespace matrix { namespace service_core {
                         break;
                     case 4:
                         if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->user_name);
+                            isset_user_name = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 5:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
                             xfer += iprot->readString(this->login_password);
                             isset_login_password = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 6:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->ip);
+                            isset_ip = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 7:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->ssh_port);
+                            isset_ssh_port = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 8:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->create_time);
+                            isset_create_time = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 9:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->system_storage);
+                            isset_system_storage = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 10:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->data_storage);
+                            isset_data_storage = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 11:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->cpu_cores);
+                            isset_cpu_cores = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 12:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->gpu_count);
+                            isset_gpu_count = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                    case 13:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->mem_size);
+                            isset_mem_size = true;
                         } else {
                             xfer += iprot->skip(ftype);
                         }
@@ -1435,7 +1552,25 @@ namespace matrix { namespace service_core {
                 throw TProtocolException(TProtocolException::INVALID_DATA);
             if (!isset_task_id)
                 throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_user_name)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
             if (!isset_login_password)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_ip)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_ssh_port)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_create_time)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_system_storage)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_data_storage)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_cpu_cores)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_gpu_count)
+                throw TProtocolException(TProtocolException::INVALID_DATA);
+            if (!isset_mem_size)
                 throw TProtocolException(TProtocolException::INVALID_DATA);
             return xfer;
         }
@@ -1457,8 +1592,44 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeString(this->task_id);
             xfer += oprot->writeFieldEnd();
 
-            xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 4);
+            xfer += oprot->writeFieldBegin("user_name", ::apache::thrift::protocol::T_STRING, 4);
+            xfer += oprot->writeString(this->user_name);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 5);
             xfer += oprot->writeString(this->login_password);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("ip", ::apache::thrift::protocol::T_STRING, 6);
+            xfer += oprot->writeString(this->ip);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("ssh_port", ::apache::thrift::protocol::T_STRING, 7);
+            xfer += oprot->writeString(this->ssh_port);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("create_time", ::apache::thrift::protocol::T_STRING, 8);
+            xfer += oprot->writeString(this->create_time);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("system_storage", ::apache::thrift::protocol::T_STRING, 9);
+            xfer += oprot->writeString(this->system_storage);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("data_storage", ::apache::thrift::protocol::T_STRING, 10);
+            xfer += oprot->writeString(this->data_storage);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("cpu_cores", ::apache::thrift::protocol::T_STRING, 11);
+            xfer += oprot->writeString(this->cpu_cores);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("gpu_count", ::apache::thrift::protocol::T_STRING, 12);
+            xfer += oprot->writeString(this->gpu_count);
+            xfer += oprot->writeFieldEnd();
+
+            xfer += oprot->writeFieldBegin("mem_size", ::apache::thrift::protocol::T_STRING, 13);
+            xfer += oprot->writeString(this->mem_size);
             xfer += oprot->writeFieldEnd();
 
             xfer += oprot->writeFieldStop();
@@ -1471,20 +1642,47 @@ namespace matrix { namespace service_core {
             swap(a.result, b.result);
             swap(a.result_msg, b.result_msg);
             swap(a.task_id, b.task_id);
+            swap(a.user_name, b.user_name);
             swap(a.login_password, b.login_password);
+            swap(a.ip, b.ip);
+            swap(a.ssh_port, b.ssh_port);
+            swap(a.create_time, b.create_time);
+            swap(a.system_storage, b.system_storage);
+            swap(a.data_storage, b.data_storage);
+            swap(a.cpu_cores, b.cpu_cores);
+            swap(a.gpu_count, b.gpu_count);
+            swap(a.mem_size, b.mem_size);
         }
 
         node_create_task_rsp_body::node_create_task_rsp_body(const node_create_task_rsp_body& other48) {
             result = other48.result;
             result_msg = other48.result_msg;
             task_id = other48.task_id;
+            user_name = other48.user_name;
             login_password = other48.login_password;
+            ip = other48.ip;
+            ssh_port = other48.ssh_port;
+            create_time = other48.create_time;
+            system_storage = other48.system_storage;
+            data_storage = other48.data_storage;
+            cpu_cores = other48.cpu_cores;
+            gpu_count = other48.gpu_count;
+            mem_size = other48.mem_size;
         }
         node_create_task_rsp_body& node_create_task_rsp_body::operator=(const node_create_task_rsp_body& other49) {
             result = other49.result;
             result_msg = other49.result_msg;
             task_id = other49.task_id;
+            user_name = other49.user_name;
             login_password = other49.login_password;
+            ip = other49.ip;
+            ssh_port = other49.ssh_port;
+            create_time = other49.create_time;
+            system_storage = other49.system_storage;
+            data_storage = other49.data_storage;
+            cpu_cores = other49.cpu_cores;
+            gpu_count = other49.gpu_count;
+            mem_size = other49.mem_size;
             return *this;
         }
         void node_create_task_rsp_body::printTo(std::ostream& out) const {
@@ -1493,7 +1691,16 @@ namespace matrix { namespace service_core {
             out << "result=" << to_string(result);
             out << ", " << "result_msg=" << to_string(result_msg);
             out << ", " << "task_id=" << to_string(task_id);
+            out << ", " << "user_name=" << to_string(user_name);
             out << ", " << "login_password=" << to_string(login_password);
+            out << ", " << "ip=" << to_string(ip);
+            out << ", " << "ssh_port=" << to_string(ssh_port);
+            out << ", " << "create_time=" << to_string(create_time);
+            out << ", " << "system_storage=" << to_string(system_storage);
+            out << ", " << "data_storage=" << to_string(data_storage);
+            out << ", " << "cpu_cores=" << to_string(cpu_cores);
+            out << ", " << "gpu_count=" << to_string(gpu_count);
+            out << ", " << "mem_size=" << to_string(mem_size);
             out << ")";
         }
 

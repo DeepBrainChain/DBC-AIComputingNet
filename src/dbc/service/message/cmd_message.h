@@ -29,7 +29,16 @@ public:
     std::string result_info;
 
     std::string task_id;
+    std::string user_name;
     std::string login_password;
+    std::string ip;
+    std::string ssh_port;
+    std::string create_time;
+    std::string system_storage;
+    std::string data_storage;
+    std::string cpu_cores;
+    std::string gpu_count;
+    std::string mem_size;
 };
 
 // start task
@@ -131,7 +140,7 @@ class cmd_task_info {
 public:
     std::string task_id;
     time_t create_time;
-    int8_t status;
+    int32_t status;
     std::string description;
     std::string raw;
     std::string pwd;

@@ -16,6 +16,12 @@
 #include <shadow.h>
 #include "comm.h"
 #include "json_util.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/error.h"
 
 namespace dbc {
 	vector<string> split(const string& str, const string& delim) {
@@ -46,185 +52,242 @@ namespace dbc {
 
 	}
 
-    int32_t TaskScheduler::Init() {
+    FResult TaskScheduler::Init() {
 		return init_db();
 	}
 
-    int32_t TaskScheduler::init_db() {
+    FResult TaskScheduler::init_db() {
 		bool ret = m_task_db.init_db(env_manager::get_db_path(), "task.db");
 		if (!ret) {
-			LOG_INFO << "init_db failed!";
-			return E_DEFAULT;
+			LOG_ERROR << "init_db failed!";
+			return { E_DEFAULT, "init db failed!" };
 		}
-		 
+
 		m_task_db.load_tasks(m_tasks);
 
-		for (auto& task : m_tasks) {
-		    task.second->__set_operation(T_OP_None);
-		}
-
-		return E_SUCCESS;
+		return { E_SUCCESS, "" };
 	}
 
-    int32_t TaskScheduler::CreateTask(const std::string& task_id, const std::string& login_password, const std::string& additional) {
+    FResult TaskScheduler::CreateTask(const std::string& task_id, const std::string& login_password, const std::string& additional) {
         auto it = m_tasks.find(task_id);
         if (it != m_tasks.end()) {
-            LOG_ERROR << "create failed: task_id already exist " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task_id already exist" };
         }
 
-        // parse additional
+        if (login_password.empty()) {
+            return { E_DEFAULT, "login_password is empty" };
+        }
+
         if (additional.empty()) {
-            LOG_ERROR << "create failed: additional is emtpy";
-            return E_DEFAULT;
+            return { E_DEFAULT, "additional is empty" };
         }
 
         rapidjson::Document doc;
         doc.Parse(additional.c_str());
         if (!doc.IsObject()) {
-            LOG_ERROR << "create failed: additional is invalid";
-            return E_DEFAULT;
+            return { E_DEFAULT, "additional(json) parse failed" };
         }
 
-        std::string image, ssh_port;
-        JSON_PARSE_STRING(doc, "image_name", image)
+        std::string image_name, ssh_port, gpu_count, cpu_cores, mem_rate;
+        JSON_PARSE_STRING(doc, "image_name", image_name)
         JSON_PARSE_STRING(doc, "ssh_port", ssh_port)
+        JSON_PARSE_STRING(doc, "gpu_count", gpu_count)
+        JSON_PARSE_STRING(doc, "cpu_cores", cpu_cores)
+        JSON_PARSE_STRING(doc, "mem_rate", mem_rate)
+        std::string vm_xml, vm_xml_url;
+        JSON_PARSE_STRING(doc, "vm_xml", vm_xml)
+        JSON_PARSE_STRING(doc, "vm_xml_url", vm_xml_url)
 
-        if (image.empty() || ssh_port.empty() || login_password.empty()) {
-            LOG_ERROR << "create failed: params is invalid";
-            return E_DEFAULT;
+        if (vm_xml.empty() && vm_xml_url.empty()) {
+            if (image_name.empty() || image_name.substr(image_name.size() - 5) != "qcow2") {
+                return { E_DEFAULT, "image_name is empty or image_name is invalid" };
+            }
+
+            std::regex reg( "^[\\d]+[.]?[\\d+]?$");
+            if (!std::regex_match(ssh_port, reg) || atoi(ssh_port.c_str()) <= 0) {
+                return { E_DEFAULT, "ssh_port is invalid" };
+            }
+
+            if (!std::regex_match(gpu_count, reg) || atoi(gpu_count.c_str()) < 0) {
+                return { E_DEFAULT, "gpu_count is invalid" };
+            }
+
+            if (!std::regex_match(cpu_cores, reg) || atoi(cpu_cores.c_str()) <= 0) {
+                return { E_DEFAULT, "cpu_cores is invalid" };
+            }
+
+            if (!std::regex_match(mem_rate, reg) || atof(mem_rate.c_str()) <= 0) {
+                return { E_DEFAULT, "mem_rate is invalid" };
+            }
+
+            //todo: 检查资源够不够
+
+        } else {
+            if (vm_xml_url.empty()) {
+                std::string real_xml_name = vm_xml.substr(0, vm_xml.size() - 4) + "_" + task_id + ".xml";
+                real_xml_name = "/data/" + real_xml_name;
+                std::string file_content;
+                fs::load_string_file(real_xml_name, file_content);
+                rapidjson::Document doc;
+                rapidjson::ParseResult ok = doc.Parse(file_content.c_str());
+                if (!ok) {
+                    return { E_DEFAULT, std::string("json parse error: ") +
+                        rapidjson::GetParseError_En(ok.Code()) + "(" + std::to_string(ok.Offset()) + ")" };
+                }
+
+                //todo: 检查资源够不够
+
+            } else {
+                //todo: 下载xml文件，并检查资源够不够
+
+            }
         }
 
         std::shared_ptr<TaskInfo> taskinfo = std::make_shared<TaskInfo>();
         taskinfo->__set_task_id(task_id);
-        taskinfo->__set_image_name(image);
+        taskinfo->__set_image_name(image_name);
         taskinfo->__set_login_password(login_password);
         taskinfo->__set_ssh_port(ssh_port);
+        taskinfo->__set_status(TS_Creating);
         taskinfo->__set_operation(T_OP_Create);
         int64_t now = time(nullptr);
         taskinfo->__set_create_time(now);
         taskinfo->__set_last_start_time(now);
-        taskinfo->__set_last_stop_time(-1);
+        taskinfo->hardware_resource.__set_gpu_count(atoi(gpu_count.c_str()));
+        taskinfo->hardware_resource.__set_cpu_cores(atoi(cpu_cores.c_str()));
+        taskinfo->hardware_resource.__set_mem_rate(atof(mem_rate.c_str()));
+        taskinfo->__set_vm_xml(vm_xml);
+        taskinfo->__set_vm_xml_url(vm_xml_url);
 
         m_tasks[task_id] = taskinfo;
         m_process_tasks.push_back(taskinfo);
         m_task_db.write_task(taskinfo);
 
-        return E_SUCCESS;
+        return { E_SUCCESS, "" };
 	}
 
-    int32_t TaskScheduler::StartTask(const std::string& task_id) {
+    FResult TaskScheduler::StartTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
-            LOG_ERROR << "start failed: task_id not exist " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task_id not exist" };
         }
 
         auto taskinfo = it->second;
+        if (taskinfo->operation != T_OP_None) {
+            return { E_DEFAULT, "task is busy, please try again later" };
+        }
 
         EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
         if (vm_status == VS_SHUT_OFF) {
+            taskinfo->__set_status(TS_Starting);
             taskinfo->__set_operation(T_OP_Start);
             taskinfo->__set_last_start_time(time(nullptr));
             m_process_tasks.push_back(taskinfo);
             m_task_db.write_task(taskinfo);
-            return E_SUCCESS;
+            return { E_SUCCESS, "" };
         }
         else {
-            LOG_ERROR << "start failed: task already start " << task_id << ", " << vm_status;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task is starting..."};
         }
     }
 
-    int32_t TaskScheduler::StopTask(const std::string& task_id) {
+    FResult TaskScheduler::StopTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
-            LOG_ERROR << "stop failed: task_id not exist " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task_id not exist" };
         }
 
         auto taskinfo = it->second;
+        if (taskinfo->operation != T_OP_None) {
+            return { E_DEFAULT, "task is busy, please try again later" };
+        }
 
         EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
         if (vm_status == VS_RUNNING) {
+            taskinfo->__set_status(TS_Stopping);
             taskinfo->__set_operation(T_OP_Stop);
             taskinfo->__set_last_stop_time(time(nullptr));
             m_process_tasks.push_back(taskinfo);
             m_task_db.write_task(taskinfo);
-            return E_SUCCESS;
+            return { E_SUCCESS, "" };
         }
         else {
-            LOG_ERROR << "stop failed: task not running " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task is not running" };
         }
 	}
 
-    int32_t TaskScheduler::RestartTask(const std::string& task_id) {
+    FResult TaskScheduler::RestartTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
-            LOG_ERROR << "restart failed: task_id not exist " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task_id not exist" };
         }
 
         auto taskinfo = it->second;
-        EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+        if (taskinfo->operation != T_OP_None) {
+            return { E_DEFAULT, "task is busy, please try again later" };
+        }
 
+        EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
         if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+            taskinfo->__set_status(TS_Restarting);
             taskinfo->__set_operation(T_OP_ReStart);
             taskinfo->__set_last_start_time(time(nullptr));
             m_process_tasks.push_back(taskinfo);
             m_task_db.write_task(taskinfo);
-            return E_SUCCESS;
+            return { E_SUCCESS, "" };
         }
         else {
-            LOG_ERROR << "restart failed: task already start " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task is starting..." };
         }
     }
 
-    int32_t TaskScheduler::ResetTask(const std::string& task_id) {
+    FResult TaskScheduler::ResetTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
-            LOG_ERROR << "stop failed: task_id not exist " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task_id not exist" };
         }
 
         auto taskinfo = it->second;
+        if (taskinfo->operation != T_OP_None) {
+            return { E_DEFAULT, "task is busy, please try again later" };
+        }
 
         EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
         if (vm_status == VS_RUNNING) {
+            taskinfo->__set_status(TS_Resetting);
             taskinfo->__set_operation(T_OP_Reset);
             taskinfo->__set_last_start_time(time(nullptr));
             m_process_tasks.push_back(taskinfo);
             m_task_db.write_task(taskinfo);
-            return E_SUCCESS;
+            return { E_SUCCESS, "" };
         }
         else {
-            LOG_ERROR << "reset failed: task not running " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task is not running" };
         }
     }
 
-    int32_t TaskScheduler::DeleteTask(const std::string& task_id) {
+    FResult TaskScheduler::DeleteTask(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
-            LOG_ERROR << "stop failed: task_id not exist " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "task_id not exist" };
         }
 
         auto taskinfo = it->second;
+        if (taskinfo->operation != T_OP_None) {
+            return { E_DEFAULT, "task is busy, please try again later" };
+        }
 
         EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
         if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
-            taskinfo->__set_operation(T_OP_Destroy);
+            taskinfo->__set_status(TS_Deleting);
+            taskinfo->__set_operation(T_OP_Delete);
             taskinfo->__set_last_stop_time(time(nullptr));
             m_process_tasks.push_back(taskinfo);
             m_task_db.write_task(taskinfo);
-            return E_SUCCESS;
+            return { E_SUCCESS, "" };
         }
         else {
-            LOG_ERROR << "stop failed: task not running " << task_id;
-            return E_DEFAULT;
+            return { E_DEFAULT, "please try again after a minute" };
         }
     }
 
@@ -252,8 +315,13 @@ namespace dbc {
         }
 	}
 
-	EVmStatus TaskScheduler::GetTaskStatus(const std::string& task_id) {
-	    return m_vm_client.GetDomainStatus(task_id);
+    ETaskStatus TaskScheduler::GetTaskStatus(const std::string& task_id) {
+        auto it = m_tasks.find(task_id);
+        if (it == m_tasks.end()) {
+            return TS_None;
+        } else {
+            return (ETaskStatus) it->second->status;
+        }
 	}
 
     bool SetVmPassword(const std::string& vm_name, const std::string& username, const std::string& pwd) {
@@ -310,18 +378,31 @@ namespace dbc {
                         count++;
                         sleep(3);
                     }
+
+                    taskinfo->__set_status(TS_Running);
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_INFO << "create task " << taskinfo->task_id << " successful";
                 } else {
                     LOG_ERROR << "create task " << taskinfo->task_id << " failed";
                 }
             } else if (taskinfo->operation == T_OP_Start) {
                 if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
+                    taskinfo->__set_status(TS_Running);
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_INFO << "start task " << taskinfo->task_id << " successful";
                 } else {
                     LOG_ERROR << "start task " << taskinfo->task_id << " failed";
                 }
             } else if (taskinfo->operation == T_OP_Stop) {
                 if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
+                    taskinfo->__set_status(TS_None);
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_INFO << "stop task " << taskinfo->task_id << " successful";
                 } else {
                     LOG_ERROR << "stop task " << taskinfo->task_id << " failed";
@@ -330,37 +411,48 @@ namespace dbc {
                 EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
                 if (vm_status == VS_SHUT_OFF) {
                     if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
+                        taskinfo->__set_status(TS_Running);
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
                         LOG_INFO << "restart task " << taskinfo->task_id << " successful";
                     } else {
                         LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
                     }
                 } else if (vm_status == VS_RUNNING) {
                     if (E_SUCCESS == m_vm_client.RebootDomain(taskinfo->task_id)) {
+                        taskinfo->__set_status(TS_Running);
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
                         LOG_INFO << "restart task " << taskinfo->task_id << " successful";
                     } else {
                         LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
                     }
                 }
             } else if (taskinfo->operation == T_OP_Reset) {
-                EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
-                if (vm_status == VS_RUNNING) {
-                    if (E_SUCCESS == m_vm_client.ResetDomain(taskinfo->task_id)) {
-                        LOG_INFO << "reset task " << taskinfo->task_id << " successful";
-                    } else {
-                        LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
-                    }
+                if (E_SUCCESS == m_vm_client.ResetDomain(taskinfo->task_id)) {
+                    taskinfo->__set_status(TS_Running);
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
+                    LOG_INFO << "reset task " << taskinfo->task_id << " successful";
+                } else {
+                    LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
                 }
-            } else if (taskinfo->operation == T_OP_Destroy) {
+            } else if (taskinfo->operation == T_OP_Delete) {
                 EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
                 if (vm_status == VS_SHUT_OFF) {
                     if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
                         sleep(1);
                         delete_image_file(taskinfo->image_name, taskinfo->task_id);
-                        m_task_db.delete_task(taskinfo->task_id);
+
                         m_tasks.erase(taskinfo->task_id);
-                        LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
+                        m_task_db.delete_task(taskinfo->task_id);
+
+                        LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                     } else {
-                        LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
+                        LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                     }
                 } else if (vm_status == VS_RUNNING) {
                     if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
@@ -368,14 +460,16 @@ namespace dbc {
                         if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
                             sleep(1);
                             delete_image_file(taskinfo->image_name, taskinfo->task_id);
-                            m_task_db.delete_task(taskinfo->task_id);
+
                             m_tasks.erase(taskinfo->task_id);
-                            LOG_INFO << "destroy task " << taskinfo->task_id << " successful";
+                            m_task_db.delete_task(taskinfo->task_id);
+
+                            LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                         } else {
-                            LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
+                            LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                         }
                     } else {
-                        LOG_ERROR << "destroy task " << taskinfo->task_id << " failed";
+                        LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                     }
                 }
             }

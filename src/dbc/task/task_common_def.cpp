@@ -5,17 +5,32 @@ namespace dbc {
     using namespace boost::xpressive;
 
     std::string task_status_string(int32_t status) {
-        std::string status_string = "unknown status";
+        std::string status_string = "none";
 
         switch (status) {
-            case EVmStatus::VS_SHUT_OFF:
-                status_string = "shut_off";
+            case TS_None:
+                status_string = "none";
                 break;
-            case EVmStatus::VS_RUNNING:
+            case TS_Creating:
+                status_string = "creating";
+                break;
+            case TS_Running:
                 status_string = "running";
                 break;
-            case EVmStatus::VS_PAUSED:
-                status_string = "paused";
+            case TS_Starting:
+                status_string = "starting";
+                break;
+            case TS_Stopping:
+                status_string = "stopping";
+                break;
+            case TS_Restarting:
+                status_string = "restarting";
+                break;
+            case TS_Resetting:
+                status_string = "resetting";
+                break;
+            case TS_Deleting:
+                status_string = "deleting";
                 break;
             default:
                 break;

@@ -185,7 +185,16 @@ namespace dbc {
         }
 
         data.AddMember("task_id", STRING_REF(resp->task_id), allocator);
+        data.AddMember("user_name", STRING_REF(resp->user_name), allocator);
         data.AddMember("login_password", STRING_REF(resp->login_password), allocator);
+        data.AddMember("ip", STRING_REF(resp->ip), allocator);
+        data.AddMember("ssh_port", STRING_REF(resp->ssh_port), allocator);
+        data.AddMember("create_time", STRING_REF(resp->create_time), allocator);
+        data.AddMember("system_storage", STRING_REF(resp->system_storage), allocator);
+        data.AddMember("data_storage", STRING_REF(resp->data_storage), allocator);
+        data.AddMember("cpu_cores", STRING_REF(resp->cpu_cores), allocator);
+        data.AddMember("gpu_count", STRING_REF(resp->gpu_count), allocator);
+        data.AddMember("mem_size", STRING_REF(resp->mem_size), allocator);
 
         httpReq->reply_comm_rest_succ(data);
 

@@ -11,6 +11,13 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
+#include <iostream>
+#include <tuple>
+#include <string>
+#include <functional>
+
+typedef std::tuple<int32_t, std::string> FResult;
+
 #define E_SUCCESS                                            0                   //success
 #define E_EXIT_FAILURE                                      -1                  //exit because of failure
 #define E_EXIT_PARSE_COMMAND_LINE                           -2                  //exit because of failure

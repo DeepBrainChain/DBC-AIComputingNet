@@ -222,7 +222,16 @@ namespace dbc {
         cmd_rsp_msg->result = rsp_content->body.result;
         cmd_rsp_msg->result_info = rsp_content->body.result_msg;
         cmd_rsp_msg->task_id = rsp_content->body.task_id;
+        cmd_rsp_msg->user_name = rsp_content->body.user_name;
         cmd_rsp_msg->login_password = rsp_content->body.login_password;
+        cmd_rsp_msg->ip = rsp_content->body.ip;
+        cmd_rsp_msg->ssh_port = rsp_content->body.ssh_port;
+        cmd_rsp_msg->create_time = rsp_content->body.create_time;
+        cmd_rsp_msg->system_storage = rsp_content->body.system_storage;
+        cmd_rsp_msg->data_storage = rsp_content->body.data_storage;
+        cmd_rsp_msg->cpu_cores = rsp_content->body.cpu_cores;
+        cmd_rsp_msg->gpu_count = rsp_content->body.gpu_count;
+        cmd_rsp_msg->mem_size = rsp_content->body.mem_size;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp_msg);
 
@@ -1251,8 +1260,8 @@ namespace dbc {
         path.push_back(CONF_MANAGER->get_node_id());
         req_content->header.__set_path(path);
         std::map<std::string, std::string> exten_info;
-        std::string sign_message = req_content->body.task_id + req_content->header.nonce +
-                req_content->header.session_id + req_content->body.additional;
+        std::string sign_message = cmd_req->task_id + req_content->header.nonce +
+                req_content->header.session_id + cmd_req->additional;
         std::string sign = dbc::sign(sign_message, CONF_MANAGER->get_node_private_key());
         exten_info["sign"] = sign;
         exten_info["sign_algo"] = ECDSA;

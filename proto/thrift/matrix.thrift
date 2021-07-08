@@ -83,7 +83,16 @@ struct node_create_task_rsp_body {
   2: required string result_msg,
 
   3: required string task_id,
-  4: required string login_password
+  4: required string user_name,
+  5: required string login_password,
+  6: required string ip,
+  7: required string ssh_port,
+  8: required string create_time,
+  9: required string system_storage,
+  10: required string data_storage,
+  11: required string cpu_cores,
+  12: required string gpu_count,
+  13: required string mem_size
 }
 
 struct node_create_task_rsp {

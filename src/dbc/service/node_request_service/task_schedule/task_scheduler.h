@@ -34,19 +34,19 @@ namespace dbc {
 
         virtual ~TaskScheduler();
 
-        int32_t Init();
+        FResult Init();
 
-        int32_t CreateTask(const std::string& task_id, const std::string& login_password, const std::string& additional);
+        FResult CreateTask(const std::string& task_id, const std::string& login_password, const std::string& additional);
 
-        int32_t StartTask(const std::string& task_id);
+        FResult StartTask(const std::string& task_id);
 
-        int32_t StopTask(const std::string& task_id);
+        FResult StopTask(const std::string& task_id);
 
-        int32_t RestartTask(const std::string& task_id);
+        FResult RestartTask(const std::string& task_id);
 
-        int32_t ResetTask(const std::string& task_id);
+        FResult ResetTask(const std::string& task_id);
 
-        int32_t DeleteTask(const std::string& task_id);
+        FResult DeleteTask(const std::string& task_id);
 
         std::shared_ptr<TaskInfo> FindTask(const std::string& task_id);
 
@@ -54,21 +54,19 @@ namespace dbc {
 
         void ListAllTask(std::vector<std::shared_ptr<TaskInfo>>& vec);
 
-        EVmStatus GetTaskStatus(const std::string& task_id);
+        ETaskStatus GetTaskStatus(const std::string& task_id);
 
         void ProcessTask();
 
         void PruneTask();
 
     protected:
-        int32_t init_db();
+        FResult init_db();
 
 	protected:
 		std::map<std::string, std::shared_ptr<TaskInfo> > m_tasks;
         std::list<std::shared_ptr<TaskInfo> > m_process_tasks;
-
         TaskDB m_task_db;
-
         VmClient m_vm_client;
 
     };

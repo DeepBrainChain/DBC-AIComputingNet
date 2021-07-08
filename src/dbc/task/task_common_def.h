@@ -30,25 +30,37 @@
 namespace dbc
 {
     enum ETaskStatus {
-        T_OP_None,
-        T_OP_Create, //创建中
-        T_OP_Start, //启动中
-        T_OP_Stop, //停止中
-        T_OP_ReStart, //重启中
-        T_OP_Reset,
-        T_OP_Destroy,
-        T_OP_PullingImage //正在拉取景象
+        TS_None,
+        TS_Creating,    //正在创建
+        TS_Running,     //正在运行中
+        TS_Starting,    //正在启动
+        TS_Stopping,    //正在停止
+        TS_Restarting,  //正在重启
+        TS_Resetting,   //正在reset重启
+        TS_Deleting,    //正在删除
+        TS_PullingImageFile    //正在下载镜像文件
     };
 
-    enum ETaskLogDirection {
-        LD_Head,
-        LD_Tail
+    enum ETaskOp {
+        T_OP_None,
+        T_OP_Create,    //创建
+        T_OP_Start,     //启动
+        T_OP_Stop,      //停止
+        T_OP_ReStart,   //重启
+        T_OP_Reset,     //reset重启
+        T_OP_Delete,   //删除
+        T_OP_PullImageFile   //下载镜像文件
     };
 
     enum EVmStatus {
         VS_SHUT_OFF,
         VS_PAUSED,
         VS_RUNNING
+    };
+
+    enum ETaskLogDirection {
+        LD_Head,
+        LD_Tail
     };
 
     std::string task_status_string(int32_t status);

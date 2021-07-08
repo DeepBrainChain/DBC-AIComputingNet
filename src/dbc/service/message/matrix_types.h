@@ -645,14 +645,23 @@ namespace matrix { namespace service_core {
 
             node_create_task_rsp_body(const node_create_task_rsp_body&);
             node_create_task_rsp_body& operator=(const node_create_task_rsp_body&);
-            node_create_task_rsp_body() : result(0), result_msg(), task_id(), login_password() {
+            node_create_task_rsp_body() : result(0), result_msg(), task_id(), user_name(), login_password(), ip(), ssh_port(), create_time(), system_storage(), data_storage(), cpu_cores(), gpu_count(), mem_size() {
             }
 
             virtual ~node_create_task_rsp_body() throw();
             int32_t result;
             std::string result_msg;
             std::string task_id;
+            std::string user_name;
             std::string login_password;
+            std::string ip;
+            std::string ssh_port;
+            std::string create_time;
+            std::string system_storage;
+            std::string data_storage;
+            std::string cpu_cores;
+            std::string gpu_count;
+            std::string mem_size;
 
             void __set_result(const int32_t val);
 
@@ -660,7 +669,25 @@ namespace matrix { namespace service_core {
 
             void __set_task_id(const std::string& val);
 
+            void __set_user_name(const std::string& val);
+
             void __set_login_password(const std::string& val);
+
+            void __set_ip(const std::string& val);
+
+            void __set_ssh_port(const std::string& val);
+
+            void __set_create_time(const std::string& val);
+
+            void __set_system_storage(const std::string& val);
+
+            void __set_data_storage(const std::string& val);
+
+            void __set_cpu_cores(const std::string& val);
+
+            void __set_gpu_count(const std::string& val);
+
+            void __set_mem_size(const std::string& val);
 
             bool operator == (const node_create_task_rsp_body & rhs) const
             {
@@ -670,7 +697,25 @@ namespace matrix { namespace service_core {
                     return false;
                 if (!(task_id == rhs.task_id))
                     return false;
+                if (!(user_name == rhs.user_name))
+                    return false;
                 if (!(login_password == rhs.login_password))
+                    return false;
+                if (!(ip == rhs.ip))
+                    return false;
+                if (!(ssh_port == rhs.ssh_port))
+                    return false;
+                if (!(create_time == rhs.create_time))
+                    return false;
+                if (!(system_storage == rhs.system_storage))
+                    return false;
+                if (!(data_storage == rhs.data_storage))
+                    return false;
+                if (!(cpu_cores == rhs.cpu_cores))
+                    return false;
+                if (!(gpu_count == rhs.gpu_count))
+                    return false;
+                if (!(mem_size == rhs.mem_size))
                     return false;
                 return true;
             }

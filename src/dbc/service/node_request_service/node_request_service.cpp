@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <boost/algorithm/string/join.hpp>
 #include "message_id.h"
+#include "comm.h"
+#include "json_util.h"
 
 using namespace matrix::core;
 using namespace matrix::service_core;
@@ -122,7 +124,10 @@ namespace dbc {
 	}
 
 	int32_t node_request_service::service_init(bpo::variables_map& options) {
-		if (E_SUCCESS != m_task_scheduler.Init()) {
+	    auto fresult = m_task_scheduler.Init();
+	    int32_t ret = std::get<0>(fresult);
+
+		if (ret != E_SUCCESS) {
 			return E_DEFAULT;
 		}
 		else {
@@ -549,7 +554,9 @@ namespace dbc {
 		// 创建虚拟机
 		std::string task_id = dbc::create_task_id();
 		std::string login_password = generate_pwd();
-		m_task_scheduler.CreateTask(task_id, login_password, req->body.additional);
+		auto fresult = m_task_scheduler.CreateTask(task_id, login_password, req->body.additional);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
 
         std::shared_ptr<matrix::service_core::node_create_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_create_task_rsp>();
         // header
@@ -568,10 +575,30 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("create task successful");
+        auto taskinfo = m_task_scheduler.FindTask(task_id);
+
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
         rsp_content->body.__set_task_id(task_id);
+        rsp_content->body.__set_user_name("ubuntu");
         rsp_content->body.__set_login_password(login_password);
+        std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
+        public_ip = string_util::rtrim(public_ip, '\n');
+        rsp_content->body.__set_ip(public_ip);
+        rsp_content->body.__set_ssh_port(taskinfo->ssh_port);
+        struct tm _tm;
+        time_t tt = taskinfo->create_time;
+        localtime_r(&tt, &_tm);
+        char buf[128] = {0};
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%Y年%m月%d日 %H时%M分%S秒", &_tm);
+        rsp_content->body.__set_create_time(buf);
+        //todo: 填充系统信息
+        rsp_content->body.__set_system_storage("350G");
+        rsp_content->body.__set_data_storage("2T");
+        rsp_content->body.__set_cpu_cores(std::to_string(taskinfo->hardware_resource.cpu_cores));
+        rsp_content->body.__set_gpu_count(std::to_string(taskinfo->hardware_resource.gpu_count));
+        rsp_content->body.__set_mem_size(std::to_string(taskinfo->hardware_resource.mem_rate));
 
         //rsp msg
         std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
@@ -585,7 +612,9 @@ namespace dbc {
 	    std::string task_id = req->body.task_id;
 	    if (!dbc::check_id(task_id)) return E_DEFAULT;
 
-	    m_task_scheduler.StartTask(task_id);
+	    auto fresult = m_task_scheduler.StartTask(task_id);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
 
         std::shared_ptr<matrix::service_core::node_start_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_start_task_rsp>();
         // header
@@ -604,8 +633,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("start task successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
 
         //rsp msg
         std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -619,7 +648,9 @@ namespace dbc {
         std::string task_id = req->body.task_id;
         if (!dbc::check_id(task_id)) return E_DEFAULT;
 
-        m_task_scheduler.StopTask(task_id);
+        auto fresult = m_task_scheduler.StopTask(task_id);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
 
         std::shared_ptr<matrix::service_core::node_stop_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_stop_task_rsp>();
         // header
@@ -638,8 +669,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("stop task successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
 
         //rsp msg
         std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -653,7 +684,9 @@ namespace dbc {
         std::string task_id = req->body.task_id;
         if (!dbc::check_id(task_id)) return E_DEFAULT;
 
-        m_task_scheduler.RestartTask(task_id);
+        auto fresult = m_task_scheduler.RestartTask(task_id);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
 
         std::shared_ptr<matrix::service_core::node_restart_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_restart_task_rsp>();
         // header
@@ -672,8 +705,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("restart task successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
 
         //rsp msg
         std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -687,7 +720,9 @@ namespace dbc {
         std::string task_id = req->body.task_id;
         if (!dbc::check_id(task_id)) return E_DEFAULT;
 
-        m_task_scheduler.ResetTask(task_id);
+        auto fresult = m_task_scheduler.ResetTask(task_id);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
 
         std::shared_ptr<matrix::service_core::node_reset_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_reset_task_rsp>();
         // header
@@ -706,8 +741,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("reset task successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
 
         //rsp msg
         std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -721,7 +756,9 @@ namespace dbc {
         std::string task_id = req->body.task_id;
         if (!dbc::check_id(task_id)) return E_DEFAULT;
 
-        m_task_scheduler.DeleteTask(task_id);
+        auto fresult = m_task_scheduler.DeleteTask(task_id);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
 
         std::shared_ptr<matrix::service_core::node_destroy_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_destroy_task_rsp>();
         // header
@@ -740,8 +777,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("destroy task successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
 
         //rsp msg
         std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
