@@ -174,7 +174,6 @@ namespace dbc {
 			std::dynamic_pointer_cast<matrix::service_core::node_create_task_req>(msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
 
-		//防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
 		if (!check_nonce(req->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
@@ -209,7 +208,6 @@ namespace dbc {
 			std::dynamic_pointer_cast<matrix::service_core::node_start_task_req>(msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
 
-		//防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
 		if (!check_nonce(req->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
@@ -248,7 +246,6 @@ namespace dbc {
 			msg->get_content());
 		if (req == nullptr) return E_DEFAULT;
 
-		//防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
 		if (!check_nonce(req->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
@@ -287,7 +284,6 @@ namespace dbc {
                 std::dynamic_pointer_cast<matrix::service_core::node_restart_task_req>(msg->get_content());
         if (req == nullptr) return E_DEFAULT;
 
-        //防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
         if (!check_nonce(req->header.nonce)) {
             LOG_ERROR << "ai power provider service nonce error ";
             return E_DEFAULT;
@@ -326,7 +322,6 @@ namespace dbc {
                 msg->get_content());
         if (req == nullptr) return E_DEFAULT;
 
-        //防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
         if (!check_nonce(req->header.nonce)) {
             LOG_ERROR << "ai power provider service nonce error ";
             return E_DEFAULT;
@@ -365,7 +360,6 @@ namespace dbc {
                 msg->get_content());
         if (req == nullptr) return E_DEFAULT;
 
-        //防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
         if (!check_nonce(req->header.nonce)) {
             LOG_ERROR << "ai power provider service nonce error ";
             return E_DEFAULT;
@@ -403,7 +397,6 @@ namespace dbc {
 		std::shared_ptr<node_task_logs_req> req_content = std::dynamic_pointer_cast<node_task_logs_req>(msg->get_content());
 		if (req_content == nullptr) return E_DEFAULT;
 
-		//防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
 		if (!check_nonce(req_content->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
@@ -419,7 +412,7 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 
-		const std::string& task_id = req_content->body.task_id;
+		std::string task_id = req_content->body.task_id;
 
 		if (GET_LOG_HEAD != req_content->body.head_or_tail && GET_LOG_TAIL != req_content->body.head_or_tail) {
 			LOG_ERROR << "ai power provider service on logs req log direction error: " << task_id;
@@ -589,9 +582,9 @@ namespace dbc {
         struct tm _tm;
         time_t tt = taskinfo->create_time;
         localtime_r(&tt, &_tm);
-        char buf[128] = {0};
+        char buf[256] = {0};
         memset(buf, 0, sizeof(char) * 256);
-        strftime(buf, sizeof(char) * 256, "%Y年%m月%d日 %H时%M分%S秒", &_tm);
+        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
         rsp_content->body.__set_create_time(buf);
         //todo: 填充系统信息
         rsp_content->body.__set_system_storage("350G");

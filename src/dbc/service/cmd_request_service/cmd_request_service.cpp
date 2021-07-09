@@ -1062,7 +1062,6 @@ namespace dbc {
     // task logs
     std::shared_ptr<dbc::network::message>
     cmd_request_service::create_node_task_logs_req_msg(const std::shared_ptr<::cmd_task_logs_req> &cmd_req) {
-        // check
         if (cmd_req->task_id.empty()) {
             LOG_ERROR << "restart failed: task_id is empty!";
             return nullptr;
@@ -1084,6 +1083,7 @@ namespace dbc {
         }
 
         auto req_content = std::make_shared<matrix::service_core::node_task_logs_req>();
+        //header
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         req_content->header.__set_msg_name(NODE_TASK_LOGS_REQ);
         req_content->header.__set_nonce(dbc::create_nonce());
@@ -1091,27 +1091,22 @@ namespace dbc {
         std::vector<std::string> path;
         path.push_back(CONF_MANAGER->get_node_id());
         req_content->header.__set_path(path);
-        req_content->body.__set_task_id(cmd_req->task_id);
-        req_content->body.__set_head_or_tail(cmd_req->head_or_tail);
-        req_content->body.__set_number_of_lines(cmd_req->number_of_lines);
-        req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
-        req_content->body.__set_additional(cmd_req->additional);
-
-        //创建签名
         std::map<std::string, std::string> exten_info;
-        exten_info["origin_id"] = CONF_MANAGER->get_node_id();
-        for (auto &peer_node : req_content->body.peer_nodes_list) {
-            exten_info["dest_id"] += peer_node + " ";
-        }
-
-        std::string sig_msg = req_content->body.task_id + req_content->header.nonce + req_content->header.session_id +
-                req_content->body.additional;
+        std::string sig_msg = cmd_req->task_id + req_content->header.nonce + req_content->header.session_id
+                + cmd_req->additional;
         std::string signature = dbc::sign(sig_msg, CONF_MANAGER->get_node_private_key());
         exten_info["sign"] = signature;
         exten_info["sign_algo"] = ECDSA;
         time_t cur = std::time(nullptr);
         exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+        exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         req_content->header.__set_exten_info(exten_info);
+        //body
+        req_content->body.__set_task_id(cmd_req->task_id);
+        req_content->body.__set_head_or_tail(cmd_req->head_or_tail);
+        req_content->body.__set_number_of_lines(cmd_req->number_of_lines);
+        req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
+        req_content->body.__set_additional(cmd_req->additional);
 
         std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
         req_msg->set_name(NODE_TASK_LOGS_REQ);
@@ -1149,23 +1144,24 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        std::shared_ptr<::cmd_task_logs_rsp> cmd_rsp_msg = std::make_shared<::cmd_task_logs_rsp>();
-        cmd_rsp_msg->result = E_SUCCESS;
-        cmd_rsp_msg->result_info = "success";
-        cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
-
         // 创建 node_ 请求
         auto task_req_msg = create_node_task_logs_req_msg(cmd_req_msg);
         if (nullptr == task_req_msg) {
+            std::shared_ptr<::cmd_task_logs_rsp> cmd_rsp_msg = std::make_shared<::cmd_task_logs_rsp>();
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
             cmd_rsp_msg->result = E_DEFAULT;
             cmd_rsp_msg->result_info = "create node request failed!";
+
             TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_rsp_msg);
             return E_DEFAULT;
         }
 
         if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(task_req_msg)) {
+            std::shared_ptr<::cmd_task_logs_rsp> cmd_rsp_msg = std::make_shared<::cmd_task_logs_rsp>();
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
             cmd_rsp_msg->result = E_DEFAULT;
             cmd_rsp_msg->result_info = "dbc node don't connect to network, pls check ";
+
             TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_rsp_msg);
             return E_DEFAULT;
         }

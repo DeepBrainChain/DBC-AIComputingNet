@@ -187,7 +187,7 @@ namespace dbc {
             return { E_SUCCESS, "" };
         }
         else {
-            return { E_DEFAULT, "task is starting..."};
+            return { E_DEFAULT, "task is already starting"};
         }
     }
 
