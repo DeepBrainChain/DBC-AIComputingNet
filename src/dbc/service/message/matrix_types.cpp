@@ -4866,7 +4866,7 @@ namespace matrix { namespace service_core {
             this->task_id = val;
         }
 
-        void task_info::__set_status(const int8_t val) {
+        void task_info::__set_status(const int32_t val) {
             this->status = val;
         }
 
@@ -4913,8 +4913,8 @@ namespace matrix { namespace service_core {
                         }
                         break;
                     case 2:
-                        if (ftype == ::apache::thrift::protocol::T_BYTE) {
-                            xfer += iprot->readByte(this->status);
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->status);
                             isset_status = true;
                         } else {
                             xfer += iprot->skip(ftype);
@@ -4955,8 +4955,8 @@ namespace matrix { namespace service_core {
             xfer += oprot->writeString(this->task_id);
             xfer += oprot->writeFieldEnd();
 
-            xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_BYTE, 2);
-            xfer += oprot->writeByte(this->status);
+            xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_I32, 2);
+            xfer += oprot->writeI32(this->status);
             xfer += oprot->writeFieldEnd();
 
             xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 3);

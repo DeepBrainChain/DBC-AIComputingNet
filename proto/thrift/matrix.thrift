@@ -242,7 +242,7 @@ struct node_list_task_req {
 // response
 struct task_info {
   1: required string task_id,
-  2: required i8 status,
+  2: required i32 status,
   3: required string login_password
 }
 

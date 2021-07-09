@@ -1917,12 +1917,12 @@ namespace matrix { namespace service_core {
 
             virtual ~task_info() throw();
             std::string task_id;
-            int8_t status;
+            int32_t status;
             std::string login_password;
 
             void __set_task_id(const std::string& val);
 
-            void __set_status(const int8_t val);
+            void __set_status(const int32_t val);
 
             void __set_login_password(const std::string& val);
 
