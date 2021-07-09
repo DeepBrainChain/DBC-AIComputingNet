@@ -834,7 +834,7 @@ namespace dbc {
 
 	int32_t node_request_service::task_list(const std::shared_ptr<matrix::service_core::node_list_task_req> &req) {
         std::string task_id = req->body.task_id;
-        if (!dbc::check_id(task_id)) return E_DEFAULT;
+        if (!task_id.empty() && !dbc::check_id(task_id)) return E_DEFAULT;
 
         std::vector<matrix::service_core::task_info> info_list;
         if (req->body.task_id.empty()) {

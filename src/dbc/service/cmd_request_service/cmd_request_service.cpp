@@ -1406,7 +1406,6 @@ namespace dbc {
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
 
-        this->remove_timer(session->get_timer_id());
         session->clear();
         this->remove_session(session_id);
         return E_SUCCESS;
