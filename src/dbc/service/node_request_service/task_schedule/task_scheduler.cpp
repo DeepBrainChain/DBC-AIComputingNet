@@ -300,12 +300,14 @@ namespace dbc {
         }
 	}
 
-	std::string TaskScheduler::GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t nlines) {
+	FResult TaskScheduler::GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t nlines, std::string& log_content) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {
-            return "";
+            log_content = "";
+            return { E_DEFAULT, "task_id not exist" };
         } else {
-            return m_vm_client.GetDomainLog(task_id, direction, nlines);
+            log_content = m_vm_client.GetDomainLog(task_id, direction, nlines);
+            return { E_SUCCESS, "" };
         }
 	}
 

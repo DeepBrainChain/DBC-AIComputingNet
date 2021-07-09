@@ -654,27 +654,26 @@ namespace dbc {
             return E_NULL_POINTER;
         }
 
-        std::shared_ptr<::cmd_restart_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_restart_task_rsp>();
-        cmd_rsp_msg->result = E_SUCCESS;
-        cmd_rsp_msg->result_info = "success";
-        cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
-
         auto task_req_msg = create_node_restart_task_req_msg(cmd_req_msg);
         if (nullptr == task_req_msg) {
+            std::shared_ptr<::cmd_restart_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_restart_task_rsp>();
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
             cmd_rsp_msg->result = E_DEFAULT;
             cmd_rsp_msg->result_info = "create node request failed!";
+
             TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
             return E_DEFAULT;
         }
 
         if (CONNECTION_MANAGER->broadcast_message(task_req_msg) != E_SUCCESS) {
+            std::shared_ptr<::cmd_restart_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_restart_task_rsp>();
+            cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
             cmd_rsp_msg->result = E_DEFAULT;
             cmd_rsp_msg->result_info = "submit error. pls check network";
+
             TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
             return E_DEFAULT;
         }
-
-        TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
 
         return E_SUCCESS;
     }

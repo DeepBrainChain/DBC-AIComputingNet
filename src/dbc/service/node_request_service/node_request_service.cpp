@@ -785,7 +785,12 @@ namespace dbc {
         std::string task_id = req->body.task_id;
         if (!dbc::check_id(task_id)) return E_DEFAULT;
 
-        std::string log_content = m_task_scheduler.GetTaskLog(req->body.task_id, (ETaskLogDirection) req->body.head_or_tail, req->body.number_of_lines);
+        std::string log_content;
+        auto fresult = m_task_scheduler.GetTaskLog(req->body.task_id, (ETaskLogDirection) req->body.head_or_tail,
+                                                   req->body.number_of_lines, log_content);
+        int32_t ret = std::get<0>(fresult);
+        std::string ret_msg = std::get<1>(fresult);
+
         if (GET_LOG_HEAD == req->body.head_or_tail) {
             log_content = log_content.substr(0, MAX_LOG_CONTENT_SIZE);
         }
@@ -813,8 +818,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
 		rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("get task logs successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
         rsp_content->body.__set_log_content(log_content);
 
         //rsp msg

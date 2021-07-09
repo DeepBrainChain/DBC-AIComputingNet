@@ -48,9 +48,9 @@ namespace dbc {
 
         FResult DeleteTask(const std::string& task_id);
 
-        std::shared_ptr<TaskInfo> FindTask(const std::string& task_id);
+        FResult GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t nlines, std::string& log_content);
 
-        std::string GetTaskLog(const std::string& task_id, ETaskLogDirection direction, int32_t nlines);
+        std::shared_ptr<TaskInfo> FindTask(const std::string& task_id);
 
         void ListAllTask(std::vector<std::shared_ptr<TaskInfo>>& vec);
 
