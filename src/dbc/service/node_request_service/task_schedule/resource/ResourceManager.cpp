@@ -48,29 +48,33 @@ int32_t ResourceManager::mem_buff_cache() {
     return atoi(mem_buff_cache.c_str());
 }
 
-int32_t ResourceManager::disk_size() {
-    std::string disk_size = run_shell("df -lh / | tail -1 | awk '{print $2}'");
+int32_t ResourceManager::disk_size(const std::string& path) {
+    std::string cmd = "df -l -k " + path + " | tail -1 | awk '{print $2}'";
+    std::string disk_size = run_shell(cmd.c_str());
     disk_size = string_util::rtrim(disk_size, '\n');
-    return atoi(disk_size.c_str());
+    return atoi(disk_size.c_str()) / 1024 / 1024;
 }
 
-int32_t ResourceManager::disk_used() {
-    std::string disk_used = run_shell("df -lh / | tail -1 | awk '{print $3}'");
+int32_t ResourceManager::disk_used(const std::string& path) {
+    std::string cmd = "df -l -k " + path + " | tail -1 | awk '{print $3}'";
+    std::string disk_used = run_shell(cmd.c_str());
     disk_used = string_util::rtrim(disk_used, '\n');
-    return atoi(disk_used.c_str());
+    return atoi(disk_used.c_str()) / 1024 / 1024;
 }
 
-int32_t ResourceManager::disk_free() {
-    std::string disk_free = run_shell("df -lh / | tail -1 | awk '{print $4}'");
+int32_t ResourceManager::disk_free(const std::string& path) {
+    std::string cmd = "df -l -k " + path + " | tail -1 | awk '{print $4}'";
+    std::string disk_free = run_shell(cmd.c_str());
     disk_free = string_util::rtrim(disk_free, '\n');
-    return atoi(disk_free.c_str());
+    return atoi(disk_free.c_str()) / 1024 / 1024;
 }
 
-std::string ResourceManager::disk_type() {
-    std::string disk = run_shell("df -lh / | tail -1 | awk '{print $1}' | awk -F\"/\" '{print $3}'");
+std::string ResourceManager::disk_type(const std::string& path) {
+    std::string cmd1 = "df -l -k " + path + " | tail -1 | awk '{print $1}' | awk -F\"/\" '{print $3}'";
+    std::string disk = run_shell(cmd1.c_str());
     disk = string_util::rtrim(disk, '\n');
-    std::string cmd = "lsblk -o name,rota | grep " + disk + " | awk '{if($2==\"1\")print \"HDD\"; else print \"SSD\"}'";
-    std::string disk_type = run_shell(cmd.c_str());
+    std::string cmd2 = "lsblk -o name,rota | grep " + disk + " | awk '{if($2==\"1\")print \"HDD\"; else print \"SSD\"}'";
+    std::string disk_type = run_shell(cmd2.c_str());
     disk_type = string_util::rtrim(disk_type, '\n');
     return disk_type;
 }

@@ -20,10 +20,10 @@ public:
     static int32_t mem_buff_cache();
 
     // disk (G)
-    static int32_t disk_size();
-    static int32_t disk_used();
-    static int32_t disk_free();
-    static std::string disk_type();
+    static int32_t disk_size(const std::string& path = "/data");
+    static int32_t disk_used(const std::string& path = "/data");
+    static int32_t disk_free(const std::string& path = "/data");
+    static std::string disk_type(const std::string& path = "/data");
 
 };
 
