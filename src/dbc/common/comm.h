@@ -39,4 +39,15 @@ static std::string run_shell(const char* cmd, const char* modes = "r") {
     }
 }
 
+static std::string read_info(const char* file, const char* modes = "r") {
+    FILE *fp = fopen(file, modes);
+    if(NULL == fp) return "";
+
+    char szBuf[1024] = {0};
+    fgets(szBuf, sizeof(szBuf) - 1, fp);
+    fclose(fp);
+
+    return std::string(szBuf);
+}
+
 #endif //DBC_COMM_H

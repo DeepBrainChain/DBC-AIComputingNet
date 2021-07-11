@@ -63,8 +63,10 @@ set(core_src_dir
         core/filter)
 
 foreach(sub_dir ${core_src_dir})
-    aux_source_directory(dbc/${sub_dir} dbc_src_files)
     include_directories(dbc/${sub_dir})
+endforeach()
+foreach(sub_dir ${core_src_dir})
+    aux_source_directory(dbc/${sub_dir} dbc_src_files)
 endforeach()
 
 # service
@@ -80,11 +82,14 @@ set(service_src_dir . common task
         service/node_request_service/task_schedule
         service/node_request_service/task_schedule/db
         service/node_request_service/task_schedule/vm
+        service/node_request_service/task_schedule/resource
         service/node_request_service/node_info)
 
 foreach(sub_dir ${service_src_dir})
-    aux_source_directory(dbc/${sub_dir} dbc_src_files)
     include_directories(dbc/${sub_dir})
+endforeach()
+foreach(sub_dir ${service_src_dir})
+    aux_source_directory(dbc/${sub_dir} dbc_src_files)
 endforeach()
 
 include_directories(.)

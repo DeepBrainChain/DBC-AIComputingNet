@@ -831,29 +831,36 @@ namespace dbc {
 	}
 
 	int32_t node_request_service::task_list(const std::shared_ptr<matrix::service_core::node_list_task_req> &req) {
-        std::string task_id = req->body.task_id;
-        if (!task_id.empty() && !dbc::check_id(task_id)) return E_DEFAULT;
+        int32_t ret = E_SUCCESS;
+        std::string ret_msg = "task list successful";
+
+	    std::string task_id = req->body.task_id;
+        if (!task_id.empty() && !dbc::check_id(task_id)) {
+            ret = E_DEFAULT;
+            ret_msg = "task_id not exist";
+        }
 
         std::vector<matrix::service_core::task_info> info_list;
-        if (req->body.task_id.empty()) {
-            std::vector<std::shared_ptr<TaskInfo>> task_list;
-            m_task_scheduler.ListAllTask(task_list);
-            for (auto &task : task_list) {
-                matrix::service_core::task_info tinfo;
-                tinfo.__set_task_id(task->task_id);
-                tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
-                tinfo.__set_login_password(task->login_password);
-                info_list.push_back(tinfo);
-            }
-        }
-        else {
-            auto task = m_task_scheduler.FindTask(req->body.task_id);
-            if (nullptr != task) {
-                matrix::service_core::task_info tinfo;
-                tinfo.__set_task_id(task->task_id);
-                tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
-                tinfo.__set_login_password(task->login_password);
-                info_list.push_back(tinfo);
+        if (ret == E_SUCCESS) {
+            if (req->body.task_id.empty()) {
+                std::vector<std::shared_ptr<TaskInfo>> task_list;
+                m_task_scheduler.ListAllTask(task_list);
+                for (auto &task : task_list) {
+                    matrix::service_core::task_info tinfo;
+                    tinfo.__set_task_id(task->task_id);
+                    tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
+                    tinfo.__set_login_password(task->login_password);
+                    info_list.push_back(tinfo);
+                }
+            } else {
+                auto task = m_task_scheduler.FindTask(req->body.task_id);
+                if (nullptr != task) {
+                    matrix::service_core::task_info tinfo;
+                    tinfo.__set_task_id(task->task_id);
+                    tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
+                    tinfo.__set_login_password(task->login_password);
+                    info_list.push_back(tinfo);
+                }
             }
         }
 
@@ -875,8 +882,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(E_SUCCESS);
-        rsp_content->body.__set_result_msg("list task successful");
+        rsp_content->body.__set_result(ret);
+        rsp_content->body.__set_result_msg(ret_msg);
         rsp_content->body.task_info_list.swap(info_list);
 
         //rsp msg
