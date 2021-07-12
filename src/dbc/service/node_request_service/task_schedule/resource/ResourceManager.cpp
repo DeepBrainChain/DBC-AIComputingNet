@@ -78,3 +78,9 @@ std::string ResourceManager::disk_type(const std::string& path) {
     disk_type = string_util::rtrim(disk_type, '\n');
     return disk_type;
 }
+
+int32_t ResourceManager::gpu_count() {
+    std::string cmd = "lspci -nnv | grep NVIDIA |grep VGA | wc -l";
+    std::string gpu = run_shell(cmd.c_str());
+    return atoi(gpu.c_str());
+}

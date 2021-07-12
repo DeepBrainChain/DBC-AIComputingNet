@@ -25,6 +25,9 @@ public:
     static int32_t disk_free(const std::string& path = "/data");
     static std::string disk_type(const std::string& path = "/data");
 
+    // gpu
+    static int32_t gpu_count();
+
 };
 
 typedef ResourceManager ResourceMgr;
