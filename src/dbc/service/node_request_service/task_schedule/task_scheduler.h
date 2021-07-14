@@ -54,6 +54,8 @@ namespace dbc {
 
         void ListAllTask(std::vector<std::shared_ptr<TaskInfo>>& vec);
 
+        int32_t GetRunningTaskSize();
+
         ETaskStatus GetTaskStatus(const std::string& task_id);
 
         void ProcessTask();

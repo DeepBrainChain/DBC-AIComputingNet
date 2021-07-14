@@ -97,15 +97,15 @@ public:
     std::string result_info;
 };
 
-// destroy
-class cmd_destroy_task_req : public dbc::network::msg_base {
+// delete
+class cmd_delete_task_req : public dbc::network::msg_base {
 public:
     std::string task_id;
     std::vector<std::string> peer_nodes_list;
     std::string additional;
 };
 
-class cmd_destroy_task_rsp : public dbc::network::msg_base {
+class cmd_delete_task_rsp : public dbc::network::msg_base {
 public:
     int32_t result;
     std::string result_info;
@@ -181,68 +181,18 @@ private:
 // mining_nodes
 class cmd_list_node_req : public dbc::network::msg_base {
 public:
-    std::string o_node_id;
-    std::string d_node_id;
-    std::vector<std::string> keys;
-    int32_t op;
-    std::string filter;
-    std::string sort;
-
-    //todo: support offset, it is always 0 now
-    int32_t num_lines;
-
-public:
-    cmd_list_node_req() :
-            op(OP_SHOW_UNKNOWN), sort("gpu"), num_lines(1000) {
-
-    }
-
-    void set_sort(std::string f) {
-
-        const char *fields[] = {"gpu", "name", "version", "state", "timestamp", "service", "startup_time"};
-
-        int n = sizeof(fields) / sizeof(char *);
-        bool found = false;
-        for (int i = 0; (i < n && !found); i++) {
-            if (f == std::string(fields[i])) {
-                found = true;
-            }
-        }
-
-        sort = found ? f : "gpu";
-    }
+    std::vector<std::string> peer_nodes_list;
+    std::string additional;
 };
 
 class cmd_list_node_rsp : public dbc::network::msg_base {
 public:
-    std::string o_node_id;
-    std::string d_node_id;
+    int32_t result;
+    std::string result_info;
     std::map<std::string, std::string> kvs;
     std::shared_ptr<std::map<std::string, node_service_info> > id_2_services;
 
-    int32_t op;
-    std::string err;
-
-    std::string filter;
-    std::string sort;
-
-
-public:
-
-    cmd_list_node_rsp();
-
-    void error(std::string err_);
-
     std::string to_string(std::vector<std::string> in);
-
-    void format_service_list();
-
-    void format_node_info();
-
-    void format_output();
-
-    std::string to_time_str(time_t t);
-
 };
 
 #endif //DBC_MESSAGE_H

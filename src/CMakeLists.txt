@@ -70,7 +70,7 @@ foreach(sub_dir ${core_src_dir})
 endforeach()
 
 # service
-set(service_src_dir . common task
+set(service_src_dir . common task node_info
         service
         service/message
         service/message/protocol_coder
@@ -82,8 +82,7 @@ set(service_src_dir . common task
         service/node_request_service/task_schedule
         service/node_request_service/task_schedule/db
         service/node_request_service/task_schedule/vm
-        service/node_request_service/task_schedule/resource
-        service/node_request_service/node_info)
+        service/node_request_service/task_schedule/resource)
 
 foreach(sub_dir ${service_src_dir})
     include_directories(dbc/${sub_dir})

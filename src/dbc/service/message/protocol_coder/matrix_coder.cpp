@@ -48,8 +48,8 @@ namespace matrix {
             BIND_DECODE_INVOKER(node_reset_task_req);
             BIND_DECODE_INVOKER(node_reset_task_rsp);
 
-            BIND_DECODE_INVOKER(node_destroy_task_req);
-            BIND_DECODE_INVOKER(node_destroy_task_rsp);
+            BIND_DECODE_INVOKER(node_delete_task_req);
+            BIND_DECODE_INVOKER(node_delete_task_rsp);
 
             BIND_DECODE_INVOKER(node_list_task_req);
             BIND_DECODE_INVOKER(node_list_task_rsp);
@@ -57,8 +57,8 @@ namespace matrix {
             BIND_DECODE_INVOKER(node_task_logs_req);
             BIND_DECODE_INVOKER(node_task_logs_rsp);
 
-            BIND_DECODE_INVOKER(show_req);
-            BIND_DECODE_INVOKER(show_resp);
+            BIND_DECODE_INVOKER(node_query_node_info_req);
+            BIND_DECODE_INVOKER(node_query_node_info_rsp);
 
             BIND_DECODE_INVOKER(service_broadcast_req);
         }
@@ -92,8 +92,8 @@ namespace matrix {
             BIND_ENCODE_INVOKER(node_reset_task_req);
             BIND_ENCODE_INVOKER(node_reset_task_rsp);
 
-            BIND_ENCODE_INVOKER(node_destroy_task_req);
-            BIND_ENCODE_INVOKER(node_destroy_task_rsp);
+            BIND_ENCODE_INVOKER(node_delete_task_req);
+            BIND_ENCODE_INVOKER(node_delete_task_rsp);
 
             BIND_ENCODE_INVOKER(node_list_task_req);
             BIND_ENCODE_INVOKER(node_list_task_rsp);
@@ -101,8 +101,8 @@ namespace matrix {
             BIND_ENCODE_INVOKER(node_task_logs_req);
             BIND_ENCODE_INVOKER(node_task_logs_rsp);
 
-            BIND_ENCODE_INVOKER(show_req);
-            BIND_ENCODE_INVOKER(show_resp);
+            BIND_ENCODE_INVOKER(node_query_node_info_req);
+            BIND_ENCODE_INVOKER(node_query_node_info_rsp);
 
             BIND_ENCODE_INVOKER(service_broadcast_req);
         }

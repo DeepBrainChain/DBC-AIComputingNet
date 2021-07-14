@@ -100,8 +100,8 @@ namespace dbc {
             }
 
             // /tasks/<task_id>/destroy
-            if (second_param == "destroy") {
-                return rest_destroy_task(httpReq, path);
+            if (second_param == "delete") {
+                return rest_delete_task(httpReq, path);
             }
 
             // /tasks/<task_id>/logs
@@ -491,8 +491,8 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    // destroy
-    std::shared_ptr<dbc::network::message> rest_destroy_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+    // delete
+    std::shared_ptr<dbc::network::message> rest_delete_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
         if (httpReq->get_request_method() != dbc::network::http_request::POST) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                         "Only support POST requests. POST /api/v1/tasks/<task_id>/stop")
@@ -510,7 +510,7 @@ namespace dbc {
 
         const std::string &task_id = path_list[0];
 
-        std::shared_ptr<cmd_destroy_task_req> cmd_req = std::make_shared<cmd_destroy_task_req>();
+        std::shared_ptr<cmd_delete_task_req> cmd_req = std::make_shared<cmd_delete_task_req>();
         cmd_req->task_id = task_id;
 
         // parse body
@@ -549,13 +549,13 @@ namespace dbc {
         }
 
         std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
-        msg->set_name(typeid(cmd_destroy_task_req).name());
+        msg->set_name(typeid(cmd_delete_task_req).name());
         msg->set_content(cmd_req);
         return msg;
     }
 
-    int32_t on_cmd_destroy_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-        INIT_RSP_CONTEXT(cmd_destroy_task_req, cmd_destroy_task_rsp)
+    int32_t on_cmd_delete_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
+        INIT_RSP_CONTEXT(cmd_delete_task_req, cmd_delete_task_rsp)
 
         if (resp->result != 0) {
             ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
@@ -850,296 +850,99 @@ namespace dbc {
 
     // mining_nodes/
     std::shared_ptr<dbc::network::message> rest_mining_nodes(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path) {
+        if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "Only support POST requests")
+            return nullptr;
+        }
+
         std::vector<std::string> path_list;
         rest_util::split_path(path, path_list);
 
-        if (path_list.size() > 2) {
+        if (path_list.size() > 1) {
             ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
                         "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}/{key}")
             return nullptr;
         }
 
-        std::string nodeid;
-        if (!path_list.empty()) {
-            nodeid = path_list[0];
+        // parse body
+        std::string body = httpReq->read_body();
+        if (body.empty()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid body. Use /api/v1/tasks")
+            return nullptr;
         }
 
-        std::shared_ptr<cmd_list_node_req> req = std::make_shared<cmd_list_node_req>();
-        req->op = OP_SHOW_UNKNOWN;
+        std::shared_ptr<cmd_list_node_req> cmd_req = std::make_shared<cmd_list_node_req>();
 
-        if (!nodeid.empty()) {
-            req->o_node_id = CONF_MANAGER->get_node_id();
-            req->d_node_id = nodeid;
-            req->op = OP_SHOW_NODE_INFO;
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(body.c_str());
+        if (!ok) {
+            std::stringstream ss;
+            ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+            LOG_ERROR << ss.str();
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str())
+            return nullptr;
+        }
 
-            std::string key;
-            if (path_list.size() >= 2) {
-                key = path_list[1];
+        if (!doc.IsObject()) {
+            ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid JSON")
+            return nullptr;
+        }
+
+        JSON_PARSE_OBJECT_TO_STRING(doc, "additional", cmd_req->additional)
+        if (doc.HasMember("peer_nodes_list")) {
+            if (doc["peer_nodes_list"].IsArray()) {
+                for (rapidjson::SizeType i = 0; i < doc["peer_nodes_list"].Size(); i++) {
+                    std::string node(doc["peer_nodes_list"][i].GetString());
+                    cmd_req->peer_nodes_list.push_back(node);
+
+                    // todo: 暂时只支持一次操作1个节点
+                    break;
+                }
             }
-
-            if (key.empty()) {
-                req->keys.emplace_back("all");
-            } else {
-                req->keys.push_back(key);
-            }
-        } else {
-            req->op = OP_SHOW_SERVICE_LIST;
         }
 
         std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
         msg->set_name(typeid(cmd_list_node_req).name());
-        msg->set_content(req);
+        msg->set_content(cmd_req);
         return msg;
     }
 
-    void reply_show_nodeinfo(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
+    void reply_node_info(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
                              rapidjson::Document::AllocatorType &allocator) {
         for (auto &kv: resp->kvs) {
-            if (kv.second.length() > 0 &&
-                (kv.second[0] == '{' || kv.second[0] == '[')) {
+            if (kv.second.length() > 0 && (kv.second[0] == '{' || kv.second[0] == '[')) {
                 rapidjson::Document doc;
-
                 if (!doc.Parse<0>(kv.second.c_str()).HasParseError()) {
                     rapidjson::Value v = rapidjson::Value(doc, allocator);
-
                     data.AddMember(STRING_DUP(kv.first), v, allocator);
                 }
             } else {
-                // legacy gpu state or  gpu usage
-                if (kv.first == std::string("image")) {
-                    rapidjson::Value images(rapidjson::kArrayType);
-                    std::vector<std::string> image_list;
-                    string_util::split(resp->kvs["image"], "\n", image_list);
-                    for (auto &img : image_list) {
-                        images.PushBack(STRING_DUP(img), allocator);
-                    }
-
-                    data.AddMember("images", images, allocator);
-                } else if (kv.first == std::string("gpu_usage")) {
-                    /*
-                    //   gpu_usage_str:
-                    //"gpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\n"
-                    //
-                    std::string gpu_usage_str = string_util::rtrim(resp->kvs["gpu_usage"], '\n');
-                    rapidjson::Value gpu_usage(rapidjson::kArrayType);
-                    std::vector<std::string> gpu_usage_list;
-                    string_util::split(gpu_usage_str, "\n", gpu_usage_list);
-
-                    if (gpu_usage_list.size() % 2 == 0) {
-                        for (auto i = 0; i < gpu_usage_list.size(); i += 2) {
-                            std::string gpu;
-                            rest_util::get_value_from_string(gpu_usage_list[i], "gpu", gpu);
-
-                            std::string mem;
-                            rest_util::get_value_from_string(gpu_usage_list[i + 1], "mem", mem);
-
-                            rapidjson::Value g(rapidjson::kObjectType);
-                            g.AddMember("gpu", STRING_DUP(gpu), allocator);
-                            g.AddMember("mem", STRING_DUP(mem), allocator);
-
-                            gpu_usage.PushBack(g, allocator);
-
-                        }
-                    }
-
-                    data.AddMember("gpu_usage", gpu_usage, allocator);
-                    */
-                } else if (kv.first == std::string("gpu")) {
-
-                } else {
-                    fill_json_filed_string(data, allocator, kv.first, kv.second);
-                }
+                fill_json_filed_string(data, allocator, kv.first, kv.second);
             }
         }
-
-#if 0
-
-        std::string cpu_info = resp->kvs["cpu"];
-        string_util::trim(cpu_info);
-        int pos = cpu_info.find_first_of(' ');
-        if (pos!=std::string::npos) {
-            std::string cpu_num_str = cpu_info.substr(0, pos);
-            string_util::trim(cpu_num_str);
-            if (!cpu_num_str.empty()) {
-                int cpu_num = atoi(cpu_num_str.c_str());
-                data.AddMember("cpu_num", cpu_num, allocator);
-            } else {
-                data.AddMember("cpu_num", -1, allocator);
-            }
-        } else {
-            data.AddMember("cpu_num", -1, allocator);
-        }
-
-        fill_json_filed_string(data, allocator, "cpu", cpu_info);
-        fill_json_filed_string(data, allocator, "cpu_usage", resp->kvs["cpu_usage"]);
-
-        fill_json_filed_string(data, allocator, "gpu", resp->kvs["gpu"]);
-        fill_json_filed_string(data, allocator, "gpu_driver", resp->kvs["gpu_driver"]);
-
-        fill_json_filed_string(data, allocator, "mem_usage", resp->kvs["mem_usage"]);
-        fill_json_filed_string(data, allocator, "startup_time", resp->kvs["startup_time"]);
-        fill_json_filed_string(data, allocator, "state", resp->kvs["state"]);
-        fill_json_filed_string(data, allocator, "version", resp->kvs["version"]);
-
-        //   gpu_usage_str:
-        //"gpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\ngpu: 0 %\nmem: 0 %\n"
-        //
-        std::string gpu_usage_str = string_util::rtrim(resp->kvs["gpu_usage"], '\n');
-        rapidjson::Value gpu_usage(rapidjson::kArrayType);
-        std::vector<std::string> gpu_usage_list;
-        string_util::split(gpu_usage_str, "\n", gpu_usage_list);
-
-        if (gpu_usage_list.size()%2==0) {
-            for (auto i = 0; i < gpu_usage_list.size(); i += 2) {
-                std::string gpu;
-                rest_util::get_value_from_string(gpu_usage_list[i], "gpu", gpu);
-
-                std::string mem;
-                rest_util::get_value_from_string(gpu_usage_list[i + 1], "mem", mem);
-
-                rapidjson::Value g(rapidjson::kObjectType);
-                g.AddMember("gpu", STRING_DUP(gpu), allocator);
-                g.AddMember("mem", STRING_DUP(mem), allocator);
-
-                gpu_usage.PushBack(g, allocator);
-
-            }
-        }
-
-        data.AddMember("gpu_usage", gpu_usage, allocator);
-
-
-        /*
-         Text:
-
-         Filesystem                 Size  Used Avail Use% Mounted on
-        /dev/mapper/8GPU--vg-root   57G  5.4G   48G  11% /
-        /dev/sda1                  917G   52G  819G   6% /dbcdata
-        /dev/sdi2                  473M  232M  218M  52% /boot
-        /dev/sdi1                  511M  6.1M  505M   2% /boot/efi
-
-         JSON:
-
-         {
-                        "fs": "/dev/bcache0",
-                        "size": "224 G",
-                        "used": "81G",
-                        "avail": "132G",
-                        "use_percent": "38%",
-                        "mounted_on": "/data"
-         }
-         * */
-        static constexpr uint32_t DEFAULT_DISK_ITEM_SIZE = 6;
-        rapidjson::Value disks(rapidjson::kArrayType);
-        std::string disk_str = resp->kvs["disk"];
-        std::vector<std::string> disk_line_list;
-        string_util::split(disk_str, "\n", disk_line_list);
-
-        for (auto& disk_line : disk_line_list) {
-            std::vector<std::string> item_list;
-            rest_util::split_line_to_itemlist(disk_line, item_list);
-            if (item_list.size()==DEFAULT_DISK_ITEM_SIZE) {
-                rapidjson::Value d(rapidjson::kObjectType);
-                d.AddMember("fs", STRING_DUP(item_list[0]), allocator);
-                d.AddMember("size", STRING_DUP(item_list[1]), allocator);
-                d.AddMember("used", STRING_DUP(item_list[2]), allocator);
-                d.AddMember("avail", STRING_DUP(item_list[3]), allocator);
-                d.AddMember("use_percent", STRING_DUP(item_list[4]), allocator);
-                d.AddMember("mounted_on", STRING_DUP(item_list[5]), allocator);
-                disks.PushBack(d, allocator);
-            }
-        }
-        data.AddMember("disks", disks, allocator);
-
-
-        /*
-          "images": [
-              "dbctraining/cuda9.0-mining-gpu:v1",
-              "dbctraining/tensorflow1.9.0-cuda9-gpu-py3:v1.0.0",
-
-            ],
-         */
-
-        rapidjson::Value images(rapidjson::kArrayType);
-        std::vector<std::string> image_list;
-        string_util::split(resp->kvs["image"], "\n", image_list);
-        for (auto& img : image_list) {
-            images.PushBack(STRING_DUP(img), allocator);
-        }
-
-        data.AddMember("images", images, allocator);
-
-
-        /*
-        "mem": {
-              "total": "251G",
-              "free": "249G"
-            }
-         * */
-        rapidjson::Value mem(rapidjson::kObjectType);
-        std::string mem_total;
-        rest_util::get_value_from_string(resp->kvs["mem"], "total", mem_total);
-
-        std::string mem_free;
-        rest_util::get_value_from_string(resp->kvs["mem"], "free", mem_free);
-
-        mem.AddMember("total", STRING_DUP(mem_total), allocator);
-        mem.AddMember("free", STRING_DUP(mem_free), allocator);
-
-        data.AddMember("mem", mem, allocator);
-#endif
-
     }
 
-    void reply_show_service(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
+    void reply_node_list(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
                             rapidjson::Document::AllocatorType &allocator) {
-
         std::map<std::string, node_service_info> s_in_order;
         for (auto &it : *(resp->id_2_services)) {
-            std::string k;
-            k = it.second.name;// or time_stamp ,or ..
-
-            auto v = it.second;
-            v.kvs["id"] = it.first;
-            s_in_order[k + it.first] = v;  // "k + id" is unique
+            s_in_order[it.first] = it.second;
         }
 
         rapidjson::Value mining_nodes(rapidjson::kArrayType);
-
         for (auto &it : s_in_order) {
-
             rapidjson::Value node_info(rapidjson::kObjectType);
-            std::string nid = string_util::rtrim(it.second.kvs["id"], '\n');
+            std::string node_id = it.first;
+            node_id = string_util::rtrim(node_id, '\n');
             std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
-            std::string gpu = string_util::rtrim(it.second.kvs["gpu"], '\n');
-            string_util::trim(gpu);
-            if (gpu.length() > 31) {
-                gpu = gpu.substr(0, 31);
-            }
-
-            std::string gpu_usage = it.second.kvs.count("gpu_usage") ? it.second.kvs["gpu_usage"] : "N/A";
-
-            std::string online_time = "N/A";
-            if (it.second.kvs.count("startup_time")) {
-                std::string s_time = it.second.kvs["startup_time"];
-                try {
-                    time_t t = std::stoi(s_time);
-                    online_time = resp->to_time_str(t);
-                } catch (...) {
-                    LOG_ERROR << "std::stoi(s_time);caught exception.";
-                }
-            }
 
             std::string service_list = resp->to_string(it.second.service_list);
             node_info.AddMember("service_list", STRING_DUP(service_list), allocator);
-
-            node_info.AddMember("nodeid", STRING_DUP(nid), allocator);
+            node_info.AddMember("nodeid", STRING_DUP(node_id), allocator);
             node_info.AddMember("name", STRING_DUP(it.second.name), allocator);
-            node_info.AddMember("time_stamp", STRING_DUP(online_time), allocator);
-            //node_info.AddMember("gpu", STRING_DUP(gpu), allocator);
             node_info.AddMember("ver", STRING_DUP(ver), allocator);
-            //node_info.AddMember("gpu_usage", STRING_DUP(gpu_usage), allocator);
             node_info.AddMember("state", STRING_DUP(it.second.kvs["state"]), allocator);
+
             mining_nodes.PushBack(node_info, allocator);
         }
 
@@ -1149,15 +952,15 @@ namespace dbc {
     int32_t on_list_node_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
         INIT_RSP_CONTEXT(cmd_list_node_req, cmd_list_node_rsp)
 
-        if (!resp->err.empty()) {
-            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->err)
+        if (resp->result != 0) {
+            ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
             return E_DEFAULT;
         }
 
-        if (resp->op == OP_SHOW_SERVICE_LIST) {
-            reply_show_service(resp, data, allocator);
-        } else if (resp->op == OP_SHOW_NODE_INFO) {
-            reply_show_nodeinfo(resp, data, allocator);
+        if (req->peer_nodes_list.empty()) {
+            reply_node_list(resp, data, allocator);
+        } else {
+            reply_node_info(resp, data, allocator);
         }
 
         SUCC_REPLY(data)

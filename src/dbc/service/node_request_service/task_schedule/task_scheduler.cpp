@@ -317,6 +317,17 @@ namespace dbc {
         }
 	}
 
+	int32_t TaskScheduler::GetRunningTaskSize() {
+	    int32_t count = 0;
+	    for (auto& task : m_tasks) {
+	        if (task.second->status != TS_None) {
+	            count += 1;
+	        }
+	    }
+
+	    return count;
+	}
+
     ETaskStatus TaskScheduler::GetTaskStatus(const std::string& task_id) {
         auto it = m_tasks.find(task_id);
         if (it == m_tasks.end()) {

@@ -4,6 +4,7 @@
 #include <string>
 #include "service_module.h"
 #include "cmd_message.h"
+#include "LruCache.hpp"
 
 using namespace matrix::core;
 namespace fs = boost::filesystem;
@@ -73,14 +74,14 @@ namespace dbc {
 
         int32_t on_node_reset_task_timer(const std::shared_ptr<core_timer> &timer);
 
-        // destroy task
-        int32_t on_cmd_destroy_task_req(const std::shared_ptr<dbc::network::message> &msg);
+        // delete task
+        int32_t on_cmd_delete_task_req(const std::shared_ptr<dbc::network::message> &msg);
 
-        std::shared_ptr<dbc::network::message> create_node_destroy_task_req_msg(const std::shared_ptr<::cmd_destroy_task_req> &cmd_req);
+        std::shared_ptr<dbc::network::message> create_node_delete_task_req_msg(const std::shared_ptr<::cmd_delete_task_req> &cmd_req);
 
-        int32_t on_node_destroy_task_rsp(std::shared_ptr<dbc::network::message> &msg);
+        int32_t on_node_delete_task_rsp(std::shared_ptr<dbc::network::message> &msg);
 
-        int32_t on_node_destroy_task_timer(const std::shared_ptr<core_timer> &timer);
+        int32_t on_node_delete_task_timer(const std::shared_ptr<core_timer> &timer);
 
         // task logs
         int32_t on_cmd_task_logs_req(const std::shared_ptr<dbc::network::message> &msg);
@@ -118,7 +119,14 @@ namespace dbc {
 
         int32_t validate_entry_file_name(const std::string &entry_file_name);
 
-        bool precheck_msg(std::shared_ptr<dbc::network::message> &msg);
+        bool check_req_header(std::shared_ptr<dbc::network::message> &msg);
+
+        bool check_rsp_header(std::shared_ptr<dbc::network::message> &msg);
+
+        bool check_nonce(const std::string& nonce);
+
+    private:
+        lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
     };
 }
 

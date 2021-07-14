@@ -37,9 +37,9 @@ namespace dbc {
         // reset task
         SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_reset_task_req).name())
         SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_RSP)
-        // destroy task
-        SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_destroy_task_req).name())
-        SUBSCRIBE_BUS_MESSAGE(NODE_DESTROY_TASK_RSP)
+        // delete task
+        SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_delete_task_req).name())
+        SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_RSP)
         // task logs
         SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_task_logs_req).name())
         SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_RSP)
@@ -71,9 +71,9 @@ namespace dbc {
         // reset task
         BIND_MESSAGE_INVOKER(typeid(::cmd_reset_task_req).name(), &cmd_request_service::on_cmd_reset_task_req)
         BIND_MESSAGE_INVOKER(NODE_RESET_TASK_RSP, &cmd_request_service::on_node_reset_task_rsp)
-        // destroy task
-        BIND_MESSAGE_INVOKER(typeid(::cmd_destroy_task_req).name(), &cmd_request_service::on_cmd_destroy_task_req)
-        BIND_MESSAGE_INVOKER(NODE_DESTROY_TASK_RSP, &cmd_request_service::on_node_destroy_task_rsp)
+        // delete task
+        BIND_MESSAGE_INVOKER(typeid(::cmd_delete_task_req).name(), &cmd_request_service::on_cmd_delete_task_req)
+        BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_RSP, &cmd_request_service::on_node_delete_task_rsp)
         // task logs
         BIND_MESSAGE_INVOKER(typeid(::cmd_task_logs_req).name(), &cmd_request_service::on_cmd_task_logs_req);
         BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_RSP, &cmd_request_service::on_node_task_logs_rsp);
@@ -99,7 +99,7 @@ namespace dbc {
         // reset task
         m_timer_invokers[NODE_RESET_TASK_TIMER] = std::bind(&cmd_request_service::on_node_reset_task_timer, this, std::placeholders::_1);
         // destroy task
-        m_timer_invokers[NODE_DESTROY_TASK_TIMER] = std::bind(&cmd_request_service::on_node_destroy_task_timer, this, std::placeholders::_1);
+        m_timer_invokers[NODE_DELETE_TASK_TIMER] = std::bind(&cmd_request_service::on_node_delete_task_timer, this, std::placeholders::_1);
         // task logs
         m_timer_invokers[NODE_TASK_LOGS_TIMER] = std::bind(&cmd_request_service::on_node_task_logs_timer, this, std::placeholders::_1);
         // list task
@@ -191,8 +191,8 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_create_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
@@ -203,10 +203,48 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id
-                               + rsp_content->body.task_id + rsp_content->body.login_password;
-        if (!dbc::verify_sign(rsp_content->header.exten_info["sign"], sign_msg,
-                              rsp_content->header.exten_info["origin_id"])) {
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        //check rsp body
+        std::string rsp_task_id;
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        std::string rsp_user_name;
+        std::string rsp_login_password;
+        std::string rsp_ip;
+        std::string rsp_ssh_port;
+        std::string rsp_create_time;
+        std::string rsp_system_storage;
+        std::string rsp_data_storage;
+        std::string rsp_cpu_cores;
+        std::string rsp_gpu_count;
+        std::string rsp_mem_size;
+        try {
+            rsp_task_id = rsp_content->body.task_id;
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+            rsp_user_name = rsp_content->body.user_name;
+            rsp_login_password = rsp_content->body.login_password;
+            rsp_ip = rsp_content->body.ip;
+            rsp_ssh_port = rsp_content->body.ssh_port;
+            rsp_create_time = rsp_content->body.create_time;
+            rsp_system_storage = rsp_content->body.system_storage;
+            rsp_data_storage = rsp_content->body.data_storage;
+            rsp_cpu_cores = rsp_content->body.cpu_cores;
+            rsp_gpu_count = rsp_content->body.gpu_count;
+            rsp_mem_size = rsp_content->body.mem_size;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
+        }
+
+        std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + rsp_task_id + rsp_login_password;
+        if (!dbc::verify_sign(rsp_content->header.exten_info["sign"], sign_msg, rsp_content->header.exten_info["origin_id"])) {
             LOG_ERROR << "verify sign failed";
             return E_DEFAULT;
         }
@@ -219,19 +257,19 @@ namespace dbc {
 
         std::shared_ptr<::cmd_create_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_create_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
-        cmd_rsp_msg->task_id = rsp_content->body.task_id;
-        cmd_rsp_msg->user_name = rsp_content->body.user_name;
-        cmd_rsp_msg->login_password = rsp_content->body.login_password;
-        cmd_rsp_msg->ip = rsp_content->body.ip;
-        cmd_rsp_msg->ssh_port = rsp_content->body.ssh_port;
-        cmd_rsp_msg->create_time = rsp_content->body.create_time;
-        cmd_rsp_msg->system_storage = rsp_content->body.system_storage;
-        cmd_rsp_msg->data_storage = rsp_content->body.data_storage;
-        cmd_rsp_msg->cpu_cores = rsp_content->body.cpu_cores;
-        cmd_rsp_msg->gpu_count = rsp_content->body.gpu_count;
-        cmd_rsp_msg->mem_size = rsp_content->body.mem_size;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
+        cmd_rsp_msg->task_id = rsp_task_id;
+        cmd_rsp_msg->user_name = rsp_user_name;
+        cmd_rsp_msg->login_password = rsp_login_password;
+        cmd_rsp_msg->ip = rsp_ip;
+        cmd_rsp_msg->ssh_port = rsp_ssh_port;
+        cmd_rsp_msg->create_time = rsp_create_time;
+        cmd_rsp_msg->system_storage = rsp_system_storage;
+        cmd_rsp_msg->data_storage = rsp_data_storage;
+        cmd_rsp_msg->cpu_cores = rsp_cpu_cores;
+        cmd_rsp_msg->gpu_count = rsp_gpu_count;
+        cmd_rsp_msg->mem_size = rsp_mem_size;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp_msg);
 
@@ -364,8 +402,8 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_start_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
@@ -373,6 +411,24 @@ namespace dbc {
         if (!rsp_content) {
             LOG_ERROR << "rsp is nullptr";
             return E_DEFAULT;
+        }
+
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        // check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
         }
 
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -389,8 +445,8 @@ namespace dbc {
 
         std::shared_ptr<::cmd_start_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_start_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_start_task_rsp).name(), cmd_rsp_msg);
 
@@ -521,8 +577,8 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_stop_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
@@ -530,6 +586,24 @@ namespace dbc {
         if (!rsp_content) {
             LOG_ERROR << "rsp is nullptr";
             return E_DEFAULT;
+        }
+
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        //check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
         }
 
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -546,8 +620,8 @@ namespace dbc {
 
         std::shared_ptr<::cmd_stop_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_stop_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_task_rsp).name(), cmd_rsp_msg);
 
@@ -679,8 +753,8 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_restart_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
@@ -688,6 +762,24 @@ namespace dbc {
         if (!rsp_content) {
             LOG_ERROR << "rsp is nullptr";
             return E_DEFAULT;
+        }
+
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        //check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
         }
 
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -704,8 +796,8 @@ namespace dbc {
 
         std::shared_ptr<::cmd_restart_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_restart_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp_msg);
 
@@ -836,8 +928,8 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_reset_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
@@ -845,6 +937,24 @@ namespace dbc {
         if (!rsp_content) {
             LOG_ERROR << "rsp is nullptr";
             return E_DEFAULT;
+        }
+
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        //check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
         }
 
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -861,8 +971,8 @@ namespace dbc {
 
         std::shared_ptr<::cmd_reset_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_reset_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_reset_task_rsp).name(), cmd_rsp_msg);
 
@@ -901,8 +1011,8 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    // destroy task
-    std::shared_ptr<dbc::network::message> cmd_request_service::create_node_destroy_task_req_msg(const std::shared_ptr<::cmd_destroy_task_req> &cmd_req) {
+    // delete task
+    std::shared_ptr<dbc::network::message> cmd_request_service::create_node_delete_task_req_msg(const std::shared_ptr<::cmd_delete_task_req> &cmd_req) {
         if (cmd_req->task_id.empty()) {
             LOG_ERROR << "restart failed: task_id is empty!";
             return nullptr;
@@ -914,10 +1024,10 @@ namespace dbc {
         }
 
         // 创建 node_ 请求
-        std::shared_ptr<matrix::service_core::node_destroy_task_req> req_content = std::make_shared<matrix::service_core::node_destroy_task_req>();
+        std::shared_ptr<matrix::service_core::node_delete_task_req> req_content = std::make_shared<matrix::service_core::node_delete_task_req>();
         // header
         req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-        req_content->header.__set_msg_name(NODE_DESTROY_TASK_REQ);
+        req_content->header.__set_msg_name(NODE_DELETE_TASK_REQ);
         req_content->header.__set_nonce(dbc::create_nonce());
         req_content->header.__set_session_id(cmd_req->header.session_id);
         std::vector<std::string> path;
@@ -938,11 +1048,11 @@ namespace dbc {
         req_content->body.__set_additional(cmd_req->additional);
 
         std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
-        req_msg->set_name(NODE_DESTROY_TASK_REQ);
+        req_msg->set_name(NODE_DELETE_TASK_REQ);
         req_msg->set_content(req_content);
 
         // 创建定时器
-        uint32_t timer_id = this->add_timer(NODE_DESTROY_TASK_TIMER, CONF_MANAGER->get_timer_dbc_request_in_millisecond(),
+        uint32_t timer_id = this->add_timer(NODE_DELETE_TASK_TIMER, CONF_MANAGER->get_timer_dbc_request_in_millisecond(),
                                             ONLY_ONE_TIME, req_content->header.session_id);
         std::shared_ptr<service_session> session = std::make_shared<service_session>(timer_id,
                                                                                      req_content->header.session_id);
@@ -960,48 +1070,66 @@ namespace dbc {
         return req_msg;
     }
 
-    int32_t cmd_request_service::on_cmd_destroy_task_req(const std::shared_ptr<dbc::network::message> &msg) {
-        std::shared_ptr<::cmd_destroy_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_destroy_task_req>(
+    int32_t cmd_request_service::on_cmd_delete_task_req(const std::shared_ptr<dbc::network::message> &msg) {
+        std::shared_ptr<::cmd_delete_task_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_delete_task_req>(
                 msg->get_content());
         if (cmd_req_msg == nullptr) {
             LOG_ERROR << "cmd_req_msg is null";
             return E_NULL_POINTER;
         }
 
-        auto task_req_msg = create_node_destroy_task_req_msg(cmd_req_msg);
+        auto task_req_msg = create_node_delete_task_req_msg(cmd_req_msg);
         if (nullptr == task_req_msg) {
-            std::shared_ptr<::cmd_destroy_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_destroy_task_rsp>();
+            std::shared_ptr<::cmd_delete_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_delete_task_rsp>();
             cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
             cmd_rsp_msg->result = E_DEFAULT;
             cmd_rsp_msg->result_info = "create node request failed!";
 
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_destroy_task_rsp).name(), cmd_rsp_msg);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp_msg);
             return E_DEFAULT;
         }
 
         if (E_SUCCESS != CONNECTION_MANAGER->broadcast_message(task_req_msg)) {
-            std::shared_ptr<::cmd_destroy_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_destroy_task_rsp>();
+            std::shared_ptr<::cmd_delete_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_delete_task_rsp>();
             cmd_rsp_msg->header.__set_session_id(cmd_req_msg->header.session_id);
             cmd_rsp_msg->result = E_DEFAULT;
             cmd_rsp_msg->result_info = "dbc node don't connect to network, pls check ";
 
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_destroy_task_rsp).name(), cmd_rsp_msg);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp_msg);
             return E_DEFAULT;
         }
 
         return E_SUCCESS;
     }
 
-    int32_t cmd_request_service::on_node_destroy_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+    int32_t cmd_request_service::on_node_delete_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
-        std::shared_ptr<matrix::service_core::node_destroy_task_rsp> rsp_content = std::dynamic_pointer_cast<matrix::service_core::node_destroy_task_rsp>(msg->content);
+        std::shared_ptr<matrix::service_core::node_delete_task_rsp> rsp_content = std::dynamic_pointer_cast<matrix::service_core::node_delete_task_rsp>(msg->content);
         if (!rsp_content) {
             LOG_ERROR << "rsp is nullptr";
             return E_DEFAULT;
+        }
+
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        //check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
         }
 
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -1016,12 +1144,12 @@ namespace dbc {
             return E_SUCCESS;
         }
 
-        std::shared_ptr<::cmd_destroy_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_destroy_task_rsp>();
+        std::shared_ptr<::cmd_delete_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_delete_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
 
-        TOPIC_MANAGER->publish<void>(typeid(::cmd_destroy_task_rsp).name(), cmd_rsp_msg);
+        TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp_msg);
 
         this->remove_timer(session->get_timer_id());
         session->clear();
@@ -1029,12 +1157,12 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    int32_t cmd_request_service::on_node_destroy_task_timer(const std::shared_ptr<core_timer> &timer) {
-        std::shared_ptr<::cmd_destroy_task_rsp> cmd_rsp = std::make_shared<::cmd_destroy_task_rsp>();
+    int32_t cmd_request_service::on_node_delete_task_timer(const std::shared_ptr<core_timer> &timer) {
+        std::shared_ptr<::cmd_delete_task_rsp> cmd_rsp = std::make_shared<::cmd_delete_task_rsp>();
         if (nullptr == timer) {
             cmd_rsp->result = E_DEFAULT;
             cmd_rsp->result_info = "timer is nullptr";
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_destroy_task_rsp).name(), cmd_rsp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp);
             return E_DEFAULT;
         }
 
@@ -1043,7 +1171,7 @@ namespace dbc {
         if (nullptr == session) {
             cmd_rsp->result = E_DEFAULT;
             cmd_rsp->result_info = "session is nullptr";
-            TOPIC_MANAGER->publish<void>(typeid(::cmd_destroy_task_rsp).name(), cmd_rsp);
+            TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp);
             return E_DEFAULT;
         }
 
@@ -1051,7 +1179,7 @@ namespace dbc {
         cmd_rsp->result = E_DEFAULT;
         cmd_rsp->result_info = "destroy task timeout";
 
-        TOPIC_MANAGER->publish<void>(typeid(::cmd_destroy_task_rsp).name(), cmd_rsp);
+        TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp);
 
         session->clear();
         this->remove_session(session_id);
@@ -1169,8 +1297,8 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_task_logs_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "precheck_msg failed";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
@@ -1181,8 +1309,28 @@ namespace dbc {
             return E_DEFAULT;
         }
 
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check failed";
+            return E_DEFAULT;
+        }
+
+        //check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        std::string rsp_log_content;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+            rsp_log_content = rsp_content->body.log_content;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp body error";
+        }
+
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id
-                    + rsp_content->body.log_content;
+                    + rsp_log_content;
         if (!dbc::verify_sign(rsp_content->header.exten_info["sign"], sign_msg, rsp_content->header.exten_info["origin_id"])) {
             LOG_ERROR << "verify sign failed";
             return E_DEFAULT;
@@ -1196,9 +1344,9 @@ namespace dbc {
 
         std::shared_ptr<::cmd_task_logs_rsp> cmd_rsp_msg = std::make_shared<::cmd_task_logs_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
-        cmd_rsp_msg->log_content = rsp_content->body.log_content;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
+        cmd_rsp_msg->log_content = rsp_log_content;
 
         TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_rsp_msg);
 
@@ -1331,15 +1479,20 @@ namespace dbc {
     }
 
     int32_t cmd_request_service::on_node_list_task_rsp(std::shared_ptr<dbc::network::message> &msg) {
-        if (!precheck_msg(msg)) {
-            LOG_ERROR << "msg precheck fail";
+        if (!check_rsp_header(msg)) {
+            LOG_ERROR << "rsp header check failed";
             return E_DEFAULT;
         }
 
         std::shared_ptr<matrix::service_core::node_list_task_rsp> rsp_content =
                 std::dynamic_pointer_cast<matrix::service_core::node_list_task_rsp>(msg->content);
         if (!rsp_content) {
-            LOG_ERROR << "recv list_training_resp but ctn is nullptr";
+            LOG_ERROR << "rsp is nullptr";
+            return E_DEFAULT;
+        }
+
+        if (!check_nonce(rsp_content->header.nonce)) {
+            LOG_ERROR << "nonce check error ";
             return E_DEFAULT;
         }
 
@@ -1355,12 +1508,27 @@ namespace dbc {
             return E_DEFAULT;
         }
 
+        //check rsp body
+        int32_t rsp_result = E_DEFAULT;
+        std::string rsp_result_msg;
+        std::vector<task_info> rsp_taskinfo_list;
+        try {
+            rsp_result = rsp_content->body.result;
+            rsp_result_msg = rsp_content->body.result_msg;
+            rsp_taskinfo_list = rsp_content->body.task_info_list;
+        } catch (...) {
+            LOG_ERROR << "rsp body error";
+
+            rsp_result = E_DEFAULT;
+            rsp_result_msg = "rsp_body_error";
+        }
+
         std::shared_ptr<::cmd_list_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_list_task_rsp>();
         cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
-        cmd_rsp_msg->result = rsp_content->body.result;
-        cmd_rsp_msg->result_info = rsp_content->body.result_msg;
+        cmd_rsp_msg->result = rsp_result;
+        cmd_rsp_msg->result_info = rsp_result_msg;
 
-        for (auto& tinfo : rsp_content->body.task_info_list) {
+        for (auto& tinfo : rsp_taskinfo_list) {
             ::cmd_task_info ctinfo;
             ctinfo.task_id = tinfo.task_id;
             ctinfo.status = tinfo.status;
@@ -1512,7 +1680,22 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    bool cmd_request_service::precheck_msg(std::shared_ptr<dbc::network::message> &msg) {
+    bool cmd_request_service::check_nonce(const std::string& nonce) {
+        if (!dbc::check_id(nonce)) {
+            return false;
+        }
+
+        if (m_nonceCache.contains(nonce)) {
+            return false;
+        }
+        else {
+            m_nonceCache.insert(nonce, 1);
+        }
+
+        return true;
+    }
+
+    bool cmd_request_service::check_req_header(std::shared_ptr<dbc::network::message> &msg) {
         if (!msg) {
             LOG_ERROR << "msg is nullptr";
             return false;
@@ -1520,18 +1703,58 @@ namespace dbc {
 
         std::shared_ptr<dbc::network::msg_base> base = msg->content;
         if (!base) {
-            LOG_ERROR << "containt is nullptr";
+            LOG_ERROR << "msg.containt is nullptr";
             return false;
         }
 
         if (!dbc::check_id(base->header.nonce)) {
-            LOG_ERROR << "nonce error ";
+            LOG_ERROR << "header.nonce check failed";
             return false;
         }
 
         if (!dbc::check_id(base->header.session_id)) {
-            LOG_ERROR << "ai power requster service on_list_training_resp. session_id error ";
+            LOG_ERROR << "header.session_id check failed";
             return false;
+        }
+
+        if (base->header.path.size() <= 0) {
+            LOG_ERROR << "header.path size <= 0";
+            return false;
+        }
+
+        if (base->header.exten_info.size() < 4) {
+            LOG_ERROR << "header.exten_info size < 4";
+            return E_DEFAULT;
+        }
+
+        return true;
+    }
+
+    bool cmd_request_service::check_rsp_header(std::shared_ptr<dbc::network::message> &msg) {
+        if (!msg) {
+            LOG_ERROR << "msg is nullptr";
+            return false;
+        }
+
+        std::shared_ptr<dbc::network::msg_base> base = msg->content;
+        if (!base) {
+            LOG_ERROR << "msg.containt is nullptr";
+            return false;
+        }
+
+        if (!dbc::check_id(base->header.nonce)) {
+            LOG_ERROR << "header.nonce check failed";
+            return false;
+        }
+
+        if (!dbc::check_id(base->header.session_id)) {
+            LOG_ERROR << "header.session_id check failed";
+            return false;
+        }
+
+        if (base->header.exten_info.size() < 4) {
+            LOG_ERROR << "header.exten_info size < 4";
+            return E_DEFAULT;
         }
 
         return true;

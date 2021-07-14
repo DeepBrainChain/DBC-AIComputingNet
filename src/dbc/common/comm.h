@@ -8,13 +8,6 @@
 #include "time_util.h"
 #include "log.h"
 
-// sub operation of show cmd
-enum {
-    OP_SHOW_NODE_INFO = 0,
-    OP_SHOW_SERVICE_LIST = 1,
-    OP_SHOW_UNKNOWN = 0xff
-};
-
 class cmd_peer_node_log {
 public:
 

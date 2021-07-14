@@ -1,5 +1,4 @@
 #include "dbc_server_initiator.h"
-#if defined(__linux__) || defined(MAC_OSX)
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -8,7 +7,6 @@
 #include <fcntl.h>  
 #include <stdio.h>
 #include <byteswap.h>
-#endif
 #include "server.h"
 #include "connection_manager.h"
 #include "env_manager.h"
@@ -159,7 +157,7 @@ namespace ai
 
             //data query service
             LOG_INFO << "begin to init net misc service";
-            mdl = std::dynamic_pointer_cast<module>(std::make_shared<service::misc::data_query_service>());
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::data_query_service>());
             g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
             ret = mdl->init(vm);
             if (E_SUCCESS != ret)

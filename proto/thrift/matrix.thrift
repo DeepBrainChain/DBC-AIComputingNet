@@ -183,25 +183,25 @@ struct node_reset_task_rsp {
   1: node_reset_task_rsp_body body
 }
 //////////////////////////////////////////////////////////////////////////
-// destroy task
+// delete task
 // request
-struct node_destroy_task_req_body {
+struct node_delete_task_req_body {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
   3: required string additional
 }
 
-struct node_destroy_task_req {
-  1: node_destroy_task_req_body body
+struct node_delete_task_req {
+  1: node_delete_task_req_body body
 }
 // response
-struct node_destroy_task_rsp_body {
+struct node_delete_task_rsp_body {
   1: required i32 result,
   2: required string result_msg
 }
 
-struct node_destroy_task_rsp {
-  1: node_destroy_task_rsp_body body
+struct node_delete_task_rsp {
+  1: node_delete_task_rsp_body body
 }
 //////////////////////////////////////////////////////////////////////////
 // task logs
@@ -304,43 +304,38 @@ struct ver_resp {
 }
 
 //////////////////////////////////////////////////////////////////////////
-//show_gpu_info
-struct show_req_body {
-  1: required string o_node_id
-  2: required string d_node_id
-  3: required list<string> keys
-}
-
-struct show_req {
-  1: show_req_body body
-}
-
-struct show_resp_body {
-  1: required string o_node_id
-  2: required string d_node_id
-  3: required map<string,string> kvs
-}
-
-struct show_resp {
-  1: show_resp_body body
-}
-
-//////////////////////////////////////////////////////////////////////////
-//service_broadcast
 struct node_service_info {
-  1: required list<string> service_list
-  2: optional string name
-  3: optional i64 time_stamp
+  1: required list<string> service_list,
+  2: optional string name,
+  3: optional i64 time_stamp,
   4: optional map<string,string> kvs
 }
 
+// list nodes
+struct node_query_node_info_req_body {
+  1: required list<string> peer_nodes_list,
+  2: required string additional
+}
+
+struct node_query_node_info_req {
+  1: node_query_node_info_req_body body
+}
+
+struct node_query_node_info_rsp_body {
+  1: required i32 result,
+  2: required string result_msg,
+  3: required map<string, string> kvs
+}
+
+struct node_query_node_info_rsp {
+  1: node_query_node_info_rsp_body body
+}
+
+//node service broadcast
 struct service_broadcast_req_body {
-  1: required map<string,node_service_info> node_service_info_map
+  1: required map<string, node_service_info> node_service_info_map
 }
 
 struct service_broadcast_req {
   1: service_broadcast_req_body body
 }
-
-
-

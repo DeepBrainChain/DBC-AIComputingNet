@@ -47,10 +47,10 @@ namespace dbc {
 
     int32_t on_cmd_reset_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
 
-    // destroy <task_id>
-    std::shared_ptr<dbc::network::message> rest_destroy_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path);
+    // delete <task_id>
+    std::shared_ptr<dbc::network::message> rest_delete_task(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    int32_t on_cmd_destroy_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
+    int32_t on_cmd_delete_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
 
     // list
     std::shared_ptr<dbc::network::message> rest_list_task(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::string &path);

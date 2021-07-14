@@ -101,12 +101,11 @@ namespace dbc {
 		BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req);
 		BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req);
         BIND_MESSAGE_INVOKER(NODE_RESET_TASK_REQ, &node_request_service::on_node_reset_task_req);
-        BIND_MESSAGE_INVOKER(NODE_DESTROY_TASK_REQ, &node_request_service::on_node_destroy_task_req);
+        BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_REQ, &node_request_service::on_node_delete_task_req);
         BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
 		BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
-
-		BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(),
-			&node_request_service::on_get_task_queue_size_req);
+		// node_info_collection 定期广播
+		BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(), &node_request_service::on_get_task_queue_size_req);
 	}
 
 	void node_request_service::init_subscription() {
@@ -115,7 +114,7 @@ namespace dbc {
 		SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
 		SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
         SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_DESTROY_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_REQ);
         SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
 		SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
 
@@ -169,30 +168,109 @@ namespace dbc {
 		return true;
 	}
 
-	int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::network::message>& msg) {
+    bool node_request_service::check_req_header(std::shared_ptr<dbc::network::message> &msg) {
+        if (!msg) {
+            LOG_ERROR << "msg is nullptr";
+            return false;
+        }
+
+        std::shared_ptr<dbc::network::msg_base> base = msg->content;
+        if (!base) {
+            LOG_ERROR << "msg.containt is nullptr";
+            return false;
+        }
+
+        if (!dbc::check_id(base->header.nonce)) {
+            LOG_ERROR << "header.nonce check failed";
+            return false;
+        }
+
+        if (!dbc::check_id(base->header.session_id)) {
+            LOG_ERROR << "header.session_id check failed";
+            return false;
+        }
+
+        if (base->header.path.size() <= 0) {
+            LOG_ERROR << "header.path size <= 0";
+            return false;
+        }
+
+        if (base->header.exten_info.size() < 4) {
+            LOG_ERROR << "header.exten_info size < 4";
+            return E_DEFAULT;
+        }
+
+        return true;
+    }
+
+    bool node_request_service::check_rsp_header(std::shared_ptr<dbc::network::message> &msg) {
+        if (!msg) {
+            LOG_ERROR << "msg is nullptr";
+            return false;
+        }
+
+        std::shared_ptr<dbc::network::msg_base> base = msg->content;
+        if (!base) {
+            LOG_ERROR << "msg.containt is nullptr";
+            return false;
+        }
+
+        if (!dbc::check_id(base->header.nonce)) {
+            LOG_ERROR << "header.nonce check failed";
+            return false;
+        }
+
+        if (!dbc::check_id(base->header.session_id)) {
+            LOG_ERROR << "header.session_id check failed";
+            return false;
+        }
+
+        if (base->header.exten_info.size() < 4) {
+            LOG_ERROR << "header.exten_info size < 4";
+            return E_DEFAULT;
+        }
+
+        return true;
+    }
+
+    int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::network::message>& msg) {
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
 		std::shared_ptr<matrix::service_core::node_create_task_req> req =
 			std::dynamic_pointer_cast<matrix::service_core::node_create_task_req>(msg->get_content());
-		if (req == nullptr) return E_DEFAULT;
+		if (req == nullptr) {
+		    LOG_ERROR << "req is nullptr";
+		    return E_DEFAULT;
+		}
 
 		if (!check_nonce(req->header.nonce)) {
-			LOG_ERROR << "ai power provider service nonce error ";
+			LOG_ERROR << "nonce check error ";
 			return E_DEFAULT;
 		}
 
+		// check req body
+		std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+        try {
+            req_additional = req->body.additional;
+            req_peer_nodes = req->body.peer_nodes_list;
+        } catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
+        }
+
 		//验证签名
-		std::string sign_msg = req->header.nonce + req->body.additional;
-		if (req->header.exten_info.size() < 3) {
-			LOG_ERROR << "exten info error.";
-			return E_DEFAULT;
-		}
+		std::string sign_msg = req->header.nonce + req_additional;
 		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "verify sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
 
 		// 检查是否命中当前节点
-		const std::vector<std::string>& peer_nodes = req->body.peer_nodes_list;
-		bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+		bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
 		if (hit_self) {
 			return task_create(req);
 		}
@@ -204,33 +282,49 @@ namespace dbc {
 	}
 
 	int32_t node_request_service::on_node_start_task_req(std::shared_ptr<dbc::network::message>& msg) {
-		std::shared_ptr<matrix::service_core::node_start_task_req> req =
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
+	    std::shared_ptr<matrix::service_core::node_start_task_req> req =
 			std::dynamic_pointer_cast<matrix::service_core::node_start_task_req>(msg->get_content());
-		if (req == nullptr) return E_DEFAULT;
+		if (req == nullptr) {
+            LOG_ERROR << "req is nullptr";
+            return E_DEFAULT;
+        }
 
 		if (!check_nonce(req->header.nonce)) {
-			LOG_ERROR << "ai power provider service nonce error ";
+			LOG_ERROR << "nonce check failed";
 			return E_DEFAULT;
 		}
 
-		if (!dbc::check_id(req->body.task_id)) {
-			LOG_ERROR << "ai power provider service task_id error ";
-			return E_DEFAULT;
+		// check req body
+		std::string req_task_id;
+		std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+		try {
+		    req_task_id = req->body.task_id;
+		    req_additional = req->body.additional;
+		    req_peer_nodes = req->body.peer_nodes_list;
+		} catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
 		}
 
-		std::string sign_msg = req->body.task_id + req->header.nonce + req->body.additional;
-		if (req->header.exten_info.size() < 3) {
-			LOG_ERROR << "exten info error.";
-			return E_DEFAULT;
-		}
+        if (!dbc::check_id(req_task_id)) {
+            LOG_ERROR << "ai power provider service task_id error ";
+            return E_DEFAULT;
+        }
+
+        std::string sign_msg = req_task_id + req->header.nonce + req_additional;
 		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
 
 		// 检查是否命中当前节点
-		const std::vector<std::string>& peer_nodes = req->body.peer_nodes_list;
-		bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+		bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
 		if (hit_self) {
 			return task_start(req);
 		}
@@ -242,33 +336,49 @@ namespace dbc {
 	}
 
 	int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<dbc::network::message>& msg) {
-		std::shared_ptr<matrix::service_core::node_stop_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_stop_task_req>(
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
+	    std::shared_ptr<matrix::service_core::node_stop_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_stop_task_req>(
 			msg->get_content());
-		if (req == nullptr) return E_DEFAULT;
+		if (req == nullptr) {
+		    LOG_ERROR << "req is nullptr";
+		    return E_DEFAULT;
+		}
 
 		if (!check_nonce(req->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
 		}
 
-		if (!dbc::check_id(req->body.task_id)) {
+        // check req body
+        std::string req_task_id;
+        std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+        try {
+            req_task_id = req->body.task_id;
+            req_additional = req->body.additional;
+            req_peer_nodes = req->body.peer_nodes_list;
+        } catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
+        }
+
+		if (!dbc::check_id(req_task_id)) {
 			LOG_ERROR << "ai power provider service on_stop_training_req task_id error ";
 			return E_DEFAULT;
 		}
 
-		std::string sign_msg = req->body.task_id + req->header.nonce + req->body.additional;
-		if (req->header.exten_info.size() < 3) {
-			LOG_ERROR << "exten info error.";
-			return E_DEFAULT;
-		}
+		std::string sign_msg = req_task_id + req->header.nonce + req_additional;
 		if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
 			LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
 
 		// 检查是否命中当前节点
-		const std::vector<std::string>& peer_nodes = req->body.peer_nodes_list;
-		bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+		bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
 		if (hit_self) {
 			return task_stop(req);
 		}
@@ -280,21 +390,42 @@ namespace dbc {
 	}
 
     int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<dbc::network::message>& msg) {
-        std::shared_ptr<matrix::service_core::node_restart_task_req> req =
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
+	    std::shared_ptr<matrix::service_core::node_restart_task_req> req =
                 std::dynamic_pointer_cast<matrix::service_core::node_restart_task_req>(msg->get_content());
-        if (req == nullptr) return E_DEFAULT;
+        if (req == nullptr) {
+            LOG_ERROR << "req is nullptr";
+            return E_DEFAULT;
+        }
 
         if (!check_nonce(req->header.nonce)) {
             LOG_ERROR << "ai power provider service nonce error ";
             return E_DEFAULT;
         }
 
-        if (!dbc::check_id(req->body.task_id)) {
+        // check req body
+        std::string req_task_id;
+        std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+        try {
+            req_task_id = req->body.task_id;
+            req_additional = req->body.additional;
+            req_peer_nodes = req->body.peer_nodes_list;
+        } catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
+        }
+
+        if (!dbc::check_id(req_task_id)) {
             LOG_ERROR << "ai power provider service task_id error ";
             return E_DEFAULT;
         }
 
-        std::string sign_msg = req->body.task_id + req->header.nonce + req->body.additional;
+        std::string sign_msg = req_task_id + req->header.nonce + req_additional;
         if (req->header.exten_info.size() < 3) {
             LOG_ERROR << "exten info error.";
             return E_DEFAULT;
@@ -305,8 +436,7 @@ namespace dbc {
         }
 
         // 检查是否命中当前节点
-        const std::vector<std::string>& peer_nodes = req->body.peer_nodes_list;
-        bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+        bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
         if (hit_self) {
             return task_restart(req);
         }
@@ -318,7 +448,12 @@ namespace dbc {
     }
 
     int32_t node_request_service::on_node_reset_task_req(std::shared_ptr<dbc::network::message>& msg) {
-        std::shared_ptr<matrix::service_core::node_reset_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_reset_task_req>(
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
+	    std::shared_ptr<matrix::service_core::node_reset_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_reset_task_req>(
                 msg->get_content());
         if (req == nullptr) return E_DEFAULT;
 
@@ -327,24 +462,32 @@ namespace dbc {
             return E_DEFAULT;
         }
 
-        if (!dbc::check_id(req->body.task_id)) {
+        // check req body
+        std::string req_task_id;
+        std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+        try {
+            req_task_id = req->body.task_id;
+            req_additional = req->body.additional;
+            req_peer_nodes = req->body.peer_nodes_list;
+        } catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
+        }
+
+        if (!dbc::check_id(req_task_id)) {
             LOG_ERROR << "ai power provider service on_stop_training_req task_id error ";
             return E_DEFAULT;
         }
 
-        std::string sign_msg = req->body.task_id + req->header.nonce + req->body.additional;
-        if (req->header.exten_info.size() < 3) {
-            LOG_ERROR << "exten info error.";
-            return E_DEFAULT;
-        }
+        std::string sign_msg = req_task_id + req->header.nonce + req_additional;
         if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
             LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
             return E_DEFAULT;
         }
 
         // 检查是否命中当前节点
-        const std::vector<std::string>& peer_nodes = req->body.peer_nodes_list;
-        bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+        bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
         if (hit_self) {
             return task_reset(req);
         }
@@ -355,36 +498,52 @@ namespace dbc {
         }
     }
 
-    int32_t node_request_service::on_node_destroy_task_req(std::shared_ptr<dbc::network::message>& msg) {
-        std::shared_ptr<matrix::service_core::node_destroy_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_destroy_task_req>(
+    int32_t node_request_service::on_node_delete_task_req(std::shared_ptr<dbc::network::message>& msg) {
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
+	    std::shared_ptr<matrix::service_core::node_delete_task_req> req = std::dynamic_pointer_cast<matrix::service_core::node_delete_task_req>(
                 msg->get_content());
-        if (req == nullptr) return E_DEFAULT;
+        if (req == nullptr) {
+            LOG_ERROR << "req id nullptr";
+            return E_DEFAULT;
+        }
 
         if (!check_nonce(req->header.nonce)) {
             LOG_ERROR << "ai power provider service nonce error ";
             return E_DEFAULT;
         }
 
-        if (!dbc::check_id(req->body.task_id)) {
+        // check req body
+        std::string req_task_id;
+        std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+        try {
+            req_task_id = req->body.task_id;
+            req_additional = req->body.additional;
+            req_peer_nodes = req->body.peer_nodes_list;
+        } catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
+        }
+
+        if (!dbc::check_id(req_task_id)) {
             LOG_ERROR << "ai power provider service on_stop_training_req task_id error ";
             return E_DEFAULT;
         }
 
-        std::string sign_msg = req->body.task_id + req->header.nonce + req->body.additional;
-        if (req->header.exten_info.size() < 3) {
-            LOG_ERROR << "exten info error.";
-            return E_DEFAULT;
-        }
+        std::string sign_msg = req_task_id + req->header.nonce + req_additional;
         if (!dbc::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
             LOG_ERROR << "sign error." << req->header.exten_info["origin_id"];
             return E_DEFAULT;
         }
 
         // 检查是否命中当前节点
-        const std::vector<std::string>& peer_nodes = req->body.peer_nodes_list;
-        bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+        bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
         if (hit_self) {
-            return task_destroy(req);
+            return task_delete(req);
         }
         else {
             req->header.path.push_back(CONF_MANAGER->get_node_id());
@@ -393,49 +552,65 @@ namespace dbc {
         }
     }
 
-	int32_t node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg) {
-		std::shared_ptr<node_task_logs_req> req_content = std::dynamic_pointer_cast<node_task_logs_req>(msg->get_content());
-		if (req_content == nullptr) return E_DEFAULT;
+	int32_t node_request_service::on_node_task_logs_req(std::shared_ptr<dbc::network::message>& msg) {
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
+	    std::shared_ptr<node_task_logs_req> req_content = std::dynamic_pointer_cast<node_task_logs_req>(msg->get_content());
+		if (req_content == nullptr) {
+		    LOG_ERROR << "req is nullptr";
+		    return E_DEFAULT;
+		}
 
 		if (!check_nonce(req_content->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
 		}
 
-		if (!dbc::check_id(req_content->header.session_id)) {
-			LOG_ERROR << "ai power provider service session_id error ";
-			return E_DEFAULT;
-		}
+        // check req body
+        std::string req_task_id;
+        std::string req_additional;
+        std::vector<std::string> req_peer_nodes;
+        int8_t req_head_or_tail;
+        int16_t req_number_of_lines;
+        try {
+            req_task_id = req_content->body.task_id;
+            req_additional = req_content->body.additional;
+            req_peer_nodes = req_content->body.peer_nodes_list;
+            req_head_or_tail = req_content->body.head_or_tail;
+            req_number_of_lines = req_content->body.number_of_lines;
+        } catch (...) {
+            LOG_ERROR << "req body error";
+            return E_DEFAULT;
+        }
 
-		if (!dbc::check_id(req_content->body.task_id)) {
+		if (!dbc::check_id(req_task_id)) {
 			LOG_ERROR << "taskid error ";
 			return E_DEFAULT;
 		}
 
-		std::string task_id = req_content->body.task_id;
-
-		if (GET_LOG_HEAD != req_content->body.head_or_tail && GET_LOG_TAIL != req_content->body.head_or_tail) {
-			LOG_ERROR << "ai power provider service on logs req log direction error: " << task_id;
+		if (GET_LOG_HEAD != req_head_or_tail && GET_LOG_TAIL != req_head_or_tail) {
+			LOG_ERROR << "ai power provider service on logs req log direction error";
 			return E_DEFAULT;
 		}
 
-		if (req_content->body.number_of_lines > MAX_NUMBER_OF_LINES || req_content->body.number_of_lines < 0) {
+		if (req_number_of_lines > MAX_NUMBER_OF_LINES || req_number_of_lines < 0) {
 			LOG_ERROR << "ai power provider service on logs req number of lines error: "
-				<< req_content->body.number_of_lines;
+				<< req_number_of_lines;
 			return E_DEFAULT;
 		}
 
 		std::string sign_req_msg =
-			req_content->body.task_id + req_content->header.nonce + req_content->header.session_id +
-			req_content->body.additional;
+			req_task_id + req_content->header.nonce + req_content->header.session_id + req_additional;
 		if (!dbc::verify_sign(req_content->header.exten_info["sign"], sign_req_msg, req_content->header.exten_info["origin_id"])) {
 			LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
 
 		// 检查是否命中当前节点
-		const std::vector<std::string>& peer_nodes = req_content->body.peer_nodes_list;
-		bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+		bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
 		if (hit_self) {
 			return task_logs(req_content);
 		}
@@ -447,36 +622,46 @@ namespace dbc {
 	}
 
 	int32_t node_request_service::on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg) {
+        if (!check_req_header(msg)) {
+            LOG_ERROR << "req header check failed";
+            return E_DEFAULT;
+        }
+
 		std::shared_ptr<node_list_task_req> req_content = std::dynamic_pointer_cast<node_list_task_req>(
 			msg->get_content());
 		if (req_content == nullptr) return E_DEFAULT;
 
-		//防止同一个msg不停的重复被广播进入同一个节点，导致广播风暴
 		if (!check_nonce(req_content->header.nonce)) {
 			LOG_ERROR << "ai power provider service nonce error ";
 			return E_DEFAULT;
 		}
 
-		if (!dbc::check_id(req_content->header.session_id)) {
-			LOG_ERROR << "ai power provider service sessionid error ";
+		//check req.body
+		std::string req_task_id;
+        std::vector<std::string> req_peer_nodes;
+        std::string req_additional;
+		try {
+		    req_task_id = req_content->body.task_id;
+            req_peer_nodes = req_content->body.peer_nodes_list;
+            req_additional = req_content->body.additional;
+		} catch (...) {
+		    LOG_ERROR << "req body error";
+		    return E_DEFAULT;
+		}
+
+		if (!req_task_id.empty() && !dbc::check_id(req_task_id)) {
+			LOG_ERROR << "task_id check failed";
 			return E_DEFAULT;
 		}
 
-		if (!req_content->body.task_id.empty() && !dbc::check_id(req_content->body.task_id)) {
-			LOG_ERROR << "ai power provider service taskid error: " << req_content->body.task_id;
-			return E_DEFAULT;
-		}
-
-		std::string sign_msg = req_content->body.task_id + req_content->header.nonce +
-			req_content->header.session_id + req_content->body.additional;
+		std::string sign_msg = req_task_id + req_content->header.nonce + req_content->header.session_id + req_additional;
 		if (!dbc::verify_sign(req_content->header.exten_info["sign"], sign_msg, req_content->header.exten_info["origin_id"])) {
 			LOG_ERROR << "fake message. " << req_content->header.exten_info["origin_id"];
 			return E_DEFAULT;
 		}
 
 		// 检查是否命中当前节点
-		const std::vector<std::string>& peer_nodes = req_content->body.peer_nodes_list;
-		bool hit_self = hit_node(peer_nodes, CONF_MANAGER->get_node_id());
+		bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
 		if (hit_self) {
 		    return task_list(req_content);
 		} else {
@@ -489,12 +674,8 @@ namespace dbc {
     int32_t node_request_service::on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg) {
         auto resp = std::make_shared<get_task_queue_size_resp_msg>();
 
-        /*
-        auto task_num = m_task_scheduler.get_user_cur_task_size();
+        auto task_num = m_task_scheduler.GetRunningTaskSize();
         resp->set_task_size(task_num);
-        resp->set_gpu_state(m_task_scheduler.get_gpu_state());
-        resp->set_active_tasks(m_task_scheduler.get_active_tasks());
-        */
 
         auto resp_msg = std::dynamic_pointer_cast<dbc::network::message>(resp);
 
@@ -745,7 +926,7 @@ namespace dbc {
         return E_SUCCESS;
     }
 
-    int32_t node_request_service::task_destroy(const std::shared_ptr<matrix::service_core::node_destroy_task_req>& req) {
+    int32_t node_request_service::task_delete(const std::shared_ptr<matrix::service_core::node_delete_task_req>& req) {
         std::string task_id = req->body.task_id;
         if (!dbc::check_id(task_id)) return E_DEFAULT;
 
@@ -753,10 +934,10 @@ namespace dbc {
         int32_t ret = std::get<0>(fresult);
         std::string ret_msg = std::get<1>(fresult);
 
-        std::shared_ptr<matrix::service_core::node_destroy_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_destroy_task_rsp>();
+        std::shared_ptr<matrix::service_core::node_delete_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_delete_task_rsp>();
         // header
         rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
-        rsp_content->header.__set_msg_name(NODE_DESTROY_TASK_RSP);
+        rsp_content->header.__set_msg_name(NODE_DELETE_TASK_RSP);
         rsp_content->header.__set_nonce(dbc::create_nonce());
         rsp_content->header.__set_session_id(req->header.session_id);
         rsp_content->header.__set_path(req->header.path);
@@ -775,7 +956,7 @@ namespace dbc {
 
         //rsp msg
         std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-        rsp_msg->set_name(NODE_DESTROY_TASK_RSP);
+        rsp_msg->set_name(NODE_DELETE_TASK_RSP);
         rsp_msg->set_content(rsp_content);
         CONNECTION_MANAGER->send_resp_message(rsp_msg);
         return E_SUCCESS;
@@ -831,17 +1012,17 @@ namespace dbc {
 	}
 
 	int32_t node_request_service::task_list(const std::shared_ptr<matrix::service_core::node_list_task_req> &req) {
-        int32_t ret = E_SUCCESS;
-        std::string ret_msg = "task list successful";
+        int32_t result = E_SUCCESS;
+        std::string result_msg = "task list successful";
 
 	    std::string task_id = req->body.task_id;
         if (!task_id.empty() && !dbc::check_id(task_id)) {
-            ret = E_DEFAULT;
-            ret_msg = "task_id not exist";
+            result = E_DEFAULT;
+            result_msg = "task_id check failed";
         }
 
         std::vector<matrix::service_core::task_info> info_list;
-        if (ret == E_SUCCESS) {
+        if (result == E_SUCCESS) {
             if (req->body.task_id.empty()) {
                 std::vector<std::shared_ptr<TaskInfo>> task_list;
                 m_task_scheduler.ListAllTask(task_list);
@@ -860,6 +1041,9 @@ namespace dbc {
                     tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
                     tinfo.__set_login_password(task->login_password);
                     info_list.push_back(tinfo);
+                } else {
+                    result = E_DEFAULT;
+                    result_msg = "task_id not exist";
                 }
             }
         }
@@ -882,8 +1066,8 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        rsp_content->body.__set_result(ret);
-        rsp_content->body.__set_result_msg(ret_msg);
+        rsp_content->body.__set_result(result);
+        rsp_content->body.__set_result_msg(result_msg);
         rsp_content->body.task_info_list.swap(info_list);
 
         //rsp msg

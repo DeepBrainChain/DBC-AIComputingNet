@@ -9,13 +9,12 @@ namespace matrix
     {
         static peer_seeds g_main_peer_seeds[] = 
         {
-            {"111.44.254.182", 11118}
+            {"1.2.3.4", 12345}
         };
 
         static const char* g_main_dns_seeds[] = 
         {
-            "seed10.dbchain.ai",
-            "seed10.deepbrainchain.org"
+            "a.b.c"
         };
 
         void net_type_params::init_seeds()

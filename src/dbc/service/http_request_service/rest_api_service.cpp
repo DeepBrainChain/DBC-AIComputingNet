@@ -48,7 +48,7 @@ namespace dbc {
                 {typeid(cmd_task_logs_rsp).name(), on_cmd_task_logs_rsp},
                 {typeid(cmd_list_task_rsp).name(), on_cmd_list_task_rsp},
                 {typeid(cmd_reset_task_rsp).name(), on_cmd_reset_task_rsp},
-                {typeid(cmd_destroy_task_rsp).name(), on_cmd_destroy_task_rsp},
+                {typeid(cmd_delete_task_rsp).name(), on_cmd_delete_task_rsp},
                 {typeid(cmd_modify_task_rsp).name(), on_cmd_modify_task_rsp},
                 {typeid(cmd_get_peer_nodes_rsp).name(), on_cmd_get_peer_nodes_rsp},
                 {typeid(cmd_list_node_rsp).name(), on_list_node_rsp}
@@ -77,7 +77,7 @@ namespace dbc {
         BIND_MESSAGE_INVOKER(typeid(cmd_task_logs_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_list_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_reset_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
-        BIND_MESSAGE_INVOKER(typeid(cmd_destroy_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
+        BIND_MESSAGE_INVOKER(typeid(cmd_delete_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_modify_task_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_rsp).name(),&rest_api_service::on_call_rsp_handler);
         BIND_MESSAGE_INVOKER(typeid(cmd_list_node_rsp).name(),&rest_api_service::on_call_rsp_handler);
@@ -99,7 +99,7 @@ namespace dbc {
         SUBSCRIBE_RESP_MSG(cmd_task_logs_rsp);
         SUBSCRIBE_RESP_MSG(cmd_list_task_rsp);
         SUBSCRIBE_RESP_MSG(cmd_reset_task_rsp);
-        SUBSCRIBE_RESP_MSG(cmd_destroy_task_rsp);
+        SUBSCRIBE_RESP_MSG(cmd_delete_task_rsp);
         SUBSCRIBE_RESP_MSG(cmd_modify_task_rsp);
         SUBSCRIBE_RESP_MSG(cmd_get_peer_nodes_rsp);
         SUBSCRIBE_RESP_MSG(cmd_list_node_rsp);

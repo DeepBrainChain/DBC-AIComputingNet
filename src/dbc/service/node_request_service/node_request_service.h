@@ -51,9 +51,9 @@ namespace dbc {
 
         int32_t on_node_reset_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-        int32_t on_node_destroy_task_req(std::shared_ptr<dbc::network::message>& msg);
+        int32_t on_node_delete_task_req(std::shared_ptr<dbc::network::message>& msg);
 
-        int32_t on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
+        int32_t on_node_task_logs_req(std::shared_ptr<dbc::network::message>& msg);
 
 		int32_t on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg);
 
@@ -67,7 +67,7 @@ namespace dbc {
 
         int32_t task_reset(const std::shared_ptr<matrix::service_core::node_reset_task_req>& req);
 
-        int32_t task_destroy(const std::shared_ptr<matrix::service_core::node_destroy_task_req>& req);
+        int32_t task_delete(const std::shared_ptr<matrix::service_core::node_delete_task_req>& req);
 
 		int32_t task_logs(const std::shared_ptr<matrix::service_core::node_task_logs_req>& req);
 
@@ -87,7 +87,12 @@ namespace dbc {
 		std::string get_task_id(const std::string& server_specification);
 
 	private:
-		bool check_nonce(const std::string& nonce);
+        bool check_req_header(std::shared_ptr<dbc::network::message> &msg);
+
+        bool check_rsp_header(std::shared_ptr<dbc::network::message> &msg);
+
+        bool check_nonce(const std::string& nonce);
+
 		bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
 
 	protected:

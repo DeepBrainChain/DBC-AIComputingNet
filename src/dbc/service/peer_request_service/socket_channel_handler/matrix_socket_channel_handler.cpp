@@ -65,7 +65,7 @@ namespace matrix
         {
             if (msg_name != NODE_LIST_TASK_RSP &&
                 msg_name != NODE_TASK_LOGS_RSP &&
-                msg_name != SHOW_RESP)
+                msg_name != NODE_QUERY_NODE_INFO_RSP)
             {
                 return true;
             }
@@ -93,7 +93,7 @@ namespace matrix
         {
             if( msg_name != NODE_LIST_TASK_REQ &&
                 msg_name != NODE_TASK_LOGS_REQ &&
-                msg_name != SHOW_REQ)
+                msg_name != NODE_QUERY_NODE_INFO_REQ)
             {
                 return true;
             }

@@ -1,83 +1,83 @@
-/*********************************************************************************
-
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         : data_query_service.h
-* description       : 
-* date              : 2018/6/13
-* author            : Jimmy Kuang
-**********************************************************************************/
-#pragma once
-
+#ifndef DBC_DATA_QUERY_SERVICE_H
+#define DBC_DATA_QUERY_SERVICE_H
 
 #include <boost/asio.hpp>
 #include <string>
 #include "service_module.h"
 #include "handler_create_functor.h"
-#include "node_info_message.h"
 #include "service_info_collection.h"
 #include "node_info_collection.h"
+#include "cmd_message.h"
+#include "LruCache.hpp"
 
 using namespace std;
-#ifdef WIN32
-using namespace stdext;
-#endif
 using namespace matrix::core;
 using namespace boost::asio::ip;
 
-namespace service
+namespace dbc
 {
-    namespace misc
+    class data_query_service : public service_module
     {
-        class data_query_service : public service_module
-        {
-        public:
-            data_query_service() = default;
+    public:
+        data_query_service() = default;
 
-            ~data_query_service() override = default;
+        ~data_query_service() override = default;
 
-            std::string module_name() const override { return "net_query"; }
+        std::string module_name() const override { return "net_query"; }
 
-            int32_t init(bpo::variables_map &options) override;
+        int32_t init(bpo::variables_map &options) override;
 
-        protected:
-            enum {
-                MAX_NAME_STR_LENGTH = 16
-            };
+    protected:
+        void init_subscription() override;
 
-            void init_subscription() override;
+        void init_invoker() override;
 
-            void init_invoker() override;
+        void init_timer() override;
 
-            void init_timer() override;
+        void add_self_to_servicelist(bpo::variables_map &options);
 
-            int32_t on_timer_node_info_collection(std::shared_ptr<matrix::core::core_timer> timer);
+        int32_t on_timer_node_info_collection(const std::shared_ptr<matrix::core::core_timer>& timer);
 
-            int32_t on_timer_service_broadcast(std::shared_ptr<matrix::core::core_timer> timer);
 
-            int32_t on_guard_timer_expired_for_node_info_query(std::shared_ptr<core_timer> timer);
+        bool check_req_header(std::shared_ptr<dbc::network::message> &msg);
 
-            void cfg_own_node(bpo::variables_map &options, std::string own_id);
+        bool check_rsp_header(std::shared_ptr<dbc::network::message> &msg);
 
-            int32_t on_get_task_queue_size_resp(std::shared_ptr<dbc::network::message> &msg);
+        bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
 
-        private:
-            int32_t on_cli_show_req(std::shared_ptr<dbc::network::message> &msg);
+        bool check_nonce(const std::string& nonce);
 
-            int32_t on_net_show_req(std::shared_ptr<dbc::network::message> &msg);
-            int32_t on_net_show_resp(std::shared_ptr<dbc::network::message> &msg);
-            int32_t on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg);
 
-            int32_t create_data_query_session(std::string session_id, std::shared_ptr<node_info_query_req_msg> q);
-            void rm_data_query_session(std::shared_ptr<service_session> session);
+        std::shared_ptr<dbc::network::message> create_service_broadcast_req_msg(const service_info_map& mp);
 
-        private:
-            bool m_is_computing_node;
-            std::string m_own_node_id;
+        int32_t on_timer_service_broadcast(const std::shared_ptr<matrix::core::core_timer>& timer);
 
-            service_info_collection m_service_info_collection;
-            node_info_collection m_node_info_collection;
-        };
-    }
+        int32_t on_get_task_queue_size_resp(std::shared_ptr<dbc::network::message> &msg);
+
+        // list node
+        std::shared_ptr<dbc::network::message> create_node_query_node_info_req_msg(const std::shared_ptr<::cmd_list_node_req> &cmd_req);
+
+        int32_t on_cmd_query_node_info_req(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_query_node_info_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t on_node_query_node_info_timer(const std::shared_ptr<core_timer>& timer);
+
+
+        int32_t on_node_query_node_info_req(std::shared_ptr<dbc::network::message> &msg);
+
+        int32_t query_node_info(const std::shared_ptr<matrix::service_core::node_query_node_info_req>& req);
+
+
+        int32_t on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg);
+
+    private:
+        bool m_is_computing_node = false;
+
+        service_info_collection m_service_info_collection;
+        node_info_collection m_node_info_collection;
+        lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
+    };
 }
+
+#endif
