@@ -379,7 +379,11 @@ namespace dbc {
             auto taskinfo = m_process_tasks.front();
             m_process_tasks.pop_front();
             if (taskinfo->operation == T_OP_Create) {
-                if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->ssh_port)) {
+                if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name,
+                                                          taskinfo->hardware_resource.gpu_count,
+                                                          taskinfo->hardware_resource.cpu_cores,
+                                                          taskinfo->hardware_resource.mem_rate,
+                                                          taskinfo->ssh_port)) {
                     bool succ = false;
                     int count = 0, max_count = 30;
                     while (!succ && count < max_count) {

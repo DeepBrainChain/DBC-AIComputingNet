@@ -21,6 +21,7 @@ namespace dbc
 		virtual ~VmClient();
 
 		int32_t CreateDomain(const std::string& domain_ame, const std::string& image,
+                             int32_t gpu_count, int32_t cpu_cores, float mem_rate,
                              const std::string& transform_port);
 
 		int32_t StartDomain(const std::string& domain_name);

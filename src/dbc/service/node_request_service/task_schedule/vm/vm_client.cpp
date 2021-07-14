@@ -237,9 +237,26 @@ namespace dbc {
         return run_shell(cmd.c_str());
     }
 
-    std::string shell_vga_pci_list() {
-        const char* cmd = "lspci |grep NVIDIA |grep -E 'VGA|Audio' |awk '{print $1}' |tr \"\n\" \"|\"";
-        return run_shell(cmd);
+    std::string shell_vga_pci_list(int32_t count) {
+        const char* cmd1 = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' |awk '{print $2}' |tr \"\n\" \"|\"";
+        std::string str1 = run_shell(cmd1);
+        std::vector<std::string> vec_device = SplitStr(str1, '|');
+        if (vec_device.size() <= 0 || vec_device[0] != "VGA") return "";
+        int32_t device_count = 0;
+        for (size_t i = 1; i < vec_device.size(); i++) {
+            if (vec_device[i] == "VGA") {
+                device_count = i;
+                break;
+            }
+        }
+        if (device_count == 0) {
+            device_count = vec_device.size();
+        }
+
+        std::string cmd = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' | head -n "
+                + std::to_string(device_count * count)
+                + " | awk '{print $1}' |tr \"\n\" \"|\"";
+        return run_shell(cmd.c_str());
     }
 
     VmClient::VmClient() {
@@ -252,23 +269,22 @@ namespace dbc {
 
     // vedio_pci格式： a1:b1.c1|a2:b2.c2|...
     // image_path: /data/**.qcow2
-    int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string& image,
+    int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string& image_name,
+                                   int32_t gpu_count, int32_t cpu_cores, float mem_rate,
                                    const std::string& transform_port) {
-        // 获取宿主机显卡列表
-        std::string vedio_pci = shell_vga_pci_list();
-        LOG_INFO << "\nvga_pci_list:\n" << vedio_pci;
+        // GPU
+        std::string vedio_pci = shell_vga_pci_list(gpu_count);
 
-        long cpuNumTotal = sysconf(_SC_NPROCESSORS_CONF);
-        cpuNumTotal *= DEFAULT_PERCENTAGE;
+        // CPU
+        long cpuNumTotal = cpu_cores; //sysconf(_SC_NPROCESSORS_CONF);
 
         struct sysinfo info{};
         int iRetVal = sysinfo(&info);
         if (iRetVal != 0) {
             return E_VIRT_INTERNAL_ERROR;
         }
-
         uint64_t memoryTotal = info.totalram / 1024; //kb
-        memoryTotal = (memoryTotal * DEFAULT_PERCENTAGE) > 1000000000 ? 1000000000 : (memoryTotal * DEFAULT_PERCENTAGE);
+        memoryTotal = (memoryTotal * mem_rate) > 1000000000 ? 1000000000 : (memoryTotal * mem_rate);
 
         uuid_t uu;
         char buf_uuid[1024];
@@ -276,13 +292,13 @@ namespace dbc {
         uuid_unparse(uu, buf_uuid);
 
         // 复制一份虚拟磁盘
-        std::string from_image_path = "/data/" + image;
-        auto pos = image.find('.');
-        std::string to_image_name = image;
+        std::string from_image_path = "/data/" + image_name;
+        auto pos = image_name.find('.');
+        std::string to_image_name = image_name;
         std::string to_ext;
         if (pos != std::string::npos) {
-            to_image_name = image.substr(0, pos);
-            to_ext = image.substr(pos + 1);
+            to_image_name = image_name.substr(0, pos);
+            to_ext = image_name.substr(pos + 1);
         }
         std::string to_image_path = "/data/" + to_image_name + "_" + domain_ame + "." + to_ext;
         fs::copy_file(from_image_path, to_image_path);
