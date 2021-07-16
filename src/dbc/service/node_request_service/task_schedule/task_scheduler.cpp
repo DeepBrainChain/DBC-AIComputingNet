@@ -422,7 +422,7 @@ namespace dbc {
                 std::string vm_local_ip;
                 int32_t try_count = 0;
 
-                while (vm_local_ip.empty() && try_count < 5) {
+                while (vm_local_ip.empty() && try_count < 10) {
                     virDomainInterfacePtr *ifaces = nullptr;
                     int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
                                                                    VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
@@ -481,6 +481,10 @@ namespace dbc {
                                                           taskinfo->hardware_resource.gpu_count,
                                                           taskinfo->hardware_resource.cpu_cores,
                                                           taskinfo->hardware_resource.mem_rate)) {
+
+                    sleep(1);
+                    transform_port(taskinfo->task_id, taskinfo->ssh_port);
+                    sleep(1);
                     bool succ = false;
                     int count = 0, max_count = 30;
                     while (!succ && count < max_count) {
@@ -490,10 +494,8 @@ namespace dbc {
                             break;
                         }
                         count++;
-                        sleep(3);
+                        sleep(2);
                     }
-
-                    transform_port(taskinfo->task_id, taskinfo->ssh_port);
 
                     taskinfo->__set_status(TS_Running);
                     taskinfo->__set_operation(T_OP_None);

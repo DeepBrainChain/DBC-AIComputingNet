@@ -130,6 +130,10 @@ namespace dbc {
 			return E_DEFAULT;
 		}
 		else {
+            m_websocket_client.init("wss://infotest.dbcwallet.io");
+            m_websocket_client.enable_auto_reconnection();
+            m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
+            m_websocket_client.start();
 			return E_SUCCESS;
 		}
 	}
@@ -722,23 +726,47 @@ namespace dbc {
         return strpwd;
     }
 
-    int32_t node_request_service::task_create(const std::shared_ptr<matrix::service_core::node_create_task_req>& req) {
-		if (req == nullptr) return E_DEFAULT;
+    void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
+	    if (err_code != 0) return;
 
-		// 创建虚拟机
-		std::string task_id = dbc::create_task_id();
-		std::string login_password = generate_pwd();
-		auto fresult = m_task_scheduler.CreateTask(task_id, login_password, req->body.additional);
-        int32_t ret = std::get<0>(fresult);
-        std::string ret_msg = std::get<1>(fresult);
+        rapidjson::Document doc;
+        doc.Parse(msg.c_str());
+        if (!doc.IsObject())
+            return;
+
+        if (!doc.HasMember("result")) return;
+        const rapidjson::Value &v_result = doc["result"];
+        if (!v_result.IsObject()) return;
+        if (!v_result.HasMember("machineStatus")) return;
+        const rapidjson::Value& v_machineStatus = v_result["machineStatus"];
+        if (!v_machineStatus.IsString()) return;
+        std::string machine_status = v_machineStatus.GetString();
+
+        int32_t ret = E_DEFAULT;
+        std::string ret_msg;
+        std::string task_id;
+        std::string login_password;
+
+        if (machine_status == "creating" || machine_status == "rented") {
+            // 创建虚拟机
+            task_id = dbc::create_task_id();
+            login_password = generate_pwd();
+            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
+            ret = std::get<0>(fresult);
+            ret_msg = std::get<1>(fresult);
+        }
+        else {
+            ret = E_DEFAULT;
+            ret_msg = "rent check failed";
+        }
 
         std::shared_ptr<matrix::service_core::node_create_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_create_task_rsp>();
         // header
         rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
         rsp_content->header.__set_msg_name(NODE_CREATE_TASK_RSP);
         rsp_content->header.__set_nonce(dbc::create_nonce());
-        rsp_content->header.__set_session_id(req->header.session_id);
-        rsp_content->header.__set_path(req->header.path);
+        rsp_content->header.__set_session_id(m_create_req->header.session_id);
+        rsp_content->header.__set_path(m_create_req->header.path);
         std::map<std::string, std::string> exten_info;
         std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_id + login_password;
         std::string sign = dbc::sign(sign_msg, CONF_MANAGER->get_node_private_key());
@@ -759,27 +787,44 @@ namespace dbc {
         std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
         public_ip = string_util::rtrim(public_ip, '\n');
         rsp_content->body.__set_ip(public_ip);
-        rsp_content->body.__set_ssh_port(taskinfo->ssh_port);
-        struct tm _tm;
-        time_t tt = taskinfo->create_time;
-        localtime_r(&tt, &_tm);
-        char buf[256] = {0};
-        memset(buf, 0, sizeof(char) * 256);
-        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-        rsp_content->body.__set_create_time(buf);
-        //todo: 填充系统信息
-        rsp_content->body.__set_system_storage("350G");
-        rsp_content->body.__set_data_storage("2T");
-        rsp_content->body.__set_cpu_cores(std::to_string(taskinfo->hardware_resource.cpu_cores));
-        rsp_content->body.__set_gpu_count(std::to_string(taskinfo->hardware_resource.gpu_count));
-        rsp_content->body.__set_mem_size(std::to_string(taskinfo->hardware_resource.mem_rate));
-
+        if (taskinfo != nullptr) {
+            rsp_content->body.__set_ssh_port(taskinfo->ssh_port);
+            struct tm _tm;
+            time_t tt = taskinfo->create_time;
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            rsp_content->body.__set_create_time(buf);
+            //todo: 填充系统信息
+            rsp_content->body.__set_system_storage("350G");
+            rsp_content->body.__set_data_storage("2T");
+            rsp_content->body.__set_cpu_cores(std::to_string(taskinfo->hardware_resource.cpu_cores));
+            rsp_content->body.__set_gpu_count(std::to_string(taskinfo->hardware_resource.gpu_count));
+            rsp_content->body.__set_mem_size(std::to_string(taskinfo->hardware_resource.mem_rate));
+        }
         //rsp msg
         std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
         resp_msg->set_name(NODE_CREATE_TASK_RSP);
         resp_msg->set_content(rsp_content);
         CONNECTION_MANAGER->send_resp_message(resp_msg);
-        return E_SUCCESS;
+	}
+
+    int32_t node_request_service::task_create(const std::shared_ptr<matrix::service_core::node_create_task_req>& req) {
+		if (req == nullptr) return E_DEFAULT;
+
+		//验证租金
+        m_create_req = req;
+        if (m_websocket_client.is_connected()) {
+            std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                                   + CONF_MANAGER->get_node_id() + R"("]})";
+            m_websocket_client.send(str_send);
+            LOG_INFO << "ws_send: " << str_send;
+        } else {
+            return E_SUCCESS;
+        }
+
+		return E_SUCCESS;
     }
 
 	int32_t node_request_service::task_start(const std::shared_ptr<matrix::service_core::node_start_task_req>& req) {

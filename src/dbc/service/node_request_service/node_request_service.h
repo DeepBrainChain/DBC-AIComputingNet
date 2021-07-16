@@ -12,6 +12,8 @@
 #include "image_manager.h"
 #include "task_scheduler.h"
 #include "LruCache.hpp"
+#include "websocket_client.h"
+#include "matrix_types.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
@@ -95,6 +97,8 @@ namespace dbc {
 
 		bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
 
+        void on_ws_msg(int32_t err_code, const std::string& msg);
+
 	protected:
 		TaskScheduler m_task_scheduler;
 
@@ -102,7 +106,10 @@ namespace dbc {
 		uint32_t m_prune_task_timer_id = INVALID_TIMER_ID;
 
 		lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
-	};
+
+        std::shared_ptr<matrix::service_core::node_create_task_req> m_create_req;
+        websocket_client m_websocket_client;
+    };
 }
 
 #endif

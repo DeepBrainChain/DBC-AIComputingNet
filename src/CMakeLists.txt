@@ -19,9 +19,9 @@ include_directories(
         ./3rd/network
         ./3rd/network/libevent
         ./3rd/network/libevent/event2
-        ./3rd/network/openssl
-        ./3rd/network/openssl/internal
-        ./3rd/network/openssl/openssl
+        #./3rd/network/openssl
+        #./3rd/network/openssl/internal
+        #./3rd/network/openssl/openssl
         ./3rd/network/rapidjson
         ./3rd/network/rapidjson/internal
         ./3rd/network/rapidjson/error
@@ -30,6 +30,8 @@ include_directories(
         ./3rd/xml
         ./3rd/substrate
         ./3rd/sr25519crust
+        ./3rd/network/websocket
+        ./3rd/network/websocket/ixwebsocket
 )
 
 #core
@@ -95,7 +97,7 @@ include_directories(.)
 aux_source_directory(. dbc_src_files)
 
 link_directories(${3RD_LIB_PATH}/secp256k1)
-link_directories(${3RD_LIB_PATH}/openssl)
+#link_directories(${3RD_LIB_PATH}/openssl)
 link_directories(${3RD_LIB_PATH}/leveldb)
 link_directories(${3RD_LIB_PATH}/libevent)
 link_directories(${3RD_LIB_PATH}/readline)
@@ -103,11 +105,12 @@ link_directories(${3RD_LIB_PATH}/snappy)
 link_directories(${3RD_LIB_PATH}/tinyxml2)
 link_directories(${3RD_LIB_PATH}/substrate)
 link_directories(${3RD_LIB_PATH}/sr25519)
+link_directories(${3RD_LIB_PATH}/websocket)
 
 add_executable(dbc ${dbc_src_files})
 
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 endif ()
 
 if (APPLE)
