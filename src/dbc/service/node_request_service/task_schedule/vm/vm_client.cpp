@@ -24,6 +24,7 @@
 #include "tinyxml2.h"
 #include "comm.h"
 #include <uuid/uuid.h>
+#include "ResourceManager.h"
 
 namespace dbc {
     vector<string> SplitStr(const string &s, const char &c) {
@@ -51,11 +52,12 @@ namespace dbc {
                              uint64_t memeory, uint64_t max_memory, long cpunum,
                              const std::string &  vedio_pci, const std::string & image_path)
     {
-        //生成xml格式配置文件
         tinyxml2::XMLDocument doc;
-        //2.创建根节点
+
+        // <domain>
         tinyxml2::XMLElement* root = doc.NewElement("domain");
         root->SetAttribute("type", "kvm");
+        root->SetAttribute("xmlns:qemu", "http://libvirt.org/schemas/domain/qemu/1.0");
         doc.InsertEndChild(root);
 
         tinyxml2::XMLElement* name_node = doc.NewElement("name");
@@ -90,6 +92,7 @@ namespace dbc {
             root->LinkEndChild(cpu_node);
         }
 
+        // <os>
         tinyxml2::XMLElement* os_node = doc.NewElement("os");
         tinyxml2::XMLElement* os_sub_node = doc.NewElement("type");
         os_sub_node->SetAttribute("arch", "x86_64");
@@ -106,9 +109,58 @@ namespace dbc {
         os_node->LinkEndChild(os_sub_node3);
         root->LinkEndChild(os_node);
 
+        // <features>
+        tinyxml2::XMLElement* features_node = doc.NewElement("features");
+        tinyxml2::XMLElement* features_sub_node1 = doc.NewElement("acpi");
+        features_node->LinkEndChild(features_sub_node1);
+        tinyxml2::XMLElement* features_sub_node2 = doc.NewElement("apic");
+        features_node->LinkEndChild(features_sub_node2);
+        tinyxml2::XMLElement* features_sub_node3 = doc.NewElement("kvm");
+        tinyxml2::XMLElement* node_hidden = doc.NewElement("hidden");
+        node_hidden->SetAttribute("state", "on");
+        features_sub_node3->LinkEndChild(node_hidden);
+        features_node->LinkEndChild(features_sub_node3);
+        root->LinkEndChild(features_node);
+
+        // <cpu>
+        tinyxml2::XMLElement* cpu_node = doc.NewElement("cpu");
+        cpu_node->SetAttribute("mode", "host-passthrough");
+        cpu_node->SetAttribute("check", "none");
+        tinyxml2::XMLElement* node_topology = doc.NewElement("topology");
+        //todo: cpu cores
+        int32_t threads_count = ResourceManager::cpu_threads();
+        int32_t sockets_count = ResourceManager::physical_cpu();
+        int32_t cores_per_socket = ResourceManager::cpu_siblings_per_physical();
+        int tmp_cpu = cpunum / threads_count;
+        int tmp_socket = 1;
+        if (tmp_cpu > cores_per_socket) tmp_socket += 1;
+        int tmp_cores = tmp_cpu / tmp_socket;
+        LOG_INFO << "socket:" << tmp_socket << ", cores:" << tmp_cores << ", threads:" << threads_count;
+
+        node_topology->SetAttribute("sockets", std::to_string(tmp_socket).c_str());
+        node_topology->SetAttribute("cores", std::to_string(tmp_cores).c_str());
+        node_topology->SetAttribute("threads", std::to_string(threads_count).c_str());
+        cpu_node->LinkEndChild(node_topology);
+        tinyxml2::XMLElement* node_cache = doc.NewElement("cache");
+        node_cache->SetAttribute("mode", "passthrough");
+        cpu_node->LinkEndChild(node_cache);
+        root->LinkEndChild(cpu_node);
+
         tinyxml2::XMLElement* clock_node = doc.NewElement("clock");
         clock_node->SetAttribute("offset", "utc");
         root->LinkEndChild(clock_node);
+
+        // <pm>
+        /*
+        tinyxml2::XMLElement* node_pm = doc.NewElement("pm");
+        tinyxml2::XMLElement* node_suspend_to_mem = doc.NewElement("suspend-to-mem");
+        node_suspend_to_mem->SetAttribute("enabled", "on");
+        node_pm->LinkEndChild(node_suspend_to_mem);
+        tinyxml2::XMLElement* node_suspend_to_disk = doc.NewElement("suspend-to-disk");
+        node_suspend_to_disk->SetAttribute("enabled", "on");
+        node_pm->LinkEndChild(node_suspend_to_disk);
+        root->LinkEndChild(node_pm);
+        */
 
         tinyxml2::XMLElement* dev_node = doc.NewElement("devices");
         /*
@@ -205,14 +257,22 @@ namespace dbc {
         listen_node->SetAttribute("address", "0.0.0.0");
         graphics_node->LinkEndChild(listen_node);
         dev_node->LinkEndChild(graphics_node);
-
         root->LinkEndChild(dev_node);
+
+        // <qemu:commandline>
+        tinyxml2::XMLElement* node_qemu_commandline = doc.NewElement("qemu:commandline");
+        tinyxml2::XMLElement* node_qemu_arg1 = doc.NewElement("qemu:arg");
+        node_qemu_arg1->SetAttribute("value", "-cpu");
+        node_qemu_commandline->LinkEndChild(node_qemu_arg1);
+        tinyxml2::XMLElement* node_qemu_arg2 = doc.NewElement("qemu:arg");
+        node_qemu_arg2->SetAttribute("value", "host");
+        node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+        root->LinkEndChild(node_qemu_commandline);
 
         //doc.SaveFile("domain.xml");
         tinyxml2::XMLPrinter printer;
-        doc.Print( &printer );//将Print打印到Xmlprint类中 即保存在内存中
-
-        return printer.CStr();//转换成const char*类型
+        doc.Print( &printer );
+        return printer.CStr();
     }
 
     std::string getUrl() {

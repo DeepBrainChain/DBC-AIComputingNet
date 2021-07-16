@@ -12,6 +12,10 @@ public:
     // cpu
     static std::string cpu_type();
     static int32_t cpu_cores();
+    static int32_t physical_cpu();
+    static int32_t cpu_cores_per_physical();
+    static int32_t cpu_siblings_per_physical();
+    static int32_t cpu_threads();
 
     // mem (G)
     static int32_t mem_total();

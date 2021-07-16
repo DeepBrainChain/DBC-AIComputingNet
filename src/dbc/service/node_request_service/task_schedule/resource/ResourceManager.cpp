@@ -24,6 +24,41 @@ int32_t ResourceManager::cpu_cores() {
     return atoi(cpu_cores.c_str());
 }
 
+int32_t ResourceManager::physical_cpu() {
+    std::string s_physical_cpu = run_shell("cat /proc/cpuinfo| grep \"physical id\"| sort| uniq| wc -l");
+    s_physical_cpu = string_util::rtrim(s_physical_cpu, '\n');
+    int32_t num_physical_cpu = atoi(s_physical_cpu.c_str());
+    return num_physical_cpu;
+}
+
+int32_t ResourceManager::cpu_cores_per_physical() {
+    std::string s_cpu_cores_per_physical = run_shell("cat /proc/cpuinfo| grep \"cpu cores\"| uniq");
+    s_cpu_cores_per_physical = string_util::rtrim(s_cpu_cores_per_physical, '\n');
+    std::vector<std::string> vec1;
+    string_util::split(s_cpu_cores_per_physical, ":", vec1);
+    s_cpu_cores_per_physical = vec1[1];
+    s_cpu_cores_per_physical = string_util::ltrim(s_cpu_cores_per_physical, ' ');
+    int32_t num_cpu_cores_per_physical = atoi(s_cpu_cores_per_physical.c_str());
+    return num_cpu_cores_per_physical;
+}
+
+int32_t ResourceManager::cpu_siblings_per_physical() {
+    std::string s_cpu_siblings_per_physical = run_shell("cat /proc/cpuinfo | grep 'siblings' | uniq");
+    s_cpu_siblings_per_physical = string_util::rtrim(s_cpu_siblings_per_physical, '\n');
+    std::vector<std::string> vec2;
+    string_util::split(s_cpu_siblings_per_physical, ":", vec2);
+    s_cpu_siblings_per_physical = vec2[1];
+    s_cpu_siblings_per_physical = string_util::ltrim(s_cpu_siblings_per_physical, ' ');
+    int32_t num_cpu_siblings_per_physical = atoi(s_cpu_siblings_per_physical.c_str());
+    return num_cpu_siblings_per_physical;
+}
+
+int32_t ResourceManager::cpu_threads() {
+    int32_t siblings = cpu_siblings_per_physical();
+    int32_t cores = cpu_cores_per_physical();
+    return siblings / cores;
+}
+
 int32_t ResourceManager::mem_total() {
     std::string mem_total = run_shell("free  -g | grep \"Mem:\" | awk '{print $2}'");
     mem_total = string_util::rtrim(mem_total, '\n');

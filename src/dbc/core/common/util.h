@@ -215,6 +215,26 @@ namespace matrix
                 return s.substr(0, i + 1);
             }
 
+            static std::string ltrim(std::string& s, char c)
+            {
+                if(s.size() == 0)
+                {
+                    return "";
+                }
+
+                int i = 0;
+
+                for(; i < s.length(); i++)
+                {
+                    if(s[i] != c)
+                    {
+                        break;
+                    }
+                }
+
+                return s.substr(i);
+            }
+
             static std::string remove_leading_zero(std::string str)
             {
                 bool is_input_str_empty = str.empty();
@@ -227,8 +247,6 @@ namespace matrix
 
                 return str.empty()?"0":str;
             }
-
-
         };
 
         class file_util
