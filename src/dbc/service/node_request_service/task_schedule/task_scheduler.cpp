@@ -414,30 +414,38 @@ namespace dbc {
             int try_count = 0;
             while (public_ip.empty() && try_count < 10) {
                 public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
+                try_count += 1;
                 sleep(1);
             }
             public_ip = string_util::rtrim(public_ip, '\n');
             if (!public_ip.empty() && !transform_port.empty()) {
                 std::string vm_local_ip;
+                int32_t try_count = 0;
 
-                virDomainInterfacePtr *ifaces = nullptr;
-                int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
-                for (int i = 0; i < ifaces_count; i++) {
-                    /*
-                    std::string if_name = ifaces[i]->name;
-                    std::string if_hwaddr;
-                    if (ifaces[i]->hwaddr)
-                        if_hwaddr = ifaces[i]->hwaddr;
-                    */
+                while (vm_local_ip.empty() && try_count < 5) {
+                    virDomainInterfacePtr *ifaces = nullptr;
+                    int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
+                                                                   VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
+                    for (int i = 0; i < ifaces_count; i++) {
+                        /*
+                        std::string if_name = ifaces[i]->name;
+                        std::string if_hwaddr;
+                        if (ifaces[i]->hwaddr)
+                            if_hwaddr = ifaces[i]->hwaddr;
+                        */
 
-                    for (int j = 0; j < ifaces[i]->naddrs; j++) {
-                        virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
-                        vm_local_ip = ip_addr->addr;
+                        for (int j = 0; j < ifaces[i]->naddrs; j++) {
+                            virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
+                            vm_local_ip = ip_addr->addr;
+                            if (!vm_local_ip.empty()) break;
+                            //printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
+                        }
+
                         if (!vm_local_ip.empty()) break;
-                        //printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
                     }
 
-                    if (!vm_local_ip.empty()) break;
+                    try_count += 1;
+                    sleep(1);
                 }
 
                 if (!vm_local_ip.empty()) {
