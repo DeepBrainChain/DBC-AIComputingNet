@@ -372,6 +372,96 @@ namespace dbc {
         remove(real_image_path.c_str());
 	}
 
+    std::string shell_transform_port(const std::string &host_ip, const std::string &transform_port, const std::string& vm_local_ip) {
+        std::string cmd;
+        cmd += "sudo iptables --table nat --append PREROUTING --protocol tcp --destination " + host_ip + " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
+        cmd += " && sudo iptables -t nat -A PREROUTING -p tcp --dport " + transform_port + " -j DNAT --to-destination " + vm_local_ip + ":22";
+        cmd += " && sudo iptables -t nat -A POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip + " -j SNAT --to 192.168.122.1";
+        cmd += " && sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " + vm_local_ip + ":20000-60000";
+        cmd += " && sudo iptables -t nat -A PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " + vm_local_ip + ":20000-60000";
+        cmd += " && sudo iptables -t nat -A POSTROUTING -d " + vm_local_ip + " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+        cmd += " && sudo iptables -t nat -A POSTROUTING -d " + vm_local_ip + " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+        LOG_INFO << "transform_port:" << cmd;
+
+        return run_shell(cmd.c_str());
+    }
+
+    // 设置端口转发
+	void transform_port(const std::string& domain_name, const std::string &transform_port) {
+        virConnectPtr connPtr = nullptr;
+        virDomainPtr domainPtr = nullptr;
+        do {
+            std::stringstream sstream;
+            sstream << "qemu+tcp://";
+            sstream << "localhost";
+            sstream << ":";
+            sstream << 16509;
+            sstream << "/system";
+            std::string url = sstream.str();
+            connPtr = virConnectOpen(url.c_str());
+            if (nullptr == connPtr) {
+                LOG_ERROR << "connPtr is nullptr";
+                break;
+            }
+
+            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+            if (nullptr == domainPtr) {
+                LOG_ERROR << "domainPtr is nullptr";
+                break;
+            }
+
+            std::string public_ip;
+            int try_count = 0;
+            while (public_ip.empty() && try_count < 10) {
+                public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
+                sleep(1);
+            }
+            public_ip = string_util::rtrim(public_ip, '\n');
+            if (!public_ip.empty() && !transform_port.empty()) {
+                std::string vm_local_ip;
+
+                virDomainInterfacePtr *ifaces = nullptr;
+                int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
+                for (int i = 0; i < ifaces_count; i++) {
+                    /*
+                    std::string if_name = ifaces[i]->name;
+                    std::string if_hwaddr;
+                    if (ifaces[i]->hwaddr)
+                        if_hwaddr = ifaces[i]->hwaddr;
+                    */
+
+                    for (int j = 0; j < ifaces[i]->naddrs; j++) {
+                        virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
+                        vm_local_ip = ip_addr->addr;
+                        if (!vm_local_ip.empty()) break;
+                        //printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
+                    }
+
+                    if (!vm_local_ip.empty()) break;
+                }
+
+                if (!vm_local_ip.empty()) {
+                    shell_transform_port(public_ip, transform_port, vm_local_ip);
+                } else {
+                    LOG_ERROR << "vm_local_ip is empty";
+                }
+
+                LOG_INFO << "transform ssh port: " << public_ip << ":" << transform_port
+                         << " local_ip:" << vm_local_ip;
+            } else {
+                LOG_ERROR << "transform ip or port is empty " << public_ip << ":" << transform_port;
+            }
+        } while(0);
+
+        if (nullptr != domainPtr) {
+            virDomainFree(domainPtr);
+        }
+
+        if (nullptr != connPtr) {
+            virConnectClose(connPtr);
+        }
+	}
+
 	void TaskScheduler::ProcessTask() {
 	    LOG_INFO << "TaskScheduler::ProcessTask (" << m_process_tasks.size() << ")";
 
@@ -382,12 +472,11 @@ namespace dbc {
                 if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name,
                                                           taskinfo->hardware_resource.gpu_count,
                                                           taskinfo->hardware_resource.cpu_cores,
-                                                          taskinfo->hardware_resource.mem_rate,
-                                                          taskinfo->ssh_port)) {
+                                                          taskinfo->hardware_resource.mem_rate)) {
                     bool succ = false;
                     int count = 0, max_count = 30;
                     while (!succ && count < max_count) {
-                        succ = SetVmPassword(taskinfo->task_id, "ubuntu", taskinfo->login_password);
+                        succ = SetVmPassword(taskinfo->task_id, "dbc", taskinfo->login_password);
                         if (succ) {
                             LOG_INFO << "set vm password successful, " << taskinfo->task_id << " : " << taskinfo->login_password;
                             break;
@@ -395,6 +484,8 @@ namespace dbc {
                         count++;
                         sleep(3);
                     }
+
+                    transform_port(taskinfo->task_id, taskinfo->ssh_port);
 
                     taskinfo->__set_status(TS_Running);
                     taskinfo->__set_operation(T_OP_None);

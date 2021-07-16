@@ -195,10 +195,11 @@ namespace dbc {
 
         tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
         graphics_node->SetAttribute("type", "vnc");
-        graphics_node->SetAttribute("port", "-1");
-        graphics_node->SetAttribute("autoport", "yes");
+        graphics_node->SetAttribute("port", "5910");
+        graphics_node->SetAttribute("autoport", "no");
         graphics_node->SetAttribute("listen", "0.0.0.0");
         graphics_node->SetAttribute("keymap", "en-us");
+        graphics_node->SetAttribute("passwd", "dbtu@supper2017");
         tinyxml2::XMLElement* listen_node = doc.NewElement("listen");
         listen_node->SetAttribute("type", "address");
         listen_node->SetAttribute("address", "0.0.0.0");
@@ -222,19 +223,6 @@ namespace dbc {
         sstream << 16509;
         sstream << "/system";
         return sstream.str();
-    }
-
-    std::string shell_transform_port(const std::string &host_ip, const std::string &transform_port) {
-        std::string cmd = "";
-        cmd += "sudo iptables --table nat --append PREROUTING --protocol tcp --destination " + host_ip + " --destination-port " + transform_port + " --jump DNAT --to-destination 192.168.122.2:22";
-        cmd += " && sudo iptables -t nat -A PREROUTING -p tcp --dport " + transform_port + " -j DNAT --to-destination 192.168.122.2:22";
-        cmd += " && sudo iptables -t nat -A POSTROUTING -p tcp --dport " + transform_port + " -d 192.168.122.2 -j SNAT --to 192.168.122.1";
-        cmd += " && sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination 192.168.122.2:20000-60000";
-        cmd += " && sudo iptables -t nat -A PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination 192.168.122.2:20000-60000";
-        cmd += " && sudo iptables -t nat -A POSTROUTING -d 192.168.122.2 -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
-        cmd += " && sudo iptables -t nat -A POSTROUTING -d 192.168.122.2 -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
-
-        return run_shell(cmd.c_str());
     }
 
     std::string shell_vga_pci_list(int32_t count) {
@@ -270,8 +258,7 @@ namespace dbc {
     // vedio_pci格式： a1:b1.c1|a2:b2.c2|...
     // image_path: /data/**.qcow2
     int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string& image_name,
-                                   int32_t gpu_count, int32_t cpu_cores, float mem_rate,
-                                   const std::string& transform_port) {
+                                   int32_t gpu_count, int32_t cpu_cores, float mem_rate) {
         // GPU
         std::string vedio_pci = shell_vga_pci_list(gpu_count);
 
@@ -305,14 +292,6 @@ namespace dbc {
 
         std::string xml_content = createXmlStr(buf_uuid, domain_ame, memoryTotal,
                                                memoryTotal, cpuNumTotal, vedio_pci, to_image_path);
-
-        // 设置端口转发
-        std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
-        public_ip = string_util::rtrim(public_ip, '\n');
-        if (!public_ip.empty() && !transform_port.empty()) {
-            std::string ret = shell_transform_port(public_ip, transform_port);
-            LOG_INFO << "transform ssh port: " << public_ip << ":" << transform_port << " ret:" << ret;
-        }
 
         virConnectPtr connPtr = nullptr;
         virDomainPtr domainPtr = nullptr;

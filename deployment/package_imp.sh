@@ -12,6 +12,11 @@ mining_repo_dir=./mining_repo
 ipfs_repo_src_dir=$deployment_dir/ipfs_repo
 
 os_name=`uname -a | awk '{print $1}'`
+if [ $os_name == 'Linux' ];then
+    os_name=linux
+elif [ $os_name == 'Darwin' ];then
+    os_name=macos
+fi
 
 remove_leading_zero()
 {
@@ -108,27 +113,6 @@ dbc_package()
     chmod +x $dbc_repo_dir/dbc
     chmod +x $dbc_repo_dir/tool/*
     chmod +x $dbc_repo_dir/p
-
-    # dbc ai-training container related files: only for mining node
-    if [ $os_name == 'linux' -a $type == 'mining' ];then
-        echo "    substep: container package"
-
-        cp -r $deployment_dir/container $dbc_repo_dir/
-        chmod +x $dbc_repo_dir/container/dbc_task.sh
-
-        # add ipfs install pkg
-        cp $ipfs_repo_src_dir/swarm.key         $dbc_repo_dir/container/
-        cp $ipfs_repo_src_dir/install_ipfs.sh   $dbc_repo_dir/container/
-        cp $ipfs_repo_src_dir/$ipfs_pkg_tgz     $dbc_repo_dir/container/
-        cp $tool_dir/dbc_upload                 $dbc_repo_dir/container/
-        cp $tool_dir/upload.py                  $dbc_repo_dir/container/
-        cp -r $deployment_dir/cache             $dbc_repo_dir/container/
-        cp $tool_dir/jq                         $dbc_repo_dir/container/
-        cp $tool_dir/ngrok                      $dbc_repo_dir/container/
-        cp -r $deployment_dir/lxcfs             $dbc_repo_dir/container/
-        cp -r $deployment_dir/private_docker_repo $dbc_repo_dir/tool/
-
-    fi
 }
 
 mining_package()
@@ -138,9 +122,7 @@ mining_package()
     mkdir $mining_repo_dir
 
     cp $tool_dir/mining_install.sh  $mining_repo_dir/
-    cp $tool_dir/docker_gpg.key     $mining_repo_dir/
     cp $tool_dir/nvidia-persistenced.service $mining_repo_dir/
-    cp -r $deployment_dir/archive   $mining_repo_dir/
 
     chmod +x $mining_repo_dir/*.sh
 }

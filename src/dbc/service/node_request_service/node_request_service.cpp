@@ -754,7 +754,7 @@ namespace dbc {
         rsp_content->body.__set_result(ret);
         rsp_content->body.__set_result_msg(ret_msg);
         rsp_content->body.__set_task_id(task_id);
-        rsp_content->body.__set_user_name("ubuntu");
+        rsp_content->body.__set_user_name("dbc");
         rsp_content->body.__set_login_password(login_password);
         std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
         public_ip = string_util::rtrim(public_ip, '\n');
