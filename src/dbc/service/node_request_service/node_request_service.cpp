@@ -747,6 +747,8 @@ namespace dbc {
         std::string task_id;
         std::string login_password;
 
+        //machine_status = "creating";
+
         if (machine_status == "creating" || machine_status == "rented") {
             // 创建虚拟机
             task_id = dbc::create_task_id();

@@ -422,7 +422,7 @@ namespace dbc {
                 std::string vm_local_ip;
                 int32_t try_count = 0;
 
-                while (vm_local_ip.empty() && try_count < 10) {
+                while (vm_local_ip.empty() && try_count < 15) {
                     virDomainInterfacePtr *ifaces = nullptr;
                     int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
                                                                    VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
@@ -445,7 +445,7 @@ namespace dbc {
                     }
 
                     try_count += 1;
-                    sleep(1);
+                    sleep(3);
                 }
 
                 if (!vm_local_ip.empty()) {
@@ -486,15 +486,15 @@ namespace dbc {
                     transform_port(taskinfo->task_id, taskinfo->ssh_port);
                     sleep(1);
                     bool succ = false;
-                    int count = 0, max_count = 30;
-                    while (!succ && count < max_count) {
+                    int count = 0;
+                    while (!succ && count < 30) {
                         succ = SetVmPassword(taskinfo->task_id, "dbc", taskinfo->login_password);
                         if (succ) {
                             LOG_INFO << "set vm password successful, " << taskinfo->task_id << " : " << taskinfo->login_password;
                             break;
                         }
                         count++;
-                        sleep(2);
+                        sleep(1);
                     }
 
                     taskinfo->__set_status(TS_Running);
@@ -503,6 +503,9 @@ namespace dbc {
 
                     LOG_INFO << "create task " << taskinfo->task_id << " successful";
                 } else {
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_ERROR << "create task " << taskinfo->task_id << " failed";
                 }
             } else if (taskinfo->operation == T_OP_Start) {
@@ -513,6 +516,9 @@ namespace dbc {
 
                     LOG_INFO << "start task " << taskinfo->task_id << " successful";
                 } else {
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_ERROR << "start task " << taskinfo->task_id << " failed";
                 }
             } else if (taskinfo->operation == T_OP_Stop) {
@@ -523,6 +529,9 @@ namespace dbc {
 
                     LOG_INFO << "stop task " << taskinfo->task_id << " successful";
                 } else {
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_ERROR << "stop task " << taskinfo->task_id << " failed";
                 }
             } else if (taskinfo->operation == T_OP_ReStart) {
@@ -535,6 +544,9 @@ namespace dbc {
 
                         LOG_INFO << "restart task " << taskinfo->task_id << " successful";
                     } else {
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
                         LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
                     }
                 } else if (vm_status == VS_RUNNING) {
@@ -545,6 +557,9 @@ namespace dbc {
 
                         LOG_INFO << "restart task " << taskinfo->task_id << " successful";
                     } else {
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
                         LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
                     }
                 }
@@ -556,6 +571,9 @@ namespace dbc {
 
                     LOG_INFO << "reset task " << taskinfo->task_id << " successful";
                 } else {
+                    taskinfo->__set_operation(T_OP_None);
+                    m_task_db.write_task(taskinfo);
+
                     LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
                 }
             } else if (taskinfo->operation == T_OP_Delete) {
@@ -570,6 +588,9 @@ namespace dbc {
 
                         LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                     } else {
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
                         LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                     }
                 } else if (vm_status == VS_RUNNING) {
@@ -584,9 +605,15 @@ namespace dbc {
 
                             LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                         } else {
+                            taskinfo->__set_operation(T_OP_None);
+                            m_task_db.write_task(taskinfo);
+
                             LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                         }
                     } else {
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
                         LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                     }
                 }

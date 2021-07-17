@@ -373,6 +373,11 @@ namespace dbc {
 
             if (virDomainCreate(domainPtr) < 0) {
                 errorNum = E_VIRT_INTERNAL_ERROR;
+
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << "virDomainCreate error: " << error->message;
+                virFreeError(error);
+
                 break;
             }
         } while (0);
