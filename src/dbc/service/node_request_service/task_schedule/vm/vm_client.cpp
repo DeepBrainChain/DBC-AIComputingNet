@@ -247,8 +247,8 @@ namespace dbc {
 
         tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
         graphics_node->SetAttribute("type", "vnc");
-        graphics_node->SetAttribute("port", "5910");
-        graphics_node->SetAttribute("autoport", "no");
+        graphics_node->SetAttribute("port", "-1");
+        graphics_node->SetAttribute("autoport", "yes");
         graphics_node->SetAttribute("listen", "0.0.0.0");
         graphics_node->SetAttribute("keymap", "en-us");
         graphics_node->SetAttribute("passwd", "dbtu@supper2017");
