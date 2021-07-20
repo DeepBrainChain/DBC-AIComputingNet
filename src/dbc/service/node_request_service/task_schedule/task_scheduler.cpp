@@ -53,7 +53,10 @@ namespace dbc {
 	}
 
     FResult TaskScheduler::Init() {
-		return init_db();
+	    return init_db();
+
+	    //todo: 加载gpu、cpu资源
+
 	}
 
     FResult TaskScheduler::init_db() {
@@ -445,7 +448,7 @@ namespace dbc {
                     }
 
                     try_count += 1;
-                    sleep(3);
+                    sleep(2);
                 }
 
                 if (!vm_local_ip.empty()) {
@@ -481,20 +484,20 @@ namespace dbc {
                                                           taskinfo->hardware_resource.gpu_count,
                                                           taskinfo->hardware_resource.cpu_cores,
                                                           taskinfo->hardware_resource.mem_rate)) {
-
                     sleep(1);
                     transform_port(taskinfo->task_id, taskinfo->ssh_port);
+
                     sleep(1);
                     bool succ = false;
                     int count = 0;
-                    while (!succ && count < 30) {
+                    while (count < 15) {
                         succ = SetVmPassword(taskinfo->task_id, "dbc", taskinfo->login_password);
                         if (succ) {
                             LOG_INFO << "set vm password successful, " << taskinfo->task_id << " : " << taskinfo->login_password;
                             break;
                         }
                         count++;
-                        sleep(1);
+                        sleep(2);
                     }
 
                     taskinfo->__set_status(TS_Running);

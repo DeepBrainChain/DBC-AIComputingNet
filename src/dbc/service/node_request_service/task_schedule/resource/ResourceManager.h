@@ -3,6 +3,74 @@
 
 #include <iostream>
 #include <string>
+#include "singleton.h"
+#include <vector>
+#include <map>
+#include <list>
+
+struct DeviceGpu {
+    std::string id;
+    std::vector<std::string> devices;
+
+    static std::string parse_bus(const std::string& id);
+    static std::string parse_slot(const std::string& id);
+    static std::string parse_function(const std::string& id);
+};
+
+struct DeviceCpu {
+    int32_t sockets;
+    int32_t cores;
+    int32_t threads;
+};
+
+enum DiskType {
+    DT_HDD,
+    DT_SSD
+};
+
+struct DeviceDisk {
+    DiskType type;
+    int64_t total;
+    int64_t available;
+};
+
+struct DeviceMem {
+    int64_t total;
+    int64_t available;
+};
+
+class HardwareManager : public Singleton<HardwareManager> {
+public:
+    HardwareManager() = default;
+
+    virtual ~HardwareManager() = default;
+
+    // cpu、gpu、disk、mem
+    void Init();
+
+
+    // test
+    void print_gpu();
+
+private:
+    void init_gpu();
+    void init_cpu();
+    void init_disk();
+    void init_mem();
+
+private:
+    // system
+    DeviceCpu m_cpu;
+    std::map<std::string, DeviceGpu> m_gpu; // <id, gpu>
+    DeviceMem m_mem;
+    DeviceDisk m_disk;
+
+    // task
+    std::map<std::string, DeviceCpu> m_mpTaskCpu;
+    std::map<std::string, std::list<DeviceGpu>> m_mpTaskGpu;
+    std::map<std::string, DeviceMem> m_mpTaskMem;
+    std::map<std::string, DeviceDisk> m_mpTaskDisk;
+};
 
 class ResourceManager {
 public:

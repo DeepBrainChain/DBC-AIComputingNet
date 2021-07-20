@@ -727,40 +727,68 @@ namespace dbc {
     }
 
     void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
-	    if (err_code != 0) return;
-
-        rapidjson::Document doc;
-        doc.Parse(msg.c_str());
-        if (!doc.IsObject())
-            return;
-
-        if (!doc.HasMember("result")) return;
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) return;
-        if (!v_result.HasMember("machineStatus")) return;
-        const rapidjson::Value& v_machineStatus = v_result["machineStatus"];
-        if (!v_machineStatus.IsString()) return;
-        std::string machine_status = v_machineStatus.GetString();
-
         int32_t ret = E_DEFAULT;
         std::string ret_msg;
         std::string task_id;
         std::string login_password;
 
-        //machine_status = "creating";
+        do {
+            if (err_code != 0) {
+                ret = E_DEFAULT;
+                ret_msg = msg;
+                break;
+            }
 
-        if (machine_status == "creating" || machine_status == "rented") {
-            // 创建虚拟机
-            task_id = dbc::create_task_id();
-            login_password = generate_pwd();
-            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
-            ret = std::get<0>(fresult);
-            ret_msg = std::get<1>(fresult);
-        }
-        else {
-            ret = E_DEFAULT;
-            ret_msg = "rent check failed";
-        }
+            rapidjson::Document doc;
+            doc.Parse(msg.c_str());
+            if (!doc.IsObject()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json parse error";
+                break;
+            }
+
+            if (!doc.HasMember("result")) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json has not result";
+                break;
+            }
+
+            const rapidjson::Value &v_result = doc["result"];
+            if (!v_result.IsObject()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json result is not object";
+                break;
+            }
+
+            if (!v_result.HasMember("machineStatus")) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json has not machineStatus";
+                break;
+            }
+
+            const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
+            if (!v_machineStatus.IsString()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json machineStatus is not string";
+                break;
+            }
+            std::string machine_status = v_machineStatus.GetString();
+
+            //machine_status = "creating";
+
+            if (machine_status == "creating" || machine_status == "rented") {
+                // 创建虚拟机
+                task_id = dbc::create_task_id();
+                login_password = generate_pwd();
+                auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
+                ret = std::get<0>(fresult);
+                ret_msg = std::get<1>(fresult);
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "rent check failed";
+                break;
+            }
+        } while(0);
 
         std::shared_ptr<matrix::service_core::node_create_task_rsp> rsp_content = std::make_shared<matrix::service_core::node_create_task_rsp>();
         // header
@@ -779,17 +807,17 @@ namespace dbc {
         exten_info["origin_id"] = CONF_MANAGER->get_node_id();
         rsp_content->header.__set_exten_info(exten_info);
         // body
-        auto taskinfo = m_task_scheduler.FindTask(task_id);
-
         rsp_content->body.__set_result(ret);
         rsp_content->body.__set_result_msg(ret_msg);
-        rsp_content->body.__set_task_id(task_id);
-        rsp_content->body.__set_user_name("dbc");
-        rsp_content->body.__set_login_password(login_password);
-        std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
-        public_ip = string_util::rtrim(public_ip, '\n');
-        rsp_content->body.__set_ip(public_ip);
-        if (taskinfo != nullptr) {
+
+        auto taskinfo = m_task_scheduler.FindTask(task_id);
+        if (ret == E_SUCCESS && taskinfo != nullptr) {
+            rsp_content->body.__set_task_id(task_id);
+            rsp_content->body.__set_user_name("dbc");
+            rsp_content->body.__set_login_password(login_password);
+            std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
+            public_ip = string_util::rtrim(public_ip, '\n');
+            rsp_content->body.__set_ip(public_ip);
             rsp_content->body.__set_ssh_port(taskinfo->ssh_port);
             struct tm _tm;
             time_t tt = taskinfo->create_time;
@@ -805,6 +833,7 @@ namespace dbc {
             rsp_content->body.__set_gpu_count(std::to_string(taskinfo->hardware_resource.gpu_count));
             rsp_content->body.__set_mem_size(std::to_string(taskinfo->hardware_resource.mem_rate));
         }
+
         //rsp msg
         std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
         resp_msg->set_name(NODE_CREATE_TASK_RSP);

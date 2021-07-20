@@ -2,6 +2,70 @@
 #include "comm.h"
 #include "common/util.h"
 
+std::string DeviceGpu::parse_bus(const std::string& id) {
+    std::vector<std::string> vec;
+    matrix::core::string_util::split(id, ":", vec);
+    if (vec.size() > 0)
+        return vec[0];
+    else
+        return "";
+}
+
+std::string DeviceGpu::parse_slot(const std::string& id) {
+    std::vector<std::string> vec;
+    matrix::core::string_util::split(id, ":", vec);
+    if (vec.size() > 1)
+        return vec[1];
+    else
+        return "";
+}
+
+std::string DeviceGpu::parse_function(const std::string& id) {
+    std::vector<std::string> vec;
+    matrix::core::string_util::split(id, ".", vec);
+    if (vec.size() > 1)
+        return vec[1];
+    else
+        return "";
+}
+
+void HardwareManager::Init() {
+    init_gpu();
+}
+
+void HardwareManager::init_gpu() {
+    // list all gpu
+    std::string cmd = "lspci -nnv |grep NVIDIA |awk '{print $2\",\"$1}' |tr \"\n\" \"|\"";
+    std::string str = run_shell(cmd.c_str());
+    std::vector<std::string> vec;
+    matrix::core::string_util::split(str, "|", vec);
+    std::string cur_id;
+    for (int i = 0; i < vec.size(); i++) {
+        std::vector<std::string> vec2;
+        matrix::core::string_util::split(vec[i], ",", vec2);
+        if (vec2[0] == "VGA") {
+            cur_id = vec2[1];
+            m_gpu[cur_id].id = cur_id;
+        }
+        m_gpu[cur_id].devices.push_back(vec2[1]);
+    }
+
+    // list task gpu
+
+}
+
+void HardwareManager::print_gpu() {
+    for (auto& it : m_gpu) {
+        std::cout << it.first << " : " << "bus=" << DeviceGpu::parse_bus(it.first) << ","
+                                       << "slot=" << DeviceGpu::parse_slot(it.first) << ","
+                                       << "function=" << DeviceGpu::parse_function(it.first) << std::endl;
+        for (auto& it2 : it.second.devices) {
+            std::cout << "  " << it2 << std::endl;
+        }
+    }
+}
+
+
 using namespace matrix::core;
 
 std::string ResourceManager::os_name() {

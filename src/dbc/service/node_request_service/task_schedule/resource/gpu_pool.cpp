@@ -1,6 +1,5 @@
 #include "gpu_pool.h"
 #include "common/util.h"
-
 #include <boost/format.hpp>
 #include <iostream>
 #include "log.h"

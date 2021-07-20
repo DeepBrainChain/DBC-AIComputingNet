@@ -39,8 +39,17 @@ int pre_main_task()
     return 0;
 }
 
+#include "ResourceManager.h"
+
 int main(int argc, char* argv[])
 {
+    /*
+    HardwareManager::instance().Init();
+    HardwareManager::instance().print_gpu();
+
+    return 0;
+    */
+
     int32_t ret = pre_main_task();
     if (ret != E_SUCCESS)
     {

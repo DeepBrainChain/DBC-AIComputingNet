@@ -368,6 +368,10 @@ namespace dbc {
             domainPtr = virDomainDefineXML(connPtr, xml_content.c_str());
             if (nullptr == domainPtr) {
                 errorNum = E_VIRT_DOMAIN_EXIST;
+
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << "virDomainDefineXML error: " << error->message;
+                virFreeError(error);
                 break;
             }
 
