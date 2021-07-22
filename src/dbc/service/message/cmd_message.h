@@ -1,20 +1,16 @@
 #ifndef DBC_CMD_MESSAGE_H
 #define DBC_CMD_MESSAGE_H
 
-#include "common/comm.h"
-#include "task_common_def.h"
-#include "console_printer.h"
+#include "util/utils.h"
+#include "../http_request_service/console_printer.h"
 #include "matrix_types.h"
-#include "service_message.h"
-#include "task_types.h"
-#include "callback_wait.h"
-#include "server.h"
-#include "api_call.h"
-#include "peer_candidate.h"
+#include "network/protocol/service_message.h"
+#include "data/task/db/task_types.h"
+#include "server/server.h"
+#include "service/peer_request_service/api_call.h"
+#include "service/peer_request_service/peer_candidate.h"
 
 using namespace boost::program_options;
-using namespace matrix::core;
-using namespace matrix::service_core;
 
 // create task
 class cmd_create_task_req : public dbc::network::msg_base {
@@ -190,7 +186,7 @@ public:
     int32_t result;
     std::string result_info;
     std::map<std::string, std::string> kvs;
-    std::shared_ptr<std::map<std::string, node_service_info> > id_2_services;
+    std::shared_ptr<std::map<std::string, dbc::node_service_info> > id_2_services;
 
     std::string to_string(std::vector<std::string> in);
 };

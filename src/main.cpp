@@ -1,15 +1,9 @@
 ﻿#include <functional>
 #include <chrono>
-#include "log.h"
-#include "start_up.h"
-#include "dbc_server_initiator.h"
-#include "server_initiator_factory.h"
-
-#if defined(WIN32) || defined(__linux__) || defined(MAC_OSX)
-
-using namespace std::chrono;
-using namespace ai::dbc;
-using namespace matrix::core;
+#include "log/log.h"
+#include "server/start_up.h"
+#include "server/dbc_server_initiator.h"
+#include "server/server_initiator_factory.h"
 
 high_resolution_clock::time_point server_start_time;
 //std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
@@ -39,16 +33,21 @@ int pre_main_task()
     return 0;
 }
 
-#include "ResourceManager.h"
+#include "data/resource/SystemResourceManager.h"
+#include "util/utils.h"
 
 int main(int argc, char* argv[])
 {
     /*
-    HardwareManager::instance().Init();
-    HardwareManager::instance().print_gpu();
+    SystemResourceMgr::instance().Init();
+    SystemResourceMgr::instance().print_os();
+    SystemResourceMgr::instance().print_cpu();
+    SystemResourceMgr::instance().print_gpu();
+    SystemResourceMgr::instance().print_mem();
+    SystemResourceMgr::instance().print_disk();
 
     return 0;
-    */
+*/
 
     int32_t ret = pre_main_task();
     if (ret != E_SUCCESS)
@@ -58,8 +57,3 @@ int main(int argc, char* argv[])
 
     return main_task(argc, argv);
 }
-
-#else       //not support yet
-
-#endif
-

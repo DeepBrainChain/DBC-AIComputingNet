@@ -1,79 +1,53 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        :   peer_node.h
-* description    :   p2p network peer node
-* date                  :   2018.03.29
-* author            :   Bruce Feng
-**********************************************************************************/
-
 #pragma once
 
+#include "util/utils.h"
+#include "network/endpoint_address.h"
+#include "network/socket_id.h"
+#include "../message/matrix_types.h"
 
-#include <string>
-#include "endpoint_address.h"
-#include "socket_id.h"
-#include "matrix_types.h"
-#include "service_common_def.h"
-
-
-using namespace std;
-using namespace matrix::core;
-
-
-namespace matrix
+enum connection_status
 {
-    namespace service_core
-    {
+    DISCONNECTED = 0,
 
-        enum connection_status
-        {
-            DISCONNECTED = 0,
+    CONNECTED
+};
 
-            CONNECTED
-        };
+class peer_node
+{
+    friend class p2p_net_service;
 
-        class peer_node
-        {
-			friend class p2p_net_service;
+    friend void assign_peer_info(dbc::peer_node_info& info, const std::shared_ptr<peer_node> node);
 
-            friend void assign_peer_info(peer_node_info& info, const std::shared_ptr<peer_node> node);
+public:
 
-        public:
+    peer_node();
 
-            peer_node();
+    virtual ~peer_node() = default;
 
-            virtual ~peer_node() = default;
+    peer_node(const peer_node &src);
 
-            peer_node(const peer_node &src);
+    peer_node& operator=(const peer_node &src);
 
-            peer_node& operator=(const peer_node &src);
+    std::string m_id;                               //peer node_id
 
-            std::string m_id;                               //peer node_id
+    dbc::network::socket_id m_sid;                                //if connected directly, it has socket id
 
-            dbc::network::socket_id m_sid;                                //if connected directly, it has socket id
+    int32_t m_core_version;
 
-            int32_t m_core_version;
+    int32_t m_protocol_version;
 
-            int32_t m_protocol_version;
+    int64_t m_connected_time;
 
-            int64_t m_connected_time;
+    int64_t m_live_time;                            //active time, it doesn't work right now
 
-            int64_t m_live_time;                            //active time, it doesn't work right now
+    connection_status m_connection_status;
 
-            connection_status m_connection_status;
+    dbc::network::endpoint_address m_peer_addr;
 
-            dbc::network::endpoint_address m_peer_addr;
+    dbc::network::endpoint_address m_local_addr;                   //local addr
 
-            dbc::network::endpoint_address m_local_addr;                   //local addr
-
-            peer_node_type m_node_type;              //seed node or not
-
-        };
-
-        extern void assign_peer_info(peer_node_info& info, const std::shared_ptr<peer_node> node);
-
-    }
+    peer_node_type m_node_type;              //seed node or not
 
 };
+
+extern void assign_peer_info(dbc::peer_node_info& info, const std::shared_ptr<peer_node> node);

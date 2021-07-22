@@ -1,34 +1,21 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name        decoder.h
-* description    decoder interface class
-* date                  :   2018.01.20
-* author            Bruce Feng
-**********************************************************************************/
-#pragma once
+#ifndef DBC_DECODER_H
+#define DBC_DECODER_H
 
-#include "service_message.h"
-#include "channel_handler_context.h"
+#include "network/protocol/service_message.h"
+#include "network/channel_handler_context.h"
 
-
-namespace matrix
+enum decode_status
 {
-    namespace core
-    {
-        enum decode_status
-        {
-            DECODE_SUCCESS = 0,
-            DECODE_NEED_MORE_DATA,
-            DECODE_UNKNOWN_MSG,
-            DECODE_ERROR
-        };
+    DECODE_SUCCESS = 0,
+    DECODE_NEED_MORE_DATA,
+    DECODE_UNKNOWN_MSG,
+    DECODE_ERROR
+};
 
-        class decoder
-        {
-        public:
-            virtual decode_status decode(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::message> &message) = 0;
-        };
-    }
-}
+class decoder
+{
+public:
+    virtual decode_status decode(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::message> &message) = 0;
+};
+
+#endif

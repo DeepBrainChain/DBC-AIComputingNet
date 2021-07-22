@@ -1,76 +1,65 @@
-/*********************************************************************************
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         : console_printer.h
-* description       : console printer for command line
-* date                    :  2018.04.01
-* author            : Bruce Feng
-**********************************************************************************/
+#ifndef DBC_CONSOLE_PRINTER_H
+#define DBC_CONSOLE_PRINTER_H
 
-#pragma once
+#include "util/utils.h"
+#include "log/log.h"
 
-#include <iostream>
-#include "common.h"
+enum ALIGN_TYPE {
+    LEFT_ALIGN = 0,
+    //MIDDLE_ALIGN,
+    RIGHT_ALIGN
+};
 
-using namespace std;
+struct field_formatter {
+    ALIGN_TYPE align;
+    int16_t field_len;
 
-namespace dbc {
-    enum ALIGN_TYPE {
-        LEFT_ALIGN = 0,
-        //MIDDLE_ALIGN,
-        RIGHT_ALIGN
-    };
+    field_formatter(ALIGN_TYPE align, int16_t field_len) {
+        this->align = align;
+        this->field_len = field_len;
+    }
+};
 
-    struct field_formatter {
-        ALIGN_TYPE align;
-        int16_t field_len;
+class console_printer {
+public:
 
-        field_formatter(ALIGN_TYPE align, int16_t field_len) {
-            this->align = align;
-            this->field_len = field_len;
+    console_printer() = default;
+
+    virtual ~console_printer() = default;
+
+    console_printer &operator()(ALIGN_TYPE align, int16_t field_len);
+
+    console_printer &operator<<(console_printer &(*manipulator)(console_printer &));
+
+    template<typename arg_type>
+    inline
+    console_printer &operator<<(arg_type val) {
+        if (m_it != m_formatter.end()) {
+            field_formatter formatter = *m_it++;
+            std::cout.setf(get_fmt_flags(formatter.align));
+            std::cout.width(formatter.field_len);
+
+            std::cout << val;
+        } else {
+            LOG_ERROR << "console_printer iterator out of range";
         }
-    };
+        return *this;
+    }
 
-    class console_printer {
-    public:
+    void reset_it() { m_it = m_formatter.begin(); }
 
-        console_printer() = default;
+    std::ios_base::fmtflags get_fmt_flags(ALIGN_TYPE type);
 
-        virtual ~console_printer() = default;
+protected:
 
-        console_printer &operator()(ALIGN_TYPE align, int16_t field_len);
+    std::list<field_formatter> m_formatter;
 
-        console_printer &operator<<(console_printer &(*manipulator)(console_printer &));
+    std::list<field_formatter>::iterator m_it;
 
-        template<typename arg_type>
-        inline
-        console_printer &operator<<(arg_type val) {
-            if (m_it != m_formatter.end()) {
-                field_formatter formatter = *m_it++;
-                std::cout.setf(get_fmt_flags(formatter.align));
-                std::cout.width(formatter.field_len);
+};
 
-                std::cout << val;
-            } else {
-                LOG_ERROR << "console_printer iterator out of range";
-            }
-            return *this;
-        }
+console_printer &init(console_printer &printer);
 
-        void reset_it() { m_it = m_formatter.begin(); }
+console_printer &endl(console_printer &printer);
 
-        std::ios_base::fmtflags get_fmt_flags(ALIGN_TYPE type);
-
-    protected:
-
-        std::list<field_formatter> m_formatter;
-
-        std::list<field_formatter>::iterator m_it;
-
-    };
-
-    console_printer &init(console_printer &printer);
-
-    console_printer &endl(console_printer &printer);
-}
+#endif

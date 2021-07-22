@@ -8,16 +8,12 @@
 #define peers_db_TYPES_H
 
 #include <iosfwd>
-#include "protocol.h"
-#include "service_message.h"
-#include "TToString.h"
-using namespace matrix::core;
+#include "network/protocol/protocol.h"
+#include "network/protocol/service_message.h"
+#include "util/TToString.h"
 
 
-namespace matrix { namespace service_core {
-
-class db_peer_candidate;
-
+namespace dbc {
 
 class db_peer_candidate : public virtual ::apache::thrift::TBase {
  public:
@@ -89,6 +85,6 @@ void swap(db_peer_candidate &a, db_peer_candidate &b);
 
 std::ostream& operator<<(std::ostream& out, const db_peer_candidate& obj);
 
-}} // namespace
+} // namespace
 
 #endif

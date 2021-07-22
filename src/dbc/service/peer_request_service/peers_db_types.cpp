@@ -8,9 +8,8 @@
 
 #include <algorithm>
 #include <ostream>
-#include <TToString.h>
 
-namespace matrix { namespace service_core {
+namespace dbc {
 
 
 db_peer_candidate::~db_peer_candidate() throw() {
@@ -265,4 +264,4 @@ void db_peer_candidate::printTo(std::ostream& out) const {
   out << ")";
 }
 
-}} // namespace
+} // namespace

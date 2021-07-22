@@ -1,16 +1,7 @@
-/*********************************************************************************
+#ifndef DBC_SERVICE_TOPIC_H
+#define DBC_SERVICE_TOPIC_H
 
-*  Copyright (c) 2017-2018 DeepBrainChain core team
-*  Distributed under the MIT software license, see the accompanying
-*  file COPYING or http://www.opensource.org/licenses/mit-license.php
-* file name         : topic.h
-* description       : 
-* date              : 2018/6/21
-* author            : Jimmy Kuang
-**********************************************************************************/
-#pragma once
-
-#include "service_message.h"
+#include "network/protocol/service_message.h"
 
 class get_task_queue_size_req_msg : public dbc::network::message {
 public:
@@ -38,3 +29,5 @@ private:
     std::string m_gpu_state;
     std::string m_active_tasks;
 };
+
+#endif

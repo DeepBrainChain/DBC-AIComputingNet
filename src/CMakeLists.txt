@@ -12,6 +12,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
 
 include_directories(
+        dbc
         ./3rd
         ./3rd/crypto/secp256k1/include
         ./3rd/crypto/secp256k1/contrib
@@ -34,67 +35,52 @@ include_directories(
         ./3rd/network/websocket/ixwebsocket
 )
 
-#core
-set(core_src_dir
-        core
-        core/common
-        core/conf
-        core/conf/validator
-        core/crypto
-        core/crypto/ctaes
-        core/container
-        core/oss
-        core/oss/bill
-        core/oss/idle_task
-        core/env
-        core/initiator
-        core/log
-        core/math
-        core/memory
-        core/module
-        core/monitor
-        core/mutex
-        core/network
-        core/network/compress
-        core/network/protocol
-        core/service_bus
-        core/vm
-        core/service_module
-        core/storage
-        core/timer_service
-        core/filter)
-
-foreach(sub_dir ${core_src_dir})
-    include_directories(dbc/${sub_dir})
-endforeach()
-foreach(sub_dir ${core_src_dir})
-    aux_source_directory(dbc/${sub_dir} dbc_src_files)
-endforeach()
-
-# service
-set(service_src_dir . common task node_info
-        service
-        service/message
-        service/message/protocol_coder
-        service/cmd_request_service
-        service/http_request_service
-        service/peer_request_service
-        service/peer_request_service/socket_channel_handler
-        service/node_request_service
-        service/node_request_service/task_schedule
-        service/node_request_service/task_schedule/db
-        service/node_request_service/task_schedule/vm
-        service/node_request_service/task_schedule/resource)
+set(service_src_dir
+        .
+        dbc
+        dbc/common
+        dbc/common/def
+        dbc/util
+        dbc/util/utils
+        dbc/util/validator
+        dbc/util/memory
+        dbc/util/math
+        dbc/util/filter
+        dbc/util/crypto
+        dbc/util/crypto/ctaes
+        dbc/config
+        dbc/data
+        dbc/data/node_info
+        dbc/data/resource
+        dbc/data/task
+        dbc/data/task/db
+        dbc/data/task/vm
+        dbc/data/task/container
+        dbc/network
+        dbc/network/compress
+        dbc/network/protocol
+        dbc/log
+        dbc/timer
+        dbc/module
+        dbc/service_module
+        dbc/server
+        dbc/service
+        dbc/service/message
+        dbc/service/message/protocol_coder
+        dbc/service/oss
+        dbc/service/oss/bill
+        dbc/service/oss/idle_task
+        dbc/service/common_service
+        dbc/service/http_request_service
+        dbc/service/cmd_request_service
+        dbc/service/node_request_service
+        dbc/service/peer_request_service
+        dbc/service/peer_request_service/socket_channel_handler
+)
 
 foreach(sub_dir ${service_src_dir})
-    include_directories(dbc/${sub_dir})
+    aux_source_directory(${sub_dir} dbc_src_files)
 endforeach()
-foreach(sub_dir ${service_src_dir})
-    aux_source_directory(dbc/${sub_dir} dbc_src_files)
-endforeach()
-
-include_directories(.)
-aux_source_directory(. dbc_src_files)
 
 link_directories(${3RD_LIB_PATH}/secp256k1)
 #link_directories(${3RD_LIB_PATH}/openssl)

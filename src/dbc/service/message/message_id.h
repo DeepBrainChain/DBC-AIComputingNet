@@ -1,6 +1,9 @@
 #ifndef DBC_MESSAGE_ID_H
 #define DBC_MESSAGE_ID_H
 
+#include <iostream>
+#include <string>
+
 // create task
 #define NODE_CREATE_TASK_REQ        "node_create_task_req"
 #define NODE_CREATE_TASK_RSP        "node_create_task_rsp"
@@ -60,6 +63,9 @@
 // def
 #define LIST_ALL_TASKS            0
 #define LIST_SPECIFIC_TASKS       1
+
+#define TASK_RESTART            "task_restart"
+#define NODE_REBOOT             "node_reboot"
 
 enum {
     MAX_NODE_INFO_MAP_SIZE = 64,

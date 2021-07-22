@@ -1,8 +1,7 @@
-#pragma once
+#ifndef DBC_NET_MESSAGE_H
+#define DBC_NET_MESSAGE_H
 
-#include "protocol.h"
-
-using namespace matrix::core;
+#include "network/protocol/protocol.h"
 
 class net_message {
 public:
@@ -33,3 +32,5 @@ private:
     byte_buf m_msg_stream;
     bool m_in_data = false;
 };
+
+#endif
