@@ -24,7 +24,7 @@ remove_leading_zero()
 
 get_version()
 {
-    version_file=$base_dir/src/dbc/core/common/version.h
+    version_file=$base_dir/src/dbc/common/version.h
 
     ver=$(grep "#define CORE_VERSION" $version_file  | awk '{print $3}')
 
