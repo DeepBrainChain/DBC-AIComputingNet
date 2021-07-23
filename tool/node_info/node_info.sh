@@ -3,8 +3,15 @@
 public_ip="N/A"
 function get_public_ip {
     echo "INFO: get public ip, start"
+    myip=$(curl -s myip.ipip.net | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}')
+    i=1
+    while [[ -z "$myip" && $i -le 10 ]]
+    do
+      myip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+      let i++
+      sleep 1
+    done
 
-    myip=$(dig +short myip.opendns.com @resolver1.opendns.com)
     if [ -n "$myip" ]; then
         public_ip=$myip
     fi

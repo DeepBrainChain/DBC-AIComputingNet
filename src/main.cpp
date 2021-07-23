@@ -34,12 +34,12 @@ int pre_main_task()
 }
 
 #include "data/resource/SystemResourceManager.h"
-#include "util/utils.h"
 
 int main(int argc, char* argv[])
 {
-    /*
     SystemResourceMgr::instance().Init();
+
+/*
     SystemResourceMgr::instance().print_os();
     SystemResourceMgr::instance().print_cpu();
     SystemResourceMgr::instance().print_gpu();

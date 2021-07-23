@@ -12,23 +12,23 @@ public:
     // os、cpu、gpu、mem、disk
     void Init();
 
-    OS& GetOS() {
+    const OS& GetOS() {
         return m_os;
     }
 
-    DeviceCpu& GetCpu() {
+    const DeviceCpu& GetCpu() {
         return m_cpu;
     }
 
-    std::map<std::string, DeviceGpu>& GetGpu() {
+    const std::map<std::string, DeviceGpu>& GetGpu() {
         return m_gpu;
     }
 
-    DeviceMem& GetMem() {
+    const DeviceMem& GetMem() {
         return m_mem;
     }
 
-    DeviceDisk& GetDisk() {
+    const DeviceDisk& GetDisk() {
         return m_disk;
     }
 

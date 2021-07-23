@@ -357,15 +357,18 @@ void delete_image_file(const std::string &image, const std::string &task_id) {
     remove(real_image_path.c_str());
 }
 
-std::string shell_transform_port(const std::string &host_ip, const std::string &transform_port,
+// 端口转发
+static std::string shell_transform_port(const std::string &host_ip, const std::string &transform_port,
                                  const std::string &vm_local_ip) {
     std::string cmd;
     cmd += "sudo iptables --table nat --append PREROUTING --protocol tcp --destination " + host_ip +
            " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
     cmd += " && sudo iptables -t nat -A PREROUTING -p tcp --dport " + transform_port +
            " -j DNAT --to-destination " + vm_local_ip + ":22";
+    auto pos = vm_local_ip.rfind('.');
+    std::string ip = vm_local_ip.substr(0, pos) + ".1";
     cmd += " && sudo iptables -t nat -A POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-           " -j SNAT --to 192.168.122.1";
+           " -j SNAT --to " + ip;
     cmd += " && sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
            vm_local_ip + ":20000-60000";
     cmd += " && sudo iptables -t nat -A PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
@@ -379,8 +382,7 @@ std::string shell_transform_port(const std::string &host_ip, const std::string &
     return run_shell(cmd.c_str());
 }
 
-// 设置端口转发
-void transform_port(const std::string &domain_name, const std::string &transform_port) {
+static void transform_port(const std::string &domain_name, const std::string &transform_port) {
     virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
     do {
@@ -404,9 +406,10 @@ void transform_port(const std::string &domain_name, const std::string &transform
         }
 
         std::string public_ip;
+        std::string cmd = "curl -s myip.ipip.net | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}'";
         int try_count = 0;
         while (public_ip.empty() && try_count < 10) {
-            public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
+            public_ip = run_shell(cmd.c_str());
             try_count += 1;
             sleep(1);
         }

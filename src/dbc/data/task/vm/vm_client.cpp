@@ -302,6 +302,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string&
                                int32_t gpu_count, int32_t cpu_cores, float mem_rate) {
     // GPU
     std::string vedio_pci = shell_vga_pci_list(gpu_count);
+    LOG_INFO << "vga_pci: " << vedio_pci;
 
     // CPU
     long cpuNumTotal = cpu_cores; //sysconf(_SC_NPROCESSORS_CONF);

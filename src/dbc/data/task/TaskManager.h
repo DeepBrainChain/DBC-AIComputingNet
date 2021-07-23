@@ -63,12 +63,6 @@ protected:
     std::list<std::shared_ptr<dbc::TaskInfo> > m_process_tasks;
     TaskDB m_task_db;
     VmClient m_vm_client;
-
-    // resource
-    std::map<std::string, DeviceCpu> m_mpTaskCpu;
-    std::map<std::string, std::list<DeviceGpu>> m_mpTaskGpu;
-    std::map<std::string, DeviceMem> m_mpTaskMem;
-    std::map<std::string, DeviceDisk> m_mpTaskDisk;
 };
 
 typedef TaskManager TaskMgr;
