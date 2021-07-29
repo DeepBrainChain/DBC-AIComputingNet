@@ -108,10 +108,6 @@ function write {
 DIR=$(cd $( dirname "${BASH_SOURCE[0]}" ) >/dev/null && pwd)
 conf_fn=$DIR/../../.dbc_node_info.conf
 
-# gpus info
-get_all_gpus_info
-write "gpu" "$all_gpu_info"
-
 #  public ip
 get_public_ip
 write "ip" "$public_ip"

@@ -58,7 +58,7 @@ private:
     int32_t cpu_siblings_per_physical();
     int32_t cpu_threads();
 
-    // mem (MB)
+    // mem (KB)
     int64_t mem_total();
     int64_t mem_used();
     int64_t mem_free();

@@ -12,8 +12,9 @@ public:
 
     virtual ~VmClient();
 
-    int32_t CreateDomain(const std::string& domain_ame, const std::string& image,
-                         int32_t gpu_count, int32_t cpu_cores, float mem_rate);
+    int32_t CreateDomain(const std::string& domain_name, const std::string& image,
+                         int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
+                         const std::map<std::string, DeviceGpu>& mpGpu, int64_t mem);
 
     int32_t StartDomain(const std::string& domain_name);
 

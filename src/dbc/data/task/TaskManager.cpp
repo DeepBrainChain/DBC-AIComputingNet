@@ -10,6 +10,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
 #include "log/log.h"
+#include "data/resource/SystemResourceManager.h"
 
 std::vector<std::string> split(const std::string &str, const std::string &delim) {
     std::vector<std::string> res;
@@ -40,18 +41,27 @@ TaskManager::~TaskManager() {
 }
 
 FResult TaskManager::Init() {
-    return init_db();
-}
-
-FResult TaskManager::init_db() {
+    // init db
     bool ret = m_task_db.init_db(env_manager::get_db_path(), "task.db");
     if (!ret) {
-        LOG_ERROR << "init_db failed!";
-        return {E_DEFAULT, "init db failed!"};
+        LOG_ERROR << "init task_db failed";
+        return {E_DEFAULT, "init task_db failed"};
     }
-
     m_task_db.load_tasks(m_tasks);
 
+    ret = m_task_iptable_db.init_db(env_manager::get_db_path(), "task_iptable.db");
+    if (!ret) {
+        LOG_ERROR << "init task_iptable_db failed";
+        return {E_DEFAULT, "init task_iptable_db failed"};
+    }
+    m_task_iptable_db.load_iptables(m_task_iptables);
+
+    // init resource
+    std::vector<std::string> taskids;
+    for (auto& it : m_tasks) {
+        taskids.push_back(it.first);
+    }
+    m_task_resource.init(taskids);
     return {E_SUCCESS, ""};
 }
 
@@ -76,17 +86,20 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
         return {E_DEFAULT, "additional(json) parse failed"};
     }
 
-    std::string image_name, ssh_port, gpu_count, cpu_cores, mem_rate;
+    std::string image_name, ssh_port, s_gpu_count, s_cpu_cores, s_mem_rate;
     JSON_PARSE_STRING(doc, "image_name", image_name)
     JSON_PARSE_STRING(doc, "ssh_port", ssh_port)
-    JSON_PARSE_STRING(doc, "gpu_count", gpu_count)
-    JSON_PARSE_STRING(doc, "cpu_cores", cpu_cores)
-    JSON_PARSE_STRING(doc, "mem_rate", mem_rate)
+    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
+    JSON_PARSE_STRING(doc, "cpu_cores", s_cpu_cores)
+    JSON_PARSE_STRING(doc, "mem_rate", s_mem_rate)
     std::string vm_xml, vm_xml_url;
     JSON_PARSE_STRING(doc, "vm_xml", vm_xml)
     JSON_PARSE_STRING(doc, "vm_xml_url", vm_xml_url)
 
+    // check字段格式
+    /*
     if (vm_xml.empty() && vm_xml_url.empty()) {
+    */
         if (image_name.empty() || image_name.substr(image_name.size() - 5) != "qcow2") {
             return {E_DEFAULT, "image_name is empty or image_name is invalid"};
         }
@@ -96,20 +109,18 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
             return {E_DEFAULT, "ssh_port is invalid"};
         }
 
-        if (!std::regex_match(gpu_count, reg) || atoi(gpu_count.c_str()) < 0) {
+        if (!std::regex_match(s_gpu_count, reg) || atoi(s_gpu_count.c_str()) < 0) {
             return {E_DEFAULT, "gpu_count is invalid"};
         }
 
-        if (!std::regex_match(cpu_cores, reg) || atoi(cpu_cores.c_str()) <= 0) {
+        if (!std::regex_match(s_cpu_cores, reg) || atoi(s_cpu_cores.c_str()) <= 0) {
             return {E_DEFAULT, "cpu_cores is invalid"};
         }
 
-        if (!std::regex_match(mem_rate, reg) || atof(mem_rate.c_str()) <= 0) {
+        if (!std::regex_match(s_mem_rate, reg) || atof(s_mem_rate.c_str()) <= 0) {
             return {E_DEFAULT, "mem_rate is invalid"};
         }
-
-        //todo: 检查资源够不够
-
+    /*
     } else {
         if (vm_xml_url.empty()) {
             std::string real_xml_name = vm_xml.substr(0, vm_xml.size() - 4) + "_" + task_id + ".xml";
@@ -131,6 +142,35 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
 
         }
     }
+    */
+
+    // check资源够不够
+    int32_t cpu_count = atoi(s_cpu_cores.c_str());
+    //cpu数量必须是(sockets x threads)的整数倍
+    int32_t sockets = SystemResourceMgr::instance().GetCpu().sockets;
+    int32_t threads = SystemResourceMgr::instance().GetCpu().threads_per_core;
+    int32_t left = cpu_count % (sockets * threads);
+    if (left != 0)
+        cpu_count += (sockets * threads) - left;
+    int32_t gpu_count = atoi(s_gpu_count.c_str());
+    float mem_rate = atof(s_mem_rate.c_str());
+
+    if (!check_cpu(cpu_count)) {
+        LOG_ERROR << "check gpu failed";
+        return {E_DEFAULT, "cpu not enough"};
+    }
+
+    if (!check_gpu(gpu_count)) {
+        LOG_ERROR << "check cpu failed";
+        return {E_DEFAULT, "gpu not enough"};
+    }
+
+    if (!check_mem(mem_rate)) {
+        LOG_ERROR << "check mem failed";
+        return {E_DEFAULT, "mem not enough"};
+    }
+
+    LOG_INFO << "cpu gpu mem check ok";
 
     std::shared_ptr<dbc::TaskInfo> taskinfo = std::make_shared<dbc::TaskInfo>();
     taskinfo->__set_task_id(task_id);
@@ -142,9 +182,9 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
     int64_t now = time(nullptr);
     taskinfo->__set_create_time(now);
     taskinfo->__set_last_start_time(now);
-    taskinfo->hardware_resource.__set_gpu_count(atoi(gpu_count.c_str()));
-    taskinfo->hardware_resource.__set_cpu_cores(atoi(cpu_cores.c_str()));
-    taskinfo->hardware_resource.__set_mem_rate(atof(mem_rate.c_str()));
+    taskinfo->hardware_resource.__set_gpu_count(gpu_count);
+    taskinfo->hardware_resource.__set_cpu_cores(cpu_count);
+    taskinfo->hardware_resource.__set_mem_rate(mem_rate);
     taskinfo->__set_vm_xml(vm_xml);
     taskinfo->__set_vm_xml_url(vm_xml_url);
 
@@ -152,7 +192,111 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
     m_process_tasks.push_back(taskinfo);
     m_task_db.write_task(taskinfo);
 
+    // add task resource
+    add_task_resource(task_id, cpu_count, mem_rate, gpu_count);
+
     return {E_SUCCESS, ""};
+}
+
+bool TaskManager::check_cpu(int32_t cpu_count) {
+    int32_t sockets = SystemResourceMgr::instance().GetCpu().sockets;
+    int32_t cores_per_socket = SystemResourceMgr::instance().GetCpu().cores_per_socket;
+    int32_t threads_per_core = SystemResourceMgr::instance().GetCpu().threads_per_core;
+
+    int32_t cur_cores = 0;
+    for (auto& it : m_tasks) {
+        if (it.second->status != TS_None) {
+            const DeviceCpu& cpuinfo = m_task_resource.GetTaskCpu(it.first);
+            cur_cores += cpuinfo.cores_per_socket;
+        }
+    }
+
+    int32_t can_use = cores_per_socket - cur_cores;
+    int32_t need_count = cpu_count / (sockets * threads_per_core);
+    return can_use >= need_count;
+}
+
+bool TaskManager::check_gpu(int32_t gpu_count) {
+    const std::map<std::string, DeviceGpu>& gpulist = SystemResourceMgr::instance().GetGpu();
+
+    int32_t cur_gpus = 0;
+    for (auto& it : m_tasks) {
+        if (it.second->status != TS_None) {
+            const std::map<std::string, DeviceGpu>& gpuinfo = m_task_resource.GetTaskGpu(it.first);
+            cur_gpus += gpuinfo.size();
+        }
+    }
+
+    return (gpulist.size() - cur_gpus) >= gpu_count;
+}
+
+bool TaskManager::check_mem(float mem_rate) {
+    int64_t mem_total = SystemResourceMgr::instance().GetMem().total;
+
+    int64_t cur_mem = 0;
+    for (auto& it : m_tasks) {
+        if (it.second->status != TS_None) {
+            const DeviceMem& meminfo = m_task_resource.GetTaskMem(it.first);
+            cur_mem += meminfo.total;
+        }
+    }
+
+    int64_t need_size = mem_total * mem_rate;
+    return (mem_total - cur_mem) >= need_size;
+}
+
+void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count) {
+    DeviceCpu task_cpu;
+    int32_t threads_count = SystemResourceMgr::instance().GetCpu().threads_per_core;
+    int32_t sockets_count = SystemResourceMgr::instance().GetCpu().sockets;
+    int32_t cores_per_socket = SystemResourceMgr::instance().GetCpu().cores_per_socket;
+    task_cpu.sockets = sockets_count;
+    task_cpu.threads_per_core = threads_count;
+    task_cpu.cores_per_socket = cpu_count / (sockets_count * threads_count);
+    m_task_resource.AddTaskCpu(task_id, task_cpu);
+    LOG_INFO << "socket: " << task_cpu.sockets << ", cores: " << task_cpu.cores_per_socket
+             << ", threads: " << task_cpu.threads_per_core;
+
+    DeviceMem task_mem;
+    int64_t mem_total = SystemResourceMgr::instance().GetMem().total; // KB
+    task_mem.total = (mem_total * mem_rate) > 1000000000 ? 1000000000 : (mem_total * mem_rate);
+    task_mem.available = task_mem.available;
+    m_task_resource.AddTaskMem(task_id, task_mem);
+    LOG_INFO << "memory: " << task_mem.total << "KB";
+
+    std::map<std::string, DeviceGpu> task_gpus;
+    std::map<std::string, DeviceGpu> can_use_gpu = SystemResourceMgr::instance().GetGpu();
+    for (auto& it : m_tasks) {
+        if (it.second->status != TS_None) {
+            const std::map<std::string, DeviceGpu>& gpuinfo = m_task_resource.GetTaskGpu(it.first);
+            for (auto& it1 : gpuinfo) {
+                can_use_gpu.erase(it1.first);
+            }
+        }
+    }
+
+    int cur_count = 0;
+    for (auto& it : can_use_gpu) {
+        task_gpus[it.first] = it.second;
+        cur_count++;
+
+        if (cur_count == gpu_count) break;
+    }
+    m_task_resource.AddTaskGpu(task_id, task_gpus);
+    std::string str_gpu;
+    for (auto& it : task_gpus)
+        str_gpu += it.first + " | ";
+    LOG_INFO << "gpus: " << str_gpu;
+
+    DeviceDisk task_disk_1;
+    int64_t disk_total_size = SystemResourceMgr::instance().GetDisk().total; // MB
+    task_disk_1.total = (disk_total_size - 350 * 1024) * 0.75;
+    task_disk_1.available = task_disk_1.total;
+    task_disk_1.type = SystemResourceMgr::instance().GetDisk().type;
+    std::map<int32_t, DeviceDisk> task_disks;
+    task_disks[1] = task_disk_1;
+    m_task_resource.AddTaskDisk(task_id, task_disks);
+    LOG_INFO << "disk_1: " << (task_disk_1.total / 1024) << "GB";
 }
 
 FResult TaskManager::StartTask(const std::string &task_id) {
@@ -297,8 +441,15 @@ FResult TaskManager::GetTaskLog(const std::string &task_id, ETaskLogDirection di
 }
 
 void TaskManager::ListAllTask(std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
-    for (auto &task : m_tasks) {
-        vec.push_back(task.second);
+    for (auto &it : m_tasks) {
+        vec.push_back(it.second);
+    }
+}
+
+void TaskManager::ListRunningTask(std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
+    for (auto &it : m_tasks) {
+        if (it.second->status == TS_Running)
+            vec.push_back(it.second);
     }
 }
 
@@ -322,86 +473,175 @@ ETaskStatus TaskManager::GetTaskStatus(const std::string &task_id) {
     }
 }
 
-bool SetVmPassword(const std::string &vm_name, const std::string &username, const std::string &pwd) {
-    //连接到虚拟机监控程序(Hypervisor)
-    virConnectPtr conn_ptr = virConnectOpen("qemu+tcp://localhost/system");
-    if (conn_ptr == nullptr) {
-        virErrorPtr error = virGetLastError();
-        LOG_ERROR << "connect virt error: " << error->message;
-        virFreeError(error);
-        return false;
-    }
+void TaskManager::delete_task_data(const std::string &task_id) {
+    delete_image_file(task_id);
+    delete_disk_file(task_id);
+    delete_iptable(task_id);
 
-    virDomainPtr domain_ptr = virDomainLookupByName(conn_ptr, vm_name.c_str());
-    if (domain_ptr == nullptr) {
-        virErrorPtr error = virGetLastError();
-        LOG_ERROR << "virDomainLookupByName error: " << error->message;
-        virFreeError(error);
-        virConnectClose(conn_ptr);
-        return false;
-    }
-
-    int ret = virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), 0);
-    return (ret == 0);
+    m_task_db.delete_task(task_id);
+    m_tasks.erase(task_id);
+    m_task_resource.Clear(task_id);
 }
 
-void delete_image_file(const std::string &image, const std::string &task_id) {
-    auto pos = image.find('.');
-    std::string real_image_name = image;
-    std::string ext;
-    if (pos != std::string::npos) {
-        real_image_name = image.substr(0, pos);
-        ext = image.substr(pos + 1);
+void TaskManager::delete_image_file(const std::string &task_id) {
+    auto it = m_tasks.find(task_id);
+    if (it != m_tasks.end()) {
+        std::string image = it->second->image_name;
+        auto pos = image.find('.');
+        std::string real_image_name = image;
+        std::string ext;
+        if (pos != std::string::npos) {
+            real_image_name = image.substr(0, pos);
+            ext = image.substr(pos + 1);
+        }
+        std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
+        LOG_INFO << "remove image file: " << real_image_path;
+        remove(real_image_path.c_str());
     }
-    std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
-    remove(real_image_path.c_str());
 }
 
-// 端口转发
-static std::string shell_transform_port(const std::string &host_ip, const std::string &transform_port,
-                                 const std::string &vm_local_ip) {
+void TaskManager::delete_disk_file(const std::string &task_id) {
+    const std::map<int32_t, DeviceDisk>& disklist = m_task_resource.GetTaskDisk(task_id);
+    for (auto& it : disklist) {
+        std::string disk_file = "/data/data_" + std::to_string(it.first) + "_" + task_id + ".qcow2";
+        LOG_INFO << "remove disk file: " << disk_file;
+        remove(disk_file.c_str());
+    }
+}
+
+static std::string shell_delete_transform_port(const std::string &host_ip, const std::string &transform_port,
+                                               const std::string &vm_local_ip) {
     std::string cmd;
-    cmd += "sudo iptables --table nat --append PREROUTING --protocol tcp --destination " + host_ip +
+    cmd += "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + host_ip +
            " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
-    cmd += " && sudo iptables -t nat -A PREROUTING -p tcp --dport " + transform_port +
+    cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
            " -j DNAT --to-destination " + vm_local_ip + ":22";
     auto pos = vm_local_ip.rfind('.');
     std::string ip = vm_local_ip.substr(0, pos) + ".1";
-    cmd += " && sudo iptables -t nat -A POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
+    cmd += " && sudo iptables -t nat -D POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
            " -j SNAT --to " + ip;
-    cmd += " && sudo iptables -t nat -A PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+    cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
            vm_local_ip + ":20000-60000";
-    cmd += " && sudo iptables -t nat -A PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+    cmd += " && sudo iptables -t nat -D PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
            vm_local_ip + ":20000-60000";
-    cmd += " && sudo iptables -t nat -A POSTROUTING -d " + vm_local_ip +
+    cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
            " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
-    cmd += " && sudo iptables -t nat -A POSTROUTING -d " + vm_local_ip +
+    cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
            " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
     LOG_INFO << "transform_port:" << cmd;
 
     return run_shell(cmd.c_str());
 }
 
-static void transform_port(const std::string &domain_name, const std::string &transform_port) {
+void TaskManager::delete_iptable(const std::string& task_id) {
+    auto it = m_task_iptables.find(task_id);
+    if (it != m_task_iptables.end()) {
+        std::shared_ptr<dbc::TaskIpTable> iptable = it->second;
+        shell_delete_transform_port(iptable->host_ip, iptable->ssh_port, iptable->vm_local_ip);
+    }
+}
+
+bool TaskManager::set_vm_password(const std::string &domain_name, const std::string &username, const std::string &pwd) {
+    bool ret = false;
+    virConnectPtr conn_ptr = nullptr;
+    virDomainPtr domain_ptr = nullptr;
+    do {
+        conn_ptr = virConnectOpen("qemu+tcp://localhost/system");
+        if (conn_ptr == nullptr) {
+            ret = false;
+            virErrorPtr error = virGetLastError();
+            LOG_ERROR << "connect virt error: " << error->message;
+            virFreeError(error);
+            break;
+        }
+
+        domain_ptr = virDomainLookupByName(conn_ptr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            ret = false;
+            virErrorPtr error = virGetLastError();
+            LOG_ERROR << "virDomainLookupByName error: " << error->message;
+            virFreeError(error);
+            break;
+        }
+
+        int try_count = 0;
+        int succ = -1;
+        // max: 5min
+        while (succ != 0 && try_count < 100) {
+            LOG_INFO << "set_vm_password try_count: " << (try_count + 1);
+            succ = virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), 0);
+            if (succ != 0) {
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << "virDomainSetUserPassword error: " << error->message;
+                virFreeError(error);
+            }
+
+            try_count++;
+            sleep(3);
+        }
+
+        if (succ == 0) {
+            ret = true;
+            LOG_INFO << "set vm password successful, task_id:" << domain_name << ", user:" << username << ", pwd:"
+                     << pwd;
+        } else {
+            ret = false;
+            LOG_INFO << "set vm password failed, task_id:" << domain_name << ", user:" << username << ", pwd:"
+                     << pwd;
+        }
+    } while(0);
+
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+
+    if (conn_ptr != nullptr) {
+        virConnectClose(conn_ptr);
+    }
+
+    return ret;
+}
+
+static std::string shell_transform_port(const std::string &host_ip, const std::string &transform_port,
+                                 const std::string &vm_local_ip) {
+    std::string cmd;
+    cmd += "sudo iptables --table nat -I PREROUTING --protocol tcp --destination " + host_ip +
+           " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
+    cmd += " && sudo iptables -t nat -I PREROUTING -p tcp --dport " + transform_port +
+           " -j DNAT --to-destination " + vm_local_ip + ":22";
+    auto pos = vm_local_ip.rfind('.');
+    std::string ip = vm_local_ip.substr(0, pos) + ".1";
+    cmd += " && sudo iptables -t nat -I POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
+           " -j SNAT --to " + ip;
+    cmd += " && sudo iptables -t nat -I PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+           vm_local_ip + ":20000-60000";
+    cmd += " && sudo iptables -t nat -I PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+           vm_local_ip + ":20000-60000";
+    cmd += " && sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
+           " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+    cmd += " && sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
+           " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+    LOG_INFO << "transform_port:" << cmd;
+
+    return run_shell(cmd.c_str());
+}
+
+bool TaskManager::transform_port(const std::string &domain_name, const std::string &transform_port) {
+    bool ret = false;
     virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
     do {
-        std::stringstream sstream;
-        sstream << "qemu+tcp://";
-        sstream << "localhost";
-        sstream << ":";
-        sstream << 16509;
-        sstream << "/system";
-        std::string url = sstream.str();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen("qemu+tcp://localhost:16509/system");
         if (nullptr == connPtr) {
             LOG_ERROR << "connPtr is nullptr";
+            ret = false;
             break;
         }
 
         domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
             LOG_ERROR << "domainPtr is nullptr";
+            ret = false;
             break;
         }
 
@@ -417,8 +657,9 @@ static void transform_port(const std::string &domain_name, const std::string &tr
         if (!public_ip.empty() && !transform_port.empty()) {
             std::string vm_local_ip;
             int32_t try_count = 0;
-
-            while (vm_local_ip.empty() && try_count < 15) {
+            // max: 15min
+            while (vm_local_ip.empty() && try_count < 300) {
+                LOG_INFO << "transform_port try_count: " << (try_count + 1);
                 virDomainInterfacePtr *ifaces = nullptr;
                 int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
                                                                VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
@@ -429,7 +670,6 @@ static void transform_port(const std::string &domain_name, const std::string &tr
                     if (ifaces[i]->hwaddr)
                         if_hwaddr = ifaces[i]->hwaddr;
                     */
-
                     for (int j = 0; j < ifaces[i]->naddrs; j++) {
                         virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
                         vm_local_ip = ip_addr->addr;
@@ -441,19 +681,29 @@ static void transform_port(const std::string &domain_name, const std::string &tr
                 }
 
                 try_count += 1;
-                sleep(2);
+                sleep(3);
             }
 
             if (!vm_local_ip.empty()) {
                 shell_transform_port(public_ip, transform_port, vm_local_ip);
+                std::shared_ptr<dbc::TaskIpTable> iptable(new dbc::TaskIpTable());
+                iptable->task_id = domain_name;
+                iptable->host_ip = public_ip;
+                iptable->vm_local_ip = vm_local_ip;
+                iptable->ssh_port = transform_port;
+                m_task_iptables[domain_name] = iptable;
+                m_task_iptable_db.write_iptable(iptable);
+                ret = true;
             } else {
-                LOG_ERROR << "vm_local_ip is empty";
+                ret = false;
+                LOG_ERROR << "transform_port failed: vm_local_ip is empty";
             }
 
-            LOG_INFO << "transform ssh port: " << public_ip << ":" << transform_port
+            LOG_INFO << "transform_port successful, public_ip:" << public_ip << " ssh_port:" << transform_port
                      << " local_ip:" << vm_local_ip;
         } else {
-            LOG_ERROR << "transform ip or port is empty " << public_ip << ":" << transform_port;
+            ret = false;
+            LOG_ERROR << "transform_port failed, ip or port is empty" << public_ip << ":" << transform_port;
         }
     } while (0);
 
@@ -464,6 +714,8 @@ static void transform_port(const std::string &domain_name, const std::string &tr
     if (nullptr != connPtr) {
         virConnectClose(connPtr);
     }
+
+    return ret;
 }
 
 void TaskManager::ProcessTask() {
@@ -473,35 +725,38 @@ void TaskManager::ProcessTask() {
         auto taskinfo = m_process_tasks.front();
         m_process_tasks.pop_front();
         if (taskinfo->operation == T_OP_Create) {
+            const DeviceCpu& task_res_cpu = m_task_resource.GetTaskCpu(taskinfo->task_id);
+            const DeviceMem& task_res_mem = m_task_resource.GetTaskMem(taskinfo->task_id);
+            const std::map<std::string, DeviceGpu>& task_res_gpu = m_task_resource.GetTaskGpu(taskinfo->task_id);
+
             if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name,
-                                                      taskinfo->hardware_resource.gpu_count,
-                                                      taskinfo->hardware_resource.cpu_cores,
-                                                      taskinfo->hardware_resource.mem_rate)) {
-                sleep(1);
-                transform_port(taskinfo->task_id, taskinfo->ssh_port);
+                                                      task_res_cpu.sockets, task_res_cpu.cores_per_socket, task_res_cpu.threads_per_core,
+                                                      task_res_gpu, task_res_mem.total)) {
+                bool succ = transform_port(taskinfo->task_id, taskinfo->ssh_port);
+                if (!succ) {
+                    m_vm_client.DestoryDomain(taskinfo->task_id);
+                    m_vm_client.UndefineDomain(taskinfo->task_id);
+                    delete_task_data(taskinfo->task_id);
 
-                sleep(1);
-                bool succ = false;
-                int count = 0;
-                while (count < 15) {
-                    succ = SetVmPassword(taskinfo->task_id, "dbc", taskinfo->login_password);
-                    if (succ) {
-                        LOG_INFO << "set vm password successful, " << taskinfo->task_id << " : "
-                                 << taskinfo->login_password;
-                        break;
+                    LOG_ERROR << "transform failed (" << taskinfo->task_id << ")";
+                } else {
+                    succ = set_vm_password(taskinfo->task_id, "dbc", taskinfo->login_password);
+                    if (!succ) {
+                        m_vm_client.DestoryDomain(taskinfo->task_id);
+                        m_vm_client.UndefineDomain(taskinfo->task_id);
+                        delete_task_data(taskinfo->task_id);
+
+                        LOG_ERROR << "set_vm_password failed (" << taskinfo->task_id << ")";
+                    } else {
+                        taskinfo->__set_status(TS_Running);
+                        taskinfo->__set_operation(T_OP_None);
+                        m_task_db.write_task(taskinfo);
+
+                        LOG_INFO << "create task " << taskinfo->task_id << " successful";
                     }
-                    count++;
-                    sleep(2);
                 }
-
-                taskinfo->__set_status(TS_Running);
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_INFO << "create task " << taskinfo->task_id << " successful";
             } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
+                delete_task_data(taskinfo->task_id);
 
                 LOG_ERROR << "create task " << taskinfo->task_id << " failed";
             }
@@ -577,11 +832,7 @@ void TaskManager::ProcessTask() {
             EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
             if (vm_status == VS_SHUT_OFF) {
                 if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
-                    sleep(1);
-                    delete_image_file(taskinfo->image_name, taskinfo->task_id);
-
-                    m_tasks.erase(taskinfo->task_id);
-                    m_task_db.delete_task(taskinfo->task_id);
+                    delete_task_data(taskinfo->task_id);
 
                     LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                 } else {
@@ -594,11 +845,7 @@ void TaskManager::ProcessTask() {
                 if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
                     sleep(1);
                     if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
-                        sleep(1);
-                        delete_image_file(taskinfo->image_name, taskinfo->task_id);
-
-                        m_tasks.erase(taskinfo->task_id);
-                        m_task_db.delete_task(taskinfo->task_id);
+                        delete_task_data(taskinfo->task_id);
 
                         LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                     } else {

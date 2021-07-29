@@ -29,9 +29,10 @@ static std::vector<std::string> SplitStr(const std::string &s, const char &c) {
     return v;
 }
 
-static std::string createXmlStr(const std::string & uuid, const std::string & name,
-                         uint64_t memeory, uint64_t max_memory, long cpunum,
-                         const std::string &  vedio_pci, const std::string & image_path)
+static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
+                         int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
+                         const std::string& vedio_pci, const std::string & image_file,
+                         const std::string& disk_file)
 {
     tinyxml2::XMLDocument doc;
 
@@ -42,36 +43,29 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     doc.InsertEndChild(root);
 
     tinyxml2::XMLElement* name_node = doc.NewElement("name");
-    name_node->SetText(name.c_str());
+    name_node->SetText(domain_name.c_str());
     root->LinkEndChild(name_node);
 
     tinyxml2::XMLElement* uuid_node = doc.NewElement("uuid");
     uuid_node->SetText(uuid.c_str());
     root->LinkEndChild(uuid_node);
 
-    if(max_memory > 0)
-    {
-        tinyxml2::XMLElement* max_memory_node = doc.NewElement("memory");
-        max_memory_node->SetAttribute("unit", "KiB");
-        max_memory_node->SetText(std::to_string(max_memory).c_str());
-        root->LinkEndChild(max_memory_node);
-    }
+    // memory
+    tinyxml2::XMLElement* max_memory_node = doc.NewElement("memory");
+    max_memory_node->SetAttribute("unit", "KiB");
+    max_memory_node->SetText(std::to_string(memory).c_str());
+    root->LinkEndChild(max_memory_node);
 
-    if(memeory > 0)
-    {
-        tinyxml2::XMLElement* memory_node = doc.NewElement("currentMemory");
-        memory_node->SetAttribute("unit", "KiB");
-        memory_node->SetText(std::to_string(memeory).c_str());
-        root->LinkEndChild(memory_node);
-    }
+    tinyxml2::XMLElement* memory_node = doc.NewElement("currentMemory");
+    memory_node->SetAttribute("unit", "KiB");
+    memory_node->SetText(std::to_string(memory).c_str());
+    root->LinkEndChild(memory_node);
 
-    if(cpunum > 0)
-    {
-        tinyxml2::XMLElement* cpu_node = doc.NewElement("vcpu");
-        cpu_node->SetAttribute("placement", "static");
-        cpu_node->SetText(std::to_string(cpunum).c_str());
-        root->LinkEndChild(cpu_node);
-    }
+    // vcpu
+    tinyxml2::XMLElement* vcpu_node = doc.NewElement("vcpu");
+    vcpu_node->SetAttribute("placement", "static");
+    vcpu_node->SetText(std::to_string(cpunum).c_str());
+    root->LinkEndChild(vcpu_node);
 
     // <os>
     tinyxml2::XMLElement* os_node = doc.NewElement("os");
@@ -108,19 +102,9 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     cpu_node->SetAttribute("mode", "host-passthrough");
     cpu_node->SetAttribute("check", "none");
     tinyxml2::XMLElement* node_topology = doc.NewElement("topology");
-    //todo: cpu cores
-    int32_t threads_count = SystemResourceMgr::instance().GetCpu().threads_per_core;
-    int32_t sockets_count = SystemResourceMgr::instance().GetCpu().sockets;
-    int32_t cores_per_socket = SystemResourceMgr::instance().GetCpu().cores_per_socket;
-    int tmp_cpu = cpunum / threads_count;
-    int tmp_socket = 1;
-    if (tmp_cpu > cores_per_socket) tmp_socket += 1;
-    int tmp_cores = tmp_cpu / tmp_socket;
-    LOG_INFO << "socket:" << tmp_socket << ", cores:" << tmp_cores << ", threads:" << threads_count;
-
-    node_topology->SetAttribute("sockets", std::to_string(tmp_socket).c_str());
-    node_topology->SetAttribute("cores", std::to_string(tmp_cores).c_str());
-    node_topology->SetAttribute("threads", std::to_string(threads_count).c_str());
+    node_topology->SetAttribute("sockets", std::to_string(sockets).c_str());
+    node_topology->SetAttribute("cores", std::to_string(cores).c_str());
+    node_topology->SetAttribute("threads", std::to_string(threads).c_str());
     cpu_node->LinkEndChild(node_topology);
     tinyxml2::XMLElement* node_cache = doc.NewElement("cache");
     node_cache->SetAttribute("mode", "passthrough");
@@ -188,6 +172,7 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
         }
     }
 
+    // disk (image)
     tinyxml2::XMLElement* image_node = doc.NewElement("disk");
     image_node->SetAttribute("type", "file");
     image_node->SetAttribute("device", "disk");
@@ -198,7 +183,7 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     image_node->LinkEndChild(driver_node);
 
     tinyxml2::XMLElement* source_node = doc.NewElement("source");
-    source_node->SetAttribute("file", image_path.c_str());
+    source_node->SetAttribute("file", image_file.c_str());
     image_node->LinkEndChild(source_node);
 
     tinyxml2::XMLElement* target_node = doc.NewElement("target");
@@ -207,6 +192,27 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     image_node->LinkEndChild(target_node);
     dev_node->LinkEndChild(image_node);
 
+    // disk (data)
+    tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
+    disk_data_node->SetAttribute("type", "file");
+
+    tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
+    disk_driver_node->SetAttribute("name", "qemu");
+    disk_driver_node->SetAttribute("type", "qcow2");
+    disk_data_node->LinkEndChild(disk_driver_node);
+
+    tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
+    disk_source_node->SetAttribute("file", disk_file.c_str());
+    disk_data_node->LinkEndChild(disk_source_node);
+
+    tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
+    disk_target_node->SetAttribute("dev", "vda");
+    disk_target_node->SetAttribute("bus", "virtio");
+    disk_data_node->LinkEndChild(disk_target_node);
+
+    dev_node->LinkEndChild(disk_data_node);
+
+    // qemu_guest_agent
     tinyxml2::XMLElement* agent_node = doc.NewElement("channel");
     agent_node->SetAttribute("type", "unix");
     tinyxml2::XMLElement* agent_source_node = doc.NewElement("source");
@@ -219,6 +225,7 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     agent_node->LinkEndChild(agent_target_node);
     dev_node->LinkEndChild(agent_node);
 
+    // network
     tinyxml2::XMLElement* interface_node = doc.NewElement("interface");
     interface_node->SetAttribute("type", "network");
     tinyxml2::XMLElement* interface_source_node = doc.NewElement("source");
@@ -226,6 +233,7 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     interface_node->LinkEndChild(interface_source_node);
     dev_node->LinkEndChild(interface_node);
 
+    // vnc
     tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
     graphics_node->SetAttribute("type", "vnc");
     graphics_node->SetAttribute("port", "-1");
@@ -240,7 +248,7 @@ static std::string createXmlStr(const std::string & uuid, const std::string & na
     dev_node->LinkEndChild(graphics_node);
     root->LinkEndChild(dev_node);
 
-    // <qemu:commandline>
+    // cpu (qemu:commandline)
     tinyxml2::XMLElement* node_qemu_commandline = doc.NewElement("qemu:commandline");
     tinyxml2::XMLElement* node_qemu_arg1 = doc.NewElement("qemu:arg");
     node_qemu_arg1->SetAttribute("value", "-cpu");
@@ -266,28 +274,6 @@ std::string getUrl() {
     return sstream.str();
 }
 
-std::string shell_vga_pci_list(int32_t count) {
-    const char* cmd1 = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' |awk '{print $2}' |tr \"\n\" \"|\"";
-    std::string str1 = run_shell(cmd1);
-    std::vector<std::string> vec_device = SplitStr(str1, '|');
-    if (vec_device.size() <= 0 || vec_device[0] != "VGA") return "";
-    int32_t device_count = 0;
-    for (size_t i = 1; i < vec_device.size(); i++) {
-        if (vec_device[i] == "VGA") {
-            device_count = i;
-            break;
-        }
-    }
-    if (device_count == 0) {
-        device_count = vec_device.size();
-    }
-
-    std::string cmd = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' | head -n "
-            + std::to_string(device_count * count)
-            + " | awk '{print $1}' |tr \"\n\" \"|\"";
-    return run_shell(cmd.c_str());
-}
-
 VmClient::VmClient() {
 
 }
@@ -296,31 +282,34 @@ VmClient::~VmClient() {
 
 }
 
-// vedio_pci格式： a1:b1.c1|a2:b2.c2|...
-// image_path: /data/**.qcow2
-int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string& image_name,
-                               int32_t gpu_count, int32_t cpu_cores, float mem_rate) {
-    // GPU
-    std::string vedio_pci = shell_vga_pci_list(gpu_count);
-    LOG_INFO << "vga_pci: " << vedio_pci;
-
-    // CPU
-    long cpuNumTotal = cpu_cores; //sysconf(_SC_NPROCESSORS_CONF);
-
-    struct sysinfo info{};
-    int iRetVal = sysinfo(&info);
-    if (iRetVal != 0) {
-        return E_VIRT_INTERNAL_ERROR;
+int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name,
+                               int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
+                               const std::map<std::string, DeviceGpu>& mpGpu, int64_t mem) {
+    // gpu
+    std::string vga_pci;
+    for (auto& it : mpGpu) {
+        for (auto& it2 : it.second.devices) {
+            vga_pci += it2 + "|";
+        }
     }
-    uint64_t memoryTotal = info.totalram / 1024; //kb
-    memoryTotal = (memoryTotal * mem_rate) > 1000000000 ? 1000000000 : (memoryTotal * mem_rate);
+    LOG_INFO << "vga_pci: " << vga_pci;
 
+    // cpu
+    long cpuNumTotal = sockets * cores_per_socket * threads_per_core;
+    LOG_INFO << "cpu: " << cpuNumTotal;
+
+    // mem
+    uint64_t memoryTotal = mem > 1000000000 ? 1000000000 : mem; // KB
+    LOG_INFO << "mem: " << memoryTotal << "KB";
+
+    // uuid
     uuid_t uu;
-    char buf_uuid[1024];
+    char buf_uuid[1024] = {0};
     uuid_generate(uu);
     uuid_unparse(uu, buf_uuid);
+    LOG_INFO << "uuid: " << buf_uuid;
 
-    // 复制一份虚拟磁盘
+    // 复制一份镜像（系统盘）
     std::string from_image_path = "/data/" + image_name;
     auto pos = image_name.find('.');
     std::string to_image_name = image_name;
@@ -329,11 +318,23 @@ int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string&
         to_image_name = image_name.substr(0, pos);
         to_ext = image_name.substr(pos + 1);
     }
-    std::string to_image_path = "/data/" + to_image_name + "_" + domain_ame + "." + to_ext;
+    std::string to_image_path = "/data/" + to_image_name + "_" + domain_name + "." + to_ext;
+    LOG_INFO << "image_copy_file: " << to_image_path;
     boost::filesystem::copy_file(from_image_path, to_image_path);
 
-    std::string xml_content = createXmlStr(buf_uuid, domain_ame, memoryTotal,
-                                           memoryTotal, cpuNumTotal, vedio_pci, to_image_path);
+    // 创建虚拟磁盘（数据盘）
+    std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
+    int64_t disk_total_size = SystemResourceMgr::instance().GetDisk().total / 1024; // GB
+    disk_total_size = (disk_total_size - 350) * 0.75;
+    LOG_INFO << "data_file: " << data_file;
+    std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
+    LOG_INFO << "create qcow2 image(data): " << cmd_create_img;
+    std::string create_ret = run_shell(cmd_create_img.c_str());
+    LOG_INFO << "create qcow2 image(data) result: " << create_ret;
+
+    std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
+                                           cpuNumTotal, sockets, cores_per_socket, threads_per_core,
+                                           vga_pci, to_image_path, data_file);
 
     virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
@@ -363,7 +364,6 @@ int32_t VmClient::CreateDomain(const std::string& domain_ame, const std::string&
             virErrorPtr error = virGetLastError();
             LOG_ERROR << "virDomainCreate error: " << error->message;
             virFreeError(error);
-
             break;
         }
     } while (0);

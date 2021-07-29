@@ -101,31 +101,31 @@ void SystemResourceManager::init_mem() {
 }
 
 int64_t SystemResourceManager::mem_total() {
-    std::string mem_total = run_shell("free -m | grep \"Mem:\" | awk '{print $2}'");
+    std::string mem_total = run_shell("free -k | grep \"Mem:\" | awk '{print $2}'");
     mem_total = util::rtrim(mem_total, '\n');
     return atoll(mem_total.c_str());
 }
 
 int64_t SystemResourceManager::mem_used() {
-    std::string mem_used = run_shell("free -m | grep \"Mem:\" | awk '{print $3}'");
+    std::string mem_used = run_shell("free -k | grep \"Mem:\" | awk '{print $3}'");
     mem_used = util::rtrim(mem_used, '\n');
     return atoll(mem_used.c_str());
 }
 
 int64_t SystemResourceManager::mem_free() {
-    std::string mem_free = run_shell("free -m | grep \"Mem:\" | awk '{print $4}'");
+    std::string mem_free = run_shell("free -k | grep \"Mem:\" | awk '{print $4}'");
     mem_free = util::rtrim(mem_free, '\n');
     return atoll(mem_free.c_str());
 }
 
 int64_t SystemResourceManager::mem_buff_cache() {
-    std::string mem_buff_cache = run_shell("free -m | grep \"Mem:\" | awk '{print $6}'");
+    std::string mem_buff_cache = run_shell("free -k | grep \"Mem:\" | awk '{print $6}'");
     mem_buff_cache = util::rtrim(mem_buff_cache, '\n');
     return atoll(mem_buff_cache.c_str());
 }
 
 int64_t SystemResourceManager::mem_available() {
-    std::string mem_available = run_shell("free -m | grep \"Mem:\" | awk '{print $7}'");
+    std::string mem_available = run_shell("free -k | grep \"Mem:\" | awk '{print $7}'");
     mem_available = util::rtrim(mem_available, '\n');
     return atoll(mem_available.c_str());
 }

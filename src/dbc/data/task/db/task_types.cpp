@@ -17,17 +17,14 @@ namespace dbc {
 
     void HardwareResource::__set_gpu_count(const int32_t val) {
         this->gpu_count = val;
-        __isset.gpu_count = true;
     }
 
     void HardwareResource::__set_cpu_cores(const int32_t val) {
         this->cpu_cores = val;
-        __isset.cpu_cores = true;
     }
 
     void HardwareResource::__set_mem_rate(const double val) {
         this->mem_rate = val;
-        __isset.mem_rate = true;
     }
     std::ostream& operator<<(std::ostream& out, const HardwareResource& obj)
     {
@@ -48,6 +45,9 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+        bool isset_gpu_count = false;
+        bool isset_cpu_cores = false;
+        bool isset_mem_rate = false;
 
         while (true)
         {
@@ -60,7 +60,7 @@ namespace dbc {
                 case 1:
                     if (ftype == ::apache::thrift::protocol::T_I32) {
                         xfer += iprot->readI32(this->gpu_count);
-                        this->__isset.gpu_count = true;
+                        isset_gpu_count = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -68,7 +68,7 @@ namespace dbc {
                 case 2:
                     if (ftype == ::apache::thrift::protocol::T_I32) {
                         xfer += iprot->readI32(this->cpu_cores);
-                        this->__isset.cpu_cores = true;
+                        isset_cpu_cores = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -76,7 +76,7 @@ namespace dbc {
                 case 3:
                     if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
                         xfer += iprot->readDouble(this->mem_rate);
-                        this->__isset.mem_rate = true;
+                        isset_mem_rate = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -90,6 +90,12 @@ namespace dbc {
 
         xfer += iprot->readStructEnd();
 
+        if (!isset_gpu_count)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_cpu_cores)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_mem_rate)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
         return xfer;
     }
 
@@ -98,21 +104,18 @@ namespace dbc {
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("HardwareResource");
 
-        if (this->__isset.gpu_count) {
-            xfer += oprot->writeFieldBegin("gpu_count", ::apache::thrift::protocol::T_I32, 1);
-            xfer += oprot->writeI32(this->gpu_count);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.cpu_cores) {
-            xfer += oprot->writeFieldBegin("cpu_cores", ::apache::thrift::protocol::T_I32, 2);
-            xfer += oprot->writeI32(this->cpu_cores);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.mem_rate) {
-            xfer += oprot->writeFieldBegin("mem_rate", ::apache::thrift::protocol::T_DOUBLE, 3);
-            xfer += oprot->writeDouble(this->mem_rate);
-            xfer += oprot->writeFieldEnd();
-        }
+        xfer += oprot->writeFieldBegin("gpu_count", ::apache::thrift::protocol::T_I32, 1);
+        xfer += oprot->writeI32(this->gpu_count);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("cpu_cores", ::apache::thrift::protocol::T_I32, 2);
+        xfer += oprot->writeI32(this->cpu_cores);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("mem_rate", ::apache::thrift::protocol::T_DOUBLE, 3);
+        xfer += oprot->writeDouble(this->mem_rate);
+        xfer += oprot->writeFieldEnd();
+
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -123,28 +126,25 @@ namespace dbc {
         swap(a.gpu_count, b.gpu_count);
         swap(a.cpu_cores, b.cpu_cores);
         swap(a.mem_rate, b.mem_rate);
-        swap(a.__isset, b.__isset);
     }
 
     HardwareResource::HardwareResource(const HardwareResource& other0) {
         gpu_count = other0.gpu_count;
         cpu_cores = other0.cpu_cores;
         mem_rate = other0.mem_rate;
-        __isset = other0.__isset;
     }
     HardwareResource& HardwareResource::operator=(const HardwareResource& other1) {
         gpu_count = other1.gpu_count;
         cpu_cores = other1.cpu_cores;
         mem_rate = other1.mem_rate;
-        __isset = other1.__isset;
         return *this;
     }
     void HardwareResource::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "HardwareResource(";
-        out << "gpu_count="; (__isset.gpu_count ? (out << to_string(gpu_count)) : (out << "<null>"));
-        out << ", " << "cpu_cores="; (__isset.cpu_cores ? (out << to_string(cpu_cores)) : (out << "<null>"));
-        out << ", " << "mem_rate="; (__isset.mem_rate ? (out << to_string(mem_rate)) : (out << "<null>"));
+        out << "gpu_count=" << to_string(gpu_count);
+        out << ", " << "cpu_cores=" << to_string(cpu_cores);
+        out << ", " << "mem_rate=" << to_string(mem_rate);
         out << ")";
     }
 
@@ -159,22 +159,18 @@ namespace dbc {
 
     void TaskInfo::__set_image_name(const std::string& val) {
         this->image_name = val;
-        __isset.image_name = true;
     }
 
     void TaskInfo::__set_login_password(const std::string& val) {
         this->login_password = val;
-        __isset.login_password = true;
     }
 
     void TaskInfo::__set_ssh_port(const std::string& val) {
         this->ssh_port = val;
-        __isset.ssh_port = true;
     }
 
     void TaskInfo::__set_status(const int32_t val) {
         this->status = val;
-        __isset.status = true;
     }
 
     void TaskInfo::__set_operation(const int32_t val) {
@@ -184,7 +180,6 @@ namespace dbc {
 
     void TaskInfo::__set_create_time(const int64_t val) {
         this->create_time = val;
-        __isset.create_time = true;
     }
 
     void TaskInfo::__set_last_start_time(const int64_t val) {
@@ -230,6 +225,11 @@ namespace dbc {
         using ::apache::thrift::protocol::TProtocolException;
 
         bool isset_task_id = false;
+        bool isset_image_name = false;
+        bool isset_login_password = false;
+        bool isset_ssh_port = false;
+        bool isset_status = false;
+        bool isset_create_time = false;
 
         while (true)
         {
@@ -250,7 +250,7 @@ namespace dbc {
                 case 2:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->image_name);
-                        this->__isset.image_name = true;
+                        isset_image_name = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -258,7 +258,7 @@ namespace dbc {
                 case 3:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->login_password);
-                        this->__isset.login_password = true;
+                        isset_login_password = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -266,7 +266,7 @@ namespace dbc {
                 case 4:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->ssh_port);
-                        this->__isset.ssh_port = true;
+                        isset_ssh_port = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -274,7 +274,7 @@ namespace dbc {
                 case 5:
                     if (ftype == ::apache::thrift::protocol::T_I32) {
                         xfer += iprot->readI32(this->status);
-                        this->__isset.status = true;
+                        isset_status = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -290,7 +290,7 @@ namespace dbc {
                 case 7:
                     if (ftype == ::apache::thrift::protocol::T_I64) {
                         xfer += iprot->readI64(this->create_time);
-                        this->__isset.create_time = true;
+                        isset_create_time = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
@@ -346,6 +346,16 @@ namespace dbc {
 
         if (!isset_task_id)
             throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_image_name)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_login_password)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_ssh_port)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_status)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_create_time)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
         return xfer;
     }
 
@@ -358,36 +368,31 @@ namespace dbc {
         xfer += oprot->writeString(this->task_id);
         xfer += oprot->writeFieldEnd();
 
-        if (this->__isset.image_name) {
-            xfer += oprot->writeFieldBegin("image_name", ::apache::thrift::protocol::T_STRING, 2);
-            xfer += oprot->writeString(this->image_name);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.login_password) {
-            xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 3);
-            xfer += oprot->writeString(this->login_password);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.ssh_port) {
-            xfer += oprot->writeFieldBegin("ssh_port", ::apache::thrift::protocol::T_STRING, 4);
-            xfer += oprot->writeString(this->ssh_port);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.status) {
-            xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_I32, 5);
-            xfer += oprot->writeI32(this->status);
-            xfer += oprot->writeFieldEnd();
-        }
+        xfer += oprot->writeFieldBegin("image_name", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->image_name);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->login_password);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("ssh_port", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->ssh_port);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_I32, 5);
+        xfer += oprot->writeI32(this->status);
+        xfer += oprot->writeFieldEnd();
+
         if (this->__isset.operation) {
             xfer += oprot->writeFieldBegin("operation", ::apache::thrift::protocol::T_I32, 6);
             xfer += oprot->writeI32(this->operation);
             xfer += oprot->writeFieldEnd();
         }
-        if (this->__isset.create_time) {
-            xfer += oprot->writeFieldBegin("create_time", ::apache::thrift::protocol::T_I64, 7);
-            xfer += oprot->writeI64(this->create_time);
-            xfer += oprot->writeFieldEnd();
-        }
+        xfer += oprot->writeFieldBegin("create_time", ::apache::thrift::protocol::T_I64, 7);
+        xfer += oprot->writeI64(this->create_time);
+        xfer += oprot->writeFieldEnd();
+
         if (this->__isset.last_start_time) {
             xfer += oprot->writeFieldBegin("last_start_time", ::apache::thrift::protocol::T_I64, 8);
             xfer += oprot->writeI64(this->last_start_time);
@@ -469,12 +474,12 @@ namespace dbc {
         using ::apache::thrift::to_string;
         out << "TaskInfo(";
         out << "task_id=" << to_string(task_id);
-        out << ", " << "image_name="; (__isset.image_name ? (out << to_string(image_name)) : (out << "<null>"));
-        out << ", " << "login_password="; (__isset.login_password ? (out << to_string(login_password)) : (out << "<null>"));
-        out << ", " << "ssh_port="; (__isset.ssh_port ? (out << to_string(ssh_port)) : (out << "<null>"));
-        out << ", " << "status="; (__isset.status ? (out << to_string(status)) : (out << "<null>"));
+        out << ", " << "image_name=" << to_string(image_name);
+        out << ", " << "login_password=" << to_string(login_password);
+        out << ", " << "ssh_port=" << to_string(ssh_port);
+        out << ", " << "status=" << to_string(status);
         out << ", " << "operation="; (__isset.operation ? (out << to_string(operation)) : (out << "<null>"));
-        out << ", " << "create_time="; (__isset.create_time ? (out << to_string(create_time)) : (out << "<null>"));
+        out << ", " << "create_time=" << to_string(create_time);
         out << ", " << "last_start_time="; (__isset.last_start_time ? (out << to_string(last_start_time)) : (out << "<null>"));
         out << ", " << "last_stop_time="; (__isset.last_stop_time ? (out << to_string(last_stop_time)) : (out << "<null>"));
         out << ", " << "hardware_resource=" << to_string(hardware_resource);

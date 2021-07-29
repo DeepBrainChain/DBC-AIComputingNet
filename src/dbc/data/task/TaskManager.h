@@ -13,6 +13,8 @@
 #include "service/message/matrix_types.h"
 #include "db/task_db.h"
 #include "vm/vm_client.h"
+#include "TaskResourceManager.h"
+#include "db/task_iptable_db.h"
 
 namespace bp = boost::process;
 
@@ -47,6 +49,8 @@ public:
 
     void ListAllTask(std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
 
+    void ListRunningTask(std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+
     int32_t GetRunningTaskSize();
 
     ETaskStatus GetTaskStatus(const std::string &task_id);
@@ -56,13 +60,36 @@ public:
     void PruneTask();
 
 protected:
-    FResult init_db();
+    void add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count);
+
+    bool check_cpu(int32_t cpu_count);
+
+    bool check_gpu(int32_t gpu_count);
+
+    bool check_mem(float mem_rate);
+
+    bool transform_port(const std::string &domain_name, const std::string &transform_port);
+
+    bool set_vm_password(const std::string &domain_name, const std::string &username, const std::string &pwd);
+
+    void delete_task_data(const std::string& task_id);
+
+    void delete_image_file(const std::string& task_id);
+
+    void delete_disk_file(const std::string& task_id);
+
+    void delete_iptable(const std::string& task_id);
 
 protected:
+    TaskDB m_task_db;
     std::map<std::string, std::shared_ptr<dbc::TaskInfo> > m_tasks;
     std::list<std::shared_ptr<dbc::TaskInfo> > m_process_tasks;
-    TaskDB m_task_db;
+
+    TaskIpTableDB m_task_iptable_db;
+    std::map<std::string, std::shared_ptr<dbc::TaskIpTable> > m_task_iptables;
+
     VmClient m_vm_client;
+    TaskResourceManager m_task_resource;
 };
 
 typedef TaskManager TaskMgr;

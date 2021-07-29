@@ -11,6 +11,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include "../message/message_id.h"
+#include "data/resource/SystemResourceManager.h"
 
 std::string get_gpu_spec(const std::string& s) {
     if (s.empty()) {
@@ -711,6 +712,8 @@ static std::string generate_pwd() {
 }
 
 void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
+    LOG_INFO << "on_ws_msg(" << err_code << ") " << msg;
+
     int32_t ret = E_DEFAULT;
     std::string ret_msg;
     std::string task_id;
@@ -770,6 +773,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         } else {
             ret = E_DEFAULT;
             ret_msg = "rent check failed";
+            LOG_ERROR << "rent check failed";
             break;
         }
     } while(0);
@@ -793,30 +797,27 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     // body
     rsp_content->body.__set_result(ret);
     rsp_content->body.__set_result_msg(ret_msg);
-
     auto taskinfo = m_task_scheduler.FindTask(task_id);
-    if (ret == E_SUCCESS && taskinfo != nullptr) {
-        rsp_content->body.__set_task_id(task_id);
-        rsp_content->body.__set_user_name("dbc");
-        rsp_content->body.__set_login_password(login_password);
-        std::string public_ip = run_shell("dig +short myip.opendns.com @resolver1.opendns.com");
-        public_ip = util::rtrim(public_ip, '\n');
-        rsp_content->body.__set_ip(public_ip);
-        rsp_content->body.__set_ssh_port(taskinfo->ssh_port);
-        struct tm _tm;
-        time_t tt = taskinfo->create_time;
-        localtime_r(&tt, &_tm);
-        char buf[256] = {0};
-        memset(buf, 0, sizeof(char) * 256);
-        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-        rsp_content->body.__set_create_time(buf);
-        //todo: 填充系统信息
-        rsp_content->body.__set_system_storage("350G");
-        rsp_content->body.__set_data_storage("2T");
-        rsp_content->body.__set_cpu_cores(std::to_string(taskinfo->hardware_resource.cpu_cores));
-        rsp_content->body.__set_gpu_count(std::to_string(taskinfo->hardware_resource.gpu_count));
-        rsp_content->body.__set_mem_size(std::to_string(taskinfo->hardware_resource.mem_rate));
-    }
+    rsp_content->body.__set_task_id(task_id);
+    rsp_content->body.__set_user_name("dbc");
+    rsp_content->body.__set_login_password(login_password);
+    std::string public_ip = run_shell("curl -s myip.ipip.net | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}'");
+    public_ip = util::rtrim(public_ip, '\n');
+    rsp_content->body.__set_ip(public_ip);
+    rsp_content->body.__set_ssh_port(taskinfo == nullptr ? "0" : taskinfo->ssh_port);
+    struct tm _tm;
+    time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
+    localtime_r(&tt, &_tm);
+    char buf[256] = {0};
+    memset(buf, 0, sizeof(char) * 256);
+    strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+    rsp_content->body.__set_create_time(buf);
+    rsp_content->body.__set_system_storage("350G");
+    int64_t disk_data = SystemResourceMgr::instance().GetDisk().total;
+    rsp_content->body.__set_data_storage(size_to_string(disk_data, 1024 * 1024));
+    rsp_content->body.__set_cpu_cores(std::to_string(taskinfo == nullptr ? 0 : taskinfo->hardware_resource.cpu_cores));
+    rsp_content->body.__set_gpu_count(std::to_string(taskinfo == nullptr ? 0 : taskinfo->hardware_resource.gpu_count));
+    rsp_content->body.__set_mem_size(std::to_string(taskinfo == nullptr ? 0 : taskinfo->hardware_resource.mem_rate));
 
     //rsp msg
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
