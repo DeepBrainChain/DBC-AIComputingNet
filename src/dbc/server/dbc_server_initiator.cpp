@@ -16,6 +16,8 @@
 #include "service/http_request_service/rest_api_service.h"
 #include <boost/exception/all.hpp>
 #include "service/node_request_service/node_request_service.h"
+#include "service_module/service_name.h"
+#include "data/resource/SystemResourceManager.h"
 
 extern std::chrono::high_resolution_clock::time_point server_start_time;
 
@@ -68,6 +70,10 @@ int32_t dbc_server_initiator::init(int argc, char* argv[])
     }
     mdl->start();
     LOG_INFO << "init conf manager successfully";
+
+    if (vm.count(SERVICE_NAME_AI_TRAINING)) {
+        SystemResourceMgr::instance().Init();
+    }
 
     //topic_manager
     LOG_INFO << "begin to init topic manager";

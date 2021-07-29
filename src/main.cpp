@@ -33,33 +33,8 @@ int pre_main_task()
     return 0;
 }
 
-#include "data/resource/SystemResourceManager.h"
-#include "data/task/TaskResourceManager.h"
-//#define MYTEST
-
 int main(int argc, char* argv[])
 {
-    SystemResourceMgr::instance().Init();
-
-#ifdef MYTEST
-    SystemResourceMgr::instance().print_os();
-    SystemResourceMgr::instance().print_cpu();
-    SystemResourceMgr::instance().print_gpu();
-    SystemResourceMgr::instance().print_mem();
-    SystemResourceMgr::instance().print_disk();
-
-    std::vector<std::string> vec;
-    vec.push_back("666txxDVSv39JqbfRkBN9oQcCzyTfLmJYodUs8jG1t89cqPd5zqupbT");
-    TaskResourceManager mgr;
-    mgr.init(vec);
-    mgr.print_cpu("666txxDVSv39JqbfRkBN9oQcCzyTfLmJYodUs8jG1t89cqPd5zqupbT");
-    mgr.print_mem("666txxDVSv39JqbfRkBN9oQcCzyTfLmJYodUs8jG1t89cqPd5zqupbT");
-    mgr.print_gpu("666txxDVSv39JqbfRkBN9oQcCzyTfLmJYodUs8jG1t89cqPd5zqupbT");
-    mgr.print_disk("666txxDVSv39JqbfRkBN9oQcCzyTfLmJYodUs8jG1t89cqPd5zqupbT");
-
-    return 0;
-#endif
-
     int32_t ret = pre_main_task();
     if (ret != E_SUCCESS)
     {
