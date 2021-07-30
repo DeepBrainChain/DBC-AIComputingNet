@@ -146,7 +146,7 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
 
     // check资源够不够
     int32_t cpu_count = atoi(s_cpu_cores.c_str());
-    //cpu数量必须是(sockets x threads)的整数倍
+    //cpu数量必须是(sockets * threads)的整数倍
     int32_t sockets = SystemResourceMgr::instance().GetCpu().sockets;
     int32_t threads = SystemResourceMgr::instance().GetCpu().threads_per_core;
     int32_t left = cpu_count % (sockets * threads);
@@ -188,12 +188,12 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
     taskinfo->__set_vm_xml(vm_xml);
     taskinfo->__set_vm_xml_url(vm_xml_url);
 
+    // add task resource
+    add_task_resource(task_id, cpu_count, mem_rate, gpu_count);
+
     m_tasks[task_id] = taskinfo;
     m_process_tasks.push_back(taskinfo);
     m_task_db.write_task(taskinfo);
-
-    // add task resource
-    add_task_resource(task_id, cpu_count, mem_rate, gpu_count);
 
     return {E_SUCCESS, ""};
 }
@@ -241,7 +241,8 @@ bool TaskManager::check_mem(float mem_rate) {
         }
     }
 
-    int64_t need_size = mem_total * mem_rate;
+    // 系统内存预留 g_reserved_memory（GB）
+    int64_t need_size = mem_total * mem_rate - g_reserved_memory * 1024 * 1024;
     return (mem_total - cur_mem) >= need_size;
 }
 
@@ -258,11 +259,11 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
              << ", threads: " << task_cpu.threads_per_core;
 
     DeviceMem task_mem;
-    int64_t mem_total = SystemResourceMgr::instance().GetMem().total; // KB
-    task_mem.total = (mem_total * mem_rate) > 1000000000 ? 1000000000 : (mem_total * mem_rate);
+    int64_t mem_total = SystemResourceMgr::instance().GetMem().total - g_reserved_memory * 1024 * 1024; // KB
+    task_mem.total = (mem_total * mem_rate > 1000000000) ? 1000000000 : (mem_total * mem_rate);
     task_mem.available = task_mem.available;
     m_task_resource.AddTaskMem(task_id, task_mem);
-    LOG_INFO << "memory: " << task_mem.total << "KB";
+    LOG_INFO << "memory: " << size_to_string(task_mem.total, 1024);
 
     std::map<std::string, DeviceGpu> task_gpus;
     std::map<std::string, DeviceGpu> can_use_gpu = SystemResourceMgr::instance().GetGpu();
@@ -290,13 +291,13 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
 
     DeviceDisk task_disk_1;
     int64_t disk_total_size = SystemResourceMgr::instance().GetDisk().total; // MB
-    task_disk_1.total = (disk_total_size - 350 * 1024) * 0.75;
+    task_disk_1.total = (disk_total_size - g_image_size * 1024) * 0.75;
     task_disk_1.available = task_disk_1.total;
     task_disk_1.type = SystemResourceMgr::instance().GetDisk().type;
     std::map<int32_t, DeviceDisk> task_disks;
     task_disks[1] = task_disk_1;
     m_task_resource.AddTaskDisk(task_id, task_disks);
-    LOG_INFO << "disk_1: " << (task_disk_1.total / 1024) << "GB";
+    LOG_INFO << "disk_1: " << size_to_string(task_disk_1.total, 1024 * 1024);
 }
 
 FResult TaskManager::StartTask(const std::string &task_id) {

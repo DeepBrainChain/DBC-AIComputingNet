@@ -761,7 +761,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string machine_status = v_machineStatus.GetString();
 
-        //machine_status = "creating";
+        machine_status = "creating";
 
         if (machine_status == "creating" || machine_status == "rented") {
             // 创建虚拟机
@@ -786,7 +786,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     rsp_content->header.__set_session_id(m_create_req->header.session_id);
     rsp_content->header.__set_path(m_create_req->header.path);
     std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + task_id + login_password;
+    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
@@ -796,28 +796,29 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
-    auto taskinfo = m_task_scheduler.FindTask(task_id);
-    rsp_content->body.__set_task_id(task_id);
-    rsp_content->body.__set_user_name("dbc");
-    rsp_content->body.__set_login_password(login_password);
-    std::string public_ip = run_shell("curl -s myip.ipip.net | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}'");
-    public_ip = util::rtrim(public_ip, '\n');
-    rsp_content->body.__set_ip(public_ip);
-    rsp_content->body.__set_ssh_port(taskinfo == nullptr ? "0" : taskinfo->ssh_port);
-    struct tm _tm;
-    time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
-    localtime_r(&tt, &_tm);
-    char buf[256] = {0};
-    memset(buf, 0, sizeof(char) * 256);
-    strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-    rsp_content->body.__set_create_time(buf);
-    rsp_content->body.__set_system_storage("350G");
-    int64_t disk_data = SystemResourceMgr::instance().GetDisk().total;
-    rsp_content->body.__set_data_storage(size_to_string(disk_data, 1024 * 1024));
-    rsp_content->body.__set_cpu_cores(std::to_string(taskinfo == nullptr ? 0 : taskinfo->hardware_resource.cpu_cores));
-    rsp_content->body.__set_gpu_count(std::to_string(taskinfo == nullptr ? 0 : taskinfo->hardware_resource.gpu_count));
-    rsp_content->body.__set_mem_size(std::to_string(taskinfo == nullptr ? 0 : taskinfo->hardware_resource.mem_rate));
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"data\":" << "{";
+        ss << "\"task_id\":" << "\"" << task_id << "\"";
+
+        auto taskinfo = m_task_scheduler.FindTask(task_id);
+        struct tm _tm{};
+        time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
+        localtime_r(&tt, &_tm);
+        char buf[256] = {0};
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+        ss << ", \"create_time\":" << "\"" << buf << "\"";
+
+        ss << "}";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
@@ -869,7 +870,17 @@ int32_t node_request_service::task_start(const std::shared_ptr<dbc::node_start_t
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"result\":" << "\"ok\"";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -905,7 +916,17 @@ int32_t node_request_service::task_stop(const std::shared_ptr<dbc::node_stop_tas
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"result\":" << "\"ok\"";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -941,7 +962,17 @@ int32_t node_request_service::task_restart(const std::shared_ptr<dbc::node_resta
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"result\":" << "\"ok\"";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -977,7 +1008,17 @@ int32_t node_request_service::task_reset(const std::shared_ptr<dbc::node_reset_t
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"result\":" << "\"ok\"";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -1013,7 +1054,17 @@ int32_t node_request_service::task_delete(const std::shared_ptr<dbc::node_delete
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"result\":" << "\"ok\"";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -1061,8 +1112,17 @@ int32_t node_request_service::task_logs(const std::shared_ptr<dbc::node_task_log
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
-    rsp_content->body.__set_result_msg(ret_msg);
-    rsp_content->body.__set_log_content(log_content);
+    std::stringstream ss;
+    ss << "{";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"log_content\":" << "\"" << log_content << "\"";
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
@@ -1082,26 +1142,100 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
         result_msg = "task_id check failed";
     }
 
-    std::vector<dbc::task_info> info_list;
+    std::stringstream ss_tasks;
     if (result == E_SUCCESS) {
         if (req->body.task_id.empty()) {
+            ss_tasks << "[";
             std::vector<std::shared_ptr<dbc::TaskInfo>> task_list;
             m_task_scheduler.ListAllTask(task_list);
+            int idx = 0;
             for (auto &task : task_list) {
-                dbc::task_info tinfo;
-                tinfo.__set_task_id(task->task_id);
-                tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
-                tinfo.__set_login_password(task->login_password);
-                info_list.push_back(tinfo);
+                if (idx > 0)
+                    ss_tasks << ",";
+
+                ss_tasks << "{";
+                ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
+                ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
+                ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
+                ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
+                ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
+
+                const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
+                const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(task->task_id);
+                int64_t disk_data = 0;
+                if (!task_disk_list.empty()) {
+                    auto it_disk = task_disk_list.find(1);
+                    if (it_disk != task_disk_list.end())
+                        disk_data = it_disk->second.total;
+                }
+                const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(task->task_id);
+                int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
+                const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(task->task_id);
+                uint32_t gpu_count = task_gpu_list.size();
+                const DeviceMem& task_mem = res_mgr.GetTaskMem(task->task_id);
+                int64_t mem_size = task_mem.total;
+
+                ss_tasks << ", \"cpu_cores\":" << cpu_cores;
+                ss_tasks << ", \"gpu_count\":" << gpu_count;
+                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024 * 1024 * 1024) << "\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024 * 1024) << "\"";
+
+                struct tm _tm{};
+                time_t tt = task->create_time;
+                localtime_r(&tt, &_tm);
+                char buf[256] = {0};
+                memset(buf, 0, sizeof(char) * 256);
+                strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+                ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
+
+                ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
+                ss_tasks << "}";
+
+                idx++;
             }
+            ss_tasks << "]";
         } else {
             auto task = m_task_scheduler.FindTask(req->body.task_id);
             if (nullptr != task) {
-                dbc::task_info tinfo;
-                tinfo.__set_task_id(task->task_id);
-                tinfo.__set_status(m_task_scheduler.GetTaskStatus(task->task_id));
-                tinfo.__set_login_password(task->login_password);
-                info_list.push_back(tinfo);
+                ss_tasks << "{";
+                ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
+                ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
+                ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
+                ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
+                ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
+
+                const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
+                const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(task_id);
+                int64_t disk_data = 0;
+                if (!task_disk_list.empty()) {
+                    auto it_disk = task_disk_list.find(1);
+                    if (it_disk != task_disk_list.end())
+                        disk_data = it_disk->second.total;
+                }
+                const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(task_id);
+                int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
+                const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(task_id);
+                uint32_t gpu_count = task_gpu_list.size();
+                const DeviceMem& task_mem = res_mgr.GetTaskMem(task_id);
+                int64_t mem_size = task_mem.total;
+
+                ss_tasks << ", \"cpu_cores\":" << cpu_cores;
+                ss_tasks << ", \"gpu_count\":" << gpu_count;
+                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024 * 1024 * 1024) << "\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024 * 1024) << "\"";
+
+                struct tm _tm{};
+                time_t tt = task->create_time;
+                localtime_r(&tt, &_tm);
+                char buf[256] = {0};
+                memset(buf, 0, sizeof(char) * 256);
+                strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+                ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
+
+                ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
+                ss_tasks << "}";
             } else {
                 result = E_DEFAULT;
                 result_msg = "task_id not exist";
@@ -1109,8 +1243,7 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
         }
     }
 
-    std::shared_ptr<dbc::node_list_task_rsp> rsp_content =
-            std::make_shared<dbc::node_list_task_rsp>();
+    std::shared_ptr<dbc::node_list_task_rsp> rsp_content = std::make_shared<dbc::node_list_task_rsp>();
     // header
     rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
     rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
@@ -1128,8 +1261,17 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(result);
-    rsp_content->body.__set_result_msg(result_msg);
-    rsp_content->body.task_info_list.swap(info_list);
+    std::stringstream ss;
+    ss << "{";
+    if (result != E_SUCCESS) {
+        ss << "\"error_code\":" << result;
+        ss << ", \"error_message\":" << "\"" << result_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << result;
+        ss << ", \"data\":" << ss_tasks.str();
+    }
+    ss << "}";
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();

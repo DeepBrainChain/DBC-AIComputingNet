@@ -10,6 +10,12 @@
 #include "../message/protocol_coder/matrix_coder.h"
 #include "../message/message_id.h"
 #include "log/log.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/error.h"
 
 int32_t cmd_request_service::service_init(bpo::variables_map &options) {
     return E_SUCCESS;
@@ -203,41 +209,18 @@ int32_t cmd_request_service::on_node_create_task_rsp(std::shared_ptr<dbc::networ
     }
 
     //check rsp body
-    std::string rsp_task_id;
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    std::string rsp_user_name;
-    std::string rsp_login_password;
-    std::string rsp_ip;
-    std::string rsp_ssh_port;
-    std::string rsp_create_time;
-    std::string rsp_system_storage;
-    std::string rsp_data_storage;
-    std::string rsp_cpu_cores;
-    std::string rsp_gpu_count;
-    std::string rsp_mem_size;
-    try {
-        rsp_task_id = rsp_content->body.task_id;
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-        rsp_user_name = rsp_content->body.user_name;
-        rsp_login_password = rsp_content->body.login_password;
-        rsp_ip = rsp_content->body.ip;
-        rsp_ssh_port = rsp_content->body.ssh_port;
-        rsp_create_time = rsp_content->body.create_time;
-        rsp_system_storage = rsp_content->body.system_storage;
-        rsp_data_storage = rsp_content->body.data_storage;
-        rsp_cpu_cores = rsp_content->body.cpu_cores;
-        rsp_gpu_count = rsp_content->body.gpu_count;
-        rsp_mem_size = rsp_content->body.mem_size;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + rsp_task_id + rsp_login_password;
+    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     if (!util::verify_sign(rsp_content->header.exten_info["sign"], sign_msg, rsp_content->header.exten_info["origin_id"])) {
         LOG_ERROR << "verify sign failed";
         return E_DEFAULT;
@@ -253,17 +236,6 @@ int32_t cmd_request_service::on_node_create_task_rsp(std::shared_ptr<dbc::networ
     cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
     cmd_rsp_msg->result = rsp_result;
     cmd_rsp_msg->result_info = rsp_result_msg;
-    cmd_rsp_msg->task_id = rsp_task_id;
-    cmd_rsp_msg->user_name = rsp_user_name;
-    cmd_rsp_msg->login_password = rsp_login_password;
-    cmd_rsp_msg->ip = rsp_ip;
-    cmd_rsp_msg->ssh_port = rsp_ssh_port;
-    cmd_rsp_msg->create_time = rsp_create_time;
-    cmd_rsp_msg->system_storage = rsp_system_storage;
-    cmd_rsp_msg->data_storage = rsp_data_storage;
-    cmd_rsp_msg->cpu_cores = rsp_cpu_cores;
-    cmd_rsp_msg->gpu_count = rsp_gpu_count;
-    cmd_rsp_msg->mem_size = rsp_mem_size;
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp_msg);
 
@@ -293,9 +265,12 @@ int32_t cmd_request_service::on_node_create_task_timer(const std::shared_ptr<cor
 
     cmd_rsp->header.__set_session_id(session_id);
     cmd_rsp->result = E_DEFAULT;
-    cmd_rsp->result_info = "create task timeout";
-    cmd_rsp->task_id = "";
-    cmd_rsp->login_password = "";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"create task timeout\"";
+    ss << "}";
+    cmd_rsp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_create_task_rsp).name(), cmd_rsp);
 
@@ -413,16 +388,15 @@ int32_t cmd_request_service::on_node_start_task_rsp(std::shared_ptr<dbc::network
     }
 
     // check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -470,7 +444,12 @@ int32_t cmd_request_service::on_node_start_task_timer(const std::shared_ptr<core
 
     cmd_rsp->header.__set_session_id(session_id);
     cmd_rsp->result = E_DEFAULT;
-    cmd_rsp->result_info = "start task timeout";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"start task timeout\"";
+    ss << "}";
+    cmd_rsp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_start_task_rsp).name(), cmd_rsp);
 
@@ -588,16 +567,15 @@ int32_t cmd_request_service::on_node_stop_task_rsp(std::shared_ptr<dbc::network:
     }
 
     //check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -645,7 +623,12 @@ int32_t cmd_request_service::on_node_stop_task_timer(const std::shared_ptr<core_
 
     cmd_rsp->header.__set_session_id(session_id);
     cmd_rsp->result = E_DEFAULT;
-    cmd_rsp->result_info = "stop task timeout";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"stop task timeout\"";
+    ss << "}";
+    cmd_rsp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_stop_task_rsp).name(), cmd_rsp);
 
@@ -764,16 +747,15 @@ int32_t cmd_request_service::on_node_restart_task_rsp(std::shared_ptr<dbc::netwo
     }
 
     //check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -821,7 +803,12 @@ int32_t cmd_request_service::on_node_restart_task_timer(const std::shared_ptr<co
 
     cmd_rsp->header.__set_session_id(session_id);
     cmd_rsp->result = E_DEFAULT;
-    cmd_rsp->result_info = "restart task timeout";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"restart task timeout\"";
+    ss << "}";
+    cmd_rsp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_restart_task_rsp).name(), cmd_rsp);
 
@@ -939,16 +926,15 @@ int32_t cmd_request_service::on_node_reset_task_rsp(std::shared_ptr<dbc::network
     }
 
     //check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -996,7 +982,12 @@ int32_t cmd_request_service::on_node_reset_task_timer(const std::shared_ptr<core
 
     cmd_rsp->header.__set_session_id(session_id);
     cmd_rsp->result = E_DEFAULT;
-    cmd_rsp->result_info = "reset task timeout";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"reset task timeout\"";
+    ss << "}";
+    cmd_rsp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_reset_task_rsp).name(), cmd_rsp);
 
@@ -1114,16 +1105,15 @@ int32_t cmd_request_service::on_node_delete_task_rsp(std::shared_ptr<dbc::networ
     }
 
     //check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
@@ -1170,8 +1160,12 @@ int32_t cmd_request_service::on_node_delete_task_timer(const std::shared_ptr<cor
     }
 
     cmd_rsp->header.__set_session_id(session_id);
-    cmd_rsp->result = E_DEFAULT;
-    cmd_rsp->result_info = "destroy task timeout";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"delete task timeout\"";
+    ss << "}";
+    cmd_rsp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_delete_task_rsp).name(), cmd_rsp);
 
@@ -1309,22 +1303,18 @@ int32_t cmd_request_service::on_node_task_logs_rsp(std::shared_ptr<dbc::network:
     }
 
     //check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    std::string rsp_log_content;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-        rsp_log_content = rsp_content->body.log_content;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp body error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id
-                + rsp_log_content;
+    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     if (!util::verify_sign(rsp_content->header.exten_info["sign"], sign_msg, rsp_content->header.exten_info["origin_id"])) {
         LOG_ERROR << "verify sign failed";
         return E_DEFAULT;
@@ -1340,7 +1330,6 @@ int32_t cmd_request_service::on_node_task_logs_rsp(std::shared_ptr<dbc::network:
     cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
     cmd_rsp_msg->result = rsp_result;
     cmd_rsp_msg->result_info = rsp_result_msg;
-    cmd_rsp_msg->log_content = rsp_log_content;
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_rsp_msg);
 
@@ -1370,7 +1359,12 @@ int32_t cmd_request_service::on_node_task_logs_timer(std::shared_ptr<core_timer>
 
     cmd_resp->header.__set_session_id(session_id);
     cmd_resp->result = E_DEFAULT;
-    cmd_resp->result_info = "get task log time out";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"get task log timeout\"";
+    ss << "}";
+    cmd_resp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_task_logs_rsp).name(), cmd_resp);
 
@@ -1503,32 +1497,21 @@ int32_t cmd_request_service::on_node_list_task_rsp(std::shared_ptr<dbc::network:
     }
 
     //check rsp body
-    int32_t rsp_result = E_DEFAULT;
-    std::string rsp_result_msg;
-    std::vector<dbc::task_info> rsp_taskinfo_list;
-    try {
-        rsp_result = rsp_content->body.result;
-        rsp_result_msg = rsp_content->body.result_msg;
-        rsp_taskinfo_list = rsp_content->body.task_info_list;
-    } catch (...) {
-        LOG_ERROR << "rsp body error";
-
-        rsp_result = E_DEFAULT;
-        rsp_result_msg = "rsp_body_error";
+    int32_t rsp_result = rsp_content->body.result;
+    std::string rsp_result_msg = rsp_content->body.result_msg;
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        return E_DEFAULT;
     }
 
     std::shared_ptr<::cmd_list_task_rsp> cmd_rsp_msg = std::make_shared<::cmd_list_task_rsp>();
     cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
     cmd_rsp_msg->result = rsp_result;
     cmd_rsp_msg->result_info = rsp_result_msg;
-
-    for (auto& tinfo : rsp_taskinfo_list) {
-        ::cmd_task_info ctinfo;
-        ctinfo.task_id = tinfo.task_id;
-        ctinfo.status = tinfo.status;
-        ctinfo.pwd = tinfo.login_password;
-        cmd_rsp_msg->task_info_list.push_back(std::move(ctinfo));
-    }
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_rsp_msg);
 
@@ -1559,7 +1542,12 @@ int32_t cmd_request_service::on_node_list_task_timer(const std::shared_ptr<core_
 
     cmd_resp->header.__set_session_id(session_id);
     cmd_resp->result = E_DEFAULT;
-    cmd_resp->result_info = "list task time out";
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_DEFAULT;
+    ss << ", \"error_message\":\"get task list timeout\"";
+    ss << "}";
+    cmd_resp->result_info = ss.str();
 
     TOPIC_MANAGER->publish<void>(typeid(::cmd_list_task_rsp).name(), cmd_resp);
 

@@ -203,6 +203,20 @@ namespace dbc
 
         }
 
+        void http_request::reply_comm_rest_err2(uint32_t status, const std::string& json)
+        {
+            write_header("Access-Control-Allow-Origin", "*");
+            write_header("Content-Type", "application/json");
+            write_reply(status, json + "\r\n");
+        }
+
+        void http_request::reply_comm_rest_succ2(const std::string& json)
+        {
+            write_header("Access-Control-Allow-Origin", "*");
+            write_header("Content-Type", "application/json");
+            write_reply(HTTP_OK, json + "\r\n");
+        }
+
         std::string http_request::request_method_string(REQUEST_METHOD method)
         {
             switch (method) {

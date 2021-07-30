@@ -28,7 +28,6 @@ public:
 
     virtual std::string module_name() const { return p2p_service_name; }
 
-    //config param
     std::string get_host_ip() const { return m_host_ip; }
 
     uint16_t get_net_listen_port() const { return m_net_listen_port; }

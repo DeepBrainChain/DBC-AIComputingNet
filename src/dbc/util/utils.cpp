@@ -35,3 +35,65 @@ std::string size_to_string(int64_t n, int64_t scale) {
     }
 }
 
+
+std::string get_public_ip() {
+    int try_count = 0;
+    std::string public_ip = run_shell("curl -s myip.ipip.net | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}'");
+    public_ip = util::rtrim(public_ip, '\n');
+    while (public_ip.empty() && try_count < 10) {
+        public_ip = run_shell("curl -s myip.ipip.net | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}'");
+        public_ip = util::rtrim(public_ip, '\n');
+        if (!public_ip.empty()) {
+            break;
+        }
+        try_count++;
+        sleep(1);
+    }
+
+    return public_ip;
+}
+
+int32_t str_to_i32(const std::string& str) {
+    try {
+        int32_t n = std::stoi(str);
+        return n;
+    } catch (std::exception& e) {
+        return 0;
+    }
+}
+
+uint32_t str_to_u32(const std::string& str) {
+    try {
+        uint64_t n = std::stoul(str);
+        return (uint32_t)n;
+    } catch (std::exception& e) {
+        return 0;
+    }
+}
+
+int64_t str_to_i64(const std::string& str) {
+    try {
+        int64_t n = std::stol(str);
+        return n;
+    } catch (std::exception& e) {
+        return 0;
+    }
+}
+
+uint64_t str_to_u64(const std::string& str) {
+    try {
+        uint64_t n = std::stoul(str);
+        return n;
+    } catch (std::exception& e) {
+        return 0;
+    }
+}
+
+float str_to_f(const std::string& str) {
+    try {
+        float n = std::stof(str);
+        return n;
+    } catch (std::exception& e) {
+        return 0;
+    }
+}

@@ -55,6 +55,10 @@ public:
 
     ETaskStatus GetTaskStatus(const std::string &task_id);
 
+    const TaskResourceManager& GetTaskResourceManager() {
+        return m_task_resource;
+    }
+
     void ProcessTask();
 
     void PruneTask();

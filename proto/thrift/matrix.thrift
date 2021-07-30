@@ -1,4 +1,4 @@
-namespace cpp matrix.service_core
+namespace cpp dbc
 
 //////////////////////////////////////////////////////////////////////////
 //msg header
@@ -80,19 +80,7 @@ struct node_create_task_req {
 // response
 struct node_create_task_rsp_body {
   1: required i32 result,
-  2: required string result_msg,
-
-  3: required string task_id,
-  4: required string user_name,
-  5: required string login_password,
-  6: required string ip,
-  7: required string ssh_port,
-  8: required string create_time,
-  9: required string system_storage,
-  10: required string data_storage,
-  11: required string cpu_cores,
-  12: required string gpu_count,
-  13: required string mem_size
+  2: required string result_msg
 }
 
 struct node_create_task_rsp {
@@ -220,8 +208,7 @@ struct node_task_logs_req {
 // response
 struct node_task_logs_rsp_body {
   1: required i32 result,
-  2: required string result_msg,
-  3: required string log_content
+  2: required string result_msg
 }
 
 struct node_task_logs_rsp {
@@ -240,16 +227,9 @@ struct node_list_task_req {
   1: node_list_task_req_body body
 }
 // response
-struct task_info {
-  1: required string task_id,
-  2: required i32 status,
-  3: required string login_password
-}
-
 struct node_list_task_rsp_body {
   1: required i32 result,
-  2: required string result_msg,
-  3: required list<task_info> task_info_list
+  2: required string result_msg
 }
 
 struct node_list_task_rsp {

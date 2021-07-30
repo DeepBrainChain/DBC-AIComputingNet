@@ -95,8 +95,6 @@ namespace dbc {
 
     class node_list_task_req;
 
-    class task_info;
-
     class node_list_task_rsp_body;
 
     class node_list_task_rsp;
@@ -637,121 +635,28 @@ namespace dbc {
 
     std::ostream& operator<<(std::ostream& out, const node_create_task_req& obj);
 
-    typedef struct _node_create_task_rsp_body__isset {
-        _node_create_task_rsp_body__isset() : task_id(false), user_name(false), login_password(false), ip(false), ssh_port(false), create_time(false), system_storage(false), data_storage(false), cpu_cores(false), gpu_count(false), mem_size(false) {}
-        bool task_id :1;
-        bool user_name :1;
-        bool login_password :1;
-        bool ip :1;
-        bool ssh_port :1;
-        bool create_time :1;
-        bool system_storage :1;
-        bool data_storage :1;
-        bool cpu_cores :1;
-        bool gpu_count :1;
-        bool mem_size :1;
-    } _node_create_task_rsp_body__isset;
 
     class node_create_task_rsp_body : public virtual ::apache::thrift::TBase {
     public:
 
         node_create_task_rsp_body(const node_create_task_rsp_body&);
         node_create_task_rsp_body& operator=(const node_create_task_rsp_body&);
-        node_create_task_rsp_body() : result(0), result_msg(), task_id(), user_name(), login_password(), ip(), ssh_port(), create_time(), system_storage(), data_storage(), cpu_cores(), gpu_count(), mem_size() {
+        node_create_task_rsp_body() : result(0), result_msg() {
         }
 
         virtual ~node_create_task_rsp_body() throw();
         int32_t result;
         std::string result_msg;
-        std::string task_id;
-        std::string user_name;
-        std::string login_password;
-        std::string ip;
-        std::string ssh_port;
-        std::string create_time;
-        std::string system_storage;
-        std::string data_storage;
-        std::string cpu_cores;
-        std::string gpu_count;
-        std::string mem_size;
-
-        _node_create_task_rsp_body__isset __isset;
 
         void __set_result(const int32_t val);
 
         void __set_result_msg(const std::string& val);
-
-        void __set_task_id(const std::string& val);
-
-        void __set_user_name(const std::string& val);
-
-        void __set_login_password(const std::string& val);
-
-        void __set_ip(const std::string& val);
-
-        void __set_ssh_port(const std::string& val);
-
-        void __set_create_time(const std::string& val);
-
-        void __set_system_storage(const std::string& val);
-
-        void __set_data_storage(const std::string& val);
-
-        void __set_cpu_cores(const std::string& val);
-
-        void __set_gpu_count(const std::string& val);
-
-        void __set_mem_size(const std::string& val);
 
         bool operator == (const node_create_task_rsp_body & rhs) const
         {
             if (!(result == rhs.result))
                 return false;
             if (!(result_msg == rhs.result_msg))
-                return false;
-            if (__isset.task_id != rhs.__isset.task_id)
-                return false;
-            else if (__isset.task_id && !(task_id == rhs.task_id))
-                return false;
-            if (__isset.user_name != rhs.__isset.user_name)
-                return false;
-            else if (__isset.user_name && !(user_name == rhs.user_name))
-                return false;
-            if (__isset.login_password != rhs.__isset.login_password)
-                return false;
-            else if (__isset.login_password && !(login_password == rhs.login_password))
-                return false;
-            if (__isset.ip != rhs.__isset.ip)
-                return false;
-            else if (__isset.ip && !(ip == rhs.ip))
-                return false;
-            if (__isset.ssh_port != rhs.__isset.ssh_port)
-                return false;
-            else if (__isset.ssh_port && !(ssh_port == rhs.ssh_port))
-                return false;
-            if (__isset.create_time != rhs.__isset.create_time)
-                return false;
-            else if (__isset.create_time && !(create_time == rhs.create_time))
-                return false;
-            if (__isset.system_storage != rhs.__isset.system_storage)
-                return false;
-            else if (__isset.system_storage && !(system_storage == rhs.system_storage))
-                return false;
-            if (__isset.data_storage != rhs.__isset.data_storage)
-                return false;
-            else if (__isset.data_storage && !(data_storage == rhs.data_storage))
-                return false;
-            if (__isset.cpu_cores != rhs.__isset.cpu_cores)
-                return false;
-            else if (__isset.cpu_cores && !(cpu_cores == rhs.cpu_cores))
-                return false;
-            if (__isset.gpu_count != rhs.__isset.gpu_count)
-                return false;
-            else if (__isset.gpu_count && !(gpu_count == rhs.gpu_count))
-                return false;
-            if (__isset.mem_size != rhs.__isset.mem_size)
-                return false;
-            else if (__isset.mem_size && !(mem_size == rhs.mem_size))
                 return false;
             return true;
         }
@@ -1772,27 +1677,22 @@ namespace dbc {
 
         node_task_logs_rsp_body(const node_task_logs_rsp_body&);
         node_task_logs_rsp_body& operator=(const node_task_logs_rsp_body&);
-        node_task_logs_rsp_body() : result(0), result_msg(), log_content() {
+        node_task_logs_rsp_body() : result(0), result_msg() {
         }
 
         virtual ~node_task_logs_rsp_body() throw();
         int32_t result;
         std::string result_msg;
-        std::string log_content;
 
         void __set_result(const int32_t val);
 
         void __set_result_msg(const std::string& val);
-
-        void __set_log_content(const std::string& val);
 
         bool operator == (const node_task_logs_rsp_body & rhs) const
         {
             if (!(result == rhs.result))
                 return false;
             if (!(result_msg == rhs.result_msg))
-                return false;
-            if (!(log_content == rhs.log_content))
                 return false;
             return true;
         }
@@ -1943,52 +1843,6 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_list_task_req& obj);
 
 
-    class task_info : public virtual ::apache::thrift::TBase {
-    public:
-
-        task_info(const task_info&);
-        task_info& operator=(const task_info&);
-        task_info() : task_id(), status(0), login_password() {
-        }
-
-        virtual ~task_info() throw();
-        std::string task_id;
-        int32_t status;
-        std::string login_password;
-
-        void __set_task_id(const std::string& val);
-
-        void __set_status(const int32_t val);
-
-        void __set_login_password(const std::string& val);
-
-        bool operator == (const task_info & rhs) const
-        {
-            if (!(task_id == rhs.task_id))
-                return false;
-            if (!(status == rhs.status))
-                return false;
-            if (!(login_password == rhs.login_password))
-                return false;
-            return true;
-        }
-        bool operator != (const task_info &rhs) const {
-            return !(*this == rhs);
-        }
-
-        bool operator < (const task_info & ) const;
-
-        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-        virtual void printTo(std::ostream& out) const;
-    };
-
-    void swap(task_info &a, task_info &b);
-
-    std::ostream& operator<<(std::ostream& out, const task_info& obj);
-
-
     class node_list_task_rsp_body : public virtual ::apache::thrift::TBase {
     public:
 
@@ -2000,21 +1854,16 @@ namespace dbc {
         virtual ~node_list_task_rsp_body() throw();
         int32_t result;
         std::string result_msg;
-        std::vector<task_info>  task_info_list;
 
         void __set_result(const int32_t val);
 
         void __set_result_msg(const std::string& val);
-
-        void __set_task_info_list(const std::vector<task_info> & val);
 
         bool operator == (const node_list_task_rsp_body & rhs) const
         {
             if (!(result == rhs.result))
                 return false;
             if (!(result_msg == rhs.result_msg))
-                return false;
-            if (!(task_info_list == rhs.task_info_list))
                 return false;
             return true;
         }

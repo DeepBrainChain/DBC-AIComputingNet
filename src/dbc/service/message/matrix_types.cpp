@@ -1346,61 +1346,6 @@ namespace dbc {
     void node_create_task_rsp_body::__set_result_msg(const std::string& val) {
         this->result_msg = val;
     }
-
-    void node_create_task_rsp_body::__set_task_id(const std::string& val) {
-        this->task_id = val;
-        __isset.task_id = true;
-    }
-
-    void node_create_task_rsp_body::__set_user_name(const std::string& val) {
-        this->user_name = val;
-        __isset.user_name = true;
-    }
-
-    void node_create_task_rsp_body::__set_login_password(const std::string& val) {
-        this->login_password = val;
-        __isset.login_password = true;
-    }
-
-    void node_create_task_rsp_body::__set_ip(const std::string& val) {
-        this->ip = val;
-        __isset.ip = true;
-    }
-
-    void node_create_task_rsp_body::__set_ssh_port(const std::string& val) {
-        this->ssh_port = val;
-        __isset.ssh_port = true;
-    }
-
-    void node_create_task_rsp_body::__set_create_time(const std::string& val) {
-        this->create_time = val;
-        __isset.create_time = true;
-    }
-
-    void node_create_task_rsp_body::__set_system_storage(const std::string& val) {
-        this->system_storage = val;
-        __isset.system_storage = true;
-    }
-
-    void node_create_task_rsp_body::__set_data_storage(const std::string& val) {
-        this->data_storage = val;
-        __isset.data_storage = true;
-    }
-
-    void node_create_task_rsp_body::__set_cpu_cores(const std::string& val) {
-        this->cpu_cores = val;
-        __isset.cpu_cores = true;
-    }
-
-    void node_create_task_rsp_body::__set_gpu_count(const std::string& val) {
-        this->gpu_count = val;
-        __isset.gpu_count = true;
-    }
-
-    void node_create_task_rsp_body::__set_mem_size(const std::string& val) {
-        this->mem_size = val;
-        __isset.mem_size = true;
-    }
     std::ostream& operator<<(std::ostream& out, const node_create_task_rsp_body& obj)
     {
         obj.printTo(out);
@@ -1447,94 +1392,6 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->task_id);
-                        this->__isset.task_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->user_name);
-                        this->__isset.user_name = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->login_password);
-                        this->__isset.login_password = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->ip);
-                        this->__isset.ip = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 7:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->ssh_port);
-                        this->__isset.ssh_port = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 8:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->create_time);
-                        this->__isset.create_time = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 9:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->system_storage);
-                        this->__isset.system_storage = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 10:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->data_storage);
-                        this->__isset.data_storage = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 11:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->cpu_cores);
-                        this->__isset.cpu_cores = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 12:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->gpu_count);
-                        this->__isset.gpu_count = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 13:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->mem_size);
-                        this->__isset.mem_size = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -1564,61 +1421,6 @@ namespace dbc {
         xfer += oprot->writeString(this->result_msg);
         xfer += oprot->writeFieldEnd();
 
-        if (this->__isset.task_id) {
-            xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 3);
-            xfer += oprot->writeString(this->task_id);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.user_name) {
-            xfer += oprot->writeFieldBegin("user_name", ::apache::thrift::protocol::T_STRING, 4);
-            xfer += oprot->writeString(this->user_name);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.login_password) {
-            xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 5);
-            xfer += oprot->writeString(this->login_password);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.ip) {
-            xfer += oprot->writeFieldBegin("ip", ::apache::thrift::protocol::T_STRING, 6);
-            xfer += oprot->writeString(this->ip);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.ssh_port) {
-            xfer += oprot->writeFieldBegin("ssh_port", ::apache::thrift::protocol::T_STRING, 7);
-            xfer += oprot->writeString(this->ssh_port);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.create_time) {
-            xfer += oprot->writeFieldBegin("create_time", ::apache::thrift::protocol::T_STRING, 8);
-            xfer += oprot->writeString(this->create_time);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.system_storage) {
-            xfer += oprot->writeFieldBegin("system_storage", ::apache::thrift::protocol::T_STRING, 9);
-            xfer += oprot->writeString(this->system_storage);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.data_storage) {
-            xfer += oprot->writeFieldBegin("data_storage", ::apache::thrift::protocol::T_STRING, 10);
-            xfer += oprot->writeString(this->data_storage);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.cpu_cores) {
-            xfer += oprot->writeFieldBegin("cpu_cores", ::apache::thrift::protocol::T_STRING, 11);
-            xfer += oprot->writeString(this->cpu_cores);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.gpu_count) {
-            xfer += oprot->writeFieldBegin("gpu_count", ::apache::thrift::protocol::T_STRING, 12);
-            xfer += oprot->writeString(this->gpu_count);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.mem_size) {
-            xfer += oprot->writeFieldBegin("mem_size", ::apache::thrift::protocol::T_STRING, 13);
-            xfer += oprot->writeString(this->mem_size);
-            xfer += oprot->writeFieldEnd();
-        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -1628,51 +1430,15 @@ namespace dbc {
         using ::std::swap;
         swap(a.result, b.result);
         swap(a.result_msg, b.result_msg);
-        swap(a.task_id, b.task_id);
-        swap(a.user_name, b.user_name);
-        swap(a.login_password, b.login_password);
-        swap(a.ip, b.ip);
-        swap(a.ssh_port, b.ssh_port);
-        swap(a.create_time, b.create_time);
-        swap(a.system_storage, b.system_storage);
-        swap(a.data_storage, b.data_storage);
-        swap(a.cpu_cores, b.cpu_cores);
-        swap(a.gpu_count, b.gpu_count);
-        swap(a.mem_size, b.mem_size);
-        swap(a.__isset, b.__isset);
     }
 
     node_create_task_rsp_body::node_create_task_rsp_body(const node_create_task_rsp_body& other48) {
         result = other48.result;
         result_msg = other48.result_msg;
-        task_id = other48.task_id;
-        user_name = other48.user_name;
-        login_password = other48.login_password;
-        ip = other48.ip;
-        ssh_port = other48.ssh_port;
-        create_time = other48.create_time;
-        system_storage = other48.system_storage;
-        data_storage = other48.data_storage;
-        cpu_cores = other48.cpu_cores;
-        gpu_count = other48.gpu_count;
-        mem_size = other48.mem_size;
-        __isset = other48.__isset;
     }
     node_create_task_rsp_body& node_create_task_rsp_body::operator=(const node_create_task_rsp_body& other49) {
         result = other49.result;
         result_msg = other49.result_msg;
-        task_id = other49.task_id;
-        user_name = other49.user_name;
-        login_password = other49.login_password;
-        ip = other49.ip;
-        ssh_port = other49.ssh_port;
-        create_time = other49.create_time;
-        system_storage = other49.system_storage;
-        data_storage = other49.data_storage;
-        cpu_cores = other49.cpu_cores;
-        gpu_count = other49.gpu_count;
-        mem_size = other49.mem_size;
-        __isset = other49.__isset;
         return *this;
     }
     void node_create_task_rsp_body::printTo(std::ostream& out) const {
@@ -1680,17 +1446,6 @@ namespace dbc {
         out << "node_create_task_rsp_body(";
         out << "result=" << to_string(result);
         out << ", " << "result_msg=" << to_string(result_msg);
-        out << ", " << "task_id="; (__isset.task_id ? (out << to_string(task_id)) : (out << "<null>"));
-        out << ", " << "user_name="; (__isset.user_name ? (out << to_string(user_name)) : (out << "<null>"));
-        out << ", " << "login_password="; (__isset.login_password ? (out << to_string(login_password)) : (out << "<null>"));
-        out << ", " << "ip="; (__isset.ip ? (out << to_string(ip)) : (out << "<null>"));
-        out << ", " << "ssh_port="; (__isset.ssh_port ? (out << to_string(ssh_port)) : (out << "<null>"));
-        out << ", " << "create_time="; (__isset.create_time ? (out << to_string(create_time)) : (out << "<null>"));
-        out << ", " << "system_storage="; (__isset.system_storage ? (out << to_string(system_storage)) : (out << "<null>"));
-        out << ", " << "data_storage="; (__isset.data_storage ? (out << to_string(data_storage)) : (out << "<null>"));
-        out << ", " << "cpu_cores="; (__isset.cpu_cores ? (out << to_string(cpu_cores)) : (out << "<null>"));
-        out << ", " << "gpu_count="; (__isset.gpu_count ? (out << to_string(gpu_count)) : (out << "<null>"));
-        out << ", " << "mem_size="; (__isset.mem_size ? (out << to_string(mem_size)) : (out << "<null>"));
         out << ")";
     }
 
@@ -4379,10 +4134,6 @@ namespace dbc {
     void node_task_logs_rsp_body::__set_result_msg(const std::string& val) {
         this->result_msg = val;
     }
-
-    void node_task_logs_rsp_body::__set_log_content(const std::string& val) {
-        this->log_content = val;
-    }
     std::ostream& operator<<(std::ostream& out, const node_task_logs_rsp_body& obj)
     {
         obj.printTo(out);
@@ -4404,7 +4155,6 @@ namespace dbc {
 
         bool isset_result = false;
         bool isset_result_msg = false;
-        bool isset_log_content = false;
 
         while (true)
         {
@@ -4430,14 +4180,6 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->log_content);
-                        isset_log_content = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -4450,8 +4192,6 @@ namespace dbc {
         if (!isset_result)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_result_msg)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_log_content)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         return xfer;
     }
@@ -4469,10 +4209,6 @@ namespace dbc {
         xfer += oprot->writeString(this->result_msg);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("log_content", ::apache::thrift::protocol::T_STRING, 3);
-        xfer += oprot->writeString(this->log_content);
-        xfer += oprot->writeFieldEnd();
-
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -4482,18 +4218,15 @@ namespace dbc {
         using ::std::swap;
         swap(a.result, b.result);
         swap(a.result_msg, b.result_msg);
-        swap(a.log_content, b.log_content);
     }
 
     node_task_logs_rsp_body::node_task_logs_rsp_body(const node_task_logs_rsp_body& other132) {
         result = other132.result;
         result_msg = other132.result_msg;
-        log_content = other132.log_content;
     }
     node_task_logs_rsp_body& node_task_logs_rsp_body::operator=(const node_task_logs_rsp_body& other133) {
         result = other133.result;
         result_msg = other133.result_msg;
-        log_content = other133.log_content;
         return *this;
     }
     void node_task_logs_rsp_body::printTo(std::ostream& out) const {
@@ -4501,7 +4234,6 @@ namespace dbc {
         out << "node_task_logs_rsp_body(";
         out << "result=" << to_string(result);
         out << ", " << "result_msg=" << to_string(result_msg);
-        out << ", " << "log_content=" << to_string(log_content);
         out << ")";
     }
 
@@ -4848,144 +4580,6 @@ namespace dbc {
     }
 
 
-    task_info::~task_info() throw() {
-    }
-
-
-    void task_info::__set_task_id(const std::string& val) {
-        this->task_id = val;
-    }
-
-    void task_info::__set_status(const int32_t val) {
-        this->status = val;
-    }
-
-    void task_info::__set_login_password(const std::string& val) {
-        this->login_password = val;
-    }
-    std::ostream& operator<<(std::ostream& out, const task_info& obj)
-    {
-        obj.printTo(out);
-        return out;
-    }
-
-
-    uint32_t task_info::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
-        uint32_t xfer = 0;
-        std::string fname;
-        ::apache::thrift::protocol::TType ftype;
-        int16_t fid;
-
-        xfer += iprot->readStructBegin(fname);
-
-        using ::apache::thrift::protocol::TProtocolException;
-
-        bool isset_task_id = false;
-        bool isset_status = false;
-        bool isset_login_password = false;
-
-        while (true)
-        {
-            xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP) {
-                break;
-            }
-            switch (fid)
-            {
-                case 1:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->task_id);
-                        isset_task_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->status);
-                        isset_status = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->login_password);
-                        isset_login_password = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
-            }
-            xfer += iprot->readFieldEnd();
-        }
-
-        xfer += iprot->readStructEnd();
-
-        if (!isset_task_id)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_status)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_login_password)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        return xfer;
-    }
-
-    uint32_t task_info::write(::apache::thrift::protocol::TProtocol* oprot) const {
-        uint32_t xfer = 0;
-        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-        xfer += oprot->writeStructBegin("task_info");
-
-        xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
-        xfer += oprot->writeString(this->task_id);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("status", ::apache::thrift::protocol::T_I32, 2);
-        xfer += oprot->writeI32(this->status);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("login_password", ::apache::thrift::protocol::T_STRING, 3);
-        xfer += oprot->writeString(this->login_password);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldStop();
-        xfer += oprot->writeStructEnd();
-        return xfer;
-    }
-
-    void swap(task_info &a, task_info &b) {
-        using ::std::swap;
-        swap(a.task_id, b.task_id);
-        swap(a.status, b.status);
-        swap(a.login_password, b.login_password);
-    }
-
-    task_info::task_info(const task_info& other146) {
-        task_id = other146.task_id;
-        status = other146.status;
-        login_password = other146.login_password;
-    }
-    task_info& task_info::operator=(const task_info& other147) {
-        task_id = other147.task_id;
-        status = other147.status;
-        login_password = other147.login_password;
-        return *this;
-    }
-    void task_info::printTo(std::ostream& out) const {
-        using ::apache::thrift::to_string;
-        out << "task_info(";
-        out << "task_id=" << to_string(task_id);
-        out << ", " << "status=" << to_string(status);
-        out << ", " << "login_password=" << to_string(login_password);
-        out << ")";
-    }
-
-
     node_list_task_rsp_body::~node_list_task_rsp_body() throw() {
     }
 
@@ -4996,10 +4590,6 @@ namespace dbc {
 
     void node_list_task_rsp_body::__set_result_msg(const std::string& val) {
         this->result_msg = val;
-    }
-
-    void node_list_task_rsp_body::__set_task_info_list(const std::vector<task_info> & val) {
-        this->task_info_list = val;
     }
     std::ostream& operator<<(std::ostream& out, const node_list_task_rsp_body& obj)
     {
@@ -5022,7 +4612,6 @@ namespace dbc {
 
         bool isset_result = false;
         bool isset_result_msg = false;
-        bool isset_task_info_list = false;
 
         while (true)
         {
@@ -5048,26 +4637,6 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->task_info_list.clear();
-                            uint32_t _size148;
-                            ::apache::thrift::protocol::TType _etype151;
-                            xfer += iprot->readListBegin(_etype151, _size148);
-                            this->task_info_list.resize(_size148);
-                            uint32_t _i152;
-                            for (_i152 = 0; _i152 < _size148; ++_i152)
-                            {
-                                xfer += this->task_info_list[_i152].read(iprot);
-                            }
-                            xfer += iprot->readListEnd();
-                        }
-                        isset_task_info_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -5080,8 +4649,6 @@ namespace dbc {
         if (!isset_result)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_result_msg)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_task_info_list)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         return xfer;
     }
@@ -5099,18 +4666,6 @@ namespace dbc {
         xfer += oprot->writeString(this->result_msg);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("task_info_list", ::apache::thrift::protocol::T_LIST, 3);
-        {
-            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->task_info_list.size()));
-            std::vector<task_info> ::const_iterator _iter153;
-            for (_iter153 = this->task_info_list.begin(); _iter153 != this->task_info_list.end(); ++_iter153)
-            {
-                xfer += (*_iter153).write(oprot);
-            }
-            xfer += oprot->writeListEnd();
-        }
-        xfer += oprot->writeFieldEnd();
-
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -5120,18 +4675,15 @@ namespace dbc {
         using ::std::swap;
         swap(a.result, b.result);
         swap(a.result_msg, b.result_msg);
-        swap(a.task_info_list, b.task_info_list);
     }
 
-    node_list_task_rsp_body::node_list_task_rsp_body(const node_list_task_rsp_body& other154) {
-        result = other154.result;
-        result_msg = other154.result_msg;
-        task_info_list = other154.task_info_list;
+    node_list_task_rsp_body::node_list_task_rsp_body(const node_list_task_rsp_body& other146) {
+        result = other146.result;
+        result_msg = other146.result_msg;
     }
-    node_list_task_rsp_body& node_list_task_rsp_body::operator=(const node_list_task_rsp_body& other155) {
-        result = other155.result;
-        result_msg = other155.result_msg;
-        task_info_list = other155.task_info_list;
+    node_list_task_rsp_body& node_list_task_rsp_body::operator=(const node_list_task_rsp_body& other147) {
+        result = other147.result;
+        result_msg = other147.result_msg;
         return *this;
     }
     void node_list_task_rsp_body::printTo(std::ostream& out) const {
@@ -5139,7 +4691,6 @@ namespace dbc {
         out << "node_list_task_rsp_body(";
         out << "result=" << to_string(result);
         out << ", " << "result_msg=" << to_string(result_msg);
-        out << ", " << "task_info_list=" << to_string(task_info_list);
         out << ")";
     }
 
@@ -5219,13 +4770,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_list_task_rsp::node_list_task_rsp(const node_list_task_rsp& other156) {
-        body = other156.body;
-        __isset = other156.__isset;
+    node_list_task_rsp::node_list_task_rsp(const node_list_task_rsp& other148) {
+        body = other148.body;
+        __isset = other148.__isset;
     }
-    node_list_task_rsp& node_list_task_rsp::operator=(const node_list_task_rsp& other157) {
-        body = other157.body;
-        __isset = other157.__isset;
+    node_list_task_rsp& node_list_task_rsp::operator=(const node_list_task_rsp& other149) {
+        body = other149.body;
+        __isset = other149.__isset;
         return *this;
     }
     void node_list_task_rsp::printTo(std::ostream& out) const {
@@ -5294,14 +4845,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size158;
-                            ::apache::thrift::protocol::TType _etype161;
-                            xfer += iprot->readListBegin(_etype161, _size158);
-                            this->peer_nodes_list.resize(_size158);
-                            uint32_t _i162;
-                            for (_i162 = 0; _i162 < _size158; ++_i162)
+                            uint32_t _size150;
+                            ::apache::thrift::protocol::TType _etype153;
+                            xfer += iprot->readListBegin(_etype153, _size150);
+                            this->peer_nodes_list.resize(_size150);
+                            uint32_t _i154;
+                            for (_i154 = 0; _i154 < _size150; ++_i154)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i162]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i154]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -5348,10 +4899,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter163;
-            for (_iter163 = this->peer_nodes_list.begin(); _iter163 != this->peer_nodes_list.end(); ++_iter163)
+            std::vector<std::string> ::const_iterator _iter155;
+            for (_iter155 = this->peer_nodes_list.begin(); _iter155 != this->peer_nodes_list.end(); ++_iter155)
             {
-                xfer += oprot->writeString((*_iter163));
+                xfer += oprot->writeString((*_iter155));
             }
             xfer += oprot->writeListEnd();
         }
@@ -5373,15 +4924,15 @@ namespace dbc {
         swap(a.additional, b.additional);
     }
 
-    node_modify_task_req_body::node_modify_task_req_body(const node_modify_task_req_body& other164) {
-        task_id = other164.task_id;
-        peer_nodes_list = other164.peer_nodes_list;
-        additional = other164.additional;
+    node_modify_task_req_body::node_modify_task_req_body(const node_modify_task_req_body& other156) {
+        task_id = other156.task_id;
+        peer_nodes_list = other156.peer_nodes_list;
+        additional = other156.additional;
     }
-    node_modify_task_req_body& node_modify_task_req_body::operator=(const node_modify_task_req_body& other165) {
-        task_id = other165.task_id;
-        peer_nodes_list = other165.peer_nodes_list;
-        additional = other165.additional;
+    node_modify_task_req_body& node_modify_task_req_body::operator=(const node_modify_task_req_body& other157) {
+        task_id = other157.task_id;
+        peer_nodes_list = other157.peer_nodes_list;
+        additional = other157.additional;
         return *this;
     }
     void node_modify_task_req_body::printTo(std::ostream& out) const {
@@ -5469,13 +5020,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_modify_task_req::node_modify_task_req(const node_modify_task_req& other166) {
-        body = other166.body;
-        __isset = other166.__isset;
+    node_modify_task_req::node_modify_task_req(const node_modify_task_req& other158) {
+        body = other158.body;
+        __isset = other158.__isset;
     }
-    node_modify_task_req& node_modify_task_req::operator=(const node_modify_task_req& other167) {
-        body = other167.body;
-        __isset = other167.__isset;
+    node_modify_task_req& node_modify_task_req::operator=(const node_modify_task_req& other159) {
+        body = other159.body;
+        __isset = other159.__isset;
         return *this;
     }
     void node_modify_task_req::printTo(std::ostream& out) const {
@@ -5583,13 +5134,13 @@ namespace dbc {
         swap(a.result_msg, b.result_msg);
     }
 
-    node_modify_task_rsp_body::node_modify_task_rsp_body(const node_modify_task_rsp_body& other168) {
-        result = other168.result;
-        result_msg = other168.result_msg;
+    node_modify_task_rsp_body::node_modify_task_rsp_body(const node_modify_task_rsp_body& other160) {
+        result = other160.result;
+        result_msg = other160.result_msg;
     }
-    node_modify_task_rsp_body& node_modify_task_rsp_body::operator=(const node_modify_task_rsp_body& other169) {
-        result = other169.result;
-        result_msg = other169.result_msg;
+    node_modify_task_rsp_body& node_modify_task_rsp_body::operator=(const node_modify_task_rsp_body& other161) {
+        result = other161.result;
+        result_msg = other161.result_msg;
         return *this;
     }
     void node_modify_task_rsp_body::printTo(std::ostream& out) const {
@@ -5676,13 +5227,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_modify_task_rsp::node_modify_task_rsp(const node_modify_task_rsp& other170) {
-        body = other170.body;
-        __isset = other170.__isset;
+    node_modify_task_rsp::node_modify_task_rsp(const node_modify_task_rsp& other162) {
+        body = other162.body;
+        __isset = other162.__isset;
     }
-    node_modify_task_rsp& node_modify_task_rsp::operator=(const node_modify_task_rsp& other171) {
-        body = other171.body;
-        __isset = other171.__isset;
+    node_modify_task_rsp& node_modify_task_rsp::operator=(const node_modify_task_rsp& other163) {
+        body = other163.body;
+        __isset = other163.__isset;
         return *this;
     }
     void node_modify_task_rsp::printTo(std::ostream& out) const {
@@ -5890,23 +5441,23 @@ namespace dbc {
         swap(a.start_height, b.start_height);
     }
 
-    ver_req_body::ver_req_body(const ver_req_body& other172) {
-        node_id = other172.node_id;
-        core_version = other172.core_version;
-        protocol_version = other172.protocol_version;
-        time_stamp = other172.time_stamp;
-        addr_me = other172.addr_me;
-        addr_you = other172.addr_you;
-        start_height = other172.start_height;
+    ver_req_body::ver_req_body(const ver_req_body& other164) {
+        node_id = other164.node_id;
+        core_version = other164.core_version;
+        protocol_version = other164.protocol_version;
+        time_stamp = other164.time_stamp;
+        addr_me = other164.addr_me;
+        addr_you = other164.addr_you;
+        start_height = other164.start_height;
     }
-    ver_req_body& ver_req_body::operator=(const ver_req_body& other173) {
-        node_id = other173.node_id;
-        core_version = other173.core_version;
-        protocol_version = other173.protocol_version;
-        time_stamp = other173.time_stamp;
-        addr_me = other173.addr_me;
-        addr_you = other173.addr_you;
-        start_height = other173.start_height;
+    ver_req_body& ver_req_body::operator=(const ver_req_body& other165) {
+        node_id = other165.node_id;
+        core_version = other165.core_version;
+        protocol_version = other165.protocol_version;
+        time_stamp = other165.time_stamp;
+        addr_me = other165.addr_me;
+        addr_you = other165.addr_you;
+        start_height = other165.start_height;
         return *this;
     }
     void ver_req_body::printTo(std::ostream& out) const {
@@ -5998,13 +5549,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    ver_req::ver_req(const ver_req& other174) {
-        body = other174.body;
-        __isset = other174.__isset;
+    ver_req::ver_req(const ver_req& other166) {
+        body = other166.body;
+        __isset = other166.__isset;
     }
-    ver_req& ver_req::operator=(const ver_req& other175) {
-        body = other175.body;
-        __isset = other175.__isset;
+    ver_req& ver_req::operator=(const ver_req& other167) {
+        body = other167.body;
+        __isset = other167.__isset;
         return *this;
     }
     void ver_req::printTo(std::ostream& out) const {
@@ -6132,15 +5683,15 @@ namespace dbc {
         swap(a.protocol_version, b.protocol_version);
     }
 
-    ver_resp_body::ver_resp_body(const ver_resp_body& other176) {
-        node_id = other176.node_id;
-        core_version = other176.core_version;
-        protocol_version = other176.protocol_version;
+    ver_resp_body::ver_resp_body(const ver_resp_body& other168) {
+        node_id = other168.node_id;
+        core_version = other168.core_version;
+        protocol_version = other168.protocol_version;
     }
-    ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other177) {
-        node_id = other177.node_id;
-        core_version = other177.core_version;
-        protocol_version = other177.protocol_version;
+    ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other169) {
+        node_id = other169.node_id;
+        core_version = other169.core_version;
+        protocol_version = other169.protocol_version;
         return *this;
     }
     void ver_resp_body::printTo(std::ostream& out) const {
@@ -6228,13 +5779,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    ver_resp::ver_resp(const ver_resp& other178) {
-        body = other178.body;
-        __isset = other178.__isset;
+    ver_resp::ver_resp(const ver_resp& other170) {
+        body = other170.body;
+        __isset = other170.__isset;
     }
-    ver_resp& ver_resp::operator=(const ver_resp& other179) {
-        body = other179.body;
-        __isset = other179.__isset;
+    ver_resp& ver_resp::operator=(const ver_resp& other171) {
+        body = other171.body;
+        __isset = other171.__isset;
         return *this;
     }
     void ver_resp::printTo(std::ostream& out) const {
@@ -6300,14 +5851,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->service_list.clear();
-                            uint32_t _size180;
-                            ::apache::thrift::protocol::TType _etype183;
-                            xfer += iprot->readListBegin(_etype183, _size180);
-                            this->service_list.resize(_size180);
-                            uint32_t _i184;
-                            for (_i184 = 0; _i184 < _size180; ++_i184)
+                            uint32_t _size172;
+                            ::apache::thrift::protocol::TType _etype175;
+                            xfer += iprot->readListBegin(_etype175, _size172);
+                            this->service_list.resize(_size172);
+                            uint32_t _i176;
+                            for (_i176 = 0; _i176 < _size172; ++_i176)
                             {
-                                xfer += iprot->readString(this->service_list[_i184]);
+                                xfer += iprot->readString(this->service_list[_i176]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -6336,17 +5887,17 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
                             this->kvs.clear();
-                            uint32_t _size185;
-                            ::apache::thrift::protocol::TType _ktype186;
-                            ::apache::thrift::protocol::TType _vtype187;
-                            xfer += iprot->readMapBegin(_ktype186, _vtype187, _size185);
-                            uint32_t _i189;
-                            for (_i189 = 0; _i189 < _size185; ++_i189)
+                            uint32_t _size177;
+                            ::apache::thrift::protocol::TType _ktype178;
+                            ::apache::thrift::protocol::TType _vtype179;
+                            xfer += iprot->readMapBegin(_ktype178, _vtype179, _size177);
+                            uint32_t _i181;
+                            for (_i181 = 0; _i181 < _size177; ++_i181)
                             {
-                                std::string _key190;
-                                xfer += iprot->readString(_key190);
-                                std::string& _val191 = this->kvs[_key190];
-                                xfer += iprot->readString(_val191);
+                                std::string _key182;
+                                xfer += iprot->readString(_key182);
+                                std::string& _val183 = this->kvs[_key182];
+                                xfer += iprot->readString(_val183);
                             }
                             xfer += iprot->readMapEnd();
                         }
@@ -6377,10 +5928,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
-            std::vector<std::string> ::const_iterator _iter192;
-            for (_iter192 = this->service_list.begin(); _iter192 != this->service_list.end(); ++_iter192)
+            std::vector<std::string> ::const_iterator _iter184;
+            for (_iter184 = this->service_list.begin(); _iter184 != this->service_list.end(); ++_iter184)
             {
-                xfer += oprot->writeString((*_iter192));
+                xfer += oprot->writeString((*_iter184));
             }
             xfer += oprot->writeListEnd();
         }
@@ -6400,11 +5951,11 @@ namespace dbc {
             xfer += oprot->writeFieldBegin("kvs", ::apache::thrift::protocol::T_MAP, 4);
             {
                 xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->kvs.size()));
-                std::map<std::string, std::string> ::const_iterator _iter193;
-                for (_iter193 = this->kvs.begin(); _iter193 != this->kvs.end(); ++_iter193)
+                std::map<std::string, std::string> ::const_iterator _iter185;
+                for (_iter185 = this->kvs.begin(); _iter185 != this->kvs.end(); ++_iter185)
                 {
-                    xfer += oprot->writeString(_iter193->first);
-                    xfer += oprot->writeString(_iter193->second);
+                    xfer += oprot->writeString(_iter185->first);
+                    xfer += oprot->writeString(_iter185->second);
                 }
                 xfer += oprot->writeMapEnd();
             }
@@ -6424,19 +5975,19 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_service_info::node_service_info(const node_service_info& other194) {
-        service_list = other194.service_list;
-        name = other194.name;
-        time_stamp = other194.time_stamp;
-        kvs = other194.kvs;
-        __isset = other194.__isset;
+    node_service_info::node_service_info(const node_service_info& other186) {
+        service_list = other186.service_list;
+        name = other186.name;
+        time_stamp = other186.time_stamp;
+        kvs = other186.kvs;
+        __isset = other186.__isset;
     }
-    node_service_info& node_service_info::operator=(const node_service_info& other195) {
-        service_list = other195.service_list;
-        name = other195.name;
-        time_stamp = other195.time_stamp;
-        kvs = other195.kvs;
-        __isset = other195.__isset;
+    node_service_info& node_service_info::operator=(const node_service_info& other187) {
+        service_list = other187.service_list;
+        name = other187.name;
+        time_stamp = other187.time_stamp;
+        kvs = other187.kvs;
+        __isset = other187.__isset;
         return *this;
     }
     void node_service_info::printTo(std::ostream& out) const {
@@ -6495,14 +6046,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size196;
-                            ::apache::thrift::protocol::TType _etype199;
-                            xfer += iprot->readListBegin(_etype199, _size196);
-                            this->peer_nodes_list.resize(_size196);
-                            uint32_t _i200;
-                            for (_i200 = 0; _i200 < _size196; ++_i200)
+                            uint32_t _size188;
+                            ::apache::thrift::protocol::TType _etype191;
+                            xfer += iprot->readListBegin(_etype191, _size188);
+                            this->peer_nodes_list.resize(_size188);
+                            uint32_t _i192;
+                            for (_i192 = 0; _i192 < _size188; ++_i192)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i200]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i192]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -6543,10 +6094,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter201;
-            for (_iter201 = this->peer_nodes_list.begin(); _iter201 != this->peer_nodes_list.end(); ++_iter201)
+            std::vector<std::string> ::const_iterator _iter193;
+            for (_iter193 = this->peer_nodes_list.begin(); _iter193 != this->peer_nodes_list.end(); ++_iter193)
             {
-                xfer += oprot->writeString((*_iter201));
+                xfer += oprot->writeString((*_iter193));
             }
             xfer += oprot->writeListEnd();
         }
@@ -6567,13 +6118,13 @@ namespace dbc {
         swap(a.additional, b.additional);
     }
 
-    node_query_node_info_req_body::node_query_node_info_req_body(const node_query_node_info_req_body& other202) {
-        peer_nodes_list = other202.peer_nodes_list;
-        additional = other202.additional;
+    node_query_node_info_req_body::node_query_node_info_req_body(const node_query_node_info_req_body& other194) {
+        peer_nodes_list = other194.peer_nodes_list;
+        additional = other194.additional;
     }
-    node_query_node_info_req_body& node_query_node_info_req_body::operator=(const node_query_node_info_req_body& other203) {
-        peer_nodes_list = other203.peer_nodes_list;
-        additional = other203.additional;
+    node_query_node_info_req_body& node_query_node_info_req_body::operator=(const node_query_node_info_req_body& other195) {
+        peer_nodes_list = other195.peer_nodes_list;
+        additional = other195.additional;
         return *this;
     }
     void node_query_node_info_req_body::printTo(std::ostream& out) const {
@@ -6660,13 +6211,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_query_node_info_req::node_query_node_info_req(const node_query_node_info_req& other204) {
-        body = other204.body;
-        __isset = other204.__isset;
+    node_query_node_info_req::node_query_node_info_req(const node_query_node_info_req& other196) {
+        body = other196.body;
+        __isset = other196.__isset;
     }
-    node_query_node_info_req& node_query_node_info_req::operator=(const node_query_node_info_req& other205) {
-        body = other205.body;
-        __isset = other205.__isset;
+    node_query_node_info_req& node_query_node_info_req::operator=(const node_query_node_info_req& other197) {
+        body = other197.body;
+        __isset = other197.__isset;
         return *this;
     }
     void node_query_node_info_req::printTo(std::ostream& out) const {
@@ -6743,17 +6294,17 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
                             this->kvs.clear();
-                            uint32_t _size206;
-                            ::apache::thrift::protocol::TType _ktype207;
-                            ::apache::thrift::protocol::TType _vtype208;
-                            xfer += iprot->readMapBegin(_ktype207, _vtype208, _size206);
-                            uint32_t _i210;
-                            for (_i210 = 0; _i210 < _size206; ++_i210)
+                            uint32_t _size198;
+                            ::apache::thrift::protocol::TType _ktype199;
+                            ::apache::thrift::protocol::TType _vtype200;
+                            xfer += iprot->readMapBegin(_ktype199, _vtype200, _size198);
+                            uint32_t _i202;
+                            for (_i202 = 0; _i202 < _size198; ++_i202)
                             {
-                                std::string _key211;
-                                xfer += iprot->readString(_key211);
-                                std::string& _val212 = this->kvs[_key211];
-                                xfer += iprot->readString(_val212);
+                                std::string _key203;
+                                xfer += iprot->readString(_key203);
+                                std::string& _val204 = this->kvs[_key203];
+                                xfer += iprot->readString(_val204);
                             }
                             xfer += iprot->readMapEnd();
                         }
@@ -6796,11 +6347,11 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("kvs", ::apache::thrift::protocol::T_MAP, 3);
         {
             xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->kvs.size()));
-            std::map<std::string, std::string> ::const_iterator _iter213;
-            for (_iter213 = this->kvs.begin(); _iter213 != this->kvs.end(); ++_iter213)
+            std::map<std::string, std::string> ::const_iterator _iter205;
+            for (_iter205 = this->kvs.begin(); _iter205 != this->kvs.end(); ++_iter205)
             {
-                xfer += oprot->writeString(_iter213->first);
-                xfer += oprot->writeString(_iter213->second);
+                xfer += oprot->writeString(_iter205->first);
+                xfer += oprot->writeString(_iter205->second);
             }
             xfer += oprot->writeMapEnd();
         }
@@ -6818,15 +6369,15 @@ namespace dbc {
         swap(a.kvs, b.kvs);
     }
 
-    node_query_node_info_rsp_body::node_query_node_info_rsp_body(const node_query_node_info_rsp_body& other214) {
-        result = other214.result;
-        result_msg = other214.result_msg;
-        kvs = other214.kvs;
+    node_query_node_info_rsp_body::node_query_node_info_rsp_body(const node_query_node_info_rsp_body& other206) {
+        result = other206.result;
+        result_msg = other206.result_msg;
+        kvs = other206.kvs;
     }
-    node_query_node_info_rsp_body& node_query_node_info_rsp_body::operator=(const node_query_node_info_rsp_body& other215) {
-        result = other215.result;
-        result_msg = other215.result_msg;
-        kvs = other215.kvs;
+    node_query_node_info_rsp_body& node_query_node_info_rsp_body::operator=(const node_query_node_info_rsp_body& other207) {
+        result = other207.result;
+        result_msg = other207.result_msg;
+        kvs = other207.kvs;
         return *this;
     }
     void node_query_node_info_rsp_body::printTo(std::ostream& out) const {
@@ -6914,13 +6465,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_query_node_info_rsp::node_query_node_info_rsp(const node_query_node_info_rsp& other216) {
-        body = other216.body;
-        __isset = other216.__isset;
+    node_query_node_info_rsp::node_query_node_info_rsp(const node_query_node_info_rsp& other208) {
+        body = other208.body;
+        __isset = other208.__isset;
     }
-    node_query_node_info_rsp& node_query_node_info_rsp::operator=(const node_query_node_info_rsp& other217) {
-        body = other217.body;
-        __isset = other217.__isset;
+    node_query_node_info_rsp& node_query_node_info_rsp::operator=(const node_query_node_info_rsp& other209) {
+        body = other209.body;
+        __isset = other209.__isset;
         return *this;
     }
     void node_query_node_info_rsp::printTo(std::ostream& out) const {
@@ -6971,17 +6522,17 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
                             this->node_service_info_map.clear();
-                            uint32_t _size218;
-                            ::apache::thrift::protocol::TType _ktype219;
-                            ::apache::thrift::protocol::TType _vtype220;
-                            xfer += iprot->readMapBegin(_ktype219, _vtype220, _size218);
-                            uint32_t _i222;
-                            for (_i222 = 0; _i222 < _size218; ++_i222)
+                            uint32_t _size210;
+                            ::apache::thrift::protocol::TType _ktype211;
+                            ::apache::thrift::protocol::TType _vtype212;
+                            xfer += iprot->readMapBegin(_ktype211, _vtype212, _size210);
+                            uint32_t _i214;
+                            for (_i214 = 0; _i214 < _size210; ++_i214)
                             {
-                                std::string _key223;
-                                xfer += iprot->readString(_key223);
-                                node_service_info& _val224 = this->node_service_info_map[_key223];
-                                xfer += _val224.read(iprot);
+                                std::string _key215;
+                                xfer += iprot->readString(_key215);
+                                node_service_info& _val216 = this->node_service_info_map[_key215];
+                                xfer += _val216.read(iprot);
                             }
                             xfer += iprot->readMapEnd();
                         }
@@ -7012,11 +6563,11 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("node_service_info_map", ::apache::thrift::protocol::T_MAP, 1);
         {
             xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->node_service_info_map.size()));
-            std::map<std::string, node_service_info> ::const_iterator _iter225;
-            for (_iter225 = this->node_service_info_map.begin(); _iter225 != this->node_service_info_map.end(); ++_iter225)
+            std::map<std::string, node_service_info> ::const_iterator _iter217;
+            for (_iter217 = this->node_service_info_map.begin(); _iter217 != this->node_service_info_map.end(); ++_iter217)
             {
-                xfer += oprot->writeString(_iter225->first);
-                xfer += _iter225->second.write(oprot);
+                xfer += oprot->writeString(_iter217->first);
+                xfer += _iter217->second.write(oprot);
             }
             xfer += oprot->writeMapEnd();
         }
@@ -7032,11 +6583,11 @@ namespace dbc {
         swap(a.node_service_info_map, b.node_service_info_map);
     }
 
-    service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other226) {
-        node_service_info_map = other226.node_service_info_map;
+    service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other218) {
+        node_service_info_map = other218.node_service_info_map;
     }
-    service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other227) {
-        node_service_info_map = other227.node_service_info_map;
+    service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other219) {
+        node_service_info_map = other219.node_service_info_map;
         return *this;
     }
     void service_broadcast_req_body::printTo(std::ostream& out) const {
@@ -7122,13 +6673,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    service_broadcast_req::service_broadcast_req(const service_broadcast_req& other228) {
-        body = other228.body;
-        __isset = other228.__isset;
+    service_broadcast_req::service_broadcast_req(const service_broadcast_req& other220) {
+        body = other220.body;
+        __isset = other220.__isset;
     }
-    service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other229) {
-        body = other229.body;
-        __isset = other229.__isset;
+    service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other221) {
+        body = other221.body;
+        __isset = other221.__isset;
         return *this;
     }
     void service_broadcast_req::printTo(std::ostream& out) const {

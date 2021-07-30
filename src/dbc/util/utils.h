@@ -159,5 +159,14 @@ static std::string read_info(const char* file, const char* modes = "r") {
 // B => TB GB KB
 std::string size_to_string(int64_t n, int64_t scale = 1);
 
+// 获取公网ip地址
+std::string get_public_ip();
+
+// string to digit
+int32_t str_to_i32(const std::string& str);
+uint32_t str_to_u32(const std::string& str);
+int64_t str_to_i64(const std::string& str);
+uint64_t str_to_u64(const std::string& str);
+float str_to_f(const std::string& str);
 
 #endif //DBCPROJ_UTILS_H

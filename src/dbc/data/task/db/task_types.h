@@ -18,6 +18,12 @@ namespace dbc {
 
     class TaskInfo;
 
+    typedef struct _HardwareResource__isset {
+        _HardwareResource__isset() : gpu_count(false), cpu_cores(false), mem_rate(false) {}
+        bool gpu_count :1;
+        bool cpu_cores :1;
+        bool mem_rate :1;
+    } _HardwareResource__isset;
 
     class HardwareResource : public virtual ::apache::thrift::TBase {
     public:
@@ -32,6 +38,8 @@ namespace dbc {
         int32_t cpu_cores;
         double mem_rate;
 
+        _HardwareResource__isset __isset;
+
         void __set_gpu_count(const int32_t val);
 
         void __set_cpu_cores(const int32_t val);
@@ -40,11 +48,17 @@ namespace dbc {
 
         bool operator == (const HardwareResource & rhs) const
         {
-            if (!(gpu_count == rhs.gpu_count))
+            if (__isset.gpu_count != rhs.__isset.gpu_count)
                 return false;
-            if (!(cpu_cores == rhs.cpu_cores))
+            else if (__isset.gpu_count && !(gpu_count == rhs.gpu_count))
                 return false;
-            if (!(mem_rate == rhs.mem_rate))
+            if (__isset.cpu_cores != rhs.__isset.cpu_cores)
+                return false;
+            else if (__isset.cpu_cores && !(cpu_cores == rhs.cpu_cores))
+                return false;
+            if (__isset.mem_rate != rhs.__isset.mem_rate)
+                return false;
+            else if (__isset.mem_rate && !(mem_rate == rhs.mem_rate))
                 return false;
             return true;
         }
@@ -65,8 +79,13 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const HardwareResource& obj);
 
     typedef struct _TaskInfo__isset {
-        _TaskInfo__isset() : operation(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false) {}
+        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false) {}
+        bool image_name :1;
+        bool login_password :1;
+        bool ssh_port :1;
+        bool status :1;
         bool operation :1;
+        bool create_time :1;
         bool last_start_time :1;
         bool last_stop_time :1;
         bool hardware_resource :1;
@@ -126,19 +145,29 @@ namespace dbc {
         {
             if (!(task_id == rhs.task_id))
                 return false;
-            if (!(image_name == rhs.image_name))
+            if (__isset.image_name != rhs.__isset.image_name)
                 return false;
-            if (!(login_password == rhs.login_password))
+            else if (__isset.image_name && !(image_name == rhs.image_name))
                 return false;
-            if (!(ssh_port == rhs.ssh_port))
+            if (__isset.login_password != rhs.__isset.login_password)
                 return false;
-            if (!(status == rhs.status))
+            else if (__isset.login_password && !(login_password == rhs.login_password))
+                return false;
+            if (__isset.ssh_port != rhs.__isset.ssh_port)
+                return false;
+            else if (__isset.ssh_port && !(ssh_port == rhs.ssh_port))
+                return false;
+            if (__isset.status != rhs.__isset.status)
+                return false;
+            else if (__isset.status && !(status == rhs.status))
                 return false;
             if (__isset.operation != rhs.__isset.operation)
                 return false;
             else if (__isset.operation && !(operation == rhs.operation))
                 return false;
-            if (!(create_time == rhs.create_time))
+            if (__isset.create_time != rhs.__isset.create_time)
+                return false;
+            else if (__isset.create_time && !(create_time == rhs.create_time))
                 return false;
             if (__isset.last_start_time != rhs.__isset.last_start_time)
                 return false;

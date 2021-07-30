@@ -30,8 +30,10 @@ function get_disk_info {
     raw_info=$(df -l -k $dbc_data_path | tail -1)
 
     disk_size=$(echo $raw_info | awk '{print $2}')
+    n_disk_size=$(echo "scale=2; ${disk_size}/1024/1024/1024" | bc)
 
     free_disk_size=$(echo $raw_info | awk '{print $4}')
+    n_disk_free_size=$(echo "scale=2; ${free_disk_size}/1024/1024/1024" | bc)
 
     device=$(echo $raw_info | awk '{print $1}' | awk -F"/" '{print $3}')
 
@@ -51,7 +53,7 @@ function get_disk_info {
 
     rm -f /tmp/dbc_speed_test_output
 
-    disk_info="{\"size\":\"$disk_size\", \"free\":\"$free_disk_size\", \"type\":\"$disk_type\", \"speed\":\"$disk_speed\"}"
+    disk_info="{\"size\":\"${n_disk_size}T\", \"free\":\"${n_disk_free_size}T\", \"type\":\"$disk_type\", \"speed\":\"$disk_speed\"}"
 
     echo "INFO: get disk info, end"
 }
@@ -77,7 +79,7 @@ function get {
 
     case "$attr" in
     "mem")
-        value=$(free  -k | grep "Mem:" | awk '{print $2}')
+        value="$(free  -g | grep "Mem:" | awk '{print $2}')G"
     ;;
 
     "os")

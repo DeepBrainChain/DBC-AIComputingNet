@@ -83,6 +83,10 @@ namespace dbc
             void reply_comm_rest_err(uint32_t status, int32_t internal_error, std::string message);
 
             void reply_comm_rest_succ( rapidjson::Value &data);
+
+            void reply_comm_rest_err2(uint32_t status, const std::string& json);
+
+            void reply_comm_rest_succ2(const std::string& json);
         };
 
         /** Event class. This can be used either as a cross-thread trigger or as a timer.

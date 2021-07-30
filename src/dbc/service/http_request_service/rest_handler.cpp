@@ -164,28 +164,18 @@ std::shared_ptr<dbc::network::message> rest_create_task(const dbc::network::HTTP
 }
 
 int32_t on_cmd_create_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_create_task_req, cmd_create_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_create_task_req> req = std::dynamic_pointer_cast<cmd_create_task_req>(req_msg->content);
+    std::shared_ptr<cmd_create_task_rsp> resp = std::dynamic_pointer_cast<cmd_create_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    data.AddMember("task_id", STRING_REF(resp->task_id), allocator);
-    data.AddMember("user_name", STRING_REF(resp->user_name), allocator);
-    data.AddMember("login_password", STRING_REF(resp->login_password), allocator);
-    data.AddMember("ip", STRING_REF(resp->ip), allocator);
-    data.AddMember("ssh_port", STRING_REF(resp->ssh_port), allocator);
-    data.AddMember("create_time", STRING_REF(resp->create_time), allocator);
-    data.AddMember("system_storage", STRING_REF(resp->system_storage), allocator);
-    data.AddMember("data_storage", STRING_REF(resp->data_storage), allocator);
-    data.AddMember("cpu_cores", STRING_REF(resp->cpu_cores), allocator);
-    data.AddMember("gpu_count", STRING_REF(resp->gpu_count), allocator);
-    data.AddMember("mem_size", STRING_REF(resp->mem_size), allocator);
-
-    httpReq->reply_comm_rest_succ(data);
-
-    return E_SUCCESS;
 }
 
 // start
@@ -243,15 +233,18 @@ std::shared_ptr<dbc::network::message> rest_start_task(const dbc::network::HTTP_
 }
 
 int32_t on_cmd_start_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_start_task_req, cmd_start_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_start_task_req> req = std::dynamic_pointer_cast<cmd_start_task_req>(req_msg->content);
+    std::shared_ptr<cmd_start_task_rsp> resp = std::dynamic_pointer_cast<cmd_start_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    SUCC_REPLY(data)
-    return E_SUCCESS;
 }
 
 // stop
@@ -318,15 +311,18 @@ std::shared_ptr<dbc::network::message> rest_stop_task(const dbc::network::HTTP_R
 }
 
 int32_t on_cmd_stop_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_stop_task_req, cmd_stop_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_stop_task_req> req = std::dynamic_pointer_cast<cmd_stop_task_req>(req_msg->content);
+    std::shared_ptr<cmd_stop_task_rsp> resp = std::dynamic_pointer_cast<cmd_stop_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    SUCC_REPLY(data)
-    return E_SUCCESS;
 }
 
 // restart
@@ -392,15 +388,18 @@ std::shared_ptr<dbc::network::message> rest_restart_task(const dbc::network::HTT
 }
 
 int32_t on_cmd_restart_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_restart_task_req, cmd_restart_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_restart_task_req> req = std::dynamic_pointer_cast<cmd_restart_task_req>(req_msg->content);
+    std::shared_ptr<cmd_restart_task_rsp> resp = std::dynamic_pointer_cast<cmd_restart_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    SUCC_REPLY(data)
-    return E_SUCCESS;
 }
 
 // reset
@@ -467,15 +466,18 @@ std::shared_ptr<dbc::network::message> rest_reset_task(const dbc::network::HTTP_
 }
 
 int32_t on_cmd_reset_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_reset_task_req, cmd_reset_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_reset_task_req> req = std::dynamic_pointer_cast<cmd_reset_task_req>(req_msg->content);
+    std::shared_ptr<cmd_reset_task_rsp> resp = std::dynamic_pointer_cast<cmd_reset_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    SUCC_REPLY(data)
-    return E_SUCCESS;
 }
 
 // delete
@@ -542,15 +544,18 @@ std::shared_ptr<dbc::network::message> rest_delete_task(const dbc::network::HTTP
 }
 
 int32_t on_cmd_delete_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_delete_task_req, cmd_delete_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_delete_task_req> req = std::dynamic_pointer_cast<cmd_delete_task_req>(req_msg->content);
+    std::shared_ptr<cmd_delete_task_rsp> resp = std::dynamic_pointer_cast<cmd_delete_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    SUCC_REPLY(data)
-    return E_SUCCESS;
 }
 
 // task logs
@@ -648,18 +653,18 @@ std::shared_ptr<dbc::network::message> rest_task_logs(const dbc::network::HTTP_R
 }
 
 int32_t on_cmd_task_logs_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_task_logs_req, cmd_task_logs_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_task_logs_req> req = std::dynamic_pointer_cast<cmd_task_logs_req>(req_msg->content);
+    std::shared_ptr<cmd_task_logs_rsp> resp = std::dynamic_pointer_cast<cmd_task_logs_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    data.AddMember("log_content", STRING_REF(resp->log_content), allocator);
-
-    httpReq->reply_comm_rest_succ(data);
-
-    return E_SUCCESS;
 }
 
 // list tasks
@@ -724,38 +729,16 @@ std::shared_ptr<dbc::network::message> rest_list_task(const dbc::network::HTTP_R
 }
 
 int32_t on_cmd_list_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_list_task_req, cmd_list_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_list_task_req> req = std::dynamic_pointer_cast<cmd_list_task_req>(req_msg->content);
+    std::shared_ptr<cmd_list_task_rsp> resp = std::dynamic_pointer_cast<cmd_list_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-        return 0;
-    }
-
-    if (req->task_id == "") {
-        rapidjson::Value task_info_list(rapidjson::kArrayType);
-        for (auto it = resp->task_info_list.begin(); it != resp->task_info_list.end(); it++) {
-            rapidjson::Value st(rapidjson::kObjectType);
-            st.AddMember("task_id", STRING_DUP(it->task_id), allocator);
-            st.AddMember("login_password", STRING_DUP(it->pwd), allocator);
-            st.AddMember("status", STRING_DUP(task_status_string(it->status)), allocator);
-
-            task_info_list.PushBack(st, allocator);
-        }
-        data.AddMember("task_info_list", task_info_list, allocator);
-        SUCC_REPLY(data)
-        return E_SUCCESS;
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
+        return E_DEFAULT;
     } else {
-        rapidjson::Document document;
-        rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-
-        if (resp->task_info_list.size() >= 1) {
-            auto it = resp->task_info_list.begin();
-            data.AddMember("task_id", STRING_REF(it->task_id), allocator);
-            data.AddMember("login_password", STRING_DUP(it->pwd), allocator);
-            data.AddMember("status", STRING_DUP(task_status_string(it->status)), allocator);
-        }
-
-        SUCC_REPLY(data)
+        httpReq->reply_comm_rest_succ2(resp->result_info);
         return E_SUCCESS;
     }
 }
@@ -824,15 +807,18 @@ std::shared_ptr<dbc::network::message> rest_modify_task(const dbc::network::HTTP
 }
 
 int32_t on_cmd_modify_task_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg) {
-    INIT_RSP_CONTEXT(cmd_modify_task_req, cmd_modify_task_rsp)
+    std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    std::shared_ptr<dbc::network::message> &req_msg = hreq_context->m_req_msg;
+    std::shared_ptr<cmd_modify_task_req> req = std::dynamic_pointer_cast<cmd_modify_task_req>(req_msg->content);
+    std::shared_ptr<cmd_modify_task_rsp> resp = std::dynamic_pointer_cast<cmd_modify_task_rsp>(resp_msg->content);
 
     if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
+        httpReq->reply_comm_rest_err2(HTTP_OK, resp->result_info);
         return E_DEFAULT;
+    } else {
+        httpReq->reply_comm_rest_succ2(resp->result_info);
+        return E_SUCCESS;
     }
-
-    SUCC_REPLY(data)
-    return E_SUCCESS;
 }
 
 // mining_nodes/

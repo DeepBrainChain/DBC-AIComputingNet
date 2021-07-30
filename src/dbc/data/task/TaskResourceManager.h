@@ -11,13 +11,13 @@ public:
 
     void init(const std::vector<std::string>& tasks);
 
-    const DeviceCpu& GetTaskCpu(const std::string& task_id);
+    const DeviceCpu& GetTaskCpu(const std::string& task_id) const;
 
-    const std::map<std::string, DeviceGpu>& GetTaskGpu(const std::string& task_id);
+    const std::map<std::string, DeviceGpu>& GetTaskGpu(const std::string& task_id) const;
 
-    const DeviceMem& GetTaskMem(const std::string& task_id);
+    const DeviceMem& GetTaskMem(const std::string& task_id) const;
 
-    const std::map<int32_t, DeviceDisk>& GetTaskDisk(const std::string& task_id);
+    const std::map<int32_t, DeviceDisk>& GetTaskDisk(const std::string& task_id) const;
 
     void AddTaskCpu(const std::string& task_id, const DeviceCpu& cpu);
 

@@ -158,7 +158,7 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
     }
 }
 
-const DeviceCpu & TaskResourceManager::GetTaskCpu(const std::string &task_id) {
+const DeviceCpu & TaskResourceManager::GetTaskCpu(const std::string &task_id) const {
     auto it = m_mpTaskCpu.find(task_id);
     if (it == m_mpTaskCpu.end()) {
         return g_default_cpu;
@@ -167,7 +167,7 @@ const DeviceCpu & TaskResourceManager::GetTaskCpu(const std::string &task_id) {
     }
 }
 
-const std::map<std::string, DeviceGpu> & TaskResourceManager::GetTaskGpu(const std::string &task_id) {
+const std::map<std::string, DeviceGpu> & TaskResourceManager::GetTaskGpu(const std::string &task_id) const {
     auto it = m_mpTaskGpu.find(task_id);
     if (it == m_mpTaskGpu.end()) {
         return g_default_gpu;
@@ -176,7 +176,7 @@ const std::map<std::string, DeviceGpu> & TaskResourceManager::GetTaskGpu(const s
     }
 }
 
-const DeviceMem & TaskResourceManager::GetTaskMem(const std::string &task_id) {
+const DeviceMem & TaskResourceManager::GetTaskMem(const std::string &task_id) const {
     auto it = m_mpTaskMem.find(task_id);
     if (it == m_mpTaskMem.end()) {
         return g_default_mem;
@@ -185,7 +185,7 @@ const DeviceMem & TaskResourceManager::GetTaskMem(const std::string &task_id) {
     }
 }
 
-const std::map<int32_t, DeviceDisk> & TaskResourceManager::GetTaskDisk(const std::string &task_id) {
+const std::map<int32_t, DeviceDisk> & TaskResourceManager::GetTaskDisk(const std::string &task_id) const {
     auto it = m_mpTaskDisk.find(task_id);
     if (it == m_mpTaskDisk.end()) {
         return g_default_disk;
