@@ -1,8 +1,8 @@
 # deepbrainchain
 Artificial Intelligence Computing Platform Driven By BlockChain
 
-If you want to add your machine to the DBC network, go straight to the “ https://kdocs.cn/l/sCsGPLlCl?f=111” and ignore the rest
-如果你想要添加机器到DBC网络中，直接查看 https://kdocs.cn/l/sCsGPLlCl?f=111
+If you want to add your machine to the DBC network, go straight to the “ https://github.com/DeepBrainChain/DBC-DOC” and ignore the rest
+如果你想要添加机器到DBC网络中，直接查看 https://github.com/DeepBrainChain/DBC-DOC
 
 
 # build dbc in linux os with dbc compile container
