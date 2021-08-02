@@ -761,7 +761,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string machine_status = v_machineStatus.GetString();
 
-        machine_status = "creating";
+        //machine_status = "creating";
 
         if (machine_status == "creating" || machine_status == "rented") {
             // 创建虚拟机
