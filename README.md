@@ -1,7 +1,8 @@
 # deepbrainchain
 Artificial Intelligence Computing Platform Driven By BlockChain
 
-If you want to add a machine to the DBC network to participate in mining to obtain DBC revenue, go straight to the “ https://github.com/DeepBrainChain/DBC-DOC” and ignore the rest
+If you want to add a machine to the DBC network to participate in mining to obtain DBC revenue, go straight to the “ https://github.com/DeepBrainChain/DBC-DOC”
+
 如果你想要添加机器到DBC网络中参与挖矿获得DBC收益，直接查看 https://github.com/DeepBrainChain/DBC-DOC
 
 
