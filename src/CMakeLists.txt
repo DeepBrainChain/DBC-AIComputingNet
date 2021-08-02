@@ -59,6 +59,7 @@ set(service_src_dir
         dbc/network
         dbc/network/compress
         dbc/network/protocol
+        dbc/network/socket_channel_handler
         dbc/log
         dbc/timer
         dbc/module
@@ -75,7 +76,6 @@ set(service_src_dir
         dbc/service/cmd_request_service
         dbc/service/node_request_service
         dbc/service/peer_request_service
-        dbc/service/peer_request_service/socket_channel_handler
 )
 
 foreach(sub_dir ${service_src_dir})

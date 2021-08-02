@@ -24,35 +24,36 @@ class p2p_net_service : public service_module {
 public:
     p2p_net_service();
 
-    virtual ~p2p_net_service() = default;
+    ~p2p_net_service() override = default;
 
-    virtual std::string module_name() const { return p2p_service_name; }
+    std::string module_name() const override { return p2p_service_name; }
 
     std::string get_host_ip() const { return m_host_ip; }
 
     uint16_t get_net_listen_port() const { return m_net_listen_port; }
 
 protected:
+    void init_timer() override;
+
+    void init_invoker() override;
+
+    void init_subscription() override;
+
+    int32_t service_init(bpo::variables_map &options) override;
+
     int32_t init_rand();
 
     int32_t init_conf();
 
     int32_t init_db();
 
+    int32_t load_peer_candidates();
+
     int32_t init_acceptor();
 
     int32_t init_connector(bpo::variables_map &options);
 
-    void init_subscription();
-
-    void init_invoker();
-
-    virtual void init_timer();
-
-    //override by service layer
-    virtual int32_t service_init(bpo::variables_map &options);
-
-    int32_t service_exit();
+    int32_t service_exit() override;
 
     //if call from outside, please think about thread-safe of m_peer_nodes_map
     void get_all_peer_nodes(peer_list_type &nodes);
@@ -112,8 +113,6 @@ protected:
 
     bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
 
-    int32_t load_peer_candidates();
-
     int32_t save_peer_candidates();
 
     int32_t clear_peer_candidates_db();
@@ -143,21 +142,21 @@ protected:
 
     uint16_t m_net_listen_port;
 
-    std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;
-
-    std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;
-
     std::list<const char *> m_dns_seeds;
 
     std::list<peer_seeds> m_hard_code_seeds;
 
-    uint32_t m_timer_check_peer_candidates;
-
-    uint32_t m_timer_dyanmic_adjust_network;
-
-    uint32_t m_timer_peer_info_exchange;
-
-    uint32_t m_timer_dump_peer_candidates;
-
     std::shared_ptr<leveldb::DB> m_peers_db;
+
+    std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;
+
+    std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;
+
+    uint32_t m_timer_check_peer_candidates = INVALID_TIMER_ID;
+
+    uint32_t m_timer_dyanmic_adjust_network = INVALID_TIMER_ID;
+
+    uint32_t m_timer_peer_info_exchange = INVALID_TIMER_ID;
+
+    uint32_t m_timer_dump_peer_candidates = INVALID_TIMER_ID;
 };

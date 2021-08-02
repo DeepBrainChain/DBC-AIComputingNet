@@ -7,4 +7,10 @@ enum peer_node_type
     SEED_NODE = 1
 };
 
+enum get_peers_flag
+{
+    flag_active,
+    flag_global
+};
+
 #endif // DBC_PEER_NODE_DEF_H

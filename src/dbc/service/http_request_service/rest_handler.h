@@ -3,7 +3,6 @@
 
 #include "util/utils.h"
 #include "network/http_server.h"
-#include "../peer_request_service/api_call.h"
 
 static const std::string REST_API_VERSION = "v1.1";
 static const std::string REST_API_URI = "/api/v1";

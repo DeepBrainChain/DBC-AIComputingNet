@@ -1,9 +1,8 @@
 #include "matrix_socket_channel_handler.h"
-#include "../p2p_net_service.h"
 #include "network/tcp_socket_channel.h"
 #include "service/common_service/service_proto_filter.h"
 #include "network/compress/matrix_compress.h"
-#include "../../message/message_id.h"
+#include "service/message/message_id.h"
 
 matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc::network::channel> ch)
     : m_stopped(false)

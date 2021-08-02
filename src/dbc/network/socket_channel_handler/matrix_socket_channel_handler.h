@@ -4,7 +4,7 @@
 #include "network/channel.h"
 #include "network/tcp_socket_channel.h"
 #include "network/socket_channel_handler.h"
-#include "../../message/protocol_coder/matrix_coder.h"
+#include "service/message/protocol_coder/matrix_coder.h"
 #include "server/server.h"
 #include "service_module/service_message_id.h"
 #include "network/flow_ctrl.h"
