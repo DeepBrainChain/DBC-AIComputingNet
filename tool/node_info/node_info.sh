@@ -37,7 +37,7 @@ function get_disk_info {
 
     device=$(echo $raw_info | awk '{print $1}' | awk -F"/" '{print $3}')
 
-    disk_type=$(lsblk -o name,rota | grep $device | awk '{if($1=="1")print "HDD"; else print "SSD"}')
+    disk_type=$(lsblk -o name,rota | grep $device | awk '{if($1=="1")print "HDD"; else print "SSD"}' | head -1)
 
     v=$(dd if=/dev/zero of=/tmp/dbc_speed_test_output bs=8k count=10k 2>&1)
     disk_speed=$(echo $v | awk '{print $(NF-1)}')
