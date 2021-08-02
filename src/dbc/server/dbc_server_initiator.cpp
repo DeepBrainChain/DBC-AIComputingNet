@@ -1,0 +1,396 @@
+#include "dbc_server_initiator.h"
+#include <fcntl.h>
+#include "util/crypto/byteswap.h"
+#include "server.h"
+#include "network/connection_manager.h"
+#include "config/env_manager.h"
+#include "service_module/topic_manager.h"
+#include "service/peer_request_service/p2p_net_service.h"
+#include "service/cmd_request_service/cmd_request_service.h"
+#include "service/node_request_service/node_request_service.h"
+#include "service/common_service/common_service.h"
+#include "util/utils/crypto_service.h"
+#include "timer/timer_matrix_manager.h"
+#include "service/node_request_service/data_query_service.h"
+#include "service/http_request_service/http_server_service.h"
+#include "service/http_request_service/rest_api_service.h"
+#include <boost/exception/all.hpp>
+#include "service/node_request_service/node_request_service.h"
+#include "service_module/service_name.h"
+#include "data/resource/SystemResourceManager.h"
+
+extern std::chrono::high_resolution_clock::time_point server_start_time;
+
+int32_t dbc_server_initiator::init(int argc, char* argv[])
+{
+    LOG_INFO << "begin to init dbc core";
+
+    int32_t ret = E_SUCCESS;
+    variables_map vm;
+    std::shared_ptr<module> mdl(nullptr);
+
+    //crypto service
+    LOG_INFO << "begin to init crypto service";
+    ret = m_crypto.init(vm);
+    if (E_SUCCESS != ret) {
+        return ret;
+    }
+    LOG_INFO << "init crypto service successfully";
+
+    //parse command line
+    LOG_INFO << "begin to init command line";
+    ret = parse_command_line(argc, argv, vm);
+    if (E_SUCCESS != ret)
+    {
+        return ret;
+    }
+    LOG_INFO << "parse command line successfully";
+
+    //env_manager
+    LOG_INFO << "begin to init env manager";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<env_manager>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init env manager successfully";
+
+    //core conf_manager
+    LOG_INFO << "begin to init conf manager";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<conf_manager>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init conf manager successfully";
+
+    if (vm.count(SERVICE_NAME_AI_TRAINING)) {
+        SystemResourceMgr::instance().Init();
+    }
+
+    //topic_manager
+    LOG_INFO << "begin to init topic manager";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<topic_manager>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init topic manager successfully";
+
+    //timer matrix manager
+    LOG_INFO << "begin to init matrix manager";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<timer_matrix_manager>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init timer matrix manager successfully";
+
+    //common service
+    LOG_INFO << "begin to init common service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<common_service>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init common service successfully";
+
+    //ai power requestor service
+    LOG_INFO << "begin to init ai power requestor service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<cmd_request_service>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init ai power requestor service successfully";
+
+    //ai power provider service
+    LOG_INFO << "begin to init ai power provider service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<node_request_service>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init ai power provider service successfully";
+
+    //data query service
+    LOG_INFO << "begin to init net misc service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<data_query_service>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        LOG_ERROR << "init data query service but failed";
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init data query service successfully";
+
+    //connection_manager
+    LOG_INFO << "begin to init connection manager";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::network::connection_manager>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init connection manager successfully";
+
+    //p2p net service
+    LOG_INFO << "begin to init p2p net service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<p2p_net_service>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        //logging
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init p2p net service successfully";
+
+    //cmd line service
+    /*
+    ::dbc::g_api_call_handler->init_subscription();
+
+    if (false == m_daemon)
+    {
+        LOG_INFO << "begin to init command line service";
+        mdl = std::dynamic_pointer_cast<module>(std::make_shared<::dbc::cmd_line_service>());
+        g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+        ret = mdl->init(vm);
+        if (E_SUCCESS != ret)
+        {
+            LOG_ERROR << "init command line service error.error code:" << ret;
+            return ret;
+        }
+        mdl->start();
+        LOG_INFO << "init command line service successfully";
+    }
+    */
+
+    LOG_INFO << "begin to init rest api service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<rest_api_service>());
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        return ret;
+    }
+    mdl->start();
+
+    std::shared_ptr<::dbc::network::http_request_event> hreq_event = std::dynamic_pointer_cast<::dbc::network::http_request_event>(mdl);
+
+
+    LOG_INFO << "begin to init http server service";
+    mdl = std::dynamic_pointer_cast<module>(std::make_shared<http_server_service>(hreq_event));
+    g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+    ret = mdl->init(vm);
+    if (E_SUCCESS != ret)
+    {
+        return ret;
+    }
+    mdl->start();
+    LOG_INFO << "init http server service successfully";
+
+    //log cost time
+    high_resolution_clock::time_point init_end_time = high_resolution_clock::now();
+    auto time_span_ms = duration_cast<milliseconds>(init_end_time - server_start_time);
+    LOG_INFO << "init dbc core successfully, cost time: " << time_span_ms.count() << " ms";
+
+    return E_SUCCESS;
+}
+
+int32_t dbc_server_initiator::exit()
+{
+    return E_SUCCESS;
+}
+
+int32_t dbc_server_initiator::parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm)
+{
+    options_description opts("dbc command options");
+    opts.add_options()
+        ("help,h", "get dbc core help info")
+        ("version,v", "get core version info")
+        ("init", "init node id")
+        ("daemon,d", "run as daemon process on Linux")
+        ("peer", bpo::value<std::vector<std::string>>(), "")
+        ("ai_training,a", "run as ai training service provider")
+        ("name,n", bpo::value<std::string>(), "node name")
+        ("max_connect", bpo::value<int32_t>(), "")
+        ("id", "get local node id")
+        ("rest_ip", bpo::value<std::string>(), "http server ip address")
+        ("rest_port", bpo::value<std::string>(), "prohibit http server if rest port is 0");
+
+    try
+    {
+        //parse
+        bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
+        bpo::notify(vm);
+
+        //help
+        if (vm.count("help") || vm.count("h"))
+        {
+            std::cout << opts;
+            return E_EXIT_PARSE_COMMAND_LINE;
+        }
+        //version
+        else if (vm.count("version") || vm.count("v"))
+        {
+            std::string ver = STR_VER(CORE_VERSION);
+            std::cout << ver.substr(2, 2) << "." << ver.substr(4, 2) << "." << ver.substr(6, 2) << "." << ver.substr(8, 2);
+            std::cout << "\n";
+            return E_EXIT_PARSE_COMMAND_LINE;
+        }
+        else if (vm.count("init"))
+        {
+            std::string in_;
+            std::cout << "Warning: the node id will be reset. Do you want to continue [yes/no]?  ";
+            std::cin >> in_;
+            if (in_ == std::string("yes") || in_ == std::string("y"))
+            {
+                return on_cmd_init();
+            }
+            else
+            {
+                std::cout<< "exit"<<endl;
+            }
+        }
+        else if (vm.count("daemon") || vm.count("d"))
+        {
+            return on_daemon();
+        }
+        else if (vm.count("id"))
+        {
+            bpo::variables_map vm;
+
+            std::shared_ptr<module> mdl(nullptr);
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<env_manager>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            auto ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
+
+            mdl = std::dynamic_pointer_cast<module>(std::make_shared<conf_manager>());
+            g_server->get_module_manager()->add_module(mdl->module_name(), mdl);
+            ret = mdl->init(vm);
+            if (E_SUCCESS != ret)
+            {
+                return ret;
+            }
+
+            std::cout << CONF_MANAGER->get_node_id();
+            std::cout << "\n";
+            return E_EXIT_PARSE_COMMAND_LINE;
+        }
+        //ignore
+        else
+        {
+            return E_SUCCESS;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "invalid command option " << e.what() << endl;
+        std::cout << opts;
+    }
+    catch (...)
+    {
+        std::cout << argv[0] << " invalid command option" << endl;
+        std::cout << opts;
+    }
+
+    return E_BAD_PARAM;
+}
+
+int32_t dbc_server_initiator::on_cmd_init()
+{
+    //node info
+    util::machine_node_info info;
+    int32_t ret = util::create_node_info(info);  //check: if exists, not init again and print prompt.
+    if (E_SUCCESS != ret)
+    {
+        std::cout << "dbc init node info error" << endl;
+        LOG_ERROR << "dbc_server_initiator init node info error";
+        return ret;
+    }
+
+    //serialization
+    ret = conf_manager::serialize_node_info(info);
+    if (E_SUCCESS != ret)
+    {
+        std::cout << "dbc node info serialization failed." << endl;
+        LOG_ERROR << "dbc node info serialization failed: node_id=" << info.node_id;
+        return ret;
+    }
+
+    std::cout << "node id: " << info.node_id << endl;
+    LOG_DEBUG << "dbc_server_initiator init node info successfully, node_id: " << info.node_id;
+
+    return E_EXIT_PARSE_COMMAND_LINE;
+}
+
+int32_t dbc_server_initiator::on_daemon()
+{
+#if defined(__linux__) || defined(MAC_OSX)
+    if (daemon(1, 1))               //log fd is reserved
+    {
+        LOG_ERROR << "dbc daemon error: " << strerror(errno);
+        return E_DEFAULT;
+    }
+
+    LOG_DEBUG << "dbc daemon running succefully";
+
+    //redirect std io to /dev/null
+    int fd = open("/dev/null", O_RDWR);
+    if (fd < 0)
+    {
+        LOG_ERROR << "dbc daemon open /dev/null error";
+        return E_DEFAULT;
+    }
+
+    dup2(fd, STDIN_FILENO);
+    dup2(fd, STDOUT_FILENO);
+    dup2(fd, STDERR_FILENO);
+
+    close(fd);
+
+    m_daemon = true;
+    return E_SUCCESS;
+#else
+    LOG_ERROR << "dbc daemon error:  not support";
+    return E_DEFAULT;
+#endif
+}

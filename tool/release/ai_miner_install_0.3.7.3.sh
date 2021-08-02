@@ -32,34 +32,17 @@ install_dbc()
   current_directory=`pwd`
   echo "current directory is $current_directory "
 
-  echo "Execution script mining_install.sh to install docker,nvidia-docker,pull images(only for miner)"
-  which nvidia-docker
-  if [ $? -ne 0 ]; then
    cd ./mining_repo/
-   #sed -i 's$echo y | sudo apt-get -y install docker-ce.*$echo y | sudo apt-get -y install docker-ce=18.06.1~ce~3-0~ubuntu$g' ./mining_install.sh
    /bin/bash ./mining_install.sh
    cd ./../
    echo "mining_install.sh execution finished"
    echo -e
-  else
-   echo "nvidia-docker exists"
-  fi
+
   cd $path_now
 }
 
 uninstall_dbc()
 {
-  echo
-  echo "-- remove nvidia-docker --"
-  docker volume ls -q -f driver=nvidia-docker | xargs -r -I{} -n1 docker ps -q -a -f volume={} | xargs -r docker rm -f
-  sudo rm -rf /var/lib/nvidia-docker
-  sudo apt-get -y purge nvidia-docker
-  sudo apt-get -y purge nvidia-docker2
-
-  echo
-  echo "-- remove docker-ce --"
-  sudo apt-get -y purge docker-ce
-
   echo
   echo "-- move dbc install --"
   dbc_dir=$(dirname  `which dbc` 2>/dev/null)
@@ -171,7 +154,6 @@ post_config()
     sudo sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
 
     # register private repo
-    sudo bash ./dbc_repo/tool/private_docker_repo/register_docker_repo.sh
     sudo bash ./dbc_repo/container/lxcfs/install.sh
 
     echo "set restart dbc automatically"
@@ -187,15 +169,6 @@ post_config()
     sudo systemctl restart  cron
     sudo systemctl enable cron
     echo "dbc ai mining install finished"
-    # settings to let user run docker command without sudo
-    count=$(grep docker /etc/group|wc -l)
-    if [ $count -eq 0 ]
-    then
-        sudo groupadd docker
-    fi
-    sudo gpasswd -a ${USER} docker
-    sudo service docker restart
-    newgrp - docker
     source ~/.bashrc
     
     cd $path_now
