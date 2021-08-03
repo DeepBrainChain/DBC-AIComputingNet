@@ -789,7 +789,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             break;
         }
 
-        machine_status = "creating";
+        //machine_status = "creating";
 
         if (machine_status == "creating") {
             auto it = m_wallet_sessionid.find(owner_wallet);
