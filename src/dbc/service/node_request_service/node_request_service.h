@@ -13,6 +13,7 @@
 #include "util/LruCache.hpp"
 #include "util/websocket_client.h"
 #include "../message/matrix_types.h"
+#include "data/session_id/sessionid_db.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
@@ -103,6 +104,9 @@ protected:
     uint32_t m_prune_task_timer_id = INVALID_TIMER_ID;
 
     lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
+
+    SessionIdDB m_sessionid_db;
+    std::map<std::string, std::string> m_wallet_sessionid;
 
     std::shared_ptr<dbc::node_create_task_req> m_create_req;
     websocket_client m_websocket_client;

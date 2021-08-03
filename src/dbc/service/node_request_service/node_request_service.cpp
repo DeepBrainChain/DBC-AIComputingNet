@@ -115,6 +115,17 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
         return E_DEFAULT;
     }
     else {
+        ret = m_sessionid_db.init_db(env_manager::get_db_path(), "sessionid.db");
+        if (!ret) {
+            LOG_ERROR << "init sessionid_db failed";
+            return E_DEFAULT;
+        }
+        std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
+        m_sessionid_db.load(wallet_sessionid);
+        for (auto& it : wallet_sessionid) {
+            m_wallet_sessionid.insert({it.first, it.second->session_id});
+        }
+
         m_websocket_client.init("wss://infotest.dbcwallet.io");
         m_websocket_client.enable_auto_reconnection();
         m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
@@ -761,21 +772,91 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string machine_status = v_machineStatus.GetString();
 
-        //machine_status = "creating";
+        const rapidjson::Value &v_machineOwner = v_result["machineOwner"];
+        if (!v_machineOwner.IsString()) {
+            ret = E_DEFAULT;
+            ret_msg = "rsp_json machineOwner is not string";
+            break;
+        }
+        std::string owner_wallet = v_machineOwner.GetString();
 
-        if (machine_status == "creating" || machine_status == "rented") {
-            // 创建虚拟机
-            task_id = util::create_task_id();
-            login_password = generate_pwd();
-            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
-            ret = std::get<0>(fresult);
-            ret_msg = std::get<1>(fresult);
+        rapidjson::Document doc2;
+        doc2.Parse(m_create_req->body.additional.c_str());
+        if (!doc2.IsObject()) {
+            ret = E_DEFAULT;
+            ret_msg = "additional parse failed";
+            LOG_ERROR << "additional parse failed";
+            break;
+        }
+
+        machine_status = "creating";
+
+        if (machine_status == "creating") {
+            auto it = m_wallet_sessionid.find(owner_wallet);
+            if (it == m_wallet_sessionid.end()) {
+                // 创建session_id
+                std::string id = util::create_session_id();
+                m_wallet_sessionid[owner_wallet] = id;
+                std::shared_ptr<dbc::owner_sessionid> sessionid(new dbc::owner_sessionid());
+                sessionid->wallet = owner_wallet;
+                sessionid->session_id = id;
+                m_sessionid_db.write(sessionid);
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "create failed";
+                LOG_ERROR << "create failed";
+                break;
+            }
+        } else if (machine_status == "rented") {
+            // 验证session_id
+            if (!doc2.HasMember("session_id")) {
+                ret = E_DEFAULT;
+                ret_msg = "invalid session_id";
+                LOG_ERROR << "invalid session_id";
+                break;
+            }
+            const rapidjson::Value &v_session_id = doc2["session_id"];
+            if (!v_session_id.IsString()) {
+                ret = E_DEFAULT;
+                ret_msg = "invalid session_id";
+                LOG_ERROR << "invalid session_id";
+                break;
+            }
+            std::string str_session_id = v_session_id.GetString();
+            if (str_session_id.empty()) {
+                ret = E_DEFAULT;
+                ret_msg = "invalid session_id";
+                LOG_ERROR << "invalid session_id";
+                break;
+            }
+
+            auto it = m_wallet_sessionid.find(owner_wallet);
+            if (it != m_wallet_sessionid.end()) {
+                ret = E_DEFAULT;
+                ret_msg = "create failed";
+                LOG_ERROR << "create failed";
+                break;
+            }
+
+            if (str_session_id != it->second) {
+                ret = E_DEFAULT;
+                ret_msg = "session_id check failed";
+                LOG_ERROR << "session_id check failed";
+                break;
+            }
         } else {
             ret = E_DEFAULT;
             ret_msg = "rent check failed";
             LOG_ERROR << "rent check failed";
             break;
         }
+
+        // 创建虚拟机
+        task_id = util::create_task_id();
+        login_password = generate_pwd();
+        auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
     } while(0);
 
     std::shared_ptr<dbc::node_create_task_rsp> rsp_content = std::make_shared<dbc::node_create_task_rsp>();

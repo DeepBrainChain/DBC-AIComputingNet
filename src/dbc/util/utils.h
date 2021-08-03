@@ -36,6 +36,7 @@
 #include "function_traits.h"
 #include "singleton.h"
 #include "rw_lock.h"
+#include "LruCache.hpp"
 
 #include "utils/string_util.h"
 #include "utils/file_util.h"

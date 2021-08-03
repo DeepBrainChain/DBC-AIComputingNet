@@ -4,8 +4,8 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-#ifndef TASK_TYPES_H
-#define TASK_TYPES_H
+#ifndef TASK_DB_TYPES_H
+#define TASK_DB_TYPES_H
 
 #include <iosfwd>
 #include "network/protocol/protocol.h"

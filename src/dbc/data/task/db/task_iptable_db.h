@@ -4,7 +4,7 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include <boost/filesystem.hpp>
-#include "task_iptable_types.h"
+#include "iptable_db_types.h"
 
 class TaskIpTableDB {
 public:

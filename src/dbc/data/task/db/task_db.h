@@ -4,7 +4,7 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include <boost/filesystem.hpp>
-#include "task_types.h"
+#include "task_db_types.h"
 
 class TaskDB
 {

@@ -49,7 +49,7 @@ FResult TaskManager::Init() {
     }
     m_task_db.load_tasks(m_tasks);
 
-    ret = m_task_iptable_db.init_db(env_manager::get_db_path(), "task_iptable.db");
+    ret = m_task_iptable_db.init_db(env_manager::get_db_path(), "iptable.db");
     if (!ret) {
         LOG_ERROR << "init task_iptable_db failed";
         return {E_DEFAULT, "init task_iptable_db failed"};

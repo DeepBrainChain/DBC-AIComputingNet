@@ -5,6 +5,7 @@
 #include "service_module/service_module.h"
 #include "network/http_server.h"
 #include "timer/timer.h"
+#include "rest_handler.h"
 
 #define REST_API_SERVICE_MODULE                             "rest_api_service"
 
@@ -61,6 +62,7 @@ private:
     std::mutex m_session_lock;
     std::vector<dbc::network::http_path_handler> m_path_handlers;
     std::map<std::string, dbc::network::response_call_handler> m_rsp_handlers;
+    RestHandler m_rest_handler;
 };
 
 #endif
