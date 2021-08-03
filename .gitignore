@@ -24,4 +24,4 @@ src/service_core/lib/*.a
 .DS_Store
 
 /proto/thrift/cpp
-
+/deployment/package
