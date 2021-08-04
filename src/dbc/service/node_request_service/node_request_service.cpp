@@ -126,7 +126,8 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
             m_wallet_sessionid.insert({it.first, it.second->session_id});
         }
 
-        m_websocket_client.init("wss://infotest.dbcwallet.io");
+        std::string ws_url = "wss://" + CONF_MANAGER->get_dbc_chain_domain();
+        m_websocket_client.init(ws_url);
         m_websocket_client.enable_auto_reconnection();
         m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
         m_websocket_client.start();

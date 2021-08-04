@@ -108,7 +108,8 @@ int32_t conf_manager::parse_local_conf()
         ("prune_task_stop_interval", bpo::value<int16_t>()->default_value(DEFAULT_PRUNE_TASK_INTERVAL), "")
         ("auth_mode", bpo::value<std::string>()->default_value(""), "")
         ("trust_node_id", bpo::value<std::vector<std::string>>(), "")
-        ("wallet", bpo::value<std::vector<std::string>>(), "");
+        ("wallet", bpo::value<std::vector<std::string>>(), "")
+        ("dbc_chain_domain", bpo::value<std::string>()->default_value(""), "");
 
     const boost::filesystem::path &conf_path = env_manager::get_conf_path();
     try {

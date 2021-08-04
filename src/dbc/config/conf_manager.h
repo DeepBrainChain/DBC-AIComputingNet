@@ -166,6 +166,10 @@ public:
         return m_args["wallet"].as< std::vector<std::string> >();
     }
 
+    std::string get_dbc_chain_domain() const {
+        return m_args["dbc_chain_domain"].as<std::string>();
+    }
+
 protected:
     // 解析本地配置文件: core.conf  peer.conf
     int32_t parse_local_conf();
