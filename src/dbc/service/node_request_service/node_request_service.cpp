@@ -790,8 +790,6 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             break;
         }
 
-        //machine_status = "creating";
-
         if (machine_status == "creating") {
             auto it = m_wallet_sessionid.find(owner_wallet);
             if (it == m_wallet_sessionid.end()) {
@@ -808,7 +806,8 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
                 LOG_ERROR << "create failed";
                 break;
             }
-        } else if (machine_status == "rented") {
+        }
+        else if (machine_status == "rented") {
             // 验证session_id
             if (!doc2.HasMember("session_id")) {
                 ret = E_DEFAULT;
@@ -845,7 +844,8 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
                 LOG_ERROR << "session_id check failed";
                 break;
             }
-        } else {
+        }
+        else {
             ret = E_DEFAULT;
             ret_msg = "rent check failed";
             LOG_ERROR << "rent check failed";
