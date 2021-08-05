@@ -105,8 +105,17 @@ if (APPLE)
     TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
 endif ()
 
-###########################
-## test
-###########################
-#add_subdirectory(unittest/tests/test_keypair)
+## check_env ##
+set(check_env_src_dir
+        check_env
+        check_env/util
+        )
+
+foreach(sub_dir ${check_env_src_dir})
+    aux_source_directory(${sub_dir} check_env_src_files)
+endforeach()
+
+add_executable(check_env ${check_env_src_files})
+
+target_link_libraries(check_env ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 
