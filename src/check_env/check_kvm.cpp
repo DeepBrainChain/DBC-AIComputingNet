@@ -538,8 +538,8 @@ namespace check_kvm {
             }
 
             int32_t try_count = 0;
-            // max: 15min
-            while (vm_local_ip.empty() && try_count < 300) {
+            // max: 30s
+            while (vm_local_ip.empty() && try_count < 10) {
                 std::cout << "get vm_local_ip try_count: " << (try_count + 1) << std::endl;
                 virDomainInterfacePtr *ifaces = nullptr;
                 int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
@@ -671,13 +671,13 @@ namespace check_kvm {
             ext = image.substr(pos + 1);
         }
         std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
-        std::cout << "remove image file: " << real_image_path << std::endl;
+        std::cout << "delete image file: " << real_image_path << std::endl;
         remove(real_image_path.c_str());
     }
 
     void delete_disk_file(const std::string &task_id) {
         std::string disk_file = "/data/data_1_" + task_id + ".qcow2";
-        std::cout << "remove disk file: " << disk_file << std::endl;
+        std::cout << "delete disk file: " << disk_file << std::endl;
         remove(disk_file.c_str());
     }
 
@@ -702,6 +702,8 @@ namespace check_kvm {
                 " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
 
         run_shell(cmd.c_str());
+
+        std::cout << "delete iptable: " << public_ip << ", " << transform_port << ", " << vm_local_ip << std::endl;
     }
 
     void delete_domain(const std::string& domain_name, const std::string& image_name,
@@ -711,7 +713,8 @@ namespace check_kvm {
             if (UndefineDomain(domain_name)) {
                 delete_image_file(domain_name, image_name);
                 delete_disk_file(domain_name);
-                delete_iptable(public_ip, ssh_port, vm_local_ip);
+                if (!vm_local_ip.empty())
+                    delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                 std::cout << "delete task " << domain_name << " successful" << std::endl;
             } else {
@@ -723,7 +726,8 @@ namespace check_kvm {
                 if (UndefineDomain(domain_name)) {
                     delete_image_file(domain_name, image_name);
                     delete_disk_file(domain_name);
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                    if (!vm_local_ip.empty())
+                        delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                     std::cout << "delete task " << domain_name << " successful" << std::endl;
                 } else {
@@ -732,6 +736,77 @@ namespace check_kvm {
             } else {
                 std::cout << "delete task " << domain_name << " failed" << std::endl;
             }
+        }
+    }
+
+    void pre_check(const std::string& domain_name, const std::string& image_name,
+                   const std::string& public_ip, const std::string& ssh_port) {
+        virConnectPtr connPtr = nullptr;
+        virDomainPtr domainPtr = nullptr;
+
+        do {
+            std::string url = getUrl();
+            connPtr = virConnectOpen(url.c_str());
+            if (nullptr == connPtr) {
+                virErrorPtr error = virGetLastError();
+                std::cout << "virDomainGetInfo error: " << error->message << std::endl;
+                virFreeError(error);
+                break;
+            }
+
+            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+            if (nullptr != domainPtr) {
+                virDomainInfo info;
+                if (virDomainGetInfo(domainPtr, &info) < 0) {
+                    virErrorPtr error = virGetLastError();
+                    std::cout << "virDomainGetInfo error: " << error->message << std::endl;
+                    virFreeError(error);
+                    break;
+                }
+
+                EVmStatus vm_status = VS_SHUT_OFF;
+                if (info.state == VIR_DOMAIN_RUNNING) {
+                    vm_status = VS_RUNNING;
+                } else if (info.state == VIR_DOMAIN_PAUSED) {
+                    vm_status = VS_PAUSED;
+                } else if (info.state == VIR_DOMAIN_SHUTOFF) {
+                    vm_status = VS_SHUT_OFF;
+                } else {
+                    vm_status = VS_SHUT_OFF;
+                }
+
+                if (vm_status == VS_RUNNING) {
+                    if (virDomainDestroy(domainPtr) < 0) {
+                        virErrorPtr error = virGetLastError();
+                        std::cout << "virDomainLookupByName error: " << error->message << std::endl;
+                        virFreeError(error);
+                        break;
+                    }
+                }
+
+                std::string vm_local_ip;
+
+
+                if (virDomainUndefine(domainPtr) < 0) {
+                    virErrorPtr error = virGetLastError();
+                    std::cout << "virDomainUndefine error: " << error->message << std::endl;
+                    virFreeError(error);
+                    break;
+                }
+
+                delete_image_file(domain_name, image_name);
+                delete_disk_file(domain_name);
+                if (!vm_local_ip.empty())
+                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+            }
+        } while(0);
+
+        if (nullptr != domainPtr) {
+            virDomainFree(domainPtr);
+        }
+
+        if (nullptr != connPtr) {
+            virConnectClose(connPtr);
         }
     }
 
@@ -760,36 +835,42 @@ namespace check_kvm {
         }
         std::cout << "public_ip: " << public_ip << std::endl;
 
+        pre_check(domain_name, image_name, public_ip, ssh_port);
+
         std::string vm_local_ip;
 
-        if (CreateDomain(domain_name, image_name, sockets, cores, threads,
-                              vga_gpu, memory_total)) {
-            vm_local_ip = get_vm_local_ip(domain_name);
-            if (vm_local_ip.empty()) {
-                std::cout << "get vm_local_ip is empty" << std::endl;
-                delete_image_file(domain_name, image_name);
-                delete_disk_file(domain_name);
-                return;
+        try {
+            if (CreateDomain(domain_name, image_name, sockets, cores, threads,
+                             vga_gpu, memory_total)) {
+                vm_local_ip = get_vm_local_ip(domain_name);
+                if (vm_local_ip.empty()) {
+                    std::cout << "get vm_local_ip is empty" << std::endl;
+                    delete_image_file(domain_name, image_name);
+                    delete_disk_file(domain_name);
+                    return;
+                }
+                std::cout << "vm_local_ip: " << vm_local_ip << std::endl;
+
+                transform_port(public_ip, ssh_port, vm_local_ip);
+
+                if (!set_vm_password(domain_name, "dbc", "vm123456")) {
+                    std::cout << "set_vm_password failed" << std::endl;
+                    delete_image_file(domain_name, image_name);
+                    delete_disk_file(domain_name);
+                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                    return;
+                }
+
+                print_green("create vm %s successful", domain_name.c_str());
+            } else {
+                print_red("create vm %s failed", domain_name.c_str());
             }
-            std::cout << "vm_local_ip: " << vm_local_ip << std::endl;
 
-            transform_port(public_ip, ssh_port, vm_local_ip);
+            sleep(15);
 
-            if (!set_vm_password(domain_name, "dbc", "vm123456")) {
-                std::cout << "set_vm_password failed" << std::endl;
-                delete_image_file(domain_name, image_name);
-                delete_disk_file(domain_name);
-                delete_iptable(public_ip, ssh_port, vm_local_ip);
-                return;
-            }
-
-            print_green("create vm %s successful", domain_name.c_str());
-        } else {
-            print_red("create vm %s failed", domain_name.c_str());
+            delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
+        } catch (...) {
+            delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
         }
-
-        sleep(15);
-
-        delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
     }
 }
