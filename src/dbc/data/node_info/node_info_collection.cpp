@@ -22,8 +22,7 @@ static const std::string static_attrs[] = {
     "mem",
     "mem_usage", //定期更新
     "version",
-    "state",     //定期更新
-    "wallet"
+    "state"     //定期更新
 };
 
 node_info_collection::node_info_collection() {
@@ -47,21 +46,6 @@ int32_t node_info_collection::init(const std::string& filename) {
              + util::remove_leading_zero(ver.substr(6, 2)) + "."
              + util::remove_leading_zero(ver.substr(8, 2));
     m_kvs["version"] = s;
-
-    // wallet
-    std::string s_wallet;
-    s_wallet = "[";
-    std::vector<std::string> vec_wallets = CONF_MANAGER->get_wallets();
-    for (size_t i = 0; i < vec_wallets.size(); i++) {
-        if (vec_wallets[i].empty()) continue;
-
-        if(i > 0)
-            s_wallet += ",";
-
-        s_wallet += "\"" + vec_wallets[i] + "\"";
-    }
-    s_wallet += "]";
-    m_kvs["wallet"] = s_wallet;
 
     // ip os cpu disk mem
     std::string node_info_file_path = env_manager::get_home_path().generic_string() + "/.dbc_node_info.conf";

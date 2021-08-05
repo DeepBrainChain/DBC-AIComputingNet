@@ -155,17 +155,6 @@ public:
         return m_args["trust_node_id"].as< std::vector<std::string> >();
     }
 
-    std::vector<std::string> get_wallets()
-    {
-        if ( m_args.count("wallet") == 0 )
-        {
-            std::vector<std::string> rtn;
-            return rtn;
-        }
-
-        return m_args["wallet"].as< std::vector<std::string> >();
-    }
-
     std::string get_dbc_chain_domain() const {
         return m_args["dbc_chain_domain"].as<std::string>();
     }

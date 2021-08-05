@@ -790,6 +790,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             break;
         }
 
+        /*
         if (machine_status == "creating") {
             auto it = m_wallet_sessionid.find(owner_wallet);
             if (it == m_wallet_sessionid.end()) {
@@ -851,6 +852,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             LOG_ERROR << "rent check failed";
             break;
         }
+        */
 
         // 创建虚拟机
         task_id = util::create_task_id();
