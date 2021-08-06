@@ -539,7 +539,7 @@ namespace check_kvm {
 
             int32_t try_count = 0;
             // max: 30s
-            while (vm_local_ip.empty() && try_count < 10) {
+            while (vm_local_ip.empty() && try_count < 100) {
                 std::cout << "get vm_local_ip try_count: " << (try_count + 1) << std::endl;
                 virDomainInterfacePtr *ifaces = nullptr;
                 int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
@@ -713,8 +713,8 @@ namespace check_kvm {
             if (UndefineDomain(domain_name)) {
                 delete_image_file(domain_name, image_name);
                 delete_disk_file(domain_name);
-                if (!vm_local_ip.empty())
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                //if (!vm_local_ip.empty())
+                //    delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                 std::cout << "delete task " << domain_name << " successful" << std::endl;
             } else {
@@ -726,8 +726,8 @@ namespace check_kvm {
                 if (UndefineDomain(domain_name)) {
                     delete_image_file(domain_name, image_name);
                     delete_disk_file(domain_name);
-                    if (!vm_local_ip.empty())
-                        delete_iptable(public_ip, ssh_port, vm_local_ip);
+                    //if (!vm_local_ip.empty())
+                    //    delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                     std::cout << "delete task " << domain_name << " successful" << std::endl;
                 } else {
@@ -796,8 +796,8 @@ namespace check_kvm {
 
                 delete_image_file(domain_name, image_name);
                 delete_disk_file(domain_name);
-                if (!vm_local_ip.empty())
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                //if (!vm_local_ip.empty())
+                //    delete_iptable(public_ip, ssh_port, vm_local_ip);
             }
         } while(0);
 
@@ -847,23 +847,26 @@ namespace check_kvm {
                     std::cout << "get vm_local_ip is empty" << std::endl;
                     delete_image_file(domain_name, image_name);
                     delete_disk_file(domain_name);
-                    return;
+
+                    print_red("check vm %s failed", domain_name.c_str());
+                } else {
+                    std::cout << "vm_local_ip: " << vm_local_ip << std::endl;
+
+                    //transform_port(public_ip, ssh_port, vm_local_ip);
+
+                    if (!set_vm_password(domain_name, "dbc", "vm123456")) {
+                        std::cout << "set_vm_password failed" << std::endl;
+                        delete_image_file(domain_name, image_name);
+                        delete_disk_file(domain_name);
+                        //delete_iptable(public_ip, ssh_port, vm_local_ip);
+
+                        print_red("check vm %s failed", domain_name.c_str());
+                    } else {
+                        print_green("check vm %s successful", domain_name.c_str());
+                    }
                 }
-                std::cout << "vm_local_ip: " << vm_local_ip << std::endl;
-
-                transform_port(public_ip, ssh_port, vm_local_ip);
-
-                if (!set_vm_password(domain_name, "dbc", "vm123456")) {
-                    std::cout << "set_vm_password failed" << std::endl;
-                    delete_image_file(domain_name, image_name);
-                    delete_disk_file(domain_name);
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
-                    return;
-                }
-
-                print_green("create vm %s successful", domain_name.c_str());
             } else {
-                print_red("create vm %s failed", domain_name.c_str());
+                print_red("check vm %s failed", domain_name.c_str());
             }
 
             sleep(15);
