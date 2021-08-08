@@ -2,7 +2,6 @@
 #define DBC_TIMER_MATRIX_MANAGER_H
 
 #include "util/utils.h"
-#include "../module/module.h"
 #include "network/nio_loop_group.h"
 #include "network/protocol/service_message.h"
 

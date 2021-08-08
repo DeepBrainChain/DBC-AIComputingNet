@@ -63,7 +63,6 @@ set(service_src_dir
         dbc/network/socket_channel_handler
         dbc/log
         dbc/timer
-        dbc/module
         dbc/service_module
         dbc/server
         dbc/service

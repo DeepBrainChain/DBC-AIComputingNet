@@ -13,18 +13,6 @@ void module_task(void *argv)
     module->run();
 }
 
-//use it for update. can delete it at next version
-bool use_sign_verify()
-{
-    time_t cur = std::time(nullptr);
-    if (cur > conf_manager::instance().get_use_sign_time())
-    {
-        return true;
-    }
-
-    return false;
-}
-
 service_module::service_module()
     : m_exited(false),
     m_module_task(module_task),

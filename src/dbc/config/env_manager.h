@@ -1,8 +1,8 @@
 #ifndef DBC_ENV_MANAGER_H
 #define DBC_ENV_MANAGER_H
 
+#include "util/utils.h"
 #include <boost/filesystem.hpp>
-#include "module/module.h"
 
 #define CONF_DIR_NAME                           "conf"
 #define DAT_DIR_NAME                            "dat"
@@ -18,6 +18,8 @@ enum endian_type {
     big_endian,
     little_endian
 };
+
+namespace bpo = boost::program_options;
 
 class env_manager : public Singleton<env_manager> {
 public:

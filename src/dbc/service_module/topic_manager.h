@@ -2,7 +2,6 @@
 #define DBC_TOPIC_MANAGER_H
 
 #include "util/utils.h"
-#include "../module/module.h"
 #include "network/protocol/service_message.h"
 #include "log/log.h"
 

@@ -2,11 +2,11 @@
 #define DBC_CONF_MANAGER_H
 
 #include "util/utils.h"
-#include "module/module.h"
 #include "net_type_params.h"
 #include "network/compress/matrix_capacity.h"
 
 using namespace boost::program_options;
+namespace bpo = boost::program_options;
 
 static const std::string DEFAULT_VM_LISTEN_PORT = "16509";
 static const std::string DEFAULT_CONTAINER_LISTEN_PORT = "31107";
@@ -59,10 +59,6 @@ public:
 
     const std::vector<peer_seeds> &get_hard_code_seeds() { return m_net_params->get_hard_code_seeds(); }
 
-    const std::string & get_container_ip() { return m_args.count("container_ip") ? m_args["container_ip"].as<std::string>() : DEFAULT_LOCAL_IP; }
-
-    const std::string & get_container_port() { return m_args.count("container_port") ? m_args["container_port"].as<std::string>() : DEFAULT_CONTAINER_LISTEN_PORT; }
-
     const std::string & get_vm_ip() { return m_args.count("virt_ip") ? m_args["virt_ip"].as<std::string>() : DEFAULT_LOCAL_IP; }
 
     const std::string & get_vm_port() { return m_args.count("virt_port") ? m_args["virt_port"].as<std::string>() : DEFAULT_VM_LISTEN_PORT; }
@@ -98,16 +94,6 @@ public:
 
     static int32_t serialize_node_info(const util::machine_node_info &info);
 
-    const std::string & get_oss_url()
-    {
-        return  m_args.count("oss_url") > 0 ?  m_args["oss_url"].as<std::string>():DEFAULT_STRING;
-    }
-
-    const std::string & get_oss_crt()
-    {
-        return m_args.count("oss_crt") > 0 ? m_args["oss_crt"].as<std::string>() : DEFAULT_STRING;
-    }
-
     const int32_t & get_max_recv_speed()
     {
         return m_args.count("max_recv_speed") > 0 ? m_args["max_recv_speed"].as<int32_t>() : DEFAULT_SPEED;
@@ -123,35 +109,15 @@ public:
         return m_args.count("rest_port") ? m_args["rest_port"].as<std::string>() : DEFAULT_REST_PORT;
     }
 
-    const bool & get_enable_idle_task() { return m_args.count("enable_idle_task") > 0 ? m_args["enable_idle_task"].as<bool>() : DEFAULT_ENABLE; }
-    const bool & get_enable_node_reboot() { return m_args.count("enable_node_reboot") > 0 ? m_args["enable_node_reboot"].as<bool>() : DEFAULT_DISABLE; }
-    const bool & get_enable_billing() { return m_args.count("enable_billing") > 0 ? m_args["enable_billing"].as<bool>() : DEFAULT_ENABLE; }
     const int32_t & get_update_idle_task_cycle() { return m_args.count("update_idle_task_cycle") > 0 ? m_args["update_idle_task_cycle"].as<int32_t>() : DEFAULT_UPDATE_IDLE_TASK_CYCLE; }
     const dbc::network::matrix_capacity & get_proto_capacity()
     {
         return m_proto_capacity;
     }
 
-    const int64_t & get_use_sign_time() { return m_args.count("use_sign_time") > 0 ? m_args["use_sign_time"].as<int64_t>() : DEFAULT_USE_SIGN_TIME;}
     const int16_t & get_prune_container_stop_interval() {return m_args.count("prune_container_stop_interval") > 0 ? m_args["prune_container_stop_interval"].as<int16_t>() : DEFAULT_PRUNE_CONTAINER_INTERVAL;}
     const int16_t & get_prune_docker_root_use_ratio() {return m_args.count("prune_docker_root_use_ratio") > 0 ? m_args["prune_docker_root_use_ratio"].as<int16_t>() : DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO;}
     const int16_t & get_prune_task_stop_interval() {return m_args.count("prune_task_stop_interval") > 0 ? m_args["prune_task_stop_interval"].as<int16_t>() : DEFAULT_PRUNE_TASK_INTERVAL;}
-
-    std::string get_auth_mode()
-    {
-        return  m_args.count("auth_mode") > 0 ?  m_args["auth_mode"].as<std::string>(): std::string("online");
-    }
-
-    std::vector<std::string>  get_trust_node_ids()
-    {
-        if ( m_args.count("trust_node_id") == 0 )
-        {
-            std::vector<std::string> rtn;
-            return rtn;
-        }
-
-        return m_args["trust_node_id"].as< std::vector<std::string> >();
-    }
 
     std::string get_dbc_chain_domain() const {
         return m_args["dbc_chain_domain"].as<std::string>();

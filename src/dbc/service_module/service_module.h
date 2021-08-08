@@ -2,7 +2,6 @@
 #define DBC_SERVICE_MODULE_H
 
 #include "util/utils.h"
-#include "../module/module.h"
 #include "../timer/timer.h"
 #include "../timer/timer_manager.h"
 #include "network/protocol/service_message.h"
@@ -18,7 +17,6 @@
 using invoker_type = typename std::function<int32_t(std::shared_ptr<dbc::network::message> &msg)>;
 using timer_invoker_type = typename std::function<int32_t(std::shared_ptr<core_timer> timer)>;
 const std::string ECDSA = "ecdsa";
-bool use_sign_verify();
 
 //        int32_t extra_sign_info(std::string &message, std::map<std::string, std::string> & exten_info);
 //        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & exten_info);
