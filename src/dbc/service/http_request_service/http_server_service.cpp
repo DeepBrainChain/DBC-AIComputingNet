@@ -9,6 +9,7 @@
 #include "log/log.h"
 #include "network/http_client.h"
 #include "rest_handler.h"
+#include "rest_api_service.h"
 
 int32_t http_server_service::init(bpo::variables_map &options) {
     int32_t ret = load_rest_config(options);
@@ -17,10 +18,7 @@ int32_t http_server_service::init(bpo::variables_map &options) {
         return ret;
     }
 
-    if (nullptr == m_http_req_event) {
-        LOG_ERROR << "m_http_req_event cannot be null";
-        return E_EXIT_FAILURE;
-    }
+    rest_api_service::instance();
 
     if (m_listen_port == 0) {
         return E_SUCCESS;
@@ -35,7 +33,7 @@ int32_t http_server_service::init(bpo::variables_map &options) {
 
 int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
     std::string conf_rest_ip = options.count("rest_ip") ? options["rest_ip"].as<std::string>()
-                                                        : CONF_MANAGER->get_rest_ip();
+                                                        : conf_manager::instance().get_rest_ip();
     ip_validator ip_vdr;
     variable_value val;
     val.value() = conf_rest_ip;
@@ -47,7 +45,7 @@ int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
 
     // rest port
     std::string conf_rest_port = options.count("rest_port") ? options["rest_port"].as<std::string>()
-                                                            : CONF_MANAGER->get_rest_port();
+            : conf_manager::instance().get_rest_port();
     port_validator port_vdr;
     val.value() = conf_rest_port;
     if ((conf_rest_port != "0") && (port_vdr.validate(val) == false)) {
@@ -127,7 +125,7 @@ void http_server_service::on_http_request_event(struct evhttp_request *req) {
     LOG_DEBUG << "Received a " << hreq->request_method_string(hreq->get_request_method()) << ", request for "
               << hreq->get_uri() << " from " << hreq->get_peer().get_ip() << std::endl;
 
-    m_http_req_event->on_http_request_event(hreq);
+    rest_api_service::instance().on_http_request_event(hreq);
 }
 
 void http_server_service::start_http_server() {

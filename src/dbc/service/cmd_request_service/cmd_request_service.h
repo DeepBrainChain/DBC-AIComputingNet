@@ -8,15 +8,11 @@
 
 namespace fs = boost::filesystem;
 
-class cmd_request_service : public service_module {
+class cmd_request_service : public service_module, public Singleton<cmd_request_service> {
 public:
     cmd_request_service() = default;
 
     ~cmd_request_service() override = default;
-
-    std::string module_name() const override {
-        return "cmd_request_service";
-    }
 
 protected:
     void init_timer() override;

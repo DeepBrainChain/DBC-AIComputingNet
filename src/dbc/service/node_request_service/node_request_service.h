@@ -4,9 +4,7 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include "service_module/service_module.h"
-#include "data/task/container/container_client.h"
 #include "document.h"
-#include "service/oss/oss_client.h"
 #include <boost/process.hpp>
 #include "data/task/vm/image_manager.h"
 #include "data/task/TaskManager.h"
@@ -22,13 +20,11 @@
 
 namespace bp = boost::process;
 
-class node_request_service : public service_module {
+class node_request_service : public service_module, public Singleton<node_request_service> {
 public:
     node_request_service();
 
     ~node_request_service() override = default;
-
-    std::string module_name() const override { return "node_request_service"; }
 
 protected:
     void init_timer() override;

@@ -2,14 +2,12 @@
 #define DBC_TASK_MANAGER_H
 
 #include "util/utils.h"
-#include "container/container_client.h"
 #include <leveldb/db.h>
 #include "vm/image_manager.h"
 #include "service_module/service_module.h"
 #include <boost/process.hpp>
 #include "network/nio_loop_group.h"
 #include "data/resource/gpu_pool.h"
-#include "server/server_initiator.h"
 #include "service/message/matrix_types.h"
 #include "db/task_db.h"
 #include "vm/vm_client.h"

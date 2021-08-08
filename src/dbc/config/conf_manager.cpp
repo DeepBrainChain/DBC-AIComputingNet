@@ -8,30 +8,6 @@
 #include "network/protocol/thrift_compact.h"
 #include "log/log.h"
 
-std::string DEFAULT_VM_LISTEN_PORT("16509");
-std::string DEFAULT_CONTAINER_LISTEN_PORT("31107");
-std::string DEFAULT_REST_PORT("41107");
-std::string DEFAULT_CONTAINER_IMAGE_NAME("dbctraining/tensorflow-cpu-0.1.0:v1");
-
-const int32_t DEFAULT_MAX_CONNECTION_NUM = 512;
-const int32_t DEFAULT_TIMER_DBC_REQUEST_IN_SECOND = 20;
-const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
-const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
-const int32_t DEFAULT_SPEED = 0;
-const bool DEFAULT_ENABLE = true;
-const bool DEFAULT_DISABLE = false;
-const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
-const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND = 15;
-const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND = 5;
-const int64_t DEFAULT_USE_SIGN_TIME = 0x7FFFFFFFFFFFFFFF;
-const int16_t DEFAULT_PRUNE_CONTAINER_INTERVAL=240; //48 hours,test:1 hours
-const int16_t DEFAULT_PRUNE_TASK_INTERVAL=2400;     //100 days
-const int16_t DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO=5;
-
-#define NODE_FILE_NAME                               "node.dat"
-#define DEFAULT_MAIN_NET_LISTEN_PORT                 "11118"
-#define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
-
 conf_manager::conf_manager()
 {
     m_net_params = std::make_shared<net_type_params>();
@@ -40,9 +16,9 @@ conf_manager::conf_manager()
     m_proto_capacity.add(dbc::network::matrix_capacity::SNAPPY_RAW_C_NAME);
 }
 
-int32_t conf_manager::init(bpo::variables_map &options)
+ERR_CODE conf_manager::init(bpo::variables_map &options)
 {
-    int32_t ret = E_SUCCESS;
+    ERR_CODE ret = E_SUCCESS;
 
     // 解析本地配置文件
     ret = parse_local_conf();
@@ -110,7 +86,7 @@ int32_t conf_manager::parse_local_conf()
         ("trust_node_id", bpo::value<std::vector<std::string>>(), "")
         ("dbc_chain_domain", bpo::value<std::string>()->default_value(""), "");
 
-    const boost::filesystem::path &conf_path = env_manager::get_conf_path();
+    const boost::filesystem::path &conf_path = env_manager::instance().get_conf_path();
     try {
         std::ifstream conf_ifs(conf_path.generic_string());
         bpo::store(bpo::parse_config_file(conf_ifs, core_opts), m_args);
@@ -127,7 +103,7 @@ int32_t conf_manager::parse_local_conf()
     peer_opts.add_options()
         ("peer", bpo::value<std::vector<std::string>>(), "");
 
-    const boost::filesystem::path &peer_path = env_manager::get_peer_path();
+    const boost::filesystem::path &peer_path = env_manager::instance().get_peer_path();
     try
     {
         std::ifstream peer_ifs(peer_path.generic_string());
@@ -237,7 +213,7 @@ int32_t conf_manager::parse_node_dat()
             ("node_id", bpo::value<std::string>(), "")
             ("node_private_key", bpo::value<std::string>(), "");
 
-    boost::filesystem::path node_dat_path = env_manager::get_dat_path();
+    boost::filesystem::path node_dat_path = env_manager::instance().get_dat_path();
     node_dat_path /= boost::filesystem::path(NODE_FILE_NAME);
 
     if (!boost::filesystem::exists(node_dat_path) || boost::filesystem::is_empty(node_dat_path))

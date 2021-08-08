@@ -1010,14 +1010,11 @@ std::shared_ptr<dbc::network::message> RestHandler::rest_stat(const dbc::network
     rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
     rapidjson::Value data(rapidjson::kObjectType);
-    std::string node_id = CONF_MANAGER->get_node_id();
-
-    std::shared_ptr<module_manager> mdls = g_server->get_module_manager();
-    rest_api_service *s = (rest_api_service *) mdls->get(REST_API_SERVICE_MODULE).get();
+    std::string node_id = conf_manager::instance().get_node_id();
 
     data.AddMember("node_id", STRING_REF(node_id), allocator);
-    data.AddMember("session_count", s->get_session_count(), allocator);
-    data.AddMember("startup_time", s->get_startup_time(), allocator);
+    data.AddMember("session_count", rest_api_service::instance().get_session_count(), allocator);
+    data.AddMember("startup_time", rest_api_service::instance().get_startup_time(), allocator);
     SUCC_REPLY(data)
     return nullptr;
 }
@@ -1095,7 +1092,7 @@ std::shared_ptr<dbc::network::message> RestHandler::rest_api_version(const dbc::
 
     data.AddMember("version", STRING_REF(REST_API_VERSION), allocator);
 
-    std::string node_id = CONF_MANAGER->get_node_id();
+    std::string node_id = conf_manager::instance().get_node_id();
 
     data.AddMember("node_id", STRING_REF(node_id), allocator);
     SUCC_REPLY(data)

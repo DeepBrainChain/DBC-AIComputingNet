@@ -5,72 +5,43 @@
 #include "config/conf_manager.h"
 #include "service_module/topic_manager.h"
 #include "network/connection_manager.h"
-#include "module/module_manager.h"
-#include "server_initiator_factory.h"
 #include "server_info.h"
+#include "util/utils/crypto_service.h"
+#include "timer/timer_matrix_manager.h"
+#include <boost/program_options.hpp>
 
-#define DEFAULT_SLEEP_MILLI_SECONDS                 1000
-
-#define TOPIC_MANAGER                                (g_server->get_topic_manager())
-#define CONF_MANAGER                                 (g_server->get_conf_manager())
-#define CONNECTION_MANAGER                           (g_server->get_connection_manager())
-#define P2P_SERVICE                                  (g_server->get_p2p_net_service())
-
-class server;
-extern std::unique_ptr<server> g_server;
-
-class server
-{
-    using init_factory = server_initiator_factory;
-    using idle_task_functor_type = std::function<void()>;
-
+class server {
 public:
-    server();
+    server() = default;
 
     virtual ~server() = default;
 
-    virtual int32_t init(int argc, char* argv[]);
+    int32_t init(int argc, char *argv[]);
 
-    virtual int32_t idle();
+    void idle();
 
-    virtual int32_t exit();
+    void exit();
 
-    virtual bool is_exited() { return m_exited; }
+    server_info &get_server_info() { return m_server_info; }
 
-    virtual void set_exited(bool exited = true) { m_exited = exited; }
-
-    virtual bool is_init_ok() { return (m_init_result == E_SUCCESS); }
-
-    void bind_idle_task(idle_task_functor_type functor) { m_idle_task = functor; }
-
-    std::shared_ptr<module_manager> get_module_manager() { return m_module_manager; }
-
-    conf_manager *get_conf_manager() { return (conf_manager *)(m_module_manager->get(conf_manager_name).get()); }
-
-    topic_manager *get_topic_manager() { return (topic_manager *)(m_module_manager->get(topic_manager_name).get()); }
-
-    dbc::network::connection_manager *get_connection_manager() { return (dbc::network::connection_manager *)(m_module_manager->get(connection_manager_name).get()); }
-
-    server_info& get_server_info() { return m_server_info; }
-    void add_service_list(std::string s)  { m_server_info.add_service_list(s); }
+    void add_service_list(const std::string& s) {
+        m_server_info.add_service_list(s);
+    }
 
 protected:
-    virtual void do_cycle_task();
+    virtual int32_t parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm);
 
-protected:
-    int32_t m_init_result;
+    virtual int32_t on_cmd_init();
 
-    bool m_exited;
+    virtual int32_t on_daemon();
 
-    std::shared_ptr<server_initiator> m_initiator;
+private:
+    bool m_stop = false;
+    server_info m_server_info;
 
-    std::shared_ptr<module_manager> m_module_manager;
-
-    init_factory m_init_factory;
-
-    idle_task_functor_type m_idle_task;
-
-    server_info m_server_info;  // provide infomation like service list, of the computer node that dbc program controlls.
+    bool m_daemon = false;
+    crypto_service m_crypto;
+    std::shared_ptr<timer_matrix_manager> m_timer_matrix_manager;
 };
 
 #endif

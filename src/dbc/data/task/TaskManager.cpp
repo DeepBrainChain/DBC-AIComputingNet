@@ -42,14 +42,14 @@ TaskManager::~TaskManager() {
 
 FResult TaskManager::Init() {
     // init db
-    bool ret = m_task_db.init_db(env_manager::get_db_path(), "task.db");
+    bool ret = m_task_db.init_db(env_manager::instance().get_db_path(), "task.db");
     if (!ret) {
         LOG_ERROR << "init task_db failed";
         return {E_DEFAULT, "init task_db failed"};
     }
     m_task_db.load_tasks(m_tasks);
 
-    ret = m_task_iptable_db.init_db(env_manager::get_db_path(), "iptable.db");
+    ret = m_task_iptable_db.init_db(env_manager::instance().get_db_path(), "iptable.db");
     if (!ret) {
         LOG_ERROR << "init task_iptable_db failed";
         return {E_DEFAULT, "init task_iptable_db failed"};

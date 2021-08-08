@@ -11,38 +11,36 @@ constexpr int DEFAULT_HTTP_SERVER_TIMEOUT = 30;
 constexpr size_t MAX_HEADERS_SIZE = 8192;    // Maximum size of http request (request line + headers)
 constexpr unsigned int MAX_BODY_SIZE = 0x02000000;  // max http body size
 
-class http_server_service : public module {
+class http_server_service : public Singleton<http_server_service> {
 public:
-    explicit http_server_service(std::shared_ptr<dbc::network::http_request_event> hreq_event) : m_http_req_event(std::move(hreq_event)) {}
+    explicit http_server_service() {
 
-    ~http_server_service() override = default;
+    }
 
-    std::string module_name() const override { return HTTP_SERVER_SERVICE_MODULE; }
+    virtual ~http_server_service() = default;
 
-    int32_t init(bpo::variables_map &options) override;
+    int32_t init(bpo::variables_map &options);
 
-    int32_t start() override {
+    int32_t start() {
         if (!is_prohibit_rest()) {
             start_http_server();
         }
         return E_SUCCESS;
     }
 
-    int32_t stop() override {
+    int32_t stop() {
         if (!is_prohibit_rest()) {
             interrupt_http_server();
         }
         return E_SUCCESS;
     }
 
-    int32_t exit() override {
+    int32_t exit() {
         if (!is_prohibit_rest()) {
             stop_http_server();
         }
         return E_SUCCESS;
     }
-
-
 
 private:
     int32_t load_rest_config(bpo::variables_map &options);
@@ -84,7 +82,6 @@ private:
     std::string m_listen_ip = "127.0.0.1";
     uint16_t m_listen_port = 0;
 
-    std::shared_ptr<dbc::network::http_request_event> m_http_req_event;
     struct event_base *m_event_base = nullptr;
     struct evhttp *m_event_http = nullptr;
     std::vector<evhttp_bound_socket *> m_bound_sockets;

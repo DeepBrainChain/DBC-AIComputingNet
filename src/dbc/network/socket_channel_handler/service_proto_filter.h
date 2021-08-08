@@ -6,8 +6,6 @@
 #include "util/filter/bloom.h"
 
 #define TIME_OUT_SEC                        180
-//#define MAX_NONCE_COUNT             1000000
-
 #define NONCE_ELEMENTS 120000
 #define NONCE_FALSE_POSITIVE 0.000001
 

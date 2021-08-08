@@ -13,14 +13,12 @@
 
 using namespace boost::asio::ip;
 
-class data_query_service : public service_module
+class data_query_service : public service_module, public Singleton<data_query_service>
 {
 public:
     data_query_service() = default;
 
     ~data_query_service() override = default;
-
-    std::string module_name() const override { return "net_query"; }
 
     int32_t init(bpo::variables_map &options) override;
 

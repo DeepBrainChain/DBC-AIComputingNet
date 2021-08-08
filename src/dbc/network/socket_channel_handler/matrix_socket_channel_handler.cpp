@@ -1,6 +1,6 @@
 #include "matrix_socket_channel_handler.h"
 #include "network/tcp_socket_channel.h"
-#include "service/common_service/service_proto_filter.h"
+#include "service_proto_filter.h"
 #include "network/compress/matrix_compress.h"
 #include "service/message/message_id.h"
 
@@ -14,9 +14,9 @@ matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc
     , m_login_success(false)
     , m_sid(ch->id())
 {
-    if (CONF_MANAGER->get_max_recv_speed() > 0)
+    if (conf_manager::instance().get_max_recv_speed() > 0)
     {
-        int32_t recv_speed = CONF_MANAGER->get_max_recv_speed();
+        int32_t recv_speed = conf_manager::instance().get_max_recv_speed();
         int32_t cycle = 1;
         int32_t slice = 2;
         m_f_ctl = std::make_shared<dbc::network::flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
@@ -37,7 +37,7 @@ int32_t matrix_socket_channel_handler::stop()
 {
     m_stopped = true;
     stop_shake_hand_timer();
-    if (CONF_MANAGER->get_max_recv_speed() > 0 && m_f_ctl != nullptr)
+    if (conf_manager::instance().get_max_recv_speed() > 0 && m_f_ctl != nullptr)
     {
         m_f_ctl->stop();
     }
@@ -108,7 +108,7 @@ bool matrix_socket_channel_handler::validate_req_path(std::string msg_name, std:
         return false;
     }
 
-    std::string my_id = CONF_MANAGER->get_node_id();
+    std::string my_id = conf_manager::instance().get_node_id();
     if (std::find(path.begin(), path.end(), my_id) != path.end())
     {
         LOG_DEBUG << "my id is already in the path";
@@ -216,13 +216,13 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
                         {
 //                                    msg->set_name(BINARY_FORWARD_MSG);
 
-                            TOPIC_MANAGER->publish<int32_t>(BINARY_FORWARD_MSG, msg);
+                            topic_manager::instance().publish<int32_t>(BINARY_FORWARD_MSG, msg);
                             LOG_DEBUG << "matrix socket channel handler forward msg: " << msg->get_name()
                                       << ", nonce: " << nonce << m_sid.to_string();
                         }
                         else
                         {
-                            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+                            topic_manager::instance().publish<int32_t>(msg->get_name(), msg);
                             //LOG_INFO << "m_count "<< m_count << endl;
                             LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name()
                                       << ", nonce: " << nonce << m_sid.to_string();
@@ -262,7 +262,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
 
 void matrix_socket_channel_handler::set_decode_context(dbc::network::channel_handler_context &ctx)
 {
-    std::string node_id = CONF_MANAGER->get_node_id();
+    std::string node_id = conf_manager::instance().get_node_id();
     variable_value v1;
     v1.value() = node_id;
     ctx.add("LOCAL_NODE_ID", v1);
@@ -276,7 +276,7 @@ void matrix_socket_channel_handler::set_encode_context(dbc::network::channel_han
         if (nullptr != ch)
         {
             auto a = ch->get_proto_capacity();
-            auto b = CONF_MANAGER->get_proto_capacity();
+            auto b = conf_manager::instance().get_proto_capacity();
 
             bool compress_enabled = dbc::network::matrix_capacity_helper::get_compress_enabled(a , b);
             int  thrift_proto = dbc::network::matrix_capacity_helper::get_thrift_proto(a , b);

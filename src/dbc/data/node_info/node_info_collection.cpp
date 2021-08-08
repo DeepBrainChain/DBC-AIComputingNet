@@ -48,7 +48,7 @@ int32_t node_info_collection::init(const std::string& filename) {
     m_kvs["version"] = s;
 
     // ip os cpu disk mem
-    std::string node_info_file_path = env_manager::get_home_path().generic_string() + "/.dbc_node_info.conf";
+    std::string node_info_file_path = env_manager::instance().get_home_path().generic_string() + "/.dbc_node_info.conf";
     read_node_static_info(node_info_file_path);
     return E_SUCCESS;
 }
@@ -65,7 +65,7 @@ bool node_info_collection::init_dbc_bash_sh(const std::string& filename, const s
 
 int32_t node_info_collection::read_node_static_info(const std::string& filename) {
     if (false == boost::filesystem::exists(filename) || false == boost::filesystem::is_regular_file(filename)) {
-        generate_node_static_info(env_manager::get_home_path().generic_string());
+        generate_node_static_info(env_manager::instance().get_home_path().generic_string());
     }
 
     bpo::options_description opts("node info options");
@@ -114,7 +114,7 @@ void node_info_collection::refresh() {
 
     auto req = std::make_shared<get_task_queue_size_req_msg>();
     auto msg = std::dynamic_pointer_cast<dbc::network::message>(req);
-    TOPIC_MANAGER->publish<int32_t>(typeid(get_task_queue_size_req_msg).name(), msg);
+    topic_manager::instance().publish<int32_t>(typeid(get_task_queue_size_req_msg).name(), msg);
 }
 
 std::string node_info_collection::get(const std::string& key) {

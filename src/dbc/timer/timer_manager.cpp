@@ -2,8 +2,9 @@
 #include "time_tick_notification.h"
 #include "timer_matrix_manager.h"
 #include "log/log.h"
+#include "service_module/service_module.h"
 
-timer_manager::timer_manager(module *mdl)
+timer_manager::timer_manager(service_module *mdl)
     : m_module(mdl)
     , m_timer_alloc_id(0)
 {
@@ -53,9 +54,8 @@ void timer_manager::remove_timer(uint32_t timer_id)
 void timer_manager::on_time_point_notification(std::shared_ptr<dbc::network::message> msg)
 {
     std::shared_ptr<time_tick_notification> notification = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
-    assert(nullptr != notification);
-
-    this->process(notification->time_tick);
+    if (nullptr != notification)
+        this->process(notification->time_tick);
 }
 
 int32_t timer_manager::process(uint64_t time_tick)
@@ -69,7 +69,6 @@ int32_t timer_manager::process(uint64_t time_tick)
 
         if (timer->get_time_out_tick() <= time_tick)
         {
-            //module callback
             m_module->on_time_out(timer);
 
             assert(timer->get_repeat_times() > 0);

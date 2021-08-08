@@ -7,6 +7,7 @@
 
 namespace bpo = boost::program_options;
 
+/*
 extern const std::string default_name;
 extern const std::string module_manager_name;
 extern const std::string conf_manager_name;
@@ -16,6 +17,7 @@ extern const std::string connection_manager_name;
 extern const std::string p2p_service_name;
 extern const std::string ai_power_provider_service_name;
 extern const std::string common_service_name;
+
 
 class module
 {
@@ -34,5 +36,6 @@ public:
 
     virtual int32_t on_time_out(std::shared_ptr<core_timer> timer) { return 0; }
 };
+*/
 
 #endif

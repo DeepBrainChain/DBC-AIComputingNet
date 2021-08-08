@@ -66,7 +66,7 @@ void node_request_service::init_timer() {
     m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
         this, std::placeholders::_1);
     m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
-        CONF_MANAGER->get_timer_ai_training_task_schedule_in_second() *
+        conf_manager::instance().get_timer_ai_training_task_schedule_in_second() *
         1000, ULLONG_MAX, DEFAULT_STRING);
 
     // 10分钟
@@ -115,7 +115,7 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
         return E_DEFAULT;
     }
     else {
-        ret = m_sessionid_db.init_db(env_manager::get_db_path(), "sessionid.db");
+        ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
         if (!ret) {
             LOG_ERROR << "init sessionid_db failed";
             return E_DEFAULT;
@@ -126,7 +126,7 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
             m_wallet_sessionid.insert({it.first, it.second->session_id});
         }
 
-        std::string ws_url = "wss://" + CONF_MANAGER->get_dbc_chain_domain();
+        std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
         m_websocket_client.init(ws_url);
         m_websocket_client.enable_auto_reconnection();
         m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
@@ -271,13 +271,13 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_create(req);
     }
     else {
-        req->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -325,13 +325,13 @@ int32_t node_request_service::on_node_start_task_req(std::shared_ptr<dbc::networ
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_start(req);
     }
     else {
-        req->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -379,13 +379,13 @@ int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<dbc::network
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_stop(req);
     }
     else {
-        req->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -437,13 +437,13 @@ int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<dbc::netw
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_restart(req);
     }
     else {
-        req->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -488,13 +488,13 @@ int32_t node_request_service::on_node_reset_task_req(std::shared_ptr<dbc::networ
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_reset(req);
     }
     else {
-        req->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -542,13 +542,13 @@ int32_t node_request_service::on_node_delete_task_req(std::shared_ptr<dbc::netwo
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_delete(req);
     }
     else {
-        req->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -611,13 +611,13 @@ int32_t node_request_service::on_node_task_logs_req(std::shared_ptr<dbc::network
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_logs(req_content);
     }
     else {
-        req_content->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req_content->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -662,12 +662,12 @@ int32_t node_request_service::on_node_list_task_req(std::shared_ptr<dbc::network
     }
 
     // 检查是否命中当前节点
-    bool hit_self = hit_node(req_peer_nodes, CONF_MANAGER->get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         return task_list(req_content);
     } else {
-        req_content->header.path.push_back(CONF_MANAGER->get_node_id());
-        CONNECTION_MANAGER->broadcast_message(msg, msg->header.src_sid);
+        req_content->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return E_SUCCESS;
     }
 }
@@ -680,7 +680,7 @@ int32_t node_request_service::on_get_task_queue_size_req(std::shared_ptr<dbc::ne
 
     auto resp_msg = std::dynamic_pointer_cast<dbc::network::message>(resp);
 
-    TOPIC_MANAGER->publish<int32_t>(typeid(get_task_queue_size_resp_msg).name(), resp_msg);
+    topic_manager::instance().publish<int32_t>(typeid(get_task_queue_size_resp_msg).name(), resp_msg);
 
     return E_SUCCESS;
 }
@@ -790,6 +790,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             break;
         }
 
+        /*
         if (machine_status == "creating") {
             auto it = m_wallet_sessionid.find(owner_wallet);
             if (it == m_wallet_sessionid.end()) {
@@ -851,30 +852,39 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             LOG_ERROR << "rent check failed";
             break;
         }
+        */
 
-        // 创建虚拟机
-        task_id = util::create_task_id();
-        login_password = generate_pwd();
-        auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
-        ret = std::get<0>(fresult);
-        ret_msg = std::get<1>(fresult);
+        machine_status = "creating";
+
+        if (machine_status == "creating" || machine_status == "rented") {
+            // 创建虚拟机
+            task_id = util::create_task_id();
+            login_password = generate_pwd();
+            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
+            ret = std::get<0>(fresult);
+            ret_msg = std::get<1>(fresult);
+        } else {
+            ret = E_DEFAULT;
+            ret_msg = "rent check failed";
+            LOG_ERROR << "rent check failed";
+        }
     } while(0);
 
     std::shared_ptr<dbc::node_create_task_rsp> rsp_content = std::make_shared<dbc::node_create_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_CREATE_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(m_create_req->header.session_id);
     rsp_content->header.__set_path(m_create_req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -906,7 +916,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
     resp_msg->set_name(NODE_CREATE_TASK_RSP);
     resp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(resp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(resp_msg);
 }
 
 int32_t node_request_service::task_create(const std::shared_ptr<dbc::node_create_task_req>& req) {
@@ -916,7 +926,7 @@ int32_t node_request_service::task_create(const std::shared_ptr<dbc::node_create
     m_create_req = req;
     if (m_websocket_client.is_connected()) {
         std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-                               + CONF_MANAGER->get_node_id() + R"("]})";
+                               + conf_manager::instance().get_node_id() + R"("]})";
         m_websocket_client.send(str_send);
         LOG_INFO << "ws_send: " << str_send;
     } else {
@@ -936,19 +946,19 @@ int32_t node_request_service::task_start(const std::shared_ptr<dbc::node_start_t
 
     std::shared_ptr<dbc::node_start_task_rsp> rsp_content = std::make_shared<dbc::node_start_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_START_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -968,7 +978,7 @@ int32_t node_request_service::task_start(const std::shared_ptr<dbc::node_start_t
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(NODE_START_TASK_RSP);
     rsp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(rsp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
     return E_SUCCESS;
 }
 
@@ -982,19 +992,19 @@ int32_t node_request_service::task_stop(const std::shared_ptr<dbc::node_stop_tas
 
     std::shared_ptr<dbc::node_stop_task_rsp> rsp_content = std::make_shared<dbc::node_stop_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_STOP_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -1014,7 +1024,7 @@ int32_t node_request_service::task_stop(const std::shared_ptr<dbc::node_stop_tas
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(NODE_STOP_TASK_RSP);
     rsp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(rsp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
     return E_SUCCESS;
 }
 
@@ -1028,19 +1038,19 @@ int32_t node_request_service::task_restart(const std::shared_ptr<dbc::node_resta
 
     std::shared_ptr<dbc::node_restart_task_rsp> rsp_content = std::make_shared<dbc::node_restart_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_RESTART_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -1060,7 +1070,7 @@ int32_t node_request_service::task_restart(const std::shared_ptr<dbc::node_resta
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(NODE_RESTART_TASK_RSP);
     rsp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(rsp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
     return E_SUCCESS;
 }
 
@@ -1074,19 +1084,19 @@ int32_t node_request_service::task_reset(const std::shared_ptr<dbc::node_reset_t
 
     std::shared_ptr<dbc::node_reset_task_rsp> rsp_content = std::make_shared<dbc::node_reset_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_RESET_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -1106,7 +1116,7 @@ int32_t node_request_service::task_reset(const std::shared_ptr<dbc::node_reset_t
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(NODE_RESET_TASK_RSP);
     rsp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(rsp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
     return E_SUCCESS;
 }
 
@@ -1120,19 +1130,19 @@ int32_t node_request_service::task_delete(const std::shared_ptr<dbc::node_delete
 
     std::shared_ptr<dbc::node_delete_task_rsp> rsp_content = std::make_shared<dbc::node_delete_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_DELETE_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -1152,7 +1162,7 @@ int32_t node_request_service::task_delete(const std::shared_ptr<dbc::node_delete
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(NODE_DELETE_TASK_RSP);
     rsp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(rsp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
     return E_SUCCESS;
 }
 
@@ -1178,19 +1188,19 @@ int32_t node_request_service::task_logs(const std::shared_ptr<dbc::node_task_log
 
     std::shared_ptr<dbc::node_task_logs_rsp> rsp_content = std::make_shared<dbc::node_task_logs_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_TASK_LOGS_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + log_content;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(ret);
@@ -1210,7 +1220,7 @@ int32_t node_request_service::task_logs(const std::shared_ptr<dbc::node_task_log
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(NODE_TASK_LOGS_RSP);
     rsp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(rsp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
     return E_SUCCESS;
 }
 
@@ -1327,19 +1337,19 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
 
     std::shared_ptr<dbc::node_list_task_rsp> rsp_content = std::make_shared<dbc::node_list_task_rsp>();
     // header
-    rsp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
     rsp_content->header.__set_session_id(req->header.session_id);
     rsp_content->header.__set_path(req->header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
     rsp_content->body.__set_result(result);
@@ -1359,7 +1369,7 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
     resp_msg->set_name(NODE_LIST_TASK_RSP);
     resp_msg->set_content(rsp_content);
-    CONNECTION_MANAGER->send_resp_message(resp_msg);
+    dbc::network::connection_manager::instance().send_resp_message(resp_msg);
     return E_SUCCESS;
 }
 

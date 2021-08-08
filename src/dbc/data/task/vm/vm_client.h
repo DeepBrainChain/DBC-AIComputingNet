@@ -3,7 +3,6 @@
 
 #include "util/utils.h"
 #include "virt_client.h"
-#include "vm_message.h"
 #include "service_module/service_module.h"
 
 class VmClient {

@@ -6,14 +6,15 @@
 #include "network/protocol/service_message.h"
 #include "log/log.h"
 
-extern const std::string topic_manager_name;
-
-class topic_manager : public module
+class topic_manager : public Singleton<topic_manager>
 {
 public:
-    ~topic_manager() override { write_lock_guard<rw_lock> lock_guard(m_lock); m_topic_registry.clear(); }
+    topic_manager() = default;
 
-    std::string module_name() const override { return topic_manager_name; }
+    virtual ~topic_manager() {
+        write_lock_guard<rw_lock> lock_guard(m_lock);
+        m_topic_registry.clear();
+    }
 
     template<typename function_type>
     void subscribe(const std::string &topic, function_type &&f)
@@ -89,7 +90,6 @@ public:
     }
 
 protected:
-
     template<typename function_type>
     void add(const std::string &topic, function_type &&func)
     {
@@ -99,7 +99,7 @@ protected:
         m_topic_registry.emplace(std::move(msg_type), std::forward<function_type>(func));
     }
 
-protected:
+private:
     rw_lock m_lock;
     std::multimap<std::string, boost::any> m_topic_registry;
 };

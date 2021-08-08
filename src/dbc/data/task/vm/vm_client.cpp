@@ -1,7 +1,6 @@
 #include "vm_client.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
-#include "service/oss/oss_common_def.h"
 #include "server/server.h"
 #include <boost/property_tree/json_parser.hpp>
 #include "tinyxml2.h"

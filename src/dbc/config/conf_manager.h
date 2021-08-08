@@ -8,40 +8,38 @@
 
 using namespace boost::program_options;
 
-extern std::string DEFAULT_VM_LISTEN_PORT;
-extern std::string DEFAULT_CONTAINER_LISTEN_PORT;
-extern std::string DEFAULT_CONTAINER_IMAGE_NAME;
-extern const int32_t DEFAULT_MAX_CONNECTION_NUM;
-extern const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND;
-extern const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND;
-extern const int32_t DEFAULT_SPEED;
-extern const std::string conf_manager_name;
-extern const bool DEFAULT_ENABLE;
-extern const bool DEFAULT_DISABLE;
-extern const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE;
-extern std::string DEFAULT_REST_PORT;
-extern const int32_t DEFAULT_TIMER_DBC_REQUEST_IN_SECOND;
-extern const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND;
-extern const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND;
-extern const int64_t DEFAULT_USE_SIGN_TIME;
-extern const int16_t DEFAULT_PRUNE_CONTAINER_INTERVAL;
-extern const int16_t DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO;
-extern const int16_t DEFAULT_PRUNE_TASK_INTERVAL;
-
+static const std::string DEFAULT_VM_LISTEN_PORT = "16509";
+static const std::string DEFAULT_CONTAINER_LISTEN_PORT = "31107";
+static const std::string DEFAULT_REST_PORT = "41107";
+static const std::string DEFAULT_CONTAINER_IMAGE_NAME = "dbctraining/tensorflow-cpu-0.1.0:v1";
+static const int32_t DEFAULT_MAX_CONNECTION_NUM = 512;
+static const int32_t DEFAULT_TIMER_DBC_REQUEST_IN_SECOND = 20;
+static const int32_t DEFAULT_TIMER_SERVICE_BROADCAST_IN_SECOND = 30;
+static const int32_t DEFAULT_TIMER_SERVICE_LIST_EXPIRED_IN_SECOND = 300;
+static const int32_t DEFAULT_SPEED = 0;
+static const bool DEFAULT_ENABLE = true;
+static const bool DEFAULT_DISABLE = false;
+static const int32_t DEFAULT_UPDATE_IDLE_TASK_CYCLE = 24*60;   //24h
+static const int32_t DEFAULT_TIMER_AI_TRAINING_TASK_SCHEDULE_IN_SECOND = 15;
+static const int32_t DEFAULT_TIMER_LOG_REFRESH_IN_SECOND = 5;
+static const int64_t DEFAULT_USE_SIGN_TIME = 0x7FFFFFFFFFFFFFFF;
+static const int16_t DEFAULT_PRUNE_CONTAINER_INTERVAL=240; //48 hours,test:1 hours
+static const int16_t DEFAULT_PRUNE_TASK_INTERVAL=2400;     //100 days
+static const int16_t DEFALUT_PRUNE_DOCKER_ROOT_USE_RATIO=5;
 static const std::vector<std::string> DEFAULT_VECTOR = std::vector<std::string>();
 
-class conf_manager : public module
+#define NODE_FILE_NAME                               "node.dat"
+#define DEFAULT_MAIN_NET_LISTEN_PORT                 "11118"
+#define DEFAULT_TEST_NET_LISTEN_PORT                 "21107"
+
+class conf_manager : public Singleton<conf_manager>
 {
 public:
     conf_manager();
 
-    ~conf_manager() override = default;
+    virtual ~conf_manager() = default;
 
-    std::string module_name() const override {return conf_manager_name;}
-
-    int32_t init(bpo::variables_map &options) override;
-
-    int32_t exit() override { m_args.clear(); return E_SUCCESS; }
+    ERR_CODE init(bpo::variables_map &options);
 
     int32_t get_log_level() const { return m_log_level; }
 
@@ -160,14 +158,11 @@ public:
     }
 
 protected:
-    // 解析本地配置文件: core.conf  peer.conf
     int32_t parse_local_conf();
 
     int32_t parse_node_dat();
 
     int32_t init_params();
-
-    void init_net_flag();
 
     const variable_value& operator[](const std::string& name) const { return m_args[name]; }
 
@@ -177,7 +172,7 @@ protected:
 
     bool check_node_info();
 
-protected:
+private:
     variables_map m_args;
 
     std::string m_node_id;

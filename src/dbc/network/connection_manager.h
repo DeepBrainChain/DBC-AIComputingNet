@@ -37,7 +37,7 @@ namespace dbc
 {
     namespace network
     {
-        class connection_manager : public service_module
+        class connection_manager : public service_module, public Singleton<connection_manager>
         {
         public:
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
@@ -45,8 +45,6 @@ namespace dbc
             connection_manager();
 
             ~connection_manager() override = default;
-
-            std::string module_name() const override { return connection_manager_name; }
 
             void set_proto_capacity(socket_id sid, std::string c);
 

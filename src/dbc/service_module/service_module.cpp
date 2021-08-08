@@ -17,7 +17,7 @@ void module_task(void *argv)
 bool use_sign_verify()
 {
     time_t cur = std::time(nullptr);
-    if (cur > CONF_MANAGER->get_use_sign_time())
+    if (cur > conf_manager::instance().get_use_sign_time())
     {
         return true;
     }
@@ -48,7 +48,7 @@ int32_t service_module::init(bpo::variables_map &options)
 
 void service_module::init_time_tick_subscription()
 {
-    TOPIC_MANAGER->subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg); });
+    topic_manager::instance().subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg); });
 }
 
 int32_t service_module::start()
@@ -182,7 +182,6 @@ int32_t service_module::on_time_out(std::shared_ptr<core_timer> timer)
     auto func = it->second;
     return func(timer);
 }
-
 
 uint32_t service_module::add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id)
 {

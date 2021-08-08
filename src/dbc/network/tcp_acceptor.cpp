@@ -119,8 +119,7 @@ namespace dbc
             }
 			
             //add to connection manager
-            dbc::network::connection_manager* mgr = g_server->get_connection_manager();
-            int32_t ret = mgr->add_channel(socket_channel->id(), socket_channel->shared_from_this());
+            int32_t ret = connection_manager::instance().add_channel(socket_channel->id(), socket_channel->shared_from_this());
             //assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
             if (ret != E_SUCCESS)
             {

@@ -49,7 +49,8 @@ namespace dbc
 
         int32_t connection_manager::load_max_connect(bpo::variables_map &options)
         {
-            m_max_connect = options.count("max_connect") ? options["max_connect"].as<int32_t>() :CONF_MANAGER->get_max_connect();
+            m_max_connect = options.count("max_connect") ? options["max_connect"].as<int32_t>()
+                    : conf_manager::instance().get_max_connect();
 
             if (m_max_connect < 0)
             {
@@ -115,7 +116,7 @@ namespace dbc
 
         void connection_manager::init_subscription()
         {
-            TOPIC_MANAGER->subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<message> &msg) {return send(msg);});
+            topic_manager::instance().subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<message> &msg) {return send(msg);});
         }
 
         void connection_manager::init_invoker()

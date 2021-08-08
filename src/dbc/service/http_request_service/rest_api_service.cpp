@@ -69,7 +69,7 @@ void rest_api_service::init_invoker() {
 }
 
 #define SUBSCRIBE_RESP_MSG(cmd)  \
-TOPIC_MANAGER->subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp){  \
+topic_manager::instance().subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp) {  \
     std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>(); \
     msg->set_name(typeid(cmd).name()); \
     msg->set_content(rsp);\
@@ -214,7 +214,7 @@ void rest_api_service::post_cmd_request_msg(std::shared_ptr<dbc::network::http_r
                  << req_msg->get_name();
     } while (0);
 
-    TOPIC_MANAGER->publish<int32_t>(req_msg->get_name(), req_msg);
+    topic_manager::instance().publish<int32_t>(req_msg->get_name(), req_msg);
 }
 
 int32_t rest_api_service::on_call_rsp_handler(std::shared_ptr<dbc::network::message> &msg) {

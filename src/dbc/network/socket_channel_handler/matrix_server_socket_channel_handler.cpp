@@ -84,7 +84,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
     }
 
     //check magic
-    if (CONF_MANAGER->get_net_flag() != msg.content->header.magic)
+    if (conf_manager::instance().get_net_flag() != msg.content->header.magic)
     {
         LOG_ERROR << "matrix server socket channel received error magic: " << msg.content->header.magic;
         return E_DEFAULT;
@@ -102,7 +102,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
     if (VER_REQ == msg.get_name())
     {
         auto req_content = std::dynamic_pointer_cast<dbc::ver_req>(msg.content);
-        if (req_content->body.node_id == CONF_MANAGER->get_node_id())
+        if (req_content->body.node_id == conf_manager::instance().get_node_id())
         {
             LOG_ERROR << "matrix server socket channel received itself node id: " << req_content->body.node_id << msg.header.src_sid.to_string();
             return E_DEFAULT;
@@ -165,7 +165,7 @@ void matrix_server_socket_channel_handler::send_shake_hand_resp()
 
     //header
     //req_content->header.length = 0;
-    req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
     req_content->header.__set_msg_name(SHAKE_HAND_RESP);
 
     resp_msg->set_content(req_content);

@@ -6,7 +6,7 @@
 #include <string>
 #include <functional>
 
-typedef int32_t ERRCODE;
+typedef int32_t ERR_CODE;
 typedef std::tuple<int32_t, std::string> FResult;
 
 #define E_SUCCESS                                            0                   //success

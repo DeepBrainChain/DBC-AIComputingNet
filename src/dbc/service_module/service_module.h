@@ -12,7 +12,7 @@
 #define DEFAULT_MESSAGE_COUNT               102400    //default message count
 
 #define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)              invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
-#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       TOPIC_MANAGER->subscribe(MSG_NAME, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg);});
+#define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       topic_manager::instance().subscribe(MSG_NAME, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg);});
 #define USE_SIGN_TIME 1548777600
 
 using invoker_type = typename std::function<int32_t(std::shared_ptr<dbc::network::message> &msg)>;
@@ -25,10 +25,9 @@ bool use_sign_verify();
 //        bool derive_pub_key_bysign(std::string &message, std::map<std::string, std::string> & exten_info, CPubKey& pub);
 //        bool verify_sign(std::string &message, std::map<std::string, std::string> & exten_info, std::string origin_node);
 
-class service_module : public module
+class service_module
 {
 public:
-
     typedef std::function<void(void *)> task_functor;
     typedef std::queue<std::shared_ptr<dbc::network::message>> queue_type;
 
@@ -75,7 +74,7 @@ protected:
 
     virtual int32_t service_msg(std::shared_ptr<dbc::network::message> &msg);
 
-    virtual int32_t on_time_out(std::shared_ptr<core_timer> timer) override final;
+    virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
 
     virtual uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id);                         //period, unit: ms
 

@@ -13,7 +13,7 @@ constexpr int MIN_INIT_HTTP_SERVER_TIME = 5000;//ms
 constexpr int MAX_WAIT_HTTP_RESPONSE_TIME = 30000;//ms
 constexpr int MAX_SESSION_COUNT = 1024;
 
-class rest_api_service : public service_module, public dbc::network::http_request_event {
+class rest_api_service : public service_module, public dbc::network::http_request_event, public Singleton<rest_api_service> {
 public:
     rest_api_service() = default;
 
@@ -27,14 +27,14 @@ public:
 
     int32_t get_startup_time();
 
+    void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
+
 protected:
     void init_timer() override;
 
     void init_invoker() override;
 
     void init_subscription() override;
-
-    void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
 
     bool check_invalid_http_request(std::shared_ptr<dbc::network::http_request> &hreq);
 

@@ -481,7 +481,7 @@ namespace dbc
 
             //notify this to service layer
             LOG_DEBUG << "error_notify: " << get_remote_addr().address().to_string() << ":" << get_remote_addr().port() << "--" << m_sid.to_string();
-            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+            topic_manager::instance().publish<int32_t>(msg->get_name(), msg);
         }
 
         bool tcp_socket_channel::is_channel_ready()

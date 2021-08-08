@@ -1,45 +1,64 @@
 ﻿#include <functional>
 #include <chrono>
 #include "log/log.h"
-#include "server/start_up.h"
-#include "server/dbc_server_initiator.h"
-#include "server/server_initiator_factory.h"
+#include <csignal>
+#include "server/server.h"
 
 high_resolution_clock::time_point server_start_time;
-//std::map< std::string, std::shared_ptr<ai::dbc::ai_training_task> > m_running_tasks;
-//define how to create initiator
-server_initiator * create_initiator()
+std::unique_ptr<server> g_server(new server());
+
+void signal_usr1_handler(int)
 {
-    return new dbc_server_initiator();
+    g_server->exit();
+    close(STDIN_FILENO);
 }
 
-//prepare for main task
-int pre_main_task()
+void register_signal_function(int signal, void(*handler)(int))
 {
-    //start time point
-    server_start_time = high_resolution_clock::now();
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(signal, &sa, nullptr);
+}
 
-    //init log
-    int32_t ret = log::init();
-    if (ret != E_SUCCESS)
-    {
-        return ret;
-    }
+void init_signal()
+{
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
+    //signal(SIGHUP, SIG_IGN);  // dbc in daemon process alwasy ignore SIGHUP; and dbc client in normal process should terminate with SIGHUP.
+    //signal(SIGTTIN, SIG_IGN);
+    //signal(SIGTTOU, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);  // ignore job control signal, e.g. Ctrl-z
 
-    //bind init creator
-    LOG_INFO << "------dbc is starting------";
-    server_initiator_factory::bind_creator(create_functor_type(create_initiator));
-
-    return 0;
+    register_signal_function(SIGUSR1, signal_usr1_handler);
 }
 
 int main(int argc, char* argv[])
 {
-    int32_t ret = pre_main_task();
+    init_signal();
+
+    server_start_time = high_resolution_clock::now();
+
+    int32_t ret = log::init();
     if (ret != E_SUCCESS)
     {
-        return ret;
+        return 0;
     }
 
-    return main_task(argc, argv);
+    int result = g_server->init(argc, argv);
+    if (E_SUCCESS != result)
+    {
+        LOG_ERROR << "server init exited, error code: " << result;
+        g_server->exit();
+        return 0;
+    }
+
+    g_server->idle();
+    LOG_INFO << "dbc start to exit...";
+    g_server->exit();
+
+    LOG_DEBUG << "------dbc shut down------";
+    return 0;
 }

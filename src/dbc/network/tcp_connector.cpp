@@ -166,7 +166,7 @@ namespace dbc
             
             ////modify by regulus:add_channel after channer start
             //add to connection manager
-            int32_t ret = CONNECTION_MANAGER->add_channel(m_sid, m_client_channel);
+            int32_t ret = connection_manager::instance().add_channel(m_sid, m_client_channel);
             if (E_SUCCESS != ret)
             {
                 LOG_ERROR << "tcp connector on connect error, add channel failed";
@@ -194,7 +194,7 @@ namespace dbc
             auto send_msg = std::dynamic_pointer_cast<message>(msg);
 
             //notify this to service layer
-            TOPIC_MANAGER->publish<int32_t>(msg->get_name(), send_msg);
+            topic_manager::instance().publish<int32_t>(msg->get_name(), send_msg);
         }
 
 

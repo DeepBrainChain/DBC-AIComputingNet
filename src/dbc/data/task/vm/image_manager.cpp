@@ -1,4 +1,3 @@
-#include "../container/container_client.h"
 #include "image_manager.h"
 #include "util/crypto/utilstrencodings.h"
 #include "log/log.h"

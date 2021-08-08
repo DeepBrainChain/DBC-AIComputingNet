@@ -143,7 +143,7 @@ void matrix_client_socket_channel_handler::send_shake_hand_req()
     std::shared_ptr<dbc::shake_hand_req> req_content = std::make_shared<dbc::shake_hand_req>();
 
     //header
-    req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
     req_content->header.__set_msg_name(SHAKE_HAND_REQ);
 
     req_msg->set_content(req_content);

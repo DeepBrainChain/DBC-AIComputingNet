@@ -4,7 +4,7 @@
 #include "service_module/service_message_id.h"
 #include "server/server.h"
 
-tick_type timer_matrix_manager::m_cur_tick = {0};
+std::atomic<std::uint64_t> timer_matrix_manager::m_cur_tick = {0};
 
 timer_matrix_manager::timer_matrix_manager()
     : m_timer_group(new dbc::network::nio_loop_group())
@@ -27,25 +27,6 @@ int32_t  timer_matrix_manager::init(bpo::variables_map &options)
 int32_t timer_matrix_manager::start()
 {
     m_timer = std::make_shared<steady_timer>(*(m_timer_group->get_io_service()));
-
-    //auto self(shared_from_this());
-    //m_timer_handler = [this, self](const boost::system::error_code & error)
-    //{
-    //    if (boost::asio::error::operation_aborted == error)
-    //    {
-    //        LOG_DEBUG << "timer matrix manager timer error: aborted";
-    //        return;
-    //    }
-    //
-    //    ++m_cur_tick;
-    //
-    //    //publish notification
-    //    std::shared_ptr<message> msg = make_time_tick_notification();
-    //    TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
-    //
-    //    //next
-    //    start_timer();
-    //};
 
     //start thread
     int32_t ret = m_timer_group->start();
@@ -75,17 +56,12 @@ int32_t  timer_matrix_manager::exit()
 
 void timer_matrix_manager::start_timer()
 {
-    //assert(nullptr != m_timer_handler);
-
     //start tick timer
     m_timer->expires_from_now(std::chrono::milliseconds(DEFAULT_TIMER_INTERVAL));
     //m_timer->async_wait(m_timer_handler);
     m_timer->async_wait(boost::bind(&timer_matrix_manager::on_timer_expired,
                                     shared_from_this(), boost::asio::placeholders::error));
-
-    //LOG_DEBUG << "timer matrix manager start timer: " << DEFAULT_TIMER_INTERVAL << "ms";
 }
-
 
 void timer_matrix_manager::on_timer_expired(const boost::system::error_code& error)
 {
@@ -99,11 +75,10 @@ void timer_matrix_manager::on_timer_expired(const boost::system::error_code& err
 
     //publish notification
     std::shared_ptr<dbc::network::message> msg = make_time_tick_notification();
-    TOPIC_MANAGER->publish<int32_t>(msg->get_name(), msg);
+    topic_manager::instance().publish<int32_t>(msg->get_name(), msg);
 
     //next
     start_timer();
-
 }
 
 void timer_matrix_manager::stop_timer()
@@ -135,4 +110,3 @@ std::shared_ptr<dbc::network::message> timer_matrix_manager::make_time_tick_noti
 
     return msg;
 }
-

@@ -72,11 +72,11 @@ namespace dbc
         //htonll
         inline uint64_t htonll(uint64_t val)
         {
-            if (env_manager::get_endian_type() == little_endian)
+            if (env_manager::instance().get_endian_type() == little_endian)
             {
                 return (((unsigned long long)htonl((int)((val << 32) >> 32))) << 32) | (unsigned int)htonl((int)(val >> 32));
             }
-            else if (env_manager::get_endian_type() == big_endian)
+            else if (env_manager::instance().get_endian_type() == big_endian)
             {
                 return val;
             }
@@ -89,11 +89,11 @@ namespace dbc
         //ntohll
         inline uint64_t ntohll(uint64_t val)
         {
-            if (env_manager::get_endian_type() == little_endian)
+            if (env_manager::instance().get_endian_type() == little_endian)
             {
                 return (((unsigned long long)ntohl((int)((val << 32) >> 32))) << 32) | (unsigned int)ntohl((int)(val >> 32));
             }
-            else if (env_manager::get_endian_type() == big_endian)
+            else if (env_manager::instance().get_endian_type() == big_endian)
             {
                 return val;
             }

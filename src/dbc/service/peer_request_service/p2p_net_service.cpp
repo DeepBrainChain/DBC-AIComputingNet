@@ -84,16 +84,16 @@ void p2p_net_service::init_invoker() {
 }
 
 void p2p_net_service::init_subscription() {
-    TOPIC_MANAGER->subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-    TOPIC_MANAGER->subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
 
-    TOPIC_MANAGER->subscribe(VER_REQ, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-    TOPIC_MANAGER->subscribe(VER_RESP, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(VER_REQ, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(VER_RESP, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
 
-    TOPIC_MANAGER->subscribe(typeid(cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(typeid(cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
 
-    TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-    TOPIC_MANAGER->subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    topic_manager::instance().subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
 }
 
 int32_t p2p_net_service::service_init(bpo::variables_map &options) {
@@ -150,7 +150,7 @@ int32_t p2p_net_service::init_conf() {
     port_validator port_vdr;
 
     //get listen ip and port conf
-    const std::string &host_ip = CONF_MANAGER->get_host_ip();
+    const std::string &host_ip = conf_manager::instance().get_host_ip();
     val.value() = host_ip;
     if (!ip_vdr.validate(val)) {
         LOG_ERROR << "p2p_net_service init_conf invalid host ip: " << host_ip;
@@ -159,7 +159,7 @@ int32_t p2p_net_service::init_conf() {
         m_host_ip = host_ip;
     }
 
-    std::string s_port = CONF_MANAGER->get_net_listen_port();
+    std::string s_port = conf_manager::instance().get_net_listen_port();
     val.value() = s_port;
     if (!port_vdr.validate(val)) {
         LOG_ERROR << "p2p_net_service init_conf invalid net port: " << s_port;
@@ -175,12 +175,12 @@ int32_t p2p_net_service::init_conf() {
     }
 
     //dns seeds
-    m_dns_seeds.insert(m_dns_seeds.begin(), CONF_MANAGER->get_dns_seeds().begin(),
-                       CONF_MANAGER->get_dns_seeds().end());
+    m_dns_seeds.insert(m_dns_seeds.begin(), conf_manager::instance().get_dns_seeds().begin(),
+                       conf_manager::instance().get_dns_seeds().end());
 
     //hard_code_seeds
-    m_hard_code_seeds.insert(m_hard_code_seeds.begin(), CONF_MANAGER->get_hard_code_seeds().begin(),
-                             CONF_MANAGER->get_hard_code_seeds().end());
+    m_hard_code_seeds.insert(m_hard_code_seeds.begin(), conf_manager::instance().get_hard_code_seeds().begin(),
+                             conf_manager::instance().get_hard_code_seeds().end());
 
     return E_SUCCESS;
 }
@@ -191,7 +191,7 @@ int32_t p2p_net_service::init_db() {
     options.create_if_missing = true;
     try {
         //get db path
-        fs::path task_db_path = env_manager::get_db_path();
+        fs::path task_db_path = env_manager::instance().get_db_path();
         if (false == fs::exists(task_db_path)) {
             LOG_DEBUG << "db directory path does not exist and create db directory";
             fs::create_directory(task_db_path);
@@ -306,7 +306,7 @@ int32_t p2p_net_service::init_acceptor() {
 
     //net
     LOG_INFO << "p2p net service init net, ip: " << m_host_ip << " port: " << m_net_listen_port;
-    ret = CONNECTION_MANAGER->start_listen(ep, &matrix_server_socket_channel_handler::create);
+    ret = dbc::network::connection_manager::instance().start_listen(ep, &matrix_server_socket_channel_handler::create);
     if (E_SUCCESS != ret) {
         LOG_ERROR << "p2p net service init net error, ip: " << m_host_ip << " port: " << m_net_listen_port;
         return ret;
@@ -324,7 +324,7 @@ int32_t p2p_net_service::init_connector(bpo::variables_map &options) {
     //peer address from peer.conf
     //peer address=117.30.51.196:11107
     //peer address=1050:0:0:0:5:600:300c:326b:11107
-    const std::vector<std::string> &peer_conf_addresses = CONF_MANAGER->get_peers();
+    const std::vector<std::string> &peer_conf_addresses = conf_manager::instance().get_peers();
 
     //merge peer addresses
     std::vector<std::string> peer_addresses; //(cmd_addresses.size() + peer_conf_addresses.size());
@@ -388,7 +388,7 @@ int32_t p2p_net_service::init_connector(bpo::variables_map &options) {
                 continue;
             }
 
-            int32_t ret = CONNECTION_MANAGER->start_connect(ep, &matrix_client_socket_channel_handler::create);
+            int32_t ret = dbc::network::connection_manager::instance().start_connect(ep, &matrix_client_socket_channel_handler::create);
             if (E_SUCCESS != ret) {
                 LOG_ERROR << "matrix init connector invalid peer address, ip: " << ip << " port: " << str_port;
                 continue;
@@ -491,7 +491,7 @@ int32_t p2p_net_service::on_timer_check_peer_candidates(std::shared_ptr<core_tim
                 }
 
                 //case: my own node id and addr in list
-                if (CONF_MANAGER->get_node_id() == candidate->node_id) {
+                if (conf_manager::instance().get_node_id() == candidate->node_id) {
                     candidate->net_st = ns_zombie;
                     continue;
                 }
@@ -500,7 +500,7 @@ int32_t p2p_net_service::on_timer_check_peer_candidates(std::shared_ptr<core_tim
                 LOG_INFO << "on_timer start_connect_peer_node => addr:" << candidate->tcp_ep.address().to_string() << ":"
                          << candidate->tcp_ep.port() << ", " << "node_id:" << candidate->node_id;
 
-                int32_t ret = CONNECTION_MANAGER->start_connect(candidate->tcp_ep,
+                int32_t ret = dbc::network::connection_manager::instance().start_connect(candidate->tcp_ep,
                                                                 &matrix_client_socket_channel_handler::create);
                 new_conn_cnt++;
 
@@ -570,7 +570,7 @@ int32_t p2p_net_service::on_timer_dyanmic_adjust_network(std::shared_ptr<core_ti
             LOG_DEBUG << "p2p net service dynamic disconnect peer node: " << node->m_id
                       << node->m_sid.to_string();
             m_peer_nodes_map.erase(node->m_id);
-            CONNECTION_MANAGER->stop_channel(
+            dbc::network::connection_manager::instance().stop_channel(
                     node->m_sid);         //whether should set ip candidates with available status if not will be erase from candidates
 
             //get connect candidate
@@ -668,7 +668,7 @@ bool p2p_net_service::add_peer_node(std::shared_ptr<dbc::network::message> &msg)
         return false;
     }
 
-    if (CONF_MANAGER->get_node_id() == nid) {
+    if (conf_manager::instance().get_node_id() == nid) {
         LOG_DEBUG << "node id of my own: " << nid;
         return false;
     }
@@ -679,7 +679,7 @@ bool p2p_net_service::add_peer_node(std::shared_ptr<dbc::network::message> &msg)
     }
 
     tcp::endpoint ep;
-    auto ptr_ch = CONNECTION_MANAGER->get_channel(sid);
+    auto ptr_ch = dbc::network::connection_manager::instance().get_channel(sid);
     if (!ptr_ch) {
         LOG_ERROR << "not find in connected channels: " << sid.to_string();
         return false;
@@ -792,13 +792,13 @@ int32_t p2p_net_service::on_ver_req(std::shared_ptr<dbc::network::message> &msg)
     if (!add_peer_node(msg)) {
         LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed."
                   << " p2p net service stop channel" << msg->header.src_sid.to_string();
-        CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+        dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
         return E_DEFAULT;
     }
 
     if (req_content->header.exten_info.count("capacity")) {
         LOG_DEBUG << "save remote peer's capacity " << req_content->header.exten_info["capacity"];
-        CONNECTION_MANAGER->set_proto_capacity(msg->header.src_sid,
+        dbc::network::connection_manager::instance().set_proto_capacity(msg->header.src_sid,
                                                req_content->header.exten_info["capacity"]);
     }
 
@@ -815,37 +815,37 @@ int32_t p2p_net_service::on_ver_req(std::shared_ptr<dbc::network::message> &msg)
     std::shared_ptr<dbc::ver_resp> resp_content = std::make_shared<dbc::ver_resp>();
 
     //header
-    resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    resp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     resp_content->header.__set_msg_name(VER_RESP);
     resp_content->header.__set_nonce(util::create_nonce());
 
     //capacity
     std::map<std::string, std::string> exten_info;
-    exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
+    exten_info["capacity"] = conf_manager::instance().get_proto_capacity().to_string();
 
 
     //body
-    resp_content->body.__set_node_id(CONF_MANAGER->get_node_id());
+    resp_content->body.__set_node_id(conf_manager::instance().get_node_id());
     resp_content->body.__set_core_version(CORE_VERSION);
     resp_content->body.__set_protocol_version(PROTOCO_VERSION);
 
     std::string sign_msg = boost::str(
-            boost::format("%s%s%d%d") % resp_content->header.nonce % CONF_MANAGER->get_node_id() %
+            boost::format("%s%s%d%d") % resp_content->header.nonce % conf_manager::instance().get_node_id() %
             CORE_VERSION % PROTOCO_VERSION);
 
-    std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
     exten_info["sign_algo"] = ECDSA;
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
     resp_content->header.__set_exten_info(exten_info);
 
     resp_msg->set_content(resp_content);
     resp_msg->set_name(VER_RESP);
     resp_msg->header.dst_sid = msg->header.src_sid;
 
-    CONNECTION_MANAGER->send_message(resp_msg->header.dst_sid, resp_msg);
+    dbc::network::connection_manager::instance().send_message(resp_msg->header.dst_sid, resp_msg);
 
     return E_SUCCESS;
 }
@@ -875,7 +875,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
               << ", core_ver=" << resp_content->body.core_version
               << ", protocol_ver=" << resp_content->body.protocol_version;
 
-    auto ch = CONNECTION_MANAGER->get_channel(msg->header.src_sid);
+    auto ch = dbc::network::connection_manager::instance().get_channel(msg->header.src_sid);
     auto tcp_ch = std::dynamic_pointer_cast<dbc::network::tcp_socket_channel>(ch);
     if (nullptr == ch || nullptr == tcp_ch) {
         LOG_ERROR << "p2p net service on ver resp get channel error," << msg->header.src_sid.to_string()
@@ -902,7 +902,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
             candidate->net_st = ns_available;
         }
 
-        CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+        dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
         return E_SUCCESS;
     }
 
@@ -911,7 +911,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
         LOG_ERROR << "add node: " << resp_content->body.node_id << " failed.";
 
         LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
-        CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+        dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
 
         return E_DEFAULT;
     }
@@ -921,7 +921,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
 
     if (resp_content->header.exten_info.count("capacity")) {
         LOG_DEBUG << "save remote peer's capacity " << resp_content->header.exten_info["capacity"];
-        CONNECTION_MANAGER->set_proto_capacity(msg->header.src_sid,
+        dbc::network::connection_manager::instance().set_proto_capacity(msg->header.src_sid,
                                                resp_content->header.exten_info["capacity"]);
     }
 
@@ -990,8 +990,8 @@ int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc:
     if (nullptr == candidate) {
         LOG_ERROR << "a client tcp connection established, but not in peer candidate: "
                   << notification_content->ep.address() << ":" << notification_content->ep.port();
-        CONNECTION_MANAGER->release_connector(msg->header.src_sid);
-        CONNECTION_MANAGER->stop_channel(msg->header.src_sid);
+        dbc::network::connection_manager::instance().release_connector(msg->header.src_sid);
+        dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
         return E_DEFAULT;
     }
 
@@ -1005,16 +1005,16 @@ int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc:
         std::shared_ptr<dbc::ver_req> req_content = std::make_shared<dbc::ver_req>();
 
         //header
-        req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+        req_content->header.__set_magic(conf_manager::instance().get_net_flag());
         req_content->header.__set_msg_name(VER_REQ);
         req_content->header.__set_nonce(util::create_nonce());
 
         //capacity
         std::map<std::string, std::string> exten_info;
-        exten_info["capacity"] = CONF_MANAGER->get_proto_capacity().to_string();
+        exten_info["capacity"] = conf_manager::instance().get_proto_capacity().to_string();
 
         //body
-        req_content->body.__set_node_id(CONF_MANAGER->get_node_id());
+        req_content->body.__set_node_id(conf_manager::instance().get_node_id());
         req_content->body.__set_core_version(CORE_VERSION);
         req_content->body.__set_protocol_version(PROTOCO_VERSION);
         req_content->body.__set_time_stamp(std::time(nullptr));
@@ -1031,15 +1031,15 @@ int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc:
         req_content->body.__set_start_height(0);              //later
 
         std::string sign_msg = boost::str(
-                boost::format("%s%s%d%d") % req_content->header.nonce % CONF_MANAGER->get_node_id() %
+                boost::format("%s%s%d%d") % req_content->header.nonce % conf_manager::instance().get_node_id() %
                 CORE_VERSION % PROTOCO_VERSION);
 
-        std::string sign = util::sign(sign_msg, CONF_MANAGER->get_node_private_key());
+        std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
         exten_info["sign"] = sign;
         exten_info["sign_algo"] = ECDSA;
         time_t cur = std::time(nullptr);
         exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-        exten_info["origin_id"] = CONF_MANAGER->get_node_id();
+        exten_info["origin_id"] = conf_manager::instance().get_node_id();
 
         req_content->header.__set_exten_info(exten_info);
 
@@ -1053,14 +1053,14 @@ int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc:
                  << " local_sid: " << msg->header.dst_sid.to_string()
                  << ", remote_sid: " << msg->header.src_sid.to_string();
 
-        CONNECTION_MANAGER->send_message(req_msg->header.dst_sid, req_msg);
+        dbc::network::connection_manager::instance().send_message(req_msg->header.dst_sid, req_msg);
     } else {
         //update peer candidate info
         candidate->last_conn_tm = time(nullptr);        //time resume after connection finished.
         candidate->net_st = ns_failed;
     }
 
-    CONNECTION_MANAGER->release_connector(msg->header.src_sid);
+    dbc::network::connection_manager::instance().release_connector(msg->header.src_sid);
     return E_SUCCESS;
 }
 
@@ -1080,7 +1080,7 @@ int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<dbc::network:
         LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";
         cmd_resp->result = E_DEFAULT;
         cmd_resp->result_info = "internal error";
-        TOPIC_MANAGER->publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
+        topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
 
         return E_DEFAULT;
     }
@@ -1118,7 +1118,7 @@ int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<dbc::network:
         }
     }
 
-    TOPIC_MANAGER->publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
+    topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
 
     return E_SUCCESS;
 }
@@ -1155,14 +1155,14 @@ int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<dbc::network::mes
         resp_msg->header.dst_sid = msg->header.src_sid;
         auto resp_content = std::make_shared<matrix::service_core::get_peer_nodes_resp>();
         //header
-        resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+        resp_content->header.__set_magic(conf_manager::instance().get_net_flag());
         resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
         resp_content->header.__set_nonce(id_generator::generate_nonce());
 
         for (uint32_t peer_cnt = 0; (it != m_peer_nodes_map.end()) && (peer_cnt < max_peer_cnt_per_pack); ++it)
         {
             //body
-            if (it->second->m_id == CONF_MANAGER->get_node_id())
+            if (it->second->m_id == conf_manager::instance().get_node_id())
             {
                 resp_msg->header.src_sid = it->second->m_sid;
                 continue;
@@ -1176,7 +1176,7 @@ int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<dbc::network::mes
 
         resp_msg->set_content(resp_content);
 
-        CONNECTION_MANAGER->send_message(msg->header.src_sid, resp_msg);
+        dbc::network::connection_manager::instance().send_message(msg->header.src_sid, resp_msg);
     }
 #endif
 
@@ -1283,14 +1283,14 @@ int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<dbc::network::me
 
 int32_t p2p_net_service::send_get_peer_nodes() {
     std::shared_ptr<dbc::get_peer_nodes_req> req_content = std::make_shared<dbc::get_peer_nodes_req>();
-    req_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
     req_content->header.__set_msg_name(P2P_GET_PEER_NODES_REQ);
     req_content->header.__set_nonce(util::create_nonce());
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(P2P_GET_PEER_NODES_REQ);
     req_msg->set_content(req_content);
-    CONNECTION_MANAGER->broadcast_message(req_msg);
+    dbc::network::connection_manager::instance().broadcast_message(req_msg);
 
     return E_SUCCESS;
 }
@@ -1303,7 +1303,7 @@ int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
     std::shared_ptr<dbc::get_peer_nodes_resp> resp_content = std::make_shared<dbc::get_peer_nodes_resp>();
 
     //header
-    resp_content->header.__set_magic(CONF_MANAGER->get_net_flag());
+    resp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
     resp_content->header.__set_nonce(util::create_nonce());
 
@@ -1316,7 +1316,7 @@ int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
         resp_content->body.peer_nodes_list.push_back(std::move(info));
         resp_msg->set_content(resp_content);
 
-        CONNECTION_MANAGER->send_message(node->m_sid, resp_msg);
+        dbc::network::connection_manager::instance().send_message(node->m_sid, resp_msg);
     } else// broadcast all nodes
     {
         int count = 0;
@@ -1366,7 +1366,7 @@ int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
                       << resp_content->body.peer_nodes_list.size();
 
             resp_msg->set_content(resp_content);
-            CONNECTION_MANAGER->broadcast_message(resp_msg);
+            dbc::network::connection_manager::instance().broadcast_message(resp_msg);
         } else {
             return E_DEFAULT;
         }
@@ -1535,8 +1535,8 @@ int32_t p2p_net_service::clear_peer_candidates_db() {
 int32_t p2p_net_service::add_dns_seeds() {
     try {
         if (m_dns_seeds.empty()) {
-            m_dns_seeds.insert(m_dns_seeds.begin(), CONF_MANAGER->get_dns_seeds().begin(),
-                               CONF_MANAGER->get_dns_seeds().end());
+            m_dns_seeds.insert(m_dns_seeds.begin(), conf_manager::instance().get_dns_seeds().begin(),
+                               conf_manager::instance().get_dns_seeds().end());
         }
 
         //get dns seeds
@@ -1558,7 +1558,7 @@ int32_t p2p_net_service::add_dns_seeds() {
             LOG_DEBUG << "p2p net service add dns candidate: " << dns_seed << ", ip: "
                       << it->endpoint().address().to_string();
 
-            tcp::endpoint ep(it->endpoint().address(), CONF_MANAGER->get_net_default_port());
+            tcp::endpoint ep(it->endpoint().address(), conf_manager::instance().get_net_default_port());
             add_peer_candidate(ep, ns_idle, SEED_NODE);
         }
     }
@@ -1592,7 +1592,7 @@ uint32_t p2p_net_service::start_connect(const tcp::endpoint tcp_ep) {
 
         //start connect
         if (E_SUCCESS !=
-            CONNECTION_MANAGER->start_connect(tcp_ep, &matrix_client_socket_channel_handler::create)) {
+            dbc::network::connection_manager::instance().start_connect(tcp_ep, &matrix_client_socket_channel_handler::create)) {
             LOG_ERROR << "matrix init connector invalid peer address, ip: " << tcp_ep.address() << " port: "
                       << tcp_ep.port();
             return E_DEFAULT;
@@ -1714,7 +1714,7 @@ void p2p_net_service::advertise_local(tcp::endpoint tcp_ep, dbc::network::socket
 
     std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
 
-    node->m_id = CONF_MANAGER->get_node_id();
+    node->m_id = conf_manager::instance().get_node_id();
     node->m_live_time = time(nullptr);
     node->m_peer_addr = tcp::endpoint(tcp_ep.address(), m_net_listen_port);
     node->m_sid = sid;

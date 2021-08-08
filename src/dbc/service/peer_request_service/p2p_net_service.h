@@ -17,7 +17,7 @@ using namespace boost::asio::ip;
 #define MIN_NORMAL_AVAILABLE_NODE_COUNT          2
 #define DISCONNECT_NODE_PER_MINUTES              5
 
-class p2p_net_service : public service_module {
+class p2p_net_service : public service_module, public Singleton<p2p_net_service> {
     using peer_list_type = typename std::list<std::shared_ptr<peer_node>>;
     using peer_map_type = typename std::unordered_map<std::string, std::shared_ptr<peer_node>>;
 
@@ -25,8 +25,6 @@ public:
     p2p_net_service();
 
     ~p2p_net_service() override = default;
-
-    std::string module_name() const override { return p2p_service_name; }
 
     std::string get_host_ip() const { return m_host_ip; }
 
