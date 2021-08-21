@@ -52,7 +52,7 @@ namespace check_kvm {
 
     EVmStatus GetDomainStatus(const std::string& domain_name);
 
-    void test_kvm();
+    void test_kvm(int argc, char** argv);
 }
 
 #endif //DBCPROJ_CHECK_KVM_H

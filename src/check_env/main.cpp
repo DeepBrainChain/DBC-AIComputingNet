@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
 
     SystemResourceManager::instance().Init();
 
-    check_kvm::test_kvm();
+    check_kvm::test_kvm(argc, argv);
 
     return 0;
 }

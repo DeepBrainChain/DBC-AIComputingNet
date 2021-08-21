@@ -3,6 +3,7 @@
 #include <sstream>
 #include <uuid/uuid.h>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 #include "util/SystemResourceManager.h"
 #include <sys/sysinfo.h>
 
@@ -713,8 +714,8 @@ namespace check_kvm {
             if (UndefineDomain(domain_name)) {
                 delete_image_file(domain_name, image_name);
                 delete_disk_file(domain_name);
-                //if (!vm_local_ip.empty())
-                //    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                if (!vm_local_ip.empty())
+                    delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                 std::cout << "delete task " << domain_name << " successful" << std::endl;
             } else {
@@ -726,8 +727,8 @@ namespace check_kvm {
                 if (UndefineDomain(domain_name)) {
                     delete_image_file(domain_name, image_name);
                     delete_disk_file(domain_name);
-                    //if (!vm_local_ip.empty())
-                    //    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                    if (!vm_local_ip.empty())
+                        delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                     std::cout << "delete task " << domain_name << " successful" << std::endl;
                 } else {
@@ -810,20 +811,21 @@ namespace check_kvm {
         }
     }
 
-    void test_kvm() {
-        std::string domain_name = "dbc_check_env_vm_x";
+    void test_kvm(int argc, char** argv) {
+        std::string domain_name = "domain_test";
         std::string image_name = "ubuntu.qcow2";
 
         std::string ssh_port = "6789";
 
-        int sockets = 2;
-        int cores = 5;
-        int threads = 2;
+        const ::DeviceCpu& cpus = SystemResourceMgr::instance().GetCpu();
+        int sockets = cpus.sockets;
+        int cores = cpus.cores_per_socket - 1;
+        int threads = cpus.threads_per_core;
 
         struct sysinfo info{};
         sysinfo(&info);
         int64_t memory_total = info.totalram/1024;
-        memory_total *= 0.1;
+        memory_total *= 0.1; //-= 32 * 1024 * 1024;
 
         std::string cmd = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' | awk '{print $1}' |tr \"\n\" \"|\"";
         std::string vga_gpu = run_shell(cmd.c_str());
@@ -834,6 +836,28 @@ namespace check_kvm {
             return;
         }
         std::cout << "public_ip: " << public_ip << std::endl;
+
+        {
+            boost::program_options::options_description opts("dbc command options");
+            opts.add_options()
+            ("localip", boost::program_options::value<std::string>(), "");
+
+            try {
+                boost::program_options::variables_map vm;
+                boost::program_options::store(boost::program_options::parse_command_line(argc, argv, opts), vm);
+                boost::program_options::notify(vm);
+
+                if (vm.count("localip")) {
+                    delete_domain(domain_name, image_name, public_ip, ssh_port, vm["localip"].as<std::string>());
+                    return;
+                }
+            }
+            catch (const std::exception &e) {
+                std::cout << "invalid command option " << e.what() << std::endl;
+                std::cout << opts;
+                return;
+            }
+        }
 
         pre_check(domain_name, image_name, public_ip, ssh_port);
 
@@ -852,13 +876,13 @@ namespace check_kvm {
                 } else {
                     std::cout << "vm_local_ip: " << vm_local_ip << std::endl;
 
-                    //transform_port(public_ip, ssh_port, vm_local_ip);
+                    transform_port(public_ip, ssh_port, vm_local_ip);
 
                     if (!set_vm_password(domain_name, "dbc", "vm123456")) {
                         std::cout << "set_vm_password failed" << std::endl;
                         delete_image_file(domain_name, image_name);
                         delete_disk_file(domain_name);
-                        //delete_iptable(public_ip, ssh_port, vm_local_ip);
+                        delete_iptable(public_ip, ssh_port, vm_local_ip);
 
                         print_red("check vm %s failed", domain_name.c_str());
                     } else {
@@ -866,14 +890,17 @@ namespace check_kvm {
                     }
                 }
             } else {
+                delete_image_file(domain_name, image_name);
+                delete_disk_file(domain_name);
+
                 print_red("check vm %s failed", domain_name.c_str());
             }
 
             sleep(15);
 
-            delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
+            //delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
         } catch (...) {
-            delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
+            //delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
         }
     }
 }
