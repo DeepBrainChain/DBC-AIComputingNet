@@ -12,6 +12,8 @@
 #include "util/websocket_client.h"
 #include "../message/matrix_types.h"
 #include "data/session_id/sessionid_db.h"
+#include "data/service_info/service_info_collection.h"
+#include "data/node_info/node_info_collection.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
@@ -19,6 +21,7 @@
 #define AI_PRUNE_TASK_TIMER_INTERVAL                             (10 * 60 * 1000)                                                 //10min timer
 
 namespace bp = boost::process;
+using namespace boost::asio::ip;
 
 class node_request_service : public service_module, public Singleton<node_request_service> {
 public:
@@ -26,7 +29,11 @@ public:
 
     ~node_request_service() override = default;
 
+    int32_t init(bpo::variables_map &options);
+
 protected:
+    void add_self_to_servicelist(bpo::variables_map &options);
+
     void init_timer() override;
 
     void init_invoker() override;
@@ -53,6 +60,8 @@ protected:
 
     int32_t on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg);
 
+    int32_t on_node_query_node_info_req(std::shared_ptr<dbc::network::message> &msg);
+
     int32_t task_create(const std::shared_ptr<dbc::node_create_task_req>& req);
 
     int32_t task_start(const std::shared_ptr<dbc::node_start_task_req>& req);
@@ -69,11 +78,27 @@ protected:
 
     int32_t task_list(const std::shared_ptr<dbc::node_list_task_req>& req);
 
+    int32_t query_node_info(const std::shared_ptr<dbc::node_query_node_info_req>& req);
+
+    // broadcast node service list
+    std::shared_ptr<dbc::network::message> create_service_broadcast_req_msg(const service_info_map& mp);
+
+    int32_t on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer);
+
+    int32_t on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg);
+
+
     int32_t on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg);
+
+    int32_t on_get_task_queue_size_resp(std::shared_ptr<dbc::network::message> &msg);
+
 
     int32_t on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
     int32_t on_prune_task_timer(const std::shared_ptr<core_timer>& timer);
+
+    int32_t on_timer_node_info_collection(const std::shared_ptr<core_timer>& timer);
+
 
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
 
@@ -94,6 +119,10 @@ private:
     void on_ws_msg(int32_t err_code, const std::string& msg);
 
 protected:
+    bool m_is_computing_node = false;
+
+    node_info_collection m_node_info_collection;
+
     TaskMgr m_task_scheduler;
 
     uint32_t m_training_task_timer_id = INVALID_TIMER_ID;

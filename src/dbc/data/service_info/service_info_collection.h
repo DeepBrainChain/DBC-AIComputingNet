@@ -2,7 +2,6 @@
 #define DBC_SERVICE_INFO_COLLECTION_H
 
 #include "util/utils.h"
-#include <boost/serialization/singleton.hpp>
 #include "service/message/matrix_types.h"
 #include "util/filter/simple_expression.h"
 
@@ -15,7 +14,7 @@ enum {
     MAX_STORED_SERVICE_INFO_NUM = 10000
 };
 
-class service_info_collection //: public singleton<service_info_collection>
+class service_info_collection : public Singleton<service_info_collection>
 {
 public:
     service_info_collection() = default;

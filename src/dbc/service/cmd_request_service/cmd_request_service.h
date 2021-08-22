@@ -5,8 +5,8 @@
 #include "service_module/service_module.h"
 #include "../message/cmd_message.h"
 #include "util/LruCache.hpp"
-
-namespace fs = boost::filesystem;
+#include "data/service_info/service_info_collection.h"
+#include "service/message/matrix_types.h"
 
 class cmd_request_service : public service_module, public Singleton<cmd_request_service> {
 public:
@@ -103,6 +103,15 @@ protected:
     int32_t on_node_modify_task_rsp(std::shared_ptr<dbc::network::message> &msg);
 
     int32_t on_node_modify_task_timer(const std::shared_ptr<core_timer> &timer);
+
+    // list node
+    std::shared_ptr<dbc::network::message> create_node_query_node_info_req_msg(const std::shared_ptr<::cmd_list_node_req> &cmd_req);
+
+    int32_t on_cmd_query_node_info_req(std::shared_ptr<dbc::network::message> &msg);
+
+    int32_t on_node_query_node_info_rsp(std::shared_ptr<dbc::network::message> &msg);
+
+    int32_t on_node_query_node_info_timer(const std::shared_ptr<core_timer>& timer);
 
 
     int32_t on_binary_forward(std::shared_ptr<dbc::network::message> &msg);

@@ -49,7 +49,7 @@
 #include "validator/port_validator.h"
 #include "validator/url_validator.h"
 
-
+namespace fs = boost::filesystem;
 
 //using namespace boost::asio::ip;
 

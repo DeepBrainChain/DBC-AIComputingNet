@@ -51,6 +51,7 @@ set(service_src_dir
         dbc/config
         dbc/data
         dbc/data/node_info
+        dbc/data/service_info
         dbc/data/resource
         dbc/data/session_id
         dbc/data/task

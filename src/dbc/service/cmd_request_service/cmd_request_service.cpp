@@ -6,7 +6,6 @@
 #include "server/server.h"
 #include "config/conf_manager.h"
 #include "service_module/service_message_id.h"
-#include "../message/matrix_types.h"
 #include "../message/protocol_coder/matrix_coder.h"
 #include "../message/message_id.h"
 #include "log/log.h"
@@ -49,6 +48,9 @@ void cmd_request_service::init_subscription() {
     // modify task
     SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_modify_task_req).name())
     SUBSCRIBE_BUS_MESSAGE(NODE_MODIFY_TASK_RSP)
+    // list node
+    SUBSCRIBE_BUS_MESSAGE(typeid(::cmd_list_node_req).name())
+    SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_RSP)
 
     //forward binary message
     SUBSCRIBE_BUS_MESSAGE(BINARY_FORWARD_MSG);
@@ -83,6 +85,9 @@ void cmd_request_service::init_invoker() {
     // modify task
     BIND_MESSAGE_INVOKER(typeid(::cmd_modify_task_req).name(), &cmd_request_service::on_cmd_modify_task_req);
     BIND_MESSAGE_INVOKER(NODE_MODIFY_TASK_RSP, &cmd_request_service::on_node_modify_task_rsp);
+    // list node
+    BIND_MESSAGE_INVOKER(typeid(::cmd_list_node_req).name(), &cmd_request_service::on_cmd_query_node_info_req)
+    BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_RSP, &cmd_request_service::on_node_query_node_info_rsp)
 
     BIND_MESSAGE_INVOKER(BINARY_FORWARD_MSG, &cmd_request_service::on_binary_forward);
 }
@@ -106,6 +111,8 @@ void cmd_request_service::init_timer() {
     m_timer_invokers[NODE_LIST_TASK_TIMER] = std::bind(&cmd_request_service::on_node_list_task_timer, this, std::placeholders::_1);
     // modify task
     m_timer_invokers[NODE_MODIFY_TASK_TIMER] = std::bind(&cmd_request_service::on_node_modify_task_timer, this, std::placeholders::_1);
+    // list node
+    m_timer_invokers[NODE_QUERY_NODE_INFO_TIMER] = std::bind(&cmd_request_service::on_node_query_node_info_timer, this, std::placeholders::_1);
 }
 
 // create task
@@ -1575,6 +1582,177 @@ int32_t cmd_request_service::on_node_modify_task_rsp(std::shared_ptr<dbc::networ
 
 int32_t cmd_request_service::on_node_modify_task_timer(const std::shared_ptr<core_timer> &timer) {
 
+    return E_SUCCESS;
+}
+
+// list node
+std::shared_ptr<dbc::network::message> cmd_request_service::create_node_query_node_info_req_msg(const std::shared_ptr<::cmd_list_node_req> &cmd_req) {
+    auto req_content = std::make_shared<dbc::node_query_node_info_req>();
+    // header
+    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_msg_name(NODE_QUERY_NODE_INFO_REQ);
+    req_content->header.__set_nonce(util::create_nonce());
+    req_content->header.__set_session_id(cmd_req->header.session_id);
+    std::vector<std::string> path;
+    path.push_back(conf_manager::instance().get_node_id());
+    req_content->header.__set_path(path);
+    std::map<std::string, std::string> exten_info;
+    std::string sign_message = req_content->header.nonce + cmd_req->additional;
+    std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
+    if (signature.empty())  return nullptr;
+    exten_info["sign"] = signature;
+    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
+    req_content->header.__set_exten_info(exten_info);
+    // body
+    req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
+    req_content->body.__set_additional(cmd_req->additional);
+
+    auto req_msg = std::make_shared<dbc::network::message>();
+    req_msg->set_name(NODE_QUERY_NODE_INFO_REQ);
+    req_msg->set_content(req_content);
+
+    // 创建定时器
+    uint32_t timer_id = this->add_timer(NODE_QUERY_NODE_INFO_TIMER, conf_manager::instance().get_timer_dbc_request_in_millisecond(),
+                                        ONLY_ONE_TIME, req_content->header.session_id);
+    std::shared_ptr<service_session> session = std::make_shared<service_session>(timer_id, req_content->header.session_id);
+    variable_value v1;
+    v1.value() = req_msg;
+    session->get_context().add("req_msg", v1);
+
+    int32_t ret = this->add_session(session->get_session_id(), session);
+    if (E_SUCCESS != ret) {
+        this->remove_timer(timer_id);
+        LOG_ERROR << "add session failed";
+        return nullptr;
+    }
+
+    return req_msg;
+}
+
+int32_t cmd_request_service::on_cmd_query_node_info_req(std::shared_ptr<dbc::network::message> &msg)
+{
+    std::shared_ptr<::cmd_list_node_req> cmd_req_msg = std::dynamic_pointer_cast<::cmd_list_node_req>(msg->get_content());
+    if (cmd_req_msg == nullptr) {
+        LOG_ERROR << "cmd_req_msg is null";
+        return E_DEFAULT;
+    }
+
+    if (cmd_req_msg->peer_nodes_list.empty()) {
+        auto cmd_resp = std::make_shared<::cmd_list_node_rsp>();
+        cmd_resp->header.__set_session_id(cmd_req_msg->header.session_id);
+        cmd_resp->id_2_services = service_info_collection::instance().get_all();
+
+        topic_manager::instance().publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
+        return E_SUCCESS;
+    }
+    else {
+        auto node_req_msg = create_node_query_node_info_req_msg(cmd_req_msg);
+        if(node_req_msg == nullptr) {
+            auto cmd_resp = std::make_shared<::cmd_list_node_rsp>();
+            cmd_resp->result = E_DEFAULT;
+            cmd_resp->result_info = "create node request failed";
+            cmd_resp->header.__set_session_id(cmd_req_msg->header.session_id);
+
+            topic_manager::instance().publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
+            return E_DEFAULT;
+        }
+
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+            auto cmd_resp = std::make_shared<::cmd_list_node_rsp>();
+            cmd_resp->result = E_DEFAULT;
+            cmd_resp->result_info = "broadcast failed";
+            cmd_resp->header.__set_session_id(cmd_req_msg->header.session_id);
+
+            topic_manager::instance().publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
+            return E_DEFAULT;
+        }
+    }
+
+    return E_SUCCESS;
+}
+
+int32_t cmd_request_service::on_node_query_node_info_rsp(std::shared_ptr<dbc::network::message> &msg) {
+    if (!check_rsp_header(msg)) {
+        LOG_ERROR << "rsp header check failed";
+        return E_DEFAULT;
+    }
+
+    std::shared_ptr<dbc::node_query_node_info_rsp> rsp_content =
+            std::dynamic_pointer_cast<dbc::node_query_node_info_rsp>(msg->content);
+    if (!rsp_content) {
+        LOG_ERROR << "rsp is nullptr";
+        return E_DEFAULT;
+    }
+
+    if (!check_nonce(rsp_content->header.nonce)) {
+        LOG_ERROR << "nonce check error";
+        return E_DEFAULT;
+    }
+
+    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
+    if (!util::verify_sign(rsp_content->header.exten_info["sign"], sign_msg, rsp_content->header.exten_info["origin_id"])) {
+        LOG_ERROR << "verify sign failed";
+        return E_DEFAULT;
+    }
+
+    std::shared_ptr<service_session> session = get_session(rsp_content->header.session_id);
+    if (nullptr == session) {
+        dbc::network::connection_manager::instance().send_resp_message(msg);
+        return E_SUCCESS;
+    }
+
+    int32_t result = E_DEFAULT;
+    std::string result_msg;
+    std::map<std::string, std::string> kvs;
+    try {
+        result = rsp_content->body.result;
+        result_msg = rsp_content->body.result_msg;
+        kvs = rsp_content->body.kvs;
+    } catch (...) {
+        LOG_ERROR << "rsp body error";
+
+        result = E_DEFAULT;
+        result_msg = "rsp_body error";
+    }
+
+    std::shared_ptr<::cmd_list_node_rsp> cmd_rsp_msg = std::make_shared<::cmd_list_node_rsp>();
+    cmd_rsp_msg->header.__set_session_id(rsp_content->header.session_id);
+    cmd_rsp_msg->result = result;
+    cmd_rsp_msg->result_info = result_msg;
+    cmd_rsp_msg->kvs = kvs;
+    topic_manager::instance().publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_rsp_msg);
+
+    this->remove_timer(session->get_timer_id());
+    session->clear();
+    this->remove_session(session->get_session_id());
+    return E_SUCCESS;
+}
+
+int32_t cmd_request_service::on_node_query_node_info_timer(const std::shared_ptr<core_timer>& timer)
+{
+    if (nullptr == timer) {
+        LOG_ERROR << "null ptr";
+        return E_NULL_POINTER;
+    }
+
+    //get session
+    std::string session_id = timer->get_session_id();
+    std::shared_ptr<service_session> session = get_session(session_id);
+    if (nullptr == session) {
+        LOG_ERROR << "on_node_query_node_info_timer get session null: " << session_id;
+        return E_NULL_POINTER;
+    }
+
+    auto cmd_resp = std::make_shared<::cmd_list_node_rsp>();
+    cmd_resp->header.__set_session_id(session_id);
+    cmd_resp->result = E_DEFAULT;
+    cmd_resp->result_info = "list node timeout";
+    topic_manager::instance().publish<void>(typeid(::cmd_list_node_rsp).name(), cmd_resp);
+
+    session->clear();
+    remove_session(session_id);
     return E_SUCCESS;
 }
 
