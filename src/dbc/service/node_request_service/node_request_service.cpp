@@ -103,6 +103,7 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
         auto k = ATTRS[i];
         kvs[k] = m_node_info_collection.get(k);
     }
+    kvs["pub_key"] = conf_manager::instance().get_pub_key();
     info.__set_kvs(kvs);
 
     service_info_collection::instance().add(conf_manager::instance().get_node_id(), info);

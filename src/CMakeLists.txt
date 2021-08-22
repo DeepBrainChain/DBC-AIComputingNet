@@ -48,6 +48,7 @@ set(service_src_dir
         dbc/util/filter
         dbc/util/crypto
         dbc/util/crypto/ctaes
+        dbc/util/tweetnacl
         dbc/config
         dbc/data
         dbc/data/node_info

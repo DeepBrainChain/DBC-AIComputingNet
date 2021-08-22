@@ -92,6 +92,10 @@ public:
 
     const std::string & get_node_private_key() const {return m_node_private_key;}
 
+    const std::string & get_pub_key() const { return m_pub_key; }
+
+    const std::string & get_priv_key() const {return m_priv_key;}
+    
     static int32_t serialize_node_info(const util::machine_node_info &info);
 
     const int32_t & get_max_recv_speed()
@@ -143,6 +147,9 @@ private:
 
     std::string m_node_id;
     std::string m_node_private_key;
+
+    std::string m_pub_key;
+    std::string m_priv_key;
 
     std::string m_net_type;
     int32_t m_net_flag;

@@ -36,7 +36,7 @@ int32_t rest_api_service::init(bpo::variables_map &options) {
             {typeid(cmd_delete_task_rsp).name(), std::bind(&RestHandler::on_cmd_delete_task_rsp, &m_rest_handler, std::placeholders::_1, std::placeholders::_2)},
             {typeid(cmd_modify_task_rsp).name(), std::bind(&RestHandler::on_cmd_modify_task_rsp, &m_rest_handler, std::placeholders::_1, std::placeholders::_2)},
             {typeid(cmd_get_peer_nodes_rsp).name(), std::bind(&RestHandler::on_cmd_get_peer_nodes_rsp, &m_rest_handler, std::placeholders::_1, std::placeholders::_2)},
-            {typeid(cmd_list_node_rsp).name(), std::bind(&RestHandler::on_list_node_rsp, &m_rest_handler, std::placeholders::_1, std::placeholders::_2)}
+            {typeid(cmd_list_node_rsp).name(), std::bind(&RestHandler::on_cmd_list_node_rsp, &m_rest_handler, std::placeholders::_1, std::placeholders::_2)}
     };
 
     for (const auto &rsp_handler : rsp_handlers) {

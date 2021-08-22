@@ -67,7 +67,7 @@ public:
     // /mining_nodes/
     std::shared_ptr<dbc::network::message> rest_mining_nodes(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path);
 
-    int32_t on_list_node_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
+    int32_t on_cmd_list_node_rsp(const dbc::network::HTTP_REQ_CTX_PTR& hreq_context, std::shared_ptr<dbc::network::message> &resp_msg);
 
     // /config/
     std::shared_ptr<dbc::network::message> rest_config(const dbc::network::HTTP_REQUEST_PTR& httpReq, const std::string &path);

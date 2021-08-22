@@ -7,6 +7,9 @@
 #include <boost/format.hpp>
 #include "network/protocol/thrift_compact.h"
 #include "log/log.h"
+#include "util/tweetnacl/randombytes.h"
+#include "util/tweetnacl/tools.h"
+#include "util/tweetnacl/tweetnacl.h"
 
 conf_manager::conf_manager()
 {
@@ -197,11 +200,6 @@ int32_t conf_manager::gen_new_nodeid()
 
 int32_t conf_manager::parse_node_dat()
 {
-    bpo::options_description node_dat_opts("node.dat options");
-    node_dat_opts.add_options()
-            ("node_id", bpo::value<std::string>(), "")
-            ("node_private_key", bpo::value<std::string>(), "");
-
     boost::filesystem::path node_dat_path = env_manager::instance().get_dat_path();
     node_dat_path /= boost::filesystem::path(NODE_FILE_NAME);
 
@@ -215,8 +213,50 @@ int32_t conf_manager::parse_node_dat()
         }
     }
 
+    {
+        FILE *fp = fopen(node_dat_path.generic_string().c_str(), "a+");
+        if (nullptr == fp) {
+            LOG_ERROR << "fp is nullptr";
+            return E_DEFAULT;
+        }
+        fseek(fp, 0, SEEK_SET);
+        char tmpbuf[2048] = {0};
+        fread(tmpbuf, 1, 2000, fp);
+
+        std::string sbuf(tmpbuf);
+        if (sbuf.find("pub_key=") == std::string::npos) {
+            unsigned char pub_key[32];
+            unsigned char priv_key[32];
+            crypto_box_keypair(pub_key, priv_key);
+            char* p_pub = bytes_to_hex(pub_key, 32);
+            char* p_priv = bytes_to_hex(priv_key, 32);
+
+            fprintf(fp, "\n");
+
+            fprintf(fp, "pub_key=");
+            fprintf(fp, "%s", p_pub);
+            fprintf(fp, "\n");
+
+            fprintf(fp, "priv_key=");
+            fprintf(fp, "%s", p_priv);
+            fprintf(fp, "\n");
+
+            free(p_pub);
+            free(p_priv);
+        }
+
+        fclose(fp);
+    }
+
     try
     {
+        bpo::options_description node_dat_opts("node.dat options");
+        node_dat_opts.add_options()
+            ("node_id", bpo::value<std::string>(), "")
+            ("node_private_key", bpo::value<std::string>(), "")
+            ("pub_key", bpo::value<std::string>(), "")
+            ("priv_key", bpo::value<std::string>(), "");
+
         std::ifstream node_dat_ifs(node_dat_path.generic_string());
         bpo::store(bpo::parse_config_file(node_dat_ifs, node_dat_opts), m_args);
         bpo::notify(m_args);
@@ -270,6 +310,14 @@ int32_t conf_manager::init_params()
     if (0 != m_args.count("log_level"))
     {
         m_log_level = m_args["log_level"].as<uint32_t>();
+    }
+
+    if (0 != m_args.count("pub_key")) {
+        m_pub_key = m_args["pub_key"].as<std::string>();
+    }
+
+    if (0 != m_args.count("priv_key")) {
+        m_priv_key = m_args["priv_key"].as<std::string>();
     }
 
     return E_SUCCESS;
