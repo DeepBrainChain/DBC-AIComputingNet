@@ -36,6 +36,8 @@ public:
     void reset_change_set();
     service_info_map& get_change_set();
 
+    bool find(const std::string& node_id, dbc::node_service_info& service_info);
+
     std::string to_string(const std::vector<std::string>& in);
 
 private:

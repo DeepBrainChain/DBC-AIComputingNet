@@ -156,6 +156,12 @@ std::shared_ptr<dbc::network::message> RestHandler::rest_create_task(const dbc::
             }
         }
     }
+    JSON_PARSE_STRING(doc, "sign", cmd_req->sign)
+    JSON_PARSE_STRING(doc, "nonce", cmd_req->nonce)
+    JSON_PARSE_STRING(doc, "wallet", cmd_req->wallet)
+    JSON_PARSE_STRING(doc, "session_id", cmd_req->session_id)
+    JSON_PARSE_STRING(doc, "session_id_sign", cmd_req->session_id_sign)
+    cmd_req->pub_key = conf_manager::instance().get_pub_key();
 
     std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
     msg->set_name(typeid(cmd_create_task_req).name());
@@ -908,12 +914,10 @@ void reply_node_list(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::
         std::string node_id = it.first;
         node_id = util::rtrim(node_id, '\n');
         std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
-        std::string pubkey = it.second.kvs.count("pub_key") ? it.second.kvs["pub_key"] : "N/A";
 
         std::string service_list = resp->to_string(it.second.service_list);
         node_info.AddMember("service_list", STRING_DUP(service_list), allocator);
         node_info.AddMember("nodeid", STRING_DUP(node_id), allocator);
-        node_info.AddMember("pub_key", STRING_DUP(pubkey), allocator);
         node_info.AddMember("name", STRING_DUP(it.second.name), allocator);
         node_info.AddMember("version", STRING_DUP(ver), allocator);
         node_info.AddMember("state", STRING_DUP(it.second.kvs["state"]), allocator);

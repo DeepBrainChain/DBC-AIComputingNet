@@ -33,6 +33,7 @@ include_directories(
         ./3rd/sr25519crust
         ./3rd/network/websocket
         ./3rd/network/websocket/ixwebsocket
+        ./3rd/tweetnacl
 )
 
 set(service_src_dir
@@ -48,7 +49,6 @@ set(service_src_dir
         dbc/util/filter
         dbc/util/crypto
         dbc/util/crypto/ctaes
-        dbc/util/tweetnacl
         dbc/config
         dbc/data
         dbc/data/node_info
@@ -94,11 +94,12 @@ link_directories(${3RD_LIB_PATH}/tinyxml2)
 link_directories(${3RD_LIB_PATH}/substrate)
 link_directories(${3RD_LIB_PATH}/sr25519)
 link_directories(${3RD_LIB_PATH}/websocket)
+link_directories(${3RD_LIB_PATH}/tweetnacl)
 
 add_executable(dbc ${dbc_src_files})
 
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 endif ()
 
 if (APPLE)

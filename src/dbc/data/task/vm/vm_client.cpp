@@ -87,13 +87,41 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* features_node = doc.NewElement("features");
     tinyxml2::XMLElement* features_sub_node1 = doc.NewElement("acpi");
     features_node->LinkEndChild(features_sub_node1);
+
     tinyxml2::XMLElement* features_sub_node2 = doc.NewElement("apic");
     features_node->LinkEndChild(features_sub_node2);
-    tinyxml2::XMLElement* features_sub_node3 = doc.NewElement("kvm");
+
+    tinyxml2::XMLElement* features_sub_node3 = doc.NewElement("hyperv");
+    tinyxml2::XMLElement* node_relaxed = doc.NewElement("relaxed");
+    node_relaxed->SetAttribute("state", "on");
+    features_sub_node3->LinkEndChild(node_relaxed);
+    tinyxml2::XMLElement* node_vapic = doc.NewElement("vapic");
+    node_vapic->SetAttribute("state", "on");
+    features_sub_node3->LinkEndChild(node_vapic);
+    tinyxml2::XMLElement* node_spinlocks = doc.NewElement("spinlocks");
+    node_spinlocks->SetAttribute("state", "on");
+    node_spinlocks->SetAttribute("retries", "8191");
+    features_sub_node3->LinkEndChild(node_spinlocks);
+    tinyxml2::XMLElement* node_vendor_id = doc.NewElement("vendor_id");
+    node_vendor_id->SetAttribute("state", "on");
+    node_vendor_id->SetAttribute("value", "1234567890ab");
+    features_sub_node3->LinkEndChild(node_vendor_id);
+    features_node->LinkEndChild(features_sub_node3);
+
+    tinyxml2::XMLElement* features_sub_node4 = doc.NewElement("kvm");
     tinyxml2::XMLElement* node_hidden = doc.NewElement("hidden");
     node_hidden->SetAttribute("state", "on");
-    features_sub_node3->LinkEndChild(node_hidden);
-    features_node->LinkEndChild(features_sub_node3);
+    features_sub_node4->LinkEndChild(node_hidden);
+    features_node->LinkEndChild(features_sub_node4);
+
+    tinyxml2::XMLElement* node_vmport = doc.NewElement("vmport");
+    node_vmport->SetAttribute("state", "off");
+    features_node->LinkEndChild(node_vmport);
+
+    tinyxml2::XMLElement* node_ioapic = doc.NewElement("ioapic");
+    node_ioapic->SetAttribute("driver", "kvm");
+    features_node->LinkEndChild(node_ioapic);
+
     root->LinkEndChild(features_node);
 
     // <cpu>
@@ -253,8 +281,14 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     node_qemu_arg1->SetAttribute("value", "-cpu");
     node_qemu_commandline->LinkEndChild(node_qemu_arg1);
     tinyxml2::XMLElement* node_qemu_arg2 = doc.NewElement("qemu:arg");
-    node_qemu_arg2->SetAttribute("value", "host");
+    node_qemu_arg2->SetAttribute("value", "host,kvm=off,hv_vendor_id=null");
     node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+    tinyxml2::XMLElement* node_qemu_arg3 = doc.NewElement("qemu:arg");
+    node_qemu_arg3->SetAttribute("value", "-machine");
+    node_qemu_commandline->LinkEndChild(node_qemu_arg3);
+    tinyxml2::XMLElement* node_qemu_arg4 = doc.NewElement("qemu:arg");
+    node_qemu_arg4->SetAttribute("value", "kernel_irqchip=on");
+    node_qemu_commandline->LinkEndChild(node_qemu_arg4);
     root->LinkEndChild(node_qemu_commandline);
 
     //doc.SaveFile("domain.xml");

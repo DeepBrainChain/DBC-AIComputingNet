@@ -92,3 +92,13 @@ void service_info_collection::remove_unlived_nodes(int32_t time_in_second) {
 int32_t service_info_collection::size() {
     return m_id_2_info.size();
 }
+
+bool service_info_collection::find(const std::string &node_id, dbc::node_service_info& service_info) {
+    auto it = m_id_2_info.find(node_id);
+    if (it == m_id_2_info.end()) {
+        return false;
+    } else {
+        service_info = it->second;
+        return true;
+    }
+}

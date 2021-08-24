@@ -15,6 +15,7 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
+#include "util/base64.h"
 
 int32_t cmd_request_service::service_init(bpo::variables_map &options) {
     return E_SUCCESS;
@@ -128,21 +129,39 @@ std::shared_ptr<dbc::network::message> cmd_request_service::create_node_create_t
     req_content->header.__set_msg_name(NODE_CREATE_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(cmd_req->header.session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = conf_manager::instance().get_pub_key();
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_message = req_content->header.nonce + cmd_req->additional;
-    std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
-    if (signature.empty())  return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_peer_nodes_list(cmd_req->peer_nodes_list);
-    req_content->body.__set_additional(cmd_req->additional);
+    dbc::node_create_task_req_data req_data;
+    req_data.__set_peer_nodes_list(cmd_req->peer_nodes_list);
+    req_data.__set_additional(cmd_req->additional);
+    req_data.__set_sign(cmd_req->sign);
+    req_data.__set_nonce(cmd_req->nonce);
+    req_data.__set_wallet(cmd_req->wallet);
+    req_data.__set_session_id(cmd_req->session_id);
+    req_data.__set_session_id_sign(cmd_req->session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(cmd_req->peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        }
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_CREATE_TASK_REQ);

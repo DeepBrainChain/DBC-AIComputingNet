@@ -16,6 +16,13 @@ class cmd_create_task_req : public dbc::network::msg_base {
 public:
     std::vector<std::string> peer_nodes_list;
     std::string additional;
+
+    std::string sign;
+    std::string nonce;
+    std::string wallet;
+    std::string session_id;
+    std::string session_id_sign;
+    std::string pub_key;
 };
 
 class cmd_create_task_rsp : public dbc::network::msg_base {

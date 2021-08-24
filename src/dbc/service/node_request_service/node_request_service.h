@@ -14,6 +14,7 @@
 #include "data/session_id/sessionid_db.h"
 #include "data/service_info/service_info_collection.h"
 #include "data/node_info/node_info_collection.h"
+#include "network/protocol/protocol.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
@@ -62,7 +63,7 @@ protected:
 
     int32_t on_node_query_node_info_req(std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t task_create(const std::shared_ptr<dbc::node_create_task_req>& req);
+    int32_t task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data);
 
     int32_t task_start(const std::shared_ptr<dbc::node_start_task_req>& req);
 
@@ -133,7 +134,9 @@ protected:
     SessionIdDB m_sessionid_db;
     std::map<std::string, std::string> m_wallet_sessionid;
 
-    std::shared_ptr<dbc::node_create_task_req> m_create_req;
+    dbc::network::base_header m_create_header;
+    std::shared_ptr<dbc::node_create_task_req_data> m_create_data;
+
     websocket_client m_websocket_client;
 };
 

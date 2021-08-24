@@ -7,9 +7,9 @@
 #include <boost/format.hpp>
 #include "network/protocol/thrift_compact.h"
 #include "log/log.h"
-#include "util/tweetnacl/randombytes.h"
-#include "util/tweetnacl/tools.h"
-#include "util/tweetnacl/tweetnacl.h"
+#include "tweetnacl/randombytes.h"
+#include "tweetnacl/tools.h"
+#include "tweetnacl/tweetnacl.h"
 
 conf_manager::conf_manager()
 {

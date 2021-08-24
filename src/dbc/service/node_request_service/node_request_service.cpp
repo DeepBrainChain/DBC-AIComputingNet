@@ -13,6 +13,10 @@
 #include "../message/message_id.h"
 #include "data/resource/SystemResourceManager.h"
 #include "service_module/service_name.h"
+#include "util/base64.h"
+#include "tweetnacl/tools.h"
+#include "tweetnacl/randombytes.h"
+#include "tweetnacl/tweetnacl.h"
 
 std::string get_gpu_spec(const std::string& s) {
     if (s.empty()) {
@@ -269,9 +273,9 @@ bool node_request_service::check_req_header(std::shared_ptr<dbc::network::messag
         return false;
     }
 
-    if (base->header.exten_info.size() < 4) {
+    if (base->header.exten_info.size() < 1) {
         LOG_ERROR << "header.exten_info size < 4";
-        return E_DEFAULT;
+        return false;
     }
 
     return true;
@@ -320,33 +324,37 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
         return E_DEFAULT;
     }
 
-    if (!check_nonce(req->header.nonce)) {
-        LOG_ERROR << "nonce check error ";
+    // decrypt
+    std::string pub_key = req->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
         return E_DEFAULT;
     }
 
-    // check req body
-    std::string req_additional;
-    std::vector<std::string> req_peer_nodes;
-    try {
-        req_additional = req->body.additional;
-        req_peer_nodes = req->body.peer_nodes_list;
-    } catch (...) {
-        LOG_ERROR << "req body error";
+    std::string ori_message = decrypt_data(req->body.data, pub_key, priv_key);
+
+    std::shared_ptr<dbc::node_create_task_req_data> data = std::make_shared<dbc::node_create_task_req_data>();
+    std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+    task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+    dbc::network::binary_protocol proto(task_buf.get());
+    data->read(&proto);
+
+    if (!check_nonce(data->nonce)) {
+        LOG_ERROR << "nonce check failed";
         return E_DEFAULT;
     }
 
-    //验证签名
-    std::string sign_msg = req->header.nonce + req_additional;
-    if (!util::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
-        LOG_ERROR << "verify sign error." << req->header.exten_info["origin_id"];
+    std::string sign_msg = data->nonce;
+    if (!util::verify_sign(data->sign, sign_msg, data->wallet)) {
+        LOG_ERROR << "verify sign error";
         return E_DEFAULT;
     }
 
-    // 检查是否命中当前节点
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
     bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
-        return task_create(req);
+        return task_create(req->header, data);
     }
     else {
         req->header.path.push_back(conf_manager::instance().get_node_id());
@@ -1030,6 +1038,15 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string machine_status = v_machineStatus.GetString();
 
+        machine_status = "creating";
+
+        if (machine_status != "creating" && machine_status != "rented") {
+            ret = E_DEFAULT;
+            ret_msg = "rent check failed";
+            LOG_ERROR << "rent check failed";
+            break;
+        }
+
         const rapidjson::Value &v_machineOwner = v_result["machineOwner"];
         if (!v_machineOwner.IsString()) {
             ret = E_DEFAULT;
@@ -1038,92 +1055,49 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string owner_wallet = v_machineOwner.GetString();
 
-        rapidjson::Document doc2;
-        doc2.Parse(m_create_req->body.additional.c_str());
-        if (!doc2.IsObject()) {
-            ret = E_DEFAULT;
-            ret_msg = "additional parse failed";
-            LOG_ERROR << "additional parse failed";
-            break;
-        }
+        owner_wallet = "e8a1ce95c614d55ea28730123e6b2dff3f5cf70d3a7bfe73f408f6513afc0c19";
 
-        /*
-        if (machine_status == "creating") {
+        bool can_do = false;
+        if (owner_wallet == m_create_data->wallet) {
+            can_do = true;
+
             auto it = m_wallet_sessionid.find(owner_wallet);
             if (it == m_wallet_sessionid.end()) {
-                // 创建session_id
                 std::string id = util::create_session_id();
                 m_wallet_sessionid[owner_wallet] = id;
                 std::shared_ptr<dbc::owner_sessionid> sessionid(new dbc::owner_sessionid());
                 sessionid->wallet = owner_wallet;
                 sessionid->session_id = id;
                 m_sessionid_db.write(sessionid);
-            } else {
-                ret = E_DEFAULT;
-                ret_msg = "create failed";
-                LOG_ERROR << "create failed";
-                break;
+            }
+        } else {
+            if (!m_create_data->session_id.empty() && !m_create_data->session_id_sign.empty()) {
+                std::string sign_msg = m_create_data->session_id;
+                if (util::verify_sign(m_create_data->session_id_sign, sign_msg, owner_wallet)) {
+                    auto it = m_wallet_sessionid.find(owner_wallet);
+                    if (it != m_wallet_sessionid.end()) {
+                        can_do = true;
+                    } else {
+                        ret = E_DEFAULT;
+                        ret_msg = "session_id is invalid";
+                        LOG_ERROR << "session_id is invalid";
+                        break;
+                    }
+                } else {
+                    ret = E_DEFAULT;
+                    ret_msg = "session_id is invalid";
+                    LOG_ERROR << "session_id is invalid";
+                    break;
+                }
             }
         }
-        else if (machine_status == "rented") {
-            // 验证session_id
-            if (!doc2.HasMember("session_id")) {
-                ret = E_DEFAULT;
-                ret_msg = "invalid session_id";
-                LOG_ERROR << "invalid session_id";
-                break;
-            }
-            const rapidjson::Value &v_session_id = doc2["session_id"];
-            if (!v_session_id.IsString()) {
-                ret = E_DEFAULT;
-                ret_msg = "invalid session_id";
-                LOG_ERROR << "invalid session_id";
-                break;
-            }
-            std::string str_session_id = v_session_id.GetString();
-            if (str_session_id.empty()) {
-                ret = E_DEFAULT;
-                ret_msg = "invalid session_id";
-                LOG_ERROR << "invalid session_id";
-                break;
-            }
 
-            auto it = m_wallet_sessionid.find(owner_wallet);
-            if (it != m_wallet_sessionid.end()) {
-                ret = E_DEFAULT;
-                ret_msg = "create failed";
-                LOG_ERROR << "create failed";
-                break;
-            }
-
-            if (str_session_id != it->second) {
-                ret = E_DEFAULT;
-                ret_msg = "session_id check failed";
-                LOG_ERROR << "session_id check failed";
-                break;
-            }
-        }
-        else {
-            ret = E_DEFAULT;
-            ret_msg = "rent check failed";
-            LOG_ERROR << "rent check failed";
-            break;
-        }
-        */
-
-        machine_status = "creating";
-
-        if (machine_status == "creating" || machine_status == "rented") {
-            // 创建虚拟机
+        if (can_do) {
             task_id = util::create_task_id();
             login_password = generate_pwd();
-            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_req->body.additional);
+            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_data->additional);
             ret = std::get<0>(fresult);
             ret_msg = std::get<1>(fresult);
-        } else {
-            ret = E_DEFAULT;
-            ret_msg = "rent check failed";
-            LOG_ERROR << "rent check failed";
         }
     } while(0);
 
@@ -1132,8 +1106,8 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     rsp_content->header.__set_msg_name(NODE_CREATE_TASK_RSP);
     rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(m_create_req->header.session_id);
-    rsp_content->header.__set_path(m_create_req->header.path);
+    rsp_content->header.__set_session_id(m_create_header.session_id);
+    rsp_content->header.__set_path(m_create_header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
@@ -1176,17 +1150,17 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     dbc::network::connection_manager::instance().send_resp_message(resp_msg);
 }
 
-int32_t node_request_service::task_create(const std::shared_ptr<dbc::node_create_task_req>& req) {
-    if (req == nullptr) return E_DEFAULT;
+int32_t node_request_service::task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data) {
+    m_create_header = header;
+    m_create_data = data;
 
-    //验证租金
-    m_create_req = req;
     if (m_websocket_client.is_connected()) {
         std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
                                + conf_manager::instance().get_node_id() + R"("]})";
         m_websocket_client.send(str_send);
         LOG_INFO << "ws_send: " << str_send;
     } else {
+        LOG_ERROR << "websocket is disconnect";
         return E_SUCCESS;
     }
 

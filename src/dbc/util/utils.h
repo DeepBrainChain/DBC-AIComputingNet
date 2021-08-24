@@ -37,6 +37,10 @@
 #include "singleton.h"
 #include "rw_lock.h"
 #include "LruCache.hpp"
+#include "tweetnacl/tools.h"
+#include "tweetnacl/randombytes.h"
+#include "tweetnacl/tweetnacl.h"
+#include "base64.h"
 
 #include "utils/string_util.h"
 #include "utils/file_util.h"
@@ -169,5 +173,15 @@ uint32_t str_to_u32(const std::string& str);
 int64_t str_to_i64(const std::string& str);
 uint64_t str_to_u64(const std::string& str);
 float str_to_f(const std::string& str);
+
+void printhex(unsigned char *buf, int len);
+
+void ByteToHexStr(const unsigned char* source, int sourceLen, char* dest);
+
+void HexStrToByte(const char* source, int sourceLen, unsigned char* dest);
+
+std::string encrypt_data(unsigned char* data, int32_t len, const std::string& pub_key, const std::string& priv_key);
+
+std::string decrypt_data(const std::string& data, const std::string& pub_key, const std::string& priv_key);
 
 #endif //DBCPROJ_UTILS_H

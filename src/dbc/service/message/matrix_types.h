@@ -35,6 +35,8 @@ namespace dbc {
 
     class peer_nodes_broadcast_req;
 
+    class node_create_task_req_data;
+
     class node_create_task_req_body;
 
     class node_create_task_req;
@@ -553,27 +555,88 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const peer_nodes_broadcast_req& obj);
 
 
-    class node_create_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_create_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_create_task_req_body(const node_create_task_req_body&);
-        node_create_task_req_body& operator=(const node_create_task_req_body&);
-        node_create_task_req_body() : additional() {
+        node_create_task_req_data(const node_create_task_req_data&);
+        node_create_task_req_data& operator=(const node_create_task_req_data&);
+        node_create_task_req_data() : additional(), sign(), nonce(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_create_task_req_body() throw();
+        virtual ~node_create_task_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string sign;
+        std::string nonce;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_create_task_req_body & rhs) const
+        void __set_sign(const std::string& val);
+
+        void __set_nonce(const std::string& val);
+
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_create_task_req_data & rhs) const
         {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(sign == rhs.sign))
+                return false;
+            if (!(nonce == rhs.nonce))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_create_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_create_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_create_task_req_data &a, node_create_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_create_task_req_data& obj);
+
+
+    class node_create_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_create_task_req_body(const node_create_task_req_body&);
+        node_create_task_req_body& operator=(const node_create_task_req_body&);
+        node_create_task_req_body() : data() {
+        }
+
+        virtual ~node_create_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_create_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }

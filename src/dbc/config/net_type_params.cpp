@@ -3,8 +3,8 @@
 
 static peer_seeds g_main_peer_seeds[] =
 {
-    //{"1.2.3.4", 12345}
-        {"111.44.254.182", 11118}
+    {"1.2.3.4", 12345}
+    //{"111.44.254.182", 11118}
 };
 
 static const char* g_main_dns_seeds[] =
