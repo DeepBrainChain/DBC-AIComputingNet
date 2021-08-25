@@ -134,9 +134,6 @@ void node_request_service::init_timer() {
     // broadcast service list
     m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1);
     add_timer(SERVICE_BROADCAST_TIMER, conf_manager::instance().get_timer_service_broadcast_in_second() * 1000, ULLONG_MAX, DEFAULT_STRING);
-
-    assert(INVALID_TIMER_ID != m_training_task_timer_id);
-    assert(INVALID_TIMER_ID != m_prune_task_timer_id);
 }
 
 void node_request_service::init_invoker() {
