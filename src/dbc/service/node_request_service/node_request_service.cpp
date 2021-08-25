@@ -114,22 +114,24 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
 }
 
 void node_request_service::init_timer() {
-    // 配置文件：timer_ai_training_task_schedule_in_second（15秒）
-    m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
-        this, std::placeholders::_1);
-    m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
-        conf_manager::instance().get_timer_ai_training_task_schedule_in_second() *
-        1000, ULLONG_MAX, DEFAULT_STRING);
+    if (m_is_computing_node) {
+        // 配置文件：timer_ai_training_task_schedule_in_second（15秒）
+        m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
+                                                             this, std::placeholders::_1);
+        m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
+                                                   conf_manager::instance().get_timer_ai_training_task_schedule_in_second() *
+                                                   1000, ULLONG_MAX, DEFAULT_STRING);
 
-    // 10分钟
-    m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
-        std::placeholders::_1);
-    m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
-        DEFAULT_STRING);
+        // 10分钟
+        m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
+                                                          std::placeholders::_1);
+        m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
+                                                DEFAULT_STRING);
 
-    // 定期更新本地node_info (cpu usage、mem_usage、state(task_size))
-    m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&node_request_service::on_timer_node_info_collection, this, std::placeholders::_1);
-    add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
+        // 定期更新本地node_info (cpu usage、mem_usage、state(task_size))
+        m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&node_request_service::on_timer_node_info_collection, this, std::placeholders::_1);
+        add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
+    }
 
     // broadcast service list
     m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1);
@@ -138,40 +140,40 @@ void node_request_service::init_timer() {
 
 void node_request_service::init_invoker() {
     invoker_type invoker;
-    BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req);
-    BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req);
-    BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req);
-    BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req);
-    BIND_MESSAGE_INVOKER(NODE_RESET_TASK_REQ, &node_request_service::on_node_reset_task_req);
-    BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_REQ, &node_request_service::on_node_delete_task_req);
-    BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
-    BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
-
-    BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
+    if (m_is_computing_node) {
+        BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req);
+        BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req);
+        BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req);
+        BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req);
+        BIND_MESSAGE_INVOKER(NODE_RESET_TASK_REQ, &node_request_service::on_node_reset_task_req);
+        BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_REQ, &node_request_service::on_node_delete_task_req);
+        BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
+        BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
+        BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
+        BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(), &node_request_service::on_get_task_queue_size_req)
+        BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &node_request_service::on_get_task_queue_size_resp)
+    }
 
     BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
-
-    BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(), &node_request_service::on_get_task_queue_size_req)
-    BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &node_request_service::on_get_task_queue_size_resp)
 }
 
 void node_request_service::init_subscription() {
-    SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
-
-    SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
+    if (m_is_computing_node) {
+        SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
+        SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
+        SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_req_msg).name());
+        SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_resp_msg).name());
+    }
 
     // broadcast service list
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
-
-    SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_req_msg).name());
-    SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_resp_msg).name());
 }
 
 int32_t node_request_service::service_init(bpo::variables_map& options) {
@@ -182,29 +184,34 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
         return E_DEFAULT;
     }
     else {
-        ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
-        if (!ret) {
-            LOG_ERROR << "init sessionid_db failed";
-            return E_DEFAULT;
-        }
-        std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
-        m_sessionid_db.load(wallet_sessionid);
-        for (auto& it : wallet_sessionid) {
-            m_wallet_sessionid.insert({it.first, it.second->session_id});
+        if (m_is_computing_node) {
+            ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
+            if (!ret) {
+                LOG_ERROR << "init sessionid_db failed";
+                return E_DEFAULT;
+            }
+            std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
+            m_sessionid_db.load(wallet_sessionid);
+            for (auto& it : wallet_sessionid) {
+                m_wallet_sessionid.insert({it.first, it.second->session_id});
+            }
+
+            std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
+            m_websocket_client.init(ws_url);
+            m_websocket_client.enable_auto_reconnection();
+            m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
+            m_websocket_client.start();
         }
 
-        std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
-        m_websocket_client.init(ws_url);
-        m_websocket_client.enable_auto_reconnection();
-        m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
-        m_websocket_client.start();
         return E_SUCCESS;
     }
 }
 
 int32_t node_request_service::service_exit() {
-    remove_timer(m_training_task_timer_id);
-    remove_timer(m_prune_task_timer_id);
+    if (m_is_computing_node) {
+        remove_timer(m_training_task_timer_id);
+        remove_timer(m_prune_task_timer_id);
+    }
     return E_SUCCESS;
 }
 
