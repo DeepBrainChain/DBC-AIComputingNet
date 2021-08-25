@@ -37,7 +37,6 @@ include_directories(
 )
 
 set(service_src_dir
-        .
         dbc
         dbc/common
         dbc/common/def
@@ -96,7 +95,7 @@ link_directories(${3RD_LIB_PATH}/sr25519)
 link_directories(${3RD_LIB_PATH}/websocket)
 link_directories(${3RD_LIB_PATH}/tweetnacl)
 
-add_executable(dbc ${dbc_src_files})
+add_executable(dbc ./main.cpp ${dbc_src_files})
 
 if (LINUX)
     TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
@@ -121,3 +120,6 @@ add_executable(check_env ${check_env_src_files})
 
 target_link_libraries(check_env ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 
+## sign_tool ##
+add_executable(sign_tool ./sign_tool/main.cpp ${dbc_src_files})
+target_link_libraries(sign_tool ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)

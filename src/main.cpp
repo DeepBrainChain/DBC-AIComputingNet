@@ -35,27 +35,8 @@ void init_signal()
     register_signal_function(SIGUSR1, signal_usr1_handler);
 }
 
-#include "service/message/matrix_types.h"
-#include "network/protocol/thrift_binary.h"
-#include "tweetnacl/tools.h"
-#include "tweetnacl/randombytes.h"
-#include "tweetnacl/tweetnacl.h"
-#include "util/base64.h"
-
 int main(int argc, char* argv[])
 {
-    /*
-    util::machine_node_info node_info;
-    util::create_node_info(node_info);
-    std::cout << node_info.node_id << std::endl
-              << node_info.node_private_key << std::endl;
-    std::string sign_nonce = util::create_nonce();
-    std::string signature = util::sign(sign_nonce, node_info.node_private_key);
-    std::cout << sign_nonce << std::endl
-              << signature << std::endl;
-    return 0;
-    */
-
     init_signal();
 
     server_start_time = high_resolution_clock::now();

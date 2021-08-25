@@ -1038,7 +1038,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string machine_status = v_machineStatus.GetString();
 
-        machine_status = "creating";
+        //machine_status = "creating";
 
         if (machine_status != "creating" && machine_status != "rented") {
             ret = E_DEFAULT;
@@ -1055,7 +1055,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
         }
         std::string owner_wallet = v_machineOwner.GetString();
 
-        owner_wallet = "e8a1ce95c614d55ea28730123e6b2dff3f5cf70d3a7bfe73f408f6513afc0c19";
+        //owner_wallet = "e8a1ce95c614d55ea28730123e6b2dff3f5cf70d3a7bfe73f408f6513afc0c19";
 
         bool can_do = false;
         if (owner_wallet == m_create_data->wallet) {
