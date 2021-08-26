@@ -131,6 +131,8 @@ std::shared_ptr<dbc::network::message> cmd_request_service::create_node_create_t
     req_content->header.__set_session_id(cmd_req->header.session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = conf_manager::instance().get_pub_key();
+    exten_info["sign"] = cmd_req->sign;
+    exten_info["nonce"] = cmd_req->nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -140,8 +142,6 @@ std::shared_ptr<dbc::network::message> cmd_request_service::create_node_create_t
     dbc::node_create_task_req_data req_data;
     req_data.__set_peer_nodes_list(cmd_req->peer_nodes_list);
     req_data.__set_additional(cmd_req->additional);
-    req_data.__set_sign(cmd_req->sign);
-    req_data.__set_nonce(cmd_req->nonce);
     req_data.__set_wallet(cmd_req->wallet);
     req_data.__set_session_id(cmd_req->session_id);
     req_data.__set_session_id_sign(cmd_req->session_id_sign);

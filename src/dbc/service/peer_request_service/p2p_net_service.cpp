@@ -716,7 +716,7 @@ bool p2p_net_service::add_peer_node(std::shared_ptr<dbc::network::message> &msg)
 
     m_peer_nodes_map[node->m_id] = node;
 
-    LOG_INFO << "add a new peer_node: " << node->m_id << ", remote addr: " << ep.address().to_string() << ":"
+    LOG_DEBUG << "add a new peer_node: " << node->m_id << ", remote addr: " << ep.address().to_string() << ":"
               << ep.port() << sid.to_string();
 
     return true;

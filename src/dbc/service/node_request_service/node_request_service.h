@@ -133,6 +133,7 @@ protected:
 
     SessionIdDB m_sessionid_db;
     std::map<std::string, std::string> m_wallet_sessionid;
+    std::map<std::string, std::string> m_sessionid_wallet;
 
     dbc::network::base_header m_create_header;
     std::shared_ptr<dbc::node_create_task_req_data> m_create_data;

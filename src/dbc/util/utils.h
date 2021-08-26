@@ -182,6 +182,6 @@ void HexStrToByte(const char* source, int sourceLen, unsigned char* dest);
 
 std::string encrypt_data(unsigned char* data, int32_t len, const std::string& pub_key, const std::string& priv_key);
 
-std::string decrypt_data(const std::string& data, const std::string& pub_key, const std::string& priv_key);
+bool decrypt_data(const std::string& data, const std::string& pub_key, const std::string& priv_key, std::string& ori_message);
 
 #endif //DBCPROJ_UTILS_H

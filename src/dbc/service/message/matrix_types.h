@@ -560,14 +560,12 @@ namespace dbc {
 
         node_create_task_req_data(const node_create_task_req_data&);
         node_create_task_req_data& operator=(const node_create_task_req_data&);
-        node_create_task_req_data() : additional(), sign(), nonce(), wallet(), session_id(), session_id_sign() {
+        node_create_task_req_data() : additional(), wallet(), session_id(), session_id_sign() {
         }
 
         virtual ~node_create_task_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
-        std::string sign;
-        std::string nonce;
         std::string wallet;
         std::string session_id;
         std::string session_id_sign;
@@ -575,10 +573,6 @@ namespace dbc {
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
-
-        void __set_sign(const std::string& val);
-
-        void __set_nonce(const std::string& val);
 
         void __set_wallet(const std::string& val);
 
@@ -591,10 +585,6 @@ namespace dbc {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
-                return false;
-            if (!(sign == rhs.sign))
-                return false;
-            if (!(nonce == rhs.nonce))
                 return false;
             if (!(wallet == rhs.wallet))
                 return false;

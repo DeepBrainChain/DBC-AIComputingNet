@@ -187,7 +187,7 @@ std::string encrypt_data(unsigned char* data, int32_t len, const std::string& pu
     return str_base64;
 }
 
-std::string decrypt_data(const std::string& data, const std::string& pub_key, const std::string& priv_key) {
+bool decrypt_data(const std::string& data, const std::string& pub_key, const std::string& priv_key, std::string& ori_message) {
     unsigned char* byte_pub = new unsigned char[pub_key.size()/2];
     unsigned char* byte_priv = new unsigned char[priv_key.size()/2];
     HexStrToByte(pub_key.c_str(), pub_key.size(), byte_pub);
@@ -201,8 +201,7 @@ std::string decrypt_data(const std::string& data, const std::string& pub_key, co
     memset(encrypt, 0, real_len);
     memcpy(encrypt + crypto_box_BOXZEROBYTES, str_data.c_str() + crypto_box_NONCEBYTES, str_data.size() - crypto_box_NONCEBYTES);
     unsigned char *message = new unsigned char[real_len];
-    crypto_box_open(message, encrypt, real_len, nonce, byte_pub, byte_priv);
-    std::string ori_message;
+    int ret = crypto_box_open(message, encrypt, real_len, nonce, byte_pub, byte_priv);
     ori_message.assign((char*) (message + crypto_box_ZEROBYTES), real_len - crypto_box_ZEROBYTES);
 
     delete[] encrypt;
@@ -210,5 +209,5 @@ std::string decrypt_data(const std::string& data, const std::string& pub_key, co
     delete[] byte_pub;
     delete[] byte_priv;
 
-    return ori_message;
+    return ret == 0;
 }

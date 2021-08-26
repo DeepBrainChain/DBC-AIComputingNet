@@ -1120,14 +1120,6 @@ namespace dbc {
         this->additional = val;
     }
 
-    void node_create_task_req_data::__set_sign(const std::string& val) {
-        this->sign = val;
-    }
-
-    void node_create_task_req_data::__set_nonce(const std::string& val) {
-        this->nonce = val;
-    }
-
     void node_create_task_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
@@ -1160,8 +1152,6 @@ namespace dbc {
 
         bool isset_peer_nodes_list = false;
         bool isset_additional = false;
-        bool isset_sign = false;
-        bool isset_nonce = false;
         bool isset_wallet = false;
         bool isset_session_id = false;
         bool isset_session_id_sign = false;
@@ -1204,47 +1194,31 @@ namespace dbc {
                         break;
                         case 3:
                             if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                xfer += iprot->readString(this->sign);
-                                isset_sign = true;
+                                xfer += iprot->readString(this->wallet);
+                                isset_wallet = true;
                             } else {
                                 xfer += iprot->skip(ftype);
                             }
                             break;
                             case 4:
                                 if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                    xfer += iprot->readString(this->nonce);
-                                    isset_nonce = true;
+                                    xfer += iprot->readString(this->session_id);
+                                    isset_session_id = true;
                                 } else {
                                     xfer += iprot->skip(ftype);
                                 }
                                 break;
                                 case 5:
                                     if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                        xfer += iprot->readString(this->wallet);
-                                        isset_wallet = true;
+                                        xfer += iprot->readString(this->session_id_sign);
+                                        isset_session_id_sign = true;
                                     } else {
                                         xfer += iprot->skip(ftype);
                                     }
                                     break;
-                                    case 6:
-                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                            xfer += iprot->readString(this->session_id);
-                                            isset_session_id = true;
-                                        } else {
-                                            xfer += iprot->skip(ftype);
-                                        }
+                                    default:
+                                        xfer += iprot->skip(ftype);
                                         break;
-                                        case 7:
-                                            if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                                xfer += iprot->readString(this->session_id_sign);
-                                                isset_session_id_sign = true;
-                                            } else {
-                                                xfer += iprot->skip(ftype);
-                                            }
-                                            break;
-                                            default:
-                                                xfer += iprot->skip(ftype);
-                                                break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1254,10 +1228,6 @@ namespace dbc {
         if (!isset_peer_nodes_list)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_additional)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_sign)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_nonce)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_wallet)
             throw TProtocolException(TProtocolException::INVALID_DATA);
@@ -1289,23 +1259,15 @@ namespace dbc {
         xfer += oprot->writeString(this->additional);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 3);
-        xfer += oprot->writeString(this->sign);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
-        xfer += oprot->writeString(this->nonce);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
         xfer += oprot->writeString(this->wallet);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 6);
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 4);
         xfer += oprot->writeString(this->session_id);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 7);
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 5);
         xfer += oprot->writeString(this->session_id_sign);
         xfer += oprot->writeFieldEnd();
 
@@ -1318,8 +1280,6 @@ namespace dbc {
         using ::std::swap;
         swap(a.peer_nodes_list, b.peer_nodes_list);
         swap(a.additional, b.additional);
-        swap(a.sign, b.sign);
-        swap(a.nonce, b.nonce);
         swap(a.wallet, b.wallet);
         swap(a.session_id, b.session_id);
         swap(a.session_id_sign, b.session_id_sign);
@@ -1328,8 +1288,6 @@ namespace dbc {
     node_create_task_req_data::node_create_task_req_data(const node_create_task_req_data& other44) {
         peer_nodes_list = other44.peer_nodes_list;
         additional = other44.additional;
-        sign = other44.sign;
-        nonce = other44.nonce;
         wallet = other44.wallet;
         session_id = other44.session_id;
         session_id_sign = other44.session_id_sign;
@@ -1337,8 +1295,6 @@ namespace dbc {
     node_create_task_req_data& node_create_task_req_data::operator=(const node_create_task_req_data& other45) {
         peer_nodes_list = other45.peer_nodes_list;
         additional = other45.additional;
-        sign = other45.sign;
-        nonce = other45.nonce;
         wallet = other45.wallet;
         session_id = other45.session_id;
         session_id_sign = other45.session_id_sign;
@@ -1349,8 +1305,6 @@ namespace dbc {
         out << "node_create_task_req_data(";
         out << "peer_nodes_list=" << to_string(peer_nodes_list);
         out << ", " << "additional=" << to_string(additional);
-        out << ", " << "sign=" << to_string(sign);
-        out << ", " << "nonce=" << to_string(nonce);
         out << ", " << "wallet=" << to_string(wallet);
         out << ", " << "session_id=" << to_string(session_id);
         out << ", " << "session_id_sign=" << to_string(session_id_sign);

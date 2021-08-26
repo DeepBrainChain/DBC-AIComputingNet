@@ -114,24 +114,22 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
 }
 
 void node_request_service::init_timer() {
-    if (m_is_computing_node) {
-        // 配置文件：timer_ai_training_task_schedule_in_second（15秒）
-        m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
-                                                             this, std::placeholders::_1);
-        m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
-                                                   conf_manager::instance().get_timer_ai_training_task_schedule_in_second() *
-                                                   1000, ULLONG_MAX, DEFAULT_STRING);
+    // 配置文件：timer_ai_training_task_schedule_in_second（15秒）
+    m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
+                                                         this, std::placeholders::_1);
+    m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
+                                               conf_manager::instance().get_timer_ai_training_task_schedule_in_second() *
+                                               1000, ULLONG_MAX, DEFAULT_STRING);
 
-        // 10分钟
-        m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
-                                                          std::placeholders::_1);
-        m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
-                                                DEFAULT_STRING);
+    // 10分钟
+    m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
+                                                      std::placeholders::_1);
+    m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
+                                            DEFAULT_STRING);
 
-        // 定期更新本地node_info (cpu usage、mem_usage、state(task_size))
-        m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&node_request_service::on_timer_node_info_collection, this, std::placeholders::_1);
-        add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
-    }
+    // 定期更新本地node_info (cpu usage、mem_usage、state(task_size))
+    m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&node_request_service::on_timer_node_info_collection, this, std::placeholders::_1);
+    add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
 
     // broadcast service list
     m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1);
@@ -140,37 +138,33 @@ void node_request_service::init_timer() {
 
 void node_request_service::init_invoker() {
     invoker_type invoker;
-    if (m_is_computing_node) {
-        BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req);
-        BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req);
-        BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req);
-        BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req);
-        BIND_MESSAGE_INVOKER(NODE_RESET_TASK_REQ, &node_request_service::on_node_reset_task_req);
-        BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_REQ, &node_request_service::on_node_delete_task_req);
-        BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
-        BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
-        BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
-        BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(), &node_request_service::on_get_task_queue_size_req)
-        BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &node_request_service::on_get_task_queue_size_resp)
-    }
+    BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req);
+    BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req);
+    BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req);
+    BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req);
+    BIND_MESSAGE_INVOKER(NODE_RESET_TASK_REQ, &node_request_service::on_node_reset_task_req);
+    BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_REQ, &node_request_service::on_node_delete_task_req);
+    BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
+    BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
+    BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
+    BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(), &node_request_service::on_get_task_queue_size_req)
+    BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &node_request_service::on_get_task_queue_size_resp)
 
     BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
 }
 
 void node_request_service::init_subscription() {
-    if (m_is_computing_node) {
-        SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
-        SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
-        SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_req_msg).name());
-        SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_resp_msg).name());
-    }
+    SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
+    SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_req_msg).name());
+    SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_resp_msg).name());
 
     // broadcast service list
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
@@ -184,34 +178,31 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
         return E_DEFAULT;
     }
     else {
-        if (m_is_computing_node) {
-            ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
-            if (!ret) {
-                LOG_ERROR << "init sessionid_db failed";
-                return E_DEFAULT;
-            }
-            std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
-            m_sessionid_db.load(wallet_sessionid);
-            for (auto& it : wallet_sessionid) {
-                m_wallet_sessionid.insert({it.first, it.second->session_id});
-            }
-
-            std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
-            m_websocket_client.init(ws_url);
-            m_websocket_client.enable_auto_reconnection();
-            m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
-            m_websocket_client.start();
+        ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
+        if (!ret) {
+            LOG_ERROR << "init sessionid_db failed";
+            return E_DEFAULT;
         }
+        std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
+        m_sessionid_db.load(wallet_sessionid);
+        for (auto& it : wallet_sessionid) {
+            m_wallet_sessionid.insert({it.first, it.second->session_id});
+            m_wallet_sessionid.insert({it.second->session_id, it.first});
+        }
+
+        std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
+        m_websocket_client.init(ws_url);
+        m_websocket_client.enable_auto_reconnection();
+        m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
+        m_websocket_client.start();
 
         return E_SUCCESS;
     }
 }
 
 int32_t node_request_service::service_exit() {
-    if (m_is_computing_node) {
-        remove_timer(m_training_task_timer_id);
-        remove_timer(m_prune_task_timer_id);
-    }
+    remove_timer(m_training_task_timer_id);
+    remove_timer(m_prune_task_timer_id);
     return E_SUCCESS;
 }
 
@@ -277,8 +268,8 @@ bool node_request_service::check_req_header(std::shared_ptr<dbc::network::messag
         return false;
     }
 
-    if (base->header.exten_info.size() < 1) {
-        LOG_ERROR << "header.exten_info size < 4";
+    if (base->header.exten_info.size() < 3) {
+        LOG_ERROR << "header.exten_info size < 3";
         return false;
     }
 
@@ -328,6 +319,17 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
         return E_DEFAULT;
     }
 
+    std::string nonce = req->header.exten_info["nonce"];
+    if (nonce.empty()) {
+        LOG_ERROR << "nonce is empty";
+        return E_DEFAULT;
+    }
+
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed " << nonce;
+        return E_DEFAULT;
+    }
+
     // decrypt
     std::string pub_key = req->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -336,7 +338,21 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
         return E_DEFAULT;
     }
 
-    std::string ori_message = decrypt_data(req->body.data, pub_key, priv_key);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(req->body.data, pub_key, priv_key, ori_message);
+        if (!succ) {
+            req->header.path.push_back(conf_manager::instance().get_node_id());
+            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+            LOG_ERROR << "req decrypt error";
+            return E_SUCCESS;
+        }
+    } catch (std::exception &e) {
+        req->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        LOG_ERROR << "req decrypt error";
+        return E_SUCCESS;
+    }
 
     std::shared_ptr<dbc::node_create_task_req_data> data = std::make_shared<dbc::node_create_task_req_data>();
     std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
@@ -344,13 +360,8 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
     dbc::network::binary_protocol proto(task_buf.get());
     data->read(&proto);
 
-    if (!check_nonce(data->nonce)) {
-        LOG_ERROR << "nonce check failed";
-        return E_DEFAULT;
-    }
-
-    std::string sign_msg = data->nonce;
-    if (!util::verify_sign(data->sign, sign_msg, data->wallet)) {
+    std::string nonce_sign = req->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
         return E_DEFAULT;
     }
@@ -1028,80 +1039,100 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             break;
         }
 
-        if (!v_result.HasMember("machineStatus")) {
-            ret = E_DEFAULT;
-            ret_msg = "rsp_json has not machineStatus";
-            break;
-        }
-
-        const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
-        if (!v_machineStatus.IsString()) {
-            ret = E_DEFAULT;
-            ret_msg = "rsp_json machineStatus is not string";
-            break;
-        }
-        std::string machine_status = v_machineStatus.GetString();
-
-        //machine_status = "creating";
-
-        if (machine_status != "creating" && machine_status != "rented") {
-            ret = E_DEFAULT;
-            ret_msg = "rent check failed";
-            LOG_ERROR << "rent check failed";
-            break;
-        }
-
-        const rapidjson::Value &v_machineOwner = v_result["machineOwner"];
-        if (!v_machineOwner.IsString()) {
-            ret = E_DEFAULT;
-            ret_msg = "rsp_json machineOwner is not string";
-            break;
-        }
-        std::string owner_wallet = v_machineOwner.GetString();
-
-        //owner_wallet = "e8a1ce95c614d55ea28730123e6b2dff3f5cf70d3a7bfe73f408f6513afc0c19";
-
-        bool can_do = false;
-        if (owner_wallet == m_create_data->wallet) {
-            can_do = true;
-
-            auto it = m_wallet_sessionid.find(owner_wallet);
-            if (it == m_wallet_sessionid.end()) {
-                std::string id = util::create_session_id();
-                m_wallet_sessionid[owner_wallet] = id;
-                std::shared_ptr<dbc::owner_sessionid> sessionid(new dbc::owner_sessionid());
-                sessionid->wallet = owner_wallet;
-                sessionid->session_id = id;
-                m_sessionid_db.write(sessionid);
+        if (v_result.HasMember("machineStatus")) {
+            if (!v_result.HasMember("machineStatus")) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json has not machineStatus";
+                break;
             }
-        } else {
-            if (!m_create_data->session_id.empty() && !m_create_data->session_id_sign.empty()) {
+
+            const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
+            if (!v_machineStatus.IsString()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json machineStatus is not string";
+                break;
+            }
+            std::string machine_status = v_machineStatus.GetString();
+
+            //machine_status = "creating";
+
+            if (machine_status != "creating" && machine_status != "rented") {
+                ret = E_DEFAULT;
+                ret_msg = "rent check failed";
+                LOG_ERROR << "rent check failed";
+                break;
+            }
+
+            if (m_websocket_client.is_connected()) {
+                std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
+                        + m_create_data->wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+                m_websocket_client.send(str_send);
+                LOG_INFO << "ws_send: " << str_send;
+                return;
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "verify renter failed";
+                LOG_ERROR << "websocket is disconnect";
+                break;
+            }
+        }
+        else if (v_result.HasMember("rentEnd")) {
+            const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
+            if (!v_rentEnd.IsNumber()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json rentEnd is not number";
+                break;
+            }
+
+            uint64_t rentEnd = v_rentEnd.GetUint64();
+
+            bool can_do = false;
+            if (rentEnd > 0) {
+                can_do = true;
+
+                auto it = m_wallet_sessionid.find(m_create_data->wallet);
+                if (it == m_wallet_sessionid.end()) {
+                    std::string id = util::create_session_id();
+                    m_wallet_sessionid[m_create_data->wallet] = id;
+                    m_wallet_sessionid[id] = m_create_data->wallet;
+                    std::shared_ptr<dbc::owner_sessionid> sessionid(new dbc::owner_sessionid());
+                    sessionid->wallet = m_create_data->wallet;
+                    sessionid->session_id = id;
+                    m_sessionid_db.write(sessionid);
+                }
+            } else if (!m_create_data->session_id.empty() && !m_create_data->session_id_sign.empty()) {
                 std::string sign_msg = m_create_data->session_id;
+                auto it = m_sessionid_wallet.find(sign_msg);
+                if (it == m_sessionid_wallet.end()) {
+                    ret = E_DEFAULT;
+                    ret_msg = "session_id is invalid";
+                    LOG_ERROR << "session_id is invalid";
+                    break;
+                }
+
+                std::string owner_wallet = it->second;
                 if (util::verify_sign(m_create_data->session_id_sign, sign_msg, owner_wallet)) {
-                    auto it = m_wallet_sessionid.find(owner_wallet);
-                    if (it != m_wallet_sessionid.end()) {
-                        can_do = true;
-                    } else {
-                        ret = E_DEFAULT;
-                        ret_msg = "session_id is invalid";
-                        LOG_ERROR << "session_id is invalid";
-                        break;
-                    }
+                    can_do = true;
                 } else {
                     ret = E_DEFAULT;
                     ret_msg = "session_id is invalid";
                     LOG_ERROR << "session_id is invalid";
                     break;
                 }
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "req error";
+                LOG_ERROR << "wallet and session_id  error";
+                break;
             }
-        }
 
-        if (can_do) {
-            task_id = util::create_task_id();
-            login_password = generate_pwd();
-            auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_data->additional);
-            ret = std::get<0>(fresult);
-            ret_msg = std::get<1>(fresult);
+            if (can_do) {
+                task_id = util::create_task_id();
+                login_password = generate_pwd();
+                auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_data->additional);
+                ret = std::get<0>(fresult);
+                ret_msg = std::get<1>(fresult);
+            }
         }
     } while(0);
 
@@ -1610,12 +1641,6 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
 
 int32_t node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
     m_task_scheduler.ProcessTask();
-
-    static int count = 0;
-    count++;
-    if ((count % 10) == 0) {
-        //m_task_schedule->update_gpu_info_from_proc();
-    }
 
     return E_SUCCESS;
 }
