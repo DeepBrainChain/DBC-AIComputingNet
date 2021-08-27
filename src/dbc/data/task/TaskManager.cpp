@@ -510,20 +510,26 @@ void TaskManager::delete_disk_file(const std::string &task_id) {
     }
 }
 
+#define OS_1804
+
 static std::string shell_delete_transform_port(const std::string &host_ip, const std::string &transform_port,
                                                const std::string &vm_local_ip) {
     std::string cmd;
 
-    /*
-    cmd += "sudo iptables -t nat -D PREROUTING -p tcp -d " + host_ip + " --dport " + transform_port
+    // 2004
+#ifdef OS_2004
+    cmd += "sudo iptables -F -t nat";
+    cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -d " + host_ip + " --dport " + transform_port
             + " -j DNAT --to-destination " + vm_local_ip + ":22";
     auto pos = vm_local_ip.rfind('.');
     std::string ip = vm_local_ip.substr(0, pos) + ".0/24";
     cmd += " && sudo iptables -t nat -D POSTROUTING -s " + ip + " -j SNAT --to-source " + host_ip;
     cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -d " + host_ip + " --dport 6000:60000 -j DNAT --to-destination "
             + vm_local_ip + ":6000-60000";
-    */
+#endif
 
+    // 1804
+#ifdef OS_1804
     cmd += "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + host_ip +
            " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
     cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
@@ -540,6 +546,7 @@ static std::string shell_delete_transform_port(const std::string &host_ip, const
            " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
     cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
            " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+#endif
 
     LOG_INFO << "delete transform_port:" << cmd;
 
@@ -619,7 +626,8 @@ static std::string shell_transform_port(const std::string &host_ip, const std::s
                                  const std::string &vm_local_ip) {
     std::string cmd;
 
-    /*
+    // 2004
+#ifdef OS_2004
     cmd += "sudo iptables -t nat -I PREROUTING -p tcp -d " + host_ip + " --dport " + transform_port
             + " -j DNAT --to-destination " + vm_local_ip + ":22";
     auto pos = vm_local_ip.rfind('.');
@@ -627,8 +635,10 @@ static std::string shell_transform_port(const std::string &host_ip, const std::s
     cmd += " && sudo iptables -t nat -I POSTROUTING -s " + ip + " -j SNAT --to-source " + host_ip;
     cmd += " && sudo iptables -t nat -I PREROUTING -p tcp -d " + host_ip + " --dport 6000:60000 -j DNAT --to-destination "
             + vm_local_ip + ":6000-60000";
-    */
+#endif
 
+    // 1804
+#ifdef OS_1804
     cmd += "sudo iptables --table nat -I PREROUTING --protocol tcp --destination " + host_ip +
            " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
     cmd += " && sudo iptables -t nat -I PREROUTING -p tcp --dport " + transform_port +
@@ -645,6 +655,7 @@ static std::string shell_transform_port(const std::string &host_ip, const std::s
            " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
     cmd += " && sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
            " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
+#endif
 
     LOG_INFO << "transform_port:" << cmd;
 
