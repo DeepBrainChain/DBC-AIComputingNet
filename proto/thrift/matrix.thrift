@@ -69,9 +69,16 @@ struct peer_nodes_broadcast_req {
 //////////////////////////////////////////////////////////////////////////
 // create task
 // request
-struct node_create_task_req_body {
+struct node_create_task_req_data {
   1: required list<string> peer_nodes_list,
-  2: required string additional
+  2: required string additional,
+  3: required string wallet,
+  4: required string session_id,
+  5: required string session_id_sign
+}
+
+struct node_create_task_req_body {
+  1: required string data;
 }
 
 struct node_create_task_req {

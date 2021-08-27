@@ -8,7 +8,7 @@ struct HardwareResource {
 
 struct TaskInfo {
     1: required string task_id,         //id
-    2: required string image_name,      //镜像名字
+    2: optional string image_name,      //镜像名字
     3: optional string login_password,  //登录密码
     4: optional string ssh_port,        //映射端口
     5: optional i32 status,             //状态
