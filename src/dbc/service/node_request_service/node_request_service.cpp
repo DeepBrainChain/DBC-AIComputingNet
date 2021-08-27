@@ -1535,9 +1535,9 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
 
                 ss_tasks << ", \"cpu_cores\":" << cpu_cores;
                 ss_tasks << ", \"gpu_count\":" << gpu_count;
-                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024) << "\"";
-                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024 * 1024 * 1024) << "\"";
-                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024 * 1024) << "\"";
+                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
 
                 struct tm _tm{};
                 time_t tt = task->create_time;
@@ -1580,9 +1580,9 @@ int32_t node_request_service::task_list(const std::shared_ptr<dbc::node_list_tas
 
                 ss_tasks << ", \"cpu_cores\":" << cpu_cores;
                 ss_tasks << ", \"gpu_count\":" << gpu_count;
-                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024) << "\"";
-                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024 * 1024 * 1024) << "\"";
-                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024 * 1024) << "\"";
+                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
 
                 struct tm _tm{};
                 time_t tt = task->create_time;

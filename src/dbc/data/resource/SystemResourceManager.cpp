@@ -193,13 +193,13 @@ void SystemResourceManager::print_gpu() {
 
 void SystemResourceManager::print_mem() {
     std::cout << "mem:" << std::endl
-              << "total: " << size_to_string(m_mem.total, 1024 * 1024)
-              << ", available: " << size_to_string(m_mem.available, 1024 * 1024) << std::endl;
+              << "total: " << size_to_string(m_mem.total, 1024L * 1024L)
+              << ", available: " << size_to_string(m_mem.available, 1024L * 1024L) << std::endl;
 }
 
 void SystemResourceManager::print_disk() {
     std::cout << "disk:" << std::endl
               << "type: " << (m_disk.type == DiskType::DT_SSD ? "SSD" : "HDD")
-              << ", total: " << size_to_string(m_disk.total, 1024 * 1024)
-              << ", available: " << size_to_string(m_disk.available, 1024 * 1024) << std::endl;
+              << ", total: " << size_to_string(m_disk.total, 1024L * 1024L)
+              << ", available: " << size_to_string(m_disk.available, 1024L * 1024L) << std::endl;
 }
