@@ -35,9 +35,13 @@ void init_signal()
     register_signal_function(SIGUSR1, signal_usr1_handler);
 }
 
+#include "util/system_info.h"
+
 int main(int argc, char* argv[])
 {
     init_signal();
+
+    SystemInfo::instance().start();
 
     server_start_time = high_resolution_clock::now();
 

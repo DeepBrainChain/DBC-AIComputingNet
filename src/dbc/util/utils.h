@@ -85,55 +85,6 @@ inline int32_t RaiseFileDescriptorLimit(int nMinFD)
 #endif
 }
 
-inline void get_sys_mem(int64_t& mem, int64_t& mem_swap)
-{
-#if defined(WIN32)
-    MEMORYSTATUSEX memoryInfo;
-            memoryInfo.dwLength = sizeof(memoryInfo);
-            GlobalMemoryStatusEx(&memoryInfo);
-            mem = memoryInfo.ullTotalPhys;
-            mem_swap = memoryInfo.ullTotalVirtual;
-#elif defined(__linux__)
-    struct sysinfo s_info;
-    if (0 == sysinfo(&s_info))
-    {
-        mem = s_info.totalram;
-        mem_swap = mem + s_info.totalswap;
-    }
-#endif
-}
-
-inline uint32_t get_disk_free(const std::string& disk_path)
-{
-#if defined(__linux__)
-    struct statfs diskInfo;
-    statfs(disk_path.c_str(), &diskInfo);
-    uint64_t b_size = diskInfo.f_bsize;
-
-    //uint64_t free = b_size * diskInfo.f_bfree;
-    // general user can available
-    uint64_t free = b_size * diskInfo.f_bavail;
-    //MB
-    free = free >> 20;
-    return free;
-#endif
-    return 0;
-}
-
-inline uint32_t get_disk_total(const std::string& disk_path)
-{
-#if defined(__linux__)
-    struct statfs diskInfo;
-    statfs(disk_path.c_str(), &diskInfo);
-    uint64_t b_size = diskInfo.f_bsize;
-    uint64_t totalSize = b_size * (diskInfo.f_blocks - diskInfo.f_bfree + diskInfo.f_bavail);
-
-    uint32_t total = totalSize >> 20;
-    return total;
-#endif
-    return 0;
-}
-
 
 static std::string run_shell(const char* cmd, const char* modes = "r") {
     if (cmd == nullptr) return "";
@@ -163,6 +114,38 @@ static std::string read_info(const char* file, const char* modes = "r") {
 
 // B => TB GB KB
 std::string size_to_string(int64_t n, int64_t scale = 1);
+
+inline double power(unsigned int base, unsigned int expo)
+{
+    return (expo == 0) ? 1 : base * power(base, expo - 1);
+}
+
+// size: KB
+static const char *scale_size(unsigned long size)
+{
+    static char up[] = { 'B', 'K', 'M', 'G', 'T', 'P', 0 };
+    static char buf[BUFSIZ];
+    int i;
+    float base;
+    long long bytes;
+
+    base = 1024.0;
+    bytes = size * 1024LL;
+
+    if (4 >= snprintf(buf, sizeof(buf), "%lld%c", bytes, up[0]))
+        return buf;
+
+    for (i = 1; up[i] != 0; i++) {
+        if (4 >= snprintf(buf, sizeof(buf), "%.1f%c",
+                          (float)(bytes / power(base, i)), up[i]))
+            return buf;
+        if (4 >= snprintf(buf, sizeof(buf), "%ld%c",
+                          (long)(bytes / power(base, i)), up[i]))
+            return buf;
+    }
+
+    return buf;
+}
 
 // 获取公网ip地址
 std::string get_public_ip();

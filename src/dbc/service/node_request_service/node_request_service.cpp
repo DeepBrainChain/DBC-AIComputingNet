@@ -1085,6 +1085,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
             }
 
             uint64_t rentEnd = v_rentEnd.GetUint64();
+            //rentEnd = 123;
 
             bool can_do = false;
             if (rentEnd > 0) {

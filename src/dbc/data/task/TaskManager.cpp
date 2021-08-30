@@ -694,7 +694,7 @@ bool TaskManager::transform_port(const std::string &domain_name, const std::stri
             std::string vm_local_ip;
             int32_t try_count = 0;
             // max: 15min
-            while (vm_local_ip.empty() && try_count < 300) {
+            while (vm_local_ip.empty() && try_count < 1000) {
                 LOG_INFO << "transform_port try_count: " << (try_count + 1);
                 virDomainInterfacePtr *ifaces = nullptr;
                 int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,

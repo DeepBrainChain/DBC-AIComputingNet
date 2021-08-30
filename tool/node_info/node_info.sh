@@ -35,7 +35,7 @@ function get_disk_info {
     free_disk_size=$(echo $raw_info | awk '{print $4}')
     n_disk_free_size=$(echo "scale=2; ${free_disk_size}/1024/1024/1024" | bc)
 
-    device=$(echo $raw_info | awk '{print $1}' | awk -F"/" '{print $3}')
+    device=$(echo $raw_info | awk -F' ' '{print $1}' | awk -F"/" '{print $3}')
 
     disk_type=$(lsblk -o name,rota | grep $device | awk '{if($1=="1")print "HDD"; else print "SSD"}' | head -1)
 
