@@ -13,8 +13,9 @@
 #include "../message/matrix_types.h"
 #include "data/session_id/sessionid_db.h"
 #include "data/service_info/service_info_collection.h"
-#include "data/node_info/node_info_collection.h"
+#include "data/resource/system_info.h"
 #include "network/protocol/protocol.h"
+#include "data/resource/system_info.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 //#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
@@ -98,8 +99,6 @@ protected:
 
     int32_t on_prune_task_timer(const std::shared_ptr<core_timer>& timer);
 
-    int32_t on_timer_node_info_collection(const std::shared_ptr<core_timer>& timer);
-
 
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
 
@@ -121,8 +120,6 @@ private:
 
 protected:
     bool m_is_computing_node = false;
-
-    node_info_collection m_node_info_collection;
 
     TaskMgr m_task_scheduler;
 

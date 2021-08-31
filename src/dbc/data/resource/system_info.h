@@ -11,7 +11,7 @@
 #include <thread>
 #include <atomic>
 #include <cstring>
-#include "singleton.h"
+#include "util/singleton.h"
 
 enum OS_TYPE {
     OS_1804,
@@ -50,7 +50,7 @@ struct disk_info {
     uint64_t disk_total = 0;
     uint64_t disk_free = 0;
     uint64_t disk_awalible = 0;
-    uint64_t disk_used = 0;
+    float disk_usage = 0.0f;
 };
 
 class SystemInfo : public Singleton<SystemInfo> {
@@ -63,8 +63,20 @@ public:
 
     void stop();
 
+    std::string get_version() const {
+        return m_version;
+    }
+
+    std::string get_publicip() const {
+        return m_public_ip;
+    }
+
     OS_TYPE get_ostype() const {
         return m_os_type;
+    }
+
+    std::string get_osname() const {
+        return m_os_name;
     }
 
     const mem_info& get_meminfo() const {
@@ -94,6 +106,7 @@ protected:
 
 private:
     OS_TYPE m_os_type = OS_1804;
+    std::string m_os_name = "N/A";
     mem_info m_meminfo;
     cpu_info m_cpuinfo;
     disk_info m_diskinfo;
@@ -101,6 +114,9 @@ private:
     float m_cpu_usage = 0.0f;
     std::thread* m_thread = nullptr;
     std::atomic<bool> m_running{false};
+
+    std::string m_version = "N/A";
+    std::string m_public_ip = "N/A";
 };
 
 #endif //DBCPROJ_SYSTEM_INFO_H

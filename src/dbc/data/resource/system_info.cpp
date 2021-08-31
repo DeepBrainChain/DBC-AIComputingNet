@@ -30,6 +30,15 @@ void SystemInfo::start() {
     get_cpu_info(m_cpuinfo);
     get_disk_info("/data", m_diskinfo);
 
+    std::string ver = STR_VER(CORE_VERSION);
+    auto s_ver = util::remove_leading_zero(ver.substr(2, 2)) + "."
+            + util::remove_leading_zero(ver.substr(4, 2)) + "."
+            + util::remove_leading_zero(ver.substr(6, 2)) + "."
+            + util::remove_leading_zero(ver.substr(8, 2));
+    m_version = s_ver;
+    m_public_ip = get_public_ip();
+    get_os_type();
+
     if (m_thread == nullptr) {
         m_thread = new std::thread(&SystemInfo::update_cpu_usage, this);
     }
@@ -47,6 +56,10 @@ void SystemInfo::stop() {
 void SystemInfo::get_os_type() {
     std::string os_name = run_shell("cat /etc/os-release | grep VERSION | awk -F '=' '{print $2}'| tr -d '\"'");
     os_name = util::rtrim(os_name, '\n');
+    std::string linux_ver = run_shell("uname -o -r");
+    linux_ver = util::rtrim(linux_ver, '\n');
+
+    m_os_name = os_name + " " + linux_ver;
     if (os_name.find("18.04") != std::string::npos)
         m_os_type = OS_1804;
     else if (os_name.find("20.04") != std::string::npos) {
@@ -213,7 +226,7 @@ void SystemInfo::get_disk_info(const std::string &path, disk_info &info) {
     info.disk_total = (diskInfo.f_blocks * block_size) >> 20; //磁盘总空间
     info.disk_awalible = (diskInfo.f_bavail * block_size) >> 20; //非超级用户可用空间
     info.disk_free = (diskInfo.f_bfree * block_size) >> 20; //磁盘所有剩余空间
-    info.disk_used = info.disk_total - info.disk_free;
+    info.disk_usage = (info.disk_total - info.disk_awalible) * 1.0f / info.disk_total;
 
     std::string cmd = "df -l " + std::string(dpath) + " | tail -1";
     std::string tmp = run_shell(cmd.c_str());
@@ -299,6 +312,8 @@ void SystemInfo::update_cpu_usage() {
     struct occupy *ncpu = new occupy[cpu_num + 1];
 
     while (m_running) {
+        m_public_ip = get_public_ip();
+
         get_occupy(ocpu, cpu_num);
         sleep(3);
         get_occupy(ncpu, cpu_num);

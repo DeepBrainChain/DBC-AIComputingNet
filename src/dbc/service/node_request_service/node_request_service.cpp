@@ -69,13 +69,6 @@ node_request_service::node_request_service() {
 int32_t node_request_service::init(bpo::variables_map &options) {
     if (options.count(SERVICE_NAME_AI_TRAINING)) {
         m_is_computing_node = true;
-
-        std::string node_info_filename = env_manager::instance().get_home_path().generic_string() + "/.dbc_bash.sh";
-        auto rtn = m_node_info_collection.init(node_info_filename);
-        if (rtn != E_SUCCESS) {
-            return rtn;
-        }
-
         add_self_to_servicelist(options);
     }
 
@@ -96,17 +89,19 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
     auto tnow = std::time(nullptr);
     info.__set_time_stamp(tnow);
 
-    const char* ATTRS[] = {
-            "state",
-            "version"
-    };
-
     std::map<std::string, std::string> kvs;
-    int num_of_attrs = sizeof(ATTRS) / sizeof(char*);
-    for(int i = 0; i < num_of_attrs; i++) {
-        auto k = ATTRS[i];
-        kvs[k] = m_node_info_collection.get(k);
+    kvs["version"] = SystemInfo::instance().get_version();
+
+    int32_t count = m_task_scheduler.GetRunningTaskSize();
+    std::string state;
+    if (count <= 0) {
+        state = "idle";
     }
+    else {
+        state = "busy(" + std::to_string(count) + ")";
+    }
+    kvs["state"] = state;
+
     kvs["pub_key"] = conf_manager::instance().get_pub_key();
     info.__set_kvs(kvs);
 
@@ -127,10 +122,6 @@ void node_request_service::init_timer() {
     m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
                                             DEFAULT_STRING);
 
-    // 定期更新本地node_info (cpu usage、mem_usage、state(task_size))
-    m_timer_invokers[NODE_INFO_COLLECTION_TIMER] = std::bind(&node_request_service::on_timer_node_info_collection, this, std::placeholders::_1);
-    add_timer(NODE_INFO_COLLECTION_TIMER, TIMER_INTERVAL_NODE_INFO_COLLECTION, ULLONG_MAX, DEFAULT_STRING);
-
     // broadcast service list
     m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1);
     add_timer(SERVICE_BROADCAST_TIMER, conf_manager::instance().get_timer_service_broadcast_in_second() * 1000, ULLONG_MAX, DEFAULT_STRING);
@@ -147,9 +138,6 @@ void node_request_service::init_invoker() {
     BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req);
     BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req);
     BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
-    BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_req_msg).name(), &node_request_service::on_get_task_queue_size_req)
-    BIND_MESSAGE_INVOKER(typeid(get_task_queue_size_resp_msg).name(), &node_request_service::on_get_task_queue_size_resp)
-
     BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
 }
 
@@ -163,10 +151,6 @@ void node_request_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
-    SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_req_msg).name());
-    SUBSCRIBE_BUS_MESSAGE(typeid(get_task_queue_size_resp_msg).name());
-
-    // broadcast service list
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
 }
 
@@ -203,13 +187,6 @@ int32_t node_request_service::service_init(bpo::variables_map& options) {
 int32_t node_request_service::service_exit() {
     remove_timer(m_training_task_timer_id);
     remove_timer(m_prune_task_timer_id);
-    return E_SUCCESS;
-}
-
-int32_t node_request_service::on_timer_node_info_collection(const std::shared_ptr<core_timer>& timer) {
-    if(m_is_computing_node)
-        m_node_info_collection.refresh();
-
     return E_SUCCESS;
 }
 
@@ -816,10 +793,44 @@ int32_t node_request_service::query_node_info(const std::shared_ptr<dbc::node_qu
     if (req == nullptr) return E_DEFAULT;
 
     std::map<std::string, std::string> kvs;
-    std::vector<std::string> vec_keys = m_node_info_collection.get_all_attributes();
-    for (auto &key : vec_keys) {
-        kvs[key] = m_node_info_collection.get(key);
+    kvs["os"] = SystemInfo::instance().get_osname();
+    kvs["ip"] = SystemInfo::instance().get_publicip();
+    std::stringstream ss_cpu;
+    cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
+    ss_cpu << "{";
+    ss_cpu << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
+    ss_cpu << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
+    ss_cpu << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
+    ss_cpu << "}";
+    kvs["cpu"] = ss_cpu.str();
+    std::stringstream ss_mem;
+    mem_info tmp_meminfo = SystemInfo::instance().get_meminfo();
+    ss_mem << "{";
+    ss_mem << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
+    ss_mem << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_total - tmp_meminfo.mem_used) << "\"";
+    ss_mem << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
+    ss_mem << "}";
+    kvs["mem"] = ss_mem.str();
+    std::stringstream ss_disk;
+    disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();
+    ss_disk << "{";
+    ss_disk << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
+    ss_disk << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
+    ss_disk << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
+    ss_disk << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
+    ss_disk << "}";
+    kvs["disk"] = ss_disk.str();
+
+    int32_t count = m_task_scheduler.GetRunningTaskSize();
+    std::string state;
+    if (count <= 0) {
+        state = "idle";
     }
+    else {
+        state = "busy(" + std::to_string(count) + ")";
+    }
+    kvs["state"] = state;
+    kvs["version"] = SystemInfo::instance().get_version();
 
     std::shared_ptr<dbc::node_query_node_info_rsp> rsp_content = std::make_shared<dbc::node_query_node_info_rsp>();
     // header
@@ -861,19 +872,6 @@ int32_t node_request_service::on_get_task_queue_size_req(std::shared_ptr<dbc::ne
     return E_SUCCESS;
 }
 
-int32_t node_request_service::on_get_task_queue_size_resp(std::shared_ptr<dbc::network::message> &msg)
-{
-    std::shared_ptr<get_task_queue_size_resp_msg> resp =
-            std::dynamic_pointer_cast<get_task_queue_size_resp_msg>(msg);
-    if (nullptr == resp) {
-        LOG_ERROR<< "on_get_task_queue_size_resp null ptr";
-        return E_NULL_POINTER;
-    }
-
-    m_node_info_collection.set("state", std::to_string(resp->get_task_size()));
-    return E_SUCCESS;
-}
-
 std::shared_ptr<dbc::network::message> node_request_service::create_service_broadcast_req_msg(const service_info_map& mp) {
     auto req_content = std::make_shared<dbc::service_broadcast_req>();
     // header
@@ -909,11 +907,17 @@ int32_t node_request_service::on_timer_service_broadcast(const std::shared_ptr<c
         return E_SUCCESS;
     }
 
-    std::string v;
-    v = m_node_info_collection.get("state");
-    service_info_collection::instance().update(conf_manager::instance().get_node_id(),"state", v);
-    v = m_node_info_collection.get("version");
-    service_info_collection::instance().update(conf_manager::instance().get_node_id(),"version", v);
+    int32_t count = m_task_scheduler.GetRunningTaskSize();
+    std::string state;
+    if (count <= 0) {
+        state = "idle";
+    } else {
+        state = "busy(" + std::to_string(count) + ")";
+    }
+
+    service_info_collection::instance().update(conf_manager::instance().get_node_id(),"state", state);
+    service_info_collection::instance().update(conf_manager::instance().get_node_id(),"version", SystemInfo::instance().get_version());
+
     service_info_collection::instance().update_own_node_time_stamp(conf_manager::instance().get_node_id());
     service_info_collection::instance().remove_unlived_nodes(conf_manager::instance().get_timer_service_list_expired_in_second());
 

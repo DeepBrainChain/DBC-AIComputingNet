@@ -16,6 +16,8 @@
 #include "service/node_request_service/node_request_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
 
+#include "data/resource/system_info.h"
+
 #define DEFAULT_SLEEP_MILLI_SECONDS                 1000
 
 int32_t server::init(int argc, char *argv[]) {
@@ -67,6 +69,7 @@ int32_t server::init(int argc, char *argv[]) {
     if (vm.count(SERVICE_NAME_AI_TRAINING)) {
         LOG_INFO << "begin to init system resource manager";
         SystemResourceMgr::instance().Init();
+        SystemInfo::instance().start();
         LOG_INFO << "init system resource manager successfully";
     }
 
