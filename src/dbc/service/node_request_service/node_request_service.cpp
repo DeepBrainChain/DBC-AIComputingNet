@@ -318,6 +318,12 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
     std::string ori_message;
     try {
         bool succ = decrypt_data(req->body.data, pub_key, priv_key, ori_message);
+        LOG_INFO << "===decrypt:"
+                 << "  data.len=" << req->body.data.size()
+                 << ", pub_key.len=" << pub_key.size()
+                 << ", priv_key.len=" << priv_key.size()
+                 << ", ori_message.len=" << ori_message.size();
+
         if (!succ) {
             req->header.path.push_back(conf_manager::instance().get_node_id());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
