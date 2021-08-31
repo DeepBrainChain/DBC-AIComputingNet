@@ -19,6 +19,7 @@ enum OS_TYPE {
 };
 
 struct mem_info {
+    // kb
     uint64_t mem_total = 0L;
     uint64_t mem_free = 0L;
     uint64_t mem_used = 0L;
@@ -46,6 +47,7 @@ enum DISK_TYPE {
 };
 
 struct disk_info {
+    // kb
     DISK_TYPE disk_type = DISK_SSD;
     uint64_t disk_total = 0;
     uint64_t disk_free = 0;
