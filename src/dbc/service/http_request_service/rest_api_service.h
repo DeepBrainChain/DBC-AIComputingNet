@@ -25,6 +25,9 @@ struct req_body {
     std::string session_id;
     std::string session_id_sign;
     std::string pub_key;
+
+    uint16_t number_of_lines = 100;
+    uint16_t head_or_tail = GET_LOG_TAIL;
 };
 
 class rest_api_service : public service_module, public dbc::network::http_request_event, public Singleton<rest_api_service> {
