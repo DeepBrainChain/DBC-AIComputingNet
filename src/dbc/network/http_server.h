@@ -130,8 +130,8 @@ namespace dbc
         typedef std::shared_ptr<http_request>  HTTP_REQUEST_PTR;
         typedef std::shared_ptr<http_request_context> HTTP_REQ_CTX_PTR;
 
-        typedef std::function<std::shared_ptr<message>(HTTP_REQUEST_PTR  ,const std::string& )> http_request_handler;
-        typedef std::function<int32_t(HTTP_REQ_CTX_PTR,  std::shared_ptr<message>& )> response_call_handler;
+        typedef std::function<void(const HTTP_REQUEST_PTR&, const std::string& )> http_request_handler;
+        typedef std::function<void(const HTTP_REQ_CTX_PTR&, const std::shared_ptr<message>& )> response_call_handler;
 
         struct http_path_handler
         {

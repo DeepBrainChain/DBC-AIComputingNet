@@ -14,8 +14,8 @@
 #define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       topic_manager::instance().subscribe(MSG_NAME, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg);});
 #define USE_SIGN_TIME 1548777600
 
-using invoker_type = typename std::function<int32_t(std::shared_ptr<dbc::network::message> &msg)>;
-using timer_invoker_type = typename std::function<int32_t(std::shared_ptr<core_timer> timer)>;
+using invoker_type = typename std::function<void(const std::shared_ptr<dbc::network::message> &msg)>;
+using timer_invoker_type = typename std::function<void(const std::shared_ptr<core_timer>& timer)>;
 const std::string ECDSA = "ecdsa";
 
 //        int32_t extra_sign_info(std::string &message, std::map<std::string, std::string> & exten_info);
@@ -33,7 +33,7 @@ public:
 
     service_module();
 
-    virtual ~service_module() {}
+    virtual ~service_module() = default;
 
     virtual std::string module_name() const { return ""; }
 
@@ -52,8 +52,7 @@ public:
     bool is_empty() const { return m_msg_queue.empty(); }
 
 protected:
-
-    virtual int32_t on_invoke(std::shared_ptr<dbc::network::message> &msg);
+    virtual void on_invoke(std::shared_ptr<dbc::network::message> &msg);
 
     virtual void init_invoker() {}
 
@@ -63,16 +62,11 @@ protected:
 
     virtual void init_time_tick_subscription();
 
-protected:
-
-    //override by service layer
     virtual int32_t service_init(bpo::variables_map &options) { return E_SUCCESS; }         //derived class should declare which topic is subscribed in service_init
 
     virtual int32_t service_exit() { return E_SUCCESS; }
 
-    virtual int32_t service_msg(std::shared_ptr<dbc::network::message> &msg);
-
-    virtual int32_t on_time_out(std::shared_ptr<core_timer> timer);
+    virtual void on_time_out(std::shared_ptr<core_timer> timer);
 
     virtual uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id);                         //period, unit: ms
 
@@ -84,27 +78,27 @@ protected:
 
     void remove_session(std::string session_id);
 
-protected:
+    int32_t get_session_count();
 
+protected:
     bool m_exited;
 
-    std::mutex m_mutex;
-
-    std::shared_ptr<std::thread> m_thread;
-
     queue_type m_msg_queue;
-
+    std::mutex m_mutex;
     std::condition_variable m_cond;
+    std::shared_ptr<std::thread> m_thread;
 
     task_functor m_module_task;
 
     std::shared_ptr<timer_manager> m_timer_manager;
+    std::mutex m_timer_lock;
 
     std::unordered_map<std::string, invoker_type> m_invokers;
 
     std::unordered_map<std::string, timer_invoker_type> m_timer_invokers;
 
     std::unordered_map<std::string, std::shared_ptr<service_session>> m_sessions;
+    std::mutex m_session_lock;
 };
 
 #endif
