@@ -33,16 +33,6 @@ rapidjson::Document document;\
 rapidjson::Document::AllocatorType& allocator = document.GetAllocator();\
 rapidjson::Value data(rapidjson::kObjectType);
 
-static void fill_json_filed_string(rapidjson::Value &data, rapidjson::Document::AllocatorType &allocator,
-                                   const std::string& key, const std::string &val) {
-    if (val.empty()) return;
-
-    std::string tmp_val(val);
-    tmp_val = util::rtrim(tmp_val, '\n');
-    util::trim(tmp_val);
-
-    data.AddMember(STRING_DUP(key), STRING_DUP(tmp_val), allocator);
-}
 
 
 

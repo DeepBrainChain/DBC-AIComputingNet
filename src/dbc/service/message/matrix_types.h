@@ -45,6 +45,8 @@ namespace dbc {
 
     class node_create_task_rsp;
 
+    class node_start_task_req_data;
+
     class node_start_task_req_body;
 
     class node_start_task_req;
@@ -52,6 +54,8 @@ namespace dbc {
     class node_start_task_rsp_body;
 
     class node_start_task_rsp;
+
+    class node_stop_task_req_data;
 
     class node_stop_task_req_body;
 
@@ -61,6 +65,8 @@ namespace dbc {
 
     class node_stop_task_rsp;
 
+    class node_restart_task_req_data;
+
     class node_restart_task_req_body;
 
     class node_restart_task_req;
@@ -68,6 +74,8 @@ namespace dbc {
     class node_restart_task_rsp_body;
 
     class node_restart_task_rsp;
+
+    class node_reset_task_req_data;
 
     class node_reset_task_req_body;
 
@@ -77,6 +85,8 @@ namespace dbc {
 
     class node_reset_task_rsp;
 
+    class node_delete_task_req_data;
+
     class node_delete_task_req_body;
 
     class node_delete_task_req;
@@ -84,6 +94,8 @@ namespace dbc {
     class node_delete_task_rsp_body;
 
     class node_delete_task_rsp;
+
+    class node_task_logs_req_data;
 
     class node_task_logs_req_body;
 
@@ -93,6 +105,8 @@ namespace dbc {
 
     class node_task_logs_rsp;
 
+    class node_list_task_req_data;
+
     class node_list_task_req_body;
 
     class node_list_task_req;
@@ -100,6 +114,8 @@ namespace dbc {
     class node_list_task_rsp_body;
 
     class node_list_task_rsp;
+
+    class node_modify_task_req_data;
 
     class node_modify_task_req_body;
 
@@ -118,6 +134,8 @@ namespace dbc {
     class ver_resp;
 
     class node_service_info;
+
+    class node_query_node_info_req_data;
 
     class node_query_node_info_req_body;
 
@@ -772,18 +790,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_create_task_rsp& obj);
 
 
-    class node_start_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_start_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_start_task_req_body(const node_start_task_req_body&);
-        node_start_task_req_body& operator=(const node_start_task_req_body&);
-        node_start_task_req_body() : task_id(), additional() {
+        node_start_task_req_data(const node_start_task_req_data&);
+        node_start_task_req_data& operator=(const node_start_task_req_data&);
+        node_start_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_start_task_req_body() throw();
+        virtual ~node_start_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -791,13 +812,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_start_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_start_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_start_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_start_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_start_task_req_data &a, node_start_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_start_task_req_data& obj);
+
+
+    class node_start_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_start_task_req_body(const node_start_task_req_body&);
+        node_start_task_req_body& operator=(const node_start_task_req_body&);
+        node_start_task_req_body() : data() {
+        }
+
+        virtual ~node_start_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_start_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -943,18 +1012,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_start_task_rsp& obj);
 
 
-    class node_stop_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_stop_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_stop_task_req_body(const node_stop_task_req_body&);
-        node_stop_task_req_body& operator=(const node_stop_task_req_body&);
-        node_stop_task_req_body() : task_id(), additional() {
+        node_stop_task_req_data(const node_stop_task_req_data&);
+        node_stop_task_req_data& operator=(const node_stop_task_req_data&);
+        node_stop_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_stop_task_req_body() throw();
+        virtual ~node_stop_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -962,13 +1034,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_stop_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_stop_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_stop_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_stop_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_stop_task_req_data &a, node_stop_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_stop_task_req_data& obj);
+
+
+    class node_stop_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_stop_task_req_body(const node_stop_task_req_body&);
+        node_stop_task_req_body& operator=(const node_stop_task_req_body&);
+        node_stop_task_req_body() : data() {
+        }
+
+        virtual ~node_stop_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_stop_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -1114,18 +1234,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_stop_task_rsp& obj);
 
 
-    class node_restart_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_restart_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_restart_task_req_body(const node_restart_task_req_body&);
-        node_restart_task_req_body& operator=(const node_restart_task_req_body&);
-        node_restart_task_req_body() : task_id(), additional() {
+        node_restart_task_req_data(const node_restart_task_req_data&);
+        node_restart_task_req_data& operator=(const node_restart_task_req_data&);
+        node_restart_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_restart_task_req_body() throw();
+        virtual ~node_restart_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -1133,13 +1256,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_restart_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_restart_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_restart_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_restart_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_restart_task_req_data &a, node_restart_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_restart_task_req_data& obj);
+
+
+    class node_restart_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_restart_task_req_body(const node_restart_task_req_body&);
+        node_restart_task_req_body& operator=(const node_restart_task_req_body&);
+        node_restart_task_req_body() : data() {
+        }
+
+        virtual ~node_restart_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_restart_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -1285,18 +1456,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_restart_task_rsp& obj);
 
 
-    class node_reset_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_reset_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_reset_task_req_body(const node_reset_task_req_body&);
-        node_reset_task_req_body& operator=(const node_reset_task_req_body&);
-        node_reset_task_req_body() : task_id(), additional() {
+        node_reset_task_req_data(const node_reset_task_req_data&);
+        node_reset_task_req_data& operator=(const node_reset_task_req_data&);
+        node_reset_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_reset_task_req_body() throw();
+        virtual ~node_reset_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -1304,13 +1478,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_reset_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_reset_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_reset_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_reset_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_reset_task_req_data &a, node_reset_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_reset_task_req_data& obj);
+
+
+    class node_reset_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_reset_task_req_body(const node_reset_task_req_body&);
+        node_reset_task_req_body& operator=(const node_reset_task_req_body&);
+        node_reset_task_req_body() : data() {
+        }
+
+        virtual ~node_reset_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_reset_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -1456,18 +1678,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_reset_task_rsp& obj);
 
 
-    class node_delete_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_delete_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_delete_task_req_body(const node_delete_task_req_body&);
-        node_delete_task_req_body& operator=(const node_delete_task_req_body&);
-        node_delete_task_req_body() : task_id(), additional() {
+        node_delete_task_req_data(const node_delete_task_req_data&);
+        node_delete_task_req_data& operator=(const node_delete_task_req_data&);
+        node_delete_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_delete_task_req_body() throw();
+        virtual ~node_delete_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -1475,13 +1700,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_delete_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_delete_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_delete_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_delete_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_delete_task_req_data &a, node_delete_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_delete_task_req_data& obj);
+
+
+    class node_delete_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_delete_task_req_body(const node_delete_task_req_body&);
+        node_delete_task_req_body& operator=(const node_delete_task_req_body&);
+        node_delete_task_req_body() : data() {
+        }
+
+        virtual ~node_delete_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_delete_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -1627,42 +1900,93 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_delete_task_rsp& obj);
 
 
-    class node_task_logs_req_body : public virtual ::apache::thrift::TBase {
+    class node_task_logs_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_task_logs_req_body(const node_task_logs_req_body&);
-        node_task_logs_req_body& operator=(const node_task_logs_req_body&);
-        node_task_logs_req_body() : task_id(), head_or_tail(0), number_of_lines(0), additional() {
+        node_task_logs_req_data(const node_task_logs_req_data&);
+        node_task_logs_req_data& operator=(const node_task_logs_req_data&);
+        node_task_logs_req_data() : task_id(), head_or_tail(0), number_of_lines(0), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_task_logs_req_body() throw();
+        virtual ~node_task_logs_req_data() throw();
         std::string task_id;
+        int16_t head_or_tail;
+        int32_t number_of_lines;
         std::vector<std::string>  peer_nodes_list;
-        int8_t head_or_tail;
-        int16_t number_of_lines;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
+        void __set_head_or_tail(const int16_t val);
+
+        void __set_number_of_lines(const int32_t val);
+
         void __set_peer_nodes_list(const std::vector<std::string> & val);
-
-        void __set_head_or_tail(const int8_t val);
-
-        void __set_number_of_lines(const int16_t val);
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_task_logs_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_task_logs_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
-                return false;
-            if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(head_or_tail == rhs.head_or_tail))
                 return false;
             if (!(number_of_lines == rhs.number_of_lines))
                 return false;
+            if (!(peer_nodes_list == rhs.peer_nodes_list))
+                return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_task_logs_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_task_logs_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_task_logs_req_data &a, node_task_logs_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_task_logs_req_data& obj);
+
+
+    class node_task_logs_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_task_logs_req_body(const node_task_logs_req_body&);
+        node_task_logs_req_body& operator=(const node_task_logs_req_body&);
+        node_task_logs_req_body() : data() {
+        }
+
+        virtual ~node_task_logs_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_task_logs_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -1808,18 +2132,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_task_logs_rsp& obj);
 
 
-    class node_list_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_list_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_list_task_req_body(const node_list_task_req_body&);
-        node_list_task_req_body& operator=(const node_list_task_req_body&);
-        node_list_task_req_body() : task_id(), additional() {
+        node_list_task_req_data(const node_list_task_req_data&);
+        node_list_task_req_data& operator=(const node_list_task_req_data&);
+        node_list_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_list_task_req_body() throw();
+        virtual ~node_list_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -1827,13 +2154,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_list_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_list_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_list_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_list_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_list_task_req_data &a, node_list_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_list_task_req_data& obj);
+
+
+    class node_list_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_list_task_req_body(const node_list_task_req_body&);
+        node_list_task_req_body& operator=(const node_list_task_req_body&);
+        node_list_task_req_body() : data() {
+        }
+
+        virtual ~node_list_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_list_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -1979,18 +2354,21 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_list_task_rsp& obj);
 
 
-    class node_modify_task_req_body : public virtual ::apache::thrift::TBase {
+    class node_modify_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_modify_task_req_body(const node_modify_task_req_body&);
-        node_modify_task_req_body& operator=(const node_modify_task_req_body&);
-        node_modify_task_req_body() : task_id(), additional() {
+        node_modify_task_req_data(const node_modify_task_req_data&);
+        node_modify_task_req_data& operator=(const node_modify_task_req_data&);
+        node_modify_task_req_data() : task_id(), additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_modify_task_req_body() throw();
+        virtual ~node_modify_task_req_data() throw();
         std::string task_id;
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_task_id(const std::string& val);
 
@@ -1998,13 +2376,61 @@ namespace dbc {
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_modify_task_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_modify_task_req_data & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_modify_task_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_modify_task_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_modify_task_req_data &a, node_modify_task_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_modify_task_req_data& obj);
+
+
+    class node_modify_task_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_modify_task_req_body(const node_modify_task_req_body&);
+        node_modify_task_req_body& operator=(const node_modify_task_req_body&);
+        node_modify_task_req_body() : data() {
+        }
+
+        virtual ~node_modify_task_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_modify_task_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }
@@ -2411,27 +2837,78 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const node_service_info& obj);
 
 
-    class node_query_node_info_req_body : public virtual ::apache::thrift::TBase {
+    class node_query_node_info_req_data : public virtual ::apache::thrift::TBase {
     public:
 
-        node_query_node_info_req_body(const node_query_node_info_req_body&);
-        node_query_node_info_req_body& operator=(const node_query_node_info_req_body&);
-        node_query_node_info_req_body() : additional() {
+        node_query_node_info_req_data(const node_query_node_info_req_data&);
+        node_query_node_info_req_data& operator=(const node_query_node_info_req_data&);
+        node_query_node_info_req_data() : additional(), wallet(), session_id(), session_id_sign() {
         }
 
-        virtual ~node_query_node_info_req_body() throw();
+        virtual ~node_query_node_info_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
 
-        bool operator == (const node_query_node_info_req_body & rhs) const
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_query_node_info_req_data & rhs) const
         {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_query_node_info_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_query_node_info_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_query_node_info_req_data &a, node_query_node_info_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_query_node_info_req_data& obj);
+
+
+    class node_query_node_info_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_query_node_info_req_body(const node_query_node_info_req_body&);
+        node_query_node_info_req_body& operator=(const node_query_node_info_req_body&);
+        node_query_node_info_req_body() : data() {
+        }
+
+        virtual ~node_query_node_info_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_query_node_info_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
                 return false;
             return true;
         }

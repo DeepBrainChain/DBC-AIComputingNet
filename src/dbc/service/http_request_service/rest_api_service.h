@@ -17,6 +17,7 @@ constexpr int MAX_SESSION_COUNT = 1024;
 
 struct req_body {
     std::string task_id;
+
     std::vector<std::string> peer_nodes_list;
     std::string additional;
     std::string sign;
@@ -26,8 +27,14 @@ struct req_body {
     std::string session_id_sign;
     std::string pub_key;
 
-    uint16_t number_of_lines = 100;
-    uint16_t head_or_tail = GET_LOG_TAIL;
+    // task logs
+    int16_t head_or_tail = GET_LOG_TAIL;
+    int32_t number_of_lines = 100;
+
+    // peers
+    std::string option;
+    int16_t flag = flag_global;
+
 };
 
 class rest_api_service : public service_module, public dbc::network::http_request_event, public Singleton<rest_api_service> {

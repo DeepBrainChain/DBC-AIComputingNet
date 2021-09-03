@@ -33,11 +33,12 @@ extern std::chrono::high_resolution_clock::time_point server_start_time;
 int32_t rest_api_service::init(bpo::variables_map &options) {
     const dbc::network::http_path_handler uri_prefixes[] = {
             {"/tasks", false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
-            {"/peers",        false, std::bind(&rest_api_service::rest_peers, this, std::placeholders::_1, std::placeholders::_2)},
-            {"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
             {"/mining_nodes", false, std::bind(&rest_api_service::rest_mining_nodes, this, std::placeholders::_1, std::placeholders::_2)},
-            {"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
-            {"",              true,  std::bind(&rest_api_service::rest_api_version, this, std::placeholders::_1, std::placeholders::_2)},
+
+            //{"/peers",        false, std::bind(&rest_api_service::rest_peers, this, std::placeholders::_1, std::placeholders::_2)},
+            //{"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
+            //{"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
+            //{"",              true,  std::bind(&rest_api_service::rest_api_version, this, std::placeholders::_1, std::placeholders::_2)},
     };
 
     for (const auto &uri_prefixe : uri_prefixes) {
@@ -56,7 +57,7 @@ int32_t rest_api_service::init(bpo::variables_map &options) {
             {       NODE_LIST_TASK_RSP, std::bind(&rest_api_service::on_node_list_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {     NODE_MODIFY_TASK_RSP, std::bind(&rest_api_service::on_node_modify_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             { NODE_QUERY_NODE_INFO_RSP, std::bind(&rest_api_service::on_node_query_node_info_rsp, this, std::placeholders::_1, std::placeholders::_2) },
-            {typeid(cmd_get_peer_nodes_rsp).name(), std::bind(&rest_api_service::on_cmd_get_peer_nodes_rsp, this, std::placeholders::_1, std::placeholders::_2)},
+            //{typeid(cmd_get_peer_nodes_rsp).name(), std::bind(&rest_api_service::on_cmd_get_peer_nodes_rsp, this, std::placeholders::_1, std::placeholders::_2)},
     };
 
     for (const auto &rsp_handler : rsp_handlers) {
@@ -590,7 +591,13 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
             req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
         }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
     }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
@@ -663,18 +670,14 @@ void rest_api_service::on_node_create_task_timer(const std::shared_ptr<core_time
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"create task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        std::stringstream ss;
+        ss << "{";
+        ss << "\"error_code\":" << -1;
+        ss << ", \"error_message\":\"create task timeout\"";
+        ss << "}";
+        hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
     }
 
     session->clear();
@@ -874,22 +877,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
     req_content->header.__set_msg_name(NODE_START_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_message = body.task_id + req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
-    if (signature.empty()) return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_start_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_START_TASK_REQ);
@@ -1175,22 +1202,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
     req_content->header.__set_msg_name(NODE_STOP_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = body.task_id + req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    if (signature.empty()) return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_stop_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_STOP_TASK_REQ);
@@ -1476,22 +1527,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     req_content->header.__set_msg_name(NODE_RESTART_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_message = body.task_id + req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
-    if (signature.empty()) return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_restart_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_RESTART_TASK_REQ);
@@ -1777,22 +1852,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
     req_content->header.__set_msg_name(NODE_RESET_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = body.task_id + req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    if (signature.empty()) return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_reset_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_RESET_TASK_REQ);
@@ -2078,22 +2177,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
     req_content->header.__set_msg_name(NODE_DELETE_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = body.task_id + req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    if (signature.empty()) return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_delete_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_DELETE_TASK_REQ);
@@ -2375,23 +2498,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
     req_content->header.__set_msg_name(NODE_LIST_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_message = body.task_id + req_content->header.nonce +
-            req_content->header.session_id + body.additional;
-    std::string sign = util::sign(sign_message, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_list_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_LIST_TASK_REQ);
@@ -2677,22 +2823,46 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
     req_content->header.__set_msg_name(NODE_MODIFY_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = body.task_id + req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    if (signature.empty()) return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_modify_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_MODIFY_TASK_REQ);
@@ -2958,17 +3128,19 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     }
 
     // number of lines
-    auto lines = (uint64_t) std::stoull(number_of_lines);
+    int32_t lines = atoi(number_of_lines);
     if (lines > MAX_NUMBER_OF_LINES) {
         lines = MAX_NUMBER_OF_LINES - 1;
     }
-    body.number_of_lines = (uint16_t) lines;
+    body.number_of_lines = lines;
 
     // tail or head
     if (head_or_tail == "tail") {
         body.head_or_tail = GET_LOG_TAIL;
     } else if (head_or_tail == "head") {
         body.head_or_tail = GET_LOG_HEAD;
+    } else {
+        body.head_or_tail = GET_LOG_TAIL;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -3004,41 +3176,54 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
         return nullptr;
     }
 
-    if (GET_LOG_HEAD != body.head_or_tail && GET_LOG_TAIL != body.head_or_tail) {
-        LOG_ERROR << "log direction error";
-        return nullptr;
-    }
-
-    if (body.number_of_lines > MAX_NUMBER_OF_LINES) {
-        LOG_ERROR << "number of lines error: should less than " + std::to_string(body.number_of_lines);
-        return nullptr;
-    }
-
     auto req_content = std::make_shared<dbc::node_task_logs_req>();
     //header
     req_content->header.__set_magic(conf_manager::instance().get_net_flag());
     req_content->header.__set_msg_name(NODE_TASK_LOGS_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sig_msg = body.task_id + req_content->header.nonce + req_content->header.session_id
-            + body.additional;
-    std::string signature = util::sign(sig_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     //body
-    req_content->body.__set_task_id(body.task_id);
-    req_content->body.__set_head_or_tail(body.head_or_tail);
-    req_content->body.__set_number_of_lines(body.number_of_lines);
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_task_logs_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_head_or_tail(body.head_or_tail);
+    req_data.__set_number_of_lines(body.number_of_lines);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_TASK_LOGS_REQ);
@@ -3131,6 +3316,40 @@ void rest_api_service::on_node_task_logs_timer(const std::shared_ptr<core_timer>
 }
 
 // list mining node
+void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_service_info>> &service_list,
+                     std::string &data_json) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":0";
+    ss << ", \"data\":{";
+    ss << "\"mining_nodes\":[";
+    int service_count = 0;
+    for (auto &it : *service_list) {
+        if (service_count > 0) ss << ",";
+        ss << "{";
+        std::string service_list;
+        for (int i = 0; i < it.second.service_list.size(); i++) {
+            if (i > 0) service_list += ",";
+            service_list += it.second.service_list[i];
+        }
+        ss << "\"service_list\":" << "\"" << service_list << "\"";
+        std::string node_id = it.first;
+        node_id = util::rtrim(node_id, '\n');
+        ss << ",\"node_id\":" << "\"" << node_id << "\"";
+        ss << ",\"name\":" << "\"" << it.second.name << "\"";
+        std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
+        ss << ",\"version\":" << "\"" << ver << "\"";
+        ss << ",\"state\":" << "\"" << it.second.kvs["state"] << "\"";
+        ss << "}";
+
+        service_count++;
+    }
+    ss << "]}";
+    ss << "}";
+
+    data_json = ss.str();
+}
+
 void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "Only support POST requests");
@@ -3277,24 +3496,33 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
         return;
     }
 
-    std::string head_session_id = util::create_session_id();
+    // peer_nodes_list
+    if (body.peer_nodes_list.empty()) {
+        std::shared_ptr<std::map<std::string, dbc::node_service_info>> id_2_services =
+                service_info_collection::instance().get_all();
+        std::string data_json;
+        reply_node_list(id_2_services, data_json);
+        httpReq->reply_comm_rest_succ2(data_json);
+    } else {
+        std::string head_session_id = util::create_session_id();
 
-    auto node_req_msg = create_node_query_node_info_req_msg(head_session_id, body);
-    if (nullptr == node_req_msg) {
-        LOG_ERROR << "modify node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "modify node request failed");
-        return;
-    }
+        auto node_req_msg = create_node_query_node_info_req_msg(head_session_id, body);
+        if (nullptr == node_req_msg) {
+            LOG_ERROR << "modify node request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "modify node request failed");
+            return;
+        }
 
-    if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_QUERY_NODE_INFO_TIMER) failed";
-        return;
-    }
+        if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id)) {
+            LOG_ERROR << "create request session and timer(NODE_QUERY_NODE_INFO_TIMER) failed";
+            return;
+        }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
-        return;
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+            LOG_ERROR << "broadcast failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+            return;
+        }
     }
 }
 
@@ -3306,70 +3534,51 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     req_content->header.__set_msg_name(NODE_QUERY_NODE_INFO_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
     req_content->header.__set_path(path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_message = req_content->header.nonce + body.additional;
-    std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
-    if (signature.empty())  return nullptr;
-    exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    req_content->header.__set_exten_info(exten_info);
+
     // body
-    req_content->body.__set_peer_nodes_list(body.peer_nodes_list);
-    req_content->body.__set_additional(body.additional);
+    dbc::node_query_node_info_req_data req_data;
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
 
     auto req_msg = std::make_shared<dbc::network::message>();
     req_msg->set_name(NODE_QUERY_NODE_INFO_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
-}
-
-void reply_node_info(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
-                     rapidjson::Document::AllocatorType &allocator) {
-
-    for (auto &kv: resp->kvs) {
-        if (kv.second.length() > 0 && (kv.second[0] == '{' || kv.second[0] == '[')) {
-            rapidjson::Document doc;
-            if (!doc.Parse<0>(kv.second.c_str()).HasParseError()) {
-                rapidjson::Value v = rapidjson::Value(doc, allocator);
-                data.AddMember(STRING_DUP(kv.first), v, allocator);
-            }
-        } else {
-            fill_json_filed_string(data, allocator, kv.first, kv.second);
-        }
-    }
-}
-
-void reply_node_list(const std::shared_ptr<cmd_list_node_rsp> &resp, rapidjson::Value &data,
-                     rapidjson::Document::AllocatorType &allocator) {
-    std::map<std::string, dbc::node_service_info> s_in_order;
-    for (auto &it : *(resp->id_2_services)) {
-        s_in_order[it.first] = it.second;
-    }
-
-    rapidjson::Value mining_nodes(rapidjson::kArrayType);
-    for (auto &it : s_in_order) {
-        rapidjson::Value node_info(rapidjson::kObjectType);
-        std::string node_id = it.first;
-        node_id = util::rtrim(node_id, '\n');
-        std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
-
-        std::string service_list = resp->to_string(it.second.service_list);
-        node_info.AddMember("service_list", STRING_DUP(service_list), allocator);
-        node_info.AddMember("nodeid", STRING_DUP(node_id), allocator);
-        node_info.AddMember("name", STRING_DUP(it.second.name), allocator);
-        node_info.AddMember("version", STRING_DUP(ver), allocator);
-        node_info.AddMember("state", STRING_DUP(it.second.kvs["state"]), allocator);
-
-        mining_nodes.PushBack(node_info, allocator);
-    }
-
-    data.AddMember("mining_nodes", mining_nodes, allocator);
 }
 
 void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
@@ -3459,36 +3668,41 @@ void rest_api_service::on_node_query_node_info_timer(const std::shared_ptr<core_
 
 // /peers/
 void rest_api_service::rest_peers(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    /*
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
     if (path_list.size() != 1) {
-        ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                    "No option count specified. Use /api/v1/peers/{option}")
-                    return nullptr;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                    "No option count specified. Use /api/v1/peers/{option}");
+        return;
     }
 
-    const std::string &option = path_list[0];
-    std::shared_ptr<cmd_get_peer_nodes_req> req = std::make_shared<cmd_get_peer_nodes_req>();
-    req->flag = flag_active;
+    req_body body;
 
-    if (option == "active") {
-        req->flag = flag_active;
-    } else if (option == "global") {
-        req->flag = flag_global;
+    body.option = path_list[0];
+
+    if (body.option == "active") {
+        body.flag = flag_active;
+    } else if (body.option == "global") {
+        body.flag = flag_global;
     } else {
-        ERROR_REPLY(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid option. The option is active or global.")
-        return nullptr;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid option. The option is active or global.");
+        return;
     }
+
+
 
     std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
     msg->set_name(typeid(cmd_get_peer_nodes_req).name());
     msg->set_content(req);
     return msg;
+    */
 }
 
 void rest_api_service::on_cmd_get_peer_nodes_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+    /*
     INIT_RSP_CONTEXT(cmd_get_peer_nodes_req, cmd_get_peer_nodes_rsp)
 
     if (resp->result != 0) {
@@ -3520,10 +3734,12 @@ void rest_api_service::on_cmd_get_peer_nodes_rsp(const std::shared_ptr<dbc::netw
     httpReq->reply_comm_rest_succ(data);
 
     return E_SUCCESS;
+    */
 }
 
 // /stat/
 void rest_api_service::rest_stat(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    /*
     rapidjson::Document document;
     rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
@@ -3535,10 +3751,12 @@ void rest_api_service::rest_stat(const std::shared_ptr<dbc::network::http_reques
     data.AddMember("startup_time", rest_api_service::instance().get_startup_time(), allocator);
     SUCC_REPLY(data)
     return nullptr;
+    */
 }
 
 // /config/
 void rest_api_service::rest_config(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    /*
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -3599,10 +3817,12 @@ void rest_api_service::rest_config(const std::shared_ptr<dbc::network::http_requ
     SUCC_REPLY(data)
 
     return nullptr;
+    */
 }
 
 // /
 void rest_api_service::rest_api_version(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    /*
     rapidjson::Document document;
     rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
@@ -3615,9 +3835,11 @@ void rest_api_service::rest_api_version(const std::shared_ptr<dbc::network::http
     data.AddMember("node_id", STRING_REF(node_id), allocator);
     SUCC_REPLY(data)
     return nullptr;
+    */
 }
 
-int32_t rest_api_service::on_binary_forward(std::shared_ptr<dbc::network::message> &msg) {
+void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::message> &msg) {
+    /*
     if (!msg) {
         LOG_ERROR << "recv logs_resp but msg is nullptr";
         return E_DEFAULT;
@@ -3646,5 +3868,6 @@ int32_t rest_api_service::on_binary_forward(std::shared_ptr<dbc::network::messag
     }
 
     return E_SUCCESS;
+    */
 }
 
