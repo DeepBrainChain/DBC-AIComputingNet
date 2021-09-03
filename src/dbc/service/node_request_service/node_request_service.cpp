@@ -62,10 +62,6 @@ std::string get_is_update(const std::string& s) {
     return operation;
 }
 
-node_request_service::node_request_service() {
-
-}
-
 int32_t node_request_service::init(bpo::variables_map &options) {
     if (options.count(SERVICE_NAME_AI_TRAINING)) {
         m_is_computing_node = true;
@@ -283,7 +279,7 @@ bool node_request_service::check_rsp_header(std::shared_ptr<dbc::network::messag
     return true;
 }
 
-int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -361,7 +357,7 @@ int32_t node_request_service::on_node_create_task_req(std::shared_ptr<dbc::netwo
     }
 }
 
-int32_t node_request_service::on_node_start_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -415,7 +411,7 @@ int32_t node_request_service::on_node_start_task_req(std::shared_ptr<dbc::networ
     }
 }
 
-int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -469,7 +465,7 @@ int32_t node_request_service::on_node_stop_task_req(std::shared_ptr<dbc::network
     }
 }
 
-int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -527,7 +523,7 @@ int32_t node_request_service::on_node_restart_task_req(std::shared_ptr<dbc::netw
     }
 }
 
-int32_t node_request_service::on_node_reset_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -578,7 +574,7 @@ int32_t node_request_service::on_node_reset_task_req(std::shared_ptr<dbc::networ
     }
 }
 
-int32_t node_request_service::on_node_delete_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -632,7 +628,7 @@ int32_t node_request_service::on_node_delete_task_req(std::shared_ptr<dbc::netwo
     }
 }
 
-int32_t node_request_service::on_node_task_logs_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -701,7 +697,7 @@ int32_t node_request_service::on_node_task_logs_req(std::shared_ptr<dbc::network
     }
 }
 
-int32_t node_request_service::on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg) {
+void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -751,7 +747,7 @@ int32_t node_request_service::on_node_list_task_req(std::shared_ptr<dbc::network
     }
 }
 
-int32_t node_request_service::on_node_query_node_info_req(std::shared_ptr<dbc::network::message> &msg) {
+void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;
@@ -938,7 +934,7 @@ int32_t node_request_service::on_timer_service_broadcast(const std::shared_ptr<c
     return E_SUCCESS;
 }
 
-int32_t node_request_service::on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg) {
+void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
         return E_DEFAULT;

@@ -54,6 +54,9 @@
 #define NODE_QUERY_NODE_INFO_RSP       "node_query_node_info_rsp"
 #define NODE_QUERY_NODE_INFO_TIMER     "node_query_node_info_timer"
 
+// peer nodes
+
+
 // service broadcast
 #define SERVICE_BROADCAST_REQ          "service_broadcast_req"
 

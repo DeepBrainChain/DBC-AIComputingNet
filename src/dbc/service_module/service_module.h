@@ -7,6 +7,7 @@
 #include "network/protocol/service_message.h"
 #include "session.h"
 #include "util/crypto/pubkey.h"
+#include <mutex>
 
 #define DEFAULT_MESSAGE_COUNT               102400    //default message count
 

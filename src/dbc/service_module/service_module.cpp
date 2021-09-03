@@ -181,7 +181,7 @@ int32_t service_module::add_session(std::string session_id, std::shared_ptr<serv
 
 std::shared_ptr<service_session> service_module::get_session(std::string session_id)
 {
-    std::unique_lock<std::mutext> wlock(m_session_lock);
+    std::unique_lock<std::mutex> wlock(m_session_lock);
     auto it = m_sessions.find(session_id);
     if (it == m_sessions.end())
     {
@@ -193,7 +193,7 @@ std::shared_ptr<service_session> service_module::get_session(std::string session
 
 void service_module::remove_session(std::string session_id)
 {
-    std::unique_lock<std::mutext> wlock(m_session_lock);
+    std::unique_lock<std::mutex> wlock(m_session_lock);
     m_sessions.erase(session_id);
 }
 

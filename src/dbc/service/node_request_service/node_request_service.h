@@ -27,7 +27,7 @@ using namespace boost::asio::ip;
 
 class node_request_service : public service_module, public Singleton<node_request_service> {
 public:
-    node_request_service();
+    node_request_service() = default;
 
     ~node_request_service() override = default;
 
@@ -46,23 +46,23 @@ protected:
 
     int32_t service_exit() override;
 
-    int32_t on_node_create_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_start_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_restart_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_stop_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_reset_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_delete_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_task_logs_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_list_task_req(std::shared_ptr<dbc::network::message>& msg);
+    void on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    int32_t on_node_query_node_info_req(std::shared_ptr<dbc::network::message> &msg);
+    void on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg);
 
     int32_t task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data);
 
@@ -87,7 +87,7 @@ protected:
 
     int32_t on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer);
 
-    int32_t on_net_service_broadcast_req(std::shared_ptr<dbc::network::message> &msg);
+    void on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg);
 
 
     int32_t on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg);

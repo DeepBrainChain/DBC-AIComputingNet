@@ -68,12 +68,8 @@ set(service_src_dir
         dbc/service
         dbc/service/message
         dbc/service/message/protocol_coder
-        dbc/service/oss
-        dbc/service/oss/bill
-        dbc/service/oss/idle_task
         dbc/service/common_service
         dbc/service/http_request_service
-        dbc/service/cmd_request_service
         dbc/service/node_request_service
         dbc/service/peer_request_service
 )

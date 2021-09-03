@@ -9,7 +9,6 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
-#include "rest_handler.h"
 #include "log/log.h"
 #include "service_module/service_message_id.h"
 #include "timer/time_tick_notification.h"
@@ -17,28 +16,16 @@
 #include "../message/message_id.h"
 #include "data/service_info/service_info_collection.h"
 
-#define SUBSCRIBE_RESP_MSG(cmd)  \
-topic_manager::instance().subscribe(typeid(cmd).name(),[this](std::shared_ptr<cmd> &rsp) {  \
-    std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>(); \
-    msg->set_name(typeid(cmd).name()); \
-    msg->set_content(rsp);\
-    this->send(msg);\
-});
-
-extern std::chrono::high_resolution_clock::time_point server_start_time;
-
-#define HTTP_REQUEST_TIMEOUT_EVENT   "http_request_timeout_event"
 #define HTTP_REQUEST_KEY             "hreq_context"
 
 int32_t rest_api_service::init(bpo::variables_map &options) {
     const dbc::network::http_path_handler uri_prefixes[] = {
             {"/tasks", false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
             {"/mining_nodes", false, std::bind(&rest_api_service::rest_mining_nodes, this, std::placeholders::_1, std::placeholders::_2)},
-
-            //{"/peers",        false, std::bind(&rest_api_service::rest_peers, this, std::placeholders::_1, std::placeholders::_2)},
-            //{"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
-            //{"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
-            //{"",              true,  std::bind(&rest_api_service::rest_api_version, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/peers",        false, std::bind(&rest_api_service::rest_peers, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
+            {"",              true,  std::bind(&rest_api_service::rest_api_version, this, std::placeholders::_1, std::placeholders::_2)},
     };
 
     for (const auto &uri_prefixe : uri_prefixes) {
@@ -93,7 +80,7 @@ void rest_api_service::init_invoker() {
     m_invokers[NODE_LIST_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
     m_invokers[NODE_MODIFY_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
     m_invokers[NODE_QUERY_NODE_INFO_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[BINARY_FORWARD_MSG] = std::bind(&rest_api_service::on_binary_forward, this, std::placeholders::_1);
+    //m_invokers[BINARY_FORWARD_MSG] = std::bind(&rest_api_service::on_binary_forward, this, std::placeholders::_1);
 }
 
 void rest_api_service::init_subscription() {
@@ -107,13 +94,14 @@ void rest_api_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_RSP)
     SUBSCRIBE_BUS_MESSAGE(NODE_MODIFY_TASK_RSP)
     SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_RSP)
-    SUBSCRIBE_BUS_MESSAGE(BINARY_FORWARD_MSG)
+    //SUBSCRIBE_BUS_MESSAGE(BINARY_FORWARD_MSG)
 }
 
 void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) {
     std::string str_uri = hreq->get_uri();
-    if (check_invalid_http_request(hreq)) {
-        LOG_ERROR << "the request is invalid,so reject it," << str_uri;
+    if (str_uri.substr(0, REST_API_URI.size()) != REST_API_URI) {
+        LOG_ERROR << "request uri is invalid, uri:" << str_uri;
+        hreq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "request uri is invalid, uri:" + str_uri);
         return;
     }
 
@@ -135,34 +123,11 @@ void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_
     }
 
     if (i == iend) {
-        hreq->reply_comm_rest_err(HTTP_NOTFOUND, RPC_METHOD_NOT_FOUND, "not support RESTful api");
-        return;
+        LOG_ERROR << "not support uri:" << str_uri;
+        hreq->reply_comm_rest_err(HTTP_NOTFOUND, RPC_METHOD_NOT_FOUND, "not support uri:" + str_uri);
+    } else {
+        i->m_handler(hreq, path);
     }
-
-    i->m_handler(hreq, path);
-}
-
-bool rest_api_service::check_invalid_http_request(std::shared_ptr<dbc::network::http_request> &hreq) {
-    if (hreq->get_request_method() == dbc::network::http_request::UNKNOWN) {
-        hreq->reply_comm_rest_err(HTTP_BADMETHOD, RPC_METHOD_DEPRECATED, "not support method");
-        return true;
-    }
-
-    auto time_span_ms = duration_cast<milliseconds>(high_resolution_clock::now() - server_start_time);
-
-    if (time_span_ms.count() < MIN_INIT_HTTP_SERVER_TIME) {
-        hreq->reply_comm_rest_err(HTTP_OK, RPC_REQUEST_INTERRUPTED, "Request is interrupted.Try again later.");
-        return true;
-    }
-
-    std::string str_uri = hreq->get_uri();
-    if (str_uri.substr(0, REST_API_URI.size()) != REST_API_URI) {
-        hreq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "The api version is invalid. Current "
-                                                                        "version is " + std::string(REST_API_URI) + ".");
-        return true;
-    }
-
-    return false;
 }
 
 void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::message> &rsp_msg) {
@@ -223,12 +188,6 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::m
     }
 }
 
-int32_t rest_api_service::get_startup_time() {
-    auto time_span_ms = duration_cast<milliseconds>(high_resolution_clock::now() - server_start_time);
-    int32_t fractional_seconds = (int32_t) (time_span_ms.count() / 1000);
-    return fractional_seconds;
-}
-
 bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::message> &rsp_msg) {
     if (!rsp_msg) {
         LOG_ERROR << "msg is nullptr";
@@ -285,15 +244,13 @@ int32_t rest_api_service::create_request_session(const std::string& timer_id,
         std::string str_uri = hreq->get_uri();
 
         if (get_session_count() >= MAX_SESSION_COUNT) {
-            LOG_ERROR << "str_uri:" << str_uri << ";m_sessions.size() exceed size";
-            hreq->reply_comm_rest_err(HTTP_OK, RPC_RESPONSE_ERROR, "session pool is full");
+            LOG_ERROR << "session pool is full, uri:" << str_uri;
             return E_DEFAULT;
         }
 
         uint32_t id = add_timer(timer_id, MAX_WAIT_HTTP_RESPONSE_TIME, ONLY_ONE_TIME, session_id);
         if (INVALID_TIMER_ID == id) {
-            LOG_ERROR << "str_uri:" << str_uri << ";add_timer failed";
-            hreq->reply_comm_rest_err(HTTP_OK, RPC_RESPONSE_ERROR, "System error.");
+            LOG_ERROR << "add_timer failed, uri:" << str_uri;
             return E_DEFAULT;
         }
 
@@ -305,12 +262,9 @@ int32_t rest_api_service::create_request_session(const std::string& timer_id,
         int32_t ret = this->add_session(session_id, session);
         if (E_SUCCESS != ret) {
             remove_timer(id);
-            LOG_ERROR << "str_uri:" << str_uri << ";add_session failed";
-            hreq->reply_comm_rest_err(HTTP_OK, RPC_RESPONSE_ERROR, "Session error..");
+            LOG_ERROR << "add_session failed, uri:" << str_uri;
             return E_DEFAULT;
         }
-
-        LOG_INFO << "str_uri:" << str_uri << ";add_session:" << session_id << ";msg_name:" << req_msg->get_name();
     } while (0);
 
     return E_SUCCESS;
@@ -387,7 +341,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     util::split_path(path, path_list);
     if (path_list.size() != 1) {
         LOG_ERROR << "path_list's size != 1";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use: /tasks/start");
         return;
     }
 
@@ -396,7 +350,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -411,8 +365,8 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -421,8 +375,8 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -430,13 +384,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -448,13 +402,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -462,13 +416,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -476,13 +430,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -490,13 +444,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -504,8 +458,8 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -514,8 +468,8 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -537,23 +491,19 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     }
 
     if (E_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_CREATE_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task_req_msg(const std::string &head_session_id, const req_body& body) {
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "create failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     auto req_content = std::make_shared<dbc::node_create_task_req>();
     // header
     req_content->header.__set_magic(conf_manager::instance().get_net_flag());
@@ -643,7 +593,7 @@ void rest_api_service::on_node_create_task_rsp(const std::shared_ptr<dbc::networ
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -664,7 +614,7 @@ void rest_api_service::on_node_create_task_timer(const std::shared_ptr<core_time
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_create_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -696,18 +646,23 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/start");
         return;
     }
 
     req_body body;
 
     body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -722,8 +677,8 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -732,8 +687,8 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -741,13 +696,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -759,13 +714,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -773,13 +728,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -787,13 +742,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -801,13 +756,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -815,8 +770,8 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -825,8 +780,8 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -848,28 +803,19 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     }
 
     if (E_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_START_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_req_msg(const std::string &head_session_id, const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "start failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "start failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_start_task_req>();
     // header
@@ -934,7 +880,7 @@ void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<dbc::network
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_start_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -963,7 +909,7 @@ void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<dbc::network
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -984,7 +930,7 @@ void rest_api_service::on_node_start_task_timer(const std::shared_ptr<core_timer
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_create_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -1020,18 +966,23 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/stop");
         return;
     }
 
     req_body body;
 
     body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -1046,8 +997,8 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -1056,8 +1007,8 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -1065,13 +1016,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -1083,13 +1034,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -1097,13 +1048,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -1111,13 +1062,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -1125,13 +1076,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -1139,8 +1090,8 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -1149,8 +1100,8 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -1166,35 +1117,26 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
 
     auto node_req_msg = create_node_stop_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "stop node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "stop node request failed");
+        LOG_ERROR << "creaate node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_START_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_req_msg(const std::string &head_session_id,
                                                                                        const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "start failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "start failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_stop_task_req> req_content = std::make_shared<dbc::node_stop_task_req>();
     // header
@@ -1259,7 +1201,7 @@ void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<dbc::network:
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_stop_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -1288,7 +1230,7 @@ void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<dbc::network:
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -1309,7 +1251,7 @@ void rest_api_service::on_node_stop_task_timer(const std::shared_ptr<core_timer>
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_create_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -1345,18 +1287,23 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/restart");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/restart");
         return;
     }
 
     req_body body;
 
     body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/restart");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -1371,8 +1318,8 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -1381,8 +1328,8 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -1390,13 +1337,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -1408,13 +1355,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -1422,13 +1369,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -1436,13 +1383,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -1450,13 +1397,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -1464,8 +1411,8 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -1474,8 +1421,8 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -1491,35 +1438,26 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
 
     auto node_req_msg = create_node_restart_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "restart node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "restart node request failed");
+        LOG_ERROR << "creaate node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_RESTART_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_task_req_msg(const std::string &head_session_id,
                     const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "restart failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "restart failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_restart_task_req>();
     // header
@@ -1584,7 +1522,7 @@ void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<dbc::netwo
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_restart_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -1613,7 +1551,7 @@ void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<dbc::netwo
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -1634,7 +1572,7 @@ void rest_api_service::on_node_restart_task_timer(const std::shared_ptr<core_tim
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_create_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -1670,18 +1608,23 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/reset");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/reset");
         return;
     }
 
     req_body body;
 
     body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/reset");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -1696,8 +1639,8 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -1706,8 +1649,8 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -1715,13 +1658,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -1733,13 +1676,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -1747,13 +1690,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -1761,13 +1704,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -1775,13 +1718,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -1789,8 +1732,8 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -1799,8 +1742,8 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -1816,35 +1759,26 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
 
     auto node_req_msg = create_node_reset_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "restart node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "restart node request failed");
+        LOG_ERROR << "create node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_RESET_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_req_msg(const std::string &head_session_id,
                                                                                         const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "reset failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "reset failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_reset_task_req> req_content = std::make_shared<dbc::node_reset_task_req>();
     // header
@@ -1909,7 +1843,7 @@ void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<dbc::network
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_reset_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -1938,7 +1872,7 @@ void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<dbc::network
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -1959,7 +1893,7 @@ void rest_api_service::on_node_reset_task_timer(const std::shared_ptr<core_timer
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_reset_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -1995,18 +1929,23 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/delete");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/delete");
         return;
     }
 
     req_body body;
 
     body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/delete");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -2021,8 +1960,8 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -2031,8 +1970,8 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -2040,13 +1979,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -2058,13 +1997,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -2072,13 +2011,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -2086,13 +2025,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -2100,13 +2039,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -2114,8 +2053,8 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -2124,8 +2063,8 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -2141,35 +2080,26 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
 
     auto node_req_msg = create_node_delete_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "delete node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "delete node request failed");
+        LOG_ERROR << "create node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_DELETE_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task_req_msg(const std::string &head_session_id,
                                                                                          const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "delete failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "delete failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_delete_task_req> req_content = std::make_shared<dbc::node_delete_task_req>();
     // header
@@ -2263,7 +2193,7 @@ void rest_api_service::on_node_delete_task_rsp(const std::shared_ptr<dbc::networ
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -2284,7 +2214,7 @@ void rest_api_service::on_node_delete_task_timer(const std::shared_ptr<core_time
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_delete_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -2325,15 +2255,15 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
     } else if (path_list.size() == 1) {
         body.task_id = path_list[0];
     } else {
-        LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks");
+        LOG_ERROR << "path_list's size > 1";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks");
         return;
     }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -2348,8 +2278,8 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -2358,8 +2288,8 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -2367,13 +2297,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -2385,13 +2315,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -2399,13 +2329,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -2413,13 +2343,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -2427,13 +2357,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -2441,8 +2371,8 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -2451,8 +2381,8 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -2468,30 +2398,26 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
 
     auto node_req_msg = create_node_list_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "list node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "delete node request failed");
+        LOG_ERROR << "create node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_LIST_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_req_msg(const std::string &head_session_id,
                                                                                        const req_body& body) {
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "list task failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     auto req_content = std::make_shared<dbc::node_list_task_req>();
     // header
     req_content->header.__set_magic(conf_manager::instance().get_net_flag());
@@ -2555,7 +2481,7 @@ void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network:
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -2584,7 +2510,7 @@ void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network:
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -2605,7 +2531,7 @@ void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer>
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_list_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -2641,18 +2567,23 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/modify");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/modify");
         return;
     }
 
     req_body body;
 
     body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/modify");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -2667,8 +2598,8 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -2677,8 +2608,8 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
             if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
                 return;
             }
 
@@ -2686,13 +2617,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -2704,13 +2635,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -2718,13 +2649,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -2732,13 +2663,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -2746,13 +2677,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -2760,8 +2691,8 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -2770,8 +2701,8 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -2787,35 +2718,26 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
 
     auto node_req_msg = create_node_modify_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "modify node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "modify node request failed");
+        LOG_ERROR << "create node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_MODIFY_TASK_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task_req_msg(const std::string &head_session_id,
                                                                                          const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "modify failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "modify failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_modify_task_req> req_content = std::make_shared<dbc::node_modify_task_req>();
     // header
@@ -2880,7 +2802,7 @@ void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<dbc::networ
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_modify_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -2909,7 +2831,7 @@ void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<dbc::networ
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -2930,7 +2852,7 @@ void rest_api_service::on_node_modify_task_timer(const std::shared_ptr<core_time
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_modify_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -2966,9 +2888,11 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/{task_id}/trace?flag=tail&line_num=100");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/{task_id}/trace?flag=tail&line_num=100");
         return;
     }
+
+    req_body body;
 
     std::map<std::string, std::string> query_table;
     util::split_path_into_kvs(path, query_table);
@@ -2984,146 +2908,8 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
             number_of_lines = "100";
         }
     } else {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                    "Invalid path_list /api/v1/tasks/{task_id}/trace?flag=tail&line_num=100");
-        return;
-    }
-
-    req_body body;
-
-    body.task_id = path_list[0];
-
-    std::string s_body = httpReq->read_body();
-    if (s_body.empty()) {
-        LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/modify");
-        return;
-    }
-
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
-        return;
-    }
-
-    if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
-        return;
-    }
-
-    // peer_nodes_list
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "http request's <peer_nodes_list> size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> size < 1");
-                return;
-            }
-
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-        } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
-        return;
-    }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
-        return;
-    }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
-            return;
-        }
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
+        LOG_ERROR << "head_or_tail is invalid";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "head_or_tail is invalid\"");
         return;
     }
 
@@ -3143,39 +2929,171 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         body.head_or_tail = GET_LOG_TAIL;
     }
 
+    body.task_id = path_list[0];
+    if (body.task_id.empty()) {
+        LOG_ERROR << "task_id is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+        return;
+    }
+
+    std::string s_body = httpReq->read_body();
+    if (s_body.empty()) {
+        LOG_ERROR << "http request body is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+        return;
+    }
+
+    if (!doc.IsObject()) {
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+        return;
+    }
+
+    // peer_nodes_list
+    if (doc.HasMember("peer_nodes_list")) {
+        if (doc["peer_nodes_list"].IsArray()) {
+            uint32_t list_size = doc["peer_nodes_list"].Size();
+            if (list_size < 1) {
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
+                return;
+            }
+
+            // 暂时只支持一次操作1个节点
+            std::string node(doc["peer_nodes_list"][0].GetString());
+            body.peer_nodes_list.push_back(node);
+        } else {
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+        return;
+    }
+    // additional
+    if (doc.HasMember("additional")) {
+        if (doc["additional"].IsObject()) {
+            const rapidjson::Value &obj = doc["additional"];
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            obj.Accept(writer);
+            body.additional = buffer.GetString();
+        } else {
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
+        return;
+    }
+    // sign
+    if (doc.HasMember("sign")) {
+        if (doc["sign"].IsString()) {
+            body.sign = doc["sign"].GetString();
+        } else {
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        return;
+    }
+    // nonce
+    if (doc.HasMember("nonce")) {
+        if (doc["nonce"].IsString()) {
+            body.nonce = doc["nonce"].GetString();
+        } else {
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no <nonce");
+        return;
+    }
+    // wallet
+    if (doc.HasMember("wallet")) {
+        if (doc["wallet"].IsString()) {
+            body.wallet = doc["wallet"].GetString();
+        } else {
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+        return;
+    }
+    // session_id
+    if (doc.HasMember("session_id")) {
+        if (doc["session_id"].IsString()) {
+            body.session_id = doc["session_id"].GetString();
+        } else {
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
+            return;
+        }
+    }
+    // session_id_sign
+    if (doc.HasMember("session_id_sign")) {
+        if (doc["session_id_sign"].IsString()) {
+            body.session_id_sign = doc["session_id_sign"].GetString();
+        } else {
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
+            return;
+        }
+    }
+    // pub_key
+    body.pub_key = conf_manager::instance().get_pub_key();
+    if (body.pub_key.empty()) {
+        LOG_ERROR << "pub_key is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
+        return;
+    }
+
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_task_logs_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "node task logs request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "node task logs request failed");
+        LOG_ERROR << "create node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
     if (E_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id)) {
-        LOG_ERROR << "create request session and timer(NODE_TASK_LOGS_TIMER) failed";
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_req_msg(const std::string &head_session_id,
                                                    const req_body& body) {
-    if (body.task_id.empty()) {
-        LOG_ERROR << "modify failed: task_id is empty!";
-        return nullptr;
-    }
-
-    if (body.peer_nodes_list.empty()) {
-        LOG_ERROR << "modify failed: no peer_nodes_list!";
-        return nullptr;
-    }
-
     auto req_content = std::make_shared<dbc::node_task_logs_req>();
     //header
     req_content->header.__set_magic(conf_manager::instance().get_net_flag());
@@ -3241,7 +3159,7 @@ void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<dbc::network:
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_task_logs_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -3270,7 +3188,7 @@ void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<dbc::network:
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -3291,7 +3209,7 @@ void rest_api_service::on_node_task_logs_timer(const std::shared_ptr<core_timer>
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_modify_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;
@@ -3352,15 +3270,16 @@ void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_servi
 
 void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "Only support POST requests");
+        LOG_ERROR << "http request is not post";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
 
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
-    if (path_list.size() != 1) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                    "No nodeid count specified. Use /api/v1/mining_nodes/{nodeid}/{key}");
+    if (!path_list.empty()) {
+        LOG_ERROR << "path_list's size != 0";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /mining_nodes");
         return;
     }
 
@@ -3369,7 +3288,7 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, use /api/v1/tasks/<task_id>/modify");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
 
@@ -3384,8 +3303,8 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "http request body is invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is invalid json");
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
@@ -3399,13 +3318,13 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
                 body.peer_nodes_list.push_back(node);
             }
         } else {
-            LOG_ERROR << "http request's <peer_nodes_list> is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <peer_nodes_list> is not array");
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <peer_nodes_list>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <peer_nodes_list>");
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
         return;
     }
     // additional
@@ -3417,13 +3336,13 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
             obj.Accept(writer);
             body.additional = buffer.GetString();
         } else {
-            LOG_ERROR << "http request's <additional> is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <additional> is not object");
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <additional>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <additional>");
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
     // sign
@@ -3431,13 +3350,13 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
         if (doc["sign"].IsString()) {
             body.sign = doc["sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <sign> is not string");
+            LOG_ERROR << "sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <sign>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <sign>");
+        LOG_ERROR << "has no sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
         return;
     }
     // nonce
@@ -3445,13 +3364,13 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
         if (doc["nonce"].IsString()) {
             body.nonce = doc["nonce"].GetString();
         } else {
-            LOG_ERROR << "http request's <nonce> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <nonce> is not string");
+            LOG_ERROR << "nonce is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <nonce>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <nonce>");
+        LOG_ERROR << "has no nonce";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
         return;
     }
     // wallet
@@ -3459,13 +3378,13 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
         if (doc["wallet"].IsString()) {
             body.wallet = doc["wallet"].GetString();
         } else {
-            LOG_ERROR << "http request's <wallet> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <wallet> is not string");
+            LOG_ERROR << "wallet is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
             return;
         }
     } else {
-        LOG_ERROR << "http request has no <wallet>";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request has no <wallet>");
+        LOG_ERROR << "has no wallet";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
     // session_id
@@ -3473,8 +3392,8 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
         if (doc["session_id"].IsString()) {
             body.session_id = doc["session_id"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id> is not string");
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
             return;
         }
     }
@@ -3483,8 +3402,8 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
         if (doc["session_id_sign"].IsString()) {
             body.session_id_sign = doc["session_id_sign"].GetString();
         } else {
-            LOG_ERROR << "http request's <session_id_sign> is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request's <session_id_sign> is not string");
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
     }
@@ -3508,19 +3427,20 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
 
         auto node_req_msg = create_node_query_node_info_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            LOG_ERROR << "modify node request failed";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "modify node request failed");
+            LOG_ERROR << "create node request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
         if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id)) {
-            LOG_ERROR << "create request session and timer(NODE_QUERY_NODE_INFO_TIMER) failed";
+            LOG_ERROR << "create request session failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
         if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-            LOG_ERROR << "broadcast failed";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast failed");
+            LOG_ERROR << "broadcast request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
     }
@@ -3590,7 +3510,7 @@ void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::ne
 
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_query_node_info_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
-        LOG_ERROR << "rsp is nullptr";
+        LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
@@ -3620,7 +3540,7 @@ void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::ne
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
     if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_OK, rsp_result_msg);
+        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
     } else {
         httpReq->reply_comm_rest_succ2(rsp_result_msg);
     }
@@ -3642,7 +3562,7 @@ void rest_api_service::on_node_query_node_info_timer(const std::shared_ptr<core_
 
     variables_map &vm = session->get_context().get_args();
     if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "rsp name: on_node_modify_task_timer, session_id:" << session_id << ", but get null hreq_key";
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
         session->clear();
         this->remove_session(session_id);
         return;

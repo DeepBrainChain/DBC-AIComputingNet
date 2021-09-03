@@ -47,7 +47,7 @@ public:
 
     std::string module_name() const override { return REST_API_SERVICE_MODULE; }
 
-    int32_t get_startup_time();
+    void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
 
     //////////////////////////////////////////////////////////////////////////
     // /tasks
@@ -186,10 +186,6 @@ protected:
     void init_invoker() override;
 
     void init_subscription() override;
-
-    void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
-
-    bool check_invalid_http_request(std::shared_ptr<dbc::network::http_request> &hreq);
 
     int32_t create_request_session(const std::string& timer_id, const std::shared_ptr<dbc::network::http_request>& hreq,
                                    const std::shared_ptr<dbc::network::message>& req_msg, const std::string& session_id);

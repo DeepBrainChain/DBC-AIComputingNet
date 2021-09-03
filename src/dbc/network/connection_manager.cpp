@@ -686,17 +686,15 @@ namespace dbc
             return num;
         }
 
-        int32_t connection_manager::on_tcp_channel_error(std::shared_ptr<message> &msg)
+        void connection_manager::on_tcp_channel_error(const std::shared_ptr<message> &msg)
         {
             if (nullptr == msg)
-            {
-                return E_NULL_POINTER;
-            }
+                return;
+
             socket_id  sid = msg->header.src_sid;
             LOG_DEBUG << "connection manager received tcp channel error:" << sid.to_string();
 
-            //stop channel
-            return stop_channel(sid);
+            stop_channel(sid);
         }
         
         int32_t connection_manager::get_in_connect_num()

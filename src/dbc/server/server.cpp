@@ -10,7 +10,6 @@
 #include "service_module/service_name.h"
 #include "data/resource/SystemResourceManager.h"
 
-#include "service/cmd_request_service/cmd_request_service.h"
 #include "service/http_request_service/http_server_service.h"
 #include "service/http_request_service/rest_api_service.h"
 #include "service/node_request_service/node_request_service.h"
@@ -84,16 +83,6 @@ int32_t server::init(int argc, char *argv[]) {
     m_timer_matrix_manager->start();
     LOG_INFO << "init timer matrix manager successfully";
 
-    // cmd_request_service
-    LOG_INFO << "begin to init cmd_request_service";
-    ret = cmd_request_service::instance().init(vm);
-    if (E_SUCCESS != ret) {
-        LOG_ERROR << "init cmd_request_service failed";
-        return ret;
-    }
-    cmd_request_service::instance().start();
-    LOG_INFO << "init cmd_request_service successfully";
-
     // node_request_service
     LOG_INFO << "begin to init node_request_service";
     ret = node_request_service::instance().init(vm);
@@ -104,7 +93,7 @@ int32_t server::init(int argc, char *argv[]) {
     node_request_service::instance().start();
     LOG_INFO << "init node_request_service successfully";
 
-    // connection_manager
+    // network
     LOG_INFO << "begin to init connection manager";
     ret = dbc::network::connection_manager::instance().init(vm);
     if (E_SUCCESS != ret) {
@@ -163,10 +152,6 @@ void server::exit() {
     m_timer_matrix_manager->stop();
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
     m_timer_matrix_manager->exit();
-
-    cmd_request_service::instance().stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    cmd_request_service::instance().exit();
 
     node_request_service::instance().stop();
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));

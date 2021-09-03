@@ -8,7 +8,6 @@
 #include "server/server.h"
 #include "log/log.h"
 #include "network/http_client.h"
-#include "rest_handler.h"
 #include "rest_api_service.h"
 
 int32_t http_server_service::init(bpo::variables_map &options) {

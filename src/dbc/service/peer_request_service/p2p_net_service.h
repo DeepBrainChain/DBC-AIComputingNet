@@ -58,7 +58,7 @@ protected:
 
     std::shared_ptr<peer_node> get_peer_node(const std::string &id);
 
-    bool add_peer_node(std::shared_ptr<dbc::network::message> &msg);
+    bool add_peer_node(const std::shared_ptr<dbc::network::message> &msg);
 
     void remove_peer_node(const std::string &id);
 
@@ -68,19 +68,19 @@ protected:
 
     uint32_t get_peer_nodes_count_by_socket_type(dbc::network::socket_type type);
 
-    int32_t on_ver_req(std::shared_ptr<dbc::network::message> &msg);
+    void on_ver_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t on_ver_resp(std::shared_ptr<dbc::network::message> &msg);
+    void on_ver_resp(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t on_client_tcp_connect_notification(std::shared_ptr<dbc::network::message> &msg);
+    void on_client_tcp_connect_notification(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t on_tcp_channel_error(std::shared_ptr<dbc::network::message> &msg);
+    void on_tcp_channel_error(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t on_cmd_get_peer_nodes_req(std::shared_ptr<dbc::network::message> &msg);
+    void on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t on_get_peer_nodes_req(std::shared_ptr<dbc::network::message> &msg);
+    void on_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t on_get_peer_nodes_resp(std::shared_ptr<dbc::network::message> &msg);
+    void on_get_peer_nodes_resp(const std::shared_ptr<dbc::network::message> &msg);
 
     //active pull
     int32_t send_get_peer_nodes();

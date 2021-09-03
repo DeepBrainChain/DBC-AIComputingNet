@@ -113,7 +113,7 @@ namespace dbc
 
             virtual int32_t stop_all_recycle_channel();
 
-            int32_t on_tcp_channel_error(std::shared_ptr<message> &msg);
+            void on_tcp_channel_error(const std::shared_ptr<message> &msg);
 
             int32_t on_recycle_timer(std::shared_ptr<core_timer> timer);
 
@@ -141,7 +141,7 @@ namespace dbc
 
             //socket channel
             std::map<socket_id, std::shared_ptr<channel>, cmp_key> m_channels;
-            int32_t m_max_connect = 512;
+            int32_t m_max_connect = 1024;
             //recycle channel for exception tcp socket channel
             std::map<socket_id, std::shared_ptr<channel>, cmp_key> m_recycle_channels;
         };

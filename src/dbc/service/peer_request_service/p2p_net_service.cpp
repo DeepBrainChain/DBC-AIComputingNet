@@ -628,7 +628,7 @@ int32_t p2p_net_service::on_timer_peer_candidate_dump(std::shared_ptr<core_timer
 }
 
 
-bool p2p_net_service::add_peer_node(std::shared_ptr<dbc::network::message> &msg) {
+bool p2p_net_service::add_peer_node(const std::shared_ptr<dbc::network::message> &msg) {
     if (!msg) {
         LOG_ERROR << "null ptr of msg";
         return false;
@@ -770,16 +770,16 @@ std::shared_ptr<peer_node> p2p_net_service::get_peer_node(const std::string &id)
 }
 
 
-int32_t p2p_net_service::on_ver_req(std::shared_ptr<dbc::network::message> &msg) {
+void p2p_net_service::on_ver_req(const std::shared_ptr<dbc::network::message> &msg) {
     auto req_content = std::dynamic_pointer_cast<dbc::ver_req>(msg->content);
     if (!req_content) {
         LOG_ERROR << "recv ver_req, but req_content is null.";
-        return E_DEFAULT;
+        return;
     }
 
     if (!util::check_id(req_content->header.nonce)) {
         LOG_DEBUG << "p2p_net_service ver_req. nonce error ";
-        return E_DEFAULT;
+        return;
     }
 
     LOG_INFO << "recv ver_req, "
@@ -793,7 +793,7 @@ int32_t p2p_net_service::on_ver_req(std::shared_ptr<dbc::network::message> &msg)
         LOG_ERROR << "add node( " << req_content->body.node_id << " ) failed."
                   << " p2p net service stop channel" << msg->header.src_sid.to_string();
         dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
-        return E_DEFAULT;
+        return;
     }
 
     if (req_content->header.exten_info.count("capacity")) {
@@ -807,7 +807,7 @@ int32_t p2p_net_service::on_ver_req(std::shared_ptr<dbc::network::message> &msg)
             % req_content->body.core_version % req_content->body.protocol_version);
     if (!util::verify_sign(req_content->header.exten_info["sign"], sign_req_msg, req_content->body.node_id)) {
         LOG_ERROR << "fake message. " << req_content->body.node_id;
-        return E_DEFAULT;
+        return;
     }
 
 
@@ -846,21 +846,19 @@ int32_t p2p_net_service::on_ver_req(std::shared_ptr<dbc::network::message> &msg)
     resp_msg->header.dst_sid = msg->header.src_sid;
 
     dbc::network::connection_manager::instance().send_message(resp_msg->header.dst_sid, resp_msg);
-
-    return E_SUCCESS;
 }
 
-int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg) {
+void p2p_net_service::on_ver_resp(const std::shared_ptr<dbc::network::message> &msg) {
     std::shared_ptr<dbc::ver_resp> resp_content = std::dynamic_pointer_cast<dbc::ver_resp>(
             msg->content);
     if (!resp_content) {
         LOG_ERROR << "recv ver_resp, but resp_content is null.";
-        return E_DEFAULT;
+        return;
     }
 
     if (util::check_id(resp_content->header.nonce) != true) {
         LOG_DEBUG << "p2p_net_service ver_resp. nonce error ";
-        return E_DEFAULT;
+        return;
     }
 
     std::string sign_msg = boost::str(
@@ -868,7 +866,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
             resp_content->body.core_version % resp_content->body.protocol_version);
     if (!util::verify_sign(resp_content->header.exten_info["sign"], sign_msg, resp_content->body.node_id)) {
         LOG_ERROR << "fake message. " << resp_content->body.node_id;
-        return E_DEFAULT;
+        return;
     }
 
     LOG_DEBUG << "p2p net service received ver resp, node id: " << resp_content->body.node_id
@@ -880,7 +878,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
     if (nullptr == ch || nullptr == tcp_ch) {
         LOG_ERROR << "p2p net service on ver resp get channel error," << msg->header.src_sid.to_string()
                   << "node id: " << resp_content->body.node_id;
-        return E_DEFAULT;
+        return;
     }
 
     auto candidate = get_peer_candidate(tcp_ch->get_remote_addr());
@@ -903,7 +901,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
         }
 
         dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
-        return E_SUCCESS;
+        return;
     }
 
     //add new peer node
@@ -913,7 +911,7 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
         LOG_DEBUG << "p2p net service stop channel" << msg->header.src_sid.to_string();
         dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
 
-        return E_DEFAULT;
+        return;
     }
     if (candidate) {
         candidate->reconn_cnt = 0;
@@ -928,15 +926,13 @@ int32_t p2p_net_service::on_ver_resp(std::shared_ptr<dbc::network::message> &msg
     tcp::endpoint local_ep = tcp_ch->get_local_addr();
     advertise_local(local_ep,
                     msg->header.src_sid);            //advertise local self address to neighbor peer node
-
-    return E_SUCCESS;
 }
 
 
-int32_t p2p_net_service::on_tcp_channel_error(std::shared_ptr<dbc::network::message> &msg) {
+void p2p_net_service::on_tcp_channel_error(const std::shared_ptr<dbc::network::message> &msg) {
     if (!msg) {
         LOG_ERROR << "null ptr of msg";
-        return E_NULL_POINTER;
+        return;
     }
 
     dbc::network::socket_id sid = msg->header.src_sid;
@@ -945,7 +941,7 @@ int32_t p2p_net_service::on_tcp_channel_error(std::shared_ptr<dbc::network::mess
             msg);
     if (!err_msg) {
         LOG_ERROR << "null ptr of err_msg: " << sid.to_string();
-        return E_NULL_POINTER;
+        return;
     }
 
     LOG_ERROR << "p2p net service received tcp channel error msg, " << sid.to_string() << "---"
@@ -975,14 +971,12 @@ int32_t p2p_net_service::on_tcp_channel_error(std::shared_ptr<dbc::network::mess
         }
     }
     LOG_DEBUG << "sizeof m_peer_nodes_map is " << m_peer_nodes_map.size();
-
-    return E_SUCCESS;
 }
 
-int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc::network::message> &msg) {
+void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<dbc::network::message> &msg) {
     auto notification_content = std::dynamic_pointer_cast<dbc::network::client_tcp_connect_notification>(msg);
     if (!notification_content) {
-        return E_DEFAULT;
+        return;
     }
 
     //find peer candidate
@@ -992,7 +986,7 @@ int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc:
                   << notification_content->ep.address() << ":" << notification_content->ep.port();
         dbc::network::connection_manager::instance().release_connector(msg->header.src_sid);
         dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
-        return E_DEFAULT;
+        return;
     }
 
     LOG_INFO << "onClient ep: " << candidate->tcp_ep.address().to_string() << ":" << candidate->tcp_ep.port();
@@ -1061,11 +1055,10 @@ int32_t p2p_net_service::on_client_tcp_connect_notification(std::shared_ptr<dbc:
     }
 
     dbc::network::connection_manager::instance().release_connector(msg->header.src_sid);
-    return E_SUCCESS;
 }
 
 
-int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<dbc::network::message> &msg)
+void p2p_net_service::on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg)
 {
     auto cmd_resp = std::make_shared<cmd_get_peer_nodes_rsp>();
     cmd_resp->result = E_SUCCESS;
@@ -1082,7 +1075,7 @@ int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<dbc::network:
         cmd_resp->result_info = "internal error";
         topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
 
-        return E_DEFAULT;
+        return;
     }
 
     if(req->flag == flag_active)
@@ -1119,11 +1112,9 @@ int32_t p2p_net_service::on_cmd_get_peer_nodes_req(std::shared_ptr<dbc::network:
     }
 
     topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
-
-    return E_SUCCESS;
 }
 
-int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<dbc::network::message> &msg) {
+void p2p_net_service::on_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg) {
 #if 0
     if (m_peer_nodes_map.size() == 0)
     {
@@ -1180,25 +1171,25 @@ int32_t p2p_net_service::on_get_peer_nodes_req(std::shared_ptr<dbc::network::mes
     }
 #endif
 
-    return E_SUCCESS;
+    return;
 }
 
-int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<dbc::network::message> &msg) {
+void p2p_net_service::on_get_peer_nodes_resp(const std::shared_ptr<dbc::network::message> &msg) {
     //limit of candidates
     if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT) {
-        return E_SUCCESS;
+        return;
     }
 
     std::shared_ptr<dbc::get_peer_nodes_resp> rsp = std::dynamic_pointer_cast<dbc::get_peer_nodes_resp>(
             msg->content);
     if (!rsp) {
         LOG_ERROR << "recv get_peer_nodes_resp, but req_content is null.";
-        return E_DEFAULT;
+        return;
     }
 
     if (util::check_id(rsp->header.nonce) != true) {
         LOG_DEBUG << "p2p_net_service on_get_peer_nodes_resp. nonce error ";
-        return E_SUCCESS;
+        return;
     }
 
     //if advertise local ip, peer nodes list is just one and should relay to neighbor node
@@ -1213,7 +1204,7 @@ int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<dbc::network::me
 
             if (dbc::network::net_address::is_rfc1918(ep)) {
                 LOG_ERROR << "Peer Ip address is RFC1918 prive network. ip: " << ep.address().to_string();
-                return false;
+                return;
             }
 
             //add to peer candidates
@@ -1223,18 +1214,18 @@ int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<dbc::network::me
                 LOG_DEBUG << "p2p net service add peer candidate: " << ep;
             }
 
-            return E_SUCCESS;
+            return;
         }
         catch (boost::system::system_error e) {
             LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << (uint16_t) node.addr.port
                       << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string()
                       << e.what();
-            return E_DEFAULT;
+            return;
         }
         catch (...) {
             LOG_ERROR << "recv a peer error: " << node.addr.ip << ", port: " << (uint16_t) node.addr.port
                       << ", node_id: " << node.peer_node_id << msg->header.src_sid.to_string();
-            return E_DEFAULT;
+            return;
         }
     }
 
@@ -1276,8 +1267,6 @@ int32_t p2p_net_service::on_get_peer_nodes_resp(std::shared_ptr<dbc::network::me
             continue;
         }
     }
-
-    return E_SUCCESS;
 }
 
 
