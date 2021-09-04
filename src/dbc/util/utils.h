@@ -36,6 +36,7 @@
 #include "function_traits.h"
 #include "singleton.h"
 #include "rw_lock.h"
+#include "RWMutex.h"
 #include "LruCache.hpp"
 #include "tweetnacl/tools.h"
 #include "tweetnacl/randombytes.h"

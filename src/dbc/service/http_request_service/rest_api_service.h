@@ -7,7 +7,6 @@
 #include "timer/timer.h"
 #include "../message/cmd_message.h"
 
-#define REST_API_SERVICE_MODULE                             "rest_api_service"
 static const std::string REST_API_VERSION = "v1.1";
 static const std::string REST_API_URI = "/api/v1";
 
@@ -44,8 +43,6 @@ public:
     ~rest_api_service() override = default;
 
     int32_t init(bpo::variables_map &options) override;
-
-    std::string module_name() const override { return REST_API_SERVICE_MODULE; }
 
     void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
 

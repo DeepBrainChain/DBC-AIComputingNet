@@ -62,13 +62,51 @@ std::string get_is_update(const std::string& s) {
     return operation;
 }
 
+node_request_service::~node_request_service() {
+    if (m_is_computing_node) {
+        remove_timer(m_training_task_timer_id);
+        remove_timer(m_prune_task_timer_id);
+    }
+    m_websocket_client.stop();
+}
+
 int32_t node_request_service::init(bpo::variables_map &options) {
+    service_module::init(options);
+
     if (options.count(SERVICE_NAME_AI_TRAINING)) {
         m_is_computing_node = true;
         add_self_to_servicelist(options);
     }
 
-    return service_module::init(options);
+    if (m_is_computing_node) {
+        auto fresult = m_task_scheduler.Init();
+        int32_t ret = std::get<0>(fresult);
+        if (ret != E_SUCCESS) {
+            return E_DEFAULT;
+        } else {
+            ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
+            if (!ret) {
+                LOG_ERROR << "init sessionid_db failed";
+                return E_DEFAULT;
+            }
+            std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
+            m_sessionid_db.load(wallet_sessionid);
+            for (auto &it: wallet_sessionid) {
+                m_wallet_sessionid.insert({it.first, it.second->session_id});
+                m_wallet_sessionid.insert({it.second->session_id, it.first});
+            }
+
+            std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
+            m_websocket_client.init(ws_url);
+            m_websocket_client.enable_auto_reconnection();
+            m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
+            m_websocket_client.start();
+
+            return E_SUCCESS;
+        }
+    }
+
+    return E_SUCCESS;
 }
 
 void node_request_service::add_self_to_servicelist(bpo::variables_map &options) {
@@ -105,22 +143,19 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
 }
 
 void node_request_service::init_timer() {
-    // 配置文件：timer_ai_training_task_schedule_in_second（15秒）
-    m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer,
-                                                         this, std::placeholders::_1);
-    m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER,
-                                               conf_manager::instance().get_timer_ai_training_task_schedule_in_second() *
-                                               1000, ULLONG_MAX, DEFAULT_STRING);
+    if (m_is_computing_node) {
+        // 10s
+        m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1);
+        m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, ULLONG_MAX, "");
 
-    // 10分钟
-    m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this,
-                                                      std::placeholders::_1);
-    m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, AI_PRUNE_TASK_TIMER_INTERVAL, ULLONG_MAX,
-                                            DEFAULT_STRING);
+        // 1min
+        m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this, std::placeholders::_1);
+        m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, 60 * 1000, ULLONG_MAX, "");
+    }
 
-    // broadcast service list
+    // 10s
     m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1);
-    add_timer(SERVICE_BROADCAST_TIMER, conf_manager::instance().get_timer_service_broadcast_in_second() * 1000, ULLONG_MAX, DEFAULT_STRING);
+    add_timer(SERVICE_BROADCAST_TIMER, 10 * 1000, ULLONG_MAX, "");
 }
 
 void node_request_service::init_invoker() {
@@ -148,42 +183,6 @@ void node_request_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
-}
-
-int32_t node_request_service::service_init(bpo::variables_map& options) {
-    auto fresult = m_task_scheduler.Init();
-    int32_t ret = std::get<0>(fresult);
-
-    if (ret != E_SUCCESS) {
-        return E_DEFAULT;
-    }
-    else {
-        ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
-        if (!ret) {
-            LOG_ERROR << "init sessionid_db failed";
-            return E_DEFAULT;
-        }
-        std::map<std::string, std::shared_ptr<dbc::owner_sessionid>> wallet_sessionid;
-        m_sessionid_db.load(wallet_sessionid);
-        for (auto& it : wallet_sessionid) {
-            m_wallet_sessionid.insert({it.first, it.second->session_id});
-            m_wallet_sessionid.insert({it.second->session_id, it.first});
-        }
-
-        std::string ws_url = "wss://" + conf_manager::instance().get_dbc_chain_domain();
-        m_websocket_client.init(ws_url);
-        m_websocket_client.enable_auto_reconnection();
-        m_websocket_client.set_message_callback(std::bind(&node_request_service::on_ws_msg, this, std::placeholders::_1, std::placeholders::_2));
-        m_websocket_client.start();
-
-        return E_SUCCESS;
-    }
-}
-
-int32_t node_request_service::service_exit() {
-    remove_timer(m_training_task_timer_id);
-    remove_timer(m_prune_task_timer_id);
-    return E_SUCCESS;
 }
 
 bool node_request_service::hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id) {
@@ -231,11 +230,6 @@ bool node_request_service::check_req_header(const std::shared_ptr<dbc::network::
         return false;
     }
 
-    if (!util::check_id(base->header.nonce)) {
-        LOG_ERROR << "header.nonce check failed, nonce:" << base->header.nonce;
-        return false;
-    }
-
     if (!check_nonce(base->header.nonce)) {
         LOG_ERROR << "nonce check failed, nonce:" << base->header.nonce;
         return E_DEFAULT;
@@ -271,6 +265,12 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         return;
     }
 
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -284,8 +284,6 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -295,8 +293,6 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -312,9 +308,6 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
     bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         task_create(node_req_msg->header, data);
-    } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
@@ -327,6 +320,12 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_start_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -343,8 +342,6 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -354,8 +351,6 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -377,10 +372,6 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
     if (hit_self) {
         task_start(node_req_msg->header, data);
     }
-    else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-    }
 }
 
 void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg) {
@@ -392,6 +383,12 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_stop_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -408,8 +405,6 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -419,8 +414,6 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -442,10 +435,6 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
     if (hit_self) {
         task_stop(node_req_msg->header, data);
     }
-    else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-    }
 }
 
 void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg) {
@@ -457,6 +446,12 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_restart_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -473,8 +468,6 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -484,8 +477,6 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -507,10 +498,6 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
     if (hit_self) {
         task_restart(node_req_msg->header, data);
     }
-    else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-    }
 }
 
 void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg) {
@@ -522,6 +509,12 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_reset_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -538,8 +531,6 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -549,8 +540,6 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -572,10 +561,6 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
     if (hit_self) {
         task_reset(node_req_msg->header, data);
     }
-    else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-    }
 }
 
 void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg) {
@@ -587,6 +572,12 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg id nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -603,8 +594,6 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -614,8 +603,6 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -637,10 +624,6 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
     if (hit_self) {
         task_delete(node_req_msg->header, data);
     }
-    else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-    }
 }
 
 void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg) {
@@ -652,6 +635,12 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_task_logs_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -668,8 +657,6 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -679,8 +666,6 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -715,10 +700,6 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
     if (hit_self) {
         task_logs(node_req_msg->header, data);
     }
-    else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-    }
 }
 
 void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg) {
@@ -730,6 +711,12 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -746,8 +733,6 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -757,8 +742,6 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -779,9 +762,6 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
     bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         task_list(node_req_msg->header, data);
-    } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
@@ -794,6 +774,12 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_query_node_info_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
@@ -810,8 +796,6 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -821,8 +805,6 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -838,9 +820,6 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
     bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
         query_node_info(node_req_msg->header, data);
-    } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
@@ -1027,7 +1006,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1066,7 +1045,7 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
 }
 
 void node_request_service::task_create(const dbc::network::base_header& header,
-                                          const std::shared_ptr<dbc::node_create_task_req_data>& data) {
+                                       const std::shared_ptr<dbc::node_create_task_req_data>& data) {
     m_create_header = header;
     m_create_data = data;
 
@@ -1081,7 +1060,7 @@ void node_request_service::task_create(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_start(const dbc::network::base_header& header,
-                                         const std::shared_ptr<dbc::node_start_task_req_data>& data) {
+                                      const std::shared_ptr<dbc::node_start_task_req_data>& data) {
     std::string task_id = data->task_id;
 
     auto fresult = m_task_scheduler.StartTask(task_id);
@@ -1099,7 +1078,7 @@ void node_request_service::task_start(const dbc::network::base_header& header,
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1126,7 +1105,7 @@ void node_request_service::task_start(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_stop(const dbc::network::base_header& header,
-                                        const std::shared_ptr<dbc::node_stop_task_req_data>& data) {
+                                     const std::shared_ptr<dbc::node_stop_task_req_data>& data) {
     std::string task_id = data->task_id;
 
     auto fresult = m_task_scheduler.StopTask(task_id);
@@ -1144,7 +1123,7 @@ void node_request_service::task_stop(const dbc::network::base_header& header,
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1171,7 +1150,7 @@ void node_request_service::task_stop(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_restart(const dbc::network::base_header& header,
-                                           const std::shared_ptr<dbc::node_restart_task_req_data>& data) {
+                                        const std::shared_ptr<dbc::node_restart_task_req_data>& data) {
     std::string task_id = data->task_id;
 
     auto fresult = m_task_scheduler.RestartTask(task_id);
@@ -1189,7 +1168,7 @@ void node_request_service::task_restart(const dbc::network::base_header& header,
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1216,7 +1195,7 @@ void node_request_service::task_restart(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_reset(const dbc::network::base_header& header,
-                                         const std::shared_ptr<dbc::node_reset_task_req_data>& data) {
+                                      const std::shared_ptr<dbc::node_reset_task_req_data>& data) {
     std::string task_id = data->task_id;
 
     auto fresult = m_task_scheduler.ResetTask(task_id);
@@ -1234,7 +1213,7 @@ void node_request_service::task_reset(const dbc::network::base_header& header,
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1261,7 +1240,7 @@ void node_request_service::task_reset(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_delete(const dbc::network::base_header& header,
-                                          const std::shared_ptr<dbc::node_delete_task_req_data>& data) {
+                                       const std::shared_ptr<dbc::node_delete_task_req_data>& data) {
     std::string task_id = data->task_id;
 
     auto fresult = m_task_scheduler.DeleteTask(task_id);
@@ -1279,7 +1258,7 @@ void node_request_service::task_delete(const dbc::network::base_header& header,
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1306,7 +1285,7 @@ void node_request_service::task_delete(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_logs(const dbc::network::base_header& header,
-                                        const std::shared_ptr<dbc::node_task_logs_req_data>& data) {
+                                     const std::shared_ptr<dbc::node_task_logs_req_data>& data) {
     std::string task_id = data->task_id;
     int16_t head_or_tail = data->head_or_tail;
     int32_t number_of_lines = data->number_of_lines;
@@ -1335,10 +1314,10 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     rsp_content->header.__set_session_id(header.session_id);
     rsp_content->header.__set_path(header.path);
     std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id + log_content;
+    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1365,7 +1344,7 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
 }
 
 void node_request_service::task_list(const dbc::network::base_header& header,
-                                        const std::shared_ptr<dbc::node_list_task_req_data>& data) {
+                                     const std::shared_ptr<dbc::node_list_task_req_data>& data) {
     int32_t result = E_SUCCESS;
     std::string result_msg = "task list successful";
 
@@ -1481,7 +1460,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
     std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1509,35 +1488,31 @@ void node_request_service::task_list(const dbc::network::base_header& header,
 
 void node_request_service::query_node_info(const dbc::network::base_header& header,
                                            const std::shared_ptr<dbc::node_query_node_info_req_data>& data) {
-    std::map<std::string, std::string> kvs;
-    kvs["os"] = SystemInfo::instance().get_osname();
-    kvs["ip"] = SystemInfo::instance().get_publicip();
-    std::stringstream ss_cpu;
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << 0;
+    ss << ",\"data\":" << "{";
+    ss << "\"ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
+    ss << ",\"os\":" << "\"" << SystemInfo::instance().get_osname() << "\"";
     cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
-    ss_cpu << "{";
-    ss_cpu << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
-    ss_cpu << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
-    ss_cpu << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
-    ss_cpu << "}";
-    kvs["cpu"] = ss_cpu.str();
-    std::stringstream ss_mem;
+    ss << ",\"cpu\":" << "{";
+    ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
+    ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
+    ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
+    ss << "}";
     mem_info tmp_meminfo = SystemInfo::instance().get_meminfo();
-    ss_mem << "{";
-    ss_mem << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
-    ss_mem << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_total - tmp_meminfo.mem_used) << "\"";
-    ss_mem << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
-    ss_mem << "}";
-    kvs["mem"] = ss_mem.str();
-    std::stringstream ss_disk;
+    ss << ",\"mem\":" <<  "{";
+    ss << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
+    ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_total - tmp_meminfo.mem_used) << "\"";
+    ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
+    ss << "}";
     disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();
-    ss_disk << "{";
-    ss_disk << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
-    ss_disk << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
-    ss_disk << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
-    ss_disk << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
-    ss_disk << "}";
-    kvs["disk"] = ss_disk.str();
-
+    ss << ",\"disk\":" << "{";
+    ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
+    ss << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
+    ss << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
+    ss << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
+    ss << "}";
     int32_t count = m_task_scheduler.GetRunningTaskSize();
     std::string state;
     if (count <= 0) {
@@ -1546,8 +1521,10 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     else {
         state = "busy(" + std::to_string(count) + ")";
     }
-    kvs["state"] = state;
-    kvs["version"] = SystemInfo::instance().get_version();
+    ss << ",\"state\":" << "\"" << state << "\"";
+    ss << ",\"version\":" << "\"" << SystemInfo::instance().get_version() << "\"";
+    ss << "}";
+    ss << "}";
 
     std::shared_ptr<dbc::node_query_node_info_rsp> rsp_content = std::make_shared<dbc::node_query_node_info_rsp>();
     // header
@@ -1560,13 +1537,14 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     std::string sign_message = rsp_content->header.nonce + rsp_content->header.session_id;
     std::string sign = util::sign(sign_message, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
     rsp_content->header.__set_exten_info(exten_info);
     // body
-    rsp_content->body.__set_kvs(kvs);
+    rsp_content->body.__set_result(E_SUCCESS);
+    rsp_content->body.__set_result_msg(ss.str());
 
     //rsp msg
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
@@ -1575,15 +1553,44 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     dbc::network::connection_manager::instance().send_resp_message(resp_msg);
 }
 
-int32_t node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
+void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
     m_task_scheduler.ProcessTask();
-
-    return E_SUCCESS;
 }
 
-int32_t node_request_service::on_prune_task_timer(const std::shared_ptr<core_timer>& timer) {
+void node_request_service::on_prune_task_timer(const std::shared_ptr<core_timer>& timer) {
     m_task_scheduler.PruneTask();
-    return E_SUCCESS;
+}
+
+void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer)
+{
+    auto s_map_size = service_info_collection::instance().size();
+    if (s_map_size == 0) {
+        return;
+    }
+
+    if (m_is_computing_node) {
+        int32_t count = m_task_scheduler.GetRunningTaskSize();
+        std::string state;
+        if (count <= 0) {
+            state = "idle";
+        } else {
+            state = "busy(" + std::to_string(count) + ")";
+        }
+
+        service_info_collection::instance().update(conf_manager::instance().get_node_id(), "state", state);
+        service_info_collection::instance().update(conf_manager::instance().get_node_id(), "version", SystemInfo::instance().get_version());
+        service_info_collection::instance().update_own_node_time_stamp(conf_manager::instance().get_node_id());
+    }
+
+    service_info_collection::instance().remove_unlived_nodes(conf_manager::instance().get_timer_service_list_expired_in_second());
+
+    auto service_info_map = service_info_collection::instance().get_change_set();
+    if(!service_info_map.empty()) {
+        auto service_broadcast_req = create_service_broadcast_req_msg(service_info_map);
+        if (service_broadcast_req != nullptr) {
+            dbc::network::connection_manager::instance().broadcast_message(service_broadcast_req);
+        }
+    }
 }
 
 std::shared_ptr<dbc::network::message> node_request_service::create_service_broadcast_req_msg(const service_info_map& mp) {
@@ -1601,7 +1608,7 @@ std::shared_ptr<dbc::network::message> node_request_service::create_service_broa
     std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
     if (signature.empty())  return nullptr;
     exten_info["sign"] = signature;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
     req_content->header.__set_exten_info(exten_info);
@@ -1614,112 +1621,27 @@ std::shared_ptr<dbc::network::message> node_request_service::create_service_broa
     return req_msg;
 }
 
-int32_t node_request_service::on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer)
-{
-    auto s_map_size = service_info_collection::instance().size();
-    if (s_map_size == 0) {
-        return E_SUCCESS;
-    }
-
-    int32_t count = m_task_scheduler.GetRunningTaskSize();
-    std::string state;
-    if (count <= 0) {
-        state = "idle";
-    } else {
-        state = "busy(" + std::to_string(count) + ")";
-    }
-
-    service_info_collection::instance().update(conf_manager::instance().get_node_id(),"state", state);
-    service_info_collection::instance().update(conf_manager::instance().get_node_id(),"version", SystemInfo::instance().get_version());
-
-    service_info_collection::instance().update_own_node_time_stamp(conf_manager::instance().get_node_id());
-    service_info_collection::instance().remove_unlived_nodes(conf_manager::instance().get_timer_service_list_expired_in_second());
-
-    auto service_info_map = service_info_collection::instance().get_change_set();
-    if(!service_info_map.empty()) {
-        auto service_broadcast_req = create_service_broadcast_req_msg(service_info_map);
-        if (service_broadcast_req != nullptr) {
-            dbc::network::connection_manager::instance().broadcast_message(service_broadcast_req);
-        }
-    }
-
-    return E_SUCCESS;
-}
-
 void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg) {
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
-        return E_DEFAULT;
+        return;
     }
 
-    std::shared_ptr<dbc::service_broadcast_req> req =
-            std::dynamic_pointer_cast<dbc::service_broadcast_req>(msg->get_content());
-    if (req == nullptr) {
-        LOG_ERROR << "req is nullptr";
-        return E_DEFAULT;
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::service_broadcast_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
     }
 
-    if (!check_nonce(req->header.nonce)) {
-        LOG_ERROR << "nonce check error";
-        return E_DEFAULT;
+    std::string sign_msg = node_req_msg->header.nonce + node_req_msg->header.session_id;
+    if (!util::verify_sign(node_req_msg->header.exten_info["sign"], sign_msg, node_req_msg->header.exten_info["origin_id"])) {
+        LOG_ERROR << "verify sign error." << node_req_msg->header.exten_info["origin_id"];
+        return;
     }
 
-    std::string sign_msg = req->header.nonce + req->header.session_id;
-    if (!util::verify_sign(req->header.exten_info["sign"], sign_msg, req->header.exten_info["origin_id"])) {
-        LOG_ERROR << "verify sign error." << req->header.exten_info["origin_id"];
-        return E_DEFAULT;
-    }
-
-    service_info_map mp;
-    try {
-        mp = req->body.node_service_info_map;
-    } catch(...) {
-        LOG_ERROR << "req body error";
-        return E_DEFAULT;
-    }
+    service_info_map mp = node_req_msg->body.node_service_info_map;
 
     service_info_collection::instance().add(mp);
-    return E_SUCCESS;
-}
-
-int32_t node_request_service::check_sign(const std::string& message, const std::string& sign,
-                                         const std::string& origin_id, const std::string& sign_algo) {
-    if (sign_algo != ECDSA) {
-        LOG_ERROR << "sign_algorithm error.";
-        return E_DEFAULT;
-    }
-
-    if (origin_id.empty() || sign.empty()) {
-        LOG_ERROR << "sign error.";
-        return E_DEFAULT;
-    }
-
-    return E_SUCCESS;
-}
-
-std::string node_request_service::get_task_id(const std::string& server_specification) {
-    if (server_specification.empty()) {
-        return "";
-    }
-
-    std::string task_id;
-    if (!server_specification.empty()) {
-        std::stringstream ss;
-        ss << server_specification;
-        boost::property_tree::ptree pt;
-
-        try {
-            boost::property_tree::read_json(ss, pt);
-            if (pt.count("task_id") != 0) {
-                task_id = pt.get<std::string>("task_id");
-            }
-        }
-        catch (...) {
-
-        }
-    }
-
-    return task_id;
 }
 
 std::string node_request_service::format_logs(const std::string& raw_logs, uint16_t max_lines) {

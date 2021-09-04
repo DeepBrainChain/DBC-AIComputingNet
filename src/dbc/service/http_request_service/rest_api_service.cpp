@@ -19,6 +19,8 @@
 #define HTTP_REQUEST_KEY             "hreq_context"
 
 int32_t rest_api_service::init(bpo::variables_map &options) {
+    service_module::init(options);
+
     const dbc::network::http_path_handler uri_prefixes[] = {
             {"/tasks", false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
             {"/mining_nodes", false, std::bind(&rest_api_service::rest_mining_nodes, this, std::placeholders::_1, std::placeholders::_2)},
@@ -29,8 +31,7 @@ int32_t rest_api_service::init(bpo::variables_map &options) {
     };
 
     for (const auto &uri_prefixe : uri_prefixes) {
-        m_path_handlers.emplace_back(REST_API_URI + uri_prefixe.m_prefix,
-                                     uri_prefixe.m_exact_match, uri_prefixe.m_handler);
+        m_path_handlers.emplace_back(REST_API_URI + uri_prefixe.m_prefix, uri_prefixe.m_exact_match, uri_prefixe.m_handler);
     }
 
     const dbc::network::response_msg_handler rsp_handlers[] = {
@@ -52,7 +53,6 @@ int32_t rest_api_service::init(bpo::variables_map &options) {
         m_rsp_handlers[name] = rsp_handler.handler;
     }
 
-    service_module::init(options);
     return E_SUCCESS;
 }
 
@@ -3790,4 +3790,3 @@ void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::mes
     return E_SUCCESS;
     */
 }
-

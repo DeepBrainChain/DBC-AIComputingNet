@@ -29,9 +29,9 @@ class node_request_service : public service_module, public Singleton<node_reques
 public:
     node_request_service() = default;
 
-    ~node_request_service() override = default;
+    ~node_request_service() override;
 
-    int32_t init(bpo::variables_map &options);
+    int32_t init(bpo::variables_map &options) override;
 
 protected:
     void add_self_to_servicelist(bpo::variables_map &options);
@@ -41,10 +41,6 @@ protected:
     void init_invoker() override;
 
     void init_subscription() override;
-
-    int32_t service_init(bpo::variables_map& options) override;
-
-    int32_t service_exit() override;
 
     void on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
@@ -64,57 +60,35 @@ protected:
 
     void on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    void task_create(const dbc::network::base_header& header,
-                     const std::shared_ptr<dbc::node_create_task_req_data>& data);
+    void task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data);
 
-    void task_start(const dbc::network::base_header& header,
-                       const std::shared_ptr<dbc::node_start_task_req_data>& data);
+    void task_start(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_start_task_req_data>& data);
 
-    void task_stop(const dbc::network::base_header& header,
-                      const std::shared_ptr<dbc::node_stop_task_req_data>& data);
+    void task_stop(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data);
 
-    void task_restart(const dbc::network::base_header& header,
-                         const std::shared_ptr<dbc::node_restart_task_req_data>& data);
+    void task_restart(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_restart_task_req_data>& data);
 
-    void task_reset(const dbc::network::base_header& header,
-                       const std::shared_ptr<dbc::node_reset_task_req_data>& data);
+    void task_reset(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_reset_task_req_data>& data);
 
-    void task_delete(const dbc::network::base_header& header,
-                        const std::shared_ptr<dbc::node_delete_task_req_data>& data);
+    void task_delete(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_task_req_data>& data);
 
-    void task_logs(const dbc::network::base_header& header,
-                      const std::shared_ptr<dbc::node_task_logs_req_data>& data);
+    void task_logs(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_task_logs_req_data>& data);
 
-    void task_list(const dbc::network::base_header& header,
-                      const std::shared_ptr<dbc::node_list_task_req_data>& data);
+    void task_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_task_req_data>& data);
 
-    void query_node_info(const dbc::network::base_header& header,
-                         const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
+    void query_node_info(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
 
-    // broadcast node service list
+    void on_training_task_timer(const std::shared_ptr<core_timer>& timer);
+
+    void on_prune_task_timer(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer);
+
     std::shared_ptr<dbc::network::message> create_service_broadcast_req_msg(const service_info_map& mp);
-
-    int32_t on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer);
 
     void on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg);
 
-
-    int32_t on_get_task_queue_size_req(std::shared_ptr<dbc::network::message>& msg);
-
-    int32_t on_get_task_queue_size_resp(std::shared_ptr<dbc::network::message> &msg);
-
-
-    int32_t on_training_task_timer(const std::shared_ptr<core_timer>& timer);
-
-    int32_t on_prune_task_timer(const std::shared_ptr<core_timer>& timer);
-
-
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
-
-    int32_t check_sign(const std::string& message, const std::string& sign, const std::string& origin_id,
-        const std::string& sign_algo);
-
-    std::string get_task_id(const std::string& server_specification);
 
 private:
     bool check_req_header(const std::shared_ptr<dbc::network::message> &msg);

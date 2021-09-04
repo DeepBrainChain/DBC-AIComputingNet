@@ -835,7 +835,7 @@ void p2p_net_service::on_ver_req(const std::shared_ptr<dbc::network::message> &m
 
     std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = ECDSA;
+    exten_info["sign_algo"] = "ecdsa";
     time_t cur = std::time(nullptr);
     exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
     exten_info["origin_id"] = conf_manager::instance().get_node_id();
@@ -1030,7 +1030,7 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
 
         std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
         exten_info["sign"] = sign;
-        exten_info["sign_algo"] = ECDSA;
+        exten_info["sign_algo"] = "ecdsa";
         time_t cur = std::time(nullptr);
         exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
         exten_info["origin_id"] = conf_manager::instance().get_node_id();

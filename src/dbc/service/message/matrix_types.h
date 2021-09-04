@@ -2982,21 +2982,16 @@ namespace dbc {
         virtual ~node_query_node_info_rsp_body() throw();
         int32_t result;
         std::string result_msg;
-        std::map<std::string, std::string>  kvs;
 
         void __set_result(const int32_t val);
 
         void __set_result_msg(const std::string& val);
-
-        void __set_kvs(const std::map<std::string, std::string> & val);
 
         bool operator == (const node_query_node_info_rsp_body & rhs) const
         {
             if (!(result == rhs.result))
                 return false;
             if (!(result_msg == rhs.result_msg))
-                return false;
-            if (!(kvs == rhs.kvs))
                 return false;
             return true;
         }

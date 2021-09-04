@@ -37,8 +37,6 @@ protected:
 
     void init_subscription() override;
 
-    int32_t service_init(bpo::variables_map &options) override;
-
     int32_t init_rand();
 
     int32_t init_conf();
@@ -50,8 +48,6 @@ protected:
     int32_t init_acceptor();
 
     int32_t init_connector(bpo::variables_map &options);
-
-    int32_t service_exit() override;
 
     //if call from outside, please think about thread-safe of m_peer_nodes_map
     void get_all_peer_nodes(peer_list_type &nodes);

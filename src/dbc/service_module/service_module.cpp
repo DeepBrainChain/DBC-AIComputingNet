@@ -5,18 +5,9 @@
 #include "../timer/time_tick_notification.h"
 #include <boost/format.hpp>
 
-void module_task(void *argv)
-{
-    auto module = (service_module *)argv;
-    module->run();
-}
-
 service_module::service_module()
-    : m_exited(false)
-    , m_module_task(module_task)
-    , m_timer_manager(std::make_shared<timer_manager>(this))
 {
-
+    m_timer_manager = std::make_shared<timer_manager>(this);
 }
 
 int32_t service_module::init(bpo::variables_map &options)
@@ -29,30 +20,42 @@ int32_t service_module::init(bpo::variables_map &options)
 
     init_time_tick_subscription();
 
-    return service_init(options);
+    return E_SUCCESS;
 }
 
 void service_module::init_time_tick_subscription() {
     topic_manager::instance().subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) {
-        return send(msg);
+        send(msg);
     });
 }
 
-int32_t service_module::start()
+void service_module::start()
 {
-    m_thread = std::make_shared<std::thread>(m_module_task, this);
-    return E_SUCCESS;
+    m_running = true;
+    if (m_thread == nullptr) {
+        m_thread = new std::thread(&service_module::thread_func, this);
+    }
 }
 
-int32_t service_module::run()
+void service_module::stop()
+{
+    m_running = false;
+
+    if (m_thread != nullptr && m_thread->joinable()) {
+        m_thread->join();
+    }
+
+    delete m_thread;
+}
+
+void service_module::thread_func()
 {
     queue_type tmp_msg_queue;
-    while (!m_exited)
-    {
-        //check memory leak
 
+    while (m_running)
+    {
         {
-            std::unique_lock<std::mutex> lock(m_mutex);
+            std::unique_lock<std::mutex> lock(m_msg_queue_mutex);
             std::chrono::milliseconds ms(500);
             m_cond.wait_for(lock, ms, [this]()->bool {return !(this->is_empty());});
             if (is_empty())
@@ -60,54 +63,20 @@ int32_t service_module::run()
             m_msg_queue.swap(tmp_msg_queue);
         }
 
-        //invoke each
         std::shared_ptr<dbc::network::message> msg;
         while (!tmp_msg_queue.empty())
         {
-            //pop msg
             msg = tmp_msg_queue.front();
             tmp_msg_queue.pop();
             on_invoke(msg);
         }
     }
-
-    return E_SUCCESS;
-}
-
-int32_t service_module::stop()
-{
-    m_exited = true;
-
-    //have a rest
-    if (m_thread != nullptr)
-    {
-        try
-        {
-            m_thread->join();
-        }
-        catch (const std::system_error &e)
-        {
-            LOG_ERROR << "join thread(" << m_thread->get_id() << ")error: " << e.what();
-            return E_DEFAULT;
-        }
-        catch (...)
-        {
-            LOG_ERROR << "join thread(" << m_thread->get_id() << ")error: unknown";
-            return E_DEFAULT;
-        }
-    }
-
-    return E_SUCCESS;
-}
-
-int32_t service_module::exit()
-{
-    return service_exit();
 }
 
 void service_module::on_invoke(std::shared_ptr<dbc::network::message> &msg)
 {
-    if (msg->get_name() == TIMER_TICK_NOTIFICATION)
+    std::string msg_name = msg->get_name();
+    if (msg_name == TIMER_TICK_NOTIFICATION)
     {
         std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
         m_timer_manager->process(content->time_tick);
@@ -122,26 +91,23 @@ void service_module::on_invoke(std::shared_ptr<dbc::network::message> &msg)
     }
 }
 
-int32_t service_module::send(std::shared_ptr<dbc::network::message> msg)
+void service_module::send(const std::shared_ptr<dbc::network::message>& msg)
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-
-    if (m_msg_queue.size() < DEFAULT_MESSAGE_COUNT)
+    std::unique_lock<std::mutex> lock(m_msg_queue_mutex);
+    if (m_msg_queue.size() < MAX_MSG_QUEUE_SIZE)
     {
-        m_msg_queue.push(msg);          //right value ref
+        m_msg_queue.push(msg);
     }
     else
     {
-        LOG_ERROR << "service module message queue full";
-        return E_MSG_QUEUE_FULL;
+        LOG_ERROR << "service module message queue is full";
+        return;
     }
 
     if (!m_msg_queue.empty())
     {
         m_cond.notify_all();
     }
-
-    return E_SUCCESS;
 }
 
 void service_module::on_time_out(std::shared_ptr<core_timer> timer)
@@ -153,52 +119,46 @@ void service_module::on_time_out(std::shared_ptr<core_timer> timer)
     }
 }
 
-uint32_t service_module::add_timer(std::string name, uint32_t period, uint64_t repeat_times,
-                                   const std::string & session_id)
+uint32_t service_module::add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id)
 {
-    std::unique_lock<std::mutex> wlock(m_timer_lock);
     return m_timer_manager->add_timer(name, period, repeat_times, session_id);
 }
 
 void service_module::remove_timer(uint32_t timer_id)
 {
-    std::unique_lock<std::mutex> wlock(m_timer_lock);
     m_timer_manager->remove_timer(timer_id);
 }
 
-int32_t service_module::add_session(std::string session_id, std::shared_ptr<service_session> session)
+int32_t service_module::add_session(const std::string& session_id, const std::shared_ptr<service_session>& session)
 {
-    std::unique_lock<std::mutex> wlock(m_session_lock);
+    RwMutex::WriteLock wlock(m_session_lock);
     auto it = m_sessions.find(session_id);
-    if (it != m_sessions.end())
-    {
+    if (it == m_sessions.end()) {
+        m_sessions.insert({ session_id, session });
+        return E_SUCCESS;
+    } else {
         return E_DEFAULT;
     }
-
-    m_sessions.insert({ session_id, session });
-    return E_SUCCESS;
 }
 
-std::shared_ptr<service_session> service_module::get_session(std::string session_id)
+void service_module::remove_session(const std::string& session_id)
 {
-    std::unique_lock<std::mutex> wlock(m_session_lock);
-    auto it = m_sessions.find(session_id);
-    if (it == m_sessions.end())
-    {
-        return nullptr;
-    }
-
-    return it->second;
-}
-
-void service_module::remove_session(std::string session_id)
-{
-    std::unique_lock<std::mutex> wlock(m_session_lock);
+    RwMutex::WriteLock wlock(m_session_lock);
     m_sessions.erase(session_id);
 }
 
-int32_t service_module::get_session_count() {
-    std::unique_lock<std::mutex> wlock(m_session_lock);
-    return m_sessions.size();
+std::shared_ptr<service_session> service_module::get_session(const std::string& session_id)
+{
+    RwMutex::ReadLock rlock(m_session_lock);
+    auto it = m_sessions.find(session_id);
+    if (it == m_sessions.end()) {
+        return nullptr;
+    } else {
+        return it->second;
+    }
 }
 
+int32_t service_module::get_session_count() {
+    RwMutex::ReadLock rlock(m_session_lock);
+    return m_sessions.size();
+}

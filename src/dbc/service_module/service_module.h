@@ -9,7 +9,7 @@
 #include "util/crypto/pubkey.h"
 #include <mutex>
 
-#define DEFAULT_MESSAGE_COUNT               102400    //default message count
+#define MAX_MSG_QUEUE_SIZE               102400    //default message count
 
 #define BIND_MESSAGE_INVOKER(MSG_NAME, FUNC_PTR)              invoker = std::bind(FUNC_PTR, this, std::placeholders::_1); m_invokers.insert({ MSG_NAME,{ invoker } });
 #define SUBSCRIBE_BUS_MESSAGE(MSG_NAME)                       topic_manager::instance().subscribe(MSG_NAME, [this](std::shared_ptr<dbc::network::message> &msg) {return send(msg);});
@@ -17,17 +17,10 @@
 
 using invoker_type = typename std::function<void(const std::shared_ptr<dbc::network::message> &msg)>;
 using timer_invoker_type = typename std::function<void(const std::shared_ptr<core_timer>& timer)>;
-const std::string ECDSA = "ecdsa";
-
-//        int32_t extra_sign_info(std::string &message, std::map<std::string, std::string> & exten_info);
-//        std::string derive_nodeid_bysign(std::string &message, std::map<std::string, std::string> & exten_info);
-//        bool derive_pub_key_bysign(std::string &message, std::map<std::string, std::string> & exten_info, CPubKey& pub);
-//        bool verify_sign(std::string &message, std::map<std::string, std::string> & exten_info, std::string origin_node);
 
 class service_module
 {
 public:
-    typedef std::function<void(void *)> task_functor;
     typedef std::queue<std::shared_ptr<dbc::network::message>> queue_type;
 
     friend class timer_manager;
@@ -36,70 +29,56 @@ public:
 
     virtual ~service_module() = default;
 
-    virtual std::string module_name() const { return ""; }
-
     virtual int32_t init(bpo::variables_map &options);
 
-    virtual int32_t start();
+    void start();
 
-    virtual int32_t stop();
-
-    virtual int32_t exit();
-
-    virtual int32_t run();
-
-    virtual int32_t send(std::shared_ptr<dbc::network::message> msg);
-
-    bool is_empty() const { return m_msg_queue.empty(); }
+    void stop();
 
 protected:
-    virtual void on_invoke(std::shared_ptr<dbc::network::message> &msg);
+    virtual void init_timer() = 0;
 
-    virtual void init_invoker() {}
+    virtual void init_invoker() = 0;
 
-    virtual void init_timer() {}
+    virtual void init_subscription() = 0;
 
-    virtual void init_subscription() {}
+    void init_time_tick_subscription();
 
-    virtual void init_time_tick_subscription();
+    void send(const std::shared_ptr<dbc::network::message>& msg);
 
-    virtual int32_t service_init(bpo::variables_map &options) { return E_SUCCESS; }         //derived class should declare which topic is subscribed in service_init
+    void thread_func();
 
-    virtual int32_t service_exit() { return E_SUCCESS; }
+    void on_invoke(std::shared_ptr<dbc::network::message> &msg);
 
-    virtual void on_time_out(std::shared_ptr<core_timer> timer);
+    void on_time_out(std::shared_ptr<core_timer> timer);
 
-    virtual uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id);                         //period, unit: ms
+    uint32_t add_timer(std::string name, uint32_t period, uint64_t repeat_times, const std::string & session_id);                         //period, unit: ms
 
-    virtual void remove_timer(uint32_t timer_id);
+    void remove_timer(uint32_t timer_id);
 
-    virtual int32_t add_session(std::string session_id, std::shared_ptr<service_session> session);
+    int32_t add_session(const std::string& session_id, const std::shared_ptr<service_session>& session);
 
-    std::shared_ptr<service_session> get_session(std::string session_id);
+    void remove_session(const std::string& session_id);
 
-    void remove_session(std::string session_id);
+    std::shared_ptr<service_session> get_session(const std::string& session_id);
 
     int32_t get_session_count();
 
 protected:
-    bool m_exited;
+    bool m_running = false;
 
     queue_type m_msg_queue;
-    std::mutex m_mutex;
+    std::mutex m_msg_queue_mutex;
     std::condition_variable m_cond;
-    std::shared_ptr<std::thread> m_thread;
-
-    task_functor m_module_task;
+    std::thread* m_thread = nullptr;
 
     std::shared_ptr<timer_manager> m_timer_manager;
-    std::mutex m_timer_lock;
-
-    std::unordered_map<std::string, invoker_type> m_invokers;
-
-    std::unordered_map<std::string, timer_invoker_type> m_timer_invokers;
 
     std::unordered_map<std::string, std::shared_ptr<service_session>> m_sessions;
-    std::mutex m_session_lock;
+    RwMutex m_session_lock;
+
+    std::unordered_map<std::string, invoker_type> m_invokers;
+    std::unordered_map<std::string, timer_invoker_type> m_timer_invokers;
 };
 
 #endif
