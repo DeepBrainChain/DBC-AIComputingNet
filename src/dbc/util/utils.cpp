@@ -202,7 +202,9 @@ bool decrypt_data(const std::string& data, const std::string& pub_key, const std
     memcpy(encrypt + crypto_box_BOXZEROBYTES, str_data.c_str() + crypto_box_NONCEBYTES, str_data.size() - crypto_box_NONCEBYTES);
     unsigned char *message = new unsigned char[real_len];
     int ret = crypto_box_open(message, encrypt, real_len, nonce, byte_pub, byte_priv);
-    ori_message.assign((char*) (message + crypto_box_ZEROBYTES), real_len - crypto_box_ZEROBYTES);
+    if (ret == 0) {
+        ori_message.assign((char*) (message + crypto_box_ZEROBYTES), real_len - crypto_box_ZEROBYTES);
+    }
 
     delete[] encrypt;
     delete[] message;

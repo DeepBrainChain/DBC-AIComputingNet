@@ -64,23 +64,32 @@ protected:
 
     void on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    int32_t task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data);
+    void task_create(const dbc::network::base_header& header,
+                     const std::shared_ptr<dbc::node_create_task_req_data>& data);
 
-    int32_t task_start(const std::shared_ptr<dbc::node_start_task_req>& req);
+    void task_start(const dbc::network::base_header& header,
+                       const std::shared_ptr<dbc::node_start_task_req_data>& data);
 
-    int32_t task_stop(const std::shared_ptr<dbc::node_stop_task_req>& req);
+    void task_stop(const dbc::network::base_header& header,
+                      const std::shared_ptr<dbc::node_stop_task_req_data>& data);
 
-    int32_t task_restart(const std::shared_ptr<dbc::node_restart_task_req>& req);
+    void task_restart(const dbc::network::base_header& header,
+                         const std::shared_ptr<dbc::node_restart_task_req_data>& data);
 
-    int32_t task_reset(const std::shared_ptr<dbc::node_reset_task_req>& req);
+    void task_reset(const dbc::network::base_header& header,
+                       const std::shared_ptr<dbc::node_reset_task_req_data>& data);
 
-    int32_t task_delete(const std::shared_ptr<dbc::node_delete_task_req>& req);
+    void task_delete(const dbc::network::base_header& header,
+                        const std::shared_ptr<dbc::node_delete_task_req_data>& data);
 
-    int32_t task_logs(const std::shared_ptr<dbc::node_task_logs_req>& req);
+    void task_logs(const dbc::network::base_header& header,
+                      const std::shared_ptr<dbc::node_task_logs_req_data>& data);
 
-    int32_t task_list(const std::shared_ptr<dbc::node_list_task_req>& req);
+    void task_list(const dbc::network::base_header& header,
+                      const std::shared_ptr<dbc::node_list_task_req_data>& data);
 
-    int32_t query_node_info(const std::shared_ptr<dbc::node_query_node_info_req>& req);
+    void query_node_info(const dbc::network::base_header& header,
+                         const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
 
     // broadcast node service list
     std::shared_ptr<dbc::network::message> create_service_broadcast_req_msg(const service_info_map& mp);
@@ -108,9 +117,7 @@ protected:
     std::string get_task_id(const std::string& server_specification);
 
 private:
-    bool check_req_header(std::shared_ptr<dbc::network::message> &msg);
-
-    bool check_rsp_header(std::shared_ptr<dbc::network::message> &msg);
+    bool check_req_header(const std::shared_ptr<dbc::network::message> &msg);
 
     bool check_nonce(const std::string& nonce);
 
