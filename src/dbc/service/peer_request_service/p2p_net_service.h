@@ -22,13 +22,15 @@ class p2p_net_service : public service_module, public Singleton<p2p_net_service>
     using peer_map_type = typename std::unordered_map<std::string, std::shared_ptr<peer_node>>;
 
 public:
-    p2p_net_service();
+    p2p_net_service() = defaule;
 
-    ~p2p_net_service() override = default;
+    ~p2p_net_service() override;
 
-    std::string get_host_ip() const { return m_host_ip; }
+    int32_t init(bpo::variables_map &options) override;
 
-    uint16_t get_net_listen_port() const { return m_net_listen_port; }
+    std::string get_host_ip() const { return m_listen_ip; }
+
+    uint16_t get_net_listen_port() const { return m_listen_port; }
 
 protected:
     void init_timer() override;
@@ -37,7 +39,7 @@ protected:
 
     void init_subscription() override;
 
-    int32_t init_rand();
+    void init_rand();
 
     int32_t init_conf();
 
@@ -48,6 +50,14 @@ protected:
     int32_t init_acceptor();
 
     int32_t init_connector(bpo::variables_map &options);
+
+    void on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_dyanmic_adjust_network(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_peer_info_exchange(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_peer_candidate_dump(const std::shared_ptr<core_timer>& timer);
 
     //if call from outside, please think about thread-safe of m_peer_nodes_map
     void get_all_peer_nodes(peer_list_type &nodes);
@@ -84,13 +94,6 @@ protected:
     //active push
     int32_t send_put_peer_nodes(std::shared_ptr<peer_node> node);
 
-    int32_t on_timer_check_peer_candidates(std::shared_ptr<core_timer> timer);
-
-    int32_t on_timer_dyanmic_adjust_network(std::shared_ptr<core_timer> timer);
-
-    int32_t on_timer_peer_info_exchange(std::shared_ptr<core_timer> timer);
-
-    int32_t on_timer_peer_candidate_dump(std::shared_ptr<core_timer> timer);
 
     uint32_t get_rand32() { return m_rand_ctx.rand32(); }
 
@@ -132,9 +135,8 @@ protected:
 
     FastRandomContext m_rand_ctx;
 
-    std::string m_host_ip;
-
-    uint16_t m_net_listen_port;
+    std::string m_listen_ip;
+    uint16_t m_listen_port = 0;
 
     std::list<const char *> m_dns_seeds;
 

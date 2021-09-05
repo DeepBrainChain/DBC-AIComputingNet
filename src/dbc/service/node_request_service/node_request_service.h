@@ -18,9 +18,7 @@
 #include "data/resource/system_info.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
-//#define AI_TRAINING_TASK_TIMER_INTERVAL                        (30 * 1000)                                                 //30s timer
 #define AI_PRUNE_TASK_TIMER                                      "prune_task"
-#define AI_PRUNE_TASK_TIMER_INTERVAL                             (10 * 60 * 1000)                                                 //10min timer
 
 namespace bp = boost::process;
 using namespace boost::asio::ip;

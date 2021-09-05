@@ -35,16 +35,16 @@ static std::string net_state_2_string(int8_t st)
     {
         case ns_idle:
             return "idle";
-            case ns_in_use:
-                return "in_use";
-                case ns_failed:
-                    return "failed";
-                    case ns_zombie:
-                        return "zombie";
-                        case ns_available:
-                            return "available";
-                            default:
-                                return "";
+        case ns_in_use:
+            return "in_use";
+        case ns_failed:
+            return "failed";
+        case ns_zombie:
+            return "zombie";
+        case ns_available:
+            return "available";
+        default:
+            return "";
     }
 }
 
@@ -54,12 +54,12 @@ static std::string node_type_2_string(int8_t nt)
     {
         case nnt_normal_node:
             return "nnt_normal_node";
-            case nnt_public_node:
-                return "nnt_public_node";
-                case nnt_super_node:
-                    return "nnt_super_node";
-                    default:
-                        return "";
+        case nnt_public_node:
+            return "nnt_public_node";
+        case nnt_super_node:
+            return "nnt_super_node";
+        default:
+            return "";
     }
 }
 
@@ -67,15 +67,13 @@ struct peer_candidate
 {
     tcp::endpoint   tcp_ep;
     net_state       net_st = ns_idle;
+    peer_node_type node_type = NORMAL_NODE;
     uint32_t        reconn_cnt = 0;
     time_t          last_conn_tm;
     uint32_t        score = 0;  //indicate level of Qos, update when disconnect
-    //node_net_type   node_type;
     std::string     node_id;
-    peer_node_type node_type = NORMAL_NODE;
 
-    peer_candidate()
-    {
+    peer_candidate() {
         last_conn_tm = time(nullptr);
     }
 

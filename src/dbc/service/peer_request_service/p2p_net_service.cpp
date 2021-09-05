@@ -17,131 +17,99 @@
 #include "network/protocol/thrift_binary.h"
 #include "network/net_address.h"
 
+#define CHECK_PEER_CANDIDATES_TIMER                 "p2p_timer_check_peer_candidates"
+#define DYANMIC_ADJUST_NETWORK_TIMER                "p2p_timer_dynamic_adjust_network"
+#define PEER_INFO_EXCHANGE_TIMER                    "p2p_timer_peer_info_exchange"
+#define DUMP_PEER_CANDIDATES_TIMER                  "p2p_timer_dump_peer_candidates"
+
 const uint32_t max_reconnect_times = 1;
-//const uint32_t max_connected_cnt = 8;
 const uint32_t max_connected_cnt = MAX_OUTBOUND_CONNECTIONS;
 const uint32_t max_connect_per_check = 16;
 
 namespace fs = boost::filesystem;
 
-p2p_net_service::p2p_net_service() {
+p2p_net_service::~p2p_net_service() {
+    remove_timer(m_timer_check_peer_candidates);
+    remove_timer(m_timer_dyanmic_adjust_network);
+    remove_timer(m_timer_peer_info_exchange);
+    remove_timer(m_timer_dump_peer_candidates);
+}
 
+int32_t p2p_net_service::init(bpo::variables_map &options) {
+    service_module::init(options);
+
+    init_rand();
+
+    if (E_SUCCESS != init_conf()) {
+        LOG_ERROR << "init_conf error";
+        return E_DEFAULT;
+    }
+
+    if (E_SUCCESS != init_db()) {
+        LOG_ERROR << "init_db error";
+        return E_DEFAULT;
+    }
+
+    load_peer_candidates();
+
+    if (E_SUCCESS != init_acceptor()) {
+        LOG_ERROR << "init_acceptor error";
+        return E_DEFAULT;
+    }
+
+    if (E_SUCCESS != init_connector(options)) {
+        LOG_ERROR << "init_connector error";
+        return E_DEFAULT;
+    }
+
+    return E_SUCCESS;
 }
 
 void p2p_net_service::init_timer() {
-    m_timer_invokers[TIMER_NAME_CHECK_PEER_CANDIDATES] = std::bind(
-            &p2p_net_service::on_timer_check_peer_candidates, this, std::placeholders::_1);
-    add_timer(TIMER_NAME_CHECK_PEER_CANDIDATES, 1 * 5 * 1000, 1, DEFAULT_STRING);
-    m_timer_check_peer_candidates = add_timer(TIMER_NAME_CHECK_PEER_CANDIDATES, 1 * 60 * 1000, ULLONG_MAX, DEFAULT_STRING);
-    assert(m_timer_check_peer_candidates != INVALID_TIMER_ID);
+    // 1min
+    m_timer_invokers[CHECK_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_check_peer_candidates, this, std::placeholders::_1);
+    add_timer(CHECK_PEER_CANDIDATES_TIMER, 5 * 1000, 1, "");
+    m_timer_check_peer_candidates = add_timer(CHECK_PEER_CANDIDATES_TIMER, 60 * 1000, ULLONG_MAX, "");
 
-    m_timer_invokers[TIMER_NAME_DYANMIC_ADJUST_NETWORK] = std::bind(
-            &p2p_net_service::on_timer_dyanmic_adjust_network, this, std::placeholders::_1);
-    m_timer_dyanmic_adjust_network = add_timer(TIMER_NAME_DYANMIC_ADJUST_NETWORK, 1 * 60 * 1000, ULLONG_MAX, DEFAULT_STRING);
-    assert(m_timer_dyanmic_adjust_network != INVALID_TIMER_ID);
+    // 1min
+    m_timer_invokers[DYANMIC_ADJUST_NETWORK_TIMER] = std::bind(&p2p_net_service::on_timer_dyanmic_adjust_network, this, std::placeholders::_1);
+    m_timer_dyanmic_adjust_network = add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, ULLONG_MAX, "");
 
-    m_timer_invokers[TIMER_NAME_PEER_INFO_EXCHANGE] = std::bind(&p2p_net_service::on_timer_peer_info_exchange,
-                                                                this, std::placeholders::_1);
-    m_timer_peer_info_exchange = add_timer(TIMER_NAME_PEER_INFO_EXCHANGE, 3 * 60 * 1000, ULLONG_MAX, DEFAULT_STRING);
-    assert(m_timer_peer_info_exchange != INVALID_TIMER_ID);
+    // 3min
+    m_timer_invokers[PEER_INFO_EXCHANGE_TIMER] = std::bind(&p2p_net_service::on_timer_peer_info_exchange, this, std::placeholders::_1);
+    m_timer_peer_info_exchange = add_timer(PEER_INFO_EXCHANGE_TIMER, 3 * 60 * 1000, ULLONG_MAX, "");
 
-    m_timer_invokers[TIMER_NAME_DUMP_PEER_CANDIDATES] = std::bind(
-            &p2p_net_service::on_timer_peer_candidate_dump, this, std::placeholders::_1);
-    m_timer_dump_peer_candidates = add_timer(TIMER_NAME_DUMP_PEER_CANDIDATES, 10 * 60 * 1000, ULLONG_MAX, DEFAULT_STRING);
-    assert(m_timer_dump_peer_candidates != INVALID_TIMER_ID);
+    // 10min
+    m_timer_invokers[DUMP_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_peer_candidate_dump, this, std::placeholders::_1);
+    m_timer_dump_peer_candidates = add_timer(DUMP_PEER_CANDIDATES_TIMER, 10 * 60 * 1000, ULLONG_MAX, DEFAULT_STRING);
 }
 
 void p2p_net_service::init_invoker() {
     invoker_type invoker;
+    BIND_MESSAGE_INVOKER(TCP_CHANNEL_ERROR, &p2p_net_service::on_tcp_channel_error)
+    BIND_MESSAGE_INVOKER(CLIENT_CONNECT_NOTIFICATION, &p2p_net_service::on_client_tcp_connect_notification)
+    BIND_MESSAGE_INVOKER(VER_REQ, &p2p_net_service::on_ver_req)
+    BIND_MESSAGE_INVOKER(VER_RESP, &p2p_net_service::on_ver_resp)
+    BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_REQ, &p2p_net_service::on_get_peer_nodes_req)
+    BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_RESP, &p2p_net_service::on_get_peer_nodes_resp)
 
-    //tcp channel error
-    invoker = std::bind(&p2p_net_service::on_tcp_channel_error, this, std::placeholders::_1);
-    m_invokers.insert({TCP_CHANNEL_ERROR, {invoker}});
-
-    //client tcp connect success
-    invoker = std::bind(&p2p_net_service::on_client_tcp_connect_notification, this, std::placeholders::_1);
-    m_invokers.insert({CLIENT_CONNECT_NOTIFICATION, {invoker}});
-
-    //ver req
-    invoker = std::bind(&p2p_net_service::on_ver_req, this, std::placeholders::_1);
-    m_invokers.insert({VER_REQ, {invoker}});
-
-    //ver resp
-    invoker = std::bind(&p2p_net_service::on_ver_resp, this, std::placeholders::_1);
-    m_invokers.insert({VER_RESP, {invoker}});
-
-    //get_peer_nodes_req
-    invoker = std::bind(&p2p_net_service::on_get_peer_nodes_req, this, std::placeholders::_1);
-    m_invokers.insert({P2P_GET_PEER_NODES_REQ, {invoker}});
-
-    //get_peer_nodes_resp
-    invoker = std::bind(&p2p_net_service::on_get_peer_nodes_resp, this, std::placeholders::_1);
-    m_invokers.insert({P2P_GET_PEER_NODES_RESP, {invoker}});
-
-    //cmd_get_peer_nodes_req
-    invoker = std::bind(&p2p_net_service::on_cmd_get_peer_nodes_req, this, std::placeholders::_1);
-    m_invokers.insert({typeid(cmd_get_peer_nodes_req).name(), {invoker}});
+    BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_req).name(), &p2p_net_service::on_cmd_get_peer_nodes_req)
 }
 
 void p2p_net_service::init_subscription() {
-    topic_manager::instance().subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-    topic_manager::instance().subscribe(CLIENT_CONNECT_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    SUBSCRIBE_BUS_MESSAGE(TCP_CHANNEL_ERROR);
+    SUBSCRIBE_BUS_MESSAGE(CLIENT_CONNECT_NOTIFICATION);
+    SUBSCRIBE_BUS_MESSAGE(VER_REQ);
+    SUBSCRIBE_BUS_MESSAGE(VER_RESP);
+    SUBSCRIBE_BUS_MESSAGE(P2P_GET_PEER_NODES_REQ);
+    SUBSCRIBE_BUS_MESSAGE(P2P_GET_PEER_NODES_RESP);
 
-    topic_manager::instance().subscribe(VER_REQ, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-    topic_manager::instance().subscribe(VER_RESP, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-
-    topic_manager::instance().subscribe(typeid(cmd_get_peer_nodes_req).name(), [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-
-    topic_manager::instance().subscribe(P2P_GET_PEER_NODES_REQ, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
-    topic_manager::instance().subscribe(P2P_GET_PEER_NODES_RESP, [this](std::shared_ptr<dbc::network::message> &msg) { return send(msg); });
+    SUBSCRIBE_BUS_MESSAGE(typeid(cmd_get_peer_nodes_req).name());
 }
 
-int32_t p2p_net_service::service_init(bpo::variables_map &options) {
-    int32_t ret = E_SUCCESS;
-
-    if (E_SUCCESS != init_rand()) {
-        LOG_ERROR << "p2p_net_service init rand error and exit";
-        return E_DEFAULT;
-    }
-
-    //init ip and port
-    if (E_SUCCESS != init_conf()) {
-        LOG_ERROR << "p2p_net_service init acceptor error and exit";
-        return E_DEFAULT;
-    }
-
-    //init db
-    if (E_SUCCESS != init_db()) {
-        LOG_ERROR << "p2p_net_service init db error and exit";
-        return E_DEFAULT;
-    }
-
-    //load peer candidates from db
-    ret = load_peer_candidates();
-    if (E_SUCCESS != ret) {
-        LOG_WARNING << "load candidate peers failed.";
-    }
-
-    //init listen
-    ret = init_acceptor();
-    if (E_SUCCESS != ret) {
-        return ret;
-    }
-
-    //init connect
-    init_connector(options);
-    if (E_SUCCESS != ret) {
-        return ret;
-    }
-
-    return E_SUCCESS;
-}
-
-int32_t p2p_net_service::init_rand() {
+void p2p_net_service::init_rand() {
     m_rand_seed = uint256();
     m_rand_ctx = FastRandomContext(m_rand_seed);
-
-    return E_SUCCESS;
 }
 
 int32_t p2p_net_service::init_conf() {
@@ -413,34 +381,8 @@ int32_t p2p_net_service::init_connector(bpo::variables_map &options) {
     return E_SUCCESS;
 }
 
-int32_t p2p_net_service::service_exit() {
-    if (m_timer_check_peer_candidates != INVALID_TIMER_ID) {
-        remove_timer(m_timer_check_peer_candidates);
-        m_timer_check_peer_candidates = INVALID_TIMER_ID;
-    }
-
-    if (m_timer_dyanmic_adjust_network != INVALID_TIMER_ID) {
-        remove_timer(m_timer_dyanmic_adjust_network);
-        m_timer_dyanmic_adjust_network = INVALID_TIMER_ID;
-    }
-
-    if (m_timer_peer_info_exchange != INVALID_TIMER_ID) {
-        remove_timer(m_timer_peer_info_exchange);
-        m_timer_peer_info_exchange = INVALID_TIMER_ID;
-    }
-
-    if (m_timer_dump_peer_candidates != INVALID_TIMER_ID) {
-        remove_timer(m_timer_dump_peer_candidates);
-        m_timer_dump_peer_candidates = INVALID_TIMER_ID;
-    }
-
-    return E_SUCCESS;
-}
-
-
-// 1分钟执行1次
 // 检查与种子节点的连接
-int32_t p2p_net_service::on_timer_check_peer_candidates(std::shared_ptr<core_timer> timer) {
+void p2p_net_service::on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer) {
     //clear ns failed status candidates
     for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end();) {
         if (ns_failed == (*it)->net_st && (*it)->reconn_cnt >= max_reconnect_times) {
@@ -520,8 +462,7 @@ int32_t p2p_net_service::on_timer_check_peer_candidates(std::shared_ptr<core_tim
     return E_SUCCESS;
 }
 
-// 1分钟执行一次
-int32_t p2p_net_service::on_timer_dyanmic_adjust_network(std::shared_ptr<core_timer> timer) {
+void p2p_net_service::on_timer_dyanmic_adjust_network(const std::shared_ptr<core_timer>& timer) {
     uint32_t client_peer_nodes_count = get_peer_nodes_count_by_socket_type(dbc::network::CLIENT_SOCKET);
     LOG_DEBUG << "p2p net service peer nodes map count: " << m_peer_nodes_map.size()
               << ", client peer nodes count: " << client_peer_nodes_count << ", peer candidates count: "
@@ -610,15 +551,13 @@ int32_t p2p_net_service::on_timer_dyanmic_adjust_network(std::shared_ptr<core_ti
     return E_SUCCESS;
 }
 
-// 3分钟执行一次
-int32_t p2p_net_service::on_timer_peer_info_exchange(std::shared_ptr<core_timer> timer) {
+void p2p_net_service::on_timer_peer_info_exchange(const std::shared_ptr<core_timer>& timer) {
     LOG_INFO << "exchange_peer_info all, " << time(nullptr);
     send_put_peer_nodes(nullptr);
     return E_SUCCESS;
 }
 
-// 10分钟执行一次
-int32_t p2p_net_service::on_timer_peer_candidate_dump(std::shared_ptr<core_timer> timer) {
+void p2p_net_service::on_timer_peer_candidate_dump(const std::shared_ptr<core_timer>& timer) {
     int32_t ret = save_peer_candidates();
     if (E_SUCCESS != ret) {
         LOG_ERROR << "save peer candidates failed.";

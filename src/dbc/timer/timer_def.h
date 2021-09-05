@@ -5,10 +5,6 @@
 #define TIMER_NAME_FILTER_CLEAN                                             "common_timer_filter_clean"
 #define TIMER_NAME_CHANNEL_RECYCLE                                   "channel_recycle_timer"
 
-#define TIMER_NAME_CHECK_PEER_CANDIDATES                     "p2p_timer_check_peer_candidates"
-#define TIMER_NAME_DYANMIC_ADJUST_NETWORK                "p2p_timer_dynamic_adjust_network"
-#define TIMER_NAME_PEER_INFO_EXCHANGE                             "p2p_timer_peer_info_exchange"
-#define TIMER_NAME_DUMP_PEER_CANDIDATES                       "p2p_timer_dump_peer_candidates"
 
 
 /*--------------------timer interval----------------------*/
