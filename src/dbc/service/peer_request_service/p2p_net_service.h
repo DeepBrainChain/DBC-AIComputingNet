@@ -22,7 +22,7 @@ class p2p_net_service : public service_module, public Singleton<p2p_net_service>
     using peer_map_type = typename std::unordered_map<std::string, std::shared_ptr<peer_node>>;
 
 public:
-    p2p_net_service() = defaule;
+    p2p_net_service() = default;
 
     ~p2p_net_service() override;
 
@@ -50,6 +50,15 @@ protected:
     int32_t init_acceptor();
 
     int32_t init_connector(bpo::variables_map &options);
+
+    bool is_peer_candidate_exist(tcp::endpoint &ep);
+
+    bool add_peer_candidate(tcp::endpoint &ep, net_state ns, peer_node_type ntype, const std::string& node_id = "");
+
+    std::shared_ptr<peer_candidate> get_peer_candidate(const tcp::endpoint &ep);
+
+    bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
+
 
     void on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer);
 
@@ -104,12 +113,6 @@ protected:
 
     uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
 
-    bool is_peer_candidate_exist(tcp::endpoint &ep);
-
-    bool add_peer_candidate(tcp::endpoint &ep, net_state ns, peer_node_type ntype, std::string node_id = "");
-
-    bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
-
     int32_t save_peer_candidates();
 
     int32_t clear_peer_candidates_db();
@@ -120,7 +123,6 @@ protected:
 
     std::shared_ptr<peer_candidate> get_dynamic_connect_peer_candidate();
 
-    std::shared_ptr<peer_candidate> get_peer_candidate(const tcp::endpoint &ep);
 
     void remove_peer_candidate(const tcp::endpoint &ep);
 
@@ -132,27 +134,21 @@ protected:
 
 protected:
     uint256 m_rand_seed;
-
     FastRandomContext m_rand_ctx;
 
     std::string m_listen_ip;
     uint16_t m_listen_port = 0;
 
+    // 内置
     std::list<const char *> m_dns_seeds;
-
     std::list<peer_seeds> m_hard_code_seeds;
 
-    std::shared_ptr<leveldb::DB> m_peers_db;
-
+    std::shared_ptr<leveldb::DB> m_peers_candidates_db;
     std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;
-
     std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;
 
     uint32_t m_timer_check_peer_candidates = INVALID_TIMER_ID;
-
     uint32_t m_timer_dyanmic_adjust_network = INVALID_TIMER_ID;
-
     uint32_t m_timer_peer_info_exchange = INVALID_TIMER_ID;
-
     uint32_t m_timer_dump_peer_candidates = INVALID_TIMER_ID;
 };

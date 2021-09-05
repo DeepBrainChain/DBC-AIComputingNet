@@ -5,8 +5,8 @@
 #include "network/tcp_acceptor.h"
 #include "service_module/service_message_id.h"
 #include "network/protocol/service_message_def.h"
-#include "network/socket_channel_handler/matrix_client_socket_channel_handler.h"
-#include "network/socket_channel_handler/matrix_server_socket_channel_handler.h"
+#include "socket_channel_handler/matrix_client_socket_channel_handler.h"
+#include "socket_channel_handler/matrix_server_socket_channel_handler.h"
 #include "../message/cmd_message.h"
 #include "network/tcp_socket_channel.h"
 #include "timer/timer_def.h"
@@ -117,36 +117,27 @@ int32_t p2p_net_service::init_conf() {
     ip_validator ip_vdr;
     port_validator port_vdr;
 
-    //get listen ip and port conf
     const std::string &host_ip = conf_manager::instance().get_host_ip();
     val.value() = host_ip;
     if (!ip_vdr.validate(val)) {
-        LOG_ERROR << "p2p_net_service init_conf invalid host ip: " << host_ip;
+        LOG_ERROR << "listen ip is invalid: " << host_ip;
         return E_DEFAULT;
     } else {
-        m_host_ip = host_ip;
+        m_listen_ip = host_ip;
     }
 
     std::string s_port = conf_manager::instance().get_net_listen_port();
     val.value() = s_port;
     if (!port_vdr.validate(val)) {
-        LOG_ERROR << "p2p_net_service init_conf invalid net port: " << s_port;
+        LOG_ERROR << "listen port is invalid: " << s_port;
         return E_DEFAULT;
     } else {
-        try {
-            m_net_listen_port = (uint16_t) std::stoi(s_port);
-        }
-        catch (const std::exception &e) {
-            LOG_ERROR << "p2p_net_service init_conf invalid main_port: " << s_port << ", " << e.what();
-            return E_DEFAULT;
-        }
+        m_listen_port = (uint16_t) atoi(s_port);
     }
 
-    //dns seeds
     m_dns_seeds.insert(m_dns_seeds.begin(), conf_manager::instance().get_dns_seeds().begin(),
                        conf_manager::instance().get_dns_seeds().end());
 
-    //hard_code_seeds
     m_hard_code_seeds.insert(m_hard_code_seeds.begin(), conf_manager::instance().get_hard_code_seeds().begin(),
                              conf_manager::instance().get_hard_code_seeds().end());
 
@@ -158,31 +149,25 @@ int32_t p2p_net_service::init_db() {
     leveldb::Options options;
     options.create_if_missing = true;
     try {
-        //get db path
         fs::path task_db_path = env_manager::instance().get_db_path();
         if (false == fs::exists(task_db_path)) {
             LOG_DEBUG << "db directory path does not exist and create db directory";
             fs::create_directory(task_db_path);
         }
 
-        //check db directory
         if (false == fs::is_directory(task_db_path)) {
             LOG_ERROR << "db directory path does not exist and exit";
             return E_DEFAULT;
         }
 
         task_db_path /= fs::path("peers.db");
-        LOG_DEBUG << "peers db path: " << task_db_path.generic_string();
-
-        //open db
         leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
         if (false == status.ok()) {
             LOG_ERROR << "p2p net service init peers db error: " << status.ToString();
             return E_DEFAULT;
         }
 
-        //smart point auto close db
-        m_peers_db.reset(db);
+        m_peers_candidates_db.reset(db);
     }
     catch (const std::exception &e) {
         LOG_ERROR << "create p2p db error: " << e.what();
@@ -203,63 +188,48 @@ int32_t p2p_net_service::load_peer_candidates() {
         ip_validator ip_vdr;
         port_validator port_vdr;
 
-        std::shared_ptr<dbc::db_peer_candidate> db_candidate;
-
-        //iterate peer candidates in db
         std::unique_ptr<leveldb::Iterator> it;
-        it.reset(m_peers_db->NewIterator(leveldb::ReadOptions()));
-
+        it.reset(m_peers_candidates_db->NewIterator(leveldb::ReadOptions()));
         for (it->SeekToFirst(); it->Valid(); it->Next()) {
-            db_candidate = std::make_shared<dbc::db_peer_candidate>();
+            std::shared_ptr<dbc::db_peer_candidate> db_candidate = std::make_shared<dbc::db_peer_candidate>();
 
-            //deserialization
             std::shared_ptr<byte_buf> peer_candidate_buf = std::make_shared<byte_buf>();
-            peer_candidate_buf->write_to_byte_buf(it->value().data(),
-                                                  (uint32_t) it->value().size());            //may exception
+            peer_candidate_buf->write_to_byte_buf(it->value().data(), (uint32_t) it->value().size());
+            dbc::network::binary_protocol proto(peer_candidate_buf.get());
+            db_candidate->read(&proto);             //may exception
 
-                                                  dbc::network::binary_protocol proto(peer_candidate_buf.get());
-                                                  db_candidate->read(&proto);             //may exception
+            variable_value val_ip(db_candidate->ip, false);
+            if (!ip_vdr.validate(val_ip)) {
+                LOG_ERROR << "load peer candidate error, ip is invalid: " << db_candidate->ip;
+                continue;
+            }
 
-                                                  //validate ip
-                                                  variable_value val_ip(db_candidate->ip, false);
-                                                  if (!ip_vdr.validate(val_ip)) {
-                                                      LOG_ERROR << "p2p net service load peer candidate error: " << db_candidate->ip
-                                                      << " is invalid ip.";
-                                                      continue;
-                                                  }
+            variable_value val_port(std::to_string((unsigned int) (uint16_t) db_candidate->port), false);
+            if (!port_vdr.validate(val_port)) {
+                LOG_ERROR << "load peer candidate error, port is invalid: " << (uint16_t) db_candidate->port;
+                continue;
+            }
 
-                                                  //validate port
-                                                  variable_value val_port(std::to_string((unsigned int) (uint16_t) db_candidate->port), false);
-                                                  if (!port_vdr.validate(val_port)) {
-                                                      LOG_ERROR << "p2p net service load peer candidate error: " << (uint16_t) db_candidate->port
-                                                      << " is invalid port.";
-                                                      continue;
-                                                  }
+            if (db_candidate->node_id.empty()) {
+                LOG_ERROR << "load peer candidate error, node_id is empty";
+                continue;
+            }
 
-                                                  //validate node id
-                                                  if (!db_candidate->node_id.empty()) {
-                                                      LOG_ERROR << "p2p net service load peer candidate error: " << "node id: "
-                                                      << db_candidate->node_id << " is not Base58 code";
-                                                      continue;
-                                                  }
+            std::shared_ptr<peer_candidate> candidate = std::make_shared<peer_candidate>();
+            boost::asio::ip::address addr = boost::asio::ip::make_address(db_candidate->ip);
+            candidate->tcp_ep = tcp::endpoint(addr, (uint16_t) db_candidate->port);
+            candidate->net_st = ns_idle;
+            candidate->reconn_cnt = 0;
+            candidate->last_conn_tm = db_candidate->last_conn_tm;
+            candidate->score = db_candidate->score;
+            candidate->node_id = db_candidate->node_id;
+            candidate->node_type = (peer_node_type) db_candidate->node_type;
 
-                                                  std::shared_ptr<peer_candidate> candidate = std::make_shared<peer_candidate>();
-
-                                                  boost::asio::ip::address addr = boost::asio::ip::make_address(db_candidate->ip);
-                                                  candidate->tcp_ep = tcp::endpoint(addr, (uint16_t) db_candidate->port);
-
-                                                  candidate->net_st = ns_idle;
-                                                  candidate->reconn_cnt = 0;
-                                                  candidate->last_conn_tm = db_candidate->last_conn_tm;
-                                                  candidate->score = db_candidate->score;
-                                                  candidate->node_id = db_candidate->node_id;
-                                                  candidate->node_type = (peer_node_type) db_candidate->node_type;
-
-                                                  m_peer_candidates.push_back(candidate);
+            m_peer_candidates.push_back(candidate);
         }
     }
-    catch (...) {
-        LOG_ERROR << "p2p net service load peer candidates from db exception";
+    catch (std::exception& e) {
+        LOG_ERROR << "load peer candidates from db exception: " << e.what();
         return E_DEFAULT;
     }
 
@@ -267,16 +237,12 @@ int32_t p2p_net_service::load_peer_candidates() {
 }
 
 int32_t p2p_net_service::init_acceptor() {
-    //ipv4 or ipv6
-    tcp::endpoint ep(ip::address::from_string(m_host_ip), m_net_listen_port);
+    LOG_INFO << "p2p net service init net, ip: " << m_listen_ip << " port: " << m_listen_port;
+    tcp::endpoint ep(ip::address::from_string(m_listen_ip), m_listen_port);
 
-    int32_t ret = E_SUCCESS;
-
-    //net
-    LOG_INFO << "p2p net service init net, ip: " << m_host_ip << " port: " << m_net_listen_port;
-    ret = dbc::network::connection_manager::instance().start_listen(ep, &matrix_server_socket_channel_handler::create);
+    int32_t ret = dbc::network::connection_manager::instance().start_listen(ep, &matrix_server_socket_channel_handler::create);
     if (E_SUCCESS != ret) {
-        LOG_ERROR << "p2p net service init net error, ip: " << m_host_ip << " port: " << m_net_listen_port;
+        LOG_ERROR << "p2p net service init net error, ip: " << m_listen_ip << " port: " << m_listen_port;
         return ret;
     }
 
@@ -284,131 +250,133 @@ int32_t p2p_net_service::init_acceptor() {
 }
 
 int32_t p2p_net_service::init_connector(bpo::variables_map &options) {
-    //peer address from command line input
-    //--peer 117.30.51.196:11107 --peer 1050:0:0:0:5:600:300c:326b:11107
-    std::vector<std::string> cmd_addresses = options.count("peer")
-            ? options["peer"].as<std::vector<std::string>>() : std::vector<std::string>();
-
-    //peer address from peer.conf
-    //peer address=117.30.51.196:11107
-    //peer address=1050:0:0:0:5:600:300c:326b:11107
+    std::vector<std::string> peer_addresses;
     const std::vector<std::string> &peer_conf_addresses = conf_manager::instance().get_peers();
-
-    //merge peer addresses
-    std::vector<std::string> peer_addresses; //(cmd_addresses.size() + peer_conf_addresses.size());
     peer_addresses.insert(peer_addresses.begin(), peer_conf_addresses.begin(), peer_conf_addresses.end());
-    peer_addresses.insert(peer_addresses.begin(), cmd_addresses.begin(), cmd_addresses.end());
 
-    int count = 0;
     ip_validator ip_vdr;
     port_validator port_vdr;
 
-    //set up connection
-    for (auto it = peer_addresses.begin(); it != peer_addresses.end() && count < DEFAULT_CONNECT_PEER_NODE; it++) {
+    for (auto it = peer_addresses.begin(); it != peer_addresses.end(); it++) {
         std::string addr = *it;
         util::trim(addr);
         size_t pos = addr.find_last_of(':');
         if (pos == std::string::npos) {
-            LOG_ERROR << "p2p net conf file invalid format: " << addr;
+            LOG_ERROR << "peer ip invalid format: " << addr;
             continue;
         }
 
-        //get ip and port
-        std::string ip = addr.substr(0, pos);
+        std::string str_ip = addr.substr(0, pos);
         std::string str_port = addr.substr(pos + 1, std::string::npos);
 
-        //validate ip
         variable_value val;
-        val.value() = ip;
-        if (false == ip_vdr.validate(val)) {
-            LOG_ERROR << "p2p_net_service init_connect invalid ip: " << ip;
-            continue;
-        }
-
-        //validate port
-        if (str_port.empty()) {
-            LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
+        val.value() = str_ip;
+        if (str_ip.empty() || !ip_vdr.validate(val)) {
+            LOG_ERROR << "invalid ip: " << str_ip;
             continue;
         }
 
         val.value() = str_port;
-        if (false == port_vdr.validate(val)) {
-            LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port;
+        if (str_port.empty() || !port_vdr.validate(val)) {
+            LOG_ERROR << "invalid port: " << str_port;
             continue;
         }
 
-        uint16_t port = 0;
-        try {
-            port = (uint16_t) std::stoi(str_port);
-        }
-        catch (const std::exception &e) {
-            LOG_ERROR << "p2p_net_service init_connect invalid port: " << str_port << ", " << e.what();
-            continue;
-        }
+        uint16_t port = (uint16_t) atoi(str_port);
 
         try {
-            tcp::endpoint ep(ip::address::from_string(ip), (uint16_t) port);
+            LOG_INFO << "connect peer, ip: " << str_ip << " port: " << str_port;
 
-            //start connect
-            LOG_DEBUG << "matrix connect peer address, ip: " << ip << " port: " << str_port;
+            tcp::endpoint ep(ip::address::from_string(str_ip), port);
             if (exist_peer_node(ep)) {
-                LOG_DEBUG << "tcp channel exist to: " << ep.address().to_string();
+                LOG_DEBUG << "peer is already exist: " << ep.address().to_string();
                 continue;
             }
 
             int32_t ret = dbc::network::connection_manager::instance().start_connect(ep, &matrix_client_socket_channel_handler::create);
             if (E_SUCCESS != ret) {
-                LOG_ERROR << "matrix init connector invalid peer address, ip: " << ip << " port: " << str_port;
+                LOG_ERROR << "connect peer error, ip: " << str_ip << " port: " << str_port;
                 continue;
             }
 
             if (is_peer_candidate_exist(ep)) {
-                //case: duplicated address from peer_addresses
                 update_peer_candidate_state(ep, ns_in_use);
             } else {
                 add_peer_candidate(ep, ns_in_use, NORMAL_NODE);
             }
         }
         catch (const std::exception &e) {
-            LOG_ERROR << "p2p_net_service init_connect abnormal. addr info: " << ip << ", port:" << str_port
-            << ", " << e.what();
+            LOG_ERROR << "connect peer exception: " << str_ip << ":" << str_port << ", " << e.what();
             continue;
         }
-
-        count++;
     }
 
     return E_SUCCESS;
 }
 
+bool p2p_net_service::is_peer_candidate_exist(tcp::endpoint &ep) {
+    auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end(),
+                           [=](std::shared_ptr<peer_candidate> &pc) -> bool { return ep == pc->tcp_ep; });
+    return it != m_peer_candidates.end();
+}
+
+bool p2p_net_service::add_peer_candidate(tcp::endpoint &ep, net_state ns, peer_node_type ntype, const std::string& node_id) {
+    if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT) {
+        return false;
+    }
+
+    auto candidate = get_peer_candidate(ep);
+    if (nullptr == candidate) {
+        auto c = std::make_shared<peer_candidate>(ep, ns, ntype, 0, time(nullptr), 0, node_id);
+        m_peer_candidates.emplace_back(c);
+        return true;
+    }
+
+    return false;
+}
+
+std::shared_ptr<peer_candidate> p2p_net_service::get_peer_candidate(const tcp::endpoint &ep) {
+    auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end(),
+                           [=](std::shared_ptr<peer_candidate> &candidate) -> bool {
+                               return ep == candidate->tcp_ep;});
+
+    return (it != m_peer_candidates.end()) ? *it : nullptr;
+}
+
+bool p2p_net_service::update_peer_candidate_state(tcp::endpoint &ep, net_state ns) {
+    auto candidate = get_peer_candidate(ep);
+    if (nullptr != candidate) {
+        candidate->net_st = ns;
+        return true;
+    }
+
+    return false;
+}
+
+
 // 检查与种子节点的连接
 void p2p_net_service::on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer) {
-    //clear ns failed status candidates
+    // remove ns failed status candidates
     for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end();) {
         if (ns_failed == (*it)->net_st && (*it)->reconn_cnt >= max_reconnect_times) {
-            LOG_DEBUG << "remove peer candidate: " << (*it)->node_id << ", state= "
-                      << net_state_2_string((*it)->net_st);
-            m_peer_candidates.erase(it++);
+            it = m_peer_candidates.erase(it);
             continue;
         }
+
         it++;
     }
 
-    //use dns peer seeds
     if (get_maybe_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT) {
         add_dns_seeds();
     }
 
-    //use hard code peer seeds
-    if (get_maybe_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT)       //still no available candidate
-    {
+    if (get_maybe_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT) {
         add_hard_code_seeds();
     }
 
     //check connections
     uint32_t new_conn_cnt = 0;
     for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it) {
-        //not too many conn at a time
         if (new_conn_cnt > max_connect_per_check) {
             break;
         }
@@ -566,6 +534,21 @@ void p2p_net_service::on_timer_peer_candidate_dump(const std::shared_ptr<core_ti
     return ret;
 }
 
+uint32_t p2p_net_service::get_maybe_available_peer_candidates_count() {
+    uint32_t count = 0;
+
+    for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it) {
+        if (ns_idle == (*it)->net_st
+            || ns_in_use == (*it)->net_st
+            || ns_available == (*it)->net_st
+            || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times))) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 
 bool p2p_net_service::add_peer_node(const std::shared_ptr<dbc::network::message> &msg) {
     if (!msg) {
@@ -669,8 +652,7 @@ void p2p_net_service::remove_peer_node(const std::string &id) {
 bool p2p_net_service::exist_peer_node(tcp::endpoint ep) {
     dbc::network::endpoint_address addr(ep);
 
-    //check if dest is itself
-    if (addr.get_ip() == m_host_ip && addr.get_port() == m_net_listen_port) {
+    if (addr.get_ip() == m_listen_ip && addr.get_port() == m_listen_port) {
         return true;
     }
 
@@ -707,7 +689,6 @@ std::shared_ptr<peer_node> p2p_net_service::get_peer_node(const std::string &id)
 
     return it->second;
 }
-
 
 void p2p_net_service::on_ver_req(const std::shared_ptr<dbc::network::message> &msg) {
     auto req_content = std::dynamic_pointer_cast<dbc::ver_req>(msg->content);
@@ -867,7 +848,6 @@ void p2p_net_service::on_ver_resp(const std::shared_ptr<dbc::network::message> &
                     msg->header.src_sid);            //advertise local self address to neighbor peer node
 }
 
-
 void p2p_net_service::on_tcp_channel_error(const std::shared_ptr<dbc::network::message> &msg) {
     if (!msg) {
         LOG_ERROR << "null ptr of msg";
@@ -995,7 +975,6 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
 
     dbc::network::connection_manager::instance().release_connector(msg->header.src_sid);
 }
-
 
 void p2p_net_service::on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg)
 {
@@ -1208,7 +1187,6 @@ void p2p_net_service::on_get_peer_nodes_resp(const std::shared_ptr<dbc::network:
     }
 }
 
-
 int32_t p2p_net_service::send_get_peer_nodes() {
     std::shared_ptr<dbc::get_peer_nodes_req> req_content = std::make_shared<dbc::get_peer_nodes_req>();
     req_content->header.__set_magic(conf_manager::instance().get_net_flag());
@@ -1303,42 +1281,6 @@ int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
     return E_SUCCESS;
 }
 
-bool p2p_net_service::is_peer_candidate_exist(tcp::endpoint &ep) {
-    auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end(),
-                           [=](std::shared_ptr<peer_candidate> &pc) -> bool { return ep == pc->tcp_ep; });
-
-    return it != m_peer_candidates.end();
-}
-
-bool p2p_net_service::add_peer_candidate(tcp::endpoint &ep, net_state ns, peer_node_type ntype,
-                                         std::string node_id) {
-    if (m_peer_candidates.size() >= MAX_PEER_CANDIDATES_CNT) {
-        //limit
-        return false;
-    }
-
-    auto candidate = get_peer_candidate(ep);
-    if (nullptr == candidate) {
-        auto c = std::make_shared<peer_candidate>(ep, ns, ntype, 0, time(nullptr), 0, node_id);
-
-        LOG_DEBUG << "node id:" << c->node_id;
-
-        m_peer_candidates.emplace_back(c);
-        return true;
-    }
-
-    return false;
-}
-
-bool p2p_net_service::update_peer_candidate_state(tcp::endpoint &ep, net_state ns) {
-    auto candidate = get_peer_candidate(ep);
-    if (nullptr != candidate) {
-        candidate->net_st = ns;
-        return true;
-    }
-
-    return false;
-}
 
 uint32_t p2p_net_service::get_peer_nodes_count_by_socket_type(dbc::network::socket_type type) {
     uint32_t count = 0;
@@ -1352,20 +1294,6 @@ uint32_t p2p_net_service::get_peer_nodes_count_by_socket_type(dbc::network::sock
     return count;
 }
 
-uint32_t p2p_net_service::get_maybe_available_peer_candidates_count() {
-    uint32_t count = 0;
-
-    for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it) {
-        if (ns_idle == (*it)->net_st
-            || ns_in_use == (*it)->net_st
-            || ns_available == (*it)->net_st
-            || (((*it)->net_st == ns_failed) && ((*it)->reconn_cnt < max_reconnect_times))) {
-            count++;
-        }
-    }
-
-    return count;
-}
 
 int32_t p2p_net_service::get_available_peer_candidates(uint32_t count,
                                                        std::vector<std::shared_ptr<peer_candidate>> &available_candidates) {
@@ -1426,7 +1354,7 @@ int32_t p2p_net_service::save_peer_candidates() {
         leveldb::WriteOptions write_options;
         //write_options.sync = true;                    //no need sync
 
-        leveldb::Status status = m_peers_db->Write(write_options, &batch);
+        leveldb::Status status = m_peers_candidates_db->Write(write_options, &batch);
         if (!status.ok()) {
             LOG_ERROR << "p2p net service save peer candidates error: " << status.ToString();
             return E_DEFAULT;
@@ -1446,10 +1374,10 @@ int32_t p2p_net_service::clear_peer_candidates_db() {
     try {
         //iterate task in db
         std::unique_ptr<leveldb::Iterator> it;
-        it.reset(m_peers_db->NewIterator(leveldb::ReadOptions()));
+        it.reset(m_peers_candidates_db->NewIterator(leveldb::ReadOptions()));
 
         for (it->SeekToFirst(); it->Valid(); it->Next()) {
-            m_peers_db->Delete(leveldb::WriteOptions(), it->key());
+            m_peers_candidates_db->Delete(leveldb::WriteOptions(), it->key());
         }
     }
     catch (...) {
@@ -1483,9 +1411,6 @@ int32_t p2p_net_service::add_dns_seeds() {
         ip::tcp::resolver::iterator end;
 
         for (; it != end; it++) {
-            LOG_DEBUG << "p2p net service add dns candidate: " << dns_seed << ", ip: "
-                      << it->endpoint().address().to_string();
-
             tcp::endpoint ep(it->endpoint().address(), conf_manager::instance().get_net_default_port());
             add_peer_candidate(ep, ns_idle, SEED_NODE);
         }
@@ -1500,8 +1425,6 @@ int32_t p2p_net_service::add_dns_seeds() {
 int32_t p2p_net_service::add_hard_code_seeds() {
     //get hard code seeds
     for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++) {
-        LOG_DEBUG << "p2p net service add hard code candidate, ip: " << it->seed << ", port: " << it->port;
-
         tcp::endpoint ep(ip::address::from_string(it->seed), it->port);
         add_peer_candidate(ep, ns_idle, SEED_NODE);
     }
@@ -1644,22 +1567,14 @@ void p2p_net_service::advertise_local(tcp::endpoint tcp_ep, dbc::network::socket
 
     node->m_id = conf_manager::instance().get_node_id();
     node->m_live_time = time(nullptr);
-    node->m_peer_addr = tcp::endpoint(tcp_ep.address(), m_net_listen_port);
+    node->m_peer_addr = tcp::endpoint(tcp_ep.address(), m_listen_port);
     node->m_sid = sid;
 
     LOG_DEBUG << "p2p net service advertise local self address: " << tcp_ep.address().to_string() << ", port: "
-              << m_net_listen_port;
+              << m_listen_port;
     send_put_peer_nodes(node);
 }
 
-std::shared_ptr<peer_candidate> p2p_net_service::get_peer_candidate(const tcp::endpoint &ep) {
-    auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end(),
-                           [=](std::shared_ptr<peer_candidate> &candidate) -> bool {
-                               return ep == candidate->tcp_ep;
-                           });
-
-    return (it != m_peer_candidates.end()) ? *it : nullptr;
-}
 
 void p2p_net_service::remove_peer_candidate(const tcp::endpoint &ep) {
     auto it = std::find_if(m_peer_candidates.begin(), m_peer_candidates.end(),
