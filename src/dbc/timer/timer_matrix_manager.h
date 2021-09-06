@@ -4,6 +4,7 @@
 #include "util/utils.h"
 #include "network/nio_loop_group.h"
 #include "network/protocol/service_message.h"
+#include "service_module/service_module.h"
 
 #define DEFAULT_TIMER_MATRIX_THREAD_COUNT           1
 #define DEFAULT_TIMER_INTERVAL                      100 //unit:ms for one tick

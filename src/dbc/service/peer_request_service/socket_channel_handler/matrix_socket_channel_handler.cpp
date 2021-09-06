@@ -216,13 +216,13 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
                         {
 //                                    msg->set_name(BINARY_FORWARD_MSG);
 
-                            topic_manager::instance().publish<int32_t>(BINARY_FORWARD_MSG, msg);
+                            topic_manager::instance().publish<void>(BINARY_FORWARD_MSG, msg);
                             LOG_DEBUG << "matrix socket channel handler forward msg: " << msg->get_name()
                                       << ", nonce: " << nonce << m_sid.to_string();
                         }
                         else
                         {
-                            topic_manager::instance().publish<int32_t>(msg->get_name(), msg);
+                            topic_manager::instance().publish<void>(msg->get_name(), msg);
                             //LOG_INFO << "m_count "<< m_count << endl;
                             LOG_DEBUG << "matrix socket channel handler received msg: " << msg->get_name()
                                       << ", nonce: " << nonce << m_sid.to_string();

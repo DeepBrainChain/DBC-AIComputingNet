@@ -75,7 +75,7 @@ void timer_matrix_manager::on_timer_expired(const boost::system::error_code& err
 
     //publish notification
     std::shared_ptr<dbc::network::message> msg = make_time_tick_notification();
-    topic_manager::instance().publish<int32_t>(msg->get_name(), msg);
+    topic_manager::instance().publish<void>(msg->get_name(), msg);
 
     //next
     start_timer();

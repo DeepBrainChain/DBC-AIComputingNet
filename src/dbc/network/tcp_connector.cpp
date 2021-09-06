@@ -194,7 +194,7 @@ namespace dbc
             auto send_msg = std::dynamic_pointer_cast<message>(msg);
 
             //notify this to service layer
-            topic_manager::instance().publish<int32_t>(msg->get_name(), send_msg);
+            topic_manager::instance().publish<void>(msg->get_name(), send_msg);
         }
 
 

@@ -99,7 +99,7 @@ namespace dbc
 
         void connection_manager::init_subscription()
         {
-            topic_manager::instance().subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<message> &msg) {return send(msg);});
+            topic_manager::instance().subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<message> &msg) { send(msg);});
         }
 
         void connection_manager::init_invoker()
