@@ -64,13 +64,11 @@ int32_t server::init(int argc, char *argv[]) {
     }
     LOG_INFO << "init conf manager successfully";
 
-    // system_resource_manager
-    if (vm.count(SERVICE_NAME_AI_TRAINING)) {
-        LOG_INFO << "begin to init system resource manager";
-        SystemResourceMgr::instance().Init();
-        SystemInfo::instance().start();
-        LOG_INFO << "init system resource manager successfully";
-    }
+    // system_info
+    LOG_INFO << "begin to init system info manager";
+    SystemResourceMgr::instance().Init();
+    SystemInfo::instance().start();
+    LOG_INFO << "init system info manager successfully";
 
     // timer_matrix_manager
     LOG_INFO << "begin to init timer matrix manager";
@@ -150,28 +148,11 @@ void server::exit() {
     m_stop = true;
 
     m_timer_matrix_manager->stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    m_timer_matrix_manager->exit();
-
     node_request_service::instance().stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    node_request_service::instance().exit();
-
     dbc::network::connection_manager::instance().stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    dbc::network::connection_manager::instance().exit();
-
     p2p_net_service::instance().stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    p2p_net_service::instance().exit();
-
     rest_api_service::instance().stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    rest_api_service::instance().exit();
-
     http_server_service::instance().stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_MILLI_SECONDS));
-    http_server_service::instance().exit();
 }
 
 int32_t server::parse_command_line(int argc, const char *const argv[],

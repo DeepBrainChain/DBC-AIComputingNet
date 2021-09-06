@@ -57,8 +57,8 @@ void service_module::thread_func()
         {
             std::unique_lock<std::mutex> lock(m_msg_queue_mutex);
             std::chrono::milliseconds ms(500);
-            m_cond.wait_for(lock, ms, [this]()->bool {return !(this->is_empty());});
-            if (is_empty())
+            m_cond.wait_for(lock, ms, [this]()->bool { return !m_msg_queue.empty(); });
+            if (m_msg_queue.empty())
                 continue;
             m_msg_queue.swap(tmp_msg_queue);
         }

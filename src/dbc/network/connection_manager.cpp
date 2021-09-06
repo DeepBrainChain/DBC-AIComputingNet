@@ -19,8 +19,31 @@ namespace dbc
             m_connector_group = std::make_shared<nio_loop_group>();
         }
 
-        int32_t connection_manager::service_init(bpo::variables_map &options)
+        connection_manager::~connection_manager() {
+            stop_all_listen();
+            stop_all_connect();
+            stop_all_channel();
+            stop_all_recycle_channel();
+            stop_io_services();
+            exit_io_services();
+
+            {
+                write_lock_guard<rw_lock> lock(m_lock_accp);
+                m_acceptors.clear();
+            }
+
+            {
+                write_lock_guard<rw_lock> lock(m_lock_conn);
+                m_connectors.clear();
+            }
+
+            remove_timers();
+        }
+
+        int32_t connection_manager::init(bpo::variables_map &options)
         {
+            service_module::init(options);
+
             //init io services
             int32_t ret = init_io_services();
             if (E_SUCCESS != ret)
@@ -71,46 +94,6 @@ namespace dbc
             m_max_connect = (std::min)(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, m_max_connect);
             m_max_connect = (std::max)(m_max_connect, MAX_OUTBOUND_CONNECTIONS);
             LOG_DEBUG << "max_connect: " <<m_max_connect;
-            return E_SUCCESS;
-        }
-
-        int32_t connection_manager::service_exit()
-        {
-            //stop server listening
-            LOG_INFO << "connection manager stop all server listening...";
-            stop_all_listen();
-
-            //stop client connect
-            LOG_INFO << "connection manager stop all client connecting...";
-            stop_all_connect();
-
-            LOG_INFO << "connection manager stop all tcp channels...";
-            stop_all_channel();
-
-            LOG_INFO << "connection manager stop all recycle tcp channels...";
-            stop_all_recycle_channel();
-
-            //stop io service
-            LOG_INFO << "connection manager stop all io services...";
-            stop_io_services();
-
-            LOG_INFO << "connection manager exit all io services";
-            exit_io_services();
-
-            {
-                write_lock_guard<rw_lock> lock(m_lock_accp);
-                m_acceptors.clear();
-            }
-
-            {
-                write_lock_guard<rw_lock> lock(m_lock_conn);
-                m_connectors.clear();
-            }
-
-            //m_channels.clear();    //release resource in stop_all_channels
-
-            remove_timers();
-
             return E_SUCCESS;
         }
 
@@ -738,7 +721,7 @@ namespace dbc
             return true;
         }
 
-        int32_t connection_manager::on_recycle_timer(std::shared_ptr<core_timer> timer)
+        void connection_manager::on_recycle_timer(const std::shared_ptr<core_timer>& timer)
         {
             std::queue<socket_id> goodbye_channels;
 
@@ -781,8 +764,6 @@ namespace dbc
                 LOG_DEBUG << "connection manager erase tcp socket channel from recycle channels:" << sid.to_string();
                 m_recycle_channels.erase(sid);
             }
-
-            return E_SUCCESS;
         }
 
         int32_t connection_manager::stop_channel(socket_id sid)

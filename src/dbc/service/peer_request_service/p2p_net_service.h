@@ -51,24 +51,29 @@ protected:
 
     int32_t init_connector(bpo::variables_map &options);
 
+    // peer candidate
     bool is_peer_candidate_exist(tcp::endpoint &ep);
 
     bool add_peer_candidate(tcp::endpoint &ep, net_state ns, peer_node_type ntype, const std::string& node_id = "");
 
     std::shared_ptr<peer_candidate> get_peer_candidate(const tcp::endpoint &ep);
 
+    void remove_peer_candidate(const tcp::endpoint &ep);
+
     bool update_peer_candidate_state(tcp::endpoint &ep, net_state ns);
 
+    int32_t get_available_peer_candidates(uint32_t count,
+                                          std::vector<std::shared_ptr<peer_candidate>> &available_candidates);
 
-    void on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer);
+    uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
 
-    void on_timer_dyanmic_adjust_network(const std::shared_ptr<core_timer>& timer);
+    int32_t save_peer_candidates();
 
-    void on_timer_peer_info_exchange(const std::shared_ptr<core_timer>& timer);
+    int32_t clear_peer_candidates_db();
 
-    void on_timer_peer_candidate_dump(const std::shared_ptr<core_timer>& timer);
+    uint32_t get_maybe_available_peer_candidates_count();
 
-    //if call from outside, please think about thread-safe of m_peer_nodes_map
+    // peer node
     void get_all_peer_nodes(peer_list_type &nodes);
 
     std::shared_ptr<peer_node> get_peer_node(const std::string &id);
@@ -83,13 +88,25 @@ protected:
 
     uint32_t get_peer_nodes_count_by_socket_type(dbc::network::socket_type type);
 
-    void on_ver_req(const std::shared_ptr<dbc::network::message> &msg);
-
-    void on_ver_resp(const std::shared_ptr<dbc::network::message> &msg);
 
     void on_client_tcp_connect_notification(const std::shared_ptr<dbc::network::message> &msg);
 
     void on_tcp_channel_error(const std::shared_ptr<dbc::network::message> &msg);
+
+
+    void on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_dyanmic_adjust_network(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_peer_info_exchange(const std::shared_ptr<core_timer>& timer);
+
+    void on_timer_peer_candidate_dump(const std::shared_ptr<core_timer>& timer);
+
+
+    void on_ver_req(const std::shared_ptr<dbc::network::message> &msg);
+
+    void on_ver_resp(const std::shared_ptr<dbc::network::message> &msg);
+
 
     void on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg);
 
@@ -106,25 +123,11 @@ protected:
 
     uint32_t get_rand32() { return m_rand_ctx.rand32(); }
 
-    uint32_t get_maybe_available_peer_candidates_count();
-
-    int32_t get_available_peer_candidates(uint32_t count,
-                                          std::vector<std::shared_ptr<peer_candidate>> &available_candidates);
-
-    uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
-
-    int32_t save_peer_candidates();
-
-    int32_t clear_peer_candidates_db();
-
     uint32_t start_connect(const tcp::endpoint tcp_ep);
 
     std::shared_ptr<peer_node> get_dynamic_disconnect_peer_node();
 
     std::shared_ptr<peer_candidate> get_dynamic_connect_peer_candidate();
-
-
-    void remove_peer_candidate(const tcp::endpoint &ep);
 
     int32_t add_dns_seeds();
 
@@ -145,7 +148,7 @@ protected:
 
     std::shared_ptr<leveldb::DB> m_peers_candidates_db;
     std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;
-    std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;
+    std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;  // <node_id, ...>
 
     uint32_t m_timer_check_peer_candidates = INVALID_TIMER_ID;
     uint32_t m_timer_dyanmic_adjust_network = INVALID_TIMER_ID;

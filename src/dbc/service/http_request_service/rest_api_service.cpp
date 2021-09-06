@@ -3521,7 +3521,6 @@ void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::ne
 
     int32_t rsp_result = node_rsp_msg->body.result;
     std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-    std::map<std::string, std::string> kvs = node_rsp_msg->body.kvs;
 
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
     if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {

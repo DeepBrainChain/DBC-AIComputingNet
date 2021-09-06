@@ -44,9 +44,11 @@ namespace dbc
 
             connection_manager();
 
-            ~connection_manager() override = default;
+            ~connection_manager() override;
 
             void set_proto_capacity(socket_id sid, std::string c);
+
+            int32_t init(bpo::variables_map &options) override;
 
             int32_t start_listen(tcp::endpoint ep, handler_create_functor func);
 
@@ -79,10 +81,6 @@ namespace dbc
             bool send_resp_message(std::shared_ptr<message> msg, socket_id id = socket_id());
 
         protected:
-            int32_t service_init(bpo::variables_map &options) override;
-
-            int32_t service_exit() override;
-
             void init_invoker() override;
 
             void init_timer() override;
@@ -115,7 +113,7 @@ namespace dbc
 
             void on_tcp_channel_error(const std::shared_ptr<message> &msg);
 
-            int32_t on_recycle_timer(std::shared_ptr<core_timer> timer);
+            void on_recycle_timer(const std::shared_ptr<core_timer>& timer);
 
             virtual void remove_timers();
 
