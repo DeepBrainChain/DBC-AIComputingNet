@@ -71,12 +71,12 @@ node_request_service::~node_request_service() {
 }
 
 int32_t node_request_service::init(bpo::variables_map &options) {
-    service_module::init(options);
-
     if (options.count(SERVICE_NAME_AI_TRAINING)) {
         m_is_computing_node = true;
         add_self_to_servicelist(options);
     }
+
+    service_module::init(options);
 
     if (m_is_computing_node) {
         auto fresult = m_task_scheduler.Init();
