@@ -67,6 +67,7 @@ int32_t server::init(int argc, char *argv[]) {
     // system_info
     LOG_INFO << "begin to init system info manager";
     SystemResourceMgr::instance().Init();
+    SystemInfo::instance().init(vm);
     SystemInfo::instance().start();
     LOG_INFO << "init system info manager successfully";
 

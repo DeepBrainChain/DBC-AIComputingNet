@@ -12,6 +12,7 @@
 #include <atomic>
 #include <cstring>
 #include "util/singleton.h"
+#include <boost/program_options.hpp>
 
 enum OS_TYPE {
     OS_1804,
@@ -55,11 +56,15 @@ struct disk_info {
     float disk_usage = 0.0f;
 };
 
+namespace bpo = boost::program_options;
+
 class SystemInfo : public Singleton<SystemInfo> {
 public:
     SystemInfo();
 
     virtual ~SystemInfo();
+
+    void init(bpo::variables_map &options);
 
     void start();
 
@@ -107,6 +112,8 @@ protected:
     void update_cpu_usage();
 
 private:
+    bool m_is_compute_node = false;
+
     OS_TYPE m_os_type = OS_1804;
     std::string m_os_name = "N/A";
     mem_info m_meminfo;

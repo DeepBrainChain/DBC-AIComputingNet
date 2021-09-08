@@ -519,7 +519,7 @@ namespace dbc
 
             if (! have_active_channel())
             {
-                LOG_INFO << "connection manager broadcast message error, no active channel";
+                LOG_DEBUG << "connection manager broadcast message error, no active channel";
                 return E_INACTIVE_CHANNEL;
             }
 
@@ -537,7 +537,7 @@ namespace dbc
                     //not login success or stopped, continue
                     if (!it->second->is_channel_ready())
                     {
-                        LOG_INFO << "connection manager broadcast message, but peer socket id: " << it->first.get_id()
+                        LOG_DEBUG << "connection manager broadcast message, but peer socket id: " << it->first.get_id()
                                   << " not logined.";
                         continue;
                     }
@@ -545,7 +545,7 @@ namespace dbc
 
                     it->second->write(msg);
                 }
-                LOG_INFO << "connection manager send message to socket, " << it->first.to_string()
+                LOG_DEBUG << "connection manager send message to socket, " << it->first.to_string()
                          << ", message name: " << msg->get_name();
             }
 

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <set>
 #include "util/utils.h"
+#include "service_module/service_name.h"
 
 typedef struct mem_table_struct {
     const char *name;     /* memory type name */
@@ -24,11 +25,20 @@ SystemInfo::~SystemInfo() {
     stop();
 }
 
+void SystemInfo::init(bpo::variables_map &options) {
+    if (options.count(SERVICE_NAME_AI_TRAINING)) {
+        m_is_compute_node = true;
+    }
+}
+
 void SystemInfo::start() {
     m_running = true;
     get_mem_info(m_meminfo);
     get_cpu_info(m_cpuinfo);
-    get_disk_info("/data", m_diskinfo);
+    if (m_is_compute_node)
+        get_disk_info("/data", m_diskinfo);
+    else
+        get_disk_info("/", m_diskinfo);
 
     std::string ver = STR_VER(CORE_VERSION);
     auto s_ver = util::remove_leading_zero(ver.substr(2, 2)) + "."
@@ -317,8 +327,18 @@ void SystemInfo::update_cpu_usage() {
         get_occupy(ocpu, cpu_num);
         sleep(3);
         get_occupy(ncpu, cpu_num);
-
         m_cpu_usage = cal_occupy(&ocpu[0], &ncpu[0]);
+
+        mem_info _mem_info;
+        get_mem_info(_mem_info);
+        m_meminfo = _mem_info;
+
+        disk_info _disk_info;
+        if (m_is_compute_node)
+            get_disk_info("/data", _disk_info);
+        else
+            get_disk_info("/", _disk_info);
+        m_diskinfo = _disk_info;
     }
 
     delete[] ocpu;

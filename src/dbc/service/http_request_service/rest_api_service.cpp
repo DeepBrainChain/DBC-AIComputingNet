@@ -148,7 +148,7 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::m
     std::shared_ptr<service_session> session = get_session(session_id);
     if (nullptr == session) {
         LOG_DEBUG << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
-        //dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
+        dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
         return;
     }
 
