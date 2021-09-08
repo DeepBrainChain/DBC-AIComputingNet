@@ -1,15 +1,6 @@
 #include "util/utils.h"
-#include "service/message/matrix_types.h"
-#include "network/protocol/thrift_binary.h"
-#include "tweetnacl/tools.h"
-#include "tweetnacl/randombytes.h"
-#include "tweetnacl/tweetnacl.h"
 #include "util/base64.h"
-#include <functional>
 #include <chrono>
-#include "log/log.h"
-#include <csignal>
-#include "server/server.h"
 
 high_resolution_clock::time_point server_start_time;
 

@@ -155,13 +155,8 @@ namespace dbc
 
         int32_t connection_manager::exit_io_services()
         {
-            LOG_INFO << "connection manager exit acceptor group";
             m_acceptor_group->exit();
-
-            LOG_INFO << "connection manager exit worker group";
             m_worker_group->exit();
-
-            LOG_INFO << "connection manager exit connector group";
             m_connector_group->exit();
 
             return E_SUCCESS;
@@ -208,15 +203,9 @@ namespace dbc
         {
             try
             {
-                LOG_INFO << "connection manager stop acceptor group";
                 m_acceptor_group->stop();
-
-                LOG_INFO << "connection manager stop worker group";
                 m_worker_group->stop();
-
-                LOG_INFO << "connection manager stop connector group";
                 m_connector_group->stop();
-
             }
             catch(const boost::exception & e)
             {

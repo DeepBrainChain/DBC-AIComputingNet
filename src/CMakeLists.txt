@@ -116,5 +116,16 @@ add_executable(check_env ${check_env_src_files})
 target_link_libraries(check_env ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 
 ## sign_tool ##
-add_executable(sign_tool ./sign_tool/main.cpp ${dbc_src_files})
+aux_source_directory(dbc/common sign_tool_src_files)
+aux_source_directory(dbc/common/def sign_tool_src_files)
+aux_source_directory(dbc/util sign_tool_src_files)
+aux_source_directory(dbc/util/utils sign_tool_src_files)
+aux_source_directory(dbc/util/validator sign_tool_src_files)
+aux_source_directory(dbc/util/memory sign_tool_src_files)
+aux_source_directory(dbc/util/math sign_tool_src_files)
+aux_source_directory(dbc/util/filter sign_tool_src_files)
+aux_source_directory(dbc/util/crypto sign_tool_src_files)
+aux_source_directory(dbc/util/crypto/ctaes sign_tool_src_files)
+
+add_executable(sign_tool ./sign_tool/main.cpp ${sign_tool_src_files})
 target_link_libraries(sign_tool ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)

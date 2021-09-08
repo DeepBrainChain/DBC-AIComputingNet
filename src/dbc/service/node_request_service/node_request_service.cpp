@@ -199,11 +199,13 @@ bool node_request_service::hit_node(const std::vector<std::string>& peer_node_li
 }
 
 bool node_request_service::check_nonce(const std::string& nonce) {
-    if (!util::check_id(nonce)) {
+    if (nonce.empty()) {
+        LOG_ERROR << "nonce is empty";
         return false;
     }
 
     if (m_nonceCache.contains(nonce)) {
+        LOG_ERROR << "nonce is already used";
         return false;
     }
     else {
@@ -230,9 +232,22 @@ bool node_request_service::check_req_header(const std::shared_ptr<dbc::network::
         return false;
     }
 
-    if (!check_nonce(base->header.nonce)) {
-        LOG_ERROR << "nonce check failed, nonce:" << base->header.nonce;
-        return E_DEFAULT;
+    if (!util::check_id(base->header.nonce)) {
+        LOG_ERROR << "header.nonce check_id failed";
+        return false;
+    }
+
+    if (m_nonceCache.contains(base->header.nonce)) {
+        LOG_ERROR << "header.nonce is already used";
+        return false;
+    }
+    else {
+        m_nonceCache.insert(base->header.nonce, 1);
+    }
+
+    if (base->header.session_id.empty()) {
+        LOG_ERROR << "base->header.session_id is empty";
+        return false;
     }
 
     if (!util::check_id(base->header.session_id)) {
@@ -298,6 +313,11 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -356,6 +376,11 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -419,6 +444,11 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -482,6 +512,11 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -545,6 +580,11 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -608,6 +648,11 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -671,6 +716,11 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -747,6 +797,11 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
@@ -810,6 +865,11 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
         LOG_ERROR << "verify sign error";
