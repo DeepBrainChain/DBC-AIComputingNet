@@ -268,564 +268,61 @@ bool node_request_service::check_req_header(const std::shared_ptr<dbc::network::
     return true;
 }
 
-void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
+template <typename T>
+void send_response_json(const std::string& msg_name, const dbc::network::base_header& header, int32_t result,
+                   const std::string& result_msg) {
+    std::shared_ptr<T> rsp_msg_content = std::make_shared<T>();
+    if (rsp_msg_content == nullptr) return;
 
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_create_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
+    // header
+    rsp_msg_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    rsp_msg_content->header.__set_msg_name(msg_name);
+    rsp_msg_content->header.__set_nonce(util::create_nonce());
+    rsp_msg_content->header.__set_session_id(header.session_id);
+    rsp_msg_content->header.__set_path(header.path);
+    std::map<std::string, std::string> exten_info;
+    std::string sign_message = rsp_msg_content->header.nonce + rsp_msg_content->header.session_id;
+    std::string sign = util::sign(sign_message, conf_manager::instance().get_node_private_key());
+    exten_info["sign"] = sign;
+    exten_info["sign_algo"] = "ecdsa";
+    time_t cur = std::time(nullptr);
+    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
+    exten_info["origin_id"] = conf_manager::instance().get_node_id();
+    rsp_msg_content->header.__set_exten_info(exten_info);
+    // body
+    rsp_msg_content->body.__set_result(result);
+    rsp_msg_content->body.__set_result_msg(result_msg);
 
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_create_task_req_data> data = std::make_shared<dbc::node_create_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_create(node_req_msg->header, data);
-    }
+    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
+    rsp_msg->set_name(msg_name);
+    rsp_msg->set_content(rsp_msg_content);
+    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
 }
 
-void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
+template <typename T>
+void send_response_ok(const std::string& msg_name, const dbc::network::base_header& header) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << E_SUCCESS;
+    ss << ", \"result\":" << "\"ok\"";
+    ss << "}";
 
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_start_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_start_task_req_data> data = std::make_shared<dbc::node_start_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_start(node_req_msg->header, data);
-    }
+    send_response_json<T>(msg_name, header, E_SUCCESS, ss.str());
 }
 
-void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
+template <typename T>
+void send_response_error(const std::string& msg_name, const dbc::network::base_header& header, int32_t result,
+                         const std::string& result_msg) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":" << result;
+    ss << ", \"error_message\":" << "\"" << result_msg << "\"";
+    ss << "}";
 
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_stop_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_stop_task_req_data> data = std::make_shared<dbc::node_stop_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_stop(node_req_msg->header, data);
-    }
-}
-
-void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_restart_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_restart_task_req_data> data = std::make_shared<dbc::node_restart_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_restart(node_req_msg->header, data);
-    }
-}
-
-void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_reset_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_reset_task_req_data> data = std::make_shared<dbc::node_reset_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_reset(node_req_msg->header, data);
-    }
-}
-
-void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg id nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_delete_task_req_data> data = std::make_shared<dbc::node_delete_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_delete(node_req_msg->header, data);
-    }
-}
-
-void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_task_logs_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_task_logs_req_data> data = std::make_shared<dbc::node_task_logs_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    int16_t req_head_or_tail = data->head_or_tail;
-    int32_t req_number_of_lines = data->number_of_lines;
-
-    if (GET_LOG_HEAD != req_head_or_tail && GET_LOG_TAIL != req_head_or_tail) {
-        LOG_ERROR << "req_head_or_tail is invalid:" << req_head_or_tail;
-        return;
-    }
-
-    if (req_number_of_lines > MAX_NUMBER_OF_LINES || req_number_of_lines < 0) {
-        LOG_ERROR << "req_number_of_lines is invalid:" << req_number_of_lines;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_logs(node_req_msg->header, data);
-    }
-}
-
-void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
-    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_task_req>(msg->get_content());
-    if (node_req_msg == nullptr) {
-        LOG_ERROR << "node_req_msg is nullptr";
-        return;
-    }
-
-    if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
-        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
-        return;
-    }
-
-    // decrypt
-    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::shared_ptr<dbc::node_list_task_req_data> data = std::make_shared<dbc::node_list_task_req_data>();
-    try {
-        std::string ori_message;
-        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            LOG_ERROR << "req decrypt error1";
-            return;
-        }
-
-        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
-        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
-        dbc::network::binary_protocol proto(task_buf.get());
-        data->read(&proto);
-    } catch (std::exception &e) {
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    std::string nonce = node_req_msg->header.exten_info["nonce"];
-    if (!check_nonce(nonce)) {
-        LOG_ERROR << "nonce check failed, nonce: " << nonce;
-        return;
-    }
-
-    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
-    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
-        LOG_ERROR << "verify sign error";
-        return;
-    }
-
-    if (!data->task_id.empty() && !util::check_id(data->task_id)) {
-        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
-        return;
-    }
-
-    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
-    if (hit_self) {
-        task_list(node_req_msg->header, data);
-    }
+    send_response_json<T>(msg_name, header, E_DEFAULT, ss.str());
 }
 
 void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_query_node_info_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
@@ -838,10 +335,17 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         return;
     }
 
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
     if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
@@ -851,6 +355,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -860,18 +365,21 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
 
     std::string nonce = node_req_msg->header.exten_info["nonce"];
     if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
         LOG_ERROR << "nonce check failed, nonce: " << nonce;
         return;
     }
 
     std::string nonce_sign = node_req_msg->header.exten_info["sign"];
     if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
         LOG_ERROR << "verify sign error";
         return;
     }
@@ -883,524 +391,123 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
     }
 }
 
-static std::string generate_pwd() {
-    char chr[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-                   'H', 'I', 'J', 'K', 'L', 'M', 'N',
-                   'O', 'P', 'Q', 'R', 'S', 'T',
-                   'U', 'V', 'W', 'X', 'Y', 'Z',
-                   'a', 'b', 'c', 'd', 'e', 'f', 'g',
-                   'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                   'o', 'p', 'q', 'r', 's', 't',
-                   'u', 'v', 'w', 'x', 'y', 'z',
-                   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    };
-    srand(time(NULL));
-    std::string strpwd;
-    int nlen = 10; //10位密码
-    char buf[3] = { 0 };
-    int idx0 = rand() % 52;
-    sprintf(buf, "%c", chr[idx0]);
-    strpwd.append(buf);
-
-    int idx_0 = rand() % nlen;
-    int idx_1 = rand() % nlen;
-    int idx_2 = rand() % nlen;
-
-    for (int i = 1; i < nlen; i++) {
-        int idx;
-        if (i == idx_0 || i == idx_1 || i == idx_2) {
-            idx = rand() % 62;
-        }
-        else {
-            idx = rand() % 62;
-        }
-        sprintf(buf, "%c", chr[idx]);
-        strpwd.append(buf);
-    }
-
-    return strpwd;
-}
-
-void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
-    LOG_INFO << "on_ws_msg(" << err_code << ") " << msg;
-
-    int32_t ret = E_DEFAULT;
-    std::string ret_msg;
-    std::string task_id;
-    std::string login_password;
-
-    do {
-        if (err_code != 0) {
-            ret = E_DEFAULT;
-            ret_msg = msg;
-            break;
-        }
-
-        rapidjson::Document doc;
-        doc.Parse(msg.c_str());
-        if (!doc.IsObject()) {
-            ret = E_DEFAULT;
-            ret_msg = "rsp_json parse error";
-            break;
-        }
-
-        if (!doc.HasMember("result")) {
-            ret = E_DEFAULT;
-            ret_msg = "rsp_json has not result";
-            break;
-        }
-
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) {
-            ret = E_DEFAULT;
-            ret_msg = "rsp_json result is not object";
-            break;
-        }
-
-        if (v_result.HasMember("machineStatus")) {
-            if (!v_result.HasMember("machineStatus")) {
-                ret = E_DEFAULT;
-                ret_msg = "rsp_json has not machineStatus";
-                break;
-            }
-
-            const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
-            if (!v_machineStatus.IsString()) {
-                ret = E_DEFAULT;
-                ret_msg = "rsp_json machineStatus is not string";
-                break;
-            }
-            std::string machine_status = v_machineStatus.GetString();
-
-            //machine_status = "creating";
-
-            if (machine_status != "creating" && machine_status != "rented") {
-                ret = E_DEFAULT;
-                ret_msg = "rent check failed";
-                LOG_ERROR << "rent check failed";
-                break;
-            }
-
-            if (m_websocket_client.is_connected()) {
-                std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-                        + m_create_data->wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
-                m_websocket_client.send(str_send);
-                LOG_INFO << "ws_send: " << str_send;
-                return;
-            } else {
-                ret = E_DEFAULT;
-                ret_msg = "verify renter failed";
-                LOG_ERROR << "websocket is disconnect";
-                break;
-            }
-        }
-        else if (v_result.HasMember("rentEnd")) {
-            const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
-            if (!v_rentEnd.IsNumber()) {
-                ret = E_DEFAULT;
-                ret_msg = "rsp_json rentEnd is not number";
-                break;
-            }
-
-            uint64_t rentEnd = v_rentEnd.GetUint64();
-            //rentEnd = 123;
-
-            bool can_do = false;
-            if (rentEnd > 0) {
-                can_do = true;
-
-                auto it = m_wallet_sessionid.find(m_create_data->wallet);
-                if (it == m_wallet_sessionid.end()) {
-                    std::string id = util::create_session_id();
-                    m_wallet_sessionid[m_create_data->wallet] = id;
-                    m_wallet_sessionid[id] = m_create_data->wallet;
-                    std::shared_ptr<dbc::owner_sessionid> sessionid(new dbc::owner_sessionid());
-                    sessionid->wallet = m_create_data->wallet;
-                    sessionid->session_id = id;
-                    m_sessionid_db.write(sessionid);
-                }
-            } else if (!m_create_data->session_id.empty() && !m_create_data->session_id_sign.empty()) {
-                std::string sign_msg = m_create_data->session_id;
-                auto it = m_sessionid_wallet.find(sign_msg);
-                if (it == m_sessionid_wallet.end()) {
-                    ret = E_DEFAULT;
-                    ret_msg = "session_id is invalid";
-                    LOG_ERROR << "session_id is invalid";
-                    break;
-                }
-
-                std::string owner_wallet = it->second;
-                if (util::verify_sign(m_create_data->session_id_sign, sign_msg, owner_wallet)) {
-                    can_do = true;
-                } else {
-                    ret = E_DEFAULT;
-                    ret_msg = "session_id is invalid";
-                    LOG_ERROR << "session_id is invalid";
-                    break;
-                }
-            } else {
-                ret = E_DEFAULT;
-                ret_msg = "req error";
-                LOG_ERROR << "wallet and session_id  error";
-                break;
-            }
-
-            if (can_do) {
-                task_id = util::create_task_id();
-                login_password = generate_pwd();
-                auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_data->additional);
-                ret = std::get<0>(fresult);
-                ret_msg = std::get<1>(fresult);
-            }
-        }
-    } while(0);
-
-    std::shared_ptr<dbc::node_create_task_rsp> rsp_content = std::make_shared<dbc::node_create_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_CREATE_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(m_create_header.session_id);
-    rsp_content->header.__set_path(m_create_header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
+void node_request_service::query_node_info(const dbc::network::base_header& header,
+                                           const std::shared_ptr<dbc::node_query_node_info_req_data>& data) {
     std::stringstream ss;
     ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"data\":" << "{";
-        ss << "\"task_id\":" << "\"" << task_id << "\"";
-
-        auto taskinfo = m_task_scheduler.FindTask(task_id);
-        struct tm _tm{};
-        time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
-        localtime_r(&tt, &_tm);
-        char buf[256] = {0};
-        memset(buf, 0, sizeof(char) * 256);
-        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-        ss << ", \"create_time\":" << "\"" << buf << "\"";
-
-        ss << "}";
-    }
+    ss << "\"error_code\":" << 0;
+    ss << ",\"data\":" << "{";
+    ss << "\"ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
+    ss << ",\"os\":" << "\"" << SystemInfo::instance().get_osname() << "\"";
+    cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
+    ss << ",\"cpu\":" << "{";
+    ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
+    ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
+    ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
     ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
-    resp_msg->set_name(NODE_CREATE_TASK_RSP);
-    resp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(resp_msg);
-}
-
-void node_request_service::task_create(const dbc::network::base_header& header,
-                                       const std::shared_ptr<dbc::node_create_task_req_data>& data) {
-    m_create_header = header;
-    m_create_data = data;
-
-    if (m_websocket_client.is_connected()) {
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-                               + conf_manager::instance().get_node_id() + R"("]})";
-        m_websocket_client.send(str_send);
-        LOG_INFO << "ws_send: " << str_send;
-    } else {
-        LOG_ERROR << "websocket is disconnect";
-    }
-}
-
-void node_request_service::task_start(const dbc::network::base_header& header,
-                                      const std::shared_ptr<dbc::node_start_task_req_data>& data) {
-    std::string task_id = data->task_id;
-
-    auto fresult = m_task_scheduler.StartTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    std::shared_ptr<dbc::node_start_task_rsp> rsp_content = std::make_shared<dbc::node_start_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_START_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
-    std::stringstream ss;
-    ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"result\":" << "\"ok\"";
-    }
+    mem_info tmp_meminfo = SystemInfo::instance().get_meminfo();
+    ss << ",\"mem\":" <<  "{";
+    ss << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
+    ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_total - tmp_meminfo.mem_used) << "\"";
+    ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
     ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-    rsp_msg->set_name(NODE_START_TASK_RSP);
-    rsp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
-}
-
-void node_request_service::task_stop(const dbc::network::base_header& header,
-                                     const std::shared_ptr<dbc::node_stop_task_req_data>& data) {
-    std::string task_id = data->task_id;
-
-    auto fresult = m_task_scheduler.StopTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    std::shared_ptr<dbc::node_stop_task_rsp> rsp_content = std::make_shared<dbc::node_stop_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_STOP_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
-    std::stringstream ss;
-    ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"result\":" << "\"ok\"";
-    }
+    disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();
+    ss << ",\"disk\":" << "{";
+    ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
+    ss << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
+    ss << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
+    ss << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
     ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-    rsp_msg->set_name(NODE_STOP_TASK_RSP);
-    rsp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
-}
-
-void node_request_service::task_restart(const dbc::network::base_header& header,
-                                        const std::shared_ptr<dbc::node_restart_task_req_data>& data) {
-    std::string task_id = data->task_id;
-
-    auto fresult = m_task_scheduler.RestartTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    std::shared_ptr<dbc::node_restart_task_rsp> rsp_content = std::make_shared<dbc::node_restart_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_RESTART_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
-    std::stringstream ss;
-    ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"result\":" << "\"ok\"";
-    }
-    ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-    rsp_msg->set_name(NODE_RESTART_TASK_RSP);
-    rsp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
-}
-
-void node_request_service::task_reset(const dbc::network::base_header& header,
-                                      const std::shared_ptr<dbc::node_reset_task_req_data>& data) {
-    std::string task_id = data->task_id;
-
-    auto fresult = m_task_scheduler.ResetTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    std::shared_ptr<dbc::node_reset_task_rsp> rsp_content = std::make_shared<dbc::node_reset_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_RESET_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
-    std::stringstream ss;
-    ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"result\":" << "\"ok\"";
-    }
-    ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-    rsp_msg->set_name(NODE_RESET_TASK_RSP);
-    rsp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
-}
-
-void node_request_service::task_delete(const dbc::network::base_header& header,
-                                       const std::shared_ptr<dbc::node_delete_task_req_data>& data) {
-    std::string task_id = data->task_id;
-
-    auto fresult = m_task_scheduler.DeleteTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    std::shared_ptr<dbc::node_delete_task_rsp> rsp_content = std::make_shared<dbc::node_delete_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_DELETE_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
-    std::stringstream ss;
-    ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"result\":" << "\"ok\"";
-    }
-    ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-    rsp_msg->set_name(NODE_DELETE_TASK_RSP);
-    rsp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
-}
-
-void node_request_service::task_logs(const dbc::network::base_header& header,
-                                     const std::shared_ptr<dbc::node_task_logs_req_data>& data) {
-    std::string task_id = data->task_id;
-    int16_t head_or_tail = data->head_or_tail;
-    int32_t number_of_lines = data->number_of_lines;
-
-    std::string log_content;
-    auto fresult = m_task_scheduler.GetTaskLog(task_id, (ETaskLogDirection) head_or_tail,
-                                               number_of_lines, log_content);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    if (GET_LOG_HEAD == (ETaskLogDirection) head_or_tail) {
-        log_content = log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+    int32_t count = m_task_scheduler.GetRunningTaskSize();
+    std::string state;
+    if (count <= 0) {
+        state = "idle";
     }
     else {
-        size_t log_lenth = log_content.length();
-        if (log_lenth > MAX_LOG_CONTENT_SIZE) {
-            log_content = log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
-        }
+        state = "busy(" + std::to_string(count) + ")";
     }
-
-    std::shared_ptr<dbc::node_task_logs_rsp> rsp_content = std::make_shared<dbc::node_task_logs_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_TASK_LOGS_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(ret);
-    std::stringstream ss;
-    ss << "{";
-    if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
-    } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"log_content\":" << "\"" << log_content << "\"";
-    }
+    ss << ",\"state\":" << "\"" << state << "\"";
+    ss << ",\"version\":" << "\"" << SystemInfo::instance().get_version() << "\"";
     ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
+    ss << "}";
 
-    //rsp msg
-    std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
-    rsp_msg->set_name(NODE_TASK_LOGS_RSP);
-    rsp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
+    send_response_json<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, E_SUCCESS, ss.str());
+}
+
+
+void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_list_task_req_data> data = std::make_shared<dbc::node_list_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!data->task_id.empty() && !util::check_id(data->task_id)) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_list(node_req_msg->header, data);
+    }
 }
 
 void node_request_service::task_list(const dbc::network::base_header& header,
@@ -1509,24 +616,6 @@ void node_request_service::task_list(const dbc::network::base_header& header,
         }
     }
 
-    std::shared_ptr<dbc::node_list_task_rsp> rsp_content = std::make_shared<dbc::node_list_task_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_LIST_TASK_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_msg = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_msg, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(result);
     std::stringstream ss;
     ss << "{";
     if (result != E_SUCCESS) {
@@ -1537,81 +626,873 @@ void node_request_service::task_list(const dbc::network::base_header& header,
         ss << ", \"data\":" << ss_tasks.str();
     }
     ss << "}";
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
-    resp_msg->set_name(NODE_LIST_TASK_RSP);
-    resp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(resp_msg);
+    send_response_json<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, result, ss.str());
 }
 
-void node_request_service::query_node_info(const dbc::network::base_header& header,
-                                           const std::shared_ptr<dbc::node_query_node_info_req_data>& data) {
+
+void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_create_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_create_task_req_data> data = std::make_shared<dbc::node_create_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_create(node_req_msg->header, data);
+    }
+}
+
+static std::string generate_pwd() {
+    char chr[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+                   'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                   'O', 'P', 'Q', 'R', 'S', 'T',
+                   'U', 'V', 'W', 'X', 'Y', 'Z',
+                   'a', 'b', 'c', 'd', 'e', 'f', 'g',
+                   'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                   'o', 'p', 'q', 'r', 's', 't',
+                   'u', 'v', 'w', 'x', 'y', 'z',
+                   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+    };
+    srand(time(NULL));
+    std::string strpwd;
+    int nlen = 10; //10位密码
+    char buf[3] = { 0 };
+    int idx0 = rand() % 52;
+    sprintf(buf, "%c", chr[idx0]);
+    strpwd.append(buf);
+
+    int idx_0 = rand() % nlen;
+    int idx_1 = rand() % nlen;
+    int idx_2 = rand() % nlen;
+
+    for (int i = 1; i < nlen; i++) {
+        int idx;
+        if (i == idx_0 || i == idx_1 || i == idx_2) {
+            idx = rand() % 62;
+        }
+        else {
+            idx = rand() % 62;
+        }
+        sprintf(buf, "%c", chr[idx]);
+        strpwd.append(buf);
+    }
+
+    return strpwd;
+}
+
+void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
+    LOG_INFO << "on_ws_msg(" << err_code << ") " << msg;
+
+    int32_t ret = E_DEFAULT;
+    std::string ret_msg;
+    std::string task_id;
+    std::string login_password;
+
+    do {
+        if (err_code != 0) {
+            ret = E_DEFAULT;
+            ret_msg = msg;
+            break;
+        }
+
+        rapidjson::Document doc;
+        doc.Parse(msg.c_str());
+        if (!doc.IsObject()) {
+            ret = E_DEFAULT;
+            ret_msg = "rsp_json parse error";
+            break;
+        }
+
+        if (!doc.HasMember("result")) {
+            ret = E_DEFAULT;
+            ret_msg = "rsp_json has not result";
+            break;
+        }
+
+        const rapidjson::Value &v_result = doc["result"];
+        if (!v_result.IsObject()) {
+            ret = E_DEFAULT;
+            ret_msg = "rsp_json result is not object";
+            break;
+        }
+
+        if (v_result.HasMember("machineStatus")) {
+            if (!v_result.HasMember("machineStatus")) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json has not machineStatus";
+                break;
+            }
+
+            const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
+            if (!v_machineStatus.IsString()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json machineStatus is not string";
+                break;
+            }
+            std::string machine_status = v_machineStatus.GetString();
+
+            //machine_status = "creating";
+
+            if (machine_status != "creating" && machine_status != "rented") {
+                ret = E_DEFAULT;
+                ret_msg = "rent check failed";
+                LOG_ERROR << "rent check failed";
+                break;
+            }
+
+            if (m_websocket_client.is_connected()) {
+                std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
+                                       + m_create_data->wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+                m_websocket_client.send(str_send);
+                LOG_INFO << "ws_send: " << str_send;
+                return;
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "verify renter failed";
+                LOG_ERROR << "websocket is disconnect";
+                break;
+            }
+        }
+        else if (v_result.HasMember("rentEnd")) {
+            const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
+            if (!v_rentEnd.IsNumber()) {
+                ret = E_DEFAULT;
+                ret_msg = "rsp_json rentEnd is not number";
+                break;
+            }
+
+            uint64_t rentEnd = v_rentEnd.GetUint64();
+            //rentEnd = 123;
+
+            bool can_do = false;
+            if (rentEnd > 0) {
+                can_do = true;
+
+                auto it = m_wallet_sessionid.find(m_create_data->wallet);
+                if (it == m_wallet_sessionid.end()) {
+                    std::string id = util::create_session_id();
+                    m_wallet_sessionid[m_create_data->wallet] = id;
+                    m_wallet_sessionid[id] = m_create_data->wallet;
+                    std::shared_ptr<dbc::owner_sessionid> sessionid(new dbc::owner_sessionid());
+                    sessionid->wallet = m_create_data->wallet;
+                    sessionid->session_id = id;
+                    m_sessionid_db.write(sessionid);
+                }
+            } else if (!m_create_data->session_id.empty() && !m_create_data->session_id_sign.empty()) {
+                std::string sign_msg = m_create_data->session_id;
+                auto it = m_sessionid_wallet.find(sign_msg);
+                if (it == m_sessionid_wallet.end()) {
+                    ret = E_DEFAULT;
+                    ret_msg = "session_id is invalid";
+                    LOG_ERROR << "session_id is invalid";
+                    break;
+                }
+
+                std::string owner_wallet = it->second;
+                if (util::verify_sign(m_create_data->session_id_sign, sign_msg, owner_wallet)) {
+                    can_do = true;
+                } else {
+                    ret = E_DEFAULT;
+                    ret_msg = "session_id is invalid";
+                    LOG_ERROR << "session_id is invalid";
+                    break;
+                }
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "req error";
+                LOG_ERROR << "wallet and session_id  error";
+                break;
+            }
+
+            if (can_do) {
+                task_id = util::create_task_id();
+                login_password = generate_pwd();
+                auto fresult = m_task_scheduler.CreateTask(task_id, login_password, m_create_data->additional);
+                ret = std::get<0>(fresult);
+                ret_msg = std::get<1>(fresult);
+            }
+        }
+    } while(0);
+
     std::stringstream ss;
     ss << "{";
-    ss << "\"error_code\":" << 0;
-    ss << ",\"data\":" << "{";
-    ss << "\"ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
-    ss << ",\"os\":" << "\"" << SystemInfo::instance().get_osname() << "\"";
-    cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
-    ss << ",\"cpu\":" << "{";
-    ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
-    ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
-    ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
+    if (ret != E_SUCCESS) {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+    } else {
+        ss << "\"error_code\":" << ret;
+        ss << ", \"data\":" << "{";
+        ss << "\"task_id\":" << "\"" << task_id << "\"";
+
+        auto taskinfo = m_task_scheduler.FindTask(task_id);
+        struct tm _tm{};
+        time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
+        localtime_r(&tt, &_tm);
+        char buf[256] = {0};
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+        ss << ", \"create_time\":" << "\"" << buf << "\"";
+
+        ss << "}";
+    }
     ss << "}";
-    mem_info tmp_meminfo = SystemInfo::instance().get_meminfo();
-    ss << ",\"mem\":" <<  "{";
-    ss << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
-    ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_total - tmp_meminfo.mem_used) << "\"";
-    ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
-    ss << "}";
-    disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();
-    ss << ",\"disk\":" << "{";
-    ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
-    ss << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
-    ss << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
-    ss << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
-    ss << "}";
-    int32_t count = m_task_scheduler.GetRunningTaskSize();
-    std::string state;
-    if (count <= 0) {
-        state = "idle";
+
+    send_response_json<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, m_create_header, ret, ss.str());
+}
+
+void node_request_service::task_create(const dbc::network::base_header& header,
+                                       const std::shared_ptr<dbc::node_create_task_req_data>& data) {
+    m_create_header = header;
+    m_create_data = data;
+
+    if (m_websocket_client.is_connected()) {
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                               + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
+    } else {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
+    }
+}
+
+
+void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_start_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_start_task_req_data> data = std::make_shared<dbc::node_start_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!util::check_id(data->task_id)) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_start(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::task_start(const dbc::network::base_header& header,
+                                      const std::shared_ptr<dbc::node_start_task_req_data>& data) {
+    std::string task_id = data->task_id;
+
+    auto fresult = m_task_scheduler.StartTask(task_id);
+    int32_t ret = std::get<0>(fresult);
+    std::string ret_msg = std::get<1>(fresult);
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header);
+    }
+}
+
+
+void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_stop_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_stop_task_req_data> data = std::make_shared<dbc::node_stop_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!util::check_id(data->task_id)) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_stop(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::task_stop(const dbc::network::base_header& header,
+                                     const std::shared_ptr<dbc::node_stop_task_req_data>& data) {
+    std::string task_id = data->task_id;
+
+    auto fresult = m_task_scheduler.StopTask(task_id);
+    int32_t ret = std::get<0>(fresult);
+    std::string ret_msg = std::get<1>(fresult);
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header);
+    }
+}
+
+
+void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_restart_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_restart_task_req_data> data = std::make_shared<dbc::node_restart_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce:" << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!util::check_id(data->task_id)) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_restart(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::task_restart(const dbc::network::base_header& header,
+                                        const std::shared_ptr<dbc::node_restart_task_req_data>& data) {
+    std::string task_id = data->task_id;
+
+    auto fresult = m_task_scheduler.RestartTask(task_id);
+    int32_t ret = std::get<0>(fresult);
+    std::string ret_msg = std::get<1>(fresult);
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header);
+    }
+}
+
+
+void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_reset_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_reset_task_req_data> data = std::make_shared<dbc::node_reset_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce: " << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!util::check_id(data->task_id)) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_reset(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::task_reset(const dbc::network::base_header& header,
+                                      const std::shared_ptr<dbc::node_reset_task_req_data>& data) {
+    std::string task_id = data->task_id;
+
+    auto fresult = m_task_scheduler.ResetTask(task_id);
+    int32_t ret = std::get<0>(fresult);
+    std::string ret_msg = std::get<1>(fresult);
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header);
+    }
+}
+
+
+void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_task_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg id nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_delete_task_req_data> data = std::make_shared<dbc::node_delete_task_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce:" << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!util::check_id(data->task_id)) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_delete(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::task_delete(const dbc::network::base_header& header,
+                                       const std::shared_ptr<dbc::node_delete_task_req_data>& data) {
+    std::string task_id = data->task_id;
+
+    auto fresult = m_task_scheduler.DeleteTask(task_id);
+    int32_t ret = std::get<0>(fresult);
+    std::string ret_msg = std::get<1>(fresult);
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header);
+    }
+}
+
+
+void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_task_logs_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg is nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_task_logs_req_data> data = std::make_shared<dbc::node_task_logs_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce:" << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    if (!util::check_id(data->task_id)) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "task_id check failed, task_id:" + data->task_id);
+        LOG_ERROR << "task_id check failed, task_id:" << data->task_id;
+        return;
+    }
+
+    int16_t req_head_or_tail = data->head_or_tail;
+    int32_t req_number_of_lines = data->number_of_lines;
+
+    if (GET_LOG_HEAD != req_head_or_tail && GET_LOG_TAIL != req_head_or_tail) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req_head_or_tail is invalid:" + req_head_or_tail);
+        LOG_ERROR << "req_head_or_tail is invalid:" << req_head_or_tail;
+        return;
+    }
+
+    if (req_number_of_lines > MAX_NUMBER_OF_LINES || req_number_of_lines < 0) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req_number_of_lines is invalid:" + req_number_of_lines);
+        LOG_ERROR << "req_number_of_lines is invalid:" << req_number_of_lines;
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        task_logs(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::task_logs(const dbc::network::base_header& header,
+                                     const std::shared_ptr<dbc::node_task_logs_req_data>& data) {
+    std::string task_id = data->task_id;
+    int16_t head_or_tail = data->head_or_tail;
+    int32_t number_of_lines = data->number_of_lines;
+
+    std::string log_content;
+    auto fresult = m_task_scheduler.GetTaskLog(task_id, (ETaskLogDirection) head_or_tail,
+                                               number_of_lines, log_content);
+    int32_t ret = std::get<0>(fresult);
+    std::string ret_msg = std::get<1>(fresult);
+
+    if (GET_LOG_HEAD == (ETaskLogDirection) head_or_tail) {
+        log_content = log_content.substr(0, MAX_LOG_CONTENT_SIZE);
     }
     else {
-        state = "busy(" + std::to_string(count) + ")";
+        size_t log_lenth = log_content.length();
+        if (log_lenth > MAX_LOG_CONTENT_SIZE) {
+            log_content = log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
+        }
     }
-    ss << ",\"state\":" << "\"" << state << "\"";
-    ss << ",\"version\":" << "\"" << SystemInfo::instance().get_version() << "\"";
-    ss << "}";
-    ss << "}";
 
-    std::shared_ptr<dbc::node_query_node_info_rsp> rsp_content = std::make_shared<dbc::node_query_node_info_rsp>();
-    // header
-    rsp_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    rsp_content->header.__set_msg_name(NODE_QUERY_NODE_INFO_RSP);
-    rsp_content->header.__set_nonce(util::create_nonce());
-    rsp_content->header.__set_session_id(header.session_id);
-    rsp_content->header.__set_path(header.path);
-    std::map<std::string, std::string> exten_info;
-    std::string sign_message = rsp_content->header.nonce + rsp_content->header.session_id;
-    std::string sign = util::sign(sign_message, conf_manager::instance().get_node_private_key());
-    exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
-    rsp_content->header.__set_exten_info(exten_info);
-    // body
-    rsp_content->body.__set_result(E_SUCCESS);
-    rsp_content->body.__set_result_msg(ss.str());
-
-    //rsp msg
-    std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
-    resp_msg->set_name(NODE_QUERY_NODE_INFO_RSP);
-    resp_msg->set_content(rsp_content);
-    dbc::network::connection_manager::instance().send_resp_message(resp_msg);
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, ret, ret_msg);
+    } else {
+        std::stringstream ss;
+        ss << "{";
+        ss << "\"error_code\":" << E_SUCCESS;
+        ss << ", \"log_content\":" << "\"" << log_content << "\"";
+        ss << "}";
+        send_response_json<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, E_SUCCESS, ss.str());
+    }
 }
+
 
 void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
     m_task_scheduler.ProcessTask();

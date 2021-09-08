@@ -40,41 +40,41 @@ protected:
 
     void init_subscription() override;
 
-    void on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg);
+    void on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    void on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg);
-
-    void on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg);
-
-    void on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg);
-
-    void on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg);
-
-    void on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg);
-
-    void on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
+    void query_node_info(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
 
     void on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg);
+    void task_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_task_req_data>& data);
+
+    void on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
     void task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data);
 
+    void on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg);
+
     void task_start(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_start_task_req_data>& data);
 
-    void task_stop(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data);
+    void on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
     void task_restart(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_restart_task_req_data>& data);
 
+    void on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void task_stop(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data);
+
+    void on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg);
+
     void task_reset(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_reset_task_req_data>& data);
+
+    void on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
     void task_delete(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_task_req_data>& data);
 
+    void on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
+
     void task_logs(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_task_logs_req_data>& data);
-
-    void task_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_task_req_data>& data);
-
-    void query_node_info(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
 
     void on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
