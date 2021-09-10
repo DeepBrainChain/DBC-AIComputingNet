@@ -125,6 +125,16 @@ namespace dbc {
 
     class node_modify_task_rsp;
 
+    class node_session_id_req_data;
+
+    class node_session_id_req_body;
+
+    class node_session_id_req;
+
+    class node_session_id_rsp_body;
+
+    class node_session_id_rsp;
+
     class ver_req_body;
 
     class ver_req;
@@ -2574,6 +2584,223 @@ namespace dbc {
     void swap(node_modify_task_rsp &a, node_modify_task_rsp &b);
 
     std::ostream& operator<<(std::ostream& out, const node_modify_task_rsp& obj);
+
+
+    class node_session_id_req_data : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_session_id_req_data(const node_session_id_req_data&);
+        node_session_id_req_data& operator=(const node_session_id_req_data&);
+        node_session_id_req_data() : additional(), wallet(), session_id(), session_id_sign() {
+        }
+
+        virtual ~node_session_id_req_data() throw();
+        std::vector<std::string>  peer_nodes_list;
+        std::string additional;
+        std::string wallet;
+        std::string session_id;
+        std::string session_id_sign;
+
+        void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+        void __set_additional(const std::string& val);
+
+        void __set_wallet(const std::string& val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        bool operator == (const node_session_id_req_data & rhs) const
+        {
+            if (!(peer_nodes_list == rhs.peer_nodes_list))
+                return false;
+            if (!(additional == rhs.additional))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            return true;
+        }
+        bool operator != (const node_session_id_req_data &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_session_id_req_data & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_session_id_req_data &a, node_session_id_req_data &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_session_id_req_data& obj);
+
+
+    class node_session_id_req_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_session_id_req_body(const node_session_id_req_body&);
+        node_session_id_req_body& operator=(const node_session_id_req_body&);
+        node_session_id_req_body() : data() {
+        }
+
+        virtual ~node_session_id_req_body() throw();
+        std::string data;
+
+        void __set_data(const std::string& val);
+
+        bool operator == (const node_session_id_req_body & rhs) const
+        {
+            if (!(data == rhs.data))
+                return false;
+            return true;
+        }
+        bool operator != (const node_session_id_req_body &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_session_id_req_body & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_session_id_req_body &a, node_session_id_req_body &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_session_id_req_body& obj);
+
+    typedef struct _node_session_id_req__isset {
+        _node_session_id_req__isset() : body(false) {}
+        bool body :1;
+    } _node_session_id_req__isset;
+
+    class node_session_id_req : public virtual ::apache::thrift::TMsgBase {
+    public:
+
+        node_session_id_req(const node_session_id_req&);
+        node_session_id_req& operator=(const node_session_id_req&);
+        node_session_id_req() {
+        }
+
+        virtual ~node_session_id_req() throw();
+        node_session_id_req_body body;
+
+        _node_session_id_req__isset __isset;
+
+        void __set_body(const node_session_id_req_body& val);
+
+        bool operator == (const node_session_id_req & rhs) const
+        {
+            if (!(body == rhs.body))
+                return false;
+            return true;
+        }
+        bool operator != (const node_session_id_req &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_session_id_req & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_session_id_req &a, node_session_id_req &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_session_id_req& obj);
+
+
+    class node_session_id_rsp_body : public virtual ::apache::thrift::TBase {
+    public:
+
+        node_session_id_rsp_body(const node_session_id_rsp_body&);
+        node_session_id_rsp_body& operator=(const node_session_id_rsp_body&);
+        node_session_id_rsp_body() : result(0), result_msg() {
+        }
+
+        virtual ~node_session_id_rsp_body() throw();
+        int32_t result;
+        std::string result_msg;
+
+        void __set_result(const int32_t val);
+
+        void __set_result_msg(const std::string& val);
+
+        bool operator == (const node_session_id_rsp_body & rhs) const
+        {
+            if (!(result == rhs.result))
+                return false;
+            if (!(result_msg == rhs.result_msg))
+                return false;
+            return true;
+        }
+        bool operator != (const node_session_id_rsp_body &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_session_id_rsp_body & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_session_id_rsp_body &a, node_session_id_rsp_body &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_session_id_rsp_body& obj);
+
+    typedef struct _node_session_id_rsp__isset {
+        _node_session_id_rsp__isset() : body(false) {}
+        bool body :1;
+    } _node_session_id_rsp__isset;
+
+    class node_session_id_rsp : public virtual ::apache::thrift::TMsgBase {
+    public:
+
+        node_session_id_rsp(const node_session_id_rsp&);
+        node_session_id_rsp& operator=(const node_session_id_rsp&);
+        node_session_id_rsp() {
+        }
+
+        virtual ~node_session_id_rsp() throw();
+        node_session_id_rsp_body body;
+
+        _node_session_id_rsp__isset __isset;
+
+        void __set_body(const node_session_id_rsp_body& val);
+
+        bool operator == (const node_session_id_rsp & rhs) const
+        {
+            if (!(body == rhs.body))
+                return false;
+            return true;
+        }
+        bool operator != (const node_session_id_rsp &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const node_session_id_rsp & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(node_session_id_rsp &a, node_session_id_rsp &b);
+
+    std::ostream& operator<<(std::ostream& out, const node_session_id_rsp& obj);
 
 
     class ver_req_body : public virtual ::apache::thrift::TBase {

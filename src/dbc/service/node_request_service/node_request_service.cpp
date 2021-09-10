@@ -170,6 +170,7 @@ void node_request_service::init_invoker() {
     BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req)
     BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
     BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
+    BIND_MESSAGE_INVOKER(NODE_SESSION_ID_REQ, &node_request_service::on_node_session_id_req)
 }
 
 void node_request_service::init_subscription() {
@@ -183,6 +184,7 @@ void node_request_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_SESSION_ID_REQ);
 }
 
 bool node_request_service::hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id) {
@@ -355,7 +357,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -365,7 +367,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -468,7 +470,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -478,7 +480,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -663,7 +665,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -673,7 +675,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -947,7 +949,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -957,7 +959,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -1038,7 +1040,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -1048,7 +1050,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -1129,7 +1131,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -1139,7 +1141,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -1220,7 +1222,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -1230,7 +1232,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -1311,7 +1313,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -1321,7 +1323,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -1402,7 +1404,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            //send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -1412,7 +1414,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        //send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -1493,6 +1495,90 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     }
 }
 
+
+void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::network::message> &msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_session_id_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        LOG_ERROR << "node_req_msg id nullptr";
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::shared_ptr<dbc::node_session_id_req_data> data = std::make_shared<dbc::node_session_id_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            //send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
+            LOG_ERROR << "req decrypt error1";
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        //send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    std::string nonce = node_req_msg->header.exten_info["nonce"];
+    if (!check_nonce(nonce)) {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "nonce check failed, nonce:" + nonce);
+        LOG_ERROR << "nonce check failed, nonce:" << nonce;
+        return;
+    }
+
+    std::string nonce_sign = node_req_msg->header.exten_info["sign"];
+    if (!util::verify_sign(nonce_sign, nonce, data->wallet)) {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "verify sign error");
+        LOG_ERROR << "verify sign error";
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        node_session_id(node_req_msg->header, data);
+    }
+}
+
+void node_request_service::node_session_id(const dbc::network::base_header &header,
+                                           const std::shared_ptr<dbc::node_session_id_req_data> &data) {
+    auto it = m_wallet_sessionid.find(data->wallet);
+    if (it == m_wallet_sessionid.end()) {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "no session id");
+    } else {
+        std::stringstream ss;
+        ss << "{";
+        ss << "\"error_code\":" << E_SUCCESS;
+        ss << ", \"session_id\":" << "\"" << it->second << "\"";
+        ss << "}";
+        send_response_json<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_SUCCESS, ss.str());
+    }
+}
 
 void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
     m_task_scheduler.ProcessTask();

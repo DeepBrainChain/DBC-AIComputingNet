@@ -129,17 +129,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I16) {
-                        xfer += iprot->readI16(this->port);
-                        isset_port = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_I16) {
+                            xfer += iprot->readI16(this->port);
+                            isset_port = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -264,61 +264,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->core_version);
-                        isset_core_version = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->protocol_version);
-                        isset_protocol_version = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->live_time_stamp);
-                        isset_live_time_stamp = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-                        xfer += this->addr.read(iprot);
-                        isset_addr = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->service_list.clear();
-                            uint32_t _size4;
-                            ::apache::thrift::protocol::TType _etype7;
-                            xfer += iprot->readListBegin(_etype7, _size4);
-                            this->service_list.resize(_size4);
-                            uint32_t _i8;
-                            for (_i8 = 0; _i8 < _size4; ++_i8)
-                            {
-                                xfer += iprot->readString(this->service_list[_i8]);
-                            }
-                            xfer += iprot->readListEnd();
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->core_version);
+                            isset_core_version = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        this->__isset.service_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_I32) {
+                                xfer += iprot->readI32(this->protocol_version);
+                                isset_protocol_version = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_I32) {
+                                    xfer += iprot->readI32(this->live_time_stamp);
+                                    isset_live_time_stamp = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                                        xfer += this->addr.read(iprot);
+                                        isset_addr = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_LIST) {
+                                            {
+                                                this->service_list.clear();
+                                                uint32_t _size4;
+                                                ::apache::thrift::protocol::TType _etype7;
+                                                xfer += iprot->readListBegin(_etype7, _size4);
+                                                this->service_list.resize(_size4);
+                                                uint32_t _i8;
+                                                for (_i8 = 0; _i8 < _size4; ++_i8)
+                                                {
+                                                    xfer += iprot->readString(this->service_list[_i8]);
+                                                }
+                                                xfer += iprot->readListEnd();
+                                            }
+                                            this->__isset.service_list = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -467,9 +467,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -559,9 +559,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -651,9 +651,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -756,9 +756,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -855,9 +855,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -960,9 +960,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1059,9 +1059,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1184,41 +1184,41 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->additional);
+                            isset_additional = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->wallet);
+                                isset_wallet = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->session_id);
+                                    isset_session_id = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id_sign);
+                                        isset_session_id_sign = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    default:
+                                        xfer += iprot->skip(ftype);
+                                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1356,9 +1356,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1447,9 +1447,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1545,17 +1545,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1654,9 +1654,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1772,61 +1772,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size54;
-                            ::apache::thrift::protocol::TType _etype57;
-                            xfer += iprot->readListBegin(_etype57, _size54);
-                            this->peer_nodes_list.resize(_size54);
-                            uint32_t _i58;
-                            for (_i58 = 0; _i58 < _size54; ++_i58)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i58]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size54;
+                                ::apache::thrift::protocol::TType _etype57;
+                                xfer += iprot->readListBegin(_etype57, _size54);
+                                this->peer_nodes_list.resize(_size54);
+                                uint32_t _i58;
+                                for (_i58 = 0; _i58 < _size54; ++_i58)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i58]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -1974,9 +1974,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2065,9 +2065,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2163,17 +2163,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2272,9 +2272,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2390,61 +2390,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size70;
-                            ::apache::thrift::protocol::TType _etype73;
-                            xfer += iprot->readListBegin(_etype73, _size70);
-                            this->peer_nodes_list.resize(_size70);
-                            uint32_t _i74;
-                            for (_i74 = 0; _i74 < _size70; ++_i74)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i74]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size70;
+                                ::apache::thrift::protocol::TType _etype73;
+                                xfer += iprot->readListBegin(_etype73, _size70);
+                                this->peer_nodes_list.resize(_size70);
+                                uint32_t _i74;
+                                for (_i74 = 0; _i74 < _size70; ++_i74)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i74]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2592,9 +2592,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2683,9 +2683,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2781,17 +2781,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -2890,9 +2890,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3008,61 +3008,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size86;
-                            ::apache::thrift::protocol::TType _etype89;
-                            xfer += iprot->readListBegin(_etype89, _size86);
-                            this->peer_nodes_list.resize(_size86);
-                            uint32_t _i90;
-                            for (_i90 = 0; _i90 < _size86; ++_i90)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i90]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size86;
+                                ::apache::thrift::protocol::TType _etype89;
+                                xfer += iprot->readListBegin(_etype89, _size86);
+                                this->peer_nodes_list.resize(_size86);
+                                uint32_t _i90;
+                                for (_i90 = 0; _i90 < _size86; ++_i90)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i90]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3210,9 +3210,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3301,9 +3301,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3399,17 +3399,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3508,9 +3508,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3626,61 +3626,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size102;
-                            ::apache::thrift::protocol::TType _etype105;
-                            xfer += iprot->readListBegin(_etype105, _size102);
-                            this->peer_nodes_list.resize(_size102);
-                            uint32_t _i106;
-                            for (_i106 = 0; _i106 < _size102; ++_i106)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i106]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size102;
+                                ::apache::thrift::protocol::TType _etype105;
+                                xfer += iprot->readListBegin(_etype105, _size102);
+                                this->peer_nodes_list.resize(_size102);
+                                uint32_t _i106;
+                                for (_i106 = 0; _i106 < _size102; ++_i106)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i106]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3828,9 +3828,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -3919,9 +3919,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4017,17 +4017,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4126,9 +4126,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4244,61 +4244,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size118;
-                            ::apache::thrift::protocol::TType _etype121;
-                            xfer += iprot->readListBegin(_etype121, _size118);
-                            this->peer_nodes_list.resize(_size118);
-                            uint32_t _i122;
-                            for (_i122 = 0; _i122 < _size118; ++_i122)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i122]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size118;
+                                ::apache::thrift::protocol::TType _etype121;
+                                xfer += iprot->readListBegin(_etype121, _size118);
+                                this->peer_nodes_list.resize(_size118);
+                                uint32_t _i122;
+                                for (_i122 = 0; _i122 < _size118; ++_i122)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i122]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4446,9 +4446,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4537,9 +4537,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4635,17 +4635,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4744,9 +4744,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -4872,77 +4872,77 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I16) {
-                        xfer += iprot->readI16(this->head_or_tail);
-                        isset_head_or_tail = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->number_of_lines);
-                        isset_number_of_lines = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size134;
-                            ::apache::thrift::protocol::TType _etype137;
-                            xfer += iprot->readListBegin(_etype137, _size134);
-                            this->peer_nodes_list.resize(_size134);
-                            uint32_t _i138;
-                            for (_i138 = 0; _i138 < _size134; ++_i138)
-                            {
-                                xfer += iprot->readString(this->peer_nodes_list[_i138]);
-                            }
-                            xfer += iprot->readListEnd();
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_I16) {
+                            xfer += iprot->readI16(this->head_or_tail);
+                            isset_head_or_tail = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 7:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 8:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_I32) {
+                                xfer += iprot->readI32(this->number_of_lines);
+                                isset_number_of_lines = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                                    {
+                                        this->peer_nodes_list.clear();
+                                        uint32_t _size134;
+                                        ::apache::thrift::protocol::TType _etype137;
+                                        xfer += iprot->readListBegin(_etype137, _size134);
+                                        this->peer_nodes_list.resize(_size134);
+                                        uint32_t _i138;
+                                        for (_i138 = 0; _i138 < _size134; ++_i138)
+                                        {
+                                            xfer += iprot->readString(this->peer_nodes_list[_i138]);
+                                        }
+                                        xfer += iprot->readListEnd();
+                                    }
+                                    isset_peer_nodes_list = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->additional);
+                                        isset_additional = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->wallet);
+                                            isset_wallet = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        case 7:
+                                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                xfer += iprot->readString(this->session_id);
+                                                isset_session_id = true;
+                                            } else {
+                                                xfer += iprot->skip(ftype);
+                                            }
+                                            break;
+                                            case 8:
+                                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                    xfer += iprot->readString(this->session_id_sign);
+                                                    isset_session_id_sign = true;
+                                                } else {
+                                                    xfer += iprot->skip(ftype);
+                                                }
+                                                break;
+                                                default:
+                                                    xfer += iprot->skip(ftype);
+                                                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5110,9 +5110,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5201,9 +5201,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5299,17 +5299,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5408,9 +5408,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5526,61 +5526,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size150;
-                            ::apache::thrift::protocol::TType _etype153;
-                            xfer += iprot->readListBegin(_etype153, _size150);
-                            this->peer_nodes_list.resize(_size150);
-                            uint32_t _i154;
-                            for (_i154 = 0; _i154 < _size150; ++_i154)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i154]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size150;
+                                ::apache::thrift::protocol::TType _etype153;
+                                xfer += iprot->readListBegin(_etype153, _size150);
+                                this->peer_nodes_list.resize(_size150);
+                                uint32_t _i154;
+                                for (_i154 = 0; _i154 < _size150; ++_i154)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i154]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5728,9 +5728,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5819,9 +5819,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -5917,17 +5917,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6026,9 +6026,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6144,61 +6144,61 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_LIST) {
-                        {
-                            this->peer_nodes_list.clear();
-                            uint32_t _size166;
-                            ::apache::thrift::protocol::TType _etype169;
-                            xfer += iprot->readListBegin(_etype169, _size166);
-                            this->peer_nodes_list.resize(_size166);
-                            uint32_t _i170;
-                            for (_i170 = 0; _i170 < _size166; ++_i170)
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i170]);
+                                this->peer_nodes_list.clear();
+                                uint32_t _size166;
+                                ::apache::thrift::protocol::TType _etype169;
+                                xfer += iprot->readListBegin(_etype169, _size166);
+                                this->peer_nodes_list.resize(_size166);
+                                uint32_t _i170;
+                                for (_i170 = 0; _i170 < _size166; ++_i170)
+                                {
+                                    xfer += iprot->readString(this->peer_nodes_list[_i170]);
+                                }
+                                xfer += iprot->readListEnd();
                             }
-                            xfer += iprot->readListEnd();
+                            isset_peer_nodes_list = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        isset_peer_nodes_list = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->additional);
+                                isset_additional = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->wallet);
+                                    isset_wallet = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id);
+                                        isset_session_id = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                            xfer += iprot->readString(this->session_id_sign);
+                                            isset_session_id_sign = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        default:
+                                            xfer += iprot->skip(ftype);
+                                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6346,9 +6346,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6437,9 +6437,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6535,17 +6535,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6644,9 +6644,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6688,6 +6688,601 @@ namespace dbc {
     void node_modify_task_rsp::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_modify_task_rsp(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_session_id_req_data::~node_session_id_req_data() throw() {
+    }
+
+
+    void node_session_id_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+        this->peer_nodes_list = val;
+    }
+
+    void node_session_id_req_data::__set_additional(const std::string& val) {
+        this->additional = val;
+    }
+
+    void node_session_id_req_data::__set_wallet(const std::string& val) {
+        this->wallet = val;
+    }
+
+    void node_session_id_req_data::__set_session_id(const std::string& val) {
+        this->session_id = val;
+    }
+
+    void node_session_id_req_data::__set_session_id_sign(const std::string& val) {
+        this->session_id_sign = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_session_id_req_data& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_session_id_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_peer_nodes_list = false;
+        bool isset_additional = false;
+        bool isset_wallet = false;
+        bool isset_session_id = false;
+        bool isset_session_id_sign = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->peer_nodes_list.clear();
+                            uint32_t _size182;
+                            ::apache::thrift::protocol::TType _etype185;
+                            xfer += iprot->readListBegin(_etype185, _size182);
+                            this->peer_nodes_list.resize(_size182);
+                            uint32_t _i186;
+                            for (_i186 = 0; _i186 < _size182; ++_i186)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i186]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->additional);
+                            isset_additional = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->wallet);
+                                isset_wallet = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->session_id);
+                                    isset_session_id = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id_sign);
+                                        isset_session_id_sign = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    default:
+                                        xfer += iprot->skip(ftype);
+                                        break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_peer_nodes_list)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_additional)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_wallet)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_session_id_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_session_id_req_data");
+
+        xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+            std::vector<std::string> ::const_iterator _iter187;
+            for (_iter187 = this->peer_nodes_list.begin(); _iter187 != this->peer_nodes_list.end(); ++_iter187)
+            {
+                xfer += oprot->writeString((*_iter187));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->additional);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->wallet);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->session_id);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeString(this->session_id_sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_session_id_req_data &a, node_session_id_req_data &b) {
+        using ::std::swap;
+        swap(a.peer_nodes_list, b.peer_nodes_list);
+        swap(a.additional, b.additional);
+        swap(a.wallet, b.wallet);
+        swap(a.session_id, b.session_id);
+        swap(a.session_id_sign, b.session_id_sign);
+    }
+
+    node_session_id_req_data::node_session_id_req_data(const node_session_id_req_data& other188) {
+        peer_nodes_list = other188.peer_nodes_list;
+        additional = other188.additional;
+        wallet = other188.wallet;
+        session_id = other188.session_id;
+        session_id_sign = other188.session_id_sign;
+    }
+    node_session_id_req_data& node_session_id_req_data::operator=(const node_session_id_req_data& other189) {
+        peer_nodes_list = other189.peer_nodes_list;
+        additional = other189.additional;
+        wallet = other189.wallet;
+        session_id = other189.session_id;
+        session_id_sign = other189.session_id_sign;
+        return *this;
+    }
+    void node_session_id_req_data::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_session_id_req_data(";
+        out << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
+        out << ")";
+    }
+
+
+    node_session_id_req_body::~node_session_id_req_body() throw() {
+    }
+
+
+    void node_session_id_req_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_session_id_req_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_session_id_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_session_id_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_session_id_req_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_session_id_req_body &a, node_session_id_req_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_session_id_req_body::node_session_id_req_body(const node_session_id_req_body& other190) {
+        data = other190.data;
+    }
+    node_session_id_req_body& node_session_id_req_body::operator=(const node_session_id_req_body& other191) {
+        data = other191.data;
+        return *this;
+    }
+    void node_session_id_req_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_session_id_req_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_session_id_req::~node_session_id_req() throw() {
+    }
+
+
+    void node_session_id_req::__set_body(const node_session_id_req_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_session_id_req& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_session_id_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_session_id_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_session_id_req");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_session_id_req &a, node_session_id_req &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_session_id_req::node_session_id_req(const node_session_id_req& other192) {
+        body = other192.body;
+        __isset = other192.__isset;
+    }
+    node_session_id_req& node_session_id_req::operator=(const node_session_id_req& other193) {
+        body = other193.body;
+        __isset = other193.__isset;
+        return *this;
+    }
+    void node_session_id_req::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_session_id_req(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_session_id_rsp_body::~node_session_id_rsp_body() throw() {
+    }
+
+
+    void node_session_id_rsp_body::__set_result(const int32_t val) {
+        this->result = val;
+    }
+
+    void node_session_id_rsp_body::__set_result_msg(const std::string& val) {
+        this->result_msg = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_session_id_rsp_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_session_id_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_result = false;
+        bool isset_result_msg = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->result);
+                        isset_result = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_result)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_result_msg)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_session_id_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_session_id_rsp_body");
+
+        xfer += oprot->writeFieldBegin("result", ::apache::thrift::protocol::T_I32, 1);
+        xfer += oprot->writeI32(this->result);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("result_msg", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->result_msg);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_session_id_rsp_body &a, node_session_id_rsp_body &b) {
+        using ::std::swap;
+        swap(a.result, b.result);
+        swap(a.result_msg, b.result_msg);
+    }
+
+    node_session_id_rsp_body::node_session_id_rsp_body(const node_session_id_rsp_body& other194) {
+        result = other194.result;
+        result_msg = other194.result_msg;
+    }
+    node_session_id_rsp_body& node_session_id_rsp_body::operator=(const node_session_id_rsp_body& other195) {
+        result = other195.result;
+        result_msg = other195.result_msg;
+        return *this;
+    }
+    void node_session_id_rsp_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_session_id_rsp_body(";
+        out << "result=" << to_string(result);
+        out << ", " << "result_msg=" << to_string(result_msg);
+        out << ")";
+    }
+
+
+    node_session_id_rsp::~node_session_id_rsp() throw() {
+    }
+
+
+    void node_session_id_rsp::__set_body(const node_session_id_rsp_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_session_id_rsp& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_session_id_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_session_id_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_session_id_rsp");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_session_id_rsp &a, node_session_id_rsp &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_session_id_rsp::node_session_id_rsp(const node_session_id_rsp& other196) {
+        body = other196.body;
+        __isset = other196.__isset;
+    }
+    node_session_id_rsp& node_session_id_rsp::operator=(const node_session_id_rsp& other197) {
+        body = other197.body;
+        __isset = other197.__isset;
+        return *this;
+    }
+    void node_session_id_rsp::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_session_id_rsp(";
         out << "body=" << to_string(body);
         out << ")";
     }
@@ -6767,57 +7362,57 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->core_version);
-                        isset_core_version = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->protocol_version);
-                        isset_protocol_version = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                        xfer += iprot->readI64(this->time_stamp);
-                        isset_time_stamp = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-                        xfer += this->addr_me.read(iprot);
-                        isset_addr_me = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-                        xfer += this->addr_you.read(iprot);
-                        isset_addr_you = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 7:
-                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                        xfer += iprot->readI64(this->start_height);
-                        isset_start_height = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->core_version);
+                            isset_core_version = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_I32) {
+                                xfer += iprot->readI32(this->protocol_version);
+                                isset_protocol_version = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_I64) {
+                                    xfer += iprot->readI64(this->time_stamp);
+                                    isset_time_stamp = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                                        xfer += this->addr_me.read(iprot);
+                                        isset_addr_me = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                                            xfer += this->addr_you.read(iprot);
+                                            isset_addr_you = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        case 7:
+                                            if (ftype == ::apache::thrift::protocol::T_I64) {
+                                                xfer += iprot->readI64(this->start_height);
+                                                isset_start_height = true;
+                                            } else {
+                                                xfer += iprot->skip(ftype);
+                                            }
+                                            break;
+                                            default:
+                                                xfer += iprot->skip(ftype);
+                                                break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6890,23 +7485,23 @@ namespace dbc {
         swap(a.start_height, b.start_height);
     }
 
-    ver_req_body::ver_req_body(const ver_req_body& other182) {
-        node_id = other182.node_id;
-        core_version = other182.core_version;
-        protocol_version = other182.protocol_version;
-        time_stamp = other182.time_stamp;
-        addr_me = other182.addr_me;
-        addr_you = other182.addr_you;
-        start_height = other182.start_height;
+    ver_req_body::ver_req_body(const ver_req_body& other198) {
+        node_id = other198.node_id;
+        core_version = other198.core_version;
+        protocol_version = other198.protocol_version;
+        time_stamp = other198.time_stamp;
+        addr_me = other198.addr_me;
+        addr_you = other198.addr_you;
+        start_height = other198.start_height;
     }
-    ver_req_body& ver_req_body::operator=(const ver_req_body& other183) {
-        node_id = other183.node_id;
-        core_version = other183.core_version;
-        protocol_version = other183.protocol_version;
-        time_stamp = other183.time_stamp;
-        addr_me = other183.addr_me;
-        addr_you = other183.addr_you;
-        start_height = other183.start_height;
+    ver_req_body& ver_req_body::operator=(const ver_req_body& other199) {
+        node_id = other199.node_id;
+        core_version = other199.core_version;
+        protocol_version = other199.protocol_version;
+        time_stamp = other199.time_stamp;
+        addr_me = other199.addr_me;
+        addr_you = other199.addr_you;
+        start_height = other199.start_height;
         return *this;
     }
     void ver_req_body::printTo(std::ostream& out) const {
@@ -6966,9 +7561,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -6998,13 +7593,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    ver_req::ver_req(const ver_req& other184) {
-        body = other184.body;
-        __isset = other184.__isset;
+    ver_req::ver_req(const ver_req& other200) {
+        body = other200.body;
+        __isset = other200.__isset;
     }
-    ver_req& ver_req::operator=(const ver_req& other185) {
-        body = other185.body;
-        __isset = other185.__isset;
+    ver_req& ver_req::operator=(const ver_req& other201) {
+        body = other201.body;
+        __isset = other201.__isset;
         return *this;
     }
     void ver_req::printTo(std::ostream& out) const {
@@ -7069,25 +7664,25 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->core_version);
-                        isset_core_version = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->protocol_version);
-                        isset_protocol_version = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->core_version);
+                            isset_core_version = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_I32) {
+                                xfer += iprot->readI32(this->protocol_version);
+                                isset_protocol_version = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            default:
+                                xfer += iprot->skip(ftype);
+                                break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7132,15 +7727,15 @@ namespace dbc {
         swap(a.protocol_version, b.protocol_version);
     }
 
-    ver_resp_body::ver_resp_body(const ver_resp_body& other186) {
-        node_id = other186.node_id;
-        core_version = other186.core_version;
-        protocol_version = other186.protocol_version;
+    ver_resp_body::ver_resp_body(const ver_resp_body& other202) {
+        node_id = other202.node_id;
+        core_version = other202.core_version;
+        protocol_version = other202.protocol_version;
     }
-    ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other187) {
-        node_id = other187.node_id;
-        core_version = other187.core_version;
-        protocol_version = other187.protocol_version;
+    ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other203) {
+        node_id = other203.node_id;
+        core_version = other203.core_version;
+        protocol_version = other203.protocol_version;
         return *this;
     }
     void ver_resp_body::printTo(std::ostream& out) const {
@@ -7196,9 +7791,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7228,13 +7823,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    ver_resp::ver_resp(const ver_resp& other188) {
-        body = other188.body;
-        __isset = other188.__isset;
+    ver_resp::ver_resp(const ver_resp& other204) {
+        body = other204.body;
+        __isset = other204.__isset;
     }
-    ver_resp& ver_resp::operator=(const ver_resp& other189) {
-        body = other189.body;
-        __isset = other189.__isset;
+    ver_resp& ver_resp::operator=(const ver_resp& other205) {
+        body = other205.body;
+        __isset = other205.__isset;
         return *this;
     }
     void ver_resp::printTo(std::ostream& out) const {
@@ -7300,14 +7895,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->service_list.clear();
-                            uint32_t _size190;
-                            ::apache::thrift::protocol::TType _etype193;
-                            xfer += iprot->readListBegin(_etype193, _size190);
-                            this->service_list.resize(_size190);
-                            uint32_t _i194;
-                            for (_i194 = 0; _i194 < _size190; ++_i194)
+                            uint32_t _size206;
+                            ::apache::thrift::protocol::TType _etype209;
+                            xfer += iprot->readListBegin(_etype209, _size206);
+                            this->service_list.resize(_size206);
+                            uint32_t _i210;
+                            for (_i210 = 0; _i210 < _size206; ++_i210)
                             {
-                                xfer += iprot->readString(this->service_list[_i194]);
+                                xfer += iprot->readString(this->service_list[_i210]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -7316,48 +7911,48 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->name);
-                        this->__isset.name = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                        xfer += iprot->readI64(this->time_stamp);
-                        this->__isset.time_stamp = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_MAP) {
-                        {
-                            this->kvs.clear();
-                            uint32_t _size195;
-                            ::apache::thrift::protocol::TType _ktype196;
-                            ::apache::thrift::protocol::TType _vtype197;
-                            xfer += iprot->readMapBegin(_ktype196, _vtype197, _size195);
-                            uint32_t _i199;
-                            for (_i199 = 0; _i199 < _size195; ++_i199)
-                            {
-                                std::string _key200;
-                                xfer += iprot->readString(_key200);
-                                std::string& _val201 = this->kvs[_key200];
-                                xfer += iprot->readString(_val201);
-                            }
-                            xfer += iprot->readMapEnd();
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->name);
+                            this->__isset.name = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
                         }
-                        this->__isset.kvs = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_I64) {
+                                xfer += iprot->readI64(this->time_stamp);
+                                this->__isset.time_stamp = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_MAP) {
+                                    {
+                                        this->kvs.clear();
+                                        uint32_t _size211;
+                                        ::apache::thrift::protocol::TType _ktype212;
+                                        ::apache::thrift::protocol::TType _vtype213;
+                                        xfer += iprot->readMapBegin(_ktype212, _vtype213, _size211);
+                                        uint32_t _i215;
+                                        for (_i215 = 0; _i215 < _size211; ++_i215)
+                                        {
+                                            std::string _key216;
+                                            xfer += iprot->readString(_key216);
+                                            std::string& _val217 = this->kvs[_key216];
+                                            xfer += iprot->readString(_val217);
+                                        }
+                                        xfer += iprot->readMapEnd();
+                                    }
+                                    this->__isset.kvs = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                default:
+                                    xfer += iprot->skip(ftype);
+                                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7377,10 +7972,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
-            std::vector<std::string> ::const_iterator _iter202;
-            for (_iter202 = this->service_list.begin(); _iter202 != this->service_list.end(); ++_iter202)
+            std::vector<std::string> ::const_iterator _iter218;
+            for (_iter218 = this->service_list.begin(); _iter218 != this->service_list.end(); ++_iter218)
             {
-                xfer += oprot->writeString((*_iter202));
+                xfer += oprot->writeString((*_iter218));
             }
             xfer += oprot->writeListEnd();
         }
@@ -7400,11 +7995,11 @@ namespace dbc {
             xfer += oprot->writeFieldBegin("kvs", ::apache::thrift::protocol::T_MAP, 4);
             {
                 xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->kvs.size()));
-                std::map<std::string, std::string> ::const_iterator _iter203;
-                for (_iter203 = this->kvs.begin(); _iter203 != this->kvs.end(); ++_iter203)
+                std::map<std::string, std::string> ::const_iterator _iter219;
+                for (_iter219 = this->kvs.begin(); _iter219 != this->kvs.end(); ++_iter219)
                 {
-                    xfer += oprot->writeString(_iter203->first);
-                    xfer += oprot->writeString(_iter203->second);
+                    xfer += oprot->writeString(_iter219->first);
+                    xfer += oprot->writeString(_iter219->second);
                 }
                 xfer += oprot->writeMapEnd();
             }
@@ -7424,19 +8019,19 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_service_info::node_service_info(const node_service_info& other204) {
-        service_list = other204.service_list;
-        name = other204.name;
-        time_stamp = other204.time_stamp;
-        kvs = other204.kvs;
-        __isset = other204.__isset;
+    node_service_info::node_service_info(const node_service_info& other220) {
+        service_list = other220.service_list;
+        name = other220.name;
+        time_stamp = other220.time_stamp;
+        kvs = other220.kvs;
+        __isset = other220.__isset;
     }
-    node_service_info& node_service_info::operator=(const node_service_info& other205) {
-        service_list = other205.service_list;
-        name = other205.name;
-        time_stamp = other205.time_stamp;
-        kvs = other205.kvs;
-        __isset = other205.__isset;
+    node_service_info& node_service_info::operator=(const node_service_info& other221) {
+        service_list = other221.service_list;
+        name = other221.name;
+        time_stamp = other221.time_stamp;
+        kvs = other221.kvs;
+        __isset = other221.__isset;
         return *this;
     }
     void node_service_info::printTo(std::ostream& out) const {
@@ -7510,14 +8105,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size206;
-                            ::apache::thrift::protocol::TType _etype209;
-                            xfer += iprot->readListBegin(_etype209, _size206);
-                            this->peer_nodes_list.resize(_size206);
-                            uint32_t _i210;
-                            for (_i210 = 0; _i210 < _size206; ++_i210)
+                            uint32_t _size222;
+                            ::apache::thrift::protocol::TType _etype225;
+                            xfer += iprot->readListBegin(_etype225, _size222);
+                            this->peer_nodes_list.resize(_size222);
+                            uint32_t _i226;
+                            for (_i226 = 0; _i226 < _size222; ++_i226)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i210]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i226]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -7526,41 +8121,41 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->additional);
-                        isset_additional = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->wallet);
-                        isset_wallet = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id);
-                        isset_session_id = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->session_id_sign);
-                        isset_session_id_sign = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->additional);
+                            isset_additional = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->wallet);
+                                isset_wallet = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->session_id);
+                                    isset_session_id = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                        xfer += iprot->readString(this->session_id_sign);
+                                        isset_session_id_sign = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    default:
+                                        xfer += iprot->skip(ftype);
+                                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7588,10 +8183,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter211;
-            for (_iter211 = this->peer_nodes_list.begin(); _iter211 != this->peer_nodes_list.end(); ++_iter211)
+            std::vector<std::string> ::const_iterator _iter227;
+            for (_iter227 = this->peer_nodes_list.begin(); _iter227 != this->peer_nodes_list.end(); ++_iter227)
             {
-                xfer += oprot->writeString((*_iter211));
+                xfer += oprot->writeString((*_iter227));
             }
             xfer += oprot->writeListEnd();
         }
@@ -7627,19 +8222,19 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_query_node_info_req_data::node_query_node_info_req_data(const node_query_node_info_req_data& other212) {
-        peer_nodes_list = other212.peer_nodes_list;
-        additional = other212.additional;
-        wallet = other212.wallet;
-        session_id = other212.session_id;
-        session_id_sign = other212.session_id_sign;
+    node_query_node_info_req_data::node_query_node_info_req_data(const node_query_node_info_req_data& other228) {
+        peer_nodes_list = other228.peer_nodes_list;
+        additional = other228.additional;
+        wallet = other228.wallet;
+        session_id = other228.session_id;
+        session_id_sign = other228.session_id_sign;
     }
-    node_query_node_info_req_data& node_query_node_info_req_data::operator=(const node_query_node_info_req_data& other213) {
-        peer_nodes_list = other213.peer_nodes_list;
-        additional = other213.additional;
-        wallet = other213.wallet;
-        session_id = other213.session_id;
-        session_id_sign = other213.session_id_sign;
+    node_query_node_info_req_data& node_query_node_info_req_data::operator=(const node_query_node_info_req_data& other229) {
+        peer_nodes_list = other229.peer_nodes_list;
+        additional = other229.additional;
+        wallet = other229.wallet;
+        session_id = other229.session_id;
+        session_id_sign = other229.session_id_sign;
         return *this;
     }
     void node_query_node_info_req_data::printTo(std::ostream& out) const {
@@ -7698,9 +8293,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7731,11 +8326,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_query_node_info_req_body::node_query_node_info_req_body(const node_query_node_info_req_body& other214) {
-        data = other214.data;
+    node_query_node_info_req_body::node_query_node_info_req_body(const node_query_node_info_req_body& other230) {
+        data = other230.data;
     }
-    node_query_node_info_req_body& node_query_node_info_req_body::operator=(const node_query_node_info_req_body& other215) {
-        data = other215.data;
+    node_query_node_info_req_body& node_query_node_info_req_body::operator=(const node_query_node_info_req_body& other231) {
+        data = other231.data;
         return *this;
     }
     void node_query_node_info_req_body::printTo(std::ostream& out) const {
@@ -7789,9 +8384,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7821,13 +8416,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_query_node_info_req::node_query_node_info_req(const node_query_node_info_req& other216) {
-        body = other216.body;
-        __isset = other216.__isset;
+    node_query_node_info_req::node_query_node_info_req(const node_query_node_info_req& other232) {
+        body = other232.body;
+        __isset = other232.__isset;
     }
-    node_query_node_info_req& node_query_node_info_req::operator=(const node_query_node_info_req& other217) {
-        body = other217.body;
-        __isset = other217.__isset;
+    node_query_node_info_req& node_query_node_info_req::operator=(const node_query_node_info_req& other233) {
+        body = other233.body;
+        __isset = other233.__isset;
         return *this;
     }
     void node_query_node_info_req::printTo(std::ostream& out) const {
@@ -7887,17 +8482,17 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->result_msg);
-                        isset_result_msg = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->result_msg);
+                            isset_result_msg = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        default:
+                            xfer += iprot->skip(ftype);
+                            break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -7935,13 +8530,13 @@ namespace dbc {
         swap(a.result_msg, b.result_msg);
     }
 
-    node_query_node_info_rsp_body::node_query_node_info_rsp_body(const node_query_node_info_rsp_body& other218) {
-        result = other218.result;
-        result_msg = other218.result_msg;
+    node_query_node_info_rsp_body::node_query_node_info_rsp_body(const node_query_node_info_rsp_body& other234) {
+        result = other234.result;
+        result_msg = other234.result_msg;
     }
-    node_query_node_info_rsp_body& node_query_node_info_rsp_body::operator=(const node_query_node_info_rsp_body& other219) {
-        result = other219.result;
-        result_msg = other219.result_msg;
+    node_query_node_info_rsp_body& node_query_node_info_rsp_body::operator=(const node_query_node_info_rsp_body& other235) {
+        result = other235.result;
+        result_msg = other235.result_msg;
         return *this;
     }
     void node_query_node_info_rsp_body::printTo(std::ostream& out) const {
@@ -7996,9 +8591,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -8028,13 +8623,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_query_node_info_rsp::node_query_node_info_rsp(const node_query_node_info_rsp& other220) {
-        body = other220.body;
-        __isset = other220.__isset;
+    node_query_node_info_rsp::node_query_node_info_rsp(const node_query_node_info_rsp& other236) {
+        body = other236.body;
+        __isset = other236.__isset;
     }
-    node_query_node_info_rsp& node_query_node_info_rsp::operator=(const node_query_node_info_rsp& other221) {
-        body = other221.body;
-        __isset = other221.__isset;
+    node_query_node_info_rsp& node_query_node_info_rsp::operator=(const node_query_node_info_rsp& other237) {
+        body = other237.body;
+        __isset = other237.__isset;
         return *this;
     }
     void node_query_node_info_rsp::printTo(std::ostream& out) const {
@@ -8085,17 +8680,17 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
                             this->node_service_info_map.clear();
-                            uint32_t _size222;
-                            ::apache::thrift::protocol::TType _ktype223;
-                            ::apache::thrift::protocol::TType _vtype224;
-                            xfer += iprot->readMapBegin(_ktype223, _vtype224, _size222);
-                            uint32_t _i226;
-                            for (_i226 = 0; _i226 < _size222; ++_i226)
+                            uint32_t _size238;
+                            ::apache::thrift::protocol::TType _ktype239;
+                            ::apache::thrift::protocol::TType _vtype240;
+                            xfer += iprot->readMapBegin(_ktype239, _vtype240, _size238);
+                            uint32_t _i242;
+                            for (_i242 = 0; _i242 < _size238; ++_i242)
                             {
-                                std::string _key227;
-                                xfer += iprot->readString(_key227);
-                                node_service_info& _val228 = this->node_service_info_map[_key227];
-                                xfer += _val228.read(iprot);
+                                std::string _key243;
+                                xfer += iprot->readString(_key243);
+                                node_service_info& _val244 = this->node_service_info_map[_key243];
+                                xfer += _val244.read(iprot);
                             }
                             xfer += iprot->readMapEnd();
                         }
@@ -8104,9 +8699,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -8126,11 +8721,11 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("node_service_info_map", ::apache::thrift::protocol::T_MAP, 1);
         {
             xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->node_service_info_map.size()));
-            std::map<std::string, node_service_info> ::const_iterator _iter229;
-            for (_iter229 = this->node_service_info_map.begin(); _iter229 != this->node_service_info_map.end(); ++_iter229)
+            std::map<std::string, node_service_info> ::const_iterator _iter245;
+            for (_iter245 = this->node_service_info_map.begin(); _iter245 != this->node_service_info_map.end(); ++_iter245)
             {
-                xfer += oprot->writeString(_iter229->first);
-                xfer += _iter229->second.write(oprot);
+                xfer += oprot->writeString(_iter245->first);
+                xfer += _iter245->second.write(oprot);
             }
             xfer += oprot->writeMapEnd();
         }
@@ -8146,11 +8741,11 @@ namespace dbc {
         swap(a.node_service_info_map, b.node_service_info_map);
     }
 
-    service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other230) {
-        node_service_info_map = other230.node_service_info_map;
+    service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other246) {
+        node_service_info_map = other246.node_service_info_map;
     }
-    service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other231) {
-        node_service_info_map = other231.node_service_info_map;
+    service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other247) {
+        node_service_info_map = other247.node_service_info_map;
         return *this;
     }
     void service_broadcast_req_body::printTo(std::ostream& out) const {
@@ -8204,9 +8799,9 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    default:
+                        xfer += iprot->skip(ftype);
+                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -8236,13 +8831,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    service_broadcast_req::service_broadcast_req(const service_broadcast_req& other232) {
-        body = other232.body;
-        __isset = other232.__isset;
+    service_broadcast_req::service_broadcast_req(const service_broadcast_req& other248) {
+        body = other248.body;
+        __isset = other248.__isset;
     }
-    service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other233) {
-        body = other233.body;
-        __isset = other233.__isset;
+    service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other249) {
+        body = other249.body;
+        __isset = other249.__isset;
         return *this;
     }
     void service_broadcast_req::printTo(std::ostream& out) const {

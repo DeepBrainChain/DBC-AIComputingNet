@@ -54,6 +54,11 @@
 #define NODE_QUERY_NODE_INFO_RSP       "node_query_node_info_rsp"
 #define NODE_QUERY_NODE_INFO_TIMER     "node_query_node_info_timer"
 
+// get node session_id
+#define NODE_SESSION_ID_REQ      "node_session_id_req"
+#define NODE_SESSION_ID_RSP      "node_session_id_rsp"
+#define NODE_SESSION_ID_TIMER    "node_session_id_timer"
+
 // peer nodes
 
 

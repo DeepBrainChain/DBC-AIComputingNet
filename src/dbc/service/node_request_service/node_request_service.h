@@ -76,6 +76,10 @@ protected:
 
     void task_logs(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_task_logs_req_data>& data);
 
+    void on_node_session_id_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void node_session_id(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data);
+
     void on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
     void on_prune_task_timer(const std::shared_ptr<core_timer>& timer);

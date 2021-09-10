@@ -149,8 +149,11 @@ public:
 
     void on_node_task_logs_timer(const std::shared_ptr<core_timer> &timer);
 
-    // list mining node
+    // /mining_nodes
     void rest_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    // list mining node
+    void rest_list_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
 
     std::shared_ptr<dbc::network::message> create_node_query_node_info_req_msg(const std::string &head_session_id,
                                                                                const req_body& body);
@@ -159,6 +162,17 @@ public:
                                         const std::shared_ptr<dbc::network::message>& rsp_msg);
 
     void on_node_query_node_info_timer(const std::shared_ptr<core_timer>& timer);
+
+    // mining node session_id
+    void rest_node_session_id(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_session_id_req_msg(const std::string &head_session_id,
+                                                                           const req_body& body);
+
+    void on_node_session_id_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
+                                 const std::shared_ptr<dbc::network::message>& rsp_msg);
+
+    void on_node_session_id_timer(const std::shared_ptr<core_timer> &timer);
 
     // peers
     void rest_peers(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
