@@ -121,6 +121,7 @@ namespace dbc
         {
             std::shared_ptr<http_request> m_hreq;
             std::shared_ptr<message> m_req_msg;
+            std::string peer_node_id;
 
             http_request_context()
             {

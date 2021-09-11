@@ -204,8 +204,26 @@ bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::mess
         return false;
     }
 
+    if (base->header.nonce.empty()) {
+        LOG_ERROR << "header.nonce is empty";
+        return false;
+    }
+
     if (!util::check_id(base->header.nonce)) {
-        LOG_ERROR << "header.nonce check failed";
+        LOG_ERROR << "header.nonce check_id failed";
+        return false;
+    }
+
+    if (m_nonceCache.contains(base->header.nonce)) {
+        LOG_ERROR << "header.nonce is already used";
+        return false;
+    }
+    else {
+        m_nonceCache.insert(base->header.nonce, 1);
+    }
+
+    if (base->header.session_id.empty()) {
+        LOG_ERROR << "base->header.session_id is empty";
         return false;
     }
 
@@ -214,35 +232,28 @@ bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::mess
         return false;
     }
 
-    if (base->header.exten_info.size() < 4) {
-        LOG_ERROR << "header.exten_info size < 4";
+    if (base->header.exten_info.size() < 2) {
+        LOG_ERROR << "header.exten_info size < 2";
         return false;
     }
+
+    if (base->header.exten_info.count("pub_key") <= 0) {
+        LOG_ERROR << "header.extern_info has no pub_Key";
+        return false;
+    }
+
 
     return true;
-}
-
-bool rest_api_service::check_nonce(const std::string& nonce) {
-    if (!util::check_id(nonce)) {
-        return false;
-    }
-
-    if (m_nonceCache.contains(nonce)) {
-        return false;
-    }
-    else {
-        m_nonceCache.insert(nonce, 1);
-        return true;
-    }
 }
 
 int32_t rest_api_service::create_request_session(const std::string& timer_id,
                                               const std::shared_ptr<dbc::network::http_request>& hreq,
                                               const std::shared_ptr<dbc::network::message>& req_msg,
-                                              const std::string& session_id) {
+                                              const std::string& session_id, const std::string& peer_node_id) {
     auto hreq_context = std::make_shared<dbc::network::http_request_context>();
     hreq_context->m_hreq = hreq;
     hreq_context->m_req_msg = req_msg;
+    hreq_context->peer_node_id = peer_node_id;
 
     do {
         std::string str_uri = hreq->get_uri();
@@ -375,6 +386,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -387,6 +399,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -494,7 +507,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -563,44 +576,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
 
 void rest_api_service::on_node_create_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                   const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_create_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
     rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
     if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
         LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
-    }
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_create_task_timer(const std::shared_ptr<core_timer>& timer) {
@@ -626,12 +654,7 @@ void rest_api_service::on_node_create_task_timer(const std::shared_ptr<core_time
 
     auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
     if (nullptr != hreq_context) {
-        std::stringstream ss;
-        ss << "{";
-        ss << "\"error_code\":" << -1;
-        ss << ", \"error_message\":\"create task timeout\"";
-        ss << "}";
-        hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "create task timeout");
     }
 
     session->clear();
@@ -687,6 +710,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -699,6 +723,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -806,7 +831,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -877,46 +902,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
 
 void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                               const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_start_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_start_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -940,18 +978,9 @@ void rest_api_service::on_node_start_task_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"start task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "start task timeout");
     }
 
     session->clear();
@@ -1007,6 +1036,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -1019,6 +1049,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -1126,7 +1157,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -1198,46 +1229,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
 
 void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                              const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_stop_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_stop_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -1261,18 +1305,9 @@ void rest_api_service::on_node_stop_task_timer(const std::shared_ptr<core_timer>
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"stop task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "stop task timeout");
     }
 
     session->clear();
@@ -1328,6 +1363,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -1340,6 +1376,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -1447,7 +1484,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -1519,46 +1556,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
 
 void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                    const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_restart_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_restart_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -1582,18 +1632,9 @@ void rest_api_service::on_node_restart_task_timer(const std::shared_ptr<core_tim
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"restart task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "restart task timeout");
     }
 
     session->clear();
@@ -1649,6 +1690,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -1661,6 +1703,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -1768,7 +1811,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -1840,46 +1883,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
 
 void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_reset_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_reset_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -1903,18 +1959,9 @@ void rest_api_service::on_node_reset_task_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"reset task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "reset task timeout");
     }
 
     session->clear();
@@ -1970,6 +2017,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -1982,6 +2030,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -2089,7 +2138,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -2161,46 +2210,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
 
 void rest_api_service::on_node_delete_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                   const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_delete_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "rsp is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_delete_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -2224,18 +2286,9 @@ void rest_api_service::on_node_delete_task_timer(const std::shared_ptr<core_time
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"delete task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "delete task timeout");
     }
 
     session->clear();
@@ -2288,6 +2341,7 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -2300,6 +2354,7 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -2407,7 +2462,7 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -2478,46 +2533,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
 
 void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                              const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -2541,18 +2609,9 @@ void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer>
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"list task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list task timeout");
     }
 
     session->clear();
@@ -2608,6 +2667,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -2620,6 +2680,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -2727,7 +2788,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -2799,46 +2860,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
 
 void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                   const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_modify_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_modify_task_timer(const std::shared_ptr<core_timer> &timer) {
@@ -2862,18 +2936,9 @@ void rest_api_service::on_node_modify_task_timer(const std::shared_ptr<core_time
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"modify task timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "modify task timeout");
     }
 
     session->clear();
@@ -2964,6 +3029,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -2976,6 +3042,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -3083,7 +3150,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -3156,46 +3223,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
 
 void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                 const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_task_logs_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_task_logs_timer(const std::shared_ptr<core_timer> &timer) {
@@ -3219,18 +3299,9 @@ void rest_api_service::on_node_task_logs_timer(const std::shared_ptr<core_timer>
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"task logs timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "task logs timeout");
     }
 
     session->clear();
@@ -3336,6 +3407,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -3343,6 +3415,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
                 // 暂时只支持一次操作1个节点
                 std::string node(doc["peer_nodes_list"][0].GetString());
                 body.peer_nodes_list.push_back(node);
+                peer_node_id = node;
             }
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
@@ -3459,7 +3532,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
             return;
         }
 
-        if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id)) {
+        if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
             LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
@@ -3530,46 +3603,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
 
 void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
                                                       const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_query_node_info_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error2");
+        LOG_ERROR << "rsq decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_query_node_info_timer(const std::shared_ptr<core_timer>& timer)
@@ -3594,18 +3680,9 @@ void rest_api_service::on_node_query_node_info_timer(const std::shared_ptr<core_
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"query node info timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "query node info timeout");
     }
 
     session->clear();
@@ -3655,6 +3732,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
     }
 
     // peer_nodes_list
+    std::string peer_node_id;
     if (doc.HasMember("peer_nodes_list")) {
         if (doc["peer_nodes_list"].IsArray()) {
             uint32_t list_size = doc["peer_nodes_list"].Size();
@@ -3667,6 +3745,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
             // 暂时只支持一次操作1个节点
             std::string node(doc["peer_nodes_list"][0].GetString());
             body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
         } else {
             LOG_ERROR << "peer_nodes_list is not array";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
@@ -3774,7 +3853,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id)) {
+    if (E_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -3845,46 +3924,59 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
 
 void rest_api_service::on_node_session_id_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
                                               const std::shared_ptr<dbc::network::message> &rsp_msg) {
-    if (!check_rsp_header(rsp_msg)) {
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_session_id_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "rsp is nullptr";
         return;
     }
 
-    if (!check_nonce(node_rsp_msg->header.nonce)) {
-        LOG_ERROR << "nonce check failed";
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    if (!check_rsp_header(rsp_msg)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
+        LOG_ERROR << "rsp header check failed";
         return;
     }
 
-    int32_t rsp_result = node_rsp_msg->body.result;
-    std::string rsp_result_msg = node_rsp_msg->body.result_msg;
-
     std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, node_rsp_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
         LOG_ERROR << "verify sign failed";
         return;
     }
 
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(rsp_result_msg.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-    if (rsp_result != 0) {
-        httpReq->reply_comm_rest_err2(HTTP_INTERNAL, rsp_result_msg);
-    } else {
-        httpReq->reply_comm_rest_succ2(rsp_result_msg);
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error2");
+        LOG_ERROR << "rsq decrypt error2";
+        return;
     }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
 }
 
 void rest_api_service::on_node_session_id_timer(const std::shared_ptr<core_timer> &timer) {
@@ -3908,18 +4000,9 @@ void rest_api_service::on_node_session_id_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    try {
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr != hreq_context) {
-            std::stringstream ss;
-            ss << "{";
-            ss << "\"error_code\":" << -1;
-            ss << ", \"error_message\":\"get session_id timeout\"";
-            ss << "}";
-            hreq_context->m_hreq->reply_comm_rest_err2(HTTP_INTERNAL, ss.str());
-        }
-    } catch (std::exception &e) {
-        LOG_ERROR << "error: " << e.what();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "get session_id timeout");
     }
 
     session->clear();

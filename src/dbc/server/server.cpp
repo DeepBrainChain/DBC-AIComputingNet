@@ -203,11 +203,11 @@ int32_t server::parse_command_line(int argc, const char *const argv[],
         }
     }
     catch (const std::exception &e) {
-        std::cout << "invalid command option " << e.what() << endl;
+        std::cout << "invalid command option " << e.what() << std::endl;
         std::cout << opts;
     }
     catch (...) {
-        std::cout << argv[0] << " invalid command option" << endl;
+        std::cout << argv[0] << " invalid command option" << std::endl;
         std::cout << opts;
     }
 
@@ -219,7 +219,7 @@ int32_t server::on_cmd_init() {
     util::machine_node_info info;
     int32_t ret = util::create_node_info(info);  //check: if exists, not init again and print prompt.
     if (E_SUCCESS != ret) {
-        std::cout << "dbc init node info error" << endl;
+        std::cout << "dbc init node info error" << std::endl;
         LOG_ERROR << "dbc_server_initiator init node info error";
         return ret;
     }
@@ -227,12 +227,12 @@ int32_t server::on_cmd_init() {
     //serialization
     ret = conf_manager::serialize_node_info(info);
     if (E_SUCCESS != ret) {
-        std::cout << "dbc node info serialization failed." << endl;
+        std::cout << "dbc node info serialization failed." << std::endl;
         LOG_ERROR << "dbc node info serialization failed: node_id=" << info.node_id;
         return ret;
     }
 
-    std::cout << "node id: " << info.node_id << endl;
+    std::cout << "node id: " << info.node_id << std::endl;
     LOG_DEBUG << "dbc_server_initiator init node info successfully, node_id: " << info.node_id;
 
     return E_EXIT_PARSE_COMMAND_LINE;

@@ -2,7 +2,6 @@
 #define DBC_CMD_MESSAGE_H
 
 #include "util/utils.h"
-#include "../http_request_service/console_printer.h"
 #include "matrix_types.h"
 #include "network/protocol/service_message.h"
 #include "data/task/db/task_db_types.h"

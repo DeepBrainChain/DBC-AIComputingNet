@@ -199,13 +199,12 @@ protected:
     void init_subscription() override;
 
     int32_t create_request_session(const std::string& timer_id, const std::shared_ptr<dbc::network::http_request>& hreq,
-                                   const std::shared_ptr<dbc::network::message>& req_msg, const std::string& session_id);
+                                   const std::shared_ptr<dbc::network::message>& req_msg, const std::string& session_id,
+                                   const std::string& peer_node_id);
 
     void on_call_rsp_handler(const std::shared_ptr<dbc::network::message> &msg);
 
     bool check_rsp_header(const std::shared_ptr<dbc::network::message> &rsp_msg);
-
-    bool check_nonce(const std::string& nonce);
 
 private:
     std::vector<dbc::network::http_path_handler> m_path_handlers;

@@ -267,12 +267,17 @@ bool node_request_service::check_req_header(const std::shared_ptr<dbc::network::
         return false;
     }
 
+    if (base->header.exten_info.count("pub_key") <= 0) {
+        LOG_ERROR << "header.exten_info has no pub_key";
+        return false;
+    }
+
     return true;
 }
 
 template <typename T>
-void send_response_json(const std::string& msg_name, const dbc::network::base_header& header, int32_t result,
-                   const std::string& result_msg) {
+void send_response_json(const std::string& msg_name, const dbc::network::base_header& header,
+                   const std::string& rsp_data) {
     std::shared_ptr<T> rsp_msg_content = std::make_shared<T>();
     if (rsp_msg_content == nullptr) return;
 
@@ -286,14 +291,10 @@ void send_response_json(const std::string& msg_name, const dbc::network::base_he
     std::string sign_message = rsp_msg_content->header.nonce + rsp_msg_content->header.session_id;
     std::string sign = util::sign(sign_message, conf_manager::instance().get_node_private_key());
     exten_info["sign"] = sign;
-    exten_info["sign_algo"] = "ecdsa";
-    time_t cur = std::time(nullptr);
-    exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
+    exten_info["pub_key"] = conf_manager::instance().get_pub_key();
     rsp_msg_content->header.__set_exten_info(exten_info);
     // body
-    rsp_msg_content->body.__set_result(result);
-    rsp_msg_content->body.__set_result_msg(result_msg);
+    rsp_msg_content->body.__set_data(rsp_data);
 
     std::shared_ptr<dbc::network::message> rsp_msg = std::make_shared<dbc::network::message>();
     rsp_msg->set_name(msg_name);
@@ -305,11 +306,25 @@ template <typename T>
 void send_response_ok(const std::string& msg_name, const dbc::network::base_header& header) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"error_code\":" << E_SUCCESS;
-    ss << ", \"result\":" << "\"ok\"";
+    ss << "\"result_code\":" << E_SUCCESS;
+    ss << ", \"result_message\":" << "\"ok\"";
     ss << "}";
 
-    send_response_json<T>(msg_name, header, E_SUCCESS, ss.str());
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<T>(msg_name, header, s_data);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+        }
+    } else {
+        LOG_ERROR << "no pub_key";
+    }
 }
 
 template <typename T>
@@ -317,11 +332,25 @@ void send_response_error(const std::string& msg_name, const dbc::network::base_h
                          const std::string& result_msg) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"error_code\":" << result;
-    ss << ", \"error_message\":" << "\"" << result_msg << "\"";
+    ss << "\"result_code\":" << result;
+    ss << ", \"result_message\":" << "\"" << result_msg << "\"";
     ss << "}";
 
-    send_response_json<T>(msg_name, header, E_DEFAULT, ss.str());
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<T>(msg_name, header, s_data);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+        }
+    } else {
+        LOG_ERROR << "no pub_key";
+    }
 }
 
 void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg) {
@@ -397,8 +426,8 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
                                            const std::shared_ptr<dbc::node_query_node_info_req_data>& data) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"error_code\":" << 0;
-    ss << ",\"data\":" << "{";
+    ss << "\"result_code\":" << 0;
+    ss << ",\"result_message\":" << "{";
     ss << "\"ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
     ss << ",\"os\":" << "\"" << SystemInfo::instance().get_osname() << "\"";
     cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
@@ -433,7 +462,21 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "}";
     ss << "}";
 
-    send_response_json<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, E_SUCCESS, ss.str());
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, s_data);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+        }
+    } else {
+        LOG_ERROR << "no pub_key";
+    }
 }
 
 
@@ -621,14 +664,29 @@ void node_request_service::task_list(const dbc::network::base_header& header,
     std::stringstream ss;
     ss << "{";
     if (result != E_SUCCESS) {
-        ss << "\"error_code\":" << result;
-        ss << ", \"error_message\":" << "\"" << result_msg << "\"";
+        ss << "\"result_code\":" << result;
+        ss << ", \"result_message\":" << "\"" << result_msg << "\"";
     } else {
-        ss << "\"error_code\":" << result;
-        ss << ", \"data\":" << ss_tasks.str();
+        ss << "\"result_code\":" << result;
+        ss << ", \"result_message\":" << ss_tasks.str();
     }
     ss << "}";
-    send_response_json<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, result, ss.str());
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, s_data);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+        }
+    } else {
+        LOG_ERROR << "no pub_key";
+    }
 }
 
 
@@ -876,11 +934,11 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     std::stringstream ss;
     ss << "{";
     if (ret != E_SUCCESS) {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"error_message\":" << "\"" << ret_msg << "\"";
+        ss << "\"result_code\":" << ret;
+        ss << ", \"result_message\":" << "\"" << ret_msg << "\"";
     } else {
-        ss << "\"error_code\":" << ret;
-        ss << ", \"data\":" << "{";
+        ss << "\"result_code\":" << ret;
+        ss << ", \"result_message\":" << "{";
         ss << "\"task_id\":" << "\"" << task_id << "\"";
 
         auto taskinfo = m_task_scheduler.FindTask(task_id);
@@ -896,7 +954,21 @@ void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     }
     ss << "}";
 
-    send_response_json<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, m_create_header, ret, ss.str());
+    const std::map<std::string, std::string>& mp = m_create_header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, m_create_header, s_data);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+        }
+    } else {
+        LOG_ERROR << "no pub_key";
+    }
 }
 
 void node_request_service::task_create(const dbc::network::base_header& header,
@@ -1488,10 +1560,25 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     } else {
         std::stringstream ss;
         ss << "{";
-        ss << "\"error_code\":" << E_SUCCESS;
-        ss << ", \"log_content\":" << "\"" << log_content << "\"";
+        ss << "\"result_code\":" << E_SUCCESS;
+        ss << ", \"result_message\":" << "\"" << log_content << "\"";
         ss << "}";
-        send_response_json<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, E_SUCCESS, ss.str());
+
+        const std::map<std::string, std::string>& mp = header.exten_info;
+        auto it = mp.find("pub_key");
+        if (it != mp.end()) {
+            std::string pub_key = it->second;
+            std::string priv_key = conf_manager::instance().get_priv_key();
+
+            if (!pub_key.empty() && !priv_key.empty()) {
+                std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+                send_response_json<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, s_data);
+            } else {
+                LOG_ERROR << "pub_key or priv_key is empty";
+            }
+        } else {
+            LOG_ERROR << "no pub_key";
+        }
     }
 }
 
@@ -1573,10 +1660,25 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
     } else {
         std::stringstream ss;
         ss << "{";
-        ss << "\"error_code\":" << E_SUCCESS;
-        ss << ", \"session_id\":" << "\"" << it->second << "\"";
+        ss << "\"result_code\":" << E_SUCCESS;
+        ss << ", \"result_message\":" << "\"" << it->second << "\"";
         ss << "}";
-        send_response_json<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_SUCCESS, ss.str());
+
+        const std::map<std::string, std::string>& mp = header.exten_info;
+        auto it = mp.find("pub_key");
+        if (it != mp.end()) {
+            std::string pub_key = it->second;
+            std::string priv_key = conf_manager::instance().get_priv_key();
+
+            if (!pub_key.empty() && !priv_key.empty()) {
+                std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+                send_response_json<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, s_data);
+            } else {
+                LOG_ERROR << "pub_key or priv_key is empty";
+            }
+        } else {
+            LOG_ERROR << "no pub_key";
+        }
     }
 }
 
@@ -1635,9 +1737,8 @@ std::shared_ptr<dbc::network::message> node_request_service::create_service_broa
     std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
     if (signature.empty())  return nullptr;
     exten_info["sign"] = signature;
-    exten_info["sign_algo"] = "ecdsa";
-    exten_info["sign_at"] = boost::str(boost::format("%d") % std::time(nullptr));
-    exten_info["origin_id"] = conf_manager::instance().get_node_id();
+    exten_info["node_id"] = conf_manager::instance().get_node_id();
+    exten_info["pub_key"] = conf_manager::instance().get_pub_key();
     req_content->header.__set_exten_info(exten_info);
     // body
     req_content->body.__set_node_service_info_map(mp);
@@ -1649,19 +1750,19 @@ std::shared_ptr<dbc::network::message> node_request_service::create_service_broa
 }
 
 void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg) {
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
-        return;
-    }
-
     auto node_req_msg = std::dynamic_pointer_cast<dbc::service_broadcast_req>(msg->get_content());
     if (node_req_msg == nullptr) {
         LOG_ERROR << "node_req_msg is nullptr";
         return;
     }
 
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "req header check failed";
+        return;
+    }
+
     std::string sign_msg = node_req_msg->header.nonce + node_req_msg->header.session_id;
-    if (!util::verify_sign(node_req_msg->header.exten_info["sign"], sign_msg, node_req_msg->header.exten_info["origin_id"])) {
+    if (!util::verify_sign(node_req_msg->header.exten_info["sign"], sign_msg, node_req_msg->header.exten_info["node_id"])) {
         LOG_ERROR << "verify sign error." << node_req_msg->header.exten_info["origin_id"];
         return;
     }
