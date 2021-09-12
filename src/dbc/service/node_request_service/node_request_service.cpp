@@ -356,7 +356,7 @@ void send_response_error(const std::string& msg_name, const dbc::network::base_h
 void node_request_service::on_ws_msg(int32_t err_code, const std::string& msg) {
     LOG_INFO << "on_ws_msg(" << err_code << ") " << msg;
 
-    int32_t ret = E_DEFAULT;
+    int32_t ret = E_SUCCESS;
     std::string ret_msg;
 
     bool can_do = false;
@@ -720,122 +720,155 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
 
 void node_request_service::task_list(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_list_task_req_data>& data) {
-    int32_t result = E_SUCCESS;
-    std::string result_msg = "task list successful";
-
-    std::string task_id = data->task_id;
-
-    std::stringstream ss_tasks;
-    if (task_id.empty()) {
-        ss_tasks << "[";
-        std::vector<std::shared_ptr<dbc::TaskInfo>> task_list;
-        m_task_scheduler.ListAllTask(task_list);
-        int idx = 0;
-        for (auto &task : task_list) {
-            if (idx > 0)
-                ss_tasks << ",";
-
-            ss_tasks << "{";
-            ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
-            ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
-            ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
-            ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
-            ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
-
-            const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
-            const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(task->task_id);
-            int64_t disk_data = 0;
-            if (!task_disk_list.empty()) {
-                auto it_disk = task_disk_list.find(1);
-                if (it_disk != task_disk_list.end())
-                    disk_data = it_disk->second.total;
-            }
-            const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(task->task_id);
-            int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
-            const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(task->task_id);
-            uint32_t gpu_count = task_gpu_list.size();
-            const DeviceMem& task_mem = res_mgr.GetTaskMem(task->task_id);
-            int64_t mem_size = task_mem.total;
-
-            ss_tasks << ", \"cpu_cores\":" << cpu_cores;
-            ss_tasks << ", \"gpu_count\":" << gpu_count;
-            ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
-            ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
-            ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
-
-            struct tm _tm{};
-            time_t tt = task->create_time;
-            localtime_r(&tt, &_tm);
-            char buf[256] = {0};
-            memset(buf, 0, sizeof(char) * 256);
-            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-            ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
-
-            ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
-            ss_tasks << "}";
-
-            idx++;
-        }
-        ss_tasks << "]";
-    } else {
-        auto task = m_task_scheduler.FindTask(task_id);
-        if (nullptr != task) {
-            ss_tasks << "{";
-            ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
-            ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
-            ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
-            ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
-            ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
-
-            const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
-            const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(task_id);
-            int64_t disk_data = 0;
-            if (!task_disk_list.empty()) {
-                auto it_disk = task_disk_list.find(1);
-                if (it_disk != task_disk_list.end())
-                    disk_data = it_disk->second.total;
-            }
-            const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(task_id);
-            int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
-            const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(task_id);
-            uint32_t gpu_count = task_gpu_list.size();
-            const DeviceMem& task_mem = res_mgr.GetTaskMem(task_id);
-            int64_t mem_size = task_mem.total;
-
-            ss_tasks << ", \"cpu_cores\":" << cpu_cores;
-            ss_tasks << ", \"gpu_count\":" << gpu_count;
-            ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
-            ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
-            ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
-
-            struct tm _tm{};
-            time_t tt = task->create_time;
-            localtime_r(&tt, &_tm);
-            char buf[256] = {0};
-            memset(buf, 0, sizeof(char) * 256);
-            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-            ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
-
-            ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
-            ss_tasks << "}";
-        } else {
-            result = E_DEFAULT;
-            result_msg = "task_id not exist";
-        }
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
     }
 
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_LIST_TASK_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
+    } else {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
+    }
+}
+
+void node_request_service::do_list_task(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
     std::stringstream ss;
-    ss << "{";
-    if (result != E_SUCCESS) {
-        ss << "\"result_code\":" << result;
-        ss << ", \"result_message\":" << "\"" << result_msg << "\"";
-    } else {
-        ss << "\"result_code\":" << result;
-        ss << ", \"result_message\":" << ss_tasks.str();
-    }
-    ss << "}";
 
-    const std::map<std::string, std::string>& mp = header.exten_info;
+    if (can_do) {
+        std::stringstream ss_tasks;
+        if (m_request_task_id.empty()) {
+            ss_tasks << "[";
+            std::vector<std::shared_ptr<dbc::TaskInfo>> task_list;
+            m_task_scheduler.ListAllTask(task_list);
+            int idx = 0;
+            for (auto &task : task_list) {
+                if (idx > 0)
+                    ss_tasks << ",";
+
+                ss_tasks << "{";
+                ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
+                /*
+                ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
+                ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
+                ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
+                ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
+
+                const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
+                const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(task->task_id);
+                int64_t disk_data = 0;
+                if (!task_disk_list.empty()) {
+                    auto it_disk = task_disk_list.find(1);
+                    if (it_disk != task_disk_list.end())
+                        disk_data = it_disk->second.total;
+                }
+                const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(task->task_id);
+                int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
+                const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(task->task_id);
+                uint32_t gpu_count = task_gpu_list.size();
+                const DeviceMem& task_mem = res_mgr.GetTaskMem(task->task_id);
+                int64_t mem_size = task_mem.total;
+
+                ss_tasks << ", \"cpu_cores\":" << cpu_cores;
+                ss_tasks << ", \"gpu_count\":" << gpu_count;
+                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
+                */
+
+                struct tm _tm{};
+                time_t tt = task->create_time;
+                localtime_r(&tt, &_tm);
+                char buf[256] = {0};
+                memset(buf, 0, sizeof(char) * 256);
+                strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+                ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
+
+                ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
+                ss_tasks << "}";
+
+                idx++;
+            }
+            ss_tasks << "]";
+        } else {
+            auto task = m_task_scheduler.FindTask(m_request_task_id);
+            if (nullptr != task) {
+                ss_tasks << "{";
+                ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
+                ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
+                ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
+                ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
+                ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
+
+                const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
+                const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(m_request_task_id);
+                int64_t disk_data = 0;
+                if (!task_disk_list.empty()) {
+                    auto it_disk = task_disk_list.find(1);
+                    if (it_disk != task_disk_list.end())
+                        disk_data = it_disk->second.total;
+                }
+                const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(m_request_task_id);
+                int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
+                const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(m_request_task_id);
+                uint32_t gpu_count = task_gpu_list.size();
+                const DeviceMem& task_mem = res_mgr.GetTaskMem(m_request_task_id);
+                int64_t mem_size = task_mem.total;
+
+                ss_tasks << ", \"cpu_cores\":" << cpu_cores;
+                ss_tasks << ", \"gpu_count\":" << gpu_count;
+                ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
+
+                struct tm _tm{};
+                time_t tt = task->create_time;
+                localtime_r(&tt, &_tm);
+                char buf[256] = {0};
+                memset(buf, 0, sizeof(char) * 256);
+                strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+                ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
+
+                ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
+                ss_tasks << "}";
+            } else {
+                ret = E_DEFAULT;
+                ret_msg = "task_id not exist";
+            }
+        }
+
+        ss << "{";
+        if (ret != E_SUCCESS) {
+            ss << "\"result_code\":" << ret;
+            ss << ", \"result_message\":" << "\"" << ret_msg << "\"";
+        } else {
+            ss << "\"result_code\":" << result;
+            ss << ", \"result_message\":" << ss_tasks.str();
+        }
+        ss << "}";
+    } else {
+        ss << "{";
+        ss << "\"result_code\":" << ret;
+        ss << ", \"result_message\":" << "\"" << ret_msg << "\"";
+        ss << "}";
+    }
+
+    const std::map<std::string, std::string>& mp = m_request_header.exten_info;
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
@@ -843,17 +876,13 @@ void node_request_service::task_list(const dbc::network::base_header& header,
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
-            send_response_json<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, s_data);
+            send_response_json<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, m_request_header, s_data);
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
         }
     } else {
         LOG_ERROR << "no pub_key";
     }
-}
-
-void node_request_service::do_list_task(bool can_do, int result, const std::string &result_msg) {
-
 }
 
 
@@ -1118,21 +1147,46 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
 
 void node_request_service::task_start(const dbc::network::base_header& header,
                                       const std::shared_ptr<dbc::node_start_task_req_data>& data) {
-    std::string task_id = data->task_id;
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
+    }
 
-    auto fresult = m_task_scheduler.StartTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_START_TASK_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
 
-    if (ret != E_SUCCESS) {
-        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header, ret, ret_msg);
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
     } else {
-        send_response_ok<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header);
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
     }
 }
 
 void node_request_service::do_start_task(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
 
+    if (can_do) {
+        auto fresult = m_task_scheduler.StartTask(m_request_task_id);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
+    }
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, m_request_header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, m_request_header);
+    }
 }
 
 
@@ -1213,21 +1267,46 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
 
 void node_request_service::task_stop(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_stop_task_req_data>& data) {
-    std::string task_id = data->task_id;
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
+    }
 
-    auto fresult = m_task_scheduler.StopTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_STOP_TASK_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
 
-    if (ret != E_SUCCESS) {
-        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, ret, ret_msg);
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
     } else {
-        send_response_ok<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header);
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
     }
 }
 
 void node_request_service::do_stop_task(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
 
+    if (can_do) {
+        auto fresult = m_task_scheduler.StopTask(m_request_task_id);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
+    }
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, m_request_header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, m_request_header);
+    }
 }
 
 
@@ -1308,21 +1387,46 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
 
 void node_request_service::task_restart(const dbc::network::base_header& header,
                                         const std::shared_ptr<dbc::node_restart_task_req_data>& data) {
-    std::string task_id = data->task_id;
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
+    }
 
-    auto fresult = m_task_scheduler.RestartTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_RESTART_TASK_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
 
-    if (ret != E_SUCCESS) {
-        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header, ret, ret_msg);
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
     } else {
-        send_response_ok<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header);
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
     }
 }
 
 void node_request_service::do_restart_task(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
 
+    if (can_do) {
+        auto fresult = m_task_scheduler.RestartTask(m_request_task_id);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
+    }
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, m_request_header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, m_request_header);
+    }
 }
 
 
@@ -1403,21 +1507,46 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
 
 void node_request_service::task_reset(const dbc::network::base_header& header,
                                       const std::shared_ptr<dbc::node_reset_task_req_data>& data) {
-    std::string task_id = data->task_id;
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
+    }
 
-    auto fresult = m_task_scheduler.ResetTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_RESET_TASK_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
 
-    if (ret != E_SUCCESS) {
-        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header, ret, ret_msg);
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
     } else {
-        send_response_ok<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header);
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
     }
 }
 
 void node_request_service::do_reset_task(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
 
+    if (can_do) {
+        auto fresult = m_task_scheduler.ResetTask(m_request_task_id);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
+    }
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, m_request_header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, m_request_header);
+    }
 }
 
 
@@ -1498,21 +1627,46 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
 
 void node_request_service::task_delete(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_delete_task_req_data>& data) {
-    std::string task_id = data->task_id;
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
+    }
 
-    auto fresult = m_task_scheduler.DeleteTask(task_id);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_DELETE_TASK_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
 
-    if (ret != E_SUCCESS) {
-        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header, ret, ret_msg);
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
     } else {
-        send_response_ok<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header);
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
     }
 }
 
 void node_request_service::do_delete_task(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
 
+    if (can_do) {
+        auto fresult = m_task_scheduler.DeleteTask(m_request_task_id);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
+    }
+
+    if (ret != E_SUCCESS) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, m_request_header, ret, ret_msg);
+    } else {
+        send_response_ok<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, m_request_header);
+    }
 }
 
 
@@ -1608,28 +1762,57 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
 
 void node_request_service::task_logs(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_task_logs_req_data>& data) {
-    std::string task_id = data->task_id;
-    int16_t head_or_tail = data->head_or_tail;
-    int32_t number_of_lines = data->number_of_lines;
-
-    std::string log_content;
-    auto fresult = m_task_scheduler.GetTaskLog(task_id, (ETaskLogDirection) head_or_tail,
-                                               number_of_lines, log_content);
-    int32_t ret = std::get<0>(fresult);
-    std::string ret_msg = std::get<1>(fresult);
-
-    if (GET_LOG_HEAD == (ETaskLogDirection) head_or_tail) {
-        log_content = log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
     }
-    else {
-        size_t log_lenth = log_content.length();
-        if (log_lenth > MAX_LOG_CONTENT_SIZE) {
-            log_content = log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
+
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_TASK_LOGS_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+        m_request_task_id = data->task_id;
+        m_request_head_or_tail = data->head_or_tail;
+        m_request_number_of_lines = data->number_of_lines;
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
+    } else {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
+    }
+}
+
+void node_request_service::do_task_logs(bool can_do, int result, const std::string &result_msg) {
+    int ret = result;
+    std::string ret_msg = result_msg;
+    std::string log_content;
+
+    if (can_do) {
+        auto fresult = m_task_scheduler.GetTaskLog(m_request_task_id, (ETaskLogDirection) m_request_head_or_tail,
+                                                   m_request_number_of_lines, log_content);
+        ret = std::get<0>(fresult);
+        ret_msg = std::get<1>(fresult);
+
+        if (GET_LOG_HEAD == (ETaskLogDirection) m_request_head_or_tail) {
+            log_content = log_content.substr(0, MAX_LOG_CONTENT_SIZE);
+        }
+        else {
+            size_t log_lenth = log_content.length();
+            if (log_lenth > MAX_LOG_CONTENT_SIZE) {
+                log_content = log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
+            }
         }
     }
 
     if (ret != E_SUCCESS) {
-        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, ret, ret_msg);
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, m_request_header, ret, ret_msg);
     } else {
         std::stringstream ss;
         ss << "{";
@@ -1637,7 +1820,7 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
         ss << ", \"result_message\":" << "\"" << log_content << "\"";
         ss << "}";
 
-        const std::map<std::string, std::string>& mp = header.exten_info;
+        const std::map<std::string, std::string>& mp = m_request_header.exten_info;
         auto it = mp.find("pub_key");
         if (it != mp.end()) {
             std::string pub_key = it->second;
@@ -1645,7 +1828,7 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
 
             if (!pub_key.empty() && !priv_key.empty()) {
                 std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
-                send_response_json<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, s_data);
+                send_response_json<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, m_request_header, s_data);
             } else {
                 LOG_ERROR << "pub_key or priv_key is empty";
             }
@@ -1653,10 +1836,6 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
             LOG_ERROR << "no pub_key";
         }
     }
-}
-
-void node_request_service::do_task_logs(bool can_do, int result, const std::string &result_msg) {
-
 }
 
 
@@ -1731,36 +1910,61 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
 
 void node_request_service::node_session_id(const dbc::network::base_header &header,
                                            const std::shared_ptr<dbc::node_session_id_req_data> &data) {
-    auto it = m_wallet_sessionid.find(data->wallet);
-    if (it == m_wallet_sessionid.end()) {
-        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "no session id");
+    if (m_cur_request != "none") {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "The operation is too frequent");
+        LOG_ERROR << "The operation is too frequent";
+        return;
+    }
+
+    if (m_websocket_client.is_connected()) {
+        m_cur_request = NODE_SESSION_ID_REQ;
+        m_request_header = header;
+        m_request_additional = data->additional;
+        m_request_wallet = data->wallet;
+        m_request_session_id = data->session_id;
+        m_request_session_id_sign = data->session_id_sign;
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+                + conf_manager::instance().get_node_id() + R"("]})";
+        m_websocket_client.send(str_send);
+        LOG_INFO << "ws_send: " << str_send;
     } else {
-        std::stringstream ss;
-        ss << "{";
-        ss << "\"result_code\":" << E_SUCCESS;
-        ss << ", \"result_message\":" << "\"" << it->second << "\"";
-        ss << "}";
-
-        const std::map<std::string, std::string>& mp = header.exten_info;
-        auto it = mp.find("pub_key");
-        if (it != mp.end()) {
-            std::string pub_key = it->second;
-            std::string priv_key = conf_manager::instance().get_priv_key();
-
-            if (!pub_key.empty() && !priv_key.empty()) {
-                std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
-                send_response_json<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, s_data);
-            } else {
-                LOG_ERROR << "pub_key or priv_key is empty";
-            }
-        } else {
-            LOG_ERROR << "no pub_key";
-        }
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "websocket is disconnect");
+        LOG_ERROR << "websocket is disconnect";
     }
 }
 
 void node_request_service::do_get_session_id(bool can_do, int result, const std::string &result_msg) {
+    if (can_do) {
+        auto it = m_wallet_sessionid.find(m_request_wallet);
+        if (it == m_wallet_sessionid.end()) {
+            send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, m_request_header, E_DEFAULT, "no session id");
+        } else {
+            std::stringstream ss;
+            ss << "{";
+            ss << "\"result_code\":" << E_SUCCESS;
+            ss << ", \"result_message\":" << "\"" << it->second << "\"";
+            ss << "}";
 
+            const std::map<std::string, std::string>& mp = m_request_header.exten_info;
+            auto it = mp.find("pub_key");
+            if (it != mp.end()) {
+                std::string pub_key = it->second;
+                std::string priv_key = conf_manager::instance().get_priv_key();
+
+                if (!pub_key.empty() && !priv_key.empty()) {
+                    std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+                    send_response_json<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, m_request_header, s_data);
+                } else {
+                    LOG_ERROR << "pub_key or priv_key is empty";
+                }
+            } else {
+                LOG_ERROR << "no pub_key";
+            }
+        }
+    } else {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, m_request_header, E_DEFAULT, "no session id");
+    }
 }
 
 

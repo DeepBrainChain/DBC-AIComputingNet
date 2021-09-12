@@ -136,6 +136,9 @@ protected:
     std::string m_request_wallet;
     std::string m_request_session_id;
     std::string m_request_session_id_sign;
+    std::string m_request_task_id;
+    int16_t m_request_head_or_tail;
+    int32_t m_request_number_of_lines;
 };
 
 #endif
