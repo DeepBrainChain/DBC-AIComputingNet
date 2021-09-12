@@ -101,6 +101,20 @@ private:
 
     void on_ws_msg(int32_t err_code, const std::string& msg);
 
+    void do_work(bool can_do, int result, const std::string& result_msg);
+
+    void do_create_task(bool can_do, int result, const std::string& result_msg);
+    void do_start_task(bool can_do, int result, const std::string& result_msg);
+    void do_stop_task(bool can_do, int result, const std::string& result_msg);
+    void do_delete_task(bool can_do, int result, const std::string& result_msg);
+    void do_restart_task(bool can_do, int result, const std::string& result_msg);
+    void do_reset_task(bool can_do, int result, const std::string& result_msg);
+    void do_list_task(bool can_do, int result, const std::string& result_msg);
+    void do_task_logs(bool can_do, int result, const std::string& result_msg);
+    void do_modify_task(bool can_do, int result, const std::string& result_msg);
+    void do_query_node_info(bool can_do, int result, const std::string& result_msg);
+    void do_get_session_id(bool can_do, int result, const std::string& result_msg);
+
 protected:
     bool m_is_computing_node = false;
 
@@ -115,10 +129,13 @@ protected:
     std::map<std::string, std::string> m_wallet_sessionid;
     std::map<std::string, std::string> m_sessionid_wallet;
 
-    dbc::network::base_header m_create_header;
-    std::shared_ptr<dbc::node_create_task_req_data> m_create_data;
-
     websocket_client m_websocket_client;
+    std::string m_cur_request = "none";
+    dbc::network::base_header m_request_header;
+    std::string m_request_additional;
+    std::string m_request_wallet;
+    std::string m_request_session_id;
+    std::string m_request_session_id_sign;
 };
 
 #endif
