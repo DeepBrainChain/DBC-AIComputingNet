@@ -134,64 +134,6 @@ void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_
     }
 }
 
-void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::message> &rsp_msg) {
-    if (rsp_msg == nullptr) {
-        LOG_ERROR << "rsp_msg is nullptr";
-        return;
-    }
-
-    auto node_rsp_msg = rsp_msg->content;
-    if (!node_rsp_msg) {
-        LOG_ERROR << "node_rsp_msg is nullptr";
-        return;
-    }
-
-    const std::string &name = rsp_msg->get_name();
-    const std::string &session_id = node_rsp_msg->header.session_id;
-
-    std::shared_ptr<service_session> session = get_session(session_id);
-    if (nullptr == session) {
-        LOG_DEBUG << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
-        dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
-        return;
-    }
-
-    remove_timer(session->get_timer_id());
-
-    try {
-        variables_map &vm = session->get_context().get_args();
-        if (0 == vm.count(HTTP_REQUEST_KEY)) {
-            LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null hreq_key";
-            remove_session(session_id);
-            return;
-        }
-
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-        if (nullptr == hreq_context) {
-            LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null hreq_context";
-            remove_session(session_id);
-            return;
-        }
-
-        auto it = m_rsp_handlers.find(name);
-        if (it == m_rsp_handlers.end()) {
-            LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null rsp_handler";
-            remove_session(session_id);
-            return;
-        }
-
-        LOG_INFO << "rsp name: " << name << ",session_id:" << session_id << ", and call rsp_handler";
-
-        auto func = it->second;
-        func(hreq_context, rsp_msg);
-
-        session->clear();
-        remove_session(session_id);
-    } catch (std::exception &e) {
-        LOG_ERROR << e.what();
-    }
-}
-
 bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::message> &rsp_msg) {
     if (!rsp_msg) {
         LOG_ERROR << "msg is nullptr";
@@ -242,8 +184,72 @@ bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::mess
         return false;
     }
 
-
     return true;
+}
+
+void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::message> &rsp_msg) {
+    if (rsp_msg == nullptr) {
+        LOG_ERROR << "rsp_msg is nullptr";
+        return;
+    }
+
+    auto node_rsp_msg = rsp_msg->content;
+    if (!node_rsp_msg) {
+        LOG_ERROR << "node_rsp_msg is nullptr";
+        return;
+    }
+
+    const std::string &name = rsp_msg->get_name();
+    const std::string &session_id = node_rsp_msg->header.session_id;
+
+    std::shared_ptr<service_session> session = get_session(session_id);
+    if (nullptr == session) {
+        LOG_DEBUG << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
+        dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
+        return;
+    }
+
+    try {
+        variables_map &vm = session->get_context().get_args();
+        if (0 == vm.count(HTTP_REQUEST_KEY)) {
+            LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null hreq_key";
+            return;
+        }
+
+        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+        if (nullptr == hreq_context) {
+            LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null hreq_context";
+            return;
+        }
+
+        if (!check_rsp_header(rsp_msg)) {
+            LOG_ERROR << "rsp header check failed";
+            return;
+        }
+
+        std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
+        if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
+            LOG_ERROR << "verify sign failed peer_node_id:" << hreq_context->peer_node_id;
+            return;
+        }
+
+        auto it = m_rsp_handlers.find(name);
+        if (it == m_rsp_handlers.end()) {
+            LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null rsp_handler";
+            return;
+        }
+
+        LOG_INFO << "rsp name: " << name << ",session_id:" << session_id << ", and call rsp_handler";
+
+        auto func = it->second;
+        func(hreq_context, rsp_msg);
+
+        remove_timer(session->get_timer_id());
+        session->clear();
+        remove_session(session_id);
+    } catch (std::exception &e) {
+        LOG_ERROR << e.what();
+    }
 }
 
 int32_t rest_api_service::create_request_session(const std::string& timer_id,
@@ -584,19 +590,6 @@ void rest_api_service::on_node_create_task_rsp(const std::shared_ptr<dbc::networ
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
 
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
-
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -909,19 +902,6 @@ void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<dbc::network
     }
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -1237,19 +1217,6 @@ void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<dbc::network:
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
 
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
-
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -1563,19 +1530,6 @@ void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<dbc::netwo
     }
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -1891,19 +1845,6 @@ void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<dbc::network
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
 
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
-
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -2218,19 +2159,6 @@ void rest_api_service::on_node_delete_task_rsp(const std::shared_ptr<dbc::networ
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
 
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
-
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -2540,19 +2468,6 @@ void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network:
     }
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -2867,19 +2782,6 @@ void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<dbc::networ
     }
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -3230,19 +3132,6 @@ void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<dbc::network:
     }
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -3611,19 +3500,6 @@ void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::ne
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
 
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
-
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -3931,19 +3807,6 @@ void rest_api_service::on_node_session_id_rsp(const std::shared_ptr<dbc::network
     }
 
     const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    if (!check_rsp_header(rsp_msg)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsp header check failed");
-        LOG_ERROR << "rsp header check failed";
-        return;
-    }
-
-    std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
-    if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "verify sign failed");
-        LOG_ERROR << "verify sign failed";
-        return;
-    }
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];

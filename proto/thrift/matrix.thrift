@@ -86,8 +86,7 @@ struct node_create_task_req {
 }
 // response
 struct node_create_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data;
 }
 
 struct node_create_task_rsp {
@@ -96,10 +95,17 @@ struct node_create_task_rsp {
 //////////////////////////////////////////////////////////////////////////
 // start task
 // request
+struct node_start_task_req_data {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
 struct node_start_task_req_body {
-    1: required string task_id,
-    2: required list<string> peer_nodes_list,
-    3: required string additional
+    1: required string data
 }
 
 struct node_start_task_req {
@@ -107,8 +113,7 @@ struct node_start_task_req {
 }
 // response
 struct node_start_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_start_task_rsp {
@@ -117,10 +122,17 @@ struct node_start_task_rsp {
 //////////////////////////////////////////////////////////////////////////
 // stop task
 // request
-struct node_stop_task_req_body {
+struct node_stop_task_req_data {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
-  3: required string additional
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
+struct node_stop_task_req_body {
+  1: required string data
 }
 
 struct node_stop_task_req {
@@ -128,8 +140,7 @@ struct node_stop_task_req {
 }
 // response
 struct node_stop_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_stop_task_rsp {
@@ -138,10 +149,17 @@ struct node_stop_task_rsp {
 ////////////////////////////////////////////////////////////////////////////
 // restart task
 // request
+struct node_restart_task_req_data {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
 struct node_restart_task_req_body {
-    1: required string task_id,
-    2: required list<string> peer_nodes_list,
-    3: required string additional
+    1: required string data
 }
 
 struct node_restart_task_req {
@@ -149,8 +167,7 @@ struct node_restart_task_req {
 }
 // response
 struct node_restart_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_restart_task_rsp {
@@ -159,10 +176,17 @@ struct node_restart_task_rsp {
 //////////////////////////////////////////////////////////////////////////
 // reset task
 // request
-struct node_reset_task_req_body {
+struct node_reset_task_req_data {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
-  3: required string additional
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
+struct node_reset_task_req_body {
+  1: required string data
 }
 
 struct node_reset_task_req {
@@ -170,8 +194,7 @@ struct node_reset_task_req {
 }
 // response
 struct node_reset_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_reset_task_rsp {
@@ -180,10 +203,17 @@ struct node_reset_task_rsp {
 //////////////////////////////////////////////////////////////////////////
 // delete task
 // request
-struct node_delete_task_req_body {
+struct node_delete_task_req_data {
   1: required string task_id,
   2: required list<string> peer_nodes_list,
-  3: required string additional
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
+struct node_delete_task_req_body {
+  1: required string data
 }
 
 struct node_delete_task_req {
@@ -191,8 +221,7 @@ struct node_delete_task_req {
 }
 // response
 struct node_delete_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_delete_task_rsp {
@@ -201,12 +230,19 @@ struct node_delete_task_rsp {
 //////////////////////////////////////////////////////////////////////////
 // task logs
 // request
-struct node_task_logs_req_body {
+struct node_task_logs_req_data {
   1: required string task_id,
-  2: required list<string> peer_nodes_list,
-  3: required i8 head_or_tail,
-  4: required i16 number_of_lines,
-  5: required string additional
+  2: required i16 head_or_tail,
+  3: required i32 number_of_lines,
+  4: required list<string> peer_nodes_list,
+  5: required string additional,
+  6: required string wallet,
+  7: required string session_id,
+  8: required string session_id_sign
+}
+
+struct node_task_logs_req_body {
+  1: required string data
 }
 
 struct node_task_logs_req {
@@ -214,8 +250,7 @@ struct node_task_logs_req {
 }
 // response
 struct node_task_logs_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_task_logs_rsp {
@@ -224,10 +259,17 @@ struct node_task_logs_rsp {
 //////////////////////////////////////////////////////////////////////////
 // list task
 // request
+struct node_list_task_req_data {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
 struct node_list_task_req_body {
-    1: required string task_id,
-    2: required list<string> peer_nodes_list,
-    3: required string additional
+    1: required string data
 }
 
 struct node_list_task_req {
@@ -235,8 +277,7 @@ struct node_list_task_req {
 }
 // response
 struct node_list_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg
+  1: required string data
 }
 
 struct node_list_task_rsp {
@@ -245,10 +286,17 @@ struct node_list_task_rsp {
 //////////////////////////////////////////////////////////////////////////
 // modify task
 // request
+struct node_modify_task_req_data {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string session_id,
+  6: required string session_id_sign
+}
+
 struct node_modify_task_req_body {
-    1: required string task_id,
-    2: required list<string> peer_nodes_list,
-    3: required string additional
+    1: required string data
 }
 
 struct node_modify_task_req {
@@ -256,15 +304,81 @@ struct node_modify_task_req {
 }
 // response
 struct node_modify_task_rsp_body {
-  1: required i32 result,
-  2: required string result_msg,
+  1: required string data,
 }
 
 struct node_modify_task_rsp {
   1: node_modify_task_rsp_body body
 }
 //////////////////////////////////////////////////////////////////////////
-//version
+// get node session_id
+// request
+struct node_session_id_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string wallet
+}
+
+struct node_session_id_req_body {
+  1: required string data
+}
+
+struct node_session_id_req {
+  1: node_session_id_req_body body
+}
+// response
+struct node_session_id_rsp_body {
+  1: required string data
+}
+
+struct node_session_id_rsp {
+  1: node_session_id_rsp_body body
+}
+//////////////////////////////////////////////////////////////////////////
+// query node info
+// request
+struct node_query_node_info_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string wallet,
+  4: required string session_id,
+  5: required string session_id_sign
+}
+
+struct node_query_node_info_req_body {
+  1: required string data
+}
+
+struct node_query_node_info_req {
+  1: node_query_node_info_req_body body
+}
+// response
+struct node_query_node_info_rsp_body {
+  1: required string data
+}
+
+struct node_query_node_info_rsp {
+  1: node_query_node_info_rsp_body body
+}
+//////////////////////////////////////////////////////////////////////////
+// node service broadcast
+// request
+struct node_service_info {
+  1: required list<string> service_list,
+  2: optional string name,
+  3: optional i64 time_stamp,
+  4: optional map<string,string> kvs
+}
+
+struct service_broadcast_req_body {
+  1: required map<string, node_service_info> node_service_info_map
+}
+
+struct service_broadcast_req {
+  1: service_broadcast_req_body body
+}
+//////////////////////////////////////////////////////////////////////////
+// request
 struct ver_req_body {
   1: required string node_id,
   2: required i32 core_version,
@@ -279,7 +393,6 @@ struct ver_req {
   1: ver_req_body body
 }
 
-
 struct ver_resp_body {
   1: required string node_id,
   2: required i32 core_version,
@@ -288,41 +401,4 @@ struct ver_resp_body {
 
 struct ver_resp {
   1: ver_resp_body body
-}
-
-//////////////////////////////////////////////////////////////////////////
-struct node_service_info {
-  1: required list<string> service_list,
-  2: optional string name,
-  3: optional i64 time_stamp,
-  4: optional map<string,string> kvs
-}
-
-// list nodes
-struct node_query_node_info_req_body {
-  1: required list<string> peer_nodes_list,
-  2: required string additional
-}
-
-struct node_query_node_info_req {
-  1: node_query_node_info_req_body body
-}
-
-struct node_query_node_info_rsp_body {
-  1: required i32 result,
-  2: required string result_msg,
-  3: required map<string, string> kvs
-}
-
-struct node_query_node_info_rsp {
-  1: node_query_node_info_rsp_body body
-}
-
-//node service broadcast
-struct service_broadcast_req_body {
-  1: required map<string, node_service_info> node_service_info_map
-}
-
-struct service_broadcast_req {
-  1: service_broadcast_req_body body
 }

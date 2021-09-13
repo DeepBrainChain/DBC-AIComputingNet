@@ -528,14 +528,14 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -668,14 +668,14 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -908,14 +908,14 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1098,14 +1098,14 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1223,14 +1223,14 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1348,14 +1348,14 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1473,14 +1473,14 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1598,14 +1598,14 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1723,14 +1723,14 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -1897,14 +1897,14 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
         return;
     }
 
-    if (!check_req_header(msg)) {
-        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
-        LOG_ERROR << "request header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
+        LOG_ERROR << "request header check failed";
         return;
     }
 
@@ -2097,13 +2097,13 @@ void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<db
         return;
     }
 
-    if (!check_req_header(msg)) {
-        LOG_ERROR << "req header check failed";
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
-    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
-        LOG_ERROR << "request header.nonce check failed";
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "req header check failed";
         return;
     }
 
