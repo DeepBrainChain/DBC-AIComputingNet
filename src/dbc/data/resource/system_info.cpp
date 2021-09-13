@@ -17,6 +17,34 @@ static int compare_mem_table_structs(const void *a, const void *b){
 #define PROCFS_OSRELEASE "/proc/sys/kernel/osrelease"
 #define MEMINFO_FILE "/proc/meminfo"
 
+std::string gpu_info::parse_bus(const std::string& id) {
+    auto pos = id.find(':');
+    if (pos != std::string::npos) {
+        return id.substr(0, pos);
+    } else {
+        return "";
+    }
+}
+
+std::string gpu_info::parse_slot(const std::string& id) {
+    auto pos1 = id.find(':');
+    auto pos2 = id.find('.');
+    if (pos1 != std::string::npos && pos2 != std::string::npos) {
+        return id.substr(pos1 + 1, pos2 - pos1 - 1);
+    } else {
+        return "";
+    }
+}
+
+std::string gpu_info::parse_function(const std::string& id) {
+    auto pos = id.find('.');
+    if (pos != std::string::npos) {
+        return id.substr(pos + 1);
+    } else {
+        return "";
+    }
+}
+
 SystemInfo::SystemInfo() {
 
 }
@@ -35,6 +63,7 @@ void SystemInfo::start() {
     m_running = true;
     get_mem_info(m_meminfo);
     get_cpu_info(m_cpuinfo);
+    init_gpu();
     if (m_is_compute_node)
         get_disk_info("/data", m_diskinfo);
     else
@@ -149,7 +178,7 @@ void SystemInfo::get_mem_info(mem_info &info) {
         head = tail+1;
     }
 
-    info.mem_total = kb_main_total;
+    info.mem_total = kb_main_total - g_reserved_memory * 1024L * 1024L;
     info.mem_free = kb_main_free;
 
     unsigned long mem_used = kb_main_total - kb_main_free - (kb_page_cache + kb_slab_reclaimable) - kb_main_buffers;
@@ -215,8 +244,25 @@ void SystemInfo::get_cpu_info(cpu_info& info) {
     fclose(fp);
 
     info.physical_cores = cpus.size();
-    info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu;
+    info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu - 1;
     info.total_cores = cpus.size() * info.logical_cores_per_cpu;
+}
+
+void SystemInfo::init_gpu() {
+    std::string cmd = "lspci -nnv |grep NVIDIA |awk '{print $2\",\"$1}' |tr \"\n\" \"|\"";
+    std::string str = run_shell(cmd.c_str());
+    std::vector<std::string> vec;
+    util::split(str, "|", vec);
+    std::string cur_id;
+    for (int i = 0; i < vec.size(); i++) {
+        std::vector<std::string> vec2;
+        util::split(vec[i], ",", vec2);
+        if (vec2[0] == "VGA") {
+            cur_id = vec2[1];
+            m_gpuinfo[cur_id].id = cur_id;
+        }
+        m_gpuinfo[cur_id].devices.push_back(vec2[1]);
+    }
 }
 
 // disk info

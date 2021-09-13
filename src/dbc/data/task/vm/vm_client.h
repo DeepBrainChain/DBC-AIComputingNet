@@ -4,6 +4,7 @@
 #include "util/utils.h"
 #include "virt_client.h"
 #include "service_module/service_module.h"
+#include "../TaskResourceManager.h"
 
 class VmClient {
 public:
@@ -11,9 +12,7 @@ public:
 
     virtual ~VmClient();
 
-    int32_t CreateDomain(const std::string& domain_name, const std::string& image,
-                         int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
-                         const std::map<std::string, DeviceGpu>& mpGpu, int64_t mem);
+    int32_t CreateDomain(const std::string& domain_name, const std::string& image, const TaskResource& task_resource);
 
     int32_t StartDomain(const std::string& domain_name);
 

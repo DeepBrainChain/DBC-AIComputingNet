@@ -8,7 +8,6 @@
 #include "util/utils/crypto_service.h"
 #include <boost/exception/all.hpp>
 #include "service_module/service_name.h"
-#include "data/resource/SystemResourceManager.h"
 
 #include "service/http_request_service/http_server_service.h"
 #include "service/http_request_service/rest_api_service.h"
@@ -66,7 +65,6 @@ int32_t server::init(int argc, char *argv[]) {
 
     // system_info
     LOG_INFO << "begin to init system info manager";
-    SystemResourceMgr::instance().Init();
     SystemInfo::instance().init(vm);
     SystemInfo::instance().start();
     LOG_INFO << "init system info manager successfully";

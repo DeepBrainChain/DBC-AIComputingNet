@@ -4,10 +4,39 @@
 #include "log/log.h"
 #include "tinyxml2.h"
 
-static DeviceCpu g_default_cpu;
-static std::map<std::string, DeviceGpu> g_default_gpu;
-static DeviceMem g_default_mem;
-static std::map<int32_t, DeviceDisk> g_default_disk;
+static TaskResource g_default_task_resource;
+
+int32_t TaskResource::total_cores() const {
+    return physical_cpu * physical_cores_per_cpu * threads_per_cpu;
+}
+
+std::string TaskResource::parse_gpu_device_bus(const std::string& id) {
+    auto pos = id.find(':');
+    if (pos != std::string::npos) {
+        return id.substr(0, pos);
+    } else {
+        return "";
+    }
+}
+
+std::string TaskResource::parse_gpu_device_slot(const std::string& id) {
+    auto pos1 = id.find(':');
+    auto pos2 = id.find('.');
+    if (pos1 != std::string::npos && pos2 != std::string::npos) {
+        return id.substr(pos1 + 1, pos2 - pos1 - 1);
+    } else {
+        return "";
+    }
+}
+
+std::string TaskResource::parse_gpu_device_function(const std::string& id) {
+    auto pos = id.find('.');
+    if (pos != std::string::npos) {
+        return id.substr(pos + 1);
+    } else {
+        return "";
+    }
+}
 
 void TaskResourceManager::init(const std::vector<std::string> &tasks) {
     for (auto& id : tasks) {
@@ -41,26 +70,22 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                 }
 
                 tinyxml2::XMLElement* root = doc.RootElement();
+                TaskResource task_resource;
                 // cpu
                 tinyxml2::XMLElement* ele_root = root->FirstChildElement("cpu");
                 if (ele_root != nullptr) {
                     tinyxml2::XMLElement* ele_topology = ele_root->FirstChildElement("topology");
                     if (ele_topology != nullptr) {
-                        DeviceCpu cpuinfo;
-                        cpuinfo.sockets = ele_topology->IntAttribute("sockets");
-                        cpuinfo.cores_per_socket = ele_topology->IntAttribute("cores");
-                        cpuinfo.threads_per_core = ele_topology->IntAttribute("threads");
-                        m_mpTaskCpu[id] = cpuinfo;
+                        task_resource.physical_cpu = ele_topology->IntAttribute("sockets");
+                        task_resource.physical_cores_per_cpu = ele_topology->IntAttribute("cores");
+                        task_resource.threads_per_cpu = ele_topology->IntAttribute("threads");
                     }
                 }
                 // mem
                 tinyxml2::XMLElement* ele_memory = root->FirstChildElement("memory");
                 if (ele_memory != nullptr) {
                     const char* str_memory = ele_memory->GetText();
-                    DeviceMem meminfo;
-                    meminfo.total = atol(str_memory);
-                    meminfo.available = atol(str_memory);
-                    m_mpTaskMem[id] = meminfo;
+                    task_resource.mem_size = atol(str_memory);
                 }
                 //gpu
                 tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
@@ -91,14 +116,10 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                                 std::string device_id = str_bus + ":" + str_slot + "." + str_function;
 
                                 if (atoi(str_function.c_str()) == 0) {
-                                    DeviceGpu gpuinfo;
-                                    gpuinfo.id = device_id;
-                                    m_mpTaskGpu[id][device_id] = gpuinfo;
                                     cur_gpu_id = device_id;
                                 }
 
-                                DeviceGpu& itr_gpu = m_mpTaskGpu[id][cur_gpu_id];
-                                itr_gpu.devices.push_back(device_id);
+                                task_resource.gpus[cur_gpu_id].push_back(device_id);
                             }
                         }
 
@@ -122,18 +143,23 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                                 util::split(fname, "_", vec);
                                 if (vec.size() >= 3) {
                                     int nindex = atoi(vec[1].c_str());
-                                    DeviceDisk diskinfo;
                                     tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
                                     if (ele_target != nullptr) {
                                         std::string vdevice = ele_target->Attribute("dev");
                                         virDomainBlockInfo blockinfo;
                                         if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
-                                            std::string str_type = disk_type("/data");
-                                            diskinfo.type = (str_type == "SSD" ? DiskType::DT_SSD : DiskType::DT_HDD);
                                             int64_t disk_size = blockinfo.capacity;
-                                            diskinfo.total = disk_size / 1024 / 1024;
-                                            diskinfo.available = disk_size / 1024 / 1024;
-                                            m_mpTaskDisk[id][nindex] = diskinfo;
+                                            task_resource.disks_data[nindex] = disk_size / 1024 / 1024;
+                                        }
+                                    }
+                                } else if (fname.find("ubuntu") != std::string::npos) {
+                                    tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
+                                    if (ele_target != nullptr) {
+                                        std::string vdevice = ele_target->Attribute("dev");
+                                        virDomainBlockInfo blockinfo;
+                                        if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
+                                            int64_t disk_size = blockinfo.capacity;
+                                            task_resource.disk_system_size = disk_size / 1024 / 1024;
                                         }
                                     }
                                 }
@@ -144,6 +170,7 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                     }
                 }
 
+                m_mpTaskResource[id] = task_resource;
                 free(pContent);
             }
         } while(0);
@@ -158,105 +185,19 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
     }
 }
 
-const DeviceCpu & TaskResourceManager::GetTaskCpu(const std::string &task_id) const {
-    auto it = m_mpTaskCpu.find(task_id);
-    if (it == m_mpTaskCpu.end()) {
-        return g_default_cpu;
+const TaskResource & TaskResourceManager::GetTaskResource(const std::string &task_id) const {
+    auto it = m_mpTaskResource.find(task_id);
+    if (it == m_mpTaskResource.end()) {
+        return g_default_task_resource;
     } else {
         return it->second;
     }
 }
 
-const std::map<std::string, DeviceGpu> & TaskResourceManager::GetTaskGpu(const std::string &task_id) const {
-    auto it = m_mpTaskGpu.find(task_id);
-    if (it == m_mpTaskGpu.end()) {
-        return g_default_gpu;
-    } else {
-        return it->second;
-    }
+void TaskResourceManager::AddTaskResource(const std::string &task_id, const TaskResource &resource) {
+    m_mpTaskResource[task_id] = resource;
 }
 
-const DeviceMem & TaskResourceManager::GetTaskMem(const std::string &task_id) const {
-    auto it = m_mpTaskMem.find(task_id);
-    if (it == m_mpTaskMem.end()) {
-        return g_default_mem;
-    } else {
-        return it->second;
-    }
+void TaskResourceManager::Delete(const std::string &task_id) {
+    m_mpTaskResource.erase(task_id);
 }
-
-const std::map<int32_t, DeviceDisk> & TaskResourceManager::GetTaskDisk(const std::string &task_id) const {
-    auto it = m_mpTaskDisk.find(task_id);
-    if (it == m_mpTaskDisk.end()) {
-        return g_default_disk;
-    } else {
-        return it->second;
-    }
-}
-
-void TaskResourceManager::AddTaskCpu(const std::string &task_id, const DeviceCpu &cpu) {
-    m_mpTaskCpu[task_id] = cpu;
-}
-
-void TaskResourceManager::AddTaskMem(const std::string &task_id, const DeviceMem &mem) {
-    m_mpTaskMem[task_id] = mem;
-}
-
-void TaskResourceManager::AddTaskGpu(const std::string &task_id, const std::map<std::string, DeviceGpu> &gpus) {
-    m_mpTaskGpu[task_id] = gpus;
-}
-
-void TaskResourceManager::AddTaskDisk(const std::string &task_id, const std::map<int32_t, DeviceDisk> &disks) {
-    m_mpTaskDisk[task_id] = disks;
-}
-
-void TaskResourceManager::Clear(const std::string &task_id) {
-    m_mpTaskCpu.erase(task_id);
-    m_mpTaskMem.erase(task_id);
-    m_mpTaskGpu.erase(task_id);
-    m_mpTaskDisk.erase(task_id);
-}
-
-std::string TaskResourceManager::disk_type(const std::string& path) {
-    std::string cmd1 = "df -l -m " + path + " | tail -1 | awk '{print $1}' | awk -F\"/\" '{print $3}'";
-    std::string disk = run_shell(cmd1.c_str());
-    disk = util::rtrim(disk, '\n');
-    std::string cmd2 = "lsblk -o name,rota | grep " + disk + " | awk '{if($2==\"1\")print \"HDD\"; else print \"SSD\"}'";
-    std::string disk_type = run_shell(cmd2.c_str());
-    disk_type = util::rtrim(disk_type, '\n');
-    return disk_type;
-}
-
-void TaskResourceManager::print_cpu(const std::string& task_id) {
-    const DeviceCpu& cpuinfo = m_mpTaskCpu[task_id];
-    std::cout << "cpu: " << std::endl
-              << "sockets: " << cpuinfo.sockets << ", cores_per_socket: " << cpuinfo.cores_per_socket
-              << ", threads_per_core: " << cpuinfo.threads_per_core << std::endl;
-}
-
-void TaskResourceManager::print_mem(const std::string& task_id) {
-    const DeviceMem& meminfo = m_mpTaskMem[task_id];
-    std::cout << "memory: " << std::endl
-              << "total: " << (meminfo.total / 1024) << "MB"
-              << ", available: " << (meminfo.available / 1024) << "MB" << std::endl;
-}
-
-void TaskResourceManager::print_gpu(const std::string& task_id) {
-    const std::map<std::string, DeviceGpu>& mp = m_mpTaskGpu[task_id];
-    std::cout << "gpu:" << std::endl;
-    for (auto &it : mp) {
-        std::cout << it.first << std::endl;
-        for (auto &device : it.second.devices) {
-            std::cout << "  " << device << std::endl;
-        }
-    }
-}
-
-void TaskResourceManager::print_disk(const std::string &task_id) {
-    const std::map<int32_t, DeviceDisk>& mp = m_mpTaskDisk[task_id];
-    std::cout << "disk:" << std::endl;
-    for (auto &it : mp) {
-        std::cout << it.first << ", " << (it.second.type == DiskType::DT_SSD ? "SSD" : "HDD") << ", " << it.second.total << "MB" << std::endl;
-    }
-}
-

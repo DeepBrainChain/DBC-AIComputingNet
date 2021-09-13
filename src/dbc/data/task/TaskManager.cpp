@@ -10,7 +10,6 @@
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
 #include "log/log.h"
-#include "data/resource/SystemResourceManager.h"
 #include "../resource/system_info.h"
 
 std::vector<std::string> split(const std::string &str, const std::string &delim) {
@@ -62,7 +61,7 @@ FResult TaskManager::Init() {
     for (auto& it : m_tasks) {
         taskids.push_back(it.first);
     }
-    m_task_resource.init(taskids);
+    m_task_resource_mgr.init(taskids);
     return {E_SUCCESS, ""};
 }
 
@@ -148,8 +147,8 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
     // check资源够不够
     int32_t cpu_count = atoi(s_cpu_cores.c_str());
     //cpu数量必须是(sockets * threads)的整数倍
-    int32_t sockets = SystemResourceMgr::instance().GetCpu().sockets;
-    int32_t threads = SystemResourceMgr::instance().GetCpu().threads_per_core;
+    int32_t sockets = SystemInfo::instance().get_cpuinfo().physical_cores;
+    int32_t threads = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
     int32_t left = cpu_count % (sockets * threads);
     if (left != 0)
         cpu_count += (sockets * threads) - left;
@@ -200,31 +199,32 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
 }
 
 bool TaskManager::check_cpu(int32_t cpu_count) {
-    int32_t sockets = SystemResourceMgr::instance().GetCpu().sockets;
-    int32_t cores_per_socket = SystemResourceMgr::instance().GetCpu().cores_per_socket;
-    int32_t threads_per_core = SystemResourceMgr::instance().GetCpu().threads_per_core;
+    int32_t sockets = SystemInfo::instance().get_cpuinfo().physical_cores;
+    int32_t cores_per_socket = SystemInfo::instance().get_cpuinfo().physical_cores_per_cpu;
+    int32_t threads_per_core = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
 
     int32_t cur_cores = 0;
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
-            const DeviceCpu& cpuinfo = m_task_resource.GetTaskCpu(it.first);
-            cur_cores += cpuinfo.cores_per_socket;
+            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(it.first);
+            cur_cores += task_resource.physical_cores_per_cpu;
         }
     }
 
     int32_t can_use = cores_per_socket - cur_cores;
     int32_t need_count = cpu_count / (sockets * threads_per_core);
+    if (need_count <= 0) need_count = 1;
     return can_use >= need_count;
 }
 
 bool TaskManager::check_gpu(int32_t gpu_count) {
-    const std::map<std::string, DeviceGpu>& gpulist = SystemResourceMgr::instance().GetGpu();
+    const std::map<std::string, gpu_info>& gpulist = SystemInfo::instance().get_gpuinfo();
 
     int32_t cur_gpus = 0;
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
-            const std::map<std::string, DeviceGpu>& gpuinfo = m_task_resource.GetTaskGpu(it.first);
-            cur_gpus += gpuinfo.size();
+            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(it.first);
+            cur_gpus += task_resource.gpus.size();
         }
     }
 
@@ -232,46 +232,43 @@ bool TaskManager::check_gpu(int32_t gpu_count) {
 }
 
 bool TaskManager::check_mem(float mem_rate) {
-    int64_t mem_total = SystemResourceMgr::instance().GetMem().total;
+    int64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; //KB
 
-    int64_t cur_mem = 0;
+    uint64_t cur_mem = 0;
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
-            const DeviceMem& meminfo = m_task_resource.GetTaskMem(it.first);
-            cur_mem += meminfo.total;
+            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(it.first);
+            cur_mem += task_resource.mem_size;
         }
     }
 
-    // 系统内存预留 g_reserved_memory（GB）
-    int64_t need_size = mem_total * mem_rate - g_reserved_memory * 1024 * 1024;
+    int64_t need_size = mem_total * mem_rate;
     return (mem_total - cur_mem) >= need_size;
 }
 
 void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count) {
-    DeviceCpu task_cpu;
-    int32_t threads_count = SystemResourceMgr::instance().GetCpu().threads_per_core;
-    int32_t sockets_count = SystemResourceMgr::instance().GetCpu().sockets;
-    int32_t cores_per_socket = SystemResourceMgr::instance().GetCpu().cores_per_socket;
-    task_cpu.sockets = sockets_count;
-    task_cpu.threads_per_core = threads_count;
-    task_cpu.cores_per_socket = cpu_count / (sockets_count * threads_count);
-    m_task_resource.AddTaskCpu(task_id, task_cpu);
-    LOG_INFO << "socket: " << task_cpu.sockets << ", cores: " << task_cpu.cores_per_socket
-             << ", threads: " << task_cpu.threads_per_core;
+    TaskResource task_resource;
+    int32_t threads_count = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
+    int32_t sockets_count = SystemInfo::instance().get_cpuinfo().physical_cores;
+    int32_t cores_per_socket = SystemInfo::instance().get_cpuinfo().physical_cores_per_cpu;
+    task_resource.physical_cpu = sockets_count;
+    task_resource.threads_per_cpu = threads_count;
+    task_resource.physical_cores_per_cpu = cpu_count / (sockets_count * threads_count);
+    if (task_resource.physical_cores_per_cpu <= 0) task_resource.physical_cores_per_cpu = 1;
+    LOG_INFO << "socket: " << task_resource.physical_cpu
+             << ", cores: " << task_resource.physical_cores_per_cpu
+             << ", threads: " << task_resource.threads_per_cpu;
 
-    DeviceMem task_mem;
-    int64_t mem_total = SystemResourceMgr::instance().GetMem().total - g_reserved_memory * 1024L * 1024L; // KB
-    task_mem.total = (mem_total * mem_rate > 1000000000) ? 1000000000 : (mem_total * mem_rate);
-    task_mem.available = task_mem.available;
-    m_task_resource.AddTaskMem(task_id, task_mem);
-    LOG_INFO << "memory: " << size_to_string(task_mem.total, 1024L);
+    int64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; // KB
+    task_resource.mem_size = (mem_total * mem_rate > 1000000000) ? 1000000000 : (mem_total * mem_rate);
+    LOG_INFO << "memory: " << size_to_string(task_resource.mem_size, 1024L);
 
-    std::map<std::string, DeviceGpu> task_gpus;
-    std::map<std::string, DeviceGpu> can_use_gpu = SystemResourceMgr::instance().GetGpu();
+    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().get_gpuinfo();
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
-            const std::map<std::string, DeviceGpu>& gpuinfo = m_task_resource.GetTaskGpu(it.first);
-            for (auto& it1 : gpuinfo) {
+            const TaskResource& resource = m_task_resource_mgr.GetTaskResource(it.first);
+            const std::map<std::string, std::list<std::string>>& gpus = resource.gpus;
+            for (auto& it1 : gpus) {
                 can_use_gpu.erase(it1.first);
             }
         }
@@ -279,26 +276,25 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
 
     int cur_count = 0;
     for (auto& it : can_use_gpu) {
-        task_gpus[it.first] = it.second;
-        cur_count++;
+        task_resource.gpus[it.first] = it.second.devices;
 
+        cur_count++;
         if (cur_count == gpu_count) break;
     }
-    m_task_resource.AddTaskGpu(task_id, task_gpus);
+
     std::string str_gpu;
+    const std::map<std::string, std::list<std::string>>& task_gpus = task_resource.gpus;
     for (auto& it : task_gpus)
         str_gpu += it.first + " | ";
     LOG_INFO << "gpus: " << str_gpu;
 
-    DeviceDisk task_disk_1;
-    int64_t disk_total_size = SystemResourceMgr::instance().GetDisk().total; // MB
-    task_disk_1.total = (disk_total_size - g_image_size * 1024) * 0.75;
-    task_disk_1.available = task_disk_1.total;
-    task_disk_1.type = SystemResourceMgr::instance().GetDisk().type;
-    std::map<int32_t, DeviceDisk> task_disks;
-    task_disks[1] = task_disk_1;
-    m_task_resource.AddTaskDisk(task_id, task_disks);
-    LOG_INFO << "disk_1: " << size_to_string(task_disk_1.total, 1024L * 1024L);
+    task_resource.disk_system_size = g_disk_system_size * 1024; // MB
+    int64_t disk_total_size = SystemInfo::instance().get_diskinfo().disk_total / 1024; // MB
+    task_resource.disks_data[1] = (disk_total_size - g_disk_system_size * 1024) * 0.75;
+    LOG_INFO << "disk_system_size:" << size_to_string(task_resource.disk_system_size, 1024L * 1024L)
+             << ", disk_data_1: " << size_to_string(task_resource.disks_data[1], 1024L * 1024L);
+
+    m_task_resource_mgr.AddTaskResource(task_id, task_resource);
 }
 
 FResult TaskManager::StartTask(const std::string &task_id) {
@@ -482,7 +478,7 @@ void TaskManager::delete_task_data(const std::string &task_id) {
 
     m_task_db.delete_task(task_id);
     m_tasks.erase(task_id);
-    m_task_resource.Clear(task_id);
+    m_task_resource_mgr.Delete(task_id);
 }
 
 void TaskManager::delete_image_file(const std::string &task_id) {
@@ -503,8 +499,10 @@ void TaskManager::delete_image_file(const std::string &task_id) {
 }
 
 void TaskManager::delete_disk_file(const std::string &task_id) {
-    const std::map<int32_t, DeviceDisk>& disklist = m_task_resource.GetTaskDisk(task_id);
-    for (auto& it : disklist) {
+    const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(task_id);
+    const std::map<int32_t, uint64_t>& disks_data = task_resource.disks_data;
+
+    for (auto& it : disks_data) {
         std::string disk_file = "/data/data_" + std::to_string(it.first) + "_" + task_id + ".qcow2";
         LOG_INFO << "remove disk file: " << disk_file;
         remove(disk_file.c_str());
@@ -760,13 +758,9 @@ void TaskManager::ProcessTask() {
         auto taskinfo = m_process_tasks.front();
         m_process_tasks.pop_front();
         if (taskinfo->operation == T_OP_Create) {
-            const DeviceCpu& task_res_cpu = m_task_resource.GetTaskCpu(taskinfo->task_id);
-            const DeviceMem& task_res_mem = m_task_resource.GetTaskMem(taskinfo->task_id);
-            const std::map<std::string, DeviceGpu>& task_res_gpu = m_task_resource.GetTaskGpu(taskinfo->task_id);
+            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(taskinfo->task_id);
 
-            if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name,
-                                                      task_res_cpu.sockets, task_res_cpu.cores_per_socket, task_res_cpu.threads_per_core,
-                                                      task_res_gpu, task_res_mem.total)) {
+            if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, task_resource)) {
                 bool succ = transform_port(taskinfo->task_id, taskinfo->ssh_port);
                 if (!succ) {
                     m_vm_client.DestoryDomain(taskinfo->task_id);

@@ -61,7 +61,7 @@ enum ETaskLogDirection {
 std::string task_status_string(int32_t status);
 
 // 系统盘大小（GB）
-static const int32_t g_image_size = 350;
+static const int32_t g_disk_system_size = 350;
 // 内存预留大小（GB）
 static const int32_t g_reserved_memory = 32;
 // 虚拟机登录用户名

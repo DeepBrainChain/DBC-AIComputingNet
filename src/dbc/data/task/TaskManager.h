@@ -54,7 +54,7 @@ public:
     ETaskStatus GetTaskStatus(const std::string &task_id);
 
     const TaskResourceManager& GetTaskResourceManager() {
-        return m_task_resource;
+        return m_task_resource_mgr;
     }
 
     void ProcessTask();
@@ -91,7 +91,7 @@ protected:
     std::map<std::string, std::shared_ptr<dbc::TaskIpTable> > m_task_iptables;
 
     VmClient m_vm_client;
-    TaskResourceManager m_task_resource;
+    TaskResourceManager m_task_resource_mgr;
 };
 
 typedef TaskManager TaskMgr;

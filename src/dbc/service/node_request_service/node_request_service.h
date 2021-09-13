@@ -95,6 +95,8 @@ protected:
 private:
     bool check_req_header(const std::shared_ptr<dbc::network::message> &msg);
 
+    bool check_req_header_nonce(const std::string& nonce);
+
     bool check_nonce(const std::string& nonce);
 
     bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);

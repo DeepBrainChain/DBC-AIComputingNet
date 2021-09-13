@@ -11,6 +11,7 @@
 #include <thread>
 #include <atomic>
 #include <cstring>
+#include <list>
 #include "util/singleton.h"
 #include <boost/program_options.hpp>
 
@@ -40,6 +41,15 @@ struct cpu_info {
     int32_t logical_cores_per_cpu = 0;
     int32_t threads_per_cpu = 0;
     int32_t total_cores = 0;
+};
+
+struct gpu_info {
+    std::string id;
+    std::list<std::string> devices;
+
+    static std::string parse_bus(const std::string& id);
+    static std::string parse_slot(const std::string& id);
+    static std::string parse_function(const std::string& id);
 };
 
 enum DISK_TYPE {
@@ -94,6 +104,10 @@ public:
         return m_cpuinfo;
     }
 
+    const std::map<std::string, gpu_info>& get_gpuinfo() {
+        return m_gpuinfo;
+    }
+
     const disk_info& get_diskinfo() const {
         return m_diskinfo;
     }
@@ -107,6 +121,8 @@ protected:
 
     void get_cpu_info(cpu_info& info);
 
+    void init_gpu();
+
     void get_disk_info(const std::string& path, disk_info& info);
 
     void update_cpu_usage();
@@ -118,6 +134,7 @@ private:
     std::string m_os_name = "N/A";
     mem_info m_meminfo;
     cpu_info m_cpuinfo;
+    std::map<std::string, gpu_info> m_gpuinfo; // <id, gpu>
     disk_info m_diskinfo;
 
     float m_cpu_usage = 0.0f;

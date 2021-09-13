@@ -5,7 +5,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include "tinyxml2.h"
 #include <uuid/uuid.h>
-#include "data/resource/SystemResourceManager.h"
+#include "data/resource/system_info.h"
 
 static std::vector<std::string> SplitStr(const std::string &s, const char &c) {
     std::string buff;
@@ -316,23 +316,23 @@ VmClient::~VmClient() {
 }
 
 int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name,
-                               int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
-                               const std::map<std::string, DeviceGpu>& mpGpu, int64_t mem) {
+                               const TaskResource& task_resource) {
     // gpu
+    std::map<std::string, std::list<std::string>> mpGpu = task_resource.gpus;
     std::string vga_pci;
     for (auto& it : mpGpu) {
-        for (auto& it2 : it.second.devices) {
+        for (auto& it2 : it.second) {
             vga_pci += it2 + "|";
         }
     }
     LOG_INFO << "vga_pci: " << vga_pci;
 
     // cpu
-    long cpuNumTotal = sockets * cores_per_socket * threads_per_core;
+    long cpuNumTotal = task_resource.total_cores();
     LOG_INFO << "cpu: " << cpuNumTotal;
 
     // mem
-    uint64_t memoryTotal = mem > 1000000000 ? 1000000000 : mem; // KB
+    uint64_t memoryTotal = task_resource.mem_size; // KB
     LOG_INFO << "mem: " << memoryTotal << "KB";
 
     // uuid
@@ -357,8 +357,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
 
     // 创建虚拟磁盘（数据盘）
     std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
-    int64_t disk_total_size = SystemResourceMgr::instance().GetDisk().total / 1024; // GB
-    disk_total_size = (disk_total_size - 350) * 0.75;
+    uint64_t disk_total_size = task_resource.disks_data.begin()->second / 1024L; // GB
     LOG_INFO << "data_file: " << data_file;
     std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
     LOG_INFO << "create qcow2 image(data): " << cmd_create_img;
@@ -366,7 +365,8 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     LOG_INFO << "create qcow2 image(data) result: " << create_ret;
 
     std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
-                                           cpuNumTotal, sockets, cores_per_socket, threads_per_core,
+                                           cpuNumTotal, task_resource.physical_cpu,
+                                           task_resource.physical_cores_per_cpu, task_resource.threads_per_cpu,
                                            vga_pci, to_image_path, data_file);
 
     virConnectPtr connPtr = nullptr;

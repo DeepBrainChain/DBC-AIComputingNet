@@ -11,7 +11,6 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include "../message/message_id.h"
-#include "data/resource/SystemResourceManager.h"
 #include "service_module/service_name.h"
 #include "util/base64.h"
 #include "tweetnacl/tools.h"
@@ -217,6 +216,28 @@ bool node_request_service::check_nonce(const std::string& nonce) {
     return true;
 }
 
+bool node_request_service::check_req_header_nonce(const std::string& nonce) {
+    if (nonce.empty()) {
+        LOG_ERROR << "header.nonce is empty";
+        return false;
+    }
+
+    if (!util::check_id(nonce)) {
+        LOG_ERROR << "header.nonce check_id failed";
+        return false;
+    }
+
+    if (m_nonceCache.contains(nonce)) {
+        LOG_ERROR << "header.nonce is already used";
+        return false;
+    }
+    else {
+        m_nonceCache.insert(nonce, 1);
+    }
+
+    return true;
+}
+
 bool node_request_service::check_req_header(const std::shared_ptr<dbc::network::message> &msg) {
     if (!msg) {
         LOG_ERROR << "msg is nullptr";
@@ -227,24 +248,6 @@ bool node_request_service::check_req_header(const std::shared_ptr<dbc::network::
     if (!base) {
         LOG_ERROR << "msg.content is nullptr";
         return false;
-    }
-
-    if (base->header.nonce.empty()) {
-        LOG_ERROR << "header.nonce is empty";
-        return false;
-    }
-
-    if (!util::check_id(base->header.nonce)) {
-        LOG_ERROR << "header.nonce check_id failed";
-        return false;
-    }
-
-    if (m_nonceCache.contains(base->header.nonce)) {
-        LOG_ERROR << "header.nonce is already used";
-        return false;
-    }
-    else {
-        m_nonceCache.insert(base->header.nonce, 1);
     }
 
     if (base->header.session_id.empty()) {
@@ -531,6 +534,11 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         return;
     }
 
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
+        return;
+    }
+
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -602,7 +610,11 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
     ss << "}";
     disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();
-    ss << ",\"disk\":" << "{";
+    ss << ",\"disk_system\":" << "{";
+    ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
+    ss << ",\"size\":" << "\"" << g_disk_system_size << "G\"";
+    ss << "}";
+    ss << ",\"disk_data\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
     ss << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
     ss << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
@@ -659,6 +671,11 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
     if (!check_req_header(msg)) {
         send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
         LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
@@ -787,7 +804,7 @@ void node_request_service::do_list_task(bool can_do, int result, const std::stri
                 ss_tasks << ", \"cpu_cores\":" << cpu_cores;
                 ss_tasks << ", \"gpu_count\":" << gpu_count;
                 ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
-                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_disk_system_size, 1024L * 1024L * 1024L) << "\"";
                 ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
                 */
 
@@ -810,30 +827,22 @@ void node_request_service::do_list_task(bool can_do, int result, const std::stri
             if (nullptr != task) {
                 ss_tasks << "{";
                 ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
-                ss_tasks << ", \"ssh_ip\":" << "\"" << get_public_ip() << "\"";
+                ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
                 ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
                 ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
                 ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
 
                 const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
-                const std::map<int32_t, DeviceDisk>& task_disk_list = res_mgr.GetTaskDisk(m_request_task_id);
-                int64_t disk_data = 0;
-                if (!task_disk_list.empty()) {
-                    auto it_disk = task_disk_list.find(1);
-                    if (it_disk != task_disk_list.end())
-                        disk_data = it_disk->second.total;
-                }
-                const DeviceCpu& task_cpu = res_mgr.GetTaskCpu(m_request_task_id);
-                int32_t cpu_cores = task_cpu.sockets * task_cpu.cores_per_socket * task_cpu.threads_per_core;
-                const std::map<std::string, DeviceGpu>& task_gpu_list = res_mgr.GetTaskGpu(m_request_task_id);
-                uint32_t gpu_count = task_gpu_list.size();
-                const DeviceMem& task_mem = res_mgr.GetTaskMem(m_request_task_id);
-                int64_t mem_size = task_mem.total;
+                const TaskResource& task_resource = res_mgr.GetTaskResource(m_request_task_id);
+                uint64_t disk_data = task_resource.disks_data.begin()->second;
+                int32_t cpu_cores = task_resource.total_cores();
+                uint32_t gpu_count = task_resource.gpus.size();
+                int64_t mem_size = task_resource.mem_size;
 
                 ss_tasks << ", \"cpu_cores\":" << cpu_cores;
                 ss_tasks << ", \"gpu_count\":" << gpu_count;
                 ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
-                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_image_size, 1024L * 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_disk_system_size, 1024L * 1024L * 1024L) << "\"";
                 ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
 
                 struct tm _tm{};
@@ -902,6 +911,11 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
     if (!check_req_header(msg)) {
         send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
         LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
@@ -1043,6 +1057,7 @@ void node_request_service::do_create_task(bool can_do, int result, const std::st
         memset(buf, 0, sizeof(char) * 256);
         strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
         ss << ", \"create_time\":" << "\"" << buf << "\"";
+        ss << ", \"status\":" << "\"" << "creating" << "\"";
         ss << "}";
         ss << "}";
     } else {
@@ -1086,6 +1101,11 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
     if (!check_req_header(msg)) {
         send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
         LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
@@ -1209,6 +1229,11 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         return;
     }
 
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
+        return;
+    }
+
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -1326,6 +1351,11 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
     if (!check_req_header(msg)) {
         send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
         LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
@@ -1449,6 +1479,11 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         return;
     }
 
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
+        return;
+    }
+
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -1569,6 +1604,11 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         return;
     }
 
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
+        return;
+    }
+
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
     std::string priv_key = conf_manager::instance().get_priv_key();
@@ -1686,6 +1726,11 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
     if (!check_req_header(msg)) {
         send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
         LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
@@ -1855,6 +1900,11 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
     if (!check_req_header(msg)) {
         send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT, "request header check failed");
         LOG_ERROR << "request header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
@@ -2049,6 +2099,11 @@ void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<db
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "req header check failed";
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        LOG_ERROR << "request header.nonce check failed";
         return;
     }
 
