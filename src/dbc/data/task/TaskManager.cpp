@@ -155,6 +155,10 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
     int32_t gpu_count = atoi(s_gpu_count.c_str());
     float mem_rate = atof(s_mem_rate.c_str());
 
+    //超过最大值时，默认设为最大值
+    if (cpu_count > SystemInfo::instance().get_cpuinfo().total_cores)
+        cpu_count = SystemInfo::instance().get_cpuinfo().total_cores;
+
     if (!check_cpu(cpu_count)) {
         LOG_ERROR << "check gpu failed";
         return {E_DEFAULT, "cpu not enough"};

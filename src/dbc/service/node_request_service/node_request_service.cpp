@@ -600,6 +600,7 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
     ss << ",\"cpu\":" << "{";
     ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
+    ss << ",\"hz\":" << "\"" << tmp_cpuinfo.mhz << "\"";
     ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
     ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
     ss << "}";
@@ -616,8 +617,8 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "}";
     ss << ",\"disk_data\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
-    ss << ",\"size\":" << "\"" << scale_size(tmp_diskinfo.disk_total) << "\"";
-    ss << ",\"free\":" << "\"" << scale_size(tmp_diskinfo.disk_awalible) << "\"";
+    ss << ",\"size\":" << "\"" << (tmp_diskinfo.disk_total/1024L/1024L) << "G\"";
+    ss << ",\"free\":" << "\"" << (tmp_diskinfo.disk_awalible/1024L/1024L) << "G\"";
     ss << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
     ss << "}";
     int32_t count = m_task_scheduler.GetRunningTaskSize();
@@ -842,8 +843,8 @@ void node_request_service::do_list_task(bool can_do, int result, const std::stri
                 ss_tasks << ", \"cpu_cores\":" << cpu_cores;
                 ss_tasks << ", \"gpu_count\":" << gpu_count;
                 ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
-                ss_tasks << ", \"disk_system\":" << "\"" << size_to_string(g_disk_system_size, 1024L * 1024L * 1024L) << "\"";
-                ss_tasks << ", \"disk_data\":" << "\"" << size_to_string(disk_data, 1024L * 1024L) << "\"";
+                ss_tasks << ", \"disk_system\":" << "\"" << g_disk_system_size << "G\"";
+                ss_tasks << ", \"disk_data\":" << "\"" << (disk_data / 1024L) << "G\"";
 
                 struct tm _tm{};
                 time_t tt = task->create_time;
@@ -1045,21 +1046,28 @@ void node_request_service::do_create_task(bool can_do, int result, const std::st
         ret = std::get<0>(fresult);
         ret_msg = std::get<1>(fresult);
 
-        ss << "{";
-        ss << "\"result_code\":" << ret;
-        ss << ", \"result_message\":" << "{";
-        ss << "\"task_id\":" << "\"" << task_id << "\"";
-        auto taskinfo = m_task_scheduler.FindTask(task_id);
-        struct tm _tm{};
-        time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
-        localtime_r(&tt, &_tm);
-        char buf[256] = {0};
-        memset(buf, 0, sizeof(char) * 256);
-        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-        ss << ", \"create_time\":" << "\"" << buf << "\"";
-        ss << ", \"status\":" << "\"" << "creating" << "\"";
-        ss << "}";
-        ss << "}";
+        if (ret != E_SUCCESS) {
+            ss << "{";
+            ss << "\"result_code\":" << ret;
+            ss << ", \"result_message\":" << "\"" << ret_msg << "\"";
+            ss << "}";
+        } else {
+            ss << "{";
+            ss << "\"result_code\":" << ret;
+            ss << ", \"result_message\":" << "{";
+            ss << "\"task_id\":" << "\"" << task_id << "\"";
+            auto taskinfo = m_task_scheduler.FindTask(task_id);
+            struct tm _tm{};
+            time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            ss << ", \"create_time\":" << "\"" << buf << "\"";
+            ss << ", \"status\":" << "\"" << "creating" << "\"";
+            ss << "}";
+            ss << "}";
+        }
     } else {
         ss << "{";
         ss << "\"result_code\":" << ret;

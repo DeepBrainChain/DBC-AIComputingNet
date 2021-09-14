@@ -226,6 +226,17 @@ void SystemInfo::get_cpu_info(cpu_info& info) {
         if (strcmp(line, "model name") == 0) {
             if (p3) {
                 info.cpu_name = std::string(p3 + 1);
+
+                auto pos1 = info.cpu_name.find("Hz");
+                auto pos2 = info.cpu_name.rfind(' ', pos1);
+                std::string mhz = info.cpu_name.substr(pos2 + 1, pos1 - pos2 - 1);
+                char ch = mhz[mhz.size() - 1];
+                if (ch == 'G') {
+                    mhz = std::to_string(int32_t(atof(mhz.substr(0, mhz.size() - 1).c_str()) * 1000)) + "MHz";
+                } else if (ch == 'M') {
+                    mhz = std::to_string(atof(mhz.substr(0, mhz.size() - 1).c_str()) * 1) + "MHz";
+                }
+                info.mhz = mhz;
             }
         } else if (strcmp(line, "physical id") == 0) {
             if (p3) {
@@ -244,10 +255,13 @@ void SystemInfo::get_cpu_info(cpu_info& info) {
     fclose(fp);
 
     info.physical_cores = cpus.size();
-    info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu - 1;
+    info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu;
+    info.physical_cores_per_cpu -= 1;
+    info.logical_cores_per_cpu -= 1 * info.threads_per_cpu;
     info.total_cores = cpus.size() * info.logical_cores_per_cpu;
 }
 
+// gpu info
 void SystemInfo::init_gpu() {
     std::string cmd = "lspci -nnv |grep NVIDIA |awk '{print $2\",\"$1}' |tr \"\n\" \"|\"";
     std::string str = run_shell(cmd.c_str());

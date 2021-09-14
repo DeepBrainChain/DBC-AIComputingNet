@@ -36,6 +36,7 @@ struct mem_info {
 
 struct cpu_info {
     std::string cpu_name;
+    std::string mhz;
     int32_t physical_cores = 0;
     int32_t physical_cores_per_cpu = 0;
     int32_t logical_cores_per_cpu = 0;
