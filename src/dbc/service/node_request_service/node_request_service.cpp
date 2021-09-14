@@ -607,7 +607,7 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     mem_info tmp_meminfo = SystemInfo::instance().get_meminfo();
     ss << ",\"mem\":" <<  "{";
     ss << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
-    ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_total - tmp_meminfo.mem_used) << "\"";
+    ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_free) << "\"";
     ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
     ss << "}";
     disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();

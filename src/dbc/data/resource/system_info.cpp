@@ -197,7 +197,7 @@ void SystemInfo::get_mem_info(mem_info &info) {
 
     info.mem_swap_total = kb_swap_total;
     info.mem_swap_free = kb_swap_free;
-    info.mem_usage = info.mem_used * 1.0 / info.mem_total;
+    info.mem_usage = (info.mem_total - info.mem_free) * 1.0 / info.mem_total;
 }
 
 // cpu info

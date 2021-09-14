@@ -116,32 +116,29 @@ static std::string read_info(const char* file, const char* modes = "r") {
 // B => TB GB KB
 std::string size_to_string(int64_t n, int64_t scale = 1);
 
-inline double power(unsigned int base, unsigned int expo)
+inline uint64_t power(unsigned int base, unsigned int expo)
 {
     return (expo == 0) ? 1 : base * power(base, expo - 1);
 }
 
 // size: KB
-static const char *scale_size(unsigned long size)
+static const char *scale_size(uint64_t size)
 {
     static char up[] = { 'B', 'K', 'M', 'G', 'T', 'P', 0 };
     static char buf[BUFSIZ];
     int i;
-    float base;
-    long long bytes;
+    uint32_t base = 1024;
+    uint64_t bytes = size * 1024LU;
 
-    base = 1024.0;
-    bytes = size * 1024LL;
-
-    if (4 >= snprintf(buf, sizeof(buf), "%lld%c", bytes, up[0]))
+    if (4 >= snprintf(buf, sizeof(buf), "%lu%c", bytes, up[0]))
         return buf;
 
     for (i = 1; up[i] != 0; i++) {
         if (4 >= snprintf(buf, sizeof(buf), "%.1f%c",
-                          (float)(bytes / power(base, i)), up[i]))
+                          (float)(bytes * 1.0 / power(base, i)), up[i]))
             return buf;
-        if (4 >= snprintf(buf, sizeof(buf), "%ld%c",
-                          (long)(bytes / power(base, i)), up[i]))
+        if (4 >= snprintf(buf, sizeof(buf), "%lu%c",
+                          (uint64_t)(bytes * 1.0 / power(base, i)), up[i]))
             return buf;
     }
 
