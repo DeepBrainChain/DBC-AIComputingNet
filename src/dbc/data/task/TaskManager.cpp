@@ -104,7 +104,7 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
             return {E_DEFAULT, "image_name is empty or image_name is invalid"};
         }
 
-        std::regex reg("^[\\d]+[.]?[\\d+]?$");
+        std::regex reg("^[\\d]*[.]?[\\d]*$");
         if (!std::regex_match(ssh_port, reg) || atoi(ssh_port.c_str()) <= 0) {
             return {E_DEFAULT, "ssh_port is invalid"};
         }
@@ -155,7 +155,6 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
     int32_t gpu_count = atoi(s_gpu_count.c_str());
     float mem_rate = atof(s_mem_rate.c_str());
 
-    //超过最大值时，默认设为最大值
     if (cpu_count > SystemInfo::instance().get_cpuinfo().total_cores)
         cpu_count = SystemInfo::instance().get_cpuinfo().total_cores;
 
@@ -164,11 +163,15 @@ FResult TaskManager::CreateTask(const std::string &task_id, const std::string &l
         return {E_DEFAULT, "cpu not enough"};
     }
 
+    if (gpu_count > SystemInfo::instance().get_gpuinfo().size())
+        gpu_count = SystemInfo::instance().get_gpuinfo().size();
     if (!check_gpu(gpu_count)) {
         LOG_ERROR << "check cpu failed";
         return {E_DEFAULT, "gpu not enough"};
     }
 
+    if (mem_rate > 1.0f)
+        mem_rate = 1.0f;
     if (!check_mem(mem_rate)) {
         LOG_ERROR << "check mem failed";
         return {E_DEFAULT, "mem not enough"};
@@ -236,7 +239,7 @@ bool TaskManager::check_gpu(int32_t gpu_count) {
 }
 
 bool TaskManager::check_mem(float mem_rate) {
-    int64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; //KB
+    uint64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; //KB
 
     uint64_t cur_mem = 0;
     for (auto& it : m_tasks) {
@@ -246,7 +249,7 @@ bool TaskManager::check_mem(float mem_rate) {
         }
     }
 
-    int64_t need_size = mem_total * mem_rate;
+    uint64_t need_size = mem_total * (double)mem_rate;
     return (mem_total - cur_mem) >= need_size;
 }
 
@@ -264,7 +267,7 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
              << ", threads: " << task_resource.threads_per_cpu;
 
     int64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; // KB
-    task_resource.mem_size = (mem_total * mem_rate > 1000000000) ? 1000000000 : (mem_total * mem_rate);
+    task_resource.mem_size = (mem_total * (double)mem_rate > 1000000000) ? 1000000000 : (mem_total * (double)mem_rate);
     LOG_INFO << "memory: " << size_to_string(task_resource.mem_size, 1024L);
 
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().get_gpuinfo();
@@ -292,9 +295,9 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
         str_gpu += it.first + " | ";
     LOG_INFO << "gpus: " << str_gpu;
 
-    task_resource.disk_system_size = g_disk_system_size * 1024; // MB
+    task_resource.disk_system_size = g_disk_system_size * 1024L; // MB
     int64_t disk_total_size = SystemInfo::instance().get_diskinfo().disk_total / 1024; // MB
-    task_resource.disks_data[1] = (disk_total_size - g_disk_system_size * 1024) * 0.75;
+    task_resource.disks_data[1] = (disk_total_size - g_disk_system_size * 1024L) * 0.75;
     LOG_INFO << "disk_system_size:" << size_to_string(task_resource.disk_system_size, 1024L * 1024L)
              << ", disk_data_1: " << size_to_string(task_resource.disks_data[1], 1024L * 1024L);
 

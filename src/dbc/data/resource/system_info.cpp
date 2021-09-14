@@ -197,7 +197,7 @@ void SystemInfo::get_mem_info(mem_info &info) {
 
     info.mem_swap_total = kb_swap_total;
     info.mem_swap_free = kb_swap_free;
-    info.mem_usage = info.mem_used * 1.0f / info.mem_total;
+    info.mem_usage = info.mem_used * 1.0 / info.mem_total;
 }
 
 // cpu info
@@ -296,7 +296,7 @@ void SystemInfo::get_disk_info(const std::string &path, disk_info &info) {
     info.disk_total = (diskInfo.f_blocks * block_size) >> 10; //磁盘总空间
     info.disk_awalible = (diskInfo.f_bavail * block_size) >> 10; //非超级用户可用空间
     info.disk_free = (diskInfo.f_bfree * block_size) >> 10; //磁盘所有剩余空间
-    info.disk_usage = (info.disk_total - info.disk_awalible) * 1.0f / info.disk_total;
+    info.disk_usage = (info.disk_total - info.disk_awalible) * 1.0 / info.disk_total;
 
     std::string cmd = "df -l " + std::string(dpath) + " | tail -1";
     std::string tmp = run_shell(cmd.c_str());
