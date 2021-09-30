@@ -136,4 +136,12 @@ namespace util {
 
         return str.empty() ? "0" : str;
     }
+
+    void replace(std::string& str, const std::string& old_str, const std::string& new_str) {
+        std::string::size_type pos = 0;
+        while ((pos = str.find(old_str, pos)) != std::string::npos) {
+            str.replace(pos, old_str.length(), new_str);
+            pos += new_str.length();
+        }
+    }
 }

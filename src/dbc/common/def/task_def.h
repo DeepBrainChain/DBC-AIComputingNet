@@ -67,6 +67,29 @@ static const int32_t g_reserved_memory = 32;
 // 虚拟机登录用户名
 static const char* g_vm_login_username = "dbc";
 
+
+enum MACHINE_STATUS {
+    MS_NONE,
+    MS_VERIFY, //验证阶段
+    MS_ONLINE, //验证完上线阶段
+    MS_RENNTED //租用中
+};
+
+enum USER_ROLE {
+    UR_NONE,
+    UR_VERIFIER,
+    UR_RENTER
+};
+
+struct AuthoriseResult {
+    bool success = false;
+    MACHINE_STATUS machine_status;
+    USER_ROLE user_role;
+
+    std::string rent_wallet;
+    int64_t rent_end = 0;
+};
+
 /*
 enum TASK_STATE {
     DBC_TASK_RUNNING,

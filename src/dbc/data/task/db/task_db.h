@@ -27,4 +27,25 @@ protected:
     std::unique_ptr<leveldb::DB> m_db;
 };
 
+class WalletTaskDB
+{
+public:
+    WalletTaskDB() = default;
+
+    virtual ~WalletTaskDB() = default;
+
+    bool init_db(boost::filesystem::path task_db_path, std::string db_name);
+
+    void load_data(std::map<std::string, std::shared_ptr<dbc::rent_task>>& datas);
+
+    bool delete_data(const std::string& wallet);
+
+    std::shared_ptr<dbc::rent_task> read_data(const std::string& wallet);
+
+    bool write_data(const std::shared_ptr<dbc::rent_task>& data);
+
+protected:
+    std::unique_ptr<leveldb::DB> m_db;
+};
+
 #endif

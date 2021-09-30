@@ -65,25 +65,25 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->cpu_cores);
-                        this->__isset.cpu_cores = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
-                        xfer += iprot->readDouble(this->mem_rate);
-                        this->__isset.mem_rate = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                            xfer += iprot->readI32(this->cpu_cores);
+                            this->__isset.cpu_cores = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
+                                xfer += iprot->readDouble(this->mem_rate);
+                                this->__isset.mem_rate = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            default:
+                                xfer += iprot->skip(ftype);
+                                break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -247,97 +247,97 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->image_name);
-                        this->__isset.image_name = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->login_password);
-                        this->__isset.login_password = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->ssh_port);
-                        this->__isset.ssh_port = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 5:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->status);
-                        this->__isset.status = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 6:
-                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                        xfer += iprot->readI32(this->operation);
-                        this->__isset.operation = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 7:
-                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                        xfer += iprot->readI64(this->create_time);
-                        this->__isset.create_time = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 8:
-                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                        xfer += iprot->readI64(this->last_start_time);
-                        this->__isset.last_start_time = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 9:
-                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                        xfer += iprot->readI64(this->last_stop_time);
-                        this->__isset.last_stop_time = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 10:
-                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-                        xfer += this->hardware_resource.read(iprot);
-                        this->__isset.hardware_resource = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 11:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->vm_xml);
-                        this->__isset.vm_xml = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 12:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->vm_xml_url);
-                        this->__isset.vm_xml_url = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->image_name);
+                            this->__isset.image_name = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->login_password);
+                                this->__isset.login_password = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->ssh_port);
+                                    this->__isset.ssh_port = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                case 5:
+                                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                                        xfer += iprot->readI32(this->status);
+                                        this->__isset.status = true;
+                                    } else {
+                                        xfer += iprot->skip(ftype);
+                                    }
+                                    break;
+                                    case 6:
+                                        if (ftype == ::apache::thrift::protocol::T_I32) {
+                                            xfer += iprot->readI32(this->operation);
+                                            this->__isset.operation = true;
+                                        } else {
+                                            xfer += iprot->skip(ftype);
+                                        }
+                                        break;
+                                        case 7:
+                                            if (ftype == ::apache::thrift::protocol::T_I64) {
+                                                xfer += iprot->readI64(this->create_time);
+                                                this->__isset.create_time = true;
+                                            } else {
+                                                xfer += iprot->skip(ftype);
+                                            }
+                                            break;
+                                            case 8:
+                                                if (ftype == ::apache::thrift::protocol::T_I64) {
+                                                    xfer += iprot->readI64(this->last_start_time);
+                                                    this->__isset.last_start_time = true;
+                                                } else {
+                                                    xfer += iprot->skip(ftype);
+                                                }
+                                                break;
+                                                case 9:
+                                                    if (ftype == ::apache::thrift::protocol::T_I64) {
+                                                        xfer += iprot->readI64(this->last_stop_time);
+                                                        this->__isset.last_stop_time = true;
+                                                    } else {
+                                                        xfer += iprot->skip(ftype);
+                                                    }
+                                                    break;
+                                                    case 10:
+                                                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                                                            xfer += this->hardware_resource.read(iprot);
+                                                            this->__isset.hardware_resource = true;
+                                                        } else {
+                                                            xfer += iprot->skip(ftype);
+                                                        }
+                                                        break;
+                                                        case 11:
+                                                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                                xfer += iprot->readString(this->vm_xml);
+                                                                this->__isset.vm_xml = true;
+                                                            } else {
+                                                                xfer += iprot->skip(ftype);
+                                                            }
+                                                            break;
+                                                            case 12:
+                                                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                                    xfer += iprot->readString(this->vm_xml_url);
+                                                                    this->__isset.vm_xml_url = true;
+                                                                } else {
+                                                                    xfer += iprot->skip(ftype);
+                                                                }
+                                                                break;
+                                                                default:
+                                                                    xfer += iprot->skip(ftype);
+                                                                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -480,6 +480,164 @@ namespace dbc {
         out << ", " << "hardware_resource=" << to_string(hardware_resource);
         out << ", " << "vm_xml="; (__isset.vm_xml ? (out << to_string(vm_xml)) : (out << "<null>"));
         out << ", " << "vm_xml_url="; (__isset.vm_xml_url ? (out << to_string(vm_xml_url)) : (out << "<null>"));
+        out << ")";
+    }
+
+
+    rent_task::~rent_task() throw() {
+    }
+
+
+    void rent_task::__set_rent_wallet(const std::string& val) {
+        this->rent_wallet = val;
+    }
+
+    void rent_task::__set_task_ids(const std::vector<std::string> & val) {
+        this->task_ids = val;
+    }
+
+    void rent_task::__set_rent_end(const int64_t val) {
+        this->rent_end = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const rent_task& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t rent_task::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_rent_wallet = false;
+        bool isset_task_ids = false;
+        bool isset_rent_end = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->rent_wallet);
+                        isset_rent_wallet = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_LIST) {
+                            {
+                                this->task_ids.clear();
+                                uint32_t _size4;
+                                ::apache::thrift::protocol::TType _etype7;
+                                xfer += iprot->readListBegin(_etype7, _size4);
+                                this->task_ids.resize(_size4);
+                                uint32_t _i8;
+                                for (_i8 = 0; _i8 < _size4; ++_i8)
+                                {
+                                    xfer += iprot->readString(this->task_ids[_i8]);
+                                }
+                                xfer += iprot->readListEnd();
+                            }
+                            isset_task_ids = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_I64) {
+                                xfer += iprot->readI64(this->rent_end);
+                                isset_rent_end = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            default:
+                                xfer += iprot->skip(ftype);
+                                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_rent_wallet)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_task_ids)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_rent_end)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t rent_task::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("rent_task");
+
+        xfer += oprot->writeFieldBegin("rent_wallet", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->rent_wallet);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("task_ids", ::apache::thrift::protocol::T_LIST, 2);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->task_ids.size()));
+            std::vector<std::string> ::const_iterator _iter9;
+            for (_iter9 = this->task_ids.begin(); _iter9 != this->task_ids.end(); ++_iter9)
+            {
+                xfer += oprot->writeString((*_iter9));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("rent_end", ::apache::thrift::protocol::T_I64, 3);
+        xfer += oprot->writeI64(this->rent_end);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(rent_task &a, rent_task &b) {
+        using ::std::swap;
+        swap(a.rent_wallet, b.rent_wallet);
+        swap(a.task_ids, b.task_ids);
+        swap(a.rent_end, b.rent_end);
+    }
+
+    rent_task::rent_task(const rent_task& other10) {
+        rent_wallet = other10.rent_wallet;
+        task_ids = other10.task_ids;
+        rent_end = other10.rent_end;
+    }
+    rent_task& rent_task::operator=(const rent_task& other11) {
+        rent_wallet = other11.rent_wallet;
+        task_ids = other11.task_ids;
+        rent_end = other11.rent_end;
+        return *this;
+    }
+    void rent_task::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "rent_task(";
+        out << "rent_wallet=" << to_string(rent_wallet);
+        out << ", " << "task_ids=" << to_string(task_ids);
+        out << ", " << "rent_end=" << to_string(rent_end);
         out << ")";
     }
 

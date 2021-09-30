@@ -29,6 +29,8 @@
 #include <iostream>
 #include <fstream>
 #include <uuid/uuid.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include "common/common.h"
 

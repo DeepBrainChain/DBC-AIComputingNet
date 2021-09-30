@@ -1,11 +1,11 @@
-#include "sessionid_db.h"
+#include "iptable_db.h"
 #include "log/log.h"
 #include "util/memory/byte_buf.h"
 #include "network/protocol/thrift_binary.h"
 
 namespace fs = boost::filesystem;
 
-bool SessionIdDB::init_db(boost::filesystem::path task_db_path, std::string db_name)
+bool IpTableDB::init_db(boost::filesystem::path task_db_path, std::string db_name)
 {
     leveldb::DB* db = nullptr;
     leveldb::Options  options;
@@ -28,7 +28,7 @@ bool SessionIdDB::init_db(boost::filesystem::path task_db_path, std::string db_n
     leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
     if (!status.ok())
     {
-        LOG_ERROR << "init task db error: " << status.ToString();
+        LOG_ERROR << "init task_iptable db error: " << status.ToString();
         return false;
     }
 
@@ -37,30 +37,30 @@ bool SessionIdDB::init_db(boost::filesystem::path task_db_path, std::string db_n
     return true;
 }
 
-void SessionIdDB::load(std::map<std::string, std::shared_ptr<dbc::owner_sessionid>>& session_ids)
+void IpTableDB::load_iptables(std::map<std::string, std::shared_ptr<dbc::task_iptable>>& task_iptables)
 {
     std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_db->NewIterator(leveldb::ReadOptions()));
     for (it->SeekToFirst(); it->Valid(); it->Next())
     {
-        std::shared_ptr<dbc::owner_sessionid> sessionid = std::make_shared<dbc::owner_sessionid>();
-        std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
-        buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-        dbc::network::binary_protocol proto(buf.get());
-        sessionid->read(&proto);
+        std::shared_ptr<dbc::task_iptable> task = std::make_shared<dbc::task_iptable>();
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        task->read(&proto);
 
-        session_ids.insert({ sessionid->wallet, sessionid });
+        task_iptables.insert({ task->task_id, task });
     }
 }
 
-bool SessionIdDB::del(const std::string& wallet)
+bool IpTableDB::delete_iptable(const std::string& task_id)
 {
-    if (wallet.empty())
+    if (task_id.empty())
         return true;
 
     leveldb::WriteOptions write_options;
     write_options.sync = true;
-    leveldb::Status status = m_db->Delete(write_options, wallet);
+    leveldb::Status status = m_db->Delete(write_options, task_id);
     if (status.ok()) {
         return true;
     }
@@ -69,40 +69,40 @@ bool SessionIdDB::del(const std::string& wallet)
     }
 }
 
-std::shared_ptr<dbc::owner_sessionid> SessionIdDB::read(const std::string& wallet) {
-    if (wallet.empty())
+std::shared_ptr<dbc::task_iptable> IpTableDB::read_iptable(const std::string& task_id) {
+    if (task_id.empty())
         return nullptr;
 
     std::string val;
-    leveldb::Status status = m_db->Get(leveldb::ReadOptions(), wallet, &val);
+    leveldb::Status status = m_db->Get(leveldb::ReadOptions(), task_id, &val);
     if (status.ok()) {
-        std::shared_ptr<dbc::owner_sessionid> sessionid = std::make_shared<dbc::owner_sessionid>();
+        std::shared_ptr<dbc::task_iptable> task = std::make_shared<dbc::task_iptable>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(val.c_str(), val.size());
         dbc::network::binary_protocol proto(task_buf.get());
-        sessionid->read(&proto);
-        return sessionid;
+        task->read(&proto);
+        return task;
     }
     else {
         return nullptr;
     }
 }
 
-bool SessionIdDB::write(const std::shared_ptr<dbc::owner_sessionid>& session_id)
+bool IpTableDB::write_iptable(const std::shared_ptr<dbc::task_iptable>& task_iptable)
 {
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
     dbc::network::binary_protocol proto(out_buf.get());
-    session_id->write(&proto);
+    task_iptable->write(&proto);
 
     leveldb::WriteOptions write_options;
     write_options.sync = true;
     leveldb::Slice slice(out_buf->get_read_ptr(), out_buf->get_valid_read_len());
-    leveldb::Status status = m_db->Put(write_options, session_id->wallet, slice);
+    leveldb::Status status = m_db->Put(write_options, task_iptable->task_id, slice);
     if (status.ok()) {
         return true;
     }
     else {
-        LOG_INFO << "sessionid_db put sessionid failed: " << session_id->wallet;
+        LOG_INFO << "task_iptable db put task failed: " << task_iptable->task_id;
         return false;
     }
 }

@@ -11,7 +11,6 @@
 #include "util/LruCache.hpp"
 #include "util/websocket_client.h"
 #include "../message/matrix_types.h"
-#include "data/session_id/sessionid_db.h"
 #include "data/service_info/service_info_collection.h"
 #include "data/resource/system_info.h"
 #include "network/protocol/protocol.h"
@@ -101,21 +100,16 @@ private:
 
     bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
 
-    void on_ws_msg(int32_t err_code, const std::string& msg);
+    std::string request_machine_status();
 
-    void do_work(bool can_do, int result, const std::string& result_msg);
+    bool in_verify_time(const std::string& wallet);
 
-    void do_create_task(bool can_do, int result, const std::string& result_msg);
-    void do_start_task(bool can_do, int result, const std::string& result_msg);
-    void do_stop_task(bool can_do, int result, const std::string& result_msg);
-    void do_delete_task(bool can_do, int result, const std::string& result_msg);
-    void do_restart_task(bool can_do, int result, const std::string& result_msg);
-    void do_reset_task(bool can_do, int result, const std::string& result_msg);
-    void do_list_task(bool can_do, int result, const std::string& result_msg);
-    void do_task_logs(bool can_do, int result, const std::string& result_msg);
-    void do_modify_task(bool can_do, int result, const std::string& result_msg);
-    void do_query_node_info(bool can_do, int result, const std::string& result_msg);
-    void do_get_session_id(bool can_do, int result, const std::string& result_msg);
+    int64_t is_renter(const std::string& wallet);
+
+    void check_authority(const std::string& request_wallet, const std::string& session_id,
+                         const std::string& session_id_sign, AuthoriseResult& result);
+
+
 
 protected:
     bool m_is_computing_node = false;
@@ -127,10 +121,7 @@ protected:
 
     lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
 
-    SessionIdDB m_sessionid_db;
-    std::map<std::string, std::string> m_wallet_sessionid;
-    std::map<std::string, std::string> m_sessionid_wallet;
-
+    /*
     websocket_client m_websocket_client;
     std::string m_cur_request = "none";
     dbc::network::base_header m_request_header;
@@ -141,6 +132,9 @@ protected:
     std::string m_request_task_id;
     int16_t m_request_head_or_tail;
     int32_t m_request_number_of_lines;
+
+     std::string m_renter_wallet;
+    */
 };
 
 #endif

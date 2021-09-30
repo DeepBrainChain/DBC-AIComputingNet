@@ -14,30 +14,30 @@
 
 namespace dbc {
 
-    class TaskIpTable;
+    class task_iptable;
 
-    typedef struct _TaskIpTable__isset {
-        _TaskIpTable__isset() : host_ip(false), vm_local_ip(false), ssh_port(false) {}
+    typedef struct _task_iptable__isset {
+        _task_iptable__isset() : host_ip(false), vm_local_ip(false), ssh_port(false) {}
         bool host_ip :1;
         bool vm_local_ip :1;
         bool ssh_port :1;
-    } _TaskIpTable__isset;
+    } _task_iptable__isset;
 
-    class TaskIpTable : public virtual ::apache::thrift::TBase {
+    class task_iptable : public virtual ::apache::thrift::TBase {
     public:
 
-        TaskIpTable(const TaskIpTable&);
-        TaskIpTable& operator=(const TaskIpTable&);
-        TaskIpTable() : task_id(), host_ip(), vm_local_ip(), ssh_port() {
+        task_iptable(const task_iptable&);
+        task_iptable& operator=(const task_iptable&);
+        task_iptable() : task_id(), host_ip(), vm_local_ip(), ssh_port() {
         }
 
-        virtual ~TaskIpTable() throw();
+        virtual ~task_iptable() throw();
         std::string task_id;
         std::string host_ip;
         std::string vm_local_ip;
         std::string ssh_port;
 
-        _TaskIpTable__isset __isset;
+        _task_iptable__isset __isset;
 
         void __set_task_id(const std::string& val);
 
@@ -47,7 +47,7 @@ namespace dbc {
 
         void __set_ssh_port(const std::string& val);
 
-        bool operator == (const TaskIpTable & rhs) const
+        bool operator == (const task_iptable & rhs) const
         {
             if (!(task_id == rhs.task_id))
                 return false;
@@ -65,11 +65,11 @@ namespace dbc {
                 return false;
             return true;
         }
-        bool operator != (const TaskIpTable &rhs) const {
+        bool operator != (const task_iptable &rhs) const {
             return !(*this == rhs);
         }
 
-        bool operator < (const TaskIpTable & ) const;
+        bool operator < (const task_iptable & ) const;
 
         uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
         uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -77,9 +77,9 @@ namespace dbc {
         virtual void printTo(std::ostream& out) const;
     };
 
-    void swap(TaskIpTable &a, TaskIpTable &b);
+    void swap(task_iptable &a, task_iptable &b);
 
-    std::ostream& operator<<(std::ostream& out, const TaskIpTable& obj);
+    std::ostream& operator<<(std::ostream& out, const task_iptable& obj);
 
 } // namespace
 

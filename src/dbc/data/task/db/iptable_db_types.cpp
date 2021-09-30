@@ -11,36 +11,36 @@
 namespace dbc {
 
 
-    TaskIpTable::~TaskIpTable() throw() {
+    task_iptable::~task_iptable() throw() {
     }
 
 
-    void TaskIpTable::__set_task_id(const std::string& val) {
+    void task_iptable::__set_task_id(const std::string& val) {
         this->task_id = val;
     }
 
-    void TaskIpTable::__set_host_ip(const std::string& val) {
+    void task_iptable::__set_host_ip(const std::string& val) {
         this->host_ip = val;
         __isset.host_ip = true;
     }
 
-    void TaskIpTable::__set_vm_local_ip(const std::string& val) {
+    void task_iptable::__set_vm_local_ip(const std::string& val) {
         this->vm_local_ip = val;
         __isset.vm_local_ip = true;
     }
 
-    void TaskIpTable::__set_ssh_port(const std::string& val) {
+    void task_iptable::__set_ssh_port(const std::string& val) {
         this->ssh_port = val;
         __isset.ssh_port = true;
     }
-    std::ostream& operator<<(std::ostream& out, const TaskIpTable& obj)
+    std::ostream& operator<<(std::ostream& out, const task_iptable& obj)
     {
         obj.printTo(out);
         return out;
     }
 
 
-    uint32_t TaskIpTable::read(::apache::thrift::protocol::TProtocol* iprot) {
+    uint32_t task_iptable::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -70,33 +70,33 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 2:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->host_ip);
-                        this->__isset.host_ip = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 3:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->vm_local_ip);
-                        this->__isset.vm_local_ip = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->ssh_port);
-                        this->__isset.ssh_port = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                default:
-                    xfer += iprot->skip(ftype);
-                    break;
+                    case 2:
+                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                            xfer += iprot->readString(this->host_ip);
+                            this->__isset.host_ip = true;
+                        } else {
+                            xfer += iprot->skip(ftype);
+                        }
+                        break;
+                        case 3:
+                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                xfer += iprot->readString(this->vm_local_ip);
+                                this->__isset.vm_local_ip = true;
+                            } else {
+                                xfer += iprot->skip(ftype);
+                            }
+                            break;
+                            case 4:
+                                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                    xfer += iprot->readString(this->ssh_port);
+                                    this->__isset.ssh_port = true;
+                                } else {
+                                    xfer += iprot->skip(ftype);
+                                }
+                                break;
+                                default:
+                                    xfer += iprot->skip(ftype);
+                                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -108,10 +108,10 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t TaskIpTable::write(::apache::thrift::protocol::TProtocol* oprot) const {
+    uint32_t task_iptable::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-        xfer += oprot->writeStructBegin("TaskIpTable");
+        xfer += oprot->writeStructBegin("task_iptable");
 
         xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
         xfer += oprot->writeString(this->task_id);
@@ -137,7 +137,7 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(TaskIpTable &a, TaskIpTable &b) {
+    void swap(task_iptable &a, task_iptable &b) {
         using ::std::swap;
         swap(a.task_id, b.task_id);
         swap(a.host_ip, b.host_ip);
@@ -146,14 +146,14 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    TaskIpTable::TaskIpTable(const TaskIpTable& other0) {
+    task_iptable::task_iptable(const task_iptable& other0) {
         task_id = other0.task_id;
         host_ip = other0.host_ip;
         vm_local_ip = other0.vm_local_ip;
         ssh_port = other0.ssh_port;
         __isset = other0.__isset;
     }
-    TaskIpTable& TaskIpTable::operator=(const TaskIpTable& other1) {
+    task_iptable& task_iptable::operator=(const task_iptable& other1) {
         task_id = other1.task_id;
         host_ip = other1.host_ip;
         vm_local_ip = other1.vm_local_ip;
@@ -161,9 +161,9 @@ namespace dbc {
         __isset = other1.__isset;
         return *this;
     }
-    void TaskIpTable::printTo(std::ostream& out) const {
+    void task_iptable::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
-        out << "TaskIpTable(";
+        out << "task_iptable(";
         out << "task_id=" << to_string(task_id);
         out << ", " << "host_ip="; (__isset.host_ip ? (out << to_string(host_ip)) : (out << "<null>"));
         out << ", " << "vm_local_ip="; (__isset.vm_local_ip ? (out << to_string(vm_local_ip)) : (out << "<null>"));

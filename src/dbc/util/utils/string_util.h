@@ -22,6 +22,8 @@ namespace util {
     std::string fuzz_ip(const std::string& ip);
 
     std::string remove_leading_zero(std::string str);
+
+    void replace(std::string& str, const std::string& old_str, const std::string& new_str);
 }
 
 #endif //DBC_STRING_UTIL_H

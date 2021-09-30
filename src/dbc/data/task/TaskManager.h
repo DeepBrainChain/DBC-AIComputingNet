@@ -9,15 +9,16 @@
 #include "network/nio_loop_group.h"
 #include "data/resource/gpu_pool.h"
 #include "service/message/matrix_types.h"
+#include "util/websocket_client.h"
 #include "db/task_db.h"
-#include "vm/vm_client.h"
+#include "db/iptable_db.h"
+#include "db/sessionid_db.h"
 #include "TaskResourceManager.h"
-#include "db/task_iptable_db.h"
+#include "vm/vm_client.h"
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "util/httplib.h"
 
 namespace bp = boost::process;
-
-//#define MAX_TASK_COUNT 200000
-//#define MAX_PRUNE_TASK_COUNT 160000
 
 class TaskManager {
 public:
@@ -27,29 +28,30 @@ public:
 
     FResult Init();
 
-    FResult
-    CreateTask(const std::string &task_id, const std::string &login_password, const std::string &additional);
+    FResult CreateTask(const std::string& wallet, const std::string &task_id,
+                       const std::string &login_password, const std::string &additional,
+                       int64_t rent_end, USER_ROLE role);
 
-    FResult StartTask(const std::string &task_id);
+    FResult StartTask(const std::string& wallet, const std::string &task_id);
 
-    FResult StopTask(const std::string &task_id);
+    FResult StopTask(const std::string& wallet, const std::string &task_id);
 
-    FResult RestartTask(const std::string &task_id);
+    FResult RestartTask(const std::string& wallet, const std::string &task_id);
 
-    FResult ResetTask(const std::string &task_id);
+    FResult ResetTask(const std::string& wallet, const std::string &task_id);
 
-    FResult DeleteTask(const std::string &task_id);
+    FResult DeleteTask(const std::string& wallet, const std::string &task_id);
 
     FResult
     GetTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines, std::string &log_content);
 
-    std::shared_ptr<dbc::TaskInfo> FindTask(const std::string &task_id);
+    std::shared_ptr<dbc::TaskInfo> FindTask(const std::string& wallet, const std::string &task_id);
 
-    void ListAllTask(std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+    void ListAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
 
-    void ListRunningTask(std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+    void ListRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
 
-    int32_t GetRunningTaskSize();
+    int32_t GetRunningTaskSize(const std::string& wallet);
 
     ETaskStatus GetTaskStatus(const std::string &task_id);
 
@@ -57,11 +59,55 @@ public:
         return m_task_resource_mgr;
     }
 
+    void DeleteOtherCheckTask(const std::string& wallet);
+
+    // 删除所有验证人创建的task
+    void DeleteAllCheckTasks();
+
+    // 检查session_id
+    std::string CheckSessionId(const std::string& session_id, const std::string& session_id_sign);
+
+    // 创建session_id
+    std::string CreateSessionId(const std::string& wallet);
+
+    // 获取session_id
+    std::string GetSessionId(const std::string& wallet);
+
     void ProcessTask();
 
     void PruneTask();
 
 protected:
+    FResult init_db();
+
+    FResult remove_invalid_tasks();
+
+    FResult restore_tasks();
+
+    void start_task(virConnectPtr connPtr, const std::string& task_id);
+
+    void close_task(virConnectPtr connPtr, const std::string& task_id);
+
+    void delete_task_data(const std::string& task_id);
+
+    void close_and_delete_task(virConnectPtr connPtr, const std::string& task_id);
+
+    void delete_disk_system_file(const std::string& task_id, const std::string& disk_system_file_name);
+
+    void delete_disk_data_file(const std::string& task_id);
+
+    void shell_delete_iptable(const std::string &public_ip, const std::string &transform_port,
+                                     const std::string &vm_local_ip);
+
+    void shell_add_iptable(const std::string &public_ip, const std::string &transform_port,
+                              const std::string &vm_local_ip);
+
+    void remove_reject_iptable();
+
+    void remove_iptable(const std::string& task_id);
+
+    void restore_iptable(const std::string& task_id);
+
     void add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count);
 
     bool check_cpu(int32_t cpu_count);
@@ -70,28 +116,40 @@ protected:
 
     bool check_mem(float mem_rate);
 
-    bool transform_port(const std::string &domain_name, const std::string &transform_port);
+    // 获取内网地址
+    std::string get_vm_local_ip(const std::string &domain_name);
+
+    bool create_task_iptable(const std::string &domain_name, const std::string &transform_port);
 
     bool set_vm_password(const std::string &domain_name, const std::string &username, const std::string &pwd);
 
-    void delete_task_data(const std::string& task_id);
-
-    void delete_image_file(const std::string& task_id);
-
-    void delete_disk_file(const std::string& task_id);
-
-    void delete_iptable(const std::string& task_id);
-
 protected:
+    // task
     TaskDB m_task_db;
+    RwMutex m_tasks_lock;
     std::map<std::string, std::shared_ptr<dbc::TaskInfo> > m_tasks;
+    TaskResourceManager m_task_resource_mgr;
+
+    RwMutex m_process_tasks_lock;
     std::list<std::shared_ptr<dbc::TaskInfo> > m_process_tasks;
 
-    TaskIpTableDB m_task_iptable_db;
-    std::map<std::string, std::shared_ptr<dbc::TaskIpTable> > m_task_iptables;
+    // iptable
+    IpTableDB m_iptable_db;
+    RwMutex m_iptable_lock;
+    std::map<std::string, std::shared_ptr<dbc::task_iptable> > m_iptables;
+
+    // session_id
+    SessionIdDB m_sessionid_db;
+    RwMutex m_sessionid_lock;
+    std::map<std::string, std::string> m_wallet_sessionid;
+    std::map<std::string, std::string> m_sessionid_wallet;
+
+    // wallet task
+    WalletTaskDB m_wallet_task_db;
+    RwMutex m_wallet_task_lock;
+    std::map<std::string, std::shared_ptr<dbc::rent_task> > m_wallet_tasks;
 
     VmClient m_vm_client;
-    TaskResourceManager m_task_resource_mgr;
 };
 
 typedef TaskManager TaskMgr;

@@ -18,6 +18,8 @@ namespace dbc {
 
     class TaskInfo;
 
+    class rent_task;
+
     typedef struct _HardwareResource__isset {
         _HardwareResource__isset() : gpu_count(false), cpu_cores(false), mem_rate(false) {}
         bool gpu_count :1;
@@ -204,6 +206,52 @@ namespace dbc {
     void swap(TaskInfo &a, TaskInfo &b);
 
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj);
+
+
+    class rent_task : public virtual ::apache::thrift::TBase {
+    public:
+
+        rent_task(const rent_task&);
+        rent_task& operator=(const rent_task&);
+        rent_task() : rent_wallet(), rent_end(0) {
+        }
+
+        virtual ~rent_task() throw();
+        std::string rent_wallet;
+        std::vector<std::string>  task_ids;
+        int64_t rent_end;
+
+        void __set_rent_wallet(const std::string& val);
+
+        void __set_task_ids(const std::vector<std::string> & val);
+
+        void __set_rent_end(const int64_t val);
+
+        bool operator == (const rent_task & rhs) const
+        {
+            if (!(rent_wallet == rhs.rent_wallet))
+                return false;
+            if (!(task_ids == rhs.task_ids))
+                return false;
+            if (!(rent_end == rhs.rent_end))
+                return false;
+            return true;
+        }
+        bool operator != (const rent_task &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator < (const rent_task & ) const;
+
+        uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+        uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+        virtual void printTo(std::ostream& out) const;
+    };
+
+    void swap(rent_task &a, rent_task &b);
+
+    std::ostream& operator<<(std::ostream& out, const rent_task& obj);
 
 } // namespace
 
