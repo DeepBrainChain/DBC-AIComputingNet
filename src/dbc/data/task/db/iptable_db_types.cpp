@@ -21,17 +21,14 @@ namespace dbc {
 
     void task_iptable::__set_host_ip(const std::string& val) {
         this->host_ip = val;
-        __isset.host_ip = true;
     }
 
     void task_iptable::__set_vm_local_ip(const std::string& val) {
         this->vm_local_ip = val;
-        __isset.vm_local_ip = true;
     }
 
     void task_iptable::__set_ssh_port(const std::string& val) {
         this->ssh_port = val;
-        __isset.ssh_port = true;
     }
     std::ostream& operator<<(std::ostream& out, const task_iptable& obj)
     {
@@ -53,6 +50,9 @@ namespace dbc {
         using ::apache::thrift::protocol::TProtocolException;
 
         bool isset_task_id = false;
+        bool isset_host_ip = false;
+        bool isset_vm_local_ip = false;
+        bool isset_ssh_port = false;
 
         while (true)
         {
@@ -73,7 +73,7 @@ namespace dbc {
                     case 2:
                         if (ftype == ::apache::thrift::protocol::T_STRING) {
                             xfer += iprot->readString(this->host_ip);
-                            this->__isset.host_ip = true;
+                            isset_host_ip = true;
                         } else {
                             xfer += iprot->skip(ftype);
                         }
@@ -81,7 +81,7 @@ namespace dbc {
                         case 3:
                             if (ftype == ::apache::thrift::protocol::T_STRING) {
                                 xfer += iprot->readString(this->vm_local_ip);
-                                this->__isset.vm_local_ip = true;
+                                isset_vm_local_ip = true;
                             } else {
                                 xfer += iprot->skip(ftype);
                             }
@@ -89,7 +89,7 @@ namespace dbc {
                             case 4:
                                 if (ftype == ::apache::thrift::protocol::T_STRING) {
                                     xfer += iprot->readString(this->ssh_port);
-                                    this->__isset.ssh_port = true;
+                                    isset_ssh_port = true;
                                 } else {
                                     xfer += iprot->skip(ftype);
                                 }
@@ -105,6 +105,12 @@ namespace dbc {
 
         if (!isset_task_id)
             throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_host_ip)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_vm_local_ip)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_ssh_port)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
         return xfer;
     }
 
@@ -117,21 +123,18 @@ namespace dbc {
         xfer += oprot->writeString(this->task_id);
         xfer += oprot->writeFieldEnd();
 
-        if (this->__isset.host_ip) {
-            xfer += oprot->writeFieldBegin("host_ip", ::apache::thrift::protocol::T_STRING, 2);
-            xfer += oprot->writeString(this->host_ip);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.vm_local_ip) {
-            xfer += oprot->writeFieldBegin("vm_local_ip", ::apache::thrift::protocol::T_STRING, 3);
-            xfer += oprot->writeString(this->vm_local_ip);
-            xfer += oprot->writeFieldEnd();
-        }
-        if (this->__isset.ssh_port) {
-            xfer += oprot->writeFieldBegin("ssh_port", ::apache::thrift::protocol::T_STRING, 4);
-            xfer += oprot->writeString(this->ssh_port);
-            xfer += oprot->writeFieldEnd();
-        }
+        xfer += oprot->writeFieldBegin("host_ip", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->host_ip);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("vm_local_ip", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->vm_local_ip);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("ssh_port", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->ssh_port);
+        xfer += oprot->writeFieldEnd();
+
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -143,7 +146,6 @@ namespace dbc {
         swap(a.host_ip, b.host_ip);
         swap(a.vm_local_ip, b.vm_local_ip);
         swap(a.ssh_port, b.ssh_port);
-        swap(a.__isset, b.__isset);
     }
 
     task_iptable::task_iptable(const task_iptable& other0) {
@@ -151,23 +153,21 @@ namespace dbc {
         host_ip = other0.host_ip;
         vm_local_ip = other0.vm_local_ip;
         ssh_port = other0.ssh_port;
-        __isset = other0.__isset;
     }
     task_iptable& task_iptable::operator=(const task_iptable& other1) {
         task_id = other1.task_id;
         host_ip = other1.host_ip;
         vm_local_ip = other1.vm_local_ip;
         ssh_port = other1.ssh_port;
-        __isset = other1.__isset;
         return *this;
     }
     void task_iptable::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "task_iptable(";
         out << "task_id=" << to_string(task_id);
-        out << ", " << "host_ip="; (__isset.host_ip ? (out << to_string(host_ip)) : (out << "<null>"));
-        out << ", " << "vm_local_ip="; (__isset.vm_local_ip ? (out << to_string(vm_local_ip)) : (out << "<null>"));
-        out << ", " << "ssh_port="; (__isset.ssh_port ? (out << to_string(ssh_port)) : (out << "<null>"));
+        out << ", " << "host_ip=" << to_string(host_ip);
+        out << ", " << "vm_local_ip=" << to_string(vm_local_ip);
+        out << ", " << "ssh_port=" << to_string(ssh_port);
         out << ")";
     }
 

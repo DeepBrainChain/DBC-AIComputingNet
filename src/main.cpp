@@ -47,6 +47,8 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    srand((int)time(0));
+
     int result = g_server->init(argc, argv);
     if (E_SUCCESS != result)
     {

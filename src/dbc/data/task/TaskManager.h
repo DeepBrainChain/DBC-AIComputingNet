@@ -126,27 +126,22 @@ protected:
 protected:
     // task
     TaskDB m_task_db;
-    RwMutex m_tasks_lock;
     std::map<std::string, std::shared_ptr<dbc::TaskInfo> > m_tasks;
     TaskResourceManager m_task_resource_mgr;
 
-    RwMutex m_process_tasks_lock;
     std::list<std::shared_ptr<dbc::TaskInfo> > m_process_tasks;
 
     // iptable
     IpTableDB m_iptable_db;
-    RwMutex m_iptable_lock;
     std::map<std::string, std::shared_ptr<dbc::task_iptable> > m_iptables;
 
     // session_id
     SessionIdDB m_sessionid_db;
-    RwMutex m_sessionid_lock;
     std::map<std::string, std::string> m_wallet_sessionid;
     std::map<std::string, std::string> m_sessionid_wallet;
 
     // wallet task
     WalletTaskDB m_wallet_task_db;
-    RwMutex m_wallet_task_lock;
     std::map<std::string, std::shared_ptr<dbc::rent_task> > m_wallet_tasks;
 
     VmClient m_vm_client;

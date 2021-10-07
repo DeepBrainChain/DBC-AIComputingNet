@@ -104,12 +104,12 @@ private:
 
     bool in_verify_time(const std::string& wallet);
 
+    int64_t get_cur_block();
+
     int64_t is_renter(const std::string& wallet);
 
     void check_authority(const std::string& request_wallet, const std::string& session_id,
                          const std::string& session_id_sign, AuthoriseResult& result);
-
-
 
 protected:
     bool m_is_computing_node = false;
@@ -120,21 +120,6 @@ protected:
     uint32_t m_prune_task_timer_id = INVALID_TIMER_ID;
 
     lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
-
-    /*
-    websocket_client m_websocket_client;
-    std::string m_cur_request = "none";
-    dbc::network::base_header m_request_header;
-    std::string m_request_additional;
-    std::string m_request_wallet;
-    std::string m_request_session_id;
-    std::string m_request_session_id_sign;
-    std::string m_request_task_id;
-    int16_t m_request_head_or_tail;
-    int32_t m_request_number_of_lines;
-
-     std::string m_renter_wallet;
-    */
 };
 
 #endif

@@ -129,7 +129,8 @@ FResult TaskManager::remove_invalid_tasks() {
         return {E_DEFAULT, "virConnectOpen error: " + url};
     }
 
-    for (auto& it_task : m_tasks) {
+    std::map<std::string, std::shared_ptr<dbc::TaskInfo> > tasks = m_tasks;
+    for (auto& it_task : tasks) {
         virDomainPtr domainPtr = virDomainLookupByName(connPtr, it_task.first.c_str());
         if (nullptr == domainPtr) {
             LOG_WARNING << "domain not exist: " << it_task.first;
@@ -138,6 +139,7 @@ FResult TaskManager::remove_invalid_tasks() {
             virDomainFree(domainPtr);
         }
     }
+    virConnectClose(connPtr);
 
     for (auto& it : m_wallet_tasks) {
         bool bwrite = false;
@@ -157,7 +159,6 @@ FResult TaskManager::remove_invalid_tasks() {
         }
     }
 
-    virConnectClose(connPtr);
     return {E_SUCCESS, "ok"};
 }
  
@@ -346,7 +347,6 @@ void TaskManager::close_task(virConnectPtr connPtr, const std::string &task_id) 
 }
 
 void TaskManager::delete_task_data(const std::string &task_id) {
-    RwMutex::WriteLock wlock1(m_tasks_lock);
     auto it_task = m_tasks.find(task_id);
     if (it_task != m_tasks.end()) {
         delete_disk_system_file(task_id, it_task->second->image_name);
@@ -354,9 +354,7 @@ void TaskManager::delete_task_data(const std::string &task_id) {
     }
     m_tasks.erase(task_id);
     m_task_db.delete_task(task_id);
-    wlock1.unlock();
 
-    RwMutex::WriteLock wlock2(m_iptable_lock);
     auto it_iptable = m_iptables.find(task_id);
     if (it_iptable != m_iptables.end()) {
         std::string host_ip = it_iptable->second->host_ip;
@@ -366,9 +364,7 @@ void TaskManager::delete_task_data(const std::string &task_id) {
     }
     m_iptables.erase(task_id);
     m_iptable_db.delete_iptable(task_id);
-    wlock2.unlock();
 
-    RwMutex::WriteLock wlock3(m_wallet_task_lock);
     for (auto& it : m_wallet_tasks) {
         std::shared_ptr<dbc::rent_task> it_rent_task = it.second;
         std::vector<std::string> &vec = it_rent_task->task_ids;
@@ -388,7 +384,6 @@ void TaskManager::delete_task_data(const std::string &task_id) {
             break;
         }
     }
-    wlock3.unlock();
 
     m_task_resource_mgr.Delete(task_id);
 }
@@ -425,8 +420,10 @@ void TaskManager::delete_disk_system_file(const std::string &task_id, const std:
         ext = image.substr(pos + 1);
     }
     std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
-    LOG_INFO << "remove disk_system file: " << real_image_path;
-    remove(real_image_path.c_str());
+    if (fs::is_regular_file(real_image_path)) {
+        LOG_INFO << "remove disk_system file: " << real_image_path;
+        remove(real_image_path.c_str());
+    }
 }
 
 void TaskManager::delete_disk_data_file(const std::string &task_id) {
@@ -443,9 +440,8 @@ void TaskManager::delete_disk_data_file(const std::string &task_id) {
                 continue;
             } else {
                 struct stat file_stat{};
-                char filename[256] = {0};
-                realpath((std::string("/data/") + pDir->d_name).c_str(), filename);
-                if (stat(filename, &file_stat) >= 0) {
+                std::string filename = std::string("/data/") + pDir->d_name;
+                if (stat(filename.c_str(), &file_stat) >= 0) {
                     if (S_ISDIR(file_stat.st_mode)) {
                         continue;
                     }
@@ -463,8 +459,10 @@ void TaskManager::delete_disk_data_file(const std::string &task_id) {
     }
 
     for (auto& it : files) {
-        LOG_INFO << "remove disk_data file: " << it;
-        remove(it.c_str());
+        if (fs::is_regular_file(it)) {
+            LOG_INFO << "remove disk_data file: " << it;
+            remove(it.c_str());
+        }
     }
 }
 
@@ -511,7 +509,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
                                        const std::string &vm_local_ip) {
     // 1804
     if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
-        std::string rule = "sudo iptables --table nat -C PREROUTING --protocol tcp --destination " + public_ip +
+        std::string rule = "sudo iptables -t nat -C PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
@@ -537,7 +535,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
             run_shell(rule.c_str());
         }
 
-        rule = "sudo iptables -t nat -I PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+        rule = "sudo iptables -t nat -C PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
                 vm_local_ip + ":20000-60000";
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
@@ -545,7 +543,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
             run_shell(rule.c_str());
         }
 
-        rule = "sudo iptables -t nat -I PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+        rule = "sudo iptables -t nat -C PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
                 vm_local_ip + ":20000-60000";
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
@@ -553,7 +551,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
             run_shell(rule.c_str());
         }
 
-        rule = "sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
+        rule = "sudo iptables -t nat -C POSTROUTING -d " + vm_local_ip +
                 " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
@@ -561,7 +559,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
             run_shell(rule.c_str());
         }
 
-        rule = "sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
+        rule = "sudo iptables -t nat -C POSTROUTING -d " + vm_local_ip +
                 " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
@@ -607,13 +605,13 @@ void TaskManager::remove_reject_iptable() {
     for (auto & it : vec) {
         if (it.find("-A") != std::string::npos) {
             util::replace(it, "-A", "-D");
-            run_shell(it.c_str());
+            std::string cmd = "sudo iptables -t filter " + it;
+            run_shell(cmd.c_str());
         }
     }
 }
 
 void TaskManager::remove_iptable(const std::string& task_id) {
-    RwMutex::ReadLock rlock(m_iptable_lock);
     auto it = m_iptables.find(task_id);
     if (it != m_iptables.end()) {
         std::string host_ip = it->second->host_ip;
@@ -624,7 +622,6 @@ void TaskManager::remove_iptable(const std::string& task_id) {
 }
 
 void TaskManager::restore_iptable(const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_iptable_lock);
     auto it = m_iptables.find(task_id);
     if (it != m_iptables.end()) {
         std::string host_ip = it->second->host_ip;
@@ -639,12 +636,10 @@ void TaskManager::restore_iptable(const std::string &task_id) {
 FResult TaskManager::CreateTask(const std::string& wallet, const std::string &task_id,
                                 const std::string &login_password, const std::string &additional,
                                 int64_t rent_end, USER_ROLE role) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it != m_tasks.end()) {
         return {E_DEFAULT, "task_id already exist"};
     }
-    rlock.unlock();
 
     if (login_password.empty()) {
         return {E_DEFAULT, "login_password is empty"};
@@ -786,23 +781,17 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
     // add task resource
     add_task_resource(task_id, cpu_count, mem_rate, gpu_count);
 
-    RwMutex::WriteLock wlock1(m_tasks_lock);
     m_tasks[task_id] = taskinfo;
     m_task_db.write_task(taskinfo);
-    wlock1.unlock();
 
     std::shared_ptr<dbc::rent_task> rent_task = std::make_shared<dbc::rent_task>();
     rent_task->rent_wallet = wallet;
     rent_task->rent_end = rent_end;
     rent_task->task_ids.push_back(task_id);
-    RwMutex::WriteLock wlock2(m_wallet_task_lock);
     m_wallet_tasks[wallet] = rent_task;
     m_wallet_task_db.write_data(rent_task);
-    wlock2.unlock();
 
-    RwMutex::WriteLock wlock3(m_process_tasks_lock);
     m_process_tasks.push_back(taskinfo);
-    wlock3.unlock();
 
     return {E_SUCCESS, ""};
 }
@@ -812,7 +801,6 @@ bool TaskManager::check_cpu(int32_t cpu_count) {
     int32_t cores_per_socket = SystemInfo::instance().get_cpuinfo().physical_cores_per_cpu;
     int32_t threads_per_core = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
 
-    RwMutex::ReadLock rlock(m_tasks_lock);
     int32_t cur_cores = 0;
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
@@ -820,7 +808,6 @@ bool TaskManager::check_cpu(int32_t cpu_count) {
             cur_cores += task_resource.physical_cores_per_cpu;
         }
     }
-    rlock.unlock();
 
     int32_t can_use = cores_per_socket - cur_cores;
     int32_t need_count = cpu_count / (sockets * threads_per_core);
@@ -831,7 +818,6 @@ bool TaskManager::check_cpu(int32_t cpu_count) {
 bool TaskManager::check_gpu(int32_t gpu_count) {
     const std::map<std::string, gpu_info>& gpulist = SystemInfo::instance().get_gpuinfo();
 
-    RwMutex::ReadLock rlock(m_tasks_lock);
     int32_t cur_gpus = 0;
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
@@ -839,7 +825,6 @@ bool TaskManager::check_gpu(int32_t gpu_count) {
             cur_gpus += task_resource.gpus.size();
         }
     }
-    rlock.unlock();
 
     return (gpulist.size() - cur_gpus) >= gpu_count;
 }
@@ -847,7 +832,6 @@ bool TaskManager::check_gpu(int32_t gpu_count) {
 bool TaskManager::check_mem(float mem_rate) {
     uint64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; //KB
 
-    RwMutex::ReadLock rlock(m_tasks_lock);
     uint64_t cur_mem = 0;
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
@@ -855,7 +839,6 @@ bool TaskManager::check_mem(float mem_rate) {
             cur_mem += task_resource.mem_size;
         }
     }
-    rlock.unlock();
 
     uint64_t need_size = mem_total * (double)mem_rate;
     return (mem_total - cur_mem) >= need_size;
@@ -913,12 +896,10 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
 }
 
 FResult TaskManager::StartTask(const std::string& wallet, const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         return {E_DEFAULT, "task_id not exist"};
     }
-    rlock.unlock();
 
     auto taskinfo = it->second;
     if (taskinfo->operation != T_OP_None) {
@@ -930,14 +911,9 @@ FResult TaskManager::StartTask(const std::string& wallet, const std::string &tas
         taskinfo->__set_status(TS_Starting);
         taskinfo->__set_operation(T_OP_Start);
         taskinfo->__set_last_start_time(time(nullptr));
-
-        RwMutex::WriteLock wlock1(m_process_tasks_lock);
         m_process_tasks.push_back(taskinfo);
-        wlock1.unlock();
 
-        RwMutex::WriteLock wlock2(m_tasks_lock);
         m_task_db.write_task(taskinfo);
-        wlock2.unlock();
         return {E_SUCCESS, ""};
     } else {
         return {E_DEFAULT, "task is already starting"};
@@ -945,12 +921,10 @@ FResult TaskManager::StartTask(const std::string& wallet, const std::string &tas
 }
 
 FResult TaskManager::StopTask(const std::string& wallet, const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         return {E_DEFAULT, "task_id not exist"};
     }
-    rlock.unlock();
 
     auto taskinfo = it->second;
     if (taskinfo->operation != T_OP_None) {
@@ -962,14 +936,9 @@ FResult TaskManager::StopTask(const std::string& wallet, const std::string &task
         taskinfo->__set_status(TS_Stopping);
         taskinfo->__set_operation(T_OP_Stop);
         taskinfo->__set_last_stop_time(time(nullptr));
-
-        RwMutex::WriteLock wlock1(m_process_tasks_lock);
         m_process_tasks.push_back(taskinfo);
-        wlock1.unlock();
 
-        RwMutex::WriteLock wlock2(m_tasks_lock);
         m_task_db.write_task(taskinfo);
-        wlock2.unlock();
         return {E_SUCCESS, ""};
     } else {
         return {E_DEFAULT, "task is not running"};
@@ -977,12 +946,10 @@ FResult TaskManager::StopTask(const std::string& wallet, const std::string &task
 }
 
 FResult TaskManager::RestartTask(const std::string& wallet, const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         return {E_DEFAULT, "task_id not exist"};
     }
-    rlock.unlock();
 
     auto taskinfo = it->second;
     if (taskinfo->operation != T_OP_None) {
@@ -994,14 +961,8 @@ FResult TaskManager::RestartTask(const std::string& wallet, const std::string &t
         taskinfo->__set_status(TS_Restarting);
         taskinfo->__set_operation(T_OP_ReStart);
         taskinfo->__set_last_start_time(time(nullptr));
-
-        RwMutex::WriteLock wlock1(m_process_tasks_lock);
         m_process_tasks.push_back(taskinfo);
-        wlock1.unlock();
-
-        RwMutex::WriteLock wlock2(m_tasks_lock);
         m_task_db.write_task(taskinfo);
-        wlock2.unlock();
         return {E_SUCCESS, ""};
     } else {
         return {E_DEFAULT, "task is starting..."};
@@ -1009,12 +970,10 @@ FResult TaskManager::RestartTask(const std::string& wallet, const std::string &t
 }
 
 FResult TaskManager::ResetTask(const std::string& wallet, const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         return {E_DEFAULT, "task_id not exist"};
     }
-    rlock.unlock();
 
     auto taskinfo = it->second;
     if (taskinfo->operation != T_OP_None) {
@@ -1026,14 +985,8 @@ FResult TaskManager::ResetTask(const std::string& wallet, const std::string &tas
         taskinfo->__set_status(TS_Resetting);
         taskinfo->__set_operation(T_OP_Reset);
         taskinfo->__set_last_start_time(time(nullptr));
-
-        RwMutex::WriteLock wlock1(m_process_tasks_lock);
         m_process_tasks.push_back(taskinfo);
-        wlock1.unlock();
-
-        RwMutex::WriteLock wlock2(m_tasks_lock);
         m_task_db.write_task(taskinfo);
-        wlock2.unlock();
         return {E_SUCCESS, ""};
     } else {
         return {E_DEFAULT, "task is not running"};
@@ -1041,12 +994,10 @@ FResult TaskManager::ResetTask(const std::string& wallet, const std::string &tas
 }
 
 FResult TaskManager::DeleteTask(const std::string& wallet, const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         return {E_DEFAULT, "task_id not exist"};
     }
-    rlock.unlock();
 
     auto taskinfo = it->second;
     if (taskinfo->operation != T_OP_None) {
@@ -1058,14 +1009,8 @@ FResult TaskManager::DeleteTask(const std::string& wallet, const std::string &ta
         taskinfo->__set_status(TS_Deleting);
         taskinfo->__set_operation(T_OP_Delete);
         taskinfo->__set_last_stop_time(time(nullptr));
-
-        RwMutex::WriteLock wlock1(m_process_tasks_lock);
         m_process_tasks.push_back(taskinfo);
-        wlock1.unlock();
-
-        RwMutex::WriteLock wlock2(m_tasks_lock);
         m_task_db.write_task(taskinfo);
-        wlock2.unlock();
         return {E_SUCCESS, ""};
     } else {
         return {E_DEFAULT, "please try again after a minute"};
@@ -1074,13 +1019,10 @@ FResult TaskManager::DeleteTask(const std::string& wallet, const std::string &ta
 
 std::shared_ptr<dbc::TaskInfo> TaskManager::FindTask(const std::string& wallet, const std::string &task_id) {
     std::shared_ptr<dbc::TaskInfo> ptr = nullptr;
-
-    RwMutex::ReadLock rlock(m_wallet_task_lock);
     auto it = m_wallet_tasks.find(wallet);
     if (it != m_wallet_tasks.end()) {
         for (auto& it_id : it->second->task_ids) {
             if (it_id == task_id) {
-                RwMutex::ReadLock rlock2(m_tasks_lock);
                 auto it_task = m_tasks.find(it_id);
                 if (it_task != m_tasks.end()) {
                     ptr = it_task->second;
@@ -1095,7 +1037,6 @@ std::shared_ptr<dbc::TaskInfo> TaskManager::FindTask(const std::string& wallet, 
 
 FResult TaskManager::GetTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines,
                                 std::string &log_content) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         log_content = "";
@@ -1118,11 +1059,9 @@ FResult TaskManager::GetTaskLog(const std::string &task_id, ETaskLogDirection di
 }
 
 void TaskManager::ListAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
-    RwMutex::ReadLock rlock(m_wallet_task_lock);
     auto it = m_wallet_tasks.find(wallet);
     if (it != m_wallet_tasks.end()) {
         for (auto& it_id : it->second->task_ids) {
-            RwMutex::ReadLock rlock2(m_tasks_lock);
             auto it_task = m_tasks.find(it_id);
             if (it_task != m_tasks.end()) {
                 vec.push_back(it_task->second);
@@ -1132,11 +1071,9 @@ void TaskManager::ListAllTask(const std::string& wallet, std::vector<std::shared
 }
 
 void TaskManager::ListRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
-    RwMutex::ReadLock rlock(m_wallet_task_lock);
     auto it = m_wallet_tasks.find(wallet);
     if (it != m_wallet_tasks.end()) {
         for (auto& it_id : it->second->task_ids) {
-            RwMutex::ReadLock rlock(m_tasks_lock);
             auto it_task = m_tasks.find(it_id);
             if (it_task != m_tasks.end()) {
                 if (it_task->second->status == TS_Running)
@@ -1147,12 +1084,10 @@ void TaskManager::ListRunningTask(const std::string& wallet, std::vector<std::sh
 }
 
 int32_t TaskManager::GetRunningTaskSize(const std::string& wallet) {
-    RwMutex::ReadLock rlock1(m_wallet_task_lock);
     int32_t count = 0;
     auto it = m_wallet_tasks.find(wallet);
     if (it != m_wallet_tasks.end()) {
         for (auto& it_id : it->second->task_ids) {
-            RwMutex::ReadLock rlock2(m_tasks_lock);
             auto it_task = m_tasks.find(it_id);
             if (it_task != m_tasks.end()) {
                 if (it_task->second->status != TS_None)
@@ -1165,7 +1100,6 @@ int32_t TaskManager::GetRunningTaskSize(const std::string& wallet) {
 }
 
 ETaskStatus TaskManager::GetTaskStatus(const std::string &task_id) {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     auto it = m_tasks.find(task_id);
     if (it == m_tasks.end()) {
         return TS_None;
@@ -1175,12 +1109,10 @@ ETaskStatus TaskManager::GetTaskStatus(const std::string &task_id) {
 }
 
 void TaskManager::DeleteOtherCheckTask(const std::string& wallet) {
-    RwMutex::ReadLock rlock(m_wallet_task_lock);
     std::vector<std::string> check_ids;
     for (auto& it : m_wallet_tasks) {
         if (it.first != wallet) {
             for (auto& it_id : it.second->task_ids) {
-                RwMutex::ReadLock rlock2(m_tasks_lock);
                 auto it_task = m_tasks.find(it_id);
                 if (it_task != m_tasks.end()) {
                     if (it_task->second->task_id.find("vm_check_") != std::string::npos) {
@@ -1190,7 +1122,6 @@ void TaskManager::DeleteOtherCheckTask(const std::string& wallet) {
             }
         }
     }
-    rlock.unlock();
 
     std::string url = "qemu+tcp://localhost:16509/system";
     virConnectPtr connPtr = virConnectOpen(url.c_str());
@@ -1206,14 +1137,12 @@ void TaskManager::DeleteOtherCheckTask(const std::string& wallet) {
 }
 
 void TaskManager::DeleteAllCheckTasks() {
-    RwMutex::ReadLock rlock(m_tasks_lock);
     std::vector<std::string> check_ids;
     for (auto& it : m_tasks) {
         if (it.second->task_id.find("vm_check_") != std::string::npos) {
             check_ids.push_back(it.second->task_id);
         }
     }
-    rlock.unlock();
 
     std::string url = "qemu+tcp://localhost:16509/system";
     virConnectPtr connPtr = virConnectOpen(url.c_str());
@@ -1229,12 +1158,10 @@ void TaskManager::DeleteAllCheckTasks() {
 }
 
 std::string TaskManager::CheckSessionId(const std::string &session_id, const std::string &session_id_sign) {
-    RwMutex::ReadLock rlock(m_sessionid_lock);
     auto it = m_sessionid_wallet.find(session_id);
     if (it == m_sessionid_wallet.end()) {
         return "";
     }
-    rlock.unlock();
 
     std::string rent_wallet = it->second;
     if (util::verify_sign(session_id_sign, session_id, rent_wallet)) {
@@ -1245,7 +1172,6 @@ std::string TaskManager::CheckSessionId(const std::string &session_id, const std
 }
 
 std::string TaskManager::CreateSessionId(const std::string &wallet) {
-    RwMutex::WriteLock wlock(m_sessionid_lock);
     auto it = m_wallet_sessionid.find(wallet);
     if (it == m_wallet_sessionid.end()) {
         std::string id = util::create_session_id();
@@ -1262,7 +1188,6 @@ std::string TaskManager::CreateSessionId(const std::string &wallet) {
 }
 
 std::string TaskManager::GetSessionId(const std::string &wallet) {
-    RwMutex::ReadLock rlock(m_sessionid_lock);
     auto it = m_wallet_sessionid.find(wallet);
     if (it != m_wallet_sessionid.end()) {
         return it->second;
@@ -1399,10 +1324,8 @@ bool TaskManager::create_task_iptable(const std::string &domain_name, const std:
             iptable->host_ip = public_ip;
             iptable->vm_local_ip = vm_local_ip;
             iptable->ssh_port = transform_port;
-            RwMutex::WriteLock wlock(m_iptable_lock);
             m_iptables[domain_name] = iptable;
             m_iptable_db.write_iptable(iptable);
-            wlock.unlock();
 
             LOG_INFO << "transform_port successful, public_ip:" << public_ip << " ssh_port:" << transform_port
                      << " local_ip:" << vm_local_ip;
@@ -1420,14 +1343,10 @@ bool TaskManager::create_task_iptable(const std::string &domain_name, const std:
 void TaskManager::ProcessTask() {
     LOG_INFO << "TaskManager::ProcessTask (" << m_process_tasks.size() << ")";
 
-    RwMutex::ReadLock rlock(m_process_tasks_lock);
     if (m_process_tasks.empty()) return;
-    rlock.unlock();
 
-    RwMutex::WriteLock wlock(m_process_tasks_lock);
     auto taskinfo = m_process_tasks.front();
     m_process_tasks.pop_front();
-    wlock.unlock();
 
     if (taskinfo->operation == T_OP_Create) {
         const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(taskinfo->task_id);
@@ -1451,7 +1370,6 @@ void TaskManager::ProcessTask() {
                 } else {
                     taskinfo->__set_status(TS_Running);
                     taskinfo->__set_operation(T_OP_None);
-                    RwMutex::WriteLock wlock(m_tasks_lock);
                     m_task_db.write_task(taskinfo);
 
                     LOG_INFO << "create task " << taskinfo->task_id << " successful";
@@ -1466,13 +1384,11 @@ void TaskManager::ProcessTask() {
         if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
             taskinfo->__set_status(TS_Running);
             taskinfo->__set_operation(T_OP_None);
-            RwMutex::WriteLock wlock(m_tasks_lock);
             m_task_db.write_task(taskinfo);
 
             LOG_INFO << "start task " << taskinfo->task_id << " successful";
         } else {
             taskinfo->__set_operation(T_OP_None);
-            RwMutex::WriteLock wlock(m_tasks_lock);
             m_task_db.write_task(taskinfo);
 
             LOG_ERROR << "start task " << taskinfo->task_id << " failed";
@@ -1481,13 +1397,11 @@ void TaskManager::ProcessTask() {
         if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
             taskinfo->__set_status(TS_None);
             taskinfo->__set_operation(T_OP_None);
-            RwMutex::WriteLock wlock(m_tasks_lock);
             m_task_db.write_task(taskinfo);
 
             LOG_INFO << "stop task " << taskinfo->task_id << " successful";
         } else {
             taskinfo->__set_operation(T_OP_None);
-            RwMutex::WriteLock wlock(m_tasks_lock);
             m_task_db.write_task(taskinfo);
 
             LOG_ERROR << "stop task " << taskinfo->task_id << " failed";
@@ -1498,13 +1412,11 @@ void TaskManager::ProcessTask() {
             if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
                 taskinfo->__set_status(TS_Running);
                 taskinfo->__set_operation(T_OP_None);
-                RwMutex::WriteLock wlock(m_tasks_lock);
                 m_task_db.write_task(taskinfo);
 
                 LOG_INFO << "restart task " << taskinfo->task_id << " successful";
             } else {
                 taskinfo->__set_operation(T_OP_None);
-                RwMutex::WriteLock wlock(m_tasks_lock);
                 m_task_db.write_task(taskinfo);
 
                 LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
@@ -1513,13 +1425,11 @@ void TaskManager::ProcessTask() {
             if (E_SUCCESS == m_vm_client.RebootDomain(taskinfo->task_id)) {
                 taskinfo->__set_status(TS_Running);
                 taskinfo->__set_operation(T_OP_None);
-                RwMutex::WriteLock wlock(m_tasks_lock);
                 m_task_db.write_task(taskinfo);
 
                 LOG_INFO << "restart task " << taskinfo->task_id << " successful";
             } else {
                 taskinfo->__set_operation(T_OP_None);
-                RwMutex::WriteLock wlock(m_tasks_lock);
                 m_task_db.write_task(taskinfo);
 
                 LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
@@ -1529,13 +1439,11 @@ void TaskManager::ProcessTask() {
         if (E_SUCCESS == m_vm_client.ResetDomain(taskinfo->task_id)) {
             taskinfo->__set_status(TS_Running);
             taskinfo->__set_operation(T_OP_None);
-            RwMutex::WriteLock wlock(m_tasks_lock);
             m_task_db.write_task(taskinfo);
 
             LOG_INFO << "reset task " << taskinfo->task_id << " successful";
         } else {
             taskinfo->__set_operation(T_OP_None);
-            RwMutex::WriteLock wlock(m_tasks_lock);
             m_task_db.write_task(taskinfo);
 
             LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
@@ -1549,7 +1457,6 @@ void TaskManager::ProcessTask() {
                 LOG_INFO << "delete task " << taskinfo->task_id << " successful";
             } else {
                 taskinfo->__set_operation(T_OP_None);
-                RwMutex::WriteLock wlock(m_tasks_lock);
                 m_task_db.write_task(taskinfo);
 
                 LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
@@ -1563,14 +1470,12 @@ void TaskManager::ProcessTask() {
                     LOG_INFO << "delete task " << taskinfo->task_id << " successful";
                 } else {
                     taskinfo->__set_operation(T_OP_None);
-                    RwMutex::WriteLock wlock(m_tasks_lock);
                     m_task_db.write_task(taskinfo);
 
                     LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
                 }
             } else {
                 taskinfo->__set_operation(T_OP_None);
-                RwMutex::WriteLock wlock(m_tasks_lock);
                 m_task_db.write_task(taskinfo);
 
                 LOG_ERROR << "delete task " << taskinfo->task_id << " failed";

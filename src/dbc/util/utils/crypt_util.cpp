@@ -65,11 +65,19 @@ namespace util {
     }
 
     std::string create_task_id() {
+        struct timeval tv;
+        gettimeofday(&tv, 0);
+        int64_t t = tv.tv_usec;
+        uint32_t r1 = rand() % 1000000;
+        std::string str = std::to_string(r1) + std::to_string(t);
+        /*
         uuid_t uid;
         uuid_generate(uid);
         char buf[128] = {0};
         uuid_unparse_lower(uid, buf);
         std::string str(buf);
+        */
+
         std::vector<unsigned char> input;
         for (int i = 0; i < str.size(); i++) {
             input.push_back(str[i]);

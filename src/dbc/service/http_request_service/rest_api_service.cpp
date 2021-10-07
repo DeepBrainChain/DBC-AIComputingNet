@@ -3244,7 +3244,7 @@ void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_servi
         ss << ",\"name\":" << "\"" << it.second.name << "\"";
         std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
         ss << ",\"version\":" << "\"" << ver << "\"";
-        ss << ",\"state\":" << "\"" << it.second.kvs["state"] << "\"";
+        //ss << ",\"state\":" << "\"" << it.second.kvs["state"] << "\"";
         ss << "}";
 
         service_count++;

@@ -89,18 +89,19 @@ inline int32_t RaiseFileDescriptorLimit(int nMinFD)
 }
 
 
-static std::string run_shell(const char* cmd, const char* modes = "r") {
-    if (cmd == nullptr) return "";
+static std::string run_shell(const std::string& cmd, const char* modes = "r") {
+    if (cmd.empty()) return "";
 
+    std::string strcmd = cmd + " 2>&1";
     FILE * fp = nullptr;
     char buffer[1024] = {0};
-    fp = popen(cmd, modes);
+    fp = popen(strcmd.c_str(), modes);
     if (fp != nullptr) {
         fgets(buffer, sizeof(buffer), fp);
         pclose(fp);
         return std::string(buffer);
     } else {
-        return std::string("run_shell failed! ") + cmd + std::string(" ") + std::to_string(errno) + ":" + strerror(errno);
+        return std::string("run_shell failed! ") + strcmd + std::string(" ") + std::to_string(errno) + ":" + strerror(errno);
     }
 }
 

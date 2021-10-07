@@ -381,7 +381,71 @@ std::string node_request_service::request_machine_status() {
     }
 }
 
+int64_t node_request_service::get_cur_block() {
+    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
+    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []}")";
+    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+    if (resp != nullptr) {
+        rapidjson::Document doc;
+        doc.Parse(resp->body.c_str());
+        if (!doc.IsObject()) {
+            return 0;
+        }
+
+        if (!doc.HasMember("result")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_result = doc["result"];
+        if (!v_result.IsObject()) {
+            return 0;
+        }
+
+        if (!v_result.HasMember("block")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_block = v_result["block"];
+        if (!v_block.IsObject()) {
+            return 0;
+        }
+
+        if (!v_block.HasMember("header")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_header = v_block["header"];
+        if (!v_header.IsObject()) {
+            return 0;
+        }
+
+        if (!v_header.HasMember("number")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_number = v_header["number"];
+        if (!v_number.IsString()) {
+            return 0;
+        }
+
+        char* p;
+        int64_t n = 0;
+        try {
+            n = strtol(v_number.GetString(), &p, 16);
+        } catch(...) {
+            n = 0;
+        }
+
+        return n;
+    } else {
+        return 0;
+    }
+}
+
 bool node_request_service::in_verify_time(const std::string &wallet) {
+    int64_t cur_block = 0;
+    cur_block = get_cur_block();
+
     httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineCommittee_getCommitteeOps", "params": [")"
             + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
@@ -423,12 +487,18 @@ bool node_request_service::in_verify_time(const std::string &wallet) {
         }
 
         // 是否在验证时间内
-        int32_t v1 = v_verifyTime[0].GetInt();
-        int32_t v2 = v_verifyTime[1].GetInt();
-        int32_t v3 = v_verifyTime[2].GetInt();
+        int64_t v1 = v_verifyTime[0].GetInt64();
+        int64_t v2 = v_verifyTime[1].GetInt64();
+        int64_t v3 = v_verifyTime[2].GetInt64();
 
-
-        return false;
+        if ((cur_block >= v1 && cur_block <= v1 + 480) ||
+            (cur_block >= v2 && cur_block <= v2 + 480) ||
+            (cur_block >= v3 && cur_block <= v3 + 480))
+        {
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
