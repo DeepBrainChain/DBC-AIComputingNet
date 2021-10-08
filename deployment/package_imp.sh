@@ -83,6 +83,9 @@ dbc_package()
     if [ $type == 'client' ];then
         echo "    substep: rm container.conf for client"
         rm -f $dbc_repo_dir/conf/container.conf
+        cp $tool_dir/restart_dbc_client.sh    $dbc_repo_dir/tool/
+        cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
+        chmod +x $dbc_repo_dir/stopapp
     fi
 
     # dbc related tool
