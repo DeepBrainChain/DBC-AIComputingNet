@@ -571,7 +571,7 @@ void node_request_service::check_authority(const std::string& request_wallet, co
         return;
     }
     // 租用中
-    else if (str_status != "creating" && str_status != "rented") {
+    else if (str_status == "creating" || str_status == "rented") {
         m_task_scheduler.DeleteAllCheckTasks();
 
         result.machine_status = MACHINE_STATUS::MS_RENNTED;
