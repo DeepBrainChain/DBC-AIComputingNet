@@ -826,7 +826,10 @@ void node_request_service::task_list(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_list_task_rsp>(NODE_LIST_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1076,7 +1079,10 @@ void node_request_service::task_create(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+                 << result.machine_status << ", " << result.user_role << ", "
+                 << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1218,7 +1224,10 @@ void node_request_service::task_start(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1318,7 +1327,10 @@ void node_request_service::task_stop(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1418,7 +1430,10 @@ void node_request_service::task_restart(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1518,7 +1533,10 @@ void node_request_service::task_reset(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1618,7 +1636,10 @@ void node_request_service::task_delete(const dbc::network::base_header& header,
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
@@ -1859,7 +1880,10 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
     check_authority(data->wallet, data->session_id, data->session_id_sign, result);
 
     if (!result.success) {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "check authority failed ("
+        << result.machine_status << ", " << result.user_role << ", "
+        << result.rent_wallet << ", " << result.rent_end << ")";
+
         send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "check authority failed");
         return;
     }
