@@ -41,7 +41,7 @@ private:
 
     bool m_daemon = false;
     crypto_service m_crypto;
-    std::shared_ptr<timer_matrix_manager> m_timer_matrix_manager;
+    std::shared_ptr<timer_matrix_manager> m_timer_matrix_manager = nullptr;
 };
 
 #endif
