@@ -146,7 +146,7 @@ void server::idle() {
 void server::exit() {
     m_stop = true;
 
-    m_timer_matrix_manager->stop();
+    if (m_timer_matrix_manager) m_timer_matrix_manager->stop();
     node_request_service::instance().stop();
     dbc::network::connection_manager::instance().stop();
     p2p_net_service::instance().stop();
