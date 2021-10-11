@@ -18,6 +18,7 @@ add_executable(db_show
         src/comm_def.h
         src/common.cpp
         src/db_show.cpp
+        src/parse_iptable_db.cpp
         src/parse_peer_db.cpp
         src/parse_pro_db.cpp
         src/parse_req_db.cpp
