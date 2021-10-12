@@ -713,6 +713,26 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << ",\"free\":" << "\"" << (tmp_diskinfo.disk_awalible/1024L/1024L) << "G\"";
     ss << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
     ss << "}";
+    std::vector<std::string> images;
+    {
+        boost::system::error_code error_code;
+        if (boost::filesystem::is_regular_file("/data/ubuntu.qcow2", error_code) && !error_code) {
+            images.push_back("ubuntu.qcow2");
+        }
+        if (boost::filesystem::is_regular_file("/data/ubuntu-2004.qcow2", error_code) && !error_code) {
+            images.push_back("ubuntu-2004.qcow2");
+        }
+        if (boost::filesystem::is_regular_file("/data/win.qcow2", error_code) && !error_code) {
+            images.push_back("win.qcow2");
+        }
+    }
+    ss << ",\"images\":" << "[";
+    for(int i = 0; i < images.size(); ++i) {
+        ss << "\"" << images[i] << "\"";
+        if (i < images.size() - 1)
+            ss << ",";
+    }
+    ss << "]";
     /*
     int32_t count = m_task_scheduler.GetRunningTaskSize();
     std::string state;
