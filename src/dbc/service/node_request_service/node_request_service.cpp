@@ -547,8 +547,8 @@ void node_request_service::check_authority(const std::string& request_wallet, co
     }
 
     // 未验证
-    if (str_status == "AddingCustomizeInfo" || str_status == "DistributingOrder" ||
-        str_status == "CommitteeVerifying" || str_status == "CommitteeRefused") {
+    if (str_status == "addingCustomizeInfo" || str_status == "distributingOrder" ||
+        str_status == "committeeVerifying" || str_status == "committeeRefused") {
         result.machine_status = MACHINE_STATUS::MS_VERIFY;
 
         bool ret = in_verify_time(request_wallet);
@@ -565,7 +565,7 @@ void node_request_service::check_authority(const std::string& request_wallet, co
         return;
     }
     // 验证完，已上线
-    else if (str_status == "WaitingFulfill" || str_status == "Online") {
+    else if (str_status == "waitingFulfill" || str_status == "online") {
         result.success = false;
         result.machine_status = MACHINE_STATUS::MS_ONLINE;
         return;
@@ -602,6 +602,7 @@ void node_request_service::check_authority(const std::string& request_wallet, co
     }
     // 未知状态
     else {
+        LOG_ERROR << "unknowned machine status: " << str_status;
         return;
     }
 }
@@ -687,7 +688,7 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "{";
     ss << "\"result_code\":" << 0;
     ss << ",\"result_message\":" << "{";
-    ss << "\"ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
+    ss << "\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().get_publicip()) << "\"";
     ss << ",\"os\":" << "\"" << SystemInfo::instance().get_osname() << "\"";
     cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
     ss << ",\"cpu\":" << "{";

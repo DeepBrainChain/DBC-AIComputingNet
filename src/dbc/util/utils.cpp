@@ -53,6 +53,19 @@ std::string get_public_ip() {
     return public_ip;
 }
 
+std::string hide_ip_addr(std::string ip) {
+    std::string value = "*";
+    std::vector<std::string> nums;
+    util::split(ip, ".", nums);
+    for (int i = 1; i < nums.size(); ++i) {
+        if (i == 2)
+            value.append(".*");
+        else
+            value.append(".").append(nums[i]);
+    }
+    return value;
+}
+
 int32_t str_to_i32(const std::string& str) {
     try {
         int32_t n = std::stoi(str);

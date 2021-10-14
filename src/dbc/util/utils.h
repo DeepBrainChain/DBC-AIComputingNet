@@ -151,6 +151,9 @@ static const char *scale_size(uint64_t size)
 // 获取公网ip地址
 std::string get_public_ip();
 
+// 隐藏ip地址，输出类似:*.51.*.142
+std::string hide_ip_addr(std::string ip);
+
 // string to digit
 int32_t str_to_i32(const std::string& str);
 uint32_t str_to_u32(const std::string& str);
