@@ -1484,8 +1484,210 @@ void TaskManager::ProcessTask() {
     }
 }
 
-void TaskManager::PruneTask() {
+std::string req_machine_status() {
+    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
+    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+            + conf_manager::instance().get_node_id() + R"("]})";
+    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+    if (resp != nullptr) {
+        rapidjson::Document doc;
+        doc.Parse(resp->body.c_str());
+        if (!doc.IsObject()) {
+            LOG_ERROR << "parse response failed";
+            return "";
+        }
 
+        if (!doc.HasMember("result")) {
+            LOG_ERROR << "parse response failed";
+            return "";
+        }
+
+        const rapidjson::Value &v_result = doc["result"];
+        if (!v_result.IsObject()) {
+            LOG_ERROR << "parse response failed";
+            return "";
+        }
+
+        if (!v_result.HasMember("machineStatus")) {
+            LOG_ERROR << "parse response failed";
+            return "";
+        }
+
+        const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
+        if (!v_machineStatus.IsString()) {
+            LOG_ERROR << "parse response failed";
+            return "";
+        }
+
+        std::string machine_status = v_machineStatus.GetString();
+        return machine_status;
+    } else {
+        return "";
+    }
+}
+
+int64_t req_rent_end(const std::string &wallet) {
+    int64_t cur_rent_end = 0;
+
+    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
+    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
+            + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+    if (resp != nullptr) {
+        do {
+            rapidjson::Document doc;
+            doc.Parse(resp->body.c_str());
+            if (!doc.IsObject()) break;
+            if (!doc.HasMember("result")) break;
+
+            const rapidjson::Value &v_result = doc["result"];
+            if (!v_result.IsObject()) break;
+
+            if (v_result.HasMember("rentEnd")) {
+                const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
+                if (!v_rentEnd.IsNumber()) break;
+
+                int64_t rentEnd = v_rentEnd.GetInt64();
+                if (rentEnd > 0) {
+                    cur_rent_end = rentEnd;
+                    break;
+                }
+            }
+        } while (0);
+    }
+
+    return cur_rent_end;
+}
+
+int64_t req_cur_block() {
+    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
+    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []}")";
+    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+    if (resp != nullptr) {
+        rapidjson::Document doc;
+        doc.Parse(resp->body.c_str());
+        if (!doc.IsObject()) {
+            return 0;
+        }
+
+        if (!doc.HasMember("result")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_result = doc["result"];
+        if (!v_result.IsObject()) {
+            return 0;
+        }
+
+        if (!v_result.HasMember("block")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_block = v_result["block"];
+        if (!v_block.IsObject()) {
+            return 0;
+        }
+
+        if (!v_block.HasMember("header")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_header = v_block["header"];
+        if (!v_header.IsObject()) {
+            return 0;
+        }
+
+        if (!v_header.HasMember("number")) {
+            return 0;
+        }
+
+        const rapidjson::Value &v_number = v_header["number"];
+        if (!v_number.IsString()) {
+            return 0;
+        }
+
+        char* p;
+        int64_t n = 0;
+        try {
+            n = strtol(v_number.GetString(), &p, 16);
+        } catch(...) {
+            n = 0;
+        }
+
+        return n;
+    } else {
+        return 0;
+    }
+}
+
+void TaskManager::PruneTask() {
+    remove_reject_iptable();
+
+    std::string machine_status = req_machine_status();
+    if (machine_status.empty()) return;
+
+    std::string url = "qemu+tcp://localhost:16509/system";
+    virConnectPtr connPtr = virConnectOpen(url.c_str());
+    if (nullptr == connPtr) {
+        return;
+    }
+
+    for (auto& it : m_wallet_tasks) {
+        if (machine_status == "AddingCustomizeInfo" || machine_status == "DistributingOrder" ||
+            machine_status == "CommitteeVerifying" || machine_status == "CommitteeRefused") {
+            std::vector<std::string> ids = it.second->task_ids;
+            for (auto& task_id : ids) {
+                if (task_id.find("vm_check_") == std::string::npos) {
+                    close_task(connPtr, task_id);
+                }
+            }
+        } else if (machine_status == "WaitingFulfill" || machine_status == "Online") {
+            std::vector<std::string> ids = it.second->task_ids;
+            for (auto& task_id : ids) {
+                if (task_id.find("vm_check_") == std::string::npos) {
+                    close_task(connPtr, task_id);
+                } else {
+                    close_and_delete_task(connPtr, task_id);
+                }
+            }
+        } else if (machine_status == "creating" || machine_status == "rented") {
+            std::vector<std::string> ids = it.second->task_ids;
+            for (auto& task_id : ids) {
+                if (task_id.find("vm_check_") != std::string::npos) {
+                    close_and_delete_task(connPtr, task_id);
+                }
+            }
+        }
+
+        if (machine_status == "WaitingFulfill" || machine_status == "Online" ||
+            machine_status == "creating" || machine_status == "rented") {
+            int64_t rent_end = req_rent_end(it.first);
+            if (rent_end <= 0) {
+                std::vector<std::string> ids = it.second->task_ids;
+                for (auto& task_id : ids) {
+                    close_task(connPtr, task_id);
+                }
+
+                // 1小时出120个块
+                int64_t wallet_rent_end = it.second->rent_end;
+                int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
+                int64_t cur_block = req_cur_block();
+                if (reserve_end > cur_block) {
+                    ids = it.second->task_ids;
+                    for (auto& task_id : ids) {
+                        close_and_delete_task(connPtr, task_id);
+                    }
+                }
+            } else {
+                if (rent_end > it.second->rent_end) {
+                    it.second->rent_end = rent_end;
+                    m_wallet_task_db.write_data(it.second);
+                }
+            }
+        }
+    }
+
+    virConnectClose(connPtr);
 }
 
 /*
