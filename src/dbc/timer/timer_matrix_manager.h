@@ -18,7 +18,7 @@ public:
 
     virtual ~timer_matrix_manager() = default;
 
-    int32_t init(bpo::variables_map &options);
+    int32_t init();
 
     int32_t start();
 

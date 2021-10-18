@@ -10,7 +10,7 @@ service_module::service_module()
     m_timer_manager = std::make_shared<timer_manager>(this);
 }
 
-int32_t service_module::init(bpo::variables_map &options)
+int32_t service_module::init()
 {
     init_timer();
 

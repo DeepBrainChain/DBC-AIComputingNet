@@ -40,9 +40,9 @@ namespace dbc
             remove_timers();
         }
 
-        int32_t connection_manager::init(bpo::variables_map &options)
+        int32_t connection_manager::init()
         {
-            service_module::init(options);
+            service_module::init();
 
             //init io services
             int32_t ret = init_io_services();
@@ -60,7 +60,7 @@ namespace dbc
                 return ret;
             }
 
-            ret = load_max_connect(options);
+            ret = load_max_connect();
             if (E_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager load max_connect failed";
@@ -70,10 +70,9 @@ namespace dbc
             return E_SUCCESS;
         }
 
-        int32_t connection_manager::load_max_connect(bpo::variables_map &options)
+        int32_t connection_manager::load_max_connect()
         {
-            m_max_connect = options.count("max_connect") ? options["max_connect"].as<int32_t>()
-                    : conf_manager::instance().get_max_connect();
+            m_max_connect = conf_manager::instance().get_max_connect_count();
 
             if (m_max_connect < 0)
             {

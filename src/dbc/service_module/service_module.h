@@ -29,7 +29,7 @@ public:
 
     virtual ~service_module() = default;
 
-    virtual int32_t init(bpo::variables_map &options);
+    virtual int32_t init();
 
     void start();
 

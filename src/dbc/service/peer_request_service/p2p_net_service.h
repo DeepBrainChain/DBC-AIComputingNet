@@ -6,7 +6,6 @@
 #include "network/handler_create_functor.h"
 #include "peer_node.h"
 #include "peer_candidate.h"
-#include "config/peer_seeds.h"
 #include "util/crypto/random.h"
 #include <leveldb/db.h>
 
@@ -26,7 +25,7 @@ public:
 
     ~p2p_net_service() override;
 
-    int32_t init(bpo::variables_map &options) override;
+    int32_t init() override;
 
     std::string get_host_ip() const { return m_listen_ip; }
 
@@ -39,17 +38,15 @@ protected:
 
     void init_subscription() override;
 
-    void init_rand();
-
     int32_t init_conf();
 
     int32_t init_db();
 
-    int32_t load_peer_candidates();
+    int32_t load_peer_candidates_from_db();
 
     int32_t init_acceptor();
 
-    int32_t init_connector(bpo::variables_map &options);
+    int32_t init_connector();
 
     // peer candidate
     bool is_peer_candidate_exist(tcp::endpoint &ep);
@@ -129,9 +126,9 @@ protected:
 
     std::shared_ptr<peer_candidate> get_dynamic_connect_peer_candidate();
 
-    int32_t add_dns_seeds();
+    void add_dns_seeds();
 
-    int32_t add_hard_code_seeds();
+    void add_ip_seeds();
 
     void advertise_local(tcp::endpoint tcp_ep, dbc::network::socket_id sid);
 
@@ -140,11 +137,10 @@ protected:
     FastRandomContext m_rand_ctx;
 
     std::string m_listen_ip;
-    uint16_t m_listen_port = 0;
+    uint16_t m_listen_port = 10001;
 
-    // 内置
-    std::list<const char *> m_dns_seeds;
-    std::list<peer_seeds> m_hard_code_seeds;
+    std::list<std::string> m_dns_seeds;
+    std::list<std::string> m_ip_seeds;
 
     std::shared_ptr<leveldb::DB> m_peers_candidates_db;
     std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;

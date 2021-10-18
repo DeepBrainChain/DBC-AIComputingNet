@@ -4,7 +4,7 @@
 #include <event2/http.h>
 #include <cstdlib>
 
-ERR_CODE env_manager::init(bpo::variables_map &options) {
+ERR_CODE env_manager::init() {
     init_locale();
 
     init_endian_type();

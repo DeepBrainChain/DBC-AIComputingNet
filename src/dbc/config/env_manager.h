@@ -27,7 +27,7 @@ public:
 
     virtual ~env_manager() = default;
 
-    ERR_CODE init(bpo::variables_map &options);
+    ERR_CODE init();
 
     const boost::filesystem::path &get_conf_path() { return m_conf_path; }
 

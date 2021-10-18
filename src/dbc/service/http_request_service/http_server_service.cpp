@@ -31,8 +31,7 @@ int32_t http_server_service::init(bpo::variables_map &options) {
 }
 
 int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
-    std::string conf_rest_ip = options.count("rest_ip") ? options["rest_ip"].as<std::string>()
-                                                        : conf_manager::instance().get_rest_ip();
+    std::string conf_rest_ip = conf_manager::instance().get_http_ip();
     ip_validator ip_vdr;
     variable_value val;
     val.value() = conf_rest_ip;
@@ -43,21 +42,12 @@ int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
     m_listen_ip = conf_rest_ip;
 
     // rest port
-    std::string conf_rest_port = options.count("rest_port") ? options["rest_port"].as<std::string>()
-            : conf_manager::instance().get_rest_port();
-    port_validator port_vdr;
-    val.value() = conf_rest_port;
-    if ((conf_rest_port != "0") && (port_vdr.validate(val) == false)) {
+    int32_t conf_rest_port = conf_manager::instance().get_http_port();
+    if (conf_rest_port <= 0) {
         LOG_ERROR << "http server init invalid port: " << conf_rest_port;
         return E_DEFAULT;
     } else {
-        try {
-            m_listen_port = (uint16_t) std::stoi(conf_rest_port);
-        } catch (const std::exception &e) {
-            LOG_ERROR << "http server init transform exception. invalid port: " << conf_rest_port << ", "
-                      << e.what();
-            return E_DEFAULT;
-        }
+        m_listen_port = conf_rest_port;
     }
 
     LOG_INFO << "rest config: " << "rest ip:" << m_listen_ip << ", rest port:" << m_listen_port;

@@ -12,7 +12,7 @@ timer_matrix_manager::timer_matrix_manager()
 
 }
 
-int32_t  timer_matrix_manager::init(bpo::variables_map &options)
+int32_t  timer_matrix_manager::init()
 {
     int ret = m_timer_group->init(DEFAULT_TIMER_MATRIX_THREAD_COUNT);
     if (E_SUCCESS != ret)

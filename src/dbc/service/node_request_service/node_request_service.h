@@ -28,7 +28,7 @@ public:
 
     ~node_request_service() override;
 
-    int32_t init(bpo::variables_map &options) override;
+    int32_t init(bpo::variables_map &options);
 
 protected:
     void add_self_to_servicelist(bpo::variables_map &options);

@@ -18,8 +18,8 @@
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
-int32_t rest_api_service::init(bpo::variables_map &options) {
-    service_module::init(options);
+int32_t rest_api_service::init() {
+    service_module::init();
 
     const dbc::network::http_path_handler uri_prefixes[] = {
             {"/tasks", false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},

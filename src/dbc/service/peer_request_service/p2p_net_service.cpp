@@ -36,10 +36,11 @@ p2p_net_service::~p2p_net_service() {
     remove_timer(m_timer_dump_peer_candidates);
 }
 
-int32_t p2p_net_service::init(bpo::variables_map &options) {
-    service_module::init(options);
+int32_t p2p_net_service::init() {
+    service_module::init();
 
-    init_rand();
+    m_rand_seed = uint256();
+    m_rand_ctx = FastRandomContext(m_rand_seed);
 
     if (E_SUCCESS != init_conf()) {
         LOG_ERROR << "init_conf error";
@@ -51,14 +52,14 @@ int32_t p2p_net_service::init(bpo::variables_map &options) {
         return E_DEFAULT;
     }
 
-    load_peer_candidates();
+    load_peer_candidates_from_db();
 
     if (E_SUCCESS != init_acceptor()) {
         LOG_ERROR << "init_acceptor error";
         return E_DEFAULT;
     }
 
-    if (E_SUCCESS != init_connector(options)) {
+    if (E_SUCCESS != init_connector()) {
         LOG_ERROR << "init_connector error";
         return E_DEFAULT;
     }
@@ -93,10 +94,10 @@ void p2p_net_service::init_invoker() {
     BIND_MESSAGE_INVOKER(VER_REQ, &p2p_net_service::on_ver_req)
     BIND_MESSAGE_INVOKER(VER_RESP, &p2p_net_service::on_ver_resp)
 
+    BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_req).name(), &p2p_net_service::on_cmd_get_peer_nodes_req)
+
     BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_REQ, &p2p_net_service::on_get_peer_nodes_req)
     BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_RESP, &p2p_net_service::on_get_peer_nodes_resp)
-
-    BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_req).name(), &p2p_net_service::on_cmd_get_peer_nodes_req)
 }
 
 void p2p_net_service::init_subscription() {
@@ -110,39 +111,15 @@ void p2p_net_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(typeid(cmd_get_peer_nodes_req).name());
 }
 
-void p2p_net_service::init_rand() {
-    m_rand_seed = uint256();
-    m_rand_ctx = FastRandomContext(m_rand_seed);
-}
-
 int32_t p2p_net_service::init_conf() {
-    variable_value val;
-    ip_validator ip_vdr;
-    port_validator port_vdr;
-
-    const std::string &host_ip = conf_manager::instance().get_host_ip();
-    val.value() = host_ip;
-    if (!ip_vdr.validate(val)) {
-        LOG_ERROR << "listen ip is invalid: " << host_ip;
-        return E_DEFAULT;
-    } else {
-        m_listen_ip = host_ip;
-    }
-
-    std::string s_port = conf_manager::instance().get_net_listen_port();
-    val.value() = s_port;
-    if (!port_vdr.validate(val)) {
-        LOG_ERROR << "listen port is invalid: " << s_port;
-        return E_DEFAULT;
-    } else {
-        m_listen_port = (uint16_t) atoi(s_port);
-    }
+    m_listen_ip = conf_manager::instance().get_net_listen_ip();
+    m_listen_port = (uint16_t) conf_manager::instance().get_net_listen_port();
 
     m_dns_seeds.insert(m_dns_seeds.begin(), conf_manager::instance().get_dns_seeds().begin(),
                        conf_manager::instance().get_dns_seeds().end());
 
-    m_hard_code_seeds.insert(m_hard_code_seeds.begin(), conf_manager::instance().get_hard_code_seeds().begin(),
-                             conf_manager::instance().get_hard_code_seeds().end());
+    m_ip_seeds.insert(m_ip_seeds.begin(), conf_manager::instance().get_ip_seeds().begin(),
+                             conf_manager::instance().get_ip_seeds().end());
 
     return E_SUCCESS;
 }
@@ -184,7 +161,7 @@ int32_t p2p_net_service::init_db() {
     return E_SUCCESS;
 }
 
-int32_t p2p_net_service::load_peer_candidates() {
+int32_t p2p_net_service::load_peer_candidates_from_db() {
     m_peer_candidates.clear();
 
     try {
@@ -239,52 +216,29 @@ int32_t p2p_net_service::load_peer_candidates() {
     return E_SUCCESS;
 }
 
+// listen
 int32_t p2p_net_service::init_acceptor() {
-    LOG_INFO << "p2p net service init net, ip: " << m_listen_ip << " port: " << m_listen_port;
     tcp::endpoint ep(ip::address::from_string(m_listen_ip), m_listen_port);
-
     int32_t ret = dbc::network::connection_manager::instance().start_listen(ep, &matrix_server_socket_channel_handler::create);
     if (E_SUCCESS != ret) {
-        LOG_ERROR << "p2p net service init net error, ip: " << m_listen_ip << " port: " << m_listen_port;
+        LOG_ERROR << "p2p net service init error, ip: " << m_listen_ip << " port: " << m_listen_port;
         return ret;
     }
 
     return E_SUCCESS;
 }
 
-int32_t p2p_net_service::init_connector(bpo::variables_map &options) {
-    std::vector<std::string> peer_addresses;
-    const std::vector<std::string> &peer_conf_addresses = conf_manager::instance().get_peers();
-    peer_addresses.insert(peer_addresses.begin(), peer_conf_addresses.begin(), peer_conf_addresses.end());
+// connect peers
+int32_t p2p_net_service::init_connector() {
+    std::vector<std::string> peers;
+    const std::vector<std::string> &conf_peers = conf_manager::instance().get_peers();
+    peers.insert(peers.begin(), conf_peers.begin(), conf_peers.end());
 
-    ip_validator ip_vdr;
-    port_validator port_vdr;
-
-    for (auto it = peer_addresses.begin(); it != peer_addresses.end(); it++) {
-        std::string addr = *it;
-        util::trim(addr);
-        size_t pos = addr.find_last_of(':');
-        if (pos == std::string::npos) {
-            LOG_ERROR << "peer ip invalid format: " << addr;
-            continue;
-        }
-
-        std::string str_ip = addr.substr(0, pos);
-        std::string str_port = addr.substr(pos + 1, std::string::npos);
-
-        variable_value val;
-        val.value() = str_ip;
-        if (str_ip.empty() || !ip_vdr.validate(val)) {
-            LOG_ERROR << "invalid ip: " << str_ip;
-            continue;
-        }
-
-        val.value() = str_port;
-        if (str_port.empty() || !port_vdr.validate(val)) {
-            LOG_ERROR << "invalid port: " << str_port;
-            continue;
-        }
-
+    for (auto it = peers.begin(); it != peers.end(); it++) {
+        std::vector<std::string> vec;
+        util::str_split(*it, ":", vec);
+        std::string str_ip = vec[0];
+        std::string str_port = vec[1];
         uint16_t port = (uint16_t) atoi(str_port);
 
         try {
@@ -373,7 +327,7 @@ void p2p_net_service::on_timer_check_peer_candidates(const std::shared_ptr<core_
     }
 
     if (get_maybe_available_peer_candidates_count() < MIN_PEER_CANDIDATES_COUNT) {
-        add_hard_code_seeds();
+        add_ip_seeds();
     }
 
     uint32_t new_conn_cnt = 0;
@@ -894,13 +848,11 @@ void p2p_net_service::on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::netwo
     auto req = std::dynamic_pointer_cast<cmd_get_peer_nodes_req>(content);
     assert(nullptr != req && nullptr != content);
     COPY_MSG_HEADER(req,cmd_resp);
-    if (!req || !content)
-    {
+    if (!req || !content) {
         LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";
         cmd_resp->result = E_DEFAULT;
         cmd_resp->result_info = "internal error";
         topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
-
         return;
     }
 
@@ -1259,20 +1211,18 @@ int32_t p2p_net_service::clear_peer_candidates_db() {
     return E_SUCCESS;
 }
 
-int32_t p2p_net_service::add_dns_seeds() {
+void p2p_net_service::add_dns_seeds() {
     try {
         if (m_dns_seeds.empty()) {
-            m_dns_seeds.insert(m_dns_seeds.begin(), conf_manager::instance().get_dns_seeds().begin(),
-                               conf_manager::instance().get_dns_seeds().end());
+            return;
         }
 
-        //get dns seeds
-        const char *dns_seed = m_dns_seeds.front();
+        std::string dns_seed = m_dns_seeds.front();
         m_dns_seeds.pop_front();
 
-        if (nullptr == dns_seed) {
-            LOG_ERROR << "p2p net service resolve dns nullptr";
-            return E_DEFAULT;
+        if (dns_seed.empty()) {
+            LOG_ERROR << "dns seed is empty";
+            return;
         }
 
         io_service ios;
@@ -1282,25 +1232,23 @@ int32_t p2p_net_service::add_dns_seeds() {
         ip::tcp::resolver::iterator end;
 
         for (; it != end; it++) {
-            tcp::endpoint ep(it->endpoint().address(), conf_manager::instance().get_net_default_port());
+            tcp::endpoint ep(it->endpoint().address(), it->endpoint().port());
             add_peer_candidate(ep, ns_idle, SEED_NODE);
         }
     }
     catch (const boost::exception &e) {
         LOG_ERROR << "p2p net service resolve dns error: " << diagnostic_information(e);
     }
-
-    return E_SUCCESS;
 }
 
-int32_t p2p_net_service::add_hard_code_seeds() {
-    //get hard code seeds
-    for (auto it = m_hard_code_seeds.begin(); it != m_hard_code_seeds.end(); it++) {
-        tcp::endpoint ep(ip::address::from_string(it->seed), it->port);
+void p2p_net_service::add_ip_seeds() {
+    for (auto it = m_ip_seeds.begin(); it != m_ip_seeds.end(); it++) {
+        std::vector<std::string> vec;
+        util::str_split(*it, ":", vec);
+        if (vec.size() != 2) continue;
+        tcp::endpoint ep(ip::address::from_string(vec[0]), atoi(vec[1].c_str()));
         add_peer_candidate(ep, ns_idle, SEED_NODE);
     }
-
-    return E_SUCCESS;
 }
 
 uint32_t p2p_net_service::start_connect(const tcp::endpoint tcp_ep) {

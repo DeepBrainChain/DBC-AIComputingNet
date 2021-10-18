@@ -48,7 +48,7 @@ namespace dbc
 
             void set_proto_capacity(socket_id sid, std::string c);
 
-            int32_t init(bpo::variables_map &options) override;
+            int32_t init() override;
 
             int32_t start_listen(tcp::endpoint ep, handler_create_functor func);
 
@@ -117,7 +117,7 @@ namespace dbc
 
             virtual void remove_timers();
 
-            int32_t load_max_connect(bpo::variables_map &options);
+            int32_t load_max_connect();
 
         protected:
             uint32_t m_channel_recycle_timer = INVALID_TIMER_ID;

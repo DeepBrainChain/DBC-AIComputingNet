@@ -42,7 +42,7 @@ public:
 
     ~rest_api_service() override = default;
 
-    int32_t init(bpo::variables_map &options) override;
+    int32_t init() override;
 
     void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
 
