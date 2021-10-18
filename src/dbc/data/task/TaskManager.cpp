@@ -673,6 +673,15 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
             return {E_DEFAULT, "image_name is empty or image_name is invalid"};
         }
 
+        boost::filesystem::path image_path("/data/" + image_name);
+        boost::system::error_code error_code;
+        if (!boost::filesystem::exists(image_path, error_code) || error_code) {
+            return {E_DEFAULT, "image does not exist"};
+        }
+        if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
+            return {E_DEFAULT, "image is not a regular file"};
+        }
+
         std::regex reg("^[\\d]*[.]?[\\d]*$");
         if (!std::regex_match(ssh_port, reg) || atoi(ssh_port.c_str()) <= 0) {
             return {E_DEFAULT, "ssh_port is invalid"};

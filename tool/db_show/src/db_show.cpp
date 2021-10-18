@@ -18,6 +18,7 @@ using namespace matrix::core;
 extern void parse_req_db(const char *path);
 extern void parse_peer_db(const char *path);
 extern void parse_provide_db(const char *path);
+extern void parse_iptable_db(const char *path);
 extern void repair_db(const char *path);
 
 int main(int argc, char* argv[])
@@ -56,11 +57,14 @@ int main(int argc, char* argv[])
     {
         parse_peer_db(argv[2]);
     }
+    else if (mode == "iptable")
+    {
+        parse_iptable_db(argv[2]);
+    }
     else if (mode == "repair")
     {
         repair_db(argv[2]);
     }
-
     else
     {
         cout << "mode error";
