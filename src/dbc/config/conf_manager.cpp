@@ -82,7 +82,7 @@ int32_t conf_manager::parse_local_conf() {
     m_log_level = core_args["log_level"].as<int32_t>();
 
     m_net_type = core_args["net_type"].as<std::string>();
-    m_net_flag = atoi(core_args["net_flag"].as<std::string>().c_str());
+    m_net_flag = strtoul(core_args["net_flag"].as<std::string>().c_str(), nullptr, 16);
     m_net_listen_ip = core_args["net_listen_ip"].as<std::string>();
     m_net_listen_port = core_args["net_listen_port"].as<int32_t>();
     m_max_connect_count = core_args["max_connect_count"].as<int32_t>();

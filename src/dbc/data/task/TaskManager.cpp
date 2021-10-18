@@ -1642,15 +1642,15 @@ void TaskManager::PruneTask() {
     }
 
     for (auto& it : m_wallet_tasks) {
-        if (machine_status == "AddingCustomizeInfo" || machine_status == "DistributingOrder" ||
-            machine_status == "CommitteeVerifying" || machine_status == "CommitteeRefused") {
+        if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
+            machine_status == "committeeVerifying" || machine_status == "committeeRefused") {
             std::vector<std::string> ids = it.second->task_ids;
             for (auto& task_id : ids) {
                 if (task_id.find("vm_check_") == std::string::npos) {
                     close_task(connPtr, task_id);
                 }
             }
-        } else if (machine_status == "WaitingFulfill" || machine_status == "Online") {
+        } else if (machine_status == "waitingFulfill" || machine_status == "online") {
             std::vector<std::string> ids = it.second->task_ids;
             for (auto& task_id : ids) {
                 if (task_id.find("vm_check_") == std::string::npos) {
@@ -1668,7 +1668,7 @@ void TaskManager::PruneTask() {
             }
         }
 
-        if (machine_status == "WaitingFulfill" || machine_status == "Online" ||
+        if (machine_status == "waitingFulfill" || machine_status == "online" ||
             machine_status == "creating" || machine_status == "rented") {
             int64_t rent_end = req_rent_end(it.first);
             if (rent_end <= 0) {

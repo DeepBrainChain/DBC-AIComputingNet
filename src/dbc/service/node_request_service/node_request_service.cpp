@@ -74,6 +74,8 @@ int32_t node_request_service::init(bpo::variables_map &options) {
         add_self_to_servicelist(options);
     }
 
+    service_module::init();
+
     if (m_is_computing_node) {
         auto fresult = m_task_scheduler.Init();
         int32_t ret = std::get<0>(fresult);
@@ -83,8 +85,6 @@ int32_t node_request_service::init(bpo::variables_map &options) {
             return E_SUCCESS;
         }
     }
-
-    service_module::init();
 
     return E_SUCCESS;
 }
