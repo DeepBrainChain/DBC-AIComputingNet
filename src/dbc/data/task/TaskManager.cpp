@@ -471,7 +471,7 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
     std::string cmd;
 
     // 1804
-    //if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
+    if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
         cmd += "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
@@ -488,12 +488,10 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
                 " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
                 " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-    //}
+    }
 
     // 2004
-    /*
     else if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_2004) {
-        //cmd += "sudo iptables -F -t nat && ";
         cmd += "sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
                 + " -j DNAT --to-destination " + vm_local_ip + ":22";
         auto pos = vm_local_ip.rfind('.');
@@ -502,7 +500,6 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
                 + vm_local_ip + ":6000-60000";
     }
-    */
 
     run_shell(cmd.c_str());
 }
@@ -510,7 +507,7 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
 void TaskManager::shell_add_iptable(const std::string &public_ip, const std::string &transform_port,
                                        const std::string &vm_local_ip) {
     // 1804
-    //if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
+    if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
         std::string rule = "sudo iptables -t nat -C PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
@@ -568,11 +565,13 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
-    //}
+    }
 
     // 2004
-    /*
     else if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_2004) {
+        //std::string cmd = "sudo iptables -F && sudo iptables -F -t nat";
+        //run_shell(cmd.c_str());
+
         std::string rule = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
                 + " -j DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
@@ -598,7 +597,6 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
             run_shell(rule.c_str());
         }
     }
-    */
 }
 
 void TaskManager::remove_reject_iptable() {
