@@ -65,7 +65,8 @@ int32_t conf_manager::parse_local_conf() {
         ("max_connect_count", bpo::value<int32_t>()->default_value(1024), "")
         ("http_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
         ("http_port", bpo::value<int32_t>()->default_value(20001), "")
-        ("dbc_chain_domain", bpo::value<std::string>()->default_value("httpinfotest2.dbcwallet.io"), "");
+        ("dbc_chain_domain", bpo::value<std::string>()->default_value("httpinfotest2.dbcwallet.io"), "")
+        ("version", bpo::value<std::string>()->default_value("0.3.7.3"), "");
 
     const boost::filesystem::path &conf_path = env_manager::instance().get_conf_path();
     try {
@@ -91,6 +92,8 @@ int32_t conf_manager::parse_local_conf() {
     m_http_port = core_args["http_port"].as<int32_t>();
 
     m_dbc_chain_domain = core_args["dbc_chain_domain"].as<std::string>();
+
+    m_version = core_args["version"].as<std::string>();
 
     // peer.conf
     variables_map peer_args;

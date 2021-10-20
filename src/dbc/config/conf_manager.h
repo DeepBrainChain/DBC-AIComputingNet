@@ -135,6 +135,8 @@ private:
     std::string m_pub_key;
     std::string m_priv_key;
 
+    std::string m_version = "0.3.7.3";
+
     dbc::network::matrix_capacity m_proto_capacity;
 };
 
