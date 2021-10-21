@@ -2,13 +2,20 @@
 
 release_version=0.3.7.4
 
-cd /data
+download()
+{
+  echo "begin download"
+  sudo rm -rf /data/dbc-linux-client*
+  # sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/0.3.7.3/dbc-linux-client-0.3.7.3.tar.gz
+  sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-client-$release_version.tar.gz
+  tar -zxvf /data/dbc-linux-client-$release_version.tar.gz -C /data
+}
 
-sudo rm -rf /data/dbc-linux-client*
-# sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/0.3.7.3/dbc-linux-client-0.3.7.3.tar.gz
-sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-client-$release_version.tar.gz
-tar -zxvf /data/dbc-linux-client-$release_version.tar.gz
-
+deletePackage()
+{
+  sudo rm -rf /data/dbc_client_node
+  sudo rm -rf /data/dbc-linux-client-$release_version.tar.gz
+}
 
 updateAbove0374()
 {
@@ -16,9 +23,9 @@ updateAbove0374()
   sudo rm -rf $dbc_dir/tool/
   sudo rm -rf $dbc_dir/conf/
 
-  sudo cp ./dbc_client_node/dbc $dbc_dir
-  sudo cp -rp ./dbc_client_node/tool $dbc_dir
-  sudo cp -rp ./dbc_client_node/conf $dbc_dir
+  sudo cp /data/dbc_client_node/dbc $dbc_dir
+  sudo cp -rp /data/dbc_client_node/tool $dbc_dir
+  sudo cp -rp /data/dbc_client_node/conf $dbc_dir
 
   echo "modify rest ip address"
   sudo sed -i "/http_ip=127.0.0.1/c http_ip=0.0.0.0" $dbc_dir/conf/core.conf
@@ -26,12 +33,11 @@ updateAbove0374()
 
 updateFrom0373()
 {
-  echo "current version 0.3.7.3"
   new_dir=$(dirname $dbc_dir)
   new_dir=$(dirname $new_dir)
   echo "new install path $new_dir"
 
-  sudo mv ./dbc_client_node $new_dir/dbc_client_node
+  sudo mv /data/dbc_client_node $new_dir/dbc_client_node
 
   new_dir=$new_dir/dbc_client_node
 
@@ -53,6 +59,10 @@ updateFrom0373()
   sed -i "s/export PATH=\$PATH:\$DBC_CLIENT_PATH.*//g" ~/.bashrc
   source ~/.bashrc
 
+  dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
+  echo "mv $dbc_dir $dbc_backup_dir"
+  mv $dbc_dir $dbc_backup_dir
+
 # sudo rm -f /home/dbc/0.3.7.3/dbc_repo/dbc
 # sudo rm -rf /home/dbc/0.3.7.3/dbc_repo/tool/
 # sudo rm -rf /home/dbc/0.3.7.3/dbc_repo/conf
@@ -62,26 +72,38 @@ updateFrom0373()
 # sudo cp -rp /data/0.3.7.3/dbc_repo/conf /home/dbc/0.3.7.3/dbc_repo/
 }
 
-
-dbc_dir=`cat ~/.bashrc | grep "DBC_CLIENT_PATH=" | awk -F '=' '{print $2}'`
-if [ "$dbc_dir" == "" ]; then
-  echo "no dbc client install found"
-else
+cur_dir=$(cd "$(dirname "$0")";pwd)
+dbc_dir=$(dirname $cur_dir)
+# if [[ "$cur_dir" == *dbc*tool* ]]; then
+if [ -f $dbc_dir/dbc ]; then
   echo "find dbc client path $dbc_dir"
+  download
 
   sudo systemctl stop dbc-client.service
   sudo systemctl stop dbc-client.service
   sudo systemctl stop dbc-client.service
 
-  if [[ "$dbc_dir" == *0.3.7.3* ]]; then
+  cur_ver=$(cat $dbc_dir/conf/core.conf | grep "version=" | awk -F '=' '{print $2}')
+  if [ "$cur_ver" == "" ]; then
+    echo "no version in conf/core.conf"
     updateFrom0373
   else
-    updateAbove0374
+    echo "current version $cur_ver and release version $release_version"
+    cmp_ver=`expr $release_version \>= $cur_ver`
+    if [ $cmp_ver -eq 1 ]; then
+      # echo ">= version"
+      updateAbove0374
+    else
+      # echo "< version"
+      updateFrom0373
+    fi
   fi
 
   sudo systemctl restart dbc-client.service
-  echo "update complete"
-fi
 
-sudo rm -rf /data/dbc_client_node
-sudo rm -rf /data/dbc-linux-client-$release_version.tar.gz
+  deletePackage
+  echo "update complete"
+else
+  echo "update failed"
+  echo "Please copy update.sh to dbc's installed tool directory like /home/dbc/0.3.7.3/dbc_repo/tool/update.sh"
+fi

@@ -81,6 +81,7 @@ dbc_package()
         echo "    substep: rm container.conf for client"
         rm -f $dbc_repo_dir/conf/container.conf
         cp $tool_dir/restart_dbc_client.sh    $dbc_repo_dir/tool/
+        cp $tool_dir/release/update_dbc_client.sh $dbc_repo_dir/tool/
         cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
         chmod +x $dbc_repo_dir/stopapp
     fi
@@ -92,6 +93,7 @@ dbc_package()
 
         # dbc node info tool
         cp -r $tool_dir/node_info $dbc_repo_dir/tool/
+        cp $tool_dir/release/update_dbc_mining.sh $dbc_repo_dir/tool/
 
         chmod +x $dbc_repo_dir/startapp
         chmod +x $dbc_repo_dir/stopapp
