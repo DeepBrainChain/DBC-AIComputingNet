@@ -3,12 +3,9 @@
 echo "==================================="
 echo "package start: $version $type"
 
-base_dir=../../..
+base_dir=../..
 tool_dir=$base_dir/tool
 deployment_dir=$base_dir/deployment
-
-dbc_repo_dir=./dbc_repo
-mining_repo_dir=./mining_repo
 ipfs_repo_src_dir=$deployment_dir/ipfs_repo
 
 os_name=`uname -a | awk '{print $1}'`
@@ -63,7 +60,7 @@ dbc_package()
 {
     echo "step: dbc program package"
 
-    mkdir $dbc_repo_dir
+    # mkdir $dbc_repo_dir
     mkdir $dbc_repo_dir/tool
 
     # dbc exe and default configure
@@ -84,6 +81,7 @@ dbc_package()
         echo "    substep: rm container.conf for client"
         rm -f $dbc_repo_dir/conf/container.conf
         cp $tool_dir/restart_dbc_client.sh    $dbc_repo_dir/tool/
+        cp $tool_dir/release/update_dbc_client.sh $dbc_repo_dir/tool/
         cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
         chmod +x $dbc_repo_dir/stopapp
     fi
@@ -95,6 +93,7 @@ dbc_package()
 
         # dbc node info tool
         cp -r $tool_dir/node_info $dbc_repo_dir/tool/
+        cp $tool_dir/release/update_dbc_mining.sh $dbc_repo_dir/tool/
 
         chmod +x $dbc_repo_dir/startapp
         chmod +x $dbc_repo_dir/stopapp
@@ -122,12 +121,12 @@ mining_package()
 {
     echo "step: mining package"
 
-    mkdir $mining_repo_dir
+    mkdir $dbc_repo_dir/mining_repo
 
-    cp $tool_dir/mining_install.sh  $mining_repo_dir/
-    cp $tool_dir/nvidia-persistenced.service $mining_repo_dir/
+    cp $tool_dir/mining_install.sh  $dbc_repo_dir/mining_repo/
+    cp $tool_dir/nvidia-persistenced.service $dbc_repo_dir/mining_repo/
 
-    chmod +x $mining_repo_dir/*.sh
+    chmod +x $dbc_repo_dir/mining_repo/*.sh
 }
 
 if [ $# -lt 2 ]; then
@@ -152,10 +151,13 @@ fi
 
 tar_ball=dbc-$os_name-$type-$version.tar.gz
 rm -f ./package/$tar_ball
-rm -rf ./package/$version
-mkdir -p ./package/$version
-cd ./package/$version
+rm -rf ./package/dbc_$type\_node
+mkdir -p ./package/dbc_$type\_node
+cd ./package
+
 pwd
+
+dbc_repo_dir=./dbc_$type\_node
 
 dbc_package
 
@@ -164,9 +166,8 @@ if [ $type == 'mining' ]; then
 fi
 
 # package
-cd ../
-tar -czvf $tar_ball $version
+tar -czvf $tar_ball dbc_$type\_node
 
-rm -rf ./$version
+rm -rf $dbc_repo_dir
 
 echo "package complete: $version $type"

@@ -1,9 +1,9 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.7.3
+release_version=0.3.7.4
 host=$(hostname)
-
+dbc_repo_dir=dbc_client_node
 
 download_dbc_tar()
 {
@@ -12,7 +12,7 @@ download_dbc_tar()
 
   #wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/dbc-linux-client-$release_version.tar.gz
   #wget http://111.44.254.164:22244/dbc-linux-client-$release_version.tar.gz
-  wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/0.3.7.3/dbc-linux-client-0.3.7.3.tar.gz  
+  wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-client-$release_version.tar.gz
   if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
@@ -26,8 +26,8 @@ download_dbc_tar()
 install_dbc()
 {
   path=$1
-  path="${path}/${release_version}"
-  #cd ./$release_version
+  path="${path}/${dbc_repo_dir}"
+  #cd ./$dbc_repo_dir
   path_now=`pwd`
   cd $path
   current_directory=`pwd`
@@ -38,16 +38,17 @@ install_dbc()
 uninstall_dbc()
 {
   echo
-
   echo "-- move dbc install --"
-  dbc_dir=$(dirname  `which dbc` 2>/dev/null)
+  # dbc_dir=$(dirname  `which dbc` 2>/dev/null)
+  dbc_dir=`cat ~/.bashrc | grep "DBC_CLIENT_PATH=" | awk -F '=' '{print $2}'`
   if [ "$dbc_dir" == "" ]; then
 	  echo "no dbc install found"
   else
-	  now_dir="$(pwd)"
-  	cd $dbc_dir/..
-  	dbc_dir=$(pwd)
-  	cd $now_dir
+    echo "find dbc path $dbc_dir"
+    now_dir="$(pwd)"
+    cd $dbc_dir
+    dbc_dir=$(pwd)
+    cd $now_dir
 
     echo
     echo "-- stop automatically"
@@ -86,16 +87,27 @@ uninstall_dbc()
 
 post_config()
 {
+  path=$1
+  path="${path}/${dbc_repo_dir}"
+  path_now=`pwd`
+  cd $path
+  current_directory=`pwd`
+  echo "current directory is $current_directory "
+
   echo "begin to add dbc executable path to ENV PATH"
   cat ~/.bashrc | grep "DBC_CLIENT_PATH="
   if [ $? -ne 0 ]; then
-      echo "export DBC_CLIENT_PATH=$current_directory/dbc_repo" >> ~/.bashrc
-      echo 'export PATH=$PATH:$DBC_CLIENT_PATH' >> ~/.bashrc
-      echo 'export PATH=$PATH:$DBC_CLIENT_PATH/tool' >> ~/.bashrc
-      echo "source .bashrc" >> ~/.bash_profile
+    echo "export DBC_CLIENT_PATH=$current_directory" >> ~/.bashrc
+    # echo 'export PATH=$PATH:$DBC_CLIENT_PATH' >> ~/.bashrc
+    # echo 'export PATH=$PATH:$DBC_CLIENT_PATH/tool' >> ~/.bashrc
+    echo "source .bashrc" >> ~/.bash_profile
   else
-      sed -i "/DBC_CLIENT_PATH=/c export DBC_CLIENT_PATH=$current_directory/dbc_repo" ~/.bashrc
+    sed -i "/DBC_CLIENT_PATH=/c export DBC_CLIENT_PATH=$current_directory" ~/.bashrc
   fi
+
+  echo "modify rest ip address"
+  sed -i "/http_ip=127.0.0.1/c http_ip=0.0.0.0" ./conf/core.conf
+
   echo -e
 
   echo "begin to set dbc auto-start when reboot/restart"
@@ -110,9 +122,9 @@ post_config()
   echo "Type=forking" >> /lib/systemd/system/dbc-client.service
   echo "User=$user_name" >> /lib/systemd/system/dbc-client.service
   #echo "Group=$user_name" >> /lib/systemd/system/dbc-client.service
-  echo "WorkingDirectory=$current_directory/dbc_repo" >> /lib/systemd/system/dbc-client.service
-  echo "ExecStart=$current_directory/dbc_repo/dbc --daemon" >> /lib/systemd/system/dbc-client.service
-  echo "ExecStop=$current_directory/dbc_repo/stopapp" >> /lib/systemd/system/dbc-client.service
+  echo "WorkingDirectory=$current_directory" >> /lib/systemd/system/dbc-client.service
+  echo "ExecStart=$current_directory/dbc --daemon" >> /lib/systemd/system/dbc-client.service
+  echo "ExecStop=$current_directory/stopapp" >> /lib/systemd/system/dbc-client.service
   echo "[Install]" >> /lib/systemd/system/dbc-client.service
   echo "WantedBy=multi-user.target" >> /lib/systemd/system/dbc-client.service
   sudo chmod 644 /lib/systemd/system/dbc-client.service
@@ -126,10 +138,11 @@ post_config()
   sudo sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
 
   # register private repo
+  # sudo bash ./container/lxcfs/install.sh
 
   echo "set restart dbc automatically"
-  sudo chmod 777 ./dbc_repo/tool/restart_dbc_client.sh
-  sudo cp  ./dbc_repo/tool/restart_dbc_client.sh /etc/systemd/system
+  sudo chmod 777 ./tool/restart_dbc_client.sh
+  sudo cp  ./tool/restart_dbc_client.sh /etc/systemd/system
   sudo chmod 777 /etc/systemd/system/restart_dbc_client.sh
 
   sudo rm -f /etc/systemd/system/restart-dbc-client.service
@@ -145,10 +158,11 @@ post_config()
   sudo systemctl daemon-reload
   sudo systemctl start restart-dbc-client.service
   sudo systemctl enable restart-dbc-client.service
-  sudo chmod 777 ./dbc_repo/tool/clean_cache.sh
+  sudo chmod 777 ./tool/clean_cache.sh
   sudo systemctl restart cron
   sudo systemctl enable cron
   echo "dbc ai client install finished"
+  source ~/.bashrc
   
   cd $path_now
 }
@@ -181,8 +195,8 @@ while getopts "udi:" o; do
               echo "$dbc_tar not found"
               exit 1
 		      	fi
-            if [ -d $install_path/$release_version ]; then
-              echo "target install folder $install_path/$release_version is not empty!"
+            if [ -d $install_path/$dbc_repo_dir ]; then
+              echo "target install folder $install_path/$dbc_repo_dir is not empty!"
               exit 1
             fi
 				    tar -zxvf $dbc_tar -C $install_path
