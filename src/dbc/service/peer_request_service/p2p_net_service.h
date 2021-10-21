@@ -111,12 +111,9 @@ protected:
 
     void on_get_peer_nodes_resp(const std::shared_ptr<dbc::network::message> &msg);
 
-    //active pull
     int32_t send_get_peer_nodes();
 
-    //active push
-    int32_t send_put_peer_nodes(std::shared_ptr<peer_node> node);
-
+    int32_t broadcast_peer_nodes(std::shared_ptr<peer_node> node);
 
     uint32_t get_rand32() { return m_rand_ctx.rand32(); }
 

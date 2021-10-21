@@ -7,8 +7,8 @@
 
 enum peer_node_type
 {
-    NORMAL_NODE = 0,
-    SEED_NODE = 1
+    NORMAL_NODE = 0, //peer
+    SEED_NODE = 1 //内置种子节点
 };
 
 enum connection_status

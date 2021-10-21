@@ -59,7 +59,7 @@ public:
     }
 
     int32_t get_timer_service_list_expired_in_second() {
-        return 60;
+        return 300;
     }
 
     int32_t  get_timer_dbc_request_in_millisecond() {

@@ -68,18 +68,18 @@ int32_t p2p_net_service::init() {
 }
 
 void p2p_net_service::init_timer() {
-    // 1min
+    // 30s
     m_timer_invokers[CHECK_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_check_peer_candidates, this, std::placeholders::_1);
     add_timer(CHECK_PEER_CANDIDATES_TIMER, 5 * 1000, 1, "");
-    m_timer_check_peer_candidates = add_timer(CHECK_PEER_CANDIDATES_TIMER, 60 * 1000, ULLONG_MAX, "");
+    m_timer_check_peer_candidates = add_timer(CHECK_PEER_CANDIDATES_TIMER, 30 * 1000, ULLONG_MAX, "");
 
     // 1min
     m_timer_invokers[DYANMIC_ADJUST_NETWORK_TIMER] = std::bind(&p2p_net_service::on_timer_dyanmic_adjust_network, this, std::placeholders::_1);
     m_timer_dyanmic_adjust_network = add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, ULLONG_MAX, "");
 
-    // 3min
+    // 1min
     m_timer_invokers[PEER_INFO_EXCHANGE_TIMER] = std::bind(&p2p_net_service::on_timer_peer_info_exchange, this, std::placeholders::_1);
-    m_timer_peer_info_exchange = add_timer(PEER_INFO_EXCHANGE_TIMER, 3 * 60 * 1000, ULLONG_MAX, "");
+    m_timer_peer_info_exchange = add_timer(PEER_INFO_EXCHANGE_TIMER, 1 * 60 * 1000, ULLONG_MAX, "");
 
     // 10min
     m_timer_invokers[DUMP_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_peer_candidate_dump, this, std::placeholders::_1);
@@ -310,7 +310,7 @@ bool p2p_net_service::update_peer_candidate_state(tcp::endpoint &ep, net_state n
     return false;
 }
 
-// 检查与种子节点的连接
+// 检查m_peer_candidates的连接状态
 void p2p_net_service::on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer) {
     // remove ns_failed status candidates
     for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end();) {
@@ -338,7 +338,7 @@ void p2p_net_service::on_timer_check_peer_candidates(const std::shared_ptr<core_
 
         std::shared_ptr<peer_candidate> candidate = *it;
         if ((ns_idle == candidate->net_st)
-            || ((ns_failed == candidate->net_st) && candidate->reconn_cnt < max_reconnect_times)) {
+            || (ns_failed == candidate->net_st && candidate->reconn_cnt < max_reconnect_times)) {
             try {
                 candidate->last_conn_tm = time(nullptr);
                 candidate->net_st = ns_in_use;
@@ -371,6 +371,11 @@ void p2p_net_service::on_timer_check_peer_candidates(const std::shared_ptr<core_
             }
         }
     }
+}
+
+// 广播peers（不包含内置种子节点）
+void p2p_net_service::on_timer_peer_info_exchange(const std::shared_ptr<core_timer>& timer) {
+    broadcast_peer_nodes(nullptr);
 }
 
 void p2p_net_service::on_timer_dyanmic_adjust_network(const std::shared_ptr<core_timer>& timer) {
@@ -431,10 +436,6 @@ void p2p_net_service::on_timer_dyanmic_adjust_network(const std::shared_ptr<core
             }
         }
     }
-}
-
-void p2p_net_service::on_timer_peer_info_exchange(const std::shared_ptr<core_timer>& timer) {
-    send_put_peer_nodes(nullptr);
 }
 
 void p2p_net_service::on_timer_peer_candidate_dump(const std::shared_ptr<core_timer>& timer) {
@@ -1037,22 +1038,17 @@ int32_t p2p_net_service::send_get_peer_nodes() {
     return E_SUCCESS;
 }
 
-int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
-    //common header
+int32_t p2p_net_service::broadcast_peer_nodes(std::shared_ptr<peer_node> node) {
     std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
     resp_msg->header.msg_name = P2P_GET_PEER_NODES_RESP;
     resp_msg->header.msg_priority = 0;
 
     std::shared_ptr<dbc::get_peer_nodes_resp> resp_content = std::make_shared<dbc::get_peer_nodes_resp>();
-
-    //header
     resp_content->header.__set_magic(conf_manager::instance().get_net_flag());
     resp_content->header.__set_msg_name(P2P_GET_PEER_NODES_RESP);
     resp_content->header.__set_nonce(util::create_nonce());
 
-    if (node)//broadcast one node
-    {
-        //body
+    if (node) {
         dbc::peer_node_info info;
         assign_peer_info(info, node);
         info.service_list.push_back(std::string("ai_training"));
@@ -1060,12 +1056,12 @@ int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
         resp_msg->set_content(resp_content);
 
         dbc::network::connection_manager::instance().send_message(node->m_sid, resp_msg);
-    } else// broadcast all nodes
-    {
+    } else {
         int count = 0;
         for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it) {
-            if (nullptr == it->second || dbc::network::SERVER_SOCKET == it->second->m_sid.get_type() ||
-                SEED_NODE == it->second->m_node_type) {
+            if (nullptr == it->second
+            || dbc::network::SERVER_SOCKET == it->second->m_sid.get_type()
+            || SEED_NODE == it->second->m_node_type) {
                 continue;
             }
 
@@ -1099,12 +1095,9 @@ int32_t p2p_net_service::send_put_peer_nodes(std::shared_ptr<peer_node> node) {
         }
         m_peer_candidates.insert(m_peer_candidates.end(), tmp_candi_list.begin(), tmp_candi_list.end());
 
-        //case: make sure msg len not exceed MAX_BYTE_BUF_LEN(MAX_MSG_LEN)
         if (resp_content->body.peer_nodes_list.size() > 0) {
             resp_msg->set_content(resp_content);
             dbc::network::connection_manager::instance().broadcast_message(resp_msg);
-        } else {
-            return E_DEFAULT;
         }
     }
 
@@ -1381,7 +1374,7 @@ void p2p_net_service::advertise_local(tcp::endpoint tcp_ep, dbc::network::socket
 
     LOG_DEBUG << "p2p net service advertise local self address: " << tcp_ep.address().to_string() << ", port: "
               << m_listen_port;
-    send_put_peer_nodes(node);
+    broadcast_peer_nodes(node);
 }
 
 void p2p_net_service::remove_peer_candidate(const tcp::endpoint &ep) {
