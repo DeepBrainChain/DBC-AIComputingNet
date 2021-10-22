@@ -54,6 +54,7 @@ updateFrom0373()
   sed -i "s/export PATH=\$PATH:\$DBC_PATH.*//g" ~/.bashrc
   source ~/.bashrc
 
+  dbc_dir=$(dirname $dbc_dir)
   dbc_backup_dir="${dbc_dir}_backup_$(date +%F-%H%M%S)"
   echo "mv $dbc_dir $dbc_backup_dir"
   mv $dbc_dir $dbc_backup_dir
