@@ -16,7 +16,7 @@ static std::string g_internal_ip_seeds[] = {
 };
 
 static std::string g_internal_dns_seeds[] = {
-    "a.b.c"
+
 };
 
 conf_manager::conf_manager() {
