@@ -177,8 +177,7 @@ public:
     // peers
     void rest_peers(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
 
-    void on_cmd_get_peer_nodes_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                   const std::shared_ptr<dbc::network::message>& rsp_msg);
+    void rest_get_peer_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
 
     // /stat/
     void rest_stat(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);

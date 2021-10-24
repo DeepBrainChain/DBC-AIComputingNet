@@ -31,6 +31,14 @@ public:
 
     uint16_t get_net_listen_port() const { return m_listen_port; }
 
+    const std::list<std::shared_ptr<peer_candidate>>& get_peer_candidates() const {
+        return m_peer_candidates;
+    }
+
+    const std::unordered_map<std::string, std::shared_ptr<peer_node>>& get_peer_nodes_map() const {
+        return m_peer_nodes_map;
+    }
+
 protected:
     void init_timer() override;
 
@@ -104,8 +112,6 @@ protected:
 
     void on_ver_resp(const std::shared_ptr<dbc::network::message> &msg);
 
-
-    void on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg);
 
     void on_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg);
 

@@ -94,8 +94,6 @@ void p2p_net_service::init_invoker() {
     BIND_MESSAGE_INVOKER(VER_REQ, &p2p_net_service::on_ver_req)
     BIND_MESSAGE_INVOKER(VER_RESP, &p2p_net_service::on_ver_resp)
 
-    BIND_MESSAGE_INVOKER(typeid(cmd_get_peer_nodes_req).name(), &p2p_net_service::on_cmd_get_peer_nodes_req)
-
     BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_REQ, &p2p_net_service::on_get_peer_nodes_req)
     BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_RESP, &p2p_net_service::on_get_peer_nodes_resp)
 }
@@ -107,8 +105,6 @@ void p2p_net_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(VER_RESP);
     SUBSCRIBE_BUS_MESSAGE(P2P_GET_PEER_NODES_REQ);
     SUBSCRIBE_BUS_MESSAGE(P2P_GET_PEER_NODES_RESP);
-
-    SUBSCRIBE_BUS_MESSAGE(typeid(cmd_get_peer_nodes_req).name());
 }
 
 int32_t p2p_net_service::init_conf() {
@@ -837,60 +833,6 @@ void p2p_net_service::get_all_peer_nodes(peer_list_type &nodes) {
     for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); it++) {
         nodes.push_back(it->second);
     }
-}
-
-void p2p_net_service::on_cmd_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg)
-{
-    auto cmd_resp = std::make_shared<cmd_get_peer_nodes_rsp>();
-    cmd_resp->result = E_SUCCESS;
-    cmd_resp->result_info = "";
-
-    std::shared_ptr<dbc::network::base> content = msg->get_content();
-    auto req = std::dynamic_pointer_cast<cmd_get_peer_nodes_req>(content);
-    assert(nullptr != req && nullptr != content);
-    COPY_MSG_HEADER(req,cmd_resp);
-    if (!req || !content) {
-        LOG_ERROR << "null ptr of cmd_get_peer_nodes_req";
-        cmd_resp->result = E_DEFAULT;
-        cmd_resp->result_info = "internal error";
-        topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
-        return;
-    }
-
-    if(req->flag == flag_active)
-    {
-        for (auto itn = m_peer_nodes_map.begin(); itn != m_peer_nodes_map.end(); ++itn)
-        {
-            cmd_peer_node_info node_info;
-            node_info.peer_node_id = itn->second->m_id;
-            node_info.live_time_stamp = itn->second->m_live_time;
-            node_info.addr.ip = itn->second->m_peer_addr.get_ip();
-            node_info.addr.port = itn->second->m_peer_addr.get_port();
-            node_info.node_type = (int8_t)itn->second->m_node_type;
-            node_info.service_list.clear();
-            node_info.service_list.push_back(std::string("ai_training"));
-            cmd_resp->peer_nodes_list.push_back(std::move(node_info));
-        }
-    }
-    else if(req->flag == flag_global)
-    {
-        //case: not too many peers
-        for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it)
-        {
-            cmd_peer_node_info node_info;
-            node_info.peer_node_id = (*it)->node_id;
-            node_info.live_time_stamp = 0;
-            node_info.net_st = (int8_t)(*it)->net_st;
-            node_info.addr.ip = (*it)->tcp_ep.address().to_string();
-            node_info.addr.port = (*it)->tcp_ep.port();
-            node_info.node_type = (int8_t)(*it)->node_type;
-            node_info.service_list.clear();
-            node_info.service_list.push_back(std::string("ai_training"));
-            cmd_resp->peer_nodes_list.push_back(std::move(node_info));
-        }
-    }
-
-    topic_manager::instance().publish<void>(typeid(cmd_get_peer_nodes_rsp).name(), cmd_resp);
 }
 
 void p2p_net_service::on_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg) {

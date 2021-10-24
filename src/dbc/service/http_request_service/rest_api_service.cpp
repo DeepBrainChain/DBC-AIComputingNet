@@ -15,6 +15,7 @@
 #include "../message/protocol_coder/matrix_coder.h"
 #include "../message/message_id.h"
 #include "data/service_info/service_info_collection.h"
+#include "../peer_request_service/p2p_net_service.h"
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
@@ -45,8 +46,7 @@ int32_t rest_api_service::init() {
             {       NODE_LIST_TASK_RSP, std::bind(&rest_api_service::on_node_list_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {     NODE_MODIFY_TASK_RSP, std::bind(&rest_api_service::on_node_modify_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             { NODE_QUERY_NODE_INFO_RSP, std::bind(&rest_api_service::on_node_query_node_info_rsp, this, std::placeholders::_1, std::placeholders::_2) },
-            {      NODE_SESSION_ID_RSP, std::bind(&rest_api_service::on_node_session_id_rsp, this, std::placeholders::_1, std::placeholders::_2) },
-            //{typeid(cmd_get_peer_nodes_rsp).name(), std::bind(&rest_api_service::on_cmd_get_peer_nodes_rsp, this, std::placeholders::_1, std::placeholders::_2)},
+            {      NODE_SESSION_ID_RSP, std::bind(&rest_api_service::on_node_session_id_rsp, this, std::placeholders::_1, std::placeholders::_2) }
     };
 
     for (const auto &rsp_handler : rsp_handlers) {
@@ -3203,14 +3203,12 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::htt
     util::split_path(path, path_list);
 
     if (path_list.empty()) {
-        // list mining nodes
         rest_list_mining_nodes(httpReq, path);
         return;
     }
 
     if (path_list.size() == 1) {
         const std::string &first_param = path_list[0];
-        // get node session_id
         if (first_param == "session_id") {
             rest_node_session_id(httpReq, path);
         }
@@ -3874,73 +3872,102 @@ void rest_api_service::on_node_session_id_timer(const std::shared_ptr<core_timer
 
 // /peers/
 void rest_api_service::rest_peers(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    /*
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
+    if (path_list.size() == 1) {
+        const std::string &sOption = path_list[0];
+        rest_get_peer_nodes(httpReq, path);
+        return;
+    }
+
+    httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid requests uri");
+}
+
+void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list, std::string &data_json) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"error_code\":0";
+    ss << ", \"data\":{";
+    ss << "\"seed_nodes\":[";
+    int peers_count = 0;
+    for (auto& iter : peer_nodes_list) {
+        if (peers_count > 0) ss << ",";
+        ss << "{";
+        ss << "\"node_id\":" << "\"" << iter.peer_node_id << "\"";
+        ss << ", \"addr\":" << "\"" << iter.addr.ip << ":" << iter.addr.port << "\"";
+        ss << "}";
+    }
+    ss << "]}";
+    ss << "}";
+    data_json = ss.str();
+}
+
+void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+        LOG_ERROR << "http request is not post";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+        return;
+    }
+
+    std::vector<std::string> path_list;
+    util::split_path(path, path_list);
     if (path_list.size() != 1) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                    "No option count specified. Use /api/v1/peers/{option}");
+        LOG_ERROR << "path_list's size != 1";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /peers/active or /peers/global");
         return;
     }
 
     req_body body;
-
     body.option = path_list[0];
-
     if (body.option == "active") {
         body.flag = flag_active;
+        std::unordered_map<std::string, std::shared_ptr<peer_node>> peer_nodes_map =
+                p2p_net_service::instance().get_peer_nodes_map();
+        std::list<cmd_peer_node_info> peer_nodes_list;
+        for (auto itn = peer_nodes_map.begin(); itn != peer_nodes_map.end(); ++itn) {
+            if (itn->second->m_node_type != peer_node_type::SEED_NODE) continue;
+
+            cmd_peer_node_info node_info;
+            node_info.peer_node_id = itn->second->m_id;
+            node_info.live_time_stamp = itn->second->m_live_time;
+            node_info.addr.ip = itn->second->m_peer_addr.get_ip();
+            node_info.addr.port = itn->second->m_peer_addr.get_port();
+            node_info.node_type = (int8_t)itn->second->m_node_type;
+            node_info.service_list.clear();
+            node_info.service_list.push_back(std::string("ai_training"));
+            peer_nodes_list.push_back(std::move(node_info));
+        }
+
+        std::string data_json;
+        reply_peer_nodes_list(peer_nodes_list, data_json);
+        httpReq->reply_comm_rest_succ2(data_json);
     } else if (body.option == "global") {
         body.flag = flag_global;
-    } else {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "Invalid option. The option is active or global.");
-        return;
-    }
+        std::list<std::shared_ptr<peer_candidate>> peer_candidates =
+                p2p_net_service::instance().get_peer_candidates();
+        std::list<cmd_peer_node_info> peer_nodes_list;
+        for (auto it = peer_candidates.begin(); it != peer_candidates.end(); ++it) {
+            if ((*it)->node_type != peer_node_type::SEED_NODE) continue;
 
-
-
-    std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
-    msg->set_name(typeid(cmd_get_peer_nodes_req).name());
-    msg->set_content(req);
-    return msg;
-    */
-}
-
-void rest_api_service::on_cmd_get_peer_nodes_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                 const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    /*
-    INIT_RSP_CONTEXT(cmd_get_peer_nodes_req, cmd_get_peer_nodes_rsp)
-
-    if (resp->result != 0) {
-        ERROR_REPLY(HTTP_OK, RPC_RESPONSE_ERROR, resp->result_info)
-        return E_DEFAULT;
-    }
-
-    rapidjson::Value peer_nodes_list(rapidjson::kArrayType);
-    for (auto it = resp->peer_nodes_list.begin(); it != resp->peer_nodes_list.end(); it++) {
-        rapidjson::Value cmd_peer_node_info(rapidjson::kObjectType);
-        cmd_peer_node_info.AddMember("peer_node_id", STRING_REF(it->peer_node_id), allocator);
-        cmd_peer_node_info.AddMember("live_time_stamp", it->live_time_stamp, allocator);
-        cmd_peer_node_info.AddMember("net_st", STRING_DUP(net_state_2_string(it->net_st)), allocator);
-        cmd_peer_node_info.AddMember("ip", STRING_DUP(util::fuzz_ip(it->addr.ip)), allocator);
-        cmd_peer_node_info.AddMember("port", it->addr.port, allocator);
-        cmd_peer_node_info.AddMember("node_type", STRING_DUP(node_type_2_string(it->node_type)), allocator);
-
-        rapidjson::Value service_list(rapidjson::kArrayType);
-        for (auto & s : it->service_list) {
-            service_list.PushBack(rapidjson::StringRef(s.c_str(), s.length()), allocator);
+            cmd_peer_node_info node_info;
+            node_info.peer_node_id = (*it)->node_id;
+            node_info.live_time_stamp = 0;
+            node_info.net_st = (int8_t)(*it)->net_st;
+            node_info.addr.ip = (*it)->tcp_ep.address().to_string();
+            node_info.addr.port = (*it)->tcp_ep.port();
+            node_info.node_type = (int8_t)(*it)->node_type;
+            node_info.service_list.clear();
+            node_info.service_list.push_back(std::string("ai_training"));
+            peer_nodes_list.push_back(std::move(node_info));
         }
-        cmd_peer_node_info.AddMember("service_list", service_list, allocator);
 
-        peer_nodes_list.PushBack(cmd_peer_node_info, allocator);
+        std::string data_json;
+        reply_peer_nodes_list(peer_nodes_list, data_json);
+        httpReq->reply_comm_rest_succ2(data_json);
+    } else {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid option. the option is active or global");
     }
-
-    data.AddMember("peer_nodes_list", peer_nodes_list, allocator);
-
-    httpReq->reply_comm_rest_succ(data);
-
-    return E_SUCCESS;
-    */
 }
 
 // /stat/
