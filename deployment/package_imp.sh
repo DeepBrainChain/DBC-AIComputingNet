@@ -149,7 +149,7 @@ if [ "$type" != "client" -a "$type" != "mining" ]; then
     help
 fi
 
-tar_ball=dbc-$os_name-$type-$version.tar.gz
+tar_ball=dbc-$os_name-$type.tar.gz
 rm -f ./package/$tar_ball
 rm -rf ./package/dbc_$type\_node
 mkdir -p ./package/dbc_$type\_node
@@ -169,5 +169,10 @@ fi
 tar -czvf $tar_ball dbc_$type\_node
 
 rm -rf $dbc_repo_dir
+
+md5=$(md5sum $tar_ball | awk '{print $1}')
+if [ -f ./version ]; then
+    echo "$tar_ball $md5" >> ./version
+fi
 
 echo "package complete: $version $type"

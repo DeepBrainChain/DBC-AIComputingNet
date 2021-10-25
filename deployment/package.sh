@@ -51,6 +51,16 @@ if [ -z "$version" ]; then
     echo "verson: $version"
 fi
 
+if [ -d ./package ]; then
+    if [ -f ./package/version ]; then
+        rm -f ./package/version
+    fi
+else
+    mkdir ./package
+fi
+touch ./package/version
+echo "version $version" >> ./package/version
+
 if [ "$os_name" == "macos" ]; then
     bash ./package_imp.sh $version "client"
 fi

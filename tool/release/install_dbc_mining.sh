@@ -1,18 +1,18 @@
 #!/bin/bash
 #set -x
 
-release_version=0.3.7.4
 host=$(hostname)
 dbc_repo_dir=dbc_mining_node
 
 download_dbc_tar()
 {
   echo "begin to wget DBC release package"
-  rm -rf dbc-linux-mining-$release_version.tar.gz
+  rm -rf dbc-linux-mining*.tar.gz
 
   #wget https://github.com/DeepBrainChain/deepbrainchain-release/releases/download/latest/dbc-linux-mining-$release_version.tar.gz
   #wget http://116.85.24.172:20444/static/dbc-linux-mining-$release_version.tar.gz
-  wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-mining-$release_version.tar.gz
+  #wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-mining-$release_version.tar.gz
+  wget http://111.44.254.179:22244/dbc/dbc-linux-mining.tar.gz
   if [ $? -ne 0 ]; then
     echo "***wget DBC release package failed***"
     exit
@@ -218,7 +218,7 @@ while getopts "udi:" o; do
         i)
             install_path=${OPTARG}
             echo "install"
-			      dbc_tar=dbc-linux-mining-$release_version.tar.gz
+			      dbc_tar=dbc-linux-mining.tar.gz
             if [ ! -f $dbc_tar ];then
               echo "$dbc_tar not found"
               exit 1

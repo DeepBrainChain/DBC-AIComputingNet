@@ -1,21 +1,40 @@
 #!/bin/bash
 
-release_version=0.3.7.4
+release_version=""
+package_md5=""
 host=$(hostname)
 
-download()
+getReleaseVersion()
+{
+  if [ -f /data/version ]; then
+    sudo rm -f /data/version
+  fi
+  sudo wget http://111.44.254.179:22244/dbc/version
+  if [ -f /data/version ]; then
+    rawdata=$(grep 'version' /data/version | awk '{print $2}')
+    release_version=${rawdata-""}
+    rawdata=$(grep 'dbc-linux-mining.tar.gz' /data/version | awk '{print $2}')
+    package_md5=${rawdata-""}
+    sudo rm -f /data/version
+    echo "get release version $release_version"
+  else
+    echo "can not get release version in http://111.44.254.179:22244/dbc/version"
+  fi
+}
+
+downloadPackage()
 {
   echo "begin download"
   sudo rm -rf /data/dbc-linux-mining*
   # sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/0.3.7.3/dbc-linux-mining-0.3.7.3.tar.gz
-  sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-mining-$release_version.tar.gz
-  tar -zxvf /data/dbc-linux-mining-$release_version.tar.gz -C /data
+  # sudo wget https://github.com/DeepBrainChain/DBC-AIComputingNet/releases/download/$release_version/dbc-linux-mining-$release_version.tar.gz
+  sudo wget http://111.44.254.179:22244/dbc/dbc-linux-mining.tar.gz
 }
 
 deletePackage()
 {
   sudo rm -rf /data/dbc_mining_node
-  sudo rm -rf /data/dbc-linux-mining-$release_version.tar.gz
+  sudo rm -rf /data/dbc-linux-mining*.tar.gz
 }
 
 updateAbove0374()
@@ -68,13 +87,8 @@ updateFrom0373()
 # sudo cp -rp /data/0.3.7.3/dbc_repo/conf /home/dbc/0.3.7.3/dbc_repo/
 }
 
-cur_dir=$(cd "$(dirname "$0")";pwd)
-dbc_dir=$(dirname $cur_dir)
-# if [[ "$cur_dir" == *dbc*tool* ]]; then
-if [ -f $dbc_dir/dbc ]; then
-  echo "find dbc path $dbc_dir"
-  download
-
+updateDBC()
+{
   sudo systemctl stop dbc
   sudo systemctl stop dbc
   sudo systemctl stop dbc
@@ -99,6 +113,40 @@ if [ -f $dbc_dir/dbc ]; then
 
   deletePackage
   echo "update complete"
+}
+
+cur_dir=$(cd "$(dirname "$0")";pwd)
+dbc_dir=$(dirname $cur_dir)
+# if [[ "$cur_dir" == *dbc*tool* ]]; then
+if [ -f $dbc_dir/dbc ]; then
+  echo "find dbc path $dbc_dir"
+
+  cd /data
+
+  getReleaseVersion
+  if [ "$release_version" == "" ]; then
+    echo "release version is empty"
+    echo "update failed. Please contact with publisher."
+  elif [ "$package_md5" == "" ]; then
+    echo "release md5 is empty"
+    echo "update failed. Please contact with publisher."
+  else
+    downloadPackage
+    dbc_tar=/data/dbc-linux-mining.tar.gz
+    if [ ! -f $dbc_tar ]; then
+      echo "download failed. Please check network environment."
+    else
+      md5=$(md5sum $dbc_tar | awk '{print $1}')
+      if [ $md5 == $package_md5 ]; then
+        echo "check package md5 success"
+        tar -zxvf $dbc_tar -C /data
+        updateDBC
+      else
+        echo "package md5 is wrong"
+        echo "update failed"
+      fi
+    fi
+  fi
 else
   echo "update failed"
   echo "Please copy update.sh to dbc's installed tool directory like /home/dbc/0.3.7.3/dbc_repo/tool/update.sh"
