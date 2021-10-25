@@ -16,6 +16,7 @@
 #include "../message/message_id.h"
 #include "data/service_info/service_info_collection.h"
 #include "../peer_request_service/p2p_net_service.h"
+#include "data/resource/system_info.h"
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
@@ -3889,7 +3890,7 @@ void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list,
     ss << "{";
     ss << "\"error_code\":0";
     ss << ", \"data\":{";
-    ss << "\"seed_nodes\":[";
+    ss << "\"peer_nodes\":[";
     int peers_count = 0;
     for (auto& iter : peer_nodes_list) {
         if (peers_count > 0) ss << ",";
@@ -3926,7 +3927,9 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
                 p2p_net_service::instance().get_peer_nodes_map();
         std::list<cmd_peer_node_info> peer_nodes_list;
         for (auto itn = peer_nodes_map.begin(); itn != peer_nodes_map.end(); ++itn) {
-            if (itn->second->m_node_type != peer_node_type::SEED_NODE) continue;
+            if (conf_manager::instance().get_node_id() == itn->second->m_id ||
+                SystemInfo::instance().get_publicip() == itn->second->m_peer_addr.get_ip())
+                continue;
 
             cmd_peer_node_info node_info;
             node_info.peer_node_id = itn->second->m_id;
@@ -3948,7 +3951,9 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
                 p2p_net_service::instance().get_peer_candidates();
         std::list<cmd_peer_node_info> peer_nodes_list;
         for (auto it = peer_candidates.begin(); it != peer_candidates.end(); ++it) {
-            if ((*it)->node_type != peer_node_type::SEED_NODE) continue;
+            if (conf_manager::instance().get_node_id() == (*it)->node_id ||
+                SystemInfo::instance().get_publicip() == (*it)->tcp_ep.address().to_string())
+                continue;
 
             cmd_peer_node_info node_info;
             node_info.peer_node_id = (*it)->node_id;

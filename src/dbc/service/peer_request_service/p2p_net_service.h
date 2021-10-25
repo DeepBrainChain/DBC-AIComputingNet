@@ -12,7 +12,6 @@
 using namespace boost::asio::ip;
 
 #define MIN_PEER_CANDIDATES_COUNT                8
-#define MAX_SEND_PEER_NODES_COUNT                16
 #define MIN_NORMAL_AVAILABLE_NODE_COUNT          2
 #define DISCONNECT_NODE_PER_MINUTES              5
 

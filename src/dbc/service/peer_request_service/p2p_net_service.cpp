@@ -544,7 +544,6 @@ bool p2p_net_service::add_peer_node(const std::shared_ptr<dbc::network::message>
     }
 
     ptr_tcp_ch->set_remote_node_id(nid);
-    //set remote node id of the tcp channel, and the node id will be used for efficient resp message transport.
 
     std::shared_ptr<peer_node> node = std::make_shared<peer_node>();
     node->m_id = nid;
@@ -637,18 +636,13 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
 
     auto candidate = get_peer_candidate(notification_content->ep);
     if (nullptr == candidate) {
-        LOG_ERROR << "a client tcp connection established, but not in m_peer_candidates, src_sid:"
-                  << msg->header.src_sid.to_string();
         dbc::network::connection_manager::instance().release_connector(msg->header.src_sid);
         dbc::network::connection_manager::instance().stop_channel(msg->header.src_sid);
         return;
     }
 
-    LOG_INFO << "on_client_tcp_connect, addr: " << candidate->tcp_ep.address().to_string() << ":" << candidate->tcp_ep.port();
-
     if (dbc::network::CLIENT_CONNECT_SUCCESS == notification_content->status) {
         std::shared_ptr<dbc::ver_req> ver_req_content = std::make_shared<dbc::ver_req>();
-
         //header
         ver_req_content->header.__set_magic(conf_manager::instance().get_net_flag());
         ver_req_content->header.__set_msg_name(VER_REQ);
@@ -663,7 +657,6 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
         exten_info["sign_at"] = boost::str(boost::format("%d") % cur);
         exten_info["origin_id"] = conf_manager::instance().get_node_id();
         ver_req_content->header.__set_exten_info(exten_info);
-
         //body
         ver_req_content->body.__set_node_id(conf_manager::instance().get_node_id());
         ver_req_content->body.__set_core_version(CORE_VERSION);
@@ -685,9 +678,7 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
         req_msg->set_name(VER_REQ);
         req_msg->header.dst_sid = msg->header.src_sid;
 
-        LOG_INFO << "send ver_req to peer, addr: " << addr_you.ip << ":" << addr_you.port
-                 << ", local_sid: " << msg->header.dst_sid.to_string()
-                 << ", remote_sid: " << msg->header.src_sid.to_string();
+        LOG_INFO << "send ver_req to peer: " << addr_you.ip << ":" << addr_you.port;
 
         dbc::network::connection_manager::instance().send_message(req_msg->header.dst_sid, req_msg);
     } else {
@@ -711,7 +702,7 @@ void p2p_net_service::on_ver_req(const std::shared_ptr<dbc::network::message> &m
     }
 
     LOG_INFO << "recv ver_req"
-             << ", from: " << req_content->body.addr_me.ip << ":" << req_content->body.addr_me.port
+             << " from: " << req_content->body.addr_me.ip << ":" << req_content->body.addr_me.port
              << ", node_id:" << req_content->body.node_id;
 
     if (!add_peer_node(msg)) {
@@ -911,7 +902,6 @@ void p2p_net_service::on_get_peer_nodes_resp(const std::shared_ptr<dbc::network:
         return;
     }
 
-    //if advertise local ip, peer nodes list is just one and should relay to neighbor node
     if (1 == rsp->body.peer_nodes_list.size()) {
         const dbc::peer_node_info &node = rsp->body.peer_nodes_list[0];
 
@@ -922,11 +912,15 @@ void p2p_net_service::on_get_peer_nodes_resp(const std::shared_ptr<dbc::network:
                 return;
             }
 
-            //add to peer candidates
             if (!add_peer_candidate(ep, ns_available, NORMAL_NODE, node.peer_node_id)) {
                 LOG_ERROR << "add peer candidate error: " << ep;
             } else {
                 LOG_DEBUG << "add peer candidate successfull: " << ep;
+            }
+
+            auto peer_candidate = get_peer_candidate(ep);
+            if (peer_candidate != nullptr) {
+                peer_candidate->node_id = node.peer_node_id;
             }
 
             return;
@@ -950,6 +944,10 @@ void p2p_net_service::on_get_peer_nodes_resp(const std::shared_ptr<dbc::network:
             if (nullptr == candidate) {
                 if (!add_peer_candidate(ep, ns_idle, NORMAL_NODE)) {
                     LOG_ERROR << "add peer candidate error: " << ep;
+                }
+
+                if (candidate != nullptr) {
+                    candidate->node_id = it->peer_node_id;
                 }
 
                 LOG_INFO << "add peer candidate: "
@@ -1012,15 +1010,15 @@ int32_t p2p_net_service::broadcast_peer_nodes(std::shared_ptr<peer_node> node) {
             info.service_list.push_back(std::string("ai_training"));
             resp_content->body.peer_nodes_list.push_back(std::move(info));
 
-            if (++count >= MAX_SEND_PEER_NODES_COUNT) {
+            if (++count >= 100) {
                 LOG_DEBUG << "send peer nodes too many and break: " << m_peer_nodes_map.size();
                 break;
             }
         }
 
         std::list<std::shared_ptr<peer_candidate> > tmp_candi_list;
-        for (auto it = m_peer_candidates.begin(); (it != m_peer_candidates.end()) && (count < MAX_SEND_PEER_NODES_COUNT);) {
-            if (ns_available == (*it)->net_st && NORMAL_NODE == (*it)->node_type) {
+        for (auto it = m_peer_candidates.begin(); (it != m_peer_candidates.end()) && (count < 100);) {
+            if (/*ns_available == (*it)->net_st &&*/ NORMAL_NODE == (*it)->node_type) {
                 dbc::peer_node_info info;
                 info.peer_node_id = (*it)->node_id;
                 info.live_time_stamp = (*it)->last_conn_tm;
