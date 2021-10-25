@@ -123,14 +123,14 @@ post_config()
     echo "CAUTION:the dbc address will be used in payment of rent."
     echo "please be sure that the wallet you filled is correct!"
     echo "-----------------------------------------------------------"
-    read -p "please input your dbc wallet address:" wallet_addr
-    if [ -z $wallet_addr ]
-    then
-      echo "wallet address is empty or invalid, please check and try again!"
-      echo "please add your wallet address manually by editing ./conf/core.conf"
-      echo "eg. wallet=AbpBWkCp3jcLZpvf5zCtCLRaGNRi95osik"
-    fi
-    echo "wallet=${wallet_addr}" >> ./conf/core.conf
+    # read -p "please input your dbc wallet address:" wallet_addr
+    # if [ -z $wallet_addr ]
+    # then
+    #   echo "wallet address is empty or invalid, please check and try again!"
+    #   echo "please add your wallet address manually by editing ./conf/core.conf"
+    #   echo "eg. wallet=AbpBWkCp3jcLZpvf5zCtCLRaGNRi95osik"
+    # fi
+    # echo "wallet=${wallet_addr}" >> ./conf/core.conf
 
 
   echo -e
