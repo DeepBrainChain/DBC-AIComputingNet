@@ -12,9 +12,9 @@
 #include "tweetnacl/tweetnacl.h"
 
 static std::string g_internal_ip_seeds[] = {
-    "111.44.254.182:4000",
-    "111.44.254.182:4001",
-    "111.44.254.182:4002"
+    "111.44.254.182:5001",
+    "111.44.254.182:5003",
+    "111.44.254.182:5005"
 };
 
 static std::string g_internal_dns_seeds[] = {
