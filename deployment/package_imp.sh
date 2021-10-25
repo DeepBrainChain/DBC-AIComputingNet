@@ -82,51 +82,24 @@ dbc_package()
         rm -f $dbc_repo_dir/conf/container.conf
         cp $tool_dir/restart_dbc_client.sh    $dbc_repo_dir/tool/
         cp $tool_dir/release/update_dbc_client.sh $dbc_repo_dir/tool/
-        cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
-        chmod +x $dbc_repo_dir/stopapp
     fi
 
     # dbc related tool
     if [ $os_name == 'linux' -a $type == 'mining' ]; then
-        cp $tool_dir/startaiserver  $dbc_repo_dir/startapp
-        cp $tool_dir/stopapp        $dbc_repo_dir/stopapp
-
         # dbc node info tool
         cp -r $tool_dir/node_info $dbc_repo_dir/tool/
         cp $tool_dir/release/update_dbc_mining.sh $dbc_repo_dir/tool/
-
-        chmod +x $dbc_repo_dir/startapp
-        chmod +x $dbc_repo_dir/stopapp
     fi
 
-    cp $tool_dir/p                  $dbc_repo_dir/p
-    cp $tool_dir/stopapp            $dbc_repo_dir/tool/
     cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/tool/
-    cp $tool_dir/rm_containers.sh   $dbc_repo_dir/tool/
     cp $tool_dir/change_gpu_id.sh   $dbc_repo_dir/tool/
     cp $tool_dir/clean_cache.sh     $dbc_repo_dir/tool/
     cp $tool_dir/restart_dbc.sh     $dbc_repo_dir/tool/
     cp $tool_dir/restart_dbc.service   $dbc_repo_dir/tool/
-    cp $tool_dir/plog               $dbc_repo_dir/
-    cp $tool_dir/ipfs-ctl           $dbc_repo_dir/tool/
     cp $tool_dir/dbc_upload          $dbc_repo_dir/tool/
 
-    chmod +x $dbc_repo_dir/plog
     chmod +x $dbc_repo_dir/dbc
     chmod +x $dbc_repo_dir/tool/*
-    chmod +x $dbc_repo_dir/p
-}
-
-mining_package()
-{
-    echo "step: mining package"
-
-    mkdir $dbc_repo_dir/mining_repo
-
-    cp $tool_dir/mining_install.sh  $dbc_repo_dir/mining_repo/
-    cp $tool_dir/nvidia-persistenced.service $dbc_repo_dir/mining_repo/
-
-    chmod +x $dbc_repo_dir/mining_repo/*.sh
 }
 
 if [ $# -lt 2 ]; then
@@ -160,10 +133,6 @@ pwd
 dbc_repo_dir=./dbc_$type\_node
 
 dbc_package
-
-if [ $type == 'mining' ]; then
-    mining_package
-fi
 
 # package
 tar -czvf $tar_ball dbc_$type\_node
