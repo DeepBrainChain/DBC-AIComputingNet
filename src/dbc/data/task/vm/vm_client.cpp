@@ -258,6 +258,9 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* interface_source_node = doc.NewElement("source");
     interface_source_node->SetAttribute("network", "default");
     interface_node->LinkEndChild(interface_source_node);
+    tinyxml2::XMLElement* interface_model_node = doc.NewElement("model");
+    interface_model_node->SetAttribute("type", "virtio");
+    interface_node->LinkEndChild(interface_model_node);
     dev_node->LinkEndChild(interface_node);
 
     // vnc
