@@ -918,7 +918,7 @@ FResult TaskManager::StartTask(const std::string& wallet, const std::string &tas
     }
 
     EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_SHUT_OFF) {
+    if (vm_status == VS_SHUT_OFF || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Starting);
         taskinfo->__set_operation(T_OP_Start);
         taskinfo->__set_last_start_time(time(nullptr));
@@ -1392,22 +1392,39 @@ void TaskManager::ProcessTask() {
             LOG_ERROR << "create task " << taskinfo->task_id << " failed";
         }
     } else if (taskinfo->operation == T_OP_Start) {
-        if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
-            taskinfo->__set_status(TS_Running);
-            taskinfo->__set_operation(T_OP_None);
-            m_task_db.write_task(taskinfo);
-            restore_iptable(taskinfo->task_id);
+        EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+        if (vm_status == VS_SHUT_OFF) {
+            if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
+                taskinfo->__set_status(TS_Running);
+                taskinfo->__set_operation(T_OP_None);
+                m_task_db.write_task(taskinfo);
+                restore_iptable(taskinfo->task_id);
 
-            LOG_INFO << "start task " << taskinfo->task_id << " successful";
-        } else {
-            taskinfo->__set_operation(T_OP_None);
-            m_task_db.write_task(taskinfo);
+                LOG_INFO << "restart task " << taskinfo->task_id << " successful";
+            } else {
+                taskinfo->__set_operation(T_OP_None);
+                m_task_db.write_task(taskinfo);
 
-            LOG_ERROR << "start task " << taskinfo->task_id << " failed";
+                LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
+            }
+        } else if (vm_status == VS_PAUSED) {
+            if (E_SUCCESS == m_vm_client.ResumeDomain(taskinfo->task_id)) {
+                taskinfo->__set_status(TS_Running);
+                taskinfo->__set_operation(T_OP_None);
+                m_task_db.write_task(taskinfo);
+                restore_iptable(taskinfo->task_id);
+
+                LOG_INFO << "start task " << taskinfo->task_id << " successful";
+            } else {
+                taskinfo->__set_operation(T_OP_None);
+                m_task_db.write_task(taskinfo);
+
+                LOG_ERROR << "start task " << taskinfo->task_id << " failed";
+            }
         }
     } else if (taskinfo->operation == T_OP_Stop) {
         if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
-            taskinfo->__set_status(TS_None);
+            taskinfo->__set_status(TS_Stopping);
             taskinfo->__set_operation(T_OP_None);
             m_task_db.write_task(taskinfo);
             remove_iptable(taskinfo->task_id);
