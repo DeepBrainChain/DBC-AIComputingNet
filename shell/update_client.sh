@@ -49,14 +49,7 @@ fi
 
 /bin/bash ./shell/stop.sh
 
-os_name=`uname -a | awk '{print $1}'`
-if [ $os_name == 'Linux' ];then
-    os_name=linux
-elif [ $os_name == 'Darwin' ];then
-    os_name=macos
-fi
-
-client_file=dbc_${os_name}_client_${latest_version}.tar.gz
+client_file=dbc_client_node_${latest_version}.tar.gz
 
 wget -P ./update_temp http://111.44.254.179:22244/dbc/${client_file}
 if [ $? -ne 0 ]; then

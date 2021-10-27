@@ -1,71 +1,42 @@
 #!/bin/bash
 
-base_dir=..
+workdir=$(cd $(dirname $0) && pwd)
+cd $workdir
 
-os_name=`uname -a | awk '{print $1}'`
-if [ $os_name == 'Linux' ];then
-    os_name=linux
-elif [ $os_name == 'Darwin' ];then
-    os_name=macos
-fi
+base_dir=${workdir}/..
 
-# get default version from src file: version.h
-
-remove_leading_zero()
-{
+remove_leading_zero() {
     v=$1
     v=$(echo "$v" |  sed 's/^0*//')
 
     if [ -z "$v" ]; then
         v="0"
     fi
+
     echo $v
 }
 
-get_version()
-{
-    version_file=$base_dir/src/dbc/common/version.h
+version_file=$base_dir/src/dbc/common/version.h
+ver=$(grep "#define CORE_VERSION" $version_file  | awk '{print $3}')
 
-    ver=$(grep "#define CORE_VERSION" $version_file  | awk '{print $3}')
+v1="${ver:2:2}"
+v1=$(remove_leading_zero $v1)
 
-    v1="${ver:2:2}"
-    v1=$(remove_leading_zero $v1)
+v2="${ver:4:2}"
+v2=$(remove_leading_zero $v2)
 
+v3="${ver:6:2}"
+v3=$(remove_leading_zero $v3)
 
-    v2="${ver:4:2}"
-    v2=$(remove_leading_zero $v2)
+v4="${ver:8:2}"
+v4=$(remove_leading_zero $v4)
 
-    v3="${ver:6:2}"
-    v3=$(remove_leading_zero $v3)
+version="$v1.$v2.$v3.$v4"
 
-    v4="${ver:8:2}"
-    v4=$(remove_leading_zero $v4)
+echo "version:" $version
 
-    echo "$v1.$v2.$v3.$v4"
-}
+mkdir -p ./package
+rm -rf ./package/*
 
-version=$1
-
-if [ -z "$version" ]; then
-    version=$(get_version)
-    echo "verson: $version"
-fi
-
-if [ -d ./package ]; then
-    if [ -f ./package/version ]; then
-        rm -f ./package/version
-    fi
-else
-    mkdir ./package
-fi
-touch ./package/version
-echo "version $version" >> ./package/version
-
-if [ "$os_name" == "macos" ]; then
-    bash ./package_imp.sh $version "client"
-fi
-
-if [ "$os_name" == "linux" ]; then
-    bash ./package_imp.sh $version "client"
-    bash ./package_imp.sh $version "mining"
-fi
+/bin/bash ./package_imp.sh $version "client"
+/bin/bash ./package_imp.sh $version "mining"
