@@ -1,0 +1,6 @@
+#* * * * * (cd /home/crontab;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
+#* * * * * (cd /home/crontab;sleep 10;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
+#* * * * * (cd /home/crontab;sleep 20;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
+#* * * * * (cd /home/crontab;sleep 30;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
+#* * * * * (cd /home/crontab;sleep 40;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
+#* * * * * (cd /home/crontab;sleep 50;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
