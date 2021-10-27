@@ -5,8 +5,8 @@ echo "package start: $version $type"
 
 base_dir=../..
 tool_dir=$base_dir/tool
+shell_dir=$base_dir/shell
 deployment_dir=$base_dir/deployment
-ipfs_repo_src_dir=$deployment_dir/ipfs_repo
 
 os_name=`uname -a | awk '{print $1}'`
 if [ $os_name == 'Linux' ];then
@@ -61,7 +61,7 @@ dbc_package()
     echo "step: dbc program package"
 
     # mkdir $dbc_repo_dir
-    mkdir $dbc_repo_dir/tool
+    mkdir $dbc_repo_dir/shell
 
     # dbc exe and default configure
     cp $base_dir/output/dbc $dbc_repo_dir/
@@ -75,31 +75,31 @@ dbc_package()
         strip -S $dbc_repo_dir/dbc
     fi
 
-    cp -R $base_dir/conf $dbc_repo_dir/
+    cp -r $base_dir/conf $dbc_repo_dir/
 
     if [ $type == 'client' ];then
-        echo "    substep: rm container.conf for client"
-        rm -f $dbc_repo_dir/conf/container.conf
-        cp $tool_dir/restart_dbc_client.sh    $dbc_repo_dir/tool/
-        cp $tool_dir/release/update_dbc_client.sh $dbc_repo_dir/tool/
+        rm -rf $dbc_repo_dir/conf/container.conf
+        cp $shell_dir/client/*.sh $dbc_repo_dir/shell/
+        cp $shell_dir/update_client.sh $dbc_repo_dir/update.sh
+        chmod +x $dbc_repo_dir/update.sh
     fi
 
-    # dbc related tool
-    if [ $os_name == 'linux' -a $type == 'mining' ]; then
-        # dbc node info tool
-        cp -r $tool_dir/node_info $dbc_repo_dir/tool/
-        cp $tool_dir/release/update_dbc_mining.sh $dbc_repo_dir/tool/
+    if [ $type == 'mining' ]; then
+        cp $shell_dir/mining/*.sh $dbc_repo_dir/shell/
+        cp $shell_dir/update_mining.sh $dbc_repo_dir/update.sh
+        chmod +x $dbc_repo_dir/update.sh
     fi
 
-    cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/tool/
-    cp $tool_dir/change_gpu_id.sh   $dbc_repo_dir/tool/
-    cp $tool_dir/clean_cache.sh     $dbc_repo_dir/tool/
-    cp $tool_dir/restart_dbc.sh     $dbc_repo_dir/tool/
-    cp $tool_dir/restart_dbc.service   $dbc_repo_dir/tool/
-    cp $tool_dir/dbc_upload          $dbc_repo_dir/tool/
+    cp -r $shell_dir/crontab $dbc_repo_dir/shell
+
+    cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/shell/
+    cp $tool_dir/change_gpu_id.sh   $dbc_repo_dir/shell/
+    cp $tool_dir/clean_cache.sh     $dbc_repo_dir/shell/
+    cp $tool_dir/dbc_upload         $dbc_repo_dir/shell/
 
     chmod +x $dbc_repo_dir/dbc
-    chmod +x $dbc_repo_dir/tool/*
+    chmod +x $dbc_repo_dir/shell/*.sh
+    chmod +x $dbc_repo_dir/shell/crontab/*.sh
 }
 
 if [ $# -lt 2 ]; then
@@ -122,7 +122,7 @@ if [ "$type" != "client" -a "$type" != "mining" ]; then
     help
 fi
 
-tar_ball=dbc-$os_name-$type.tar.gz
+tar_ball=dbc_${os_name}_${type}_${version}.tar.gz
 rm -f ./package/$tar_ball
 rm -rf ./package/dbc_$type\_node
 mkdir -p ./package/dbc_$type\_node
@@ -138,10 +138,5 @@ dbc_package
 tar -czvf $tar_ball dbc_$type\_node
 
 rm -rf $dbc_repo_dir
-
-md5=$(md5sum $tar_ball | awk '{print $1}')
-if [ -f ./version ]; then
-    echo "$tar_ball $md5" >> ./version
-fi
 
 echo "package complete: $version $type"
