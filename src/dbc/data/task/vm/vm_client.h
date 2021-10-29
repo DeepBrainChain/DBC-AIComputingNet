@@ -5,6 +5,35 @@
 #include "virt_client.h"
 #include "service_module/service_module.h"
 #include "../TaskResourceManager.h"
+#include "../db/task_db_types.h"
+
+class VMTask {
+public:
+    VMTask(const std::string& domain_name, int32_t operation, const std::string& image_name) {
+        this->domain_name = domain_name;
+        this->operation = operation;
+        this->need_reply = true;
+        this->image_name = image_name;
+    }
+    VMTask(const std::string& domain_name, int32_t operation, const std::string& image_name,
+           const TaskResource& task_resource, const std::string& user_name, const std::string& password) {
+        this->domain_name = domain_name;
+        this->operation = operation;
+        this->need_reply = true;
+        this->image_name = image_name;
+        this->task_resource = task_resource;
+        this->user_name = user_name;
+        this->password = password;
+    }
+    std::string domain_name;
+    int32_t operation;
+    bool need_reply;
+    std::string image_name; // used when create vm
+    TaskResource task_resource; // used when create vm
+    std::string local_ip; // used when create vm
+    std::string user_name; // used when create vm
+    std::string password; // used when create vm
+};
 
 class VmClient {
 public:
@@ -12,6 +41,7 @@ public:
 
     virtual ~VmClient();
 
+protected:
     int32_t CreateDomain(const std::string& domain_name, const std::string& image, const TaskResource& task_resource);
 
     int32_t StartDomain(const std::string& domain_name);
@@ -30,6 +60,7 @@ public:
 
     int32_t UndefineDomain(const std::string& domain_name);
 
+public:
     void ListAllDomains(std::vector<std::string>& domains);
 
     void ListAllRunningDomains(std::vector<std::string>& domains);
@@ -38,8 +69,35 @@ public:
 
     std::string GetDomainLog(const std::string& domain_name, ETaskLogDirection direction, int32_t n);
 
-private:
+protected:
+    std::string GetDomainLocalIP(const std::string &domain_name);
 
+    bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
+
+    void DeleteDiskSystemFile(const std::string &task_id, const std::string& disk_system_file_name);
+    void DeleteDiskDataFile(const std::string &task_id);
+
+public:
+    void Start();
+
+    void Stop();
+
+    void AddTask(const std::string& domain_name, int32_t operation, const std::string& image);
+    void AddTask(const std::string& domain_name, int32_t operation, const std::string& image,
+                 const TaskResource& task_resource, const std::string& user_name, const std::string& password);
+protected:
+    std::shared_ptr<VMTask> PopTask();
+
+    FResult ProcessTask(std::shared_ptr<VMTask>);
+
+    void thread_func();
+
+private:
+    std::queue<std::shared_ptr<VMTask> > m_process_tasks;
+    bool m_thread_running;
+    std::thread* m_thread = nullptr;
+    std::mutex m_task_mutex;
+    std::condition_variable m_cond;
 
 };
 
