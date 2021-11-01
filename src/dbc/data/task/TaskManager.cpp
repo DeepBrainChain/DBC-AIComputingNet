@@ -1332,9 +1332,9 @@ bool TaskManager::create_task_iptable(const std::string &domain_name, const std:
 
             std::shared_ptr<dbc::task_iptable> iptable(new dbc::task_iptable());
             iptable->task_id = domain_name;
-            iptable->host_ip = public_ip;
-            iptable->vm_local_ip = vm_local_ip;
-            iptable->ssh_port = transform_port;
+            iptable->__set_host_ip(public_ip);
+            iptable->__set_vm_local_ip(vm_local_ip);
+            iptable->__set_ssh_port(transform_port);
             m_iptables[domain_name] = iptable;
             m_iptable_db.write_iptable(iptable);
 

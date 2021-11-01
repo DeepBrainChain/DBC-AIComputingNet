@@ -16,6 +16,12 @@ namespace dbc {
 
     class task_iptable;
 
+    typedef struct _task_iptable__isset {
+        _task_iptable__isset() : host_ip(false), vm_local_ip(false), ssh_port(false) {}
+        bool host_ip :1;
+        bool vm_local_ip :1;
+        bool ssh_port :1;
+    } _task_iptable__isset;
 
     class task_iptable : public virtual ::apache::thrift::TBase {
     public:
@@ -31,6 +37,8 @@ namespace dbc {
         std::string vm_local_ip;
         std::string ssh_port;
 
+        _task_iptable__isset __isset;
+
         void __set_task_id(const std::string& val);
 
         void __set_host_ip(const std::string& val);
@@ -43,11 +51,17 @@ namespace dbc {
         {
             if (!(task_id == rhs.task_id))
                 return false;
-            if (!(host_ip == rhs.host_ip))
+            if (__isset.host_ip != rhs.__isset.host_ip)
                 return false;
-            if (!(vm_local_ip == rhs.vm_local_ip))
+            else if (__isset.host_ip && !(host_ip == rhs.host_ip))
                 return false;
-            if (!(ssh_port == rhs.ssh_port))
+            if (__isset.vm_local_ip != rhs.__isset.vm_local_ip)
+                return false;
+            else if (__isset.vm_local_ip && !(vm_local_ip == rhs.vm_local_ip))
+                return false;
+            if (__isset.ssh_port != rhs.__isset.ssh_port)
+                return false;
+            else if (__isset.ssh_port && !(ssh_port == rhs.ssh_port))
                 return false;
             return true;
         }
