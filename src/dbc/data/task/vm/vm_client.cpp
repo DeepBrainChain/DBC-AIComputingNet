@@ -955,6 +955,10 @@ void VmClient::Stop() {
 }
 
 void VmClient::AddTask(const std::string& domain_name, int32_t operation, const std::string& image) {
+    if (operation == T_OP_Delete && image.empty()) {
+        LOG_ERROR << "image can not be empty when delete a virtual machine";
+        return;
+    }
     std::unique_lock<std::mutex> lock(m_task_mutex);
     std::shared_ptr<VMTask> task = std::make_shared<VMTask>(domain_name, operation, image);
     bool bEmpty = m_process_tasks.empty();
@@ -992,7 +996,7 @@ std::shared_ptr<VMTask> VmClient::PopTask() {
 FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
     LOG_INFO << "vm task name " << task->domain_name << ", operate " << task->operation;
     int32_t res_code = E_DEFAULT;
-    std::string res_msg = "failed";
+    std::string res_msg;
     switch (task->operation) {
         case T_OP_Create:
             res_code = CreateDomain(task->domain_name, task->image_name, task->task_resource);
@@ -1044,17 +1048,30 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                     LOG_ERROR << "resume domain " << task->domain_name << " failed";
                 }
             }
+            else if (vm_status == VS_RUNNING) {
+                res_code = E_SUCCESS;
+                LOG_INFO << "domain " << task->domain_name << " is already running";
+            }
         }
             break;
         case T_OP_Stop:
-            res_code = DestoryDomain(task->domain_name);
-            if (res_code == E_SUCCESS) {
-                LOG_INFO << "destory domain " << task->domain_name << " successful";
+        {
+            EVmStatus vm_status = GetDomainStatus(task->domain_name);
+            if (vm_status == VS_SHUT_OFF) {
+                res_code = E_SUCCESS;
+                LOG_INFO << "domain " << task->domain_name << " is already stopping";
             }
             else {
-                res_msg = "destory domain failed";
-                LOG_ERROR << "destory domain " << task->domain_name << " failed";
+                res_code = DestoryDomain(task->domain_name);
+                if (res_code == E_SUCCESS) {
+                    LOG_INFO << "destory domain " << task->domain_name << " successful";
+                }
+                else {
+                    res_msg = "destory domain failed";
+                    LOG_ERROR << "destory domain " << task->domain_name << " failed";
+                }
             }
+        }
             break;
         case T_OP_ReStart:
         {
@@ -1119,6 +1136,7 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
         default:
             res_code = E_DEFAULT;
             res_msg = "unknown operation";
+            LOG_ERROR << res_msg;
             break;
     }
     return std::make_tuple(res_code, res_msg);

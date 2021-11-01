@@ -796,7 +796,7 @@ FResult TaskManager::StopTask(const std::string& wallet, const std::string &task
     }
 
     EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_RUNNING) {
+    if (vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Stopping);
         taskinfo->__set_operation(T_OP_Stop);
         taskinfo->__set_last_stop_time(time(nullptr));
@@ -871,7 +871,7 @@ FResult TaskManager::DeleteTask(const std::string& wallet, const std::string &ta
     }
 
     EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+    if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Deleting);
         taskinfo->__set_operation(T_OP_Delete);
         taskinfo->__set_last_stop_time(time(nullptr));
@@ -1373,29 +1373,23 @@ void TaskManager::PruneTask() {
             std::vector<std::string> ids = it.second->task_ids;
             for (auto& task_id : ids) {
                 if (task_id.find("vm_check_") == std::string::npos) {
-                    m_vm_client.AddTask(task_id, T_OP_Stop, "");
+                    StopTask(it.first, task_id);
                 }
             }
         } else if (machine_status == "waitingFulfill" || machine_status == "online") {
             std::vector<std::string> ids = it.second->task_ids;
             for (auto& task_id : ids) {
                 if (task_id.find("vm_check_") == std::string::npos) {
-                    m_vm_client.AddTask(task_id, T_OP_Stop, "");
+                    StopTask(it.first, task_id);
                 } else {
-                    auto it_task = m_tasks.find(task_id);
-                    if (it_task != m_tasks.end()) {
-                        m_vm_client.AddTask(it_task->second->task_id, T_OP_Delete, it_task->second->image_name);
-                    }
+                    DeleteTask(it.first, task_id);
                 }
             }
         } else if (machine_status == "creating" || machine_status == "rented") {
             std::vector<std::string> ids = it.second->task_ids;
             for (auto& task_id : ids) {
                 if (task_id.find("vm_check_") != std::string::npos) {
-                    auto it_task = m_tasks.find(task_id);
-                    if (it_task != m_tasks.end()) {
-                        m_vm_client.AddTask(it_task->second->task_id, T_OP_Delete, it_task->second->image_name);
-                    }
+                    DeleteTask(it.first, task_id);
                 }
             }
         }
@@ -1406,7 +1400,7 @@ void TaskManager::PruneTask() {
             if (rent_end <= 0) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto& task_id : ids) {
-                    m_vm_client.AddTask(task_id, T_OP_Stop, "");
+                    StopTask(it.first, task_id);
                 }
 
                 // 1小时出120个块
@@ -1416,10 +1410,7 @@ void TaskManager::PruneTask() {
                 if (reserve_end > cur_block) {
                     ids = it.second->task_ids;
                     for (auto& task_id : ids) {
-                        auto it_task = m_tasks.find(task_id);
-                        if (it_task != m_tasks.end()) {
-                            m_vm_client.AddTask(it_task->second->task_id, T_OP_Delete, it_task->second->image_name);
-                        }
+                        DeleteTask(it.first, task_id);
                     }
                 }
             } else {
@@ -1450,6 +1441,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
                     LOG_INFO << "create task " << taskinfo->task_id << " successful";
                 }
                 else {
+                    taskinfo->__set_operation(T_OP_Create);
                     m_vm_client.AddTask(taskinfo->task_id, T_OP_Delete, taskinfo->image_name);
                     LOG_ERROR << "create task " << taskinfo->task_id << " failed";
                 }
@@ -1516,6 +1508,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
             }
             break;
         default:
+            LOG_ERROR << "unknown operation, task_id " << taskinfo->task_id;
             break;
     }
 }

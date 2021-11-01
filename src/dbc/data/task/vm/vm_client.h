@@ -28,7 +28,7 @@ public:
     std::string domain_name;
     int32_t operation;
     bool need_reply;
-    std::string image_name; // used when create vm
+    std::string image_name; // used when create and delete vm
     TaskResource task_resource; // used when create vm
     std::string local_ip; // used when create vm
     std::string user_name; // used when create vm
@@ -82,7 +82,26 @@ public:
 
     void Stop();
 
+    /**
+     * @brief 向线程中添加虚拟机任务
+     * @param domain_name    虚拟机名称
+     * @param operation      对虚拟机进行的操作
+     * @param image          虚拟机镜像的名称，删除操作时不能为空
+     *
+     * @return void
+     */
     void AddTask(const std::string& domain_name, int32_t operation, const std::string& image);
+    /**
+     * @brief 向线程中添加虚拟机任务，创建虚拟机专用
+     * @param domain_name    虚拟机名称
+     * @param operation      对虚拟机进行的操作
+     * @param image          虚拟机镜像的名称
+     * @param task_resource  任务需要的cpu，磁盘等资源
+     * @param user_name      虚拟机的用户名
+     * @param password       虚拟机的用户密码
+     *
+     * @return void
+     */
     void AddTask(const std::string& domain_name, int32_t operation, const std::string& image,
                  const TaskResource& task_resource, const std::string& user_name, const std::string& password);
 protected:
