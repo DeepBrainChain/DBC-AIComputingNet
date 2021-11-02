@@ -1152,12 +1152,12 @@ void VmClient::thread_func() {
                 // publish notification
                 // notification
                 std::shared_ptr<dbc::vm_task_thread_result> content = std::make_shared<dbc::vm_task_thread_result>();
-                content->domain_name = task->domain_name;
-                content->operation = task->operation;
-                content->result_code = std::get<0>(ret);
-                content->result_message = std::get<1>(ret);
+                content->__set_domain_name(task->domain_name);
+                content->__set_operation(task->operation);
+                content->__set_result_code(std::get<0>(ret));
+                content->__set_result_message(std::get<1>(ret));
                 if (task->operation == T_OP_Create && content->result_code == E_SUCCESS) {
-                    content->vm_local_ip = task->local_ip;
+                    content->__set_vm_local_ip(task->local_ip);
                 }
 
                 // message
