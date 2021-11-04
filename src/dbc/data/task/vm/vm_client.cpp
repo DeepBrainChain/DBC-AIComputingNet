@@ -718,7 +718,7 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
 }
 
 EVmStatus VmClient::GetDomainStatus(const std::string &domain_name) {
-    EVmStatus vm_status = VS_SHUT_OFF;
+    EVmStatus vm_status = VS_NOSTATE;
     virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
 
@@ -745,6 +745,8 @@ EVmStatus VmClient::GetDomainStatus(const std::string &domain_name) {
             vm_status = VS_PAUSED;
         } else if (info.state == VIR_DOMAIN_SHUTOFF) {
             vm_status = VS_SHUT_OFF;
+        } else if (info.state == VIR_DOMAIN_NOSTATE) {
+            vm_status = VS_NOSTATE;
         } else {
             vm_status = VS_SHUT_OFF;
         }
@@ -758,6 +760,51 @@ EVmStatus VmClient::GetDomainStatus(const std::string &domain_name) {
         virConnectClose(connPtr);
     }
 
+    return vm_status;
+}
+
+EVmStatus VmClient::GetDomainStatusReadOnly(const std::string &domain_name) {
+    EVmStatus vm_status = VS_NOSTATE;
+    virConnectPtr connPtr = nullptr;
+    virDomainPtr domainPtr = nullptr;
+
+    do {
+        std::string url = getUrl();
+        connPtr = virConnectOpenReadOnly(url.c_str());
+        if (nullptr == connPtr) {
+            break;
+        }
+
+        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        if (nullptr == domainPtr) {
+            break;
+        }
+
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
+            break;
+        }
+
+        if (info.state == VIR_DOMAIN_RUNNING) {
+            vm_status = VS_RUNNING;
+        } else if (info.state == VIR_DOMAIN_PAUSED) {
+            vm_status = VS_PAUSED;
+        } else if (info.state == VIR_DOMAIN_SHUTOFF) {
+            vm_status = VS_SHUT_OFF;
+        } else if (info.state == VIR_DOMAIN_NOSTATE) {
+            vm_status = VS_NOSTATE;
+        } else {
+            vm_status = VS_SHUT_OFF;
+        }
+    } while(0);
+
+    if (nullptr != domainPtr) {
+        virDomainFree(domainPtr);
+    }
+
+    if (nullptr != connPtr) {
+        virConnectClose(connPtr);
+    }
 
     return vm_status;
 }
@@ -1012,6 +1059,8 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                     else {
                         DestoryDomain(task->domain_name);
                         UndefineDomain(task->domain_name);
+                        DeleteDiskSystemFile(task->domain_name, task->image_name);
+                        DeleteDiskDataFile(task->domain_name);
                         res_code = E_DEFAULT;
                         res_msg = "set user password failed";
                         LOG_ERROR << res_msg;
@@ -1020,12 +1069,16 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                 else {
                     DestoryDomain(task->domain_name);
                     UndefineDomain(task->domain_name);
+                    DeleteDiskSystemFile(task->domain_name, task->image_name);
+                    DeleteDiskDataFile(task->domain_name);
                     res_code = E_DEFAULT;
                     res_msg = "get vm local ip failed";
                     LOG_ERROR << res_msg;
                 }
             }
             else {
+                DeleteDiskSystemFile(task->domain_name, task->image_name);
+                DeleteDiskDataFile(task->domain_name);
                 res_msg = "create domain failed";
                 LOG_ERROR << "create domain " << task->domain_name << " failed";
             }

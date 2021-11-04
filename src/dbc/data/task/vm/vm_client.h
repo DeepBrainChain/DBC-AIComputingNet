@@ -60,12 +60,14 @@ protected:
 
     int32_t UndefineDomain(const std::string& domain_name);
 
+    EVmStatus GetDomainStatus(const std::string& domain_name);
+
 public:
+    EVmStatus GetDomainStatusReadOnly(const std::string& domain_name);
+
     void ListAllDomains(std::vector<std::string>& domains);
 
     void ListAllRunningDomains(std::vector<std::string>& domains);
-
-    EVmStatus GetDomainStatus(const std::string& domain_name);
 
     std::string GetDomainLog(const std::string& domain_name, ETaskLogDirection direction, int32_t n);
 

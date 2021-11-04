@@ -59,6 +59,14 @@ FResult TaskManager::Init() {
     }
 
     m_vm_client.Start();
+    // set operation to none when initializing the task manager if a crash occurred during the last run.
+    for (auto& it : m_tasks) {
+        int32_t operation = it.second->operation;
+        it.second->__set_operation(T_OP_None);
+        if (operation == T_OP_Create) {
+            DeleteTask("", it.second->task_id);
+        }
+    }
 
     // restore tasks
     fret = restore_tasks();
@@ -770,7 +778,7 @@ FResult TaskManager::StartTask(const std::string& wallet, const std::string &tas
         return {E_DEFAULT, "task is busy, please try again later"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
     if (vm_status == VS_SHUT_OFF || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Starting);
         taskinfo->__set_operation(T_OP_Start);
@@ -795,7 +803,7 @@ FResult TaskManager::StopTask(const std::string& wallet, const std::string &task
         return {E_DEFAULT, "task is busy, please try again later"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
     if (vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Stopping);
         taskinfo->__set_operation(T_OP_Stop);
@@ -820,8 +828,8 @@ FResult TaskManager::RestartTask(const std::string& wallet, const std::string &t
         return {E_DEFAULT, "task is busy, please try again later"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
+    if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Restarting);
         taskinfo->__set_operation(T_OP_ReStart);
         taskinfo->__set_last_start_time(time(nullptr));
@@ -845,7 +853,7 @@ FResult TaskManager::ResetTask(const std::string& wallet, const std::string &tas
         return {E_DEFAULT, "task is busy, please try again later"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
     if (vm_status == VS_RUNNING) {
         taskinfo->__set_status(TS_Resetting);
         taskinfo->__set_operation(T_OP_Reset);
@@ -870,7 +878,7 @@ FResult TaskManager::DeleteTask(const std::string& wallet, const std::string &ta
         return {E_DEFAULT, "task is busy, please try again later"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
     if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
         taskinfo->__set_status(TS_Deleting);
         taskinfo->__set_operation(T_OP_Delete);
@@ -1458,6 +1466,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
                 LOG_INFO << "start task " << taskinfo->task_id << " successful";
             }
             else {
+                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
                 m_task_db.write_task(taskinfo);
                 LOG_ERROR << "start task " << taskinfo->task_id << " failed";
             }
@@ -1470,6 +1479,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
                 LOG_INFO << "stop task " << taskinfo->task_id << " successful";
             }
             else {
+                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
                 m_task_db.write_task(taskinfo);
                 LOG_ERROR << "stop task " << taskinfo->task_id << " failed";
             }
@@ -1482,6 +1492,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
                 LOG_INFO << "restart task " << taskinfo->task_id << " successful";
             }
             else {
+                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
                 m_task_db.write_task(taskinfo);
                 LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
             }
@@ -1493,6 +1504,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
                 LOG_INFO << "reset task " << taskinfo->task_id << " successful";
             }
             else {
+                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
                 m_task_db.write_task(taskinfo);
                 LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
             }
@@ -1503,6 +1515,7 @@ void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_re
                 LOG_INFO << "delete task " << taskinfo->task_id << " successful";
             }
             else {
+                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
                 m_task_db.write_task(taskinfo);
                 LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
             }
