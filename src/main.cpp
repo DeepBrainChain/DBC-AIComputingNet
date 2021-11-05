@@ -35,9 +35,23 @@ void init_signal()
     register_signal_function(SIGUSR1, signal_usr1_handler);
 }
 
+void init_locale() {
+    try
+    {
+        std::locale("");
+    }
+    catch (const std::runtime_error&) {
+        setenv("LC_ALL", "C", 1);
+    }
+
+    std::locale loc = fs::path::imbue(std::locale::classic());
+    fs::path::imbue(loc);
+}
+
 int main(int argc, char* argv[])
 {
     init_signal();
+    init_locale();
 
     server_start_time = high_resolution_clock::now();
 
