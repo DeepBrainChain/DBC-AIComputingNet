@@ -89,6 +89,8 @@ protected:
 
     void on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg);
 
+    void on_vm_task_thread_result(const std::shared_ptr<dbc::network::message> &msg);
+
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
 
 private:

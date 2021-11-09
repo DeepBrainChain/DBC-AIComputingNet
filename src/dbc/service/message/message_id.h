@@ -65,6 +65,9 @@
 // service broadcast
 #define SERVICE_BROADCAST_REQ          "service_broadcast_req"
 
+// vm task thread result
+#define VM_TASK_THREAD_RESULT      "vm_task_thread_result"
+
 // compute node flag
 #define COMPUTE_NODE_FLAG   "compute node"
 

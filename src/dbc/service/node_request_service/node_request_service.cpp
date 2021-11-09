@@ -153,6 +153,7 @@ void node_request_service::init_invoker() {
     BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
     BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
     BIND_MESSAGE_INVOKER(NODE_SESSION_ID_REQ, &node_request_service::on_node_session_id_req)
+    BIND_MESSAGE_INVOKER(VM_TASK_THREAD_RESULT, &node_request_service::on_vm_task_thread_result)
 }
 
 void node_request_service::init_subscription() {
@@ -167,6 +168,7 @@ void node_request_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_SESSION_ID_REQ);
+    SUBSCRIBE_BUS_MESSAGE(VM_TASK_THREAD_RESULT);
 }
 
 bool node_request_service::hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id) {
@@ -2040,6 +2042,17 @@ void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<db
     service_info_map mp = node_req_msg->body.node_service_info_map;
 
     service_info_collection::instance().add(mp);
+}
+
+void node_request_service::on_vm_task_thread_result(const std::shared_ptr<dbc::network::message> &msg) {
+    auto vm_task_result = std::dynamic_pointer_cast<dbc::vm_task_thread_result>(msg->get_content());
+    if (vm_task_result == nullptr) {
+        LOG_ERROR << "vm_task_result is nullptr";
+        return;
+    }
+    if (m_is_computing_node) {
+        m_task_scheduler.AsyncVMTaskThreadResult(vm_task_result);
+    }
 }
 
 std::string node_request_service::format_logs(const std::string& raw_logs, uint16_t max_lines) {

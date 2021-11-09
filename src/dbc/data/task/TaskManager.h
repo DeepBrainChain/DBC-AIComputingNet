@@ -9,6 +9,7 @@
 #include "network/nio_loop_group.h"
 #include "data/resource/gpu_pool.h"
 #include "service/message/matrix_types.h"
+#include "service/message/vm_task_result_types.h"
 #include "util/websocket_client.h"
 #include "db/task_db.h"
 #include "db/iptable_db.h"
@@ -77,6 +78,8 @@ public:
 
     void PruneTask();
 
+    void AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_result> vm_task_result);
+
 protected:
     FResult init_db();
 
@@ -84,17 +87,7 @@ protected:
 
     FResult restore_tasks();
 
-    void start_task(virConnectPtr connPtr, const std::string& task_id);
-
-    void close_task(virConnectPtr connPtr, const std::string& task_id);
-
     void delete_task_data(const std::string& task_id);
-
-    void close_and_delete_task(virConnectPtr connPtr, const std::string& task_id);
-
-    void delete_disk_system_file(const std::string& task_id, const std::string& disk_system_file_name);
-
-    void delete_disk_data_file(const std::string& task_id);
 
     void shell_delete_iptable(const std::string &public_ip, const std::string &transform_port,
                                      const std::string &vm_local_ip);
@@ -116,20 +109,13 @@ protected:
 
     bool check_mem(float mem_rate);
 
-    // 获取内网地址
-    std::string get_vm_local_ip(const std::string &domain_name);
-
-    bool create_task_iptable(const std::string &domain_name, const std::string &transform_port);
-
-    bool set_vm_password(const std::string &domain_name, const std::string &username, const std::string &pwd);
+    bool create_task_iptable(const std::string &domain_name, const std::string &transform_port, const std::string &vm_local_ip);
 
 protected:
     // task
     TaskDB m_task_db;
     std::map<std::string, std::shared_ptr<dbc::TaskInfo> > m_tasks;
     TaskResourceManager m_task_resource_mgr;
-
-    std::list<std::shared_ptr<dbc::TaskInfo> > m_process_tasks;
 
     // iptable
     IpTableDB m_iptable_db;

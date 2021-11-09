@@ -48,6 +48,7 @@ enum ETaskOp {
 };
 
 enum EVmStatus {
+    VS_NOSTATE,
     VS_SHUT_OFF,
     VS_PAUSED,
     VS_RUNNING
