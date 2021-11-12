@@ -49,7 +49,7 @@ ERR_CODE conf_manager::init() {
     // 创建加密通信密钥对
     create_crypto_keypair();
 
-    log::set_filter_level((boost::log::trivial::severity_level) m_log_level);
+    dbclog::instance().set_filter_level((boost::log::trivial::severity_level) m_log_level);
 
     return E_SUCCESS;
 }

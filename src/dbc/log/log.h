@@ -8,6 +8,7 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
 #include <boost/log/utility/setup/console.hpp>  
 #include <boost/log/utility/exception_handler.hpp>
 #include <boost/log/support/date_time.hpp>
@@ -47,6 +48,23 @@ extern const char* get_short_func_name(const char* func_name);
 #define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal)
 #endif
 
+
+
+#define TASK_LOGGER(task, lvl, msg) \
+    do { \
+        auto dbclogger = dbclog::instance().get_task_logger(task); \
+        if (dbclogger != nullptr) { \
+            BOOST_LOG_SEV(*dbclogger.get(), ::boost::log::trivial::lvl) << msg; \
+        } \
+    } while(0)
+
+#define TASK_LOG_TRACE(task, msg)    TASK_LOGGER(task, trace, msg)
+#define TASK_LOG_DEBUG(task, msg)    TASK_LOGGER(task, debug, msg)
+#define TASK_LOG_INFO(task, msg)     TASK_LOGGER(task, info, msg)
+#define TASK_LOG_WARNING(task, msg)  TASK_LOGGER(task, warning, msg)
+#define TASK_LOG_ERROR(task, msg)    TASK_LOGGER(task, error, msg)
+#define TASK_LOG_FATAL(task, msg)    TASK_LOGGER(task, fatal, msg)
+
 // Set attribute and return the new value
 template<typename ValueType>
 static ValueType set_get_attrib(const char* name, ValueType value) {
@@ -55,101 +73,24 @@ static ValueType set_get_attrib(const char* name, ValueType value) {
     return attr.get();
 }
 
-struct log_exception_handler
-{
-    void operator() (std::runtime_error const& e) const
-    {
-        std::cout << "std::runtime_error: " << e.what() << std::endl;
-    }
-    void operator() (std::logic_error const& e) const
-    {
-        std::cout << "std::logic_error: " << e.what() << std::endl;
-        throw;
-    }
-};
+typedef src::severity_channel_logger_mt<logging::trivial::severity_level, std::string> logger_type;
 
-class log
+class dbclog : public Singleton<dbclog>
 {
 public:
-    static int32_t init()
-    {
-        boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
+    dbclog() = default;
+    ~dbclog() {};
 
-        try
-        {
-            auto sink = logging::add_file_log
-            (
-                //attribute
-                keywords::file_name = (util::get_exe_dir() /= "logs/matrix_core_%Y%m%d%H%M%S_%N.log").c_str(),
-                keywords::target = (util::get_exe_dir() /= "logs"),
-                keywords::max_files = 10,
-                keywords::rotation_size = 100 * 1024 * 1024,
-                keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-                keywords::format = (
-                    expr::stream
-                            << expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%m-%d %H:%M:%S.%f")
-                            << "|" << expr::attr< attrs::current_thread_id::value_type>("ThreadID")
-                            << "|" << std::setw(7) << std::setfill(' ') << std::left << logging::trivial::severity
-                            << "|" << expr::smessage
-            )
-        );
+    int32_t init();
+    void set_filter_level(boost::log::trivial::severity_level level);
 
-            logging::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
-            sink->locked_backend()->auto_flush(true);
+    // add boost log backend
+    void add_task_log_backend(const std::string& task_id);
 
-            logging::core::get()->set_exception_handler(
-                logging::make_exception_handler<std::runtime_error, std::logic_error>(log_exception_handler())
-            );
+    std::shared_ptr<logger_type> get_task_logger(const std::string& task_id);
 
-            logging::add_common_attributes();
-        }
-
-        catch (const std::exception & e)
-        {
-            std::cout << "log error" << e.what() << std::endl;
-            return E_DEFAULT;
-        }
-        catch (const boost::exception & e)
-        {
-            std::cout << "log error" << diagnostic_information(e) << std::endl;
-            return E_DEFAULT;
-        }
-        catch (...)
-        {
-            std::cout << "log error" << std::endl;
-            return E_DEFAULT;
-        }
-
-        //fix by regulus:fix boost::log throw exception cause coredump where open files is not enough. can use the 2 method as below.
-        // suppress log
-        //logging::core::get()->set_exception_handler(logging::make_exception_suppressor());
-        //use log_handler
-        logging::core::get()->set_exception_handler(
-            logging::make_exception_handler<std::runtime_error, std::logic_error>(log_exception_handler())
-        );
-        //BOOST_LOG_TRIVIAL(info) << "init core log success.";
-
-        return E_SUCCESS;
-    }
-
-    static void set_filter_level(boost::log::trivial::severity_level level)
-    {
-        switch (level)
-        {
-        case boost::log::trivial::trace:
-        case boost::log::trivial::debug:
-        case boost::log::trivial::info:
-        case boost::log::trivial::warning:
-        case boost::log::trivial::error:
-        case boost::log::trivial::fatal:
-        {
-            logging::core::get()->set_filter(boost::log::trivial::severity >= level);
-            break;
-        }
-        default:
-            break;
-        }
-    }
+protected:
+    std::map<std::string, std::shared_ptr<logger_type>> loggers;
 };
 
 #endif

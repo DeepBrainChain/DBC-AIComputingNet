@@ -60,6 +60,7 @@ enum ETaskLogDirection {
 };
 
 std::string task_status_string(int32_t status);
+std::string task_operation_string(int32_t op);
 
 // 系统盘大小（GB）
 static const int32_t g_disk_system_size = 350;

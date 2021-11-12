@@ -50,6 +50,11 @@ FResult TaskManager::Init() {
         return fret;
     }
 
+    // add new log backend for every vm task
+    for (auto& it : m_tasks) {
+        dbclog::instance().add_task_log_backend(it.second->task_id);
+    }
+
     // remove invalid tasks
     fret = remove_invalid_tasks();
     ret = std::get<0>(fret);
@@ -661,6 +666,7 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
     m_wallet_tasks[wallet] = rent_task;
     m_wallet_task_db.write_data(rent_task);
 
+    dbclog::instance().add_task_log_backend(taskinfo->task_id);
     // m_process_tasks.push_back(taskinfo);
     m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name,
                         m_task_resource_mgr.GetTaskResource(taskinfo->task_id), "dbc", taskinfo->login_password);
@@ -917,19 +923,7 @@ FResult TaskManager::GetTaskLog(const std::string &task_id, ETaskLogDirection di
         log_content = "";
         return {E_DEFAULT, "task_id not exist"};
     } else {
-        log_content = m_vm_client.GetDomainLog(task_id, direction, nlines);
-
-        if (GET_LOG_HEAD == (ETaskLogDirection) direction) {
-            log_content = log_content.substr(0, MAX_LOG_CONTENT_SIZE);
-        }
-        else {
-            size_t log_lenth = log_content.length();
-            if (log_lenth > MAX_LOG_CONTENT_SIZE) {
-                log_content = log_content.substr(log_lenth - MAX_LOG_CONTENT_SIZE, MAX_LOG_CONTENT_SIZE);
-            }
-        }
-
-        return {E_SUCCESS, ""};
+        return m_vm_client.GetDomainLog(task_id, direction, nlines, log_content);
     }
 }
 
@@ -1060,9 +1054,12 @@ bool TaskManager::create_task_iptable(const std::string &domain_name, const std:
 
         LOG_INFO << "transform_port successful, public_ip:" << public_ip << " ssh_port:" << transform_port
                     << " local_ip:" << vm_local_ip;
+        TASK_LOG_INFO(domain_name, "transform_port successful, public_ip:" << public_ip << " ssh_port:" << transform_port
+            << " local_ip:" << vm_local_ip);
         return true;
     } else {
         LOG_ERROR << "transform_port failed, ip or port is empty" << public_ip << ":" << transform_port;
+        TASK_LOG_ERROR(domain_name, "transform_port failed, ip or port is empty" << public_ip << ":" << transform_port);
         return false;
     }
 }
