@@ -1,8 +1,4 @@
 #include "system_info.h"
-#include <cstring>
-#include <unistd.h>
-#include <set>
-#include "util/utils.h"
 #include "service_module/service_name.h"
 
 typedef struct mem_table_struct {
@@ -10,14 +6,14 @@ typedef struct mem_table_struct {
     unsigned long *slot; /* slot in return struct */
 } mem_table_struct;
 
-static int compare_mem_table_structs(const void *a, const void *b){
-    return strcmp(((const mem_table_struct*)a)->name, ((const mem_table_struct*)b)->name);
+static int compare_mem_table_structs(const void *a, const void *b) {
+    return strcmp(((const mem_table_struct *) a)->name, ((const mem_table_struct *) b)->name);
 }
 
 #define PROCFS_OSRELEASE "/proc/sys/kernel/osrelease"
 #define MEMINFO_FILE "/proc/meminfo"
 
-std::string gpu_info::parse_bus(const std::string& id) {
+std::string gpu_info::parse_bus(const std::string &id) {
     auto pos = id.find(':');
     if (pos != std::string::npos) {
         return id.substr(0, pos);
@@ -26,7 +22,7 @@ std::string gpu_info::parse_bus(const std::string& id) {
     }
 }
 
-std::string gpu_info::parse_slot(const std::string& id) {
+std::string gpu_info::parse_slot(const std::string &id) {
     auto pos1 = id.find(':');
     auto pos2 = id.find('.');
     if (pos1 != std::string::npos && pos2 != std::string::npos) {
@@ -36,7 +32,7 @@ std::string gpu_info::parse_slot(const std::string& id) {
     }
 }
 
-std::string gpu_info::parse_function(const std::string& id) {
+std::string gpu_info::parse_function(const std::string &id) {
     auto pos = id.find('.');
     if (pos != std::string::npos) {
         return id.substr(pos + 1);
@@ -61,25 +57,20 @@ void SystemInfo::init(bpo::variables_map &options) {
 
 void SystemInfo::start() {
     m_running = true;
-    get_mem_info(m_meminfo);
-    get_cpu_info(m_cpuinfo);
+
+    init_os_type();
+    update_mem_info(m_meminfo);
+    init_cpu_info(m_cpuinfo);
     init_gpu();
     if (m_is_compute_node)
-        get_disk_info("/data", m_diskinfo);
+        update_disk_info("/data", m_diskinfo);
     else
-        get_disk_info("/", m_diskinfo);
+        update_disk_info("/", m_diskinfo);
 
-    std::string ver = STR_VER(CORE_VERSION);
-    auto s_ver = util::remove_leading_zero(ver.substr(2, 2)) + "."
-            + util::remove_leading_zero(ver.substr(4, 2)) + "."
-            + util::remove_leading_zero(ver.substr(6, 2)) + "."
-            + util::remove_leading_zero(ver.substr(8, 2));
-    m_version = s_ver;
     m_public_ip = get_public_ip();
-    get_os_type();
 
     if (m_thread == nullptr) {
-        m_thread = new std::thread(&SystemInfo::update_cpu_usage, this);
+        m_thread = new std::thread(&SystemInfo::update_func, this);
     }
 }
 
@@ -92,22 +83,22 @@ void SystemInfo::stop() {
 }
 
 // os_type
-void SystemInfo::get_os_type() {
-    std::string os_name = run_shell("cat /etc/os-release | grep VERSION | awk -F '=' '{print $2}'| tr -d '\"'");
-    os_name = util::rtrim(os_name, '\n');
-    std::string linux_ver = run_shell("uname -o -r");
-    linux_ver = util::rtrim(linux_ver, '\n');
+void SystemInfo::init_os_type() {
+    std::string os_ID = run_shell("cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}'| tr -d '\"'");
+    std::string os_VERSION = run_shell("cat /etc/os-release | grep -w VERSION | awk -F '=' '{print $2}'| tr -d '\"'");
+    std::string os_RELEASE = run_shell("uname -o -r");
 
-    m_os_name = os_name + " " + linux_ver;
-    if (os_name.find("18.04") != std::string::npos)
+    m_os_name = os_ID + " " + os_VERSION + " " + os_RELEASE;
+    if (os_VERSION.find("18.04") != std::string::npos)
         m_os_type = OS_1804;
-    else if (os_name.find("20.04") != std::string::npos) {
+    else if (os_VERSION.find("20.04") != std::string::npos) {
         m_os_type = OS_2004;
     }
 }
 
 // mem info
-void SystemInfo::get_mem_info(mem_info &info) {
+// 预留了一定的系统内存： g_reserved_memory
+void SystemInfo::update_mem_info(mem_info &info) {
     unsigned long kb_main_total;
     unsigned long kb_main_free;
     unsigned long kb_main_available;
@@ -150,36 +141,36 @@ void SystemInfo::get_mem_info(mem_info &info) {
         close(meminfo_fd);
     } while (0);
 
-    const int mem_table_count = sizeof(mem_table)/sizeof(mem_table_struct);
+    const int mem_table_count = sizeof(mem_table) / sizeof(mem_table_struct);
     char namebuf[32]; /* big enough to hold any row name */
-    mem_table_struct findme = { namebuf, NULL};
+    mem_table_struct findme = {namebuf, NULL};
     mem_table_struct *found;
     char *head;
     char *tail;
 
     head = buf;
-    for(;;) {
+    for (;;) {
         tail = strchr(head, ':');
-        if(!tail) break;
+        if (!tail) break;
         *tail = '\0';
-        if(strlen(head) >= sizeof(namebuf)){
-            head = tail+1;
+        if (strlen(head) >= sizeof(namebuf)) {
+            head = tail + 1;
             goto nextline;
         }
-        strcpy(namebuf,head);
-        found = (mem_table_struct*) bsearch(&findme, mem_table, mem_table_count,
-                                            sizeof(mem_table_struct), compare_mem_table_structs);
-        head = tail+1;
-        if(!found) goto nextline;
-        *(found->slot) = (unsigned long)strtoull(head,&tail,10);
+        strcpy(namebuf, head);
+        found = (mem_table_struct *) bsearch(&findme, mem_table, mem_table_count,
+                                             sizeof(mem_table_struct), compare_mem_table_structs);
+        head = tail + 1;
+        if (!found) goto nextline;
+        *(found->slot) = (unsigned long) strtoull(head, &tail, 10);
         nextline:
         tail = strchr(head, '\n');
-        if(!tail) break;
-        head = tail+1;
+        if (!tail) break;
+        head = tail + 1;
     }
 
     info.mem_total = kb_main_total - g_reserved_memory * 1024L * 1024L;
-    info.mem_free = kb_main_free;
+    info.mem_free = kb_main_free - g_reserved_memory * 1024L * 1024L;
 
     unsigned long mem_used = kb_main_total - kb_main_free - (kb_page_cache + kb_slab_reclaimable) - kb_main_buffers;
     if (mem_used < 0)
@@ -193,7 +184,7 @@ void SystemInfo::get_mem_info(mem_info &info) {
     unsigned long mem_available = kb_main_available;
     if (mem_available > kb_main_total)
         mem_available = kb_main_free;
-    info.mem_available = mem_available;
+    info.mem_available = mem_available - g_reserved_memory * 1024L * 1024L;
 
     info.mem_swap_total = kb_swap_total;
     info.mem_swap_free = kb_swap_free;
@@ -201,7 +192,7 @@ void SystemInfo::get_mem_info(mem_info &info) {
 }
 
 // cpu info
-void SystemInfo::get_cpu_info(cpu_info& info) {
+void SystemInfo::init_cpu_info(cpu_info &info) {
     std::set<int32_t> cpus;
     FILE *fp = fopen("/proc/cpuinfo", "r");
     char line[1024] = {0};
@@ -209,17 +200,17 @@ void SystemInfo::get_cpu_info(cpu_info& info) {
         //printf("%s", line);
 
         // key
-        char* p1 = strchr(line, ':');
+        char *p1 = strchr(line, ':');
         if (!p1) {
             continue;
         }
         *p1 = '\0';
 
-        char* p2 = strchr(line, '\t');
+        char *p2 = strchr(line, '\t');
         if (p2) *p2 = '\0';
 
         // value
-        char* p3 = strchr(p1 + 1, '\n');
+        char *p3 = strchr(p1 + 1, '\n');
         if (p3) *p3 = '\0';
         p3 = strchr(p1 + 1, ' ');
 
@@ -257,38 +248,49 @@ void SystemInfo::get_cpu_info(cpu_info& info) {
     info.physical_cores = cpus.size();
     info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu;
     info.physical_cores_per_cpu -= 1;
-    info.logical_cores_per_cpu -= 1 * info.threads_per_cpu;
-    info.total_cores = cpus.size() * info.logical_cores_per_cpu;
+    info.logical_cores_per_cpu = info.physical_cores_per_cpu * info.threads_per_cpu;
+    info.total_cores = info.physical_cores * info.physical_cores_per_cpu * info.threads_per_cpu;
 }
 
 // gpu info
 void SystemInfo::init_gpu() {
     std::string cmd = "lspci -nnv |grep NVIDIA |awk '{print $2\",\"$1}' |tr \"\n\" \"|\"";
     std::string str = run_shell(cmd.c_str());
-    std::vector<std::string> vec;
-    util::split(str, "|", vec);
-    std::string cur_id;
-    for (int i = 0; i < vec.size(); i++) {
-        std::vector<std::string> vec2;
-        util::split(vec[i], ",", vec2);
-        if (vec2[0] == "VGA") {
-            cur_id = vec2[1];
-            m_gpuinfo[cur_id].id = cur_id;
+    if (!str.empty()) {
+        std::vector<std::string> vGpus;
+        util::split(str, "|", vGpus);
+        std::string cur_id;
+        for (int i = 0; i < vGpus.size(); i++) {
+            std::vector<std::string> vIDs;
+            util::split(vGpus[i], ",", vIDs);
+            std::string id = vIDs[1];
+            std::string idx;
+            auto pos = id.find_last_of('.');
+            if (pos != std::string::npos) {
+                idx = id.substr(pos + 1);
+            }
+            if (idx.empty()) continue;
+
+            if (idx == "0") {
+                cur_id = id;
+                m_gpuinfo[cur_id].id = cur_id;
+            }
+
+            m_gpuinfo[cur_id].devices.push_back(vIDs[1]);
         }
-        m_gpuinfo[cur_id].devices.push_back(vec2[1]);
     }
 }
 
 // disk info
-void SystemInfo::get_disk_info(const std::string &path, disk_info &info) {
+void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
     char dpath[256] = "/"; //设置默认位置
 
-    if(!path.empty()) {
+    if (!path.empty()) {
         strcpy(dpath, path.c_str());
     }
 
     struct statfs diskInfo;
-    if(-1 == statfs(dpath, &diskInfo)) {
+    if (-1 == statfs(dpath, &diskInfo)) {
         return;
     }
 
@@ -300,18 +302,11 @@ void SystemInfo::get_disk_info(const std::string &path, disk_info &info) {
 
     std::string cmd = "df -l " + std::string(dpath) + " | tail -1";
     std::string tmp = run_shell(cmd.c_str());
-    if (tmp[tmp.size() - 1] == '\n')
-        tmp.erase(tmp.size() - 1, 1);
     cmd = "echo " + tmp + " | awk -F' ' '{print $1}' | awk -F\"/\" '{print $3}'";
     tmp = run_shell(cmd.c_str());
-    if (tmp[tmp.size() - 1] == '\n') {
-        tmp.erase(tmp.size() - 1, 1);
-    }
-
     if (tmp.find("sda") != std::string::npos)
         tmp = "sda";
     std::string tmppath = "/sys/block/" + tmp + "/queue/rotational";
-
     int fd = open(tmppath.c_str(), O_RDONLY);
     if (fd == -1) {
         return;
@@ -334,11 +329,6 @@ void SystemInfo::get_disk_info(const std::string &path, disk_info &info) {
 }
 
 // cpu usage
-float SystemInfo::get_cpu_usage() {
-    return m_cpu_usage;
-}
-
-// cpu info
 struct occupy {
     char name[20];
     unsigned int user;
@@ -362,7 +352,8 @@ void get_occupy(struct occupy *p, int cpu_count) {
 
     for (int i = 0; i < cpu_count; i++) {
         fgets(buff, sizeof(buff), fp);
-        sscanf(buff, "%s%u%u%u%u", p[i+1].name, &(p[i+1].user), &(p[i+1].nice), &(p[i+1].system), &(p[i+1].idle));
+        sscanf(buff, "%s%u%u%u%u", p[i + 1].name, &(p[i + 1].user), &(p[i + 1].nice), &(p[i + 1].system),
+               &(p[i + 1].idle));
     }
     fclose(fp);
 }
@@ -376,33 +367,36 @@ float cal_occupy(struct occupy *p1, struct occupy *p2) {
     return cpu_used;
 }
 
-void SystemInfo::update_cpu_usage() {
+void SystemInfo::update_func() {
     int cpu_num = sysconf(_SC_NPROCESSORS_CONF);
     struct occupy *ocpu = new occupy[cpu_num + 1];
     struct occupy *ncpu = new occupy[cpu_num + 1];
 
     while (m_running) {
-        m_public_ip = get_public_ip();
+        // public ip
+        if (m_public_ip.empty())
+            m_public_ip = get_public_ip();
 
+        // cpu usage
         get_occupy(ocpu, cpu_num);
         sleep(3);
         get_occupy(ncpu, cpu_num);
         m_cpu_usage = cal_occupy(&ocpu[0], &ncpu[0]);
 
+        // mem
         mem_info _mem_info;
-        get_mem_info(_mem_info);
+        update_mem_info(_mem_info);
         m_meminfo = _mem_info;
 
+        // disk
         disk_info _disk_info;
         if (m_is_compute_node)
-            get_disk_info("/data", _disk_info);
+            update_disk_info("/data", _disk_info);
         else
-            get_disk_info("/", _disk_info);
+            update_disk_info("/", _disk_info);
         m_diskinfo = _disk_info;
     }
 
     delete[] ocpu;
     delete[] ncpu;
 }
-
-

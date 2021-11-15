@@ -15,6 +15,14 @@ namespace util {
     boost::filesystem::path get_user_appdata_path();
 
     boost::filesystem::path get_user_appdata_dbc_path();
+
+    std::string GetFileNameFromPath(const std::string& szPath);
+
+    std::string GetFileNameWithoutExt(const std::string& szFile);
+
+    std::string GetFileExt(const std::string& szFile);
+
+    std::string GetBasePath(const std::string& szFullPath);
 }
 
 #endif //DBC_PATH_UTIL_H

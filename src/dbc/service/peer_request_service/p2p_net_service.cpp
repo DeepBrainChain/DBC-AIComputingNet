@@ -16,7 +16,7 @@
 #include <boost/filesystem.hpp>
 #include "network/protocol/thrift_binary.h"
 #include "network/net_address.h"
-#include "data/resource/system_info.h"
+#include "util/system_info.h"
 
 #define CHECK_PEER_CANDIDATES_TIMER                 "p2p_timer_check_peer_candidates"
 #define DYANMIC_ADJUST_NETWORK_TIMER                "p2p_timer_dynamic_adjust_network"
@@ -24,7 +24,7 @@
 #define DUMP_PEER_CANDIDATES_TIMER                  "p2p_timer_dump_peer_candidates"
 
 const uint32_t max_reconnect_times = 1;
-const uint32_t max_connected_cnt = 1024;
+const uint32_t max_connected_cnt = 100;
 const uint32_t max_connect_per_check = 16;
 
 namespace fs = boost::filesystem;
@@ -232,7 +232,7 @@ int32_t p2p_net_service::init_connector() {
 
     for (auto it = peers.begin(); it != peers.end(); it++) {
         std::vector<std::string> vec;
-        util::str_split(*it, ":", vec);
+        util::split(*it, ":", vec);
         std::string str_ip = vec[0];
         std::string str_port = vec[1];
         uint16_t port = (uint16_t) atoi(str_port);
@@ -663,7 +663,7 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
         ver_req_content->body.__set_protocol_version(PROTOCO_VERSION);
         ver_req_content->body.__set_time_stamp(std::time(nullptr));
         dbc::network_address addr_me;
-        addr_me.__set_ip(SystemInfo::instance().get_publicip());
+        addr_me.__set_ip(SystemInfo::instance().publicip());
         addr_me.__set_port(m_listen_port);
         ver_req_content->body.__set_addr_me(addr_me);
         tcp::endpoint ep = std::dynamic_pointer_cast<dbc::network::client_tcp_connect_notification>(msg)->ep;
@@ -1177,7 +1177,7 @@ void p2p_net_service::add_dns_seeds() {
 void p2p_net_service::add_ip_seeds() {
     for (auto it = m_ip_seeds.begin(); it != m_ip_seeds.end(); it++) {
         std::vector<std::string> vec;
-        util::str_split(*it, ":", vec);
+        util::split(*it, ":", vec);
         if (vec.size() != 2) continue;
         tcp::endpoint ep(ip::address::from_string(vec[0]), atoi(vec[1].c_str()));
         add_peer_candidate(ep, ns_idle, SEED_NODE);

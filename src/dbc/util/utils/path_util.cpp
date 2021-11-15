@@ -125,4 +125,50 @@ namespace util {
         create_dir(pt.string());
         return pt;
     }
+
+    std::string GetFileNameFromPath(const std::string& szPath)
+    {
+        std::string::size_type pos = szPath.find_last_of("\\/");
+        std::string szName;
+        if(pos != std::string::npos){
+            szName = szPath.substr(pos + 1);
+        }else
+            szName = szPath;
+        return szName;
+    }
+
+    std::string GetFileNameWithoutExt(const std::string& szFile)
+    {
+        std::string::size_type pos1 = szFile.find_last_of("/\\");
+        std::string::size_type pos2 = szFile.rfind('.');
+        pos1 = pos1 == std::string::npos ? 0 : pos1 + 1;
+        if(pos2 == std::string::npos)
+            pos2 = szFile.size();
+        if(pos2 < pos1)
+            pos2 = pos1;
+        return szFile.substr(pos1, pos2 - pos1);
+    }
+
+    std::string GetFileExt(const std::string& szFile)
+    {
+        std::string szName = GetFileNameFromPath(szFile);
+        std::string::size_type nPos = szName.rfind('.');
+        if(nPos != std::string::npos)
+            ++nPos;
+        else
+            nPos = szName.size();
+
+        return szName.substr(nPos);
+    }
+
+    std::string GetBasePath(const std::string& szFullPath)
+    {
+        std::string::size_type pos = szFullPath.find_last_of("/\\");
+        std::string szName;
+        if(pos != std::string::npos){
+            szName = szFullPath.substr(0, pos);
+        }else
+            szName = szFullPath;
+        return szName;
+    }
 }

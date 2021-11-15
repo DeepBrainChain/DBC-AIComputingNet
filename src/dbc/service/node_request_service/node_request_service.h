@@ -9,12 +9,10 @@
 #include "data/task/vm/image_manager.h"
 #include "data/task/TaskManager.h"
 #include "util/LruCache.hpp"
-#include "util/websocket_client.h"
 #include "../message/matrix_types.h"
 #include "data/service_info/service_info_collection.h"
-#include "data/resource/system_info.h"
+#include "util/system_info.h"
 #include "network/protocol/protocol.h"
-#include "data/resource/system_info.h"
 
 #define AI_TRAINING_TASK_TIMER                                   "training_task"
 #define AI_PRUNE_TASK_TIMER                                      "prune_task"

@@ -104,7 +104,7 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
     info.__set_time_stamp(tnow);
 
     std::map<std::string, std::string> kvs;
-    kvs["version"] = SystemInfo::instance().get_version();
+    kvs["version"] = dbcversion();
 
     /*
     int32_t count = m_task_scheduler.GetRunningTaskSize();
@@ -648,7 +648,6 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            //send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error1");
             LOG_ERROR << "req decrypt error1";
             return;
         }
@@ -658,7 +657,6 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        //send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT, "req decrypt error2");
         LOG_ERROR << "req decrypt error2";
         return;
     }
@@ -690,22 +688,22 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "{";
     ss << "\"result_code\":" << 0;
     ss << ",\"result_message\":" << "{";
-    ss << "\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().get_publicip()) << "\"";
-    ss << ",\"os\":" << "\"" << SystemInfo::instance().get_osname() << "\"";
-    cpu_info tmp_cpuinfo = SystemInfo::instance().get_cpuinfo();
+    ss << "\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().publicip()) << "\"";
+    ss << ",\"os\":" << "\"" << SystemInfo::instance().osname() << "\"";
+    cpu_info tmp_cpuinfo = SystemInfo::instance().cpuinfo();
     ss << ",\"cpu\":" << "{";
     ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
     ss << ",\"hz\":" << "\"" << tmp_cpuinfo.mhz << "\"";
     ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
-    ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().get_cpu_usage() * 100) << "%" << "\"";
+    ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().cpu_usage() * 100) << "%" << "\"";
     ss << "}";
-    mem_info tmp_meminfo = SystemInfo::instance().get_meminfo();
+    mem_info tmp_meminfo = SystemInfo::instance().meminfo();
     ss << ",\"mem\":" <<  "{";
     ss << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
     ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_free) << "\"";
     ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
     ss << "}";
-    disk_info tmp_diskinfo = SystemInfo::instance().get_diskinfo();
+    disk_info tmp_diskinfo = SystemInfo::instance().diskinfo();
     ss << ",\"disk_system\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
     ss << ",\"size\":" << "\"" << g_disk_system_size << "G\"";
@@ -747,7 +745,7 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     }
     ss << ",\"state\":" << "\"" << state << "\"";
     */
-    ss << ",\"version\":" << "\"" << SystemInfo::instance().get_version() << "\"";
+    ss << ",\"version\":" << "\"" << dbcversion() << "\"";
     ss << "}";
     ss << "}";
 
@@ -919,7 +917,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
         if (nullptr != task) {
             ss_tasks << "{";
             ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
-            ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().get_publicip() << "\"";
+            ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().publicip() << "\"";
             ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
             ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
             ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
@@ -1974,7 +1972,7 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
 
         service_info_collection::instance().update(conf_manager::instance().get_node_id(), "state", state);
         */
-        service_info_collection::instance().update(conf_manager::instance().get_node_id(), "version", SystemInfo::instance().get_version());
+        service_info_collection::instance().update(conf_manager::instance().get_node_id(), "version", dbcversion());
         service_info_collection::instance().update_own_node_time_stamp(conf_manager::instance().get_node_id());
     }
 

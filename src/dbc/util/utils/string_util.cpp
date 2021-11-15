@@ -1,19 +1,6 @@
 #include "string_util.h"
 
 namespace util {
-    void str_split(const std::string &src, const std::string &sep, std::vector<std::string> &vec_str) {
-        std::string::size_type start = 0;
-        for (std::string::size_type end = src.find(sep, start); end != std::string::npos; end = src.find(sep, start)) {
-            if (end > start) {
-                vec_str.push_back(src.substr(start, end - start));
-            }
-            start = end + sep.length();
-        }
-        if (start < src.length()) {
-            vec_str.push_back(src.substr(start, src.length() - start));
-        }
-    }
-
     void split(const std::string &str, const std::string &delim, std::vector<std::string> &vec) {
         size_t pos = 0;
         size_t index = str.find_first_of(delim, pos);
@@ -32,32 +19,20 @@ namespace util {
         }
     }
 
-    void split(char *str, char delim, int &argc, char *argv[]) {
-        if (nullptr == str || nullptr == argv || argc <= 0) {
-            argc = 0;
-            return;
+    std::vector<std::string> split(const std::string &src, const std::string &sep) {
+        std::vector<std::string> vec_str;
+        std::string::size_type start = 0;
+        for (std::string::size_type end = src.find(sep, start); end != std::string::npos; end = src.find(sep, start)) {
+            if (end > start) {
+                vec_str.push_back(src.substr(start, end - start));
+            }
+            start = end + sep.length();
+        }
+        if (start < src.length()) {
+            vec_str.push_back(src.substr(start, src.length() - start));
         }
 
-        int i = 0;
-        char *p = str;
-
-        while (*p) {
-            if (delim == *p) {
-                *p++ = '\0';
-                continue;
-            }
-
-            argv[i++] = p;
-            if (i >= argc) {
-                return;         //argc is unchanged
-            }
-
-            while (*p && delim != *p) {
-                p++;
-            }
-        }
-
-        argc = i;
+        return vec_str;
     }
 
     void trim(std::string &str) {
