@@ -3930,18 +3930,25 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
         body.flag = flag_active;
         std::unordered_map<std::string, std::shared_ptr<peer_node>> peer_nodes_map =
                 p2p_net_service::instance().get_peer_nodes_map();
+        std::vector<std::shared_ptr<peer_node>> vPeers;
+        for (auto it = peer_nodes_map.begin(); it != peer_nodes_map.end(); ++it) {
+            vPeers.push_back(it->second);
+        }
+        srand((unsigned int)time(0));
+        random_shuffle(vPeers.begin(), vPeers.end());
+
         std::list<cmd_peer_node_info> peer_nodes_list;
-        for (auto itn = peer_nodes_map.begin(); itn != peer_nodes_map.end(); ++itn) {
-            if (conf_manager::instance().get_node_id() == itn->second->m_id ||
-                SystemInfo::instance().publicip() == itn->second->m_peer_addr.get_ip())
+        for (auto itn = vPeers.begin(); itn != vPeers.end(); ++itn) {
+            if (conf_manager::instance().get_node_id() == (*itn)->m_id ||
+                SystemInfo::instance().publicip() == (*itn)->m_peer_addr.get_ip())
                 continue;
 
             cmd_peer_node_info node_info;
-            node_info.peer_node_id = itn->second->m_id;
-            node_info.live_time_stamp = itn->second->m_live_time;
-            node_info.addr.ip = itn->second->m_peer_addr.get_ip();
-            node_info.addr.port = itn->second->m_peer_addr.get_port();
-            node_info.node_type = (int8_t)itn->second->m_node_type;
+            node_info.peer_node_id = (*itn)->m_id;
+            node_info.live_time_stamp = (*itn)->m_live_time;
+            node_info.addr.ip = (*itn)->m_peer_addr.get_ip();
+            node_info.addr.port = (*itn)->m_peer_addr.get_port();
+            node_info.node_type = (int8_t)(*itn)->m_node_type;
             node_info.service_list.clear();
             node_info.service_list.push_back(std::string("ai_training"));
             peer_nodes_list.push_back(std::move(node_info));
@@ -3956,8 +3963,15 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
         body.flag = flag_global;
         std::list<std::shared_ptr<peer_candidate>> peer_candidates =
                 p2p_net_service::instance().get_peer_candidates();
-        std::list<cmd_peer_node_info> peer_nodes_list;
+        std::vector<std::shared_ptr<peer_candidate>> vPeers;
         for (auto it = peer_candidates.begin(); it != peer_candidates.end(); ++it) {
+            vPeers.push_back(*it);
+        }
+        srand((unsigned int)time(0));
+        random_shuffle(vPeers.begin(), vPeers.end());
+
+        std::list<cmd_peer_node_info> peer_nodes_list;
+        for (auto it = vPeers.begin(); it != vPeers.end(); ++it) {
             if (conf_manager::instance().get_node_id() == (*it)->node_id ||
                 SystemInfo::instance().publicip() == (*it)->tcp_ep.address().to_string())
                 continue;
