@@ -128,4 +128,8 @@ aux_source_directory(dbc/util/crypto sign_tool_src_files)
 aux_source_directory(dbc/util/crypto/ctaes sign_tool_src_files)
 
 add_executable(sign_tool ./sign_tool/main.cpp ${sign_tool_src_files})
-target_link_libraries(sign_tool ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
+
+target_link_directories(sign_tool PRIVATE ${3RD_LIB_PATH}/openssl)
+
+target_link_libraries(sign_tool ${Boost_LIBRARIES} -lsc_cli -lixwebsocket -lsr25519crust -ltweetnacl
+        -luuid -lcrypto -lssl -lsecp256k1 -pthread -ldl -lz -static-libstdc++)
