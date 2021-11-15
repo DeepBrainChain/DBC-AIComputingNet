@@ -1794,8 +1794,12 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     if (ret_code == E_SUCCESS) {
         std::stringstream ss;
         ss << "{";
-        ss << "\"status\":" << E_SUCCESS;
-        ss << ", \"message\":" << "\"" << log_content << "\"";
+        ss << "\"result_code\":" << E_SUCCESS;
+        ss << ", \"result_message\":";
+        ss << "{";
+        ss << "\"task_id\":" << "\"" << data->task_id << "\"";
+        ss << ", \"log_content\":" << "[" << log_content << "]";
+        ss << "}";
         ss << "}";
 
         const std::map<std::string, std::string>& mp = header.exten_info;

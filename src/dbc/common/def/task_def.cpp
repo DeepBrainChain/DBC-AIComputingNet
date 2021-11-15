@@ -35,6 +35,36 @@ std::string task_status_string(int32_t status) {
     return status_string;
 }
 
+std::string task_operation_string(int32_t op) {
+    std::string operation_string = "none";
+    switch(op) {
+        case T_OP_Create:
+            operation_string = "create";
+            break;
+        case T_OP_Start:
+            operation_string = "start";
+            break;
+        case T_OP_Stop:
+            operation_string = "stop";
+            break;
+        case T_OP_ReStart:
+            operation_string = "restart";
+            break;
+        case T_OP_Reset:
+            operation_string = "reset";
+            break;
+        case T_OP_Delete:
+            operation_string = "delete";
+            break;
+        case T_OP_PullImageFile:
+            operation_string = "download image file";
+            break;
+        default:
+            break;
+    }
+    return operation_string;
+}
+
 /*
 std::string to_training_task_status_string(int8_t status) {
     switch (status) {

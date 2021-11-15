@@ -320,6 +320,8 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     uuid_generate(uu);
     uuid_unparse(uu, buf_uuid);
     LOG_INFO << "uuid: " << buf_uuid;
+    TASK_LOG_INFO(domain_name, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
+        << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
 
     // 复制一份镜像（系统盘）
     std::string image_full_path = "/data/" + image_name;
@@ -327,16 +329,19 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     std::string fext = util::GetFileExt(image_full_path);
     std::string copy_image_full_path = "/data/" + fname + "_" + domain_name + "." + fext;
     LOG_INFO << "copy image file: " << copy_image_full_path;
+    TASK_LOG_INFO(domain_name, "copy image file: " << copy_image_full_path);
     boost::filesystem::copy_file(image_full_path, copy_image_full_path);
 
     // 创建虚拟磁盘（数据盘）
     std::string disk_full_path = "/data/data_1_" + domain_name + ".qcow2";
     uint64_t disk_size = task_resource.disks_data.begin()->second / 1024L; // GB
     LOG_INFO << "disk file: " << disk_full_path << ", size: " << disk_size << "GB";
+    TASK_LOG_INFO(domain_name, "disk file: " << disk_full_path << ", size: " << disk_size << "GB");
     std::string cmd_create_disk = "qemu-img create -f qcow2 " + disk_full_path + " " + std::to_string(disk_size) + "G";
     LOG_INFO << "create qcow2 disk(data) cmd: " << cmd_create_disk;
     std::string create_ret = run_shell(cmd_create_disk.c_str());
     LOG_INFO << "create qcow2 disk(data) result: " << create_ret;
+    TASK_LOG_INFO(domain_name, "create qcow2 disk(data): " << cmd_create_disk << ", result: " << create_ret);
 
     std::string xml_content = createLinuxXmlStr(buf_uuid, domain_name, memoryTotal,
                                            cpuNumTotal, task_resource.physical_cpu,
@@ -350,6 +355,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
         connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             LOG_ERROR << "virConnectOpen error: " << qemu_url;
+            TASK_LOG_ERROR(domain_name, "virConnectOpen error: " << qemu_url);
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
         }
@@ -360,6 +366,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
 
             virErrorPtr error = virGetLastError();
             LOG_ERROR << "virDomainDefineXML error: " << error->message;
+            TASK_LOG_ERROR(domain_name, "virDomainDefineXML error: " << error->message);
             virFreeError(error);
             break;
         }
@@ -369,6 +376,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
 
             virErrorPtr error = virGetLastError();
             LOG_ERROR << "virDomainCreate error: " << error->message;
+            TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << error->message);
             virFreeError(error);
             break;
         }
@@ -767,9 +775,76 @@ EVmStatus VmClient::GetDomainStatusReadOnly(const std::string &domain_name) {
     return vm_status;
 }
 
-std::string VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection direction, int32_t n) {
+FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection direction, int32_t linecount, std::string &log_content) {
+    LOG_INFO << "get domain " << domain_name << " log, direction: " << direction << ", line: " << linecount;
+    std::string latest_log;
+    int max_num = -1;
+    try {
+        boost::filesystem::path logpath = util::get_exe_dir() /= "logs";
+        boost::filesystem::directory_iterator iterend;
+        for (boost::filesystem::directory_iterator iter(logpath); iter != iterend; iter++) {
+            if (boost::filesystem::is_regular_file(iter->path()) && iter->path().string().find(domain_name) != std::string::npos) {
+                size_t pos1 = iter->path().string().find_last_of("_");
+                size_t pos2 = iter->path().string().find_last_of(".");
+                int num = atoi(iter->path().string().substr(pos1+1, pos2 - pos1 - 1).c_str());
+                if (num > max_num) {
+                    latest_log = iter->path().string();
+                    max_num = num;
+                }
+            }
+        }
+    }
+    catch (const std::exception & e) {
+        return {E_DEFAULT, std::string("log file error: ").append(e.what())};
+    }
+    catch (const boost::exception & e) {
+        return {E_DEFAULT, "log file error: " + diagnostic_information(e)};
+    }
+    catch (...) {
+        return {E_DEFAULT, "unknowned log file error"};
+    }
 
-    return "";
+    if (latest_log.empty() || max_num < 0) {
+        return {E_DEFAULT, "task log not exist"};
+    }
+
+    log_content.clear();
+    std::ifstream file(latest_log, std::ios_base::in);
+    if (file.is_open()) {
+        if (direction == GET_LOG_HEAD) {
+            file.seekg(0, std::ios_base::beg);
+        }
+        else {
+            file.seekg(-2, std::ios_base::end);
+            for (int i = 0; i < linecount; i++) {
+                // seek to the previous line
+                while (file.peek() != file.widen('\n')) {
+                    if (file.tellg() == 0) break;
+                    file.seekg(-1, std::ios::cur);
+                }
+                if (file.tellg() == 0) break;
+                file.seekg(-1, std::ios::cur);
+            }
+            if (file.tellg() != 0) {
+                file.seekg(2, std::ios::cur);
+            }
+        }
+        // read lines
+        std::string  line;
+        while (getline(file, line) && linecount-- > 0) {
+            if (log_content.size() + line.size() >= MAX_LOG_CONTENT_SIZE) {
+                break;
+            }
+            if (!log_content.empty()) {
+                log_content.append(",");
+            }
+            log_content.append("\"" + line + "\"");
+        }
+        file.close();
+        return {E_SUCCESS, ""};
+    }
+
+    return {E_DEFAULT, "open log file error"};
 }
 
 std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
@@ -870,10 +945,12 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
             ret = true;
             LOG_INFO << "set vm password successful, task_id:" << domain_name << ", user:" << username << ", pwd:"
                      << pwd;
+            TASK_LOG_INFO(domain_name, "set vm user password successful, user:" << username << ", pwd:" << pwd);
         } else {
             ret = false;
-            LOG_INFO << "set vm password failed, task_id:" << domain_name << ", user:" << username << ", pwd:"
+            LOG_ERROR << "set vm password failed, task_id:" << domain_name << ", user:" << username << ", pwd:"
                      << pwd;
+            TASK_LOG_ERROR(domain_name, "set vm user password failed, user:" << username << ", pwd:" << pwd);
         }
     } while(0);
 
@@ -900,6 +977,7 @@ void VmClient::DeleteDiskSystemFile(const std::string &task_id, const std::strin
     std::string real_image_path = "/data/" + real_image_name + "_" + task_id + "." + ext;
     if (fs::is_regular_file(real_image_path)) {
         LOG_INFO << "remove disk_system file: " << real_image_path;
+        TASK_LOG_INFO(task_id, "remove disk_system file: " << real_image_path);
         remove(real_image_path.c_str());
     }
 }
@@ -939,6 +1017,7 @@ void VmClient::DeleteDiskDataFile(const std::string &task_id) {
     for (auto& it : files) {
         if (fs::is_regular_file(it)) {
             LOG_INFO << "remove disk_data file: " << it;
+            TASK_LOG_INFO(task_id, "remove disk_data file: " << it);
             remove(it.c_str());
         }
     }
@@ -1000,6 +1079,7 @@ std::shared_ptr<VMTask> VmClient::PopTask() {
 
 FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
     LOG_INFO << "vm task name " << task->domain_name << ", operate " << task->operation;
+    TASK_LOG_INFO(task->domain_name, "received a task, operation: " << task_operation_string(task->operation));
     int32_t res_code = E_DEFAULT;
     std::string res_msg;
     switch (task->operation) {
@@ -1011,8 +1091,9 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                     task->local_ip = local_ip;
                     if (SetDomainUserPassword(task->domain_name, task->user_name, task->password)) {
                         res_code = E_SUCCESS;
-                        res_msg = "ok";
+                        res_msg = "create domain successful";
                         LOG_INFO << "create domain " << task->domain_name << " successful";
+                        TASK_LOG_INFO(task->domain_name, res_msg);
                     }
                     else {
                         DestoryDomain(task->domain_name);
@@ -1020,8 +1101,9 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                         DeleteDiskSystemFile(task->domain_name, task->image_name);
                         DeleteDiskDataFile(task->domain_name);
                         res_code = E_DEFAULT;
-                        res_msg = "set user password failed";
-                        LOG_ERROR << res_msg;
+                        res_msg = "create domain failed";
+                        LOG_ERROR << "create domain " << task->domain_name << " failed";
+                        TASK_LOG_ERROR(task->domain_name, res_msg);
                     }
                 }
                 else {
@@ -1030,16 +1112,19 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                     DeleteDiskSystemFile(task->domain_name, task->image_name);
                     DeleteDiskDataFile(task->domain_name);
                     res_code = E_DEFAULT;
-                    res_msg = "get vm local ip failed";
-                    LOG_ERROR << res_msg;
+                    res_msg = "create domain failed";
+                    LOG_ERROR << "get vm local ip failed";
+                    LOG_ERROR << "create domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "get vm local ip failed");
+                    TASK_LOG_ERROR(task->domain_name, res_msg);
                 }
             }
             else {
-                UndefineDomain(task->domain_name);
                 DeleteDiskSystemFile(task->domain_name, task->image_name);
                 DeleteDiskDataFile(task->domain_name);
                 res_msg = "create domain failed";
                 LOG_ERROR << "create domain " << task->domain_name << " failed";
+                TASK_LOG_ERROR(task->domain_name, res_msg);
             }
             break;
         case T_OP_Start:
@@ -1049,20 +1134,25 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                 res_code = StartDomain(task->domain_name);
                 if (E_SUCCESS == res_code) {
                     LOG_INFO << "start domain " << task->domain_name << " successful";
+                    TASK_LOG_INFO(task->domain_name, "start domain successful");
                 } else {
                     LOG_ERROR << "start domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "start domain failed");
                 }
             } else if (vm_status == VS_PAUSED) {
                 res_code = ResumeDomain(task->domain_name);
                 if (E_SUCCESS == res_code) {
                     LOG_INFO << "resume domain " << task->domain_name << " successful";
+                    TASK_LOG_INFO(task->domain_name, "resume domain successful");
                 } else {
                     LOG_ERROR << "resume domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "resume domain failed");
                 }
             }
             else if (vm_status == VS_RUNNING) {
                 res_code = E_SUCCESS;
                 LOG_INFO << "domain " << task->domain_name << " is already running";
+                TASK_LOG_INFO(task->domain_name, "domain is already running");
             }
         }
             break;
@@ -1072,15 +1162,18 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
             if (vm_status == VS_SHUT_OFF) {
                 res_code = E_SUCCESS;
                 LOG_INFO << "domain " << task->domain_name << " is already stopping";
+                TASK_LOG_INFO(task->domain_name, "domain is already stopping");
             }
             else {
                 res_code = DestoryDomain(task->domain_name);
                 if (res_code == E_SUCCESS) {
-                    LOG_INFO << "destory domain " << task->domain_name << " successful";
+                    LOG_INFO << "stop domain " << task->domain_name << " successful";
+                    TASK_LOG_INFO(task->domain_name, "stop domain successful");
                 }
                 else {
-                    res_msg = "destory domain failed";
-                    LOG_ERROR << "destory domain " << task->domain_name << " failed";
+                    res_msg = "stop domain failed";
+                    LOG_ERROR << "stop domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "stop domain failed");
                 }
             }
         }
@@ -1092,15 +1185,19 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                 res_code = StartDomain(task->domain_name);
                 if (E_SUCCESS == res_code) {
                     LOG_INFO << "start domain " << task->domain_name << " successful";
+                    TASK_LOG_INFO(task->domain_name, "start domain successful");
                 } else {
                     LOG_ERROR << "start domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "start domain failed");
                 }
             } else if (vm_status == VS_RUNNING) {
                 res_code = RebootDomain(task->domain_name);
                 if (E_SUCCESS == res_code) {
                     LOG_INFO << "reboot domain " << task->domain_name << " successful";
+                    TASK_LOG_INFO(task->domain_name, "reboot domain successful");
                 } else {
                     LOG_ERROR << "reboot domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "reboot domain failed");
                 }
             }
         }
@@ -1109,10 +1206,12 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
             res_code = ResetDomain(task->domain_name);
             if (res_code == E_SUCCESS) {
                 LOG_INFO << "reset domain " << task->domain_name << " successful";
+                TASK_LOG_INFO(task->domain_name, "reset domain successful");
             }
             else {
                 res_msg = "reset domain failed";
                 LOG_ERROR << "reset domain " << task->domain_name << " failed";
+                TASK_LOG_ERROR(task->domain_name, "reset domain failed");
             }
             break;
         case T_OP_Delete:
@@ -1124,8 +1223,10 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                     DeleteDiskSystemFile(task->domain_name, task->image_name);
                     DeleteDiskDataFile(task->domain_name);
                     LOG_INFO << "delete domain " << task->domain_name << " successful";
+                    TASK_LOG_INFO(task->domain_name, "delete domain successful");
                 } else {
                     LOG_ERROR << "delete domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "delete domain failed");
                 }
             } else if (vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
                 res_code = DestoryDomain(task->domain_name);
@@ -1136,11 +1237,14 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
                         DeleteDiskSystemFile(task->domain_name, task->image_name);
                         DeleteDiskDataFile(task->domain_name);
                         LOG_INFO << "delete domain " << task->domain_name << " successful";
+                        TASK_LOG_INFO(task->domain_name, "delete domain successful");
                     } else {
                         LOG_ERROR << "delete domain " << task->domain_name << " failed";
+                        TASK_LOG_ERROR(task->domain_name, "delete domain failed");
                     }
                 } else {
                     LOG_ERROR << "delete domain " << task->domain_name << " failed";
+                    TASK_LOG_ERROR(task->domain_name, "delete domain failed");
                 }
             }
         }
@@ -1149,6 +1253,7 @@ FResult VmClient::ProcessTask(std::shared_ptr<VMTask> task) {
             res_code = E_DEFAULT;
             res_msg = "unknown operation";
             LOG_ERROR << res_msg;
+            TASK_LOG_ERROR(task->domain_name, res_msg);
             break;
     }
     return std::make_tuple(res_code, res_msg);

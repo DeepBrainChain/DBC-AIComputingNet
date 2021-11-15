@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
     server_start_time = high_resolution_clock::now();
 
-    int32_t ret = log::init();
+    int32_t ret = dbclog::instance().init();
     if (ret != E_SUCCESS)
     {
         return 0;

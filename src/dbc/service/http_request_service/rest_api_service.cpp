@@ -2890,6 +2890,11 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     if (lines > MAX_NUMBER_OF_LINES) {
         lines = MAX_NUMBER_OF_LINES - 1;
     }
+    else if (lines <= 0) {
+        LOG_ERROR << "invalid line num";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid line num");
+        return;
+    }
     body.number_of_lines = lines;
 
     // tail or head
