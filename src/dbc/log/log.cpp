@@ -137,7 +137,7 @@ void dbclog::add_task_log_backend(const std::string& task_id)
 
         boost::shared_ptr<sinks::text_file_backend> backend =
             boost::make_shared<sinks::text_file_backend>(
-            keywords::file_name = (exe_path + "/logs/" + task_id + "_%N.log").c_str(),
+            keywords::file_name = (exe_path + "/logs/task_" + task_id + "_%N.log").c_str(),
             keywords::target = (exe_path + "/logs").c_str(),
             keywords::max_files = 10,
             keywords::open_mode = std::ios_base::app | std::ios_base::out,

@@ -826,8 +826,8 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
         boost::filesystem::directory_iterator iterend;
         for (boost::filesystem::directory_iterator iter(logpath); iter != iterend; iter++) {
             if (boost::filesystem::is_regular_file(iter->path()) && iter->path().string().find(domain_name) != std::string::npos) {
-                size_t pos1 = iter->path().string().find("_");
-                size_t pos2 = iter->path().string().find(".");
+                size_t pos1 = iter->path().string().find_last_of("_");
+                size_t pos2 = iter->path().string().find_last_of(".");
                 int num = atoi(iter->path().string().substr(pos1+1, pos2 - pos1 - 1).c_str());
                 if (num > max_num) {
                     latest_log = iter->path().string();
