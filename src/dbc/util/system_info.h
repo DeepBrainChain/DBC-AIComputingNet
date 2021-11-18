@@ -1,27 +1,17 @@
 #ifndef DBCPROJ_SYSTEM_INFO_H
 #define DBCPROJ_SYSTEM_INFO_H
 
-#include <iostream>
-#include <string>
-#include <sys/sysinfo.h>
-#include <sys/vfs.h>
-#include <sys/stat.h>
-#include <sys/resource.h>
-#include <fcntl.h>
-#include <thread>
-#include <atomic>
-#include <cstring>
-#include <list>
-#include "util/singleton.h"
-#include <boost/program_options.hpp>
+#include "utils.h"
+
+namespace bpo = boost::program_options;
 
 enum OS_TYPE {
     OS_1804,
     OS_2004
 };
 
+// kb
 struct mem_info {
-    // kb
     uint64_t mem_total = 0L;
     uint64_t mem_free = 0L;
     uint64_t mem_used = 0L;
@@ -48,9 +38,11 @@ struct gpu_info {
     std::string id;
     std::list<std::string> devices;
 
-    static std::string parse_bus(const std::string& id);
-    static std::string parse_slot(const std::string& id);
-    static std::string parse_function(const std::string& id);
+    static std::string parse_bus(const std::string &id);
+
+    static std::string parse_slot(const std::string &id);
+
+    static std::string parse_function(const std::string &id);
 };
 
 enum DISK_TYPE {
@@ -58,16 +50,14 @@ enum DISK_TYPE {
     DISK_SSD
 };
 
+// kb
 struct disk_info {
-    // kb
     DISK_TYPE disk_type = DISK_SSD;
     uint64_t disk_total = 0;
     uint64_t disk_free = 0;
     uint64_t disk_awalible = 0;
     float disk_usage = 0.0f;
 };
-
-namespace bpo = boost::program_options;
 
 class SystemInfo : public Singleton<SystemInfo> {
 public:
@@ -81,52 +71,50 @@ public:
 
     void stop();
 
-    std::string get_version() const {
-        return m_version;
-    }
-
-    std::string get_publicip() const {
+    std::string publicip() const {
         return m_public_ip;
     }
 
-    OS_TYPE get_ostype() const {
+    OS_TYPE ostype() const {
         return m_os_type;
     }
 
-    std::string get_osname() const {
+    std::string osname() const {
         return m_os_name;
     }
 
-    const mem_info& get_meminfo() const {
+    const mem_info &meminfo() const {
         return m_meminfo;
     }
 
-    const cpu_info& get_cpuinfo() const {
+    const cpu_info &cpuinfo() const {
         return m_cpuinfo;
     }
 
-    const std::map<std::string, gpu_info>& get_gpuinfo() {
+    float cpu_usage() const {
+        return m_cpu_usage;
+    }
+
+    const std::map<std::string, gpu_info> &gpuinfo() const {
         return m_gpuinfo;
     }
 
-    const disk_info& get_diskinfo() const {
+    const disk_info &diskinfo() const {
         return m_diskinfo;
     }
 
-    float get_cpu_usage();
-
 protected:
-    void get_os_type();
+    void init_os_type();
 
-    void get_mem_info(mem_info& info);
+    void update_mem_info(mem_info &info);
 
-    void get_cpu_info(cpu_info& info);
+    void init_cpu_info(cpu_info &info);
 
     void init_gpu();
 
-    void get_disk_info(const std::string& path, disk_info& info);
+    void update_disk_info(const std::string &path, disk_info &info);
 
-    void update_cpu_usage();
+    void update_func();
 
 private:
     bool m_is_compute_node = false;
@@ -139,10 +127,9 @@ private:
     disk_info m_diskinfo;
 
     float m_cpu_usage = 0.0f;
-    std::thread* m_thread = nullptr;
+    std::thread *m_thread = nullptr;
     std::atomic<bool> m_running{false};
 
-    std::string m_version = "N/A";
     std::string m_public_ip = "N/A";
 };
 

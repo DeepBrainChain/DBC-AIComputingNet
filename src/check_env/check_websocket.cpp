@@ -5,6 +5,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
 
+/*
 namespace check_websocket {
     std::mutex g_mutex_check_ws;
     std::condition_variable g_cond_check_ws;
@@ -75,3 +76,4 @@ namespace check_websocket {
         ix::uninitNetSystem();
     }
 }
+*/

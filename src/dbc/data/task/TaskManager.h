@@ -7,10 +7,8 @@
 #include "service_module/service_module.h"
 #include <boost/process.hpp>
 #include "network/nio_loop_group.h"
-#include "data/resource/gpu_pool.h"
 #include "service/message/matrix_types.h"
 #include "service/message/vm_task_result_types.h"
-#include "util/websocket_client.h"
 #include "db/task_db.h"
 #include "db/iptable_db.h"
 #include "db/sessionid_db.h"
@@ -108,6 +106,8 @@ protected:
     bool check_gpu(int32_t gpu_count);
 
     bool check_mem(float mem_rate);
+
+    bool check_disk();
 
     bool create_task_iptable(const std::string &domain_name, const std::string &transform_port, const std::string &vm_local_ip);
 

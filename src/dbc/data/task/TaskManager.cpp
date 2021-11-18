@@ -10,7 +10,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
 #include "log/log.h"
-#include "../resource/system_info.h"
+#include "util/system_info.h"
 #include "../../config/conf_manager.h"
 
 std::vector<std::string> split(const std::string &str, const std::string &delim) {
@@ -335,7 +335,7 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
     std::string cmd;
 
     // 1804
-    if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
+    if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
         cmd += "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
@@ -355,7 +355,7 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
     }
 
     // 2004
-    else if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_2004) {
+    else if (SystemInfo::instance().ostype() == OS_TYPE::OS_2004) {
         cmd += "sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
                 + " -j DNAT --to-destination " + vm_local_ip + ":22";
         auto pos = vm_local_ip.rfind('.');
@@ -371,7 +371,7 @@ void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::
 void TaskManager::shell_add_iptable(const std::string &public_ip, const std::string &transform_port,
                                        const std::string &vm_local_ip) {
     // 1804
-    if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_1804) {
+    if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
         std::string rule = "sudo iptables -t nat -C PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
@@ -432,7 +432,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
     }
 
     // 2004
-    else if (SystemInfo::instance().get_ostype() == OS_TYPE::OS_2004) {
+    else if (SystemInfo::instance().ostype() == OS_TYPE::OS_2004) {
         //std::string cmd = "sudo iptables -F && sudo iptables -F -t nat";
         //run_shell(cmd.c_str());
 
@@ -591,19 +591,19 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
     // check资源够不够
     int32_t cpu_count = atoi(s_cpu_cores.c_str());
     //cpu数量必须是(sockets * threads)的整数倍
-    int32_t sockets = SystemInfo::instance().get_cpuinfo().physical_cores;
-    int32_t threads = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
+    int32_t sockets = SystemInfo::instance().cpuinfo().physical_cores;
+    int32_t threads = SystemInfo::instance().cpuinfo().threads_per_cpu;
     int32_t left = cpu_count % (sockets * threads);
     if (left != 0)
         cpu_count += (sockets * threads) - left;
     int32_t gpu_count = atoi(s_gpu_count.c_str());
     float mem_rate = atof(s_mem_rate.c_str());
 
-    if (cpu_count > SystemInfo::instance().get_cpuinfo().total_cores)
-        cpu_count = SystemInfo::instance().get_cpuinfo().total_cores;
+    if (cpu_count > SystemInfo::instance().cpuinfo().total_cores)
+        cpu_count = SystemInfo::instance().cpuinfo().total_cores;
 
     if (role == USER_ROLE::UR_VERIFIER) {
-        cpu_count = SystemInfo::instance().get_cpuinfo().total_cores;
+        cpu_count = SystemInfo::instance().cpuinfo().total_cores;
     }
 
     if (!check_cpu(cpu_count)) {
@@ -611,11 +611,11 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
         return {E_DEFAULT, "cpu not enough"};
     }
 
-    if (gpu_count > SystemInfo::instance().get_gpuinfo().size())
-        gpu_count = SystemInfo::instance().get_gpuinfo().size();
+    if (gpu_count > SystemInfo::instance().gpuinfo().size())
+        gpu_count = SystemInfo::instance().gpuinfo().size();
 
     if (role == USER_ROLE::UR_VERIFIER) {
-        gpu_count = SystemInfo::instance().get_gpuinfo().size();
+        gpu_count = SystemInfo::instance().gpuinfo().size();
     }
 
     if (!check_gpu(gpu_count)) {
@@ -635,7 +635,12 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
         return {E_DEFAULT, "mem not enough"};
     }
 
-    LOG_INFO << "cpu gpu mem check ok";
+    if (!check_disk()) {
+        LOG_ERROR << "check disk failed";
+        return {E_DEFAULT, "disk not enough"};
+    }
+
+    LOG_INFO << "cpu gpu mem disk check ok";
 
     std::shared_ptr<dbc::TaskInfo> taskinfo = std::make_shared<dbc::TaskInfo>();
     taskinfo->__set_task_id(task_id);
@@ -675,9 +680,9 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
 }
 
 bool TaskManager::check_cpu(int32_t cpu_count) {
-    int32_t sockets = SystemInfo::instance().get_cpuinfo().physical_cores;
-    int32_t cores_per_socket = SystemInfo::instance().get_cpuinfo().physical_cores_per_cpu;
-    int32_t threads_per_core = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
+    int32_t sockets = SystemInfo::instance().cpuinfo().physical_cores;
+    int32_t cores_per_socket = SystemInfo::instance().cpuinfo().physical_cores_per_cpu;
+    int32_t threads_per_core = SystemInfo::instance().cpuinfo().threads_per_cpu;
 
     int32_t cur_cores = 0;
     for (auto& it : m_tasks) {
@@ -694,7 +699,7 @@ bool TaskManager::check_cpu(int32_t cpu_count) {
 }
 
 bool TaskManager::check_gpu(int32_t gpu_count) {
-    const std::map<std::string, gpu_info>& gpulist = SystemInfo::instance().get_gpuinfo();
+    const std::map<std::string, gpu_info>& gpulist = SystemInfo::instance().gpuinfo();
 
     int32_t cur_gpus = 0;
     for (auto& it : m_tasks) {
@@ -708,7 +713,7 @@ bool TaskManager::check_gpu(int32_t gpu_count) {
 }
 
 bool TaskManager::check_mem(float mem_rate) {
-    uint64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; //KB
+    uint64_t mem_total = SystemInfo::instance().meminfo().mem_total; //KB
 
     uint64_t cur_mem = 0;
     for (auto& it : m_tasks) {
@@ -722,11 +727,20 @@ bool TaskManager::check_mem(float mem_rate) {
     return (mem_total - cur_mem) >= need_size;
 }
 
+bool TaskManager::check_disk() {
+    int64_t disk_avalible_size = SystemInfo::instance().diskinfo().disk_awalible / 1024L; // MB
+    if (disk_avalible_size * 0.75 < 100L * 1024L) {
+        return false;
+    }
+
+    return true;
+}
+
 void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count) {
     TaskResource task_resource;
-    int32_t threads_count = SystemInfo::instance().get_cpuinfo().threads_per_cpu;
-    int32_t sockets_count = SystemInfo::instance().get_cpuinfo().physical_cores;
-    int32_t cores_per_socket = SystemInfo::instance().get_cpuinfo().physical_cores_per_cpu;
+    int32_t threads_count = SystemInfo::instance().cpuinfo().threads_per_cpu;
+    int32_t sockets_count = SystemInfo::instance().cpuinfo().physical_cores;
+    int32_t cores_per_socket = SystemInfo::instance().cpuinfo().physical_cores_per_cpu;
     task_resource.physical_cpu = sockets_count;
     task_resource.threads_per_cpu = threads_count;
     task_resource.physical_cores_per_cpu = cpu_count / (sockets_count * threads_count);
@@ -735,11 +749,11 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
              << ", cores: " << task_resource.physical_cores_per_cpu
              << ", threads: " << task_resource.threads_per_cpu;
 
-    int64_t mem_total = SystemInfo::instance().get_meminfo().mem_total; // KB
+    int64_t mem_total = SystemInfo::instance().meminfo().mem_total; // KB
     task_resource.mem_size = (mem_total * (double)mem_rate > 1000000000) ? 1000000000 : (mem_total * (double)mem_rate);
     LOG_INFO << "memory: " << size_to_string(task_resource.mem_size, 1024L);
 
-    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().get_gpuinfo();
+    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
     for (auto& it : m_tasks) {
         if (it.second->status != TS_None) {
             const TaskResource& resource = m_task_resource_mgr.GetTaskResource(it.first);
@@ -765,7 +779,7 @@ void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_coun
     LOG_INFO << "gpus: " << str_gpu;
 
     task_resource.disk_system_size = g_disk_system_size * 1024L; // MB
-    int64_t disk_total_size = SystemInfo::instance().get_diskinfo().disk_total / 1024; // MB
+    int64_t disk_total_size = SystemInfo::instance().diskinfo().disk_total / 1024L; // MB
     task_resource.disks_data[1] = (disk_total_size - g_disk_system_size * 1024L) * 0.75;
     LOG_INFO << "disk_system_size:" << size_to_string(task_resource.disk_system_size, 1024L * 1024L)
              << ", disk_data_1: " << size_to_string(task_resource.disks_data[1], 1024L * 1024L);
@@ -1040,7 +1054,7 @@ std::string TaskManager::GetSessionId(const std::string &wallet) {
 }
 
 bool TaskManager::create_task_iptable(const std::string &domain_name, const std::string &transform_port, const std::string &vm_local_ip) {
-    std::string public_ip = SystemInfo::instance().get_publicip();
+    std::string public_ip = SystemInfo::instance().publicip();
     if (!public_ip.empty() && !transform_port.empty() && !vm_local_ip.empty()) {
         shell_add_iptable(public_ip, transform_port, vm_local_ip);
 

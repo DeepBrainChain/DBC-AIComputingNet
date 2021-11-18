@@ -5,32 +5,13 @@
 #include <boost/property_tree/json_parser.hpp>
 #include "tinyxml2.h"
 #include <uuid/uuid.h>
-#include "data/resource/system_info.h"
+#include "util/system_info.h"
 #include "service/message/message_id.h"
 #include "service/message/vm_task_result_types.h"
 
-static std::vector<std::string> SplitStr(const std::string &s, const char &c) {
-    std::string buff;
-    std::vector<std::string> v;
-    char tmp;
-    for (int i = 0; i < s.size(); i++) {
-        tmp = s[i];
-        if (tmp != c) {
-            buff += tmp;
-        } else {
-            if (tmp == c && buff != "") {
-                v.push_back(buff);
-                buff = "";
-            }
-        }//endif
-    }
-    if (buff != "") {
-        v.push_back(buff);
-    }
-    return v;
-}
+static const std::string qemu_url = "qemu+tcp://localhost:16509/system";
 
-static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
+static std::string createLinuxXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                          const std::string& vedio_pci, const std::string & image_file,
                          const std::string& disk_file)
@@ -168,15 +149,18 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     */
 
     if(vedio_pci != "") {
-        std::vector<std::string> vedios = SplitStr(vedio_pci, '|');
+        std::vector<std::string> vedios;
+        util::split(vedio_pci, "|", vedios);
         for (int i = 0; i < vedios.size(); ++i) {
-            std::vector<std::string> infos = SplitStr(vedios[i], ':');
+            std::vector<std::string> infos;
+            util::split(vedios[i], ":", infos);
             if (infos.size() != 2) {
                 std::cout << vedios[i] << "  error" << std::endl;
                 continue;
             }
 
-            std::vector<std::string> infos2 = SplitStr(infos[1], '.');
+            std::vector<std::string> infos2;
+            util::split(infos[1], ".", infos2);
             if (infos2.size() != 2) {
                 std::cout << vedios[i] << "  error" << std::endl;
                 continue;
@@ -302,16 +286,6 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     return printer.CStr();
 }
 
-std::string getUrl() {
-    std::stringstream sstream;
-    sstream << "qemu+tcp://";
-    sstream << "localhost";
-    sstream << ":";
-    sstream << 16509;
-    sstream << "/system";
-    return sstream.str();
-}
-
 VmClient::VmClient() {
 
 }
@@ -350,44 +324,38 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
         << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
 
     // 复制一份镜像（系统盘）
-    std::string from_image_path = "/data/" + image_name;
-    auto pos = image_name.find('.');
-    std::string to_image_name = image_name;
-    std::string to_ext;
-    if (pos != std::string::npos) {
-        to_image_name = image_name.substr(0, pos);
-        to_ext = image_name.substr(pos + 1);
-    }
-    std::string to_image_path = "/data/" + to_image_name + "_" + domain_name + "." + to_ext;
-    LOG_INFO << "image_copy_file: " << to_image_path;
-    TASK_LOG_INFO(domain_name, "image_copy_file: " << to_image_path);
-    boost::filesystem::copy_file(from_image_path, to_image_path);
+    std::string image_full_path = "/data/" + image_name;
+    std::string fname = util::GetFileNameWithoutExt(image_full_path);
+    std::string fext = util::GetFileExt(image_full_path);
+    std::string copy_image_full_path = "/data/" + fname + "_" + domain_name + "." + fext;
+    LOG_INFO << "copy image file: " << copy_image_full_path;
+    TASK_LOG_INFO(domain_name, "copy image file: " << copy_image_full_path);
+    boost::filesystem::copy_file(image_full_path, copy_image_full_path);
 
     // 创建虚拟磁盘（数据盘）
-    std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
-    uint64_t disk_total_size = task_resource.disks_data.begin()->second / 1024L; // GB
-    LOG_INFO << "data_file: " << data_file;
-    TASK_LOG_INFO(domain_name, "data_file: " << data_file);
-    std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
-    LOG_INFO << "create qcow2 image(data): " << cmd_create_img;
-    std::string create_ret = run_shell(cmd_create_img.c_str());
-    LOG_INFO << "create qcow2 image(data) result: " << create_ret;
-    TASK_LOG_INFO(domain_name, "create qcow2 image(data): " << cmd_create_img << ", result: " << create_ret);
+    std::string disk_full_path = "/data/data_1_" + domain_name + ".qcow2";
+    uint64_t disk_size = task_resource.disks_data.begin()->second / 1024L; // GB
+    LOG_INFO << "disk file: " << disk_full_path << ", size: " << disk_size << "GB";
+    TASK_LOG_INFO(domain_name, "disk file: " << disk_full_path << ", size: " << disk_size << "GB");
+    std::string cmd_create_disk = "qemu-img create -f qcow2 " + disk_full_path + " " + std::to_string(disk_size) + "G";
+    LOG_INFO << "create qcow2 disk(data) cmd: " << cmd_create_disk;
+    std::string create_ret = run_shell(cmd_create_disk.c_str());
+    LOG_INFO << "create qcow2 disk(data) result: " << create_ret;
+    TASK_LOG_INFO(domain_name, "create qcow2 disk(data): " << cmd_create_disk << ", result: " << create_ret);
 
-    std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
+    std::string xml_content = createLinuxXmlStr(buf_uuid, domain_name, memoryTotal,
                                            cpuNumTotal, task_resource.physical_cpu,
                                            task_resource.physical_cores_per_cpu, task_resource.threads_per_cpu,
-                                           vga_pci, to_image_path, data_file);
+                                           vga_pci, copy_image_full_path, disk_full_path);
 
     virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
-            LOG_ERROR << "virConnectOpen error: " << url;
-            TASK_LOG_ERROR(domain_name, "virConnectOpen error: " << url);
+            LOG_ERROR << "virConnectOpen error: " << qemu_url;
+            TASK_LOG_ERROR(domain_name, "virConnectOpen error: " << qemu_url);
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
         }
@@ -431,8 +399,7 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -471,8 +438,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -507,8 +473,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -543,8 +508,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -579,8 +543,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -615,8 +578,7 @@ int32_t VmClient::DestoryDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -651,8 +613,7 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -687,8 +648,7 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             errorNum = E_VIRT_CONNECT_ERROR;
             break;
@@ -731,8 +691,7 @@ EVmStatus VmClient::GetDomainStatus(const std::string &domain_name) {
     virDomainPtr domainPtr = nullptr;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             break;
         }
@@ -777,8 +736,7 @@ EVmStatus VmClient::GetDomainStatusReadOnly(const std::string &domain_name) {
     virDomainPtr domainPtr = nullptr;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpenReadOnly(url.c_str());
+        connPtr = virConnectOpenReadOnly(qemu_url.c_str());
         if (nullptr == connPtr) {
             break;
         }
@@ -845,7 +803,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
     catch (...) {
         return {E_DEFAULT, "unknowned log file error"};
     }
-    
+
     if (latest_log.empty() || max_num < 0) {
         return {E_DEFAULT, "task log not exist"};
     }
@@ -885,7 +843,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
         file.close();
         return {E_SUCCESS, ""};
     }
-    
+
     return {E_DEFAULT, "open log file error"};
 }
 
@@ -895,7 +853,7 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
     virDomainPtr domainPtr = nullptr;
 
     do {
-        connPtr = virConnectOpen(getUrl().c_str());
+        connPtr = virConnectOpen(qemu_url.c_str());
         if (nullptr == connPtr) {
             break;
         }
@@ -949,7 +907,7 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
     virConnectPtr conn_ptr = nullptr;
     virDomainPtr domain_ptr = nullptr;
     do {
-        conn_ptr = virConnectOpen(getUrl().c_str());
+        conn_ptr = virConnectOpen(qemu_url.c_str());
         if (conn_ptr == nullptr) {
             ret = false;
             virErrorPtr error = virGetLastError();

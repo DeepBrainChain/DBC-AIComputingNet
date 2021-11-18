@@ -11,7 +11,7 @@
 #include "service/http_request_service/rest_api_service.h"
 #include "service/node_request_service/node_request_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
-#include "data/resource/system_info.h"
+#include "util/system_info.h"
 
 int32_t server::init(int argc, char *argv[]) {
     LOG_INFO << "begin server init ...";
