@@ -22,6 +22,14 @@ namespace util {
     std::string remove_leading_zero(std::string str);
 
     void replace(std::string& str, const std::string& old_str, const std::string& new_str);
+
+    inline bool is_digits(const std::string& s) {
+        if(s.length() == 0) return false;
+        for (size_t i = 0; i < s.length(); i++){
+            if (!isdigit(s.c_str()[i])) return false;
+        }
+        return true;
+    }
 }
 
 #endif //DBC_STRING_UTIL_H

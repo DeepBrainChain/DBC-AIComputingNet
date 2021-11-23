@@ -66,6 +66,8 @@ node_request_service::~node_request_service() {
         remove_timer(m_training_task_timer_id);
         remove_timer(m_prune_task_timer_id);
     }
+
+    m_task_scheduler.stop();
 }
 
 int32_t node_request_service::init(bpo::variables_map &options) {
@@ -77,11 +79,12 @@ int32_t node_request_service::init(bpo::variables_map &options) {
     service_module::init();
 
     if (m_is_computing_node) {
-        auto fresult = m_task_scheduler.Init();
+        auto fresult = m_task_scheduler.init();
         int32_t ret = std::get<0>(fresult);
         if (ret != E_SUCCESS) {
             return E_DEFAULT;
         } else {
+            m_task_scheduler.start();
             return E_SUCCESS;
         }
     }
@@ -153,7 +156,6 @@ void node_request_service::init_invoker() {
     BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
     BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
     BIND_MESSAGE_INVOKER(NODE_SESSION_ID_REQ, &node_request_service::on_node_session_id_req)
-    BIND_MESSAGE_INVOKER(VM_TASK_THREAD_RESULT, &node_request_service::on_vm_task_thread_result)
 }
 
 void node_request_service::init_subscription() {
@@ -168,7 +170,6 @@ void node_request_service::init_subscription() {
     SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
     SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_SESSION_ID_REQ);
-    SUBSCRIBE_BUS_MESSAGE(VM_TASK_THREAD_RESULT);
 }
 
 bool node_request_service::hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id) {
@@ -557,7 +558,7 @@ void node_request_service::check_authority(const std::string& request_wallet, co
         if (!ret) {
             result.success = false;
         } else {
-            m_task_scheduler.DeleteOtherCheckTask(request_wallet);
+            m_task_scheduler.deleteOtherCheckTasks(request_wallet);
 
             result.success = true;
             result.user_role = USER_ROLE::UR_VERIFIER;
@@ -574,7 +575,7 @@ void node_request_service::check_authority(const std::string& request_wallet, co
     }
     // 租用中
     else if (str_status == "creating" || str_status == "rented") {
-        m_task_scheduler.DeleteAllCheckTasks();
+        m_task_scheduler.deleteAllCheckTasks();
 
         result.machine_status = MACHINE_STATUS::MS_RENNTED;
         int64_t rent_end = is_renter(request_wallet);
@@ -584,9 +585,9 @@ void node_request_service::check_authority(const std::string& request_wallet, co
             result.rent_wallet = request_wallet;
             result.rent_end = rent_end;
 
-            m_task_scheduler.CreateSessionId(request_wallet);
+            m_task_scheduler.createSessionId(request_wallet);
         } else {
-            std::string rent_wallet = m_task_scheduler.CheckSessionId(session_id, session_id_sign);
+            std::string rent_wallet = m_task_scheduler.checkSessionId(session_id, session_id_sign);
             if (rent_wallet.empty()) {
                 result.success = false;
             } else {
@@ -688,20 +689,21 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "{";
     ss << "\"result_code\":" << 0;
     ss << ",\"result_message\":" << "{";
-    ss << "\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().publicip()) << "\"";
+    ss << "\"version\":" << "\"" << dbcversion() << "\"";
+    ss << ",\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().publicip()) << "\"";
     ss << ",\"os\":" << "\"" << SystemInfo::instance().osname() << "\"";
     cpu_info tmp_cpuinfo = SystemInfo::instance().cpuinfo();
     ss << ",\"cpu\":" << "{";
     ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
     ss << ",\"hz\":" << "\"" << tmp_cpuinfo.mhz << "\"";
     ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
-    ss << ",\"used_usage\":" << "\"" << (SystemInfo::instance().cpu_usage() * 100) << "%" << "\"";
+    ss << ",\"used_usage\":" << "\"" << f2s(SystemInfo::instance().cpu_usage() * 100) << "%" << "\"";
     ss << "}";
     mem_info tmp_meminfo = SystemInfo::instance().meminfo();
     ss << ",\"mem\":" <<  "{";
-    ss << "\"size\":" << "\"" << scale_size(tmp_meminfo.mem_total) << "\"";
-    ss << ",\"free\":" << "\"" << scale_size(tmp_meminfo.mem_free) << "\"";
-    ss << ",\"used_usage\":" << "\"" << (tmp_meminfo.mem_usage * 100) << "%" << "\"";
+    ss << "\"size\":" << "\"" << size2GB(tmp_meminfo.mem_total) << "\"";
+    ss << ",\"free\":" << "\"" << size2GB(tmp_meminfo.mem_free) << "\"";
+    ss << ",\"used_usage\":" << "\"" << f2s(tmp_meminfo.mem_usage * 100) << "%" << "\"";
     ss << "}";
     disk_info tmp_diskinfo = SystemInfo::instance().diskinfo();
     ss << ",\"disk_system\":" << "{";
@@ -710,9 +712,9 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "}";
     ss << ",\"disk_data\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
-    ss << ",\"size\":" << "\"" << (tmp_diskinfo.disk_total/1024L/1024L) << "G\"";
-    ss << ",\"free\":" << "\"" << (tmp_diskinfo.disk_awalible/1024L/1024L) << "G\"";
-    ss << ",\"used_usage\":" << "\"" << (tmp_diskinfo.disk_usage * 100) << "%" << "\"";
+    ss << ",\"size\":" << "\"" << size2GB(tmp_diskinfo.disk_total) << "\"";
+    ss << ",\"free\":" << "\"" << size2GB(tmp_diskinfo.disk_available) << "\"";
+    ss << ",\"used_usage\":" << "\"" << f2s(tmp_diskinfo.disk_usage * 100) << "%" << "\"";
     ss << "}";
     std::vector<std::string> images;
     {
@@ -745,7 +747,6 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     }
     ss << ",\"state\":" << "\"" << state << "\"";
     */
-    ss << ",\"version\":" << "\"" << dbcversion() << "\"";
     ss << "}";
     ss << "}";
 
@@ -862,7 +863,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
     if (data->task_id.empty()) {
         ss_tasks << "[";
         std::vector<std::shared_ptr<dbc::TaskInfo>> task_list;
-        m_task_scheduler.ListAllTask(result.rent_wallet, task_list);
+        m_task_scheduler.listAllTask(result.rent_wallet, task_list);
         int idx = 0;
         for (auto &task : task_list) {
             if (idx > 0)
@@ -906,14 +907,14 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
 
-            ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
+            ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.getTaskStatus(task->task_id)) << "\"";
             ss_tasks << "}";
 
             idx++;
         }
         ss_tasks << "]";
     } else {
-        auto task = m_task_scheduler.FindTask(result.rent_wallet, data->task_id);
+        auto task = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
         if (nullptr != task) {
             ss_tasks << "{";
             ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
@@ -922,18 +923,17 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
             ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
 
-            const TaskResourceManager& res_mgr = m_task_scheduler.GetTaskResourceManager();
-            const TaskResource& task_resource = res_mgr.GetTaskResource(data->task_id);
-            uint64_t disk_data = task_resource.disks_data.begin()->second;
-            int32_t cpu_cores = task_resource.total_cores();
-            uint32_t gpu_count = task_resource.gpus.size();
-            int64_t mem_size = task_resource.mem_size;
+            std::shared_ptr<TaskResource> task_resource = TaskResourceMgr::instance().getTaskResource(data->task_id);
+            uint64_t disk_data_size = task_resource == nullptr ? 0 : task_resource->disks.begin()->second;
+            int32_t cpu_cores = task_resource == nullptr ? 0 : task_resource->total_cores();
+            uint32_t gpu_count = task_resource == nullptr ? 0 : task_resource->gpus.size();
+            int64_t mem_size = task_resource == nullptr ? 0 : task_resource->mem_size;
 
             ss_tasks << ", \"cpu_cores\":" << cpu_cores;
             ss_tasks << ", \"gpu_count\":" << gpu_count;
-            ss_tasks << ", \"mem_size\":" << "\"" << size_to_string(mem_size, 1024L) << "\"";
+            ss_tasks << ", \"mem_size\":" << "\"" << size2GB(mem_size) << "\"";
             ss_tasks << ", \"disk_system\":" << "\"" << g_disk_system_size << "G\"";
-            ss_tasks << ", \"disk_data\":" << "\"" << (disk_data / 1024L) << "G\"";
+            ss_tasks << ", \"disk_data\":" << "\"" << size2GB(disk_data_size) << "\"";
 
             struct tm _tm{};
             time_t tt = task->create_time;
@@ -943,7 +943,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
 
-            ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.GetTaskStatus(task->task_id)) << "\"";
+            ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.getTaskStatus(task->task_id)) << "\"";
             ss_tasks << "}";
         } else {
             ret_code = E_DEFAULT;
@@ -1056,44 +1056,6 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
     }
 }
 
-static std::string generate_pwd() {
-    char chr[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-                   'H', 'I', 'J', 'K', 'L', 'M', 'N',
-                   'O', 'P', 'Q', 'R', 'S', 'T',
-                   'U', 'V', 'W', 'X', 'Y', 'Z',
-                   'a', 'b', 'c', 'd', 'e', 'f', 'g',
-                   'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                   'o', 'p', 'q', 'r', 's', 't',
-                   'u', 'v', 'w', 'x', 'y', 'z',
-                   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    };
-    srand(time(NULL));
-    std::string strpwd;
-    int nlen = 10; //10位密码
-    char buf[3] = { 0 };
-    int idx0 = rand() % 52;
-    sprintf(buf, "%c", chr[idx0]);
-    strpwd.append(buf);
-
-    int idx_0 = rand() % nlen;
-    int idx_1 = rand() % nlen;
-    int idx_2 = rand() % nlen;
-
-    for (int i = 1; i < nlen; i++) {
-        int idx;
-        if (i == idx_0 || i == idx_1 || i == idx_2) {
-            idx = rand() % 62;
-        }
-        else {
-            idx = rand() % 62;
-        }
-        sprintf(buf, "%c", chr[idx]);
-        strpwd.append(buf);
-    }
-
-    return strpwd;
-}
-
 void node_request_service::task_create(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_create_task_req_data>& data) {
     AuthoriseResult result;
@@ -1111,13 +1073,10 @@ void node_request_service::task_create(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    std::string task_id = util::create_task_id();
-    if (result.user_role == USER_ROLE::UR_VERIFIER) {
-        task_id = "vm_check_" + std::to_string(time(nullptr));
-    }
-    std::string login_password = generate_pwd();
-    auto fresult = m_task_scheduler.CreateTask(result.rent_wallet, task_id, login_password, data->additional,
-                                               result.rent_end, result.user_role);
+
+    std::string task_id;
+    auto fresult = m_task_scheduler.createTask(result.rent_wallet, data->additional, result.rent_end,
+                                               result.user_role, task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -1127,7 +1086,7 @@ void node_request_service::task_create(const dbc::network::base_header& header,
         ss << "\"status\":" << ret_code;
         ss << ", \"message\":" << "{";
         ss << "\"task_id\":" << "\"" << task_id << "\"";
-        auto taskinfo = m_task_scheduler.FindTask(result.rent_wallet, task_id);
+        auto taskinfo = m_task_scheduler.findTask(result.rent_wallet, task_id);
         struct tm _tm{};
         time_t tt = taskinfo == nullptr ? 0 : taskinfo->create_time;
         localtime_r(&tt, &_tm);
@@ -1256,7 +1215,7 @@ void node_request_service::task_start(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.StartTask(result.rent_wallet, data->task_id);
+    auto fresult = m_task_scheduler.startTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -1359,7 +1318,7 @@ void node_request_service::task_stop(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.StopTask(result.rent_wallet, data->task_id);
+    auto fresult = m_task_scheduler.stopTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -1462,7 +1421,7 @@ void node_request_service::task_restart(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.RestartTask(result.rent_wallet, data->task_id);
+    auto fresult = m_task_scheduler.restartTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -1565,7 +1524,7 @@ void node_request_service::task_reset(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.ResetTask(result.rent_wallet, data->task_id);
+    auto fresult = m_task_scheduler.resetTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -1668,7 +1627,7 @@ void node_request_service::task_delete(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.DeleteTask(result.rent_wallet, data->task_id);
+    auto fresult = m_task_scheduler.deleteTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -1786,7 +1745,7 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     int16_t head_or_tail = data->head_or_tail;
     int32_t number_of_lines = data->number_of_lines;
     std::string log_content;
-    auto fresult = m_task_scheduler.GetTaskLog(data->task_id, (ETaskLogDirection) head_or_tail,
+    auto fresult = m_task_scheduler.getTaskLog(data->task_id, (ETaskLogDirection) head_or_tail,
                                                number_of_lines, log_content);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
@@ -1914,7 +1873,7 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
     }
 
     if (result.machine_status == MACHINE_STATUS::MS_RENNTED && result.user_role == USER_ROLE::UR_RENTER) {
-        std::string session_id = m_task_scheduler.GetSessionId(result.rent_wallet);
+        std::string session_id = m_task_scheduler.getSessionId(result.rent_wallet);
         if (session_id.empty()) {
             send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "no session id");
         } else {
@@ -1950,11 +1909,11 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
 
 
 void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
-    m_task_scheduler.ProcessTask();
+    //m_task_scheduler.ProcessTask();
 }
 
 void node_request_service::on_prune_task_timer(const std::shared_ptr<core_timer>& timer) {
-    m_task_scheduler.PruneTask();
+    //m_task_scheduler.PruneTask();
 }
 
 void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer)
@@ -2044,17 +2003,6 @@ void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<db
     service_info_map mp = node_req_msg->body.node_service_info_map;
 
     service_info_collection::instance().add(mp);
-}
-
-void node_request_service::on_vm_task_thread_result(const std::shared_ptr<dbc::network::message> &msg) {
-    auto vm_task_result = std::dynamic_pointer_cast<dbc::vm_task_thread_result>(msg->get_content());
-    if (vm_task_result == nullptr) {
-        LOG_ERROR << "vm_task_result is nullptr";
-        return;
-    }
-    if (m_is_computing_node) {
-        m_task_scheduler.AsyncVMTaskThreadResult(vm_task_result);
-    }
 }
 
 std::string node_request_service::format_logs(const std::string& raw_logs, uint16_t max_lines) {

@@ -2,38 +2,9 @@
 #define DBC_VM_CLIENT_H
 
 #include "util/utils.h"
-#include "virt_client.h"
-#include "service_module/service_module.h"
+#include <libvirt/libvirt.h>
+#include <libvirt/virterror.h>
 #include "../TaskResourceManager.h"
-#include "../db/task_db_types.h"
-
-class VMTask {
-public:
-    VMTask(const std::string& domain_name, int32_t operation, const std::string& image_name) {
-        this->domain_name = domain_name;
-        this->operation = operation;
-        this->need_reply = true;
-        this->image_name = image_name;
-    }
-    VMTask(const std::string& domain_name, int32_t operation, const std::string& image_name,
-           const TaskResource& task_resource, const std::string& user_name, const std::string& password) {
-        this->domain_name = domain_name;
-        this->operation = operation;
-        this->need_reply = true;
-        this->image_name = image_name;
-        this->task_resource = task_resource;
-        this->user_name = user_name;
-        this->password = password;
-    }
-    std::string domain_name;
-    int32_t operation;
-    bool need_reply;
-    std::string image_name; // used when create and delete vm
-    TaskResource task_resource; // used when create vm
-    std::string local_ip; // used when create vm
-    std::string user_name; // used when create vm
-    std::string password; // used when create vm
-};
 
 class VmClient {
 public:
@@ -41,8 +12,8 @@ public:
 
     virtual ~VmClient();
 
-protected:
-    int32_t CreateDomain(const std::string& domain_name, const std::string& image, const TaskResource& task_resource);
+    int32_t CreateDomain(const std::string& domain_name, const std::string& image,
+                         const std::shared_ptr<TaskResource>& task_resource);
 
     int32_t StartDomain(const std::string& domain_name);
 
@@ -62,63 +33,15 @@ protected:
 
     EVmStatus GetDomainStatus(const std::string& domain_name);
 
-public:
-    EVmStatus GetDomainStatusReadOnly(const std::string& domain_name);
-
     void ListAllDomains(std::vector<std::string>& domains);
 
     void ListAllRunningDomains(std::vector<std::string>& domains);
 
     FResult GetDomainLog(const std::string& domain_name, ETaskLogDirection direction, int32_t linecount, std::string &log_content);
 
-protected:
     std::string GetDomainLocalIP(const std::string &domain_name);
 
     bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
-
-    void DeleteDiskSystemFile(const std::string &task_id, const std::string& disk_system_file_name);
-    void DeleteDiskDataFile(const std::string &task_id);
-
-public:
-    void Start();
-
-    void Stop();
-
-    /**
-     * @brief 向线程中添加虚拟机任务
-     * @param domain_name    虚拟机名称
-     * @param operation      对虚拟机进行的操作
-     * @param image          虚拟机镜像的名称，删除操作时不能为空
-     *
-     * @return void
-     */
-    void AddTask(const std::string& domain_name, int32_t operation, const std::string& image);
-    /**
-     * @brief 向线程中添加虚拟机任务，创建虚拟机专用
-     * @param domain_name    虚拟机名称
-     * @param operation      对虚拟机进行的操作
-     * @param image          虚拟机镜像的名称
-     * @param task_resource  任务需要的cpu，磁盘等资源
-     * @param user_name      虚拟机的用户名
-     * @param password       虚拟机的用户密码
-     *
-     * @return void
-     */
-    void AddTask(const std::string& domain_name, int32_t operation, const std::string& image,
-                 const TaskResource& task_resource, const std::string& user_name, const std::string& password);
-protected:
-    std::shared_ptr<VMTask> PopTask();
-
-    FResult ProcessTask(std::shared_ptr<VMTask>);
-
-    void thread_func();
-
-private:
-    std::queue<std::shared_ptr<VMTask> > m_process_tasks;
-    bool m_thread_running;
-    std::thread* m_thread = nullptr;
-    std::mutex m_task_mutex;
-    std::condition_variable m_cond;
 
 };
 

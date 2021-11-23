@@ -10,9 +10,6 @@ static int compare_mem_table_structs(const void *a, const void *b) {
     return strcmp(((const mem_table_struct *) a)->name, ((const mem_table_struct *) b)->name);
 }
 
-#define PROCFS_OSRELEASE "/proc/sys/kernel/osrelease"
-#define MEMINFO_FILE "/proc/meminfo"
-
 std::string gpu_info::parse_bus(const std::string &id) {
     auto pos = id.find(':');
     if (pos != std::string::npos) {
@@ -49,14 +46,13 @@ SystemInfo::~SystemInfo() {
     stop();
 }
 
-void SystemInfo::init(bpo::variables_map &options) {
+void SystemInfo::init(bpo::variables_map &options, int32_t reserved_cpu_cores, int32_t reserved_memory) {
     if (options.count(SERVICE_NAME_AI_TRAINING)) {
         m_is_compute_node = true;
     }
-}
 
-void SystemInfo::start() {
-    m_running = true;
+    m_reserved_cpu_cores = reserved_cpu_cores;
+    m_reserved_memory = reserved_memory;
 
     init_os_type();
     update_mem_info(m_meminfo);
@@ -68,6 +64,10 @@ void SystemInfo::start() {
         update_disk_info("/", m_diskinfo);
 
     m_public_ip = get_public_ip();
+}
+
+void SystemInfo::start() {
+    m_running = true;
 
     if (m_thread == nullptr) {
         m_thread = new std::thread(&SystemInfo::update_func, this);
@@ -169,8 +169,19 @@ void SystemInfo::update_mem_info(mem_info &info) {
         head = tail + 1;
     }
 
-    info.mem_total = kb_main_total - g_reserved_memory * 1024L * 1024L;
-    info.mem_free = kb_main_free - g_reserved_memory * 1024L * 1024L;
+    info.mem_total = kb_main_total;
+    info.mem_free = kb_main_free;
+    info.mem_usage = (info.mem_total - info.mem_free) * 1.0 / info.mem_total;
+
+    if (kb_main_total < m_reserved_memory * 1024L * 1024L)
+        info.mem_total = 0LU;
+    else
+        info.mem_total = kb_main_total - m_reserved_memory * 1024L * 1024L;
+
+    if (kb_main_free < m_reserved_memory * 1024L * 1024L)
+        info.mem_free = 0LU;
+    else
+        info.mem_free = kb_main_free - m_reserved_memory * 1024L * 1024L;
 
     unsigned long mem_used = kb_main_total - kb_main_free - (kb_page_cache + kb_slab_reclaimable) - kb_main_buffers;
     if (mem_used < 0)
@@ -184,11 +195,10 @@ void SystemInfo::update_mem_info(mem_info &info) {
     unsigned long mem_available = kb_main_available;
     if (mem_available > kb_main_total)
         mem_available = kb_main_free;
-    info.mem_available = mem_available - g_reserved_memory * 1024L * 1024L;
+    info.mem_available = mem_available - m_reserved_memory * 1024L * 1024L;
 
     info.mem_swap_total = kb_swap_total;
     info.mem_swap_free = kb_swap_free;
-    info.mem_usage = (info.mem_total - info.mem_free) * 1.0 / info.mem_total;
 }
 
 // cpu info
@@ -247,7 +257,7 @@ void SystemInfo::init_cpu_info(cpu_info &info) {
 
     info.physical_cores = cpus.size();
     info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu;
-    info.physical_cores_per_cpu -= 1;
+    info.physical_cores_per_cpu -= m_reserved_cpu_cores;
     info.logical_cores_per_cpu = info.physical_cores_per_cpu * info.threads_per_cpu;
     info.total_cores = info.physical_cores * info.physical_cores_per_cpu * info.threads_per_cpu;
 }
@@ -296,9 +306,11 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
 
     uint64_t block_size = diskInfo.f_bsize; //每块包含字节大小
     info.disk_total = (diskInfo.f_blocks * block_size) >> 10; //磁盘总空间
-    info.disk_awalible = (diskInfo.f_bavail * block_size) >> 10; //非超级用户可用空间
+    info.disk_available = (diskInfo.f_bavail * block_size) >> 10; //非超级用户可用空间
     info.disk_free = (diskInfo.f_bfree * block_size) >> 10; //磁盘所有剩余空间
-    info.disk_usage = (info.disk_total - info.disk_awalible) * 1.0 / info.disk_total;
+    info.disk_usage = (info.disk_total - info.disk_available) * 1.0 / info.disk_total;
+
+    std::cout << "disk:" << info.disk_total << std::endl;
 
     std::string cmd = "df -l " + std::string(dpath) + " | tail -1";
     std::string tmp = run_shell(cmd.c_str());

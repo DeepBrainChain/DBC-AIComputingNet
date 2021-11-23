@@ -4,7 +4,6 @@
 #include "util/utils.h"
 #include "matrix_types.h"
 #include "network/protocol/service_message.h"
-#include "data/task/db/task_db_types.h"
 #include "server/server.h"
 #include "service/peer_request_service/peer_candidate.h"
 

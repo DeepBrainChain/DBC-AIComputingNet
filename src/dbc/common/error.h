@@ -6,9 +6,6 @@
 #include <string>
 #include <functional>
 
-typedef int32_t ERR_CODE;
-typedef std::tuple<int32_t, std::string> FResult;
-
 #define E_SUCCESS                                            0                   //success
 #define E_EXIT_FAILURE                                      (-1)                  //exit because of failure
 #define E_EXIT_PARSE_COMMAND_LINE                           (-2)                  //exit because of failure
@@ -63,5 +60,9 @@ enum rpc_error_code
     RPC_METHOD_DEPRECATED = -23, //!< RPC method is deprecated
     RPC_INVALID_PARAMS = -25, //!<
 };
+
+typedef int32_t ERR_CODE;
+typedef std::tuple<int32_t, std::string> FResult;
+#define FResultOK {E_SUCCESS, "ok"}
 
 #endif // DBC_ERROR_H

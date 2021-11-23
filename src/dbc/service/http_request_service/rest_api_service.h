@@ -6,6 +6,7 @@
 #include "network/http_server.h"
 #include "timer/timer.h"
 #include "../message/cmd_message.h"
+#include "common/common.h"
 
 static const std::string REST_API_VERSION = "v1.1";
 static const std::string REST_API_URI = "/api/v1";

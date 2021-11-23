@@ -1,11 +1,38 @@
 #include "task_def.h"
 
-std::string task_status_string(int32_t status) {
-    std::string status_string = "none";
+std::string task_operation_string(int32_t op) {
+    std::string operation_string = "none";
+    switch(op) {
+        case T_OP_Create:
+            operation_string = "create";
+            break;
+        case T_OP_Start:
+            operation_string = "start";
+            break;
+        case T_OP_Stop:
+            operation_string = "stop";
+            break;
+        case T_OP_ReStart:
+            operation_string = "restart";
+            break;
+        case T_OP_Reset:
+            operation_string = "reset";
+            break;
+        case T_OP_Delete:
+            operation_string = "delete";
+            break;
+        default:
+            break;
+    }
 
+    return operation_string;
+}
+
+std::string task_status_string(int32_t status) {
+    std::string status_string = "closed";
     switch (status) {
-        case TS_None:
-            status_string = "none";
+        case TS_ShutOff:
+            status_string = "closed";
             break;
         case TS_Creating:
             status_string = "creating";
@@ -28,6 +55,24 @@ std::string task_status_string(int32_t status) {
         case TS_Deleting:
             status_string = "deleting";
             break;
+        case TS_Error:
+            status_string = "error";
+            break;
+        case TS_CreateError:
+            status_string = "create error";
+            break;
+        case TS_StartError:
+            status_string = "start error";
+            break;
+        case TS_RestartError:
+            status_string = "restart error";
+            break;
+        case TS_ResetError:
+            status_string = "reset error";
+            break;
+        case TS_DeleteError:
+            status_string = "delete error";
+            break;
         default:
             break;
     }
@@ -35,34 +80,26 @@ std::string task_status_string(int32_t status) {
     return status_string;
 }
 
-std::string task_operation_string(int32_t op) {
-    std::string operation_string = "none";
-    switch(op) {
-        case T_OP_Create:
-            operation_string = "create";
+std::string vm_status_string(int32_t status) {
+    std::string status_string = "none";
+    switch (status) {
+        case VS_None:
+            status_string = "none";
             break;
-        case T_OP_Start:
-            operation_string = "start";
+        case VS_PAUSED:
+            status_string = "paused";
             break;
-        case T_OP_Stop:
-            operation_string = "stop";
+        case VS_RUNNING:
+            status_string = "running";
             break;
-        case T_OP_ReStart:
-            operation_string = "restart";
-            break;
-        case T_OP_Reset:
-            operation_string = "reset";
-            break;
-        case T_OP_Delete:
-            operation_string = "delete";
-            break;
-        case T_OP_PullImageFile:
-            operation_string = "download image file";
+        case VS_SHUT_OFF:
+            status_string = "shut_off";
             break;
         default:
             break;
     }
-    return operation_string;
+
+    return status_string;
 }
 
 /*

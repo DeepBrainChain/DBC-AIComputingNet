@@ -10,7 +10,7 @@ enum OS_TYPE {
     OS_2004
 };
 
-// kb
+// KB
 struct mem_info {
     uint64_t mem_total = 0L;
     uint64_t mem_free = 0L;
@@ -50,12 +50,12 @@ enum DISK_TYPE {
     DISK_SSD
 };
 
-// kb
+// KB
 struct disk_info {
     DISK_TYPE disk_type = DISK_SSD;
     uint64_t disk_total = 0;
     uint64_t disk_free = 0;
-    uint64_t disk_awalible = 0;
+    uint64_t disk_available = 0;
     float disk_usage = 0.0f;
 };
 
@@ -65,7 +65,7 @@ public:
 
     virtual ~SystemInfo();
 
-    void init(bpo::variables_map &options);
+    void init(bpo::variables_map &options, int32_t reserved_cpu_cores, int32_t reserved_memory);
 
     void start();
 
@@ -131,6 +131,9 @@ private:
     std::atomic<bool> m_running{false};
 
     std::string m_public_ip = "N/A";
+
+    int32_t m_reserved_cpu_cores = 0; // 每个物理cpu的物理核数
+    int32_t m_reserved_memory = 0; // GB
 };
 
 #endif //DBCPROJ_SYSTEM_INFO_H

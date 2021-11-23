@@ -2,20 +2,18 @@
 #define DBC_TASK_MANAGER_H
 
 #include "util/utils.h"
-#include <leveldb/db.h>
-#include "vm/image_manager.h"
 #include "service_module/service_module.h"
 #include <boost/process.hpp>
 #include "network/nio_loop_group.h"
 #include "service/message/matrix_types.h"
 #include "service/message/vm_task_result_types.h"
-#include "db/task_db.h"
-#include "db/iptable_db.h"
-#include "db/sessionid_db.h"
-#include "TaskResourceManager.h"
 #include "vm/vm_client.h"
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#include "util/httplib.h"
+#include "HttpChainClient.h"
+#include "TaskInfoManager.h"
+#include "TaskIptableManager.h"
+#include "WalletSessionIDManager.h"
+#include "WalletRentTaskManager.h"
+#include "TaskResourceManager.h"
 
 namespace bp = boost::process;
 
@@ -25,112 +23,126 @@ public:
 
     virtual ~TaskManager();
 
-    FResult Init();
+    FResult init();
 
-    FResult CreateTask(const std::string& wallet, const std::string &task_id,
-                       const std::string &login_password, const std::string &additional,
-                       int64_t rent_end, USER_ROLE role);
+    void start();
 
-    FResult StartTask(const std::string& wallet, const std::string &task_id);
+    void stop();
 
-    FResult StopTask(const std::string& wallet, const std::string &task_id);
+    FResult createTask(const std::string& wallet, const std::string &additional,
+                       int64_t rent_end, USER_ROLE role, std::string& task_id);
 
-    FResult RestartTask(const std::string& wallet, const std::string &task_id);
+    FResult startTask(const std::string& wallet, const std::string &task_id);
 
-    FResult ResetTask(const std::string& wallet, const std::string &task_id);
+    FResult stopTask(const std::string& wallet, const std::string &task_id);
 
-    FResult DeleteTask(const std::string& wallet, const std::string &task_id);
+    FResult restartTask(const std::string& wallet, const std::string &task_id);
+
+    FResult resetTask(const std::string& wallet, const std::string &task_id);
+
+    FResult deleteTask(const std::string& wallet, const std::string &task_id);
 
     FResult
-    GetTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines, std::string &log_content);
+    getTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines, std::string &log_content);
 
-    std::shared_ptr<dbc::TaskInfo> FindTask(const std::string& wallet, const std::string &task_id);
+    void listAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
 
-    void ListAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+    void listRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
 
-    void ListRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+    std::shared_ptr<dbc::TaskInfo> findTask(const std::string& wallet, const std::string &task_id);
 
-    int32_t GetRunningTaskSize(const std::string& wallet);
+    int32_t getRunningTasksSize(const std::string& wallet);
 
-    ETaskStatus GetTaskStatus(const std::string &task_id);
+    ETaskStatus getTaskStatus(const std::string &task_id);
 
-    const TaskResourceManager& GetTaskResourceManager() {
-        return m_task_resource_mgr;
-    }
+    void deleteAllCheckTasks();
 
-    void DeleteOtherCheckTask(const std::string& wallet);
+    void deleteOtherCheckTasks(const std::string& wallet);
 
-    // 删除所有验证人创建的task
-    void DeleteAllCheckTasks();
+    std::string createSessionId(const std::string& wallet);
 
-    // 检查session_id
-    std::string CheckSessionId(const std::string& session_id, const std::string& session_id_sign);
+    std::string getSessionId(const std::string& wallet);
 
-    // 创建session_id
-    std::string CreateSessionId(const std::string& wallet);
-
-    // 获取session_id
-    std::string GetSessionId(const std::string& wallet);
-
-    void ProcessTask();
-
-    void PruneTask();
-
-    void AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_result> vm_task_result);
+    std::string checkSessionId(const std::string& session_id, const std::string& session_id_sign);
 
 protected:
-    FResult init_db();
+    bool restore_tasks();
 
-    FResult remove_invalid_tasks();
+    void start_task(virConnectPtr connPtr, const std::string &task_id);
 
-    FResult restore_tasks();
+    void close_task(virConnectPtr connPtr, const std::string &task_id);
 
-    void delete_task_data(const std::string& task_id);
+    void remove_iptable_from_system(const std::string& task_id);
 
-    void shell_delete_iptable(const std::string &public_ip, const std::string &transform_port,
+    void add_iptable_to_system(const std::string& task_id);
+
+    void shell_remove_iptable_from_system(const std::string &public_ip, const std::string &transform_port,
+                                          const std::string &vm_local_ip);
+
+    void shell_add_iptable_to_system(const std::string &public_ip, const std::string &transform_port,
                                      const std::string &vm_local_ip);
 
-    void shell_add_iptable(const std::string &public_ip, const std::string &transform_port,
-                              const std::string &vm_local_ip);
+    void shell_remove_reject_iptable_from_system();
 
-    void remove_reject_iptable();
+    void delete_task(virConnectPtr connPtr, const std::string& task_id);
 
-    void remove_iptable(const std::string& task_id);
+    void delete_disk_system_file(const std::string &task_id, const std::string& disk_system_file_name);
 
-    void restore_iptable(const std::string& task_id);
+    void delete_disk_data_file(const std::string &task_id);
 
-    void add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count);
+    FResult parse_create_params(const std::string &additional, USER_ROLE role, TaskCreateParams& params);
 
-    bool check_cpu(int32_t cpu_count);
+    bool allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads);
 
-    bool check_gpu(int32_t gpu_count);
+    bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus);
 
-    bool check_mem(float mem_rate);
+    bool allocate_mem(uint64_t mem_size);
 
-    bool check_disk();
+    bool allocate_disk(uint64_t disk_size);
+
+    FResult parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params);
+
+    FResult check_image(const std::string& image_name);
+
+    FResult check_cpu(int32_t sockets, int32_t cores, int32_t threads);
+
+    FResult check_gpu(const std::map<std::string, std::list<std::string>>& gpus);
+
+    FResult check_disk(const std::map<int32_t, uint64_t>& disks);
+
+    void process_task_thread_func();
+
+    void add_process_task(const ETaskEvent& ev);
+
+    void process_task(const ETaskEvent& ev);
+
+    void process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
     bool create_task_iptable(const std::string &domain_name, const std::string &transform_port, const std::string &vm_local_ip);
 
+    void process_start(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void process_stop(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void process_restart(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void process_reset(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void process_delete(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void prune_task_thread_func();
+
 protected:
-    // task
-    TaskDB m_task_db;
-    std::map<std::string, std::shared_ptr<dbc::TaskInfo> > m_tasks;
-    TaskResourceManager m_task_resource_mgr;
+    std::mutex m_process_mtx;
+    std::condition_variable m_process_cond;
+    std::queue<ETaskEvent> m_process_tasks; // <task_id>
 
-    // iptable
-    IpTableDB m_iptable_db;
-    std::map<std::string, std::shared_ptr<dbc::task_iptable> > m_iptables;
-
-    // session_id
-    SessionIdDB m_sessionid_db;
-    std::map<std::string, std::string> m_wallet_sessionid;
-    std::map<std::string, std::string> m_sessionid_wallet;
-
-    // wallet task
-    WalletTaskDB m_wallet_task_db;
-    std::map<std::string, std::shared_ptr<dbc::rent_task> > m_wallet_tasks;
+    std::atomic<bool> m_running {false};
+    std::thread* m_process_thread = nullptr;
+    std::thread* m_prune_thread = nullptr;
 
     VmClient m_vm_client;
+    HttpChainClient m_httpclient;
 };
 
 typedef TaskManager TaskMgr;
