@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <string>
+#include <map>
+#include <list>
 
 #define MAX_LIST_TASK_COUNT                                     10000
 #define MAX_TASK_COUNT_PER_REQ                                  10
@@ -24,34 +26,45 @@
 
 #define AI_TRAINING_MAX_TASK_COUNT                                  64
 
-enum ETaskStatus {
-    TS_None,
-    TS_Creating,    //正在创建
-    TS_Running,     //正在运行中
-    TS_Starting,    //正在启动
-    TS_Stopping,    //正在停止
-    TS_Restarting,  //正在重启
-    TS_Resetting,   //正在reset重启
-    TS_Deleting,    //正在删除
-    TS_PullingImageFile    //正在下载镜像文件
-};
-
 enum ETaskOp {
     T_OP_None,
     T_OP_Create,    //创建
     T_OP_Start,     //启动
     T_OP_Stop,      //停止
     T_OP_ReStart,   //重启
-    T_OP_Reset,     //reset重启
-    T_OP_Delete,   //删除
-    T_OP_PullImageFile   //下载镜像文件
+    T_OP_Reset,     //reset
+    T_OP_Delete     //删除
+};
+
+struct ETaskEvent {
+    std::string task_id;
+    ETaskOp op;
+};
+
+enum ETaskStatus {
+    TS_ShutOff,     //关闭状态
+    TS_Creating,    //正在创建
+    TS_Running,     //正在运行中
+    TS_Starting,    //正在启动
+    TS_Stopping,    //正在停止
+    TS_Restarting,  //正在重启
+    TS_Resetting,   //正在reset
+    TS_Deleting,    //正在删除
+
+    TS_Error,   //出错
+    TS_CreateError,
+    TS_StartError,
+    TS_StopError,
+    TS_RestartError,
+    TS_ResetError,
+    TS_DeleteError
 };
 
 enum EVmStatus {
-    VS_NOSTATE,
-    VS_SHUT_OFF,
+    VS_None,
     VS_PAUSED,
-    VS_RUNNING
+    VS_RUNNING,
+    VS_SHUT_OFF
 };
 
 enum ETaskLogDirection {
@@ -61,11 +74,14 @@ enum ETaskLogDirection {
 
 std::string task_status_string(int32_t status);
 std::string task_operation_string(int32_t op);
+std::string vm_status_string(int32_t status);
 
 // 系统盘大小（GB）
 static const int32_t g_disk_system_size = 350;
 // 内存预留大小（GB）
 static const int32_t g_reserved_memory = 32;
+// cpu预留核数（每个物理cpu的物理核数）
+static const int32_t g_reserved_physical_cores_per_cpu = 1;
 // 虚拟机登录用户名
 static const char* g_vm_login_username = "dbc";
 
@@ -90,6 +106,41 @@ struct AuthoriseResult {
 
     std::string rent_wallet;
     int64_t rent_end = 0;
+};
+
+struct TaskCreateParams {
+    std::string task_id;
+    std::string login_password;
+    std::string image_name;
+    int16_t ssh_port;
+
+    int32_t cpu_sockets = 0;
+    int32_t cpu_cores = 0;
+    int32_t cpu_threads = 0;
+
+    std::map<std::string, std::list<std::string>> gpus;
+
+    uint64_t mem_size; // KB
+
+    std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
+
+    std::string vm_xml;
+    std::string vm_xml_url;
+};
+
+struct ParseVmXmlParams {
+    std::string task_id;
+    std::string image_name;
+
+    int32_t cpu_sockets;
+    int32_t cpu_cores;
+    int32_t cpu_threads;
+
+    std::map<std::string, std::list<std::string>> gpus;
+
+    uint64_t mem_size; // KB
+
+    std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
 };
 
 /*

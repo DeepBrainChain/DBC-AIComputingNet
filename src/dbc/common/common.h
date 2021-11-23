@@ -14,7 +14,7 @@
 
 #include "def/common_def.h"
 #include "def/net_def.h"
-#include "def/peer_node_def.h"
 #include "def/task_def.h"
+#include "def/peer_node_def.h"
 
 #endif //DBC_COMMON_H

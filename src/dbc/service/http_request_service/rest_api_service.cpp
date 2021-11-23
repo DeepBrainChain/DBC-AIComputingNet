@@ -14,7 +14,7 @@
 #include "timer/time_tick_notification.h"
 #include "../message/protocol_coder/matrix_coder.h"
 #include "../message/message_id.h"
-#include "data/service_info/service_info_collection.h"
+#include "service/service_info/service_info_collection.h"
 #include "../peer_request_service/p2p_net_service.h"
 #include "util/system_info.h"
 

@@ -47,14 +47,6 @@ set(service_src_dir
         dbc/util/crypto
         dbc/util/crypto/ctaes
         dbc/config
-        dbc/data
-        dbc/data/service_info
-        dbc/data/resource
-        dbc/data/session_id
-        dbc/data/task
-        dbc/data/task/db
-        dbc/data/task/vm
-        dbc/data/task/container
         dbc/network
         dbc/network/compress
         dbc/network/protocol
@@ -65,7 +57,11 @@ set(service_src_dir
         dbc/service
         dbc/service/message
         dbc/service/message/protocol_coder
-        dbc/service/common_service
+        dbc/service/service_info
+        dbc/service/task
+        dbc/service/task/db
+        dbc/service/task/vm
+        dbc/service/task/docker
         dbc/service/http_request_service
         dbc/service/node_request_service
         dbc/service/peer_request_service

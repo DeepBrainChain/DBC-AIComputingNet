@@ -57,7 +57,7 @@ int32_t server::init(int argc, char *argv[]) {
 
     // system_info
     LOG_INFO << "begin to init SystemInfo";
-    SystemInfo::instance().init(args);
+    SystemInfo::instance().init(args, g_reserved_physical_cores_per_cpu, g_reserved_memory);
     SystemInfo::instance().start();
     LOG_INFO << "init SystemInfo successful";
 

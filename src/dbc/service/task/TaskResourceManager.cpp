@@ -4,10 +4,8 @@
 #include "log/log.h"
 #include "tinyxml2.h"
 
-static TaskResource g_default_task_resource;
-
 int32_t TaskResource::total_cores() const {
-    return physical_cpu * physical_cores_per_cpu * threads_per_cpu;
+    return cpu_sockets * cpu_cores * cpu_threads;
 }
 
 std::string TaskResource::parse_gpu_device_bus(const std::string& id) {
@@ -38,20 +36,18 @@ std::string TaskResource::parse_gpu_device_function(const std::string& id) {
     }
 }
 
-void TaskResourceManager::init(const std::vector<std::string> &tasks) {
-    for (auto& id : tasks) {
-        virConnectPtr connPtr = nullptr;
+bool TaskResourceManager::init(const std::vector<std::string> &taskids) {
+    std::string url = "qemu+tcp://localhost:16509/system";
+    virConnectPtr connPtr = virConnectOpen(url.c_str());
+    if (nullptr == connPtr) {
+        LOG_ERROR << "virConnectOpen error: " << url;
+        return false;
+    }
+
+    for (auto& id : taskids) {
         virDomainPtr domainPtr = nullptr;
 
         do {
-            std::string url = "qemu+tcp://localhost:16509/system";
-
-            connPtr = virConnectOpen(url.c_str());
-            if (nullptr == connPtr) {
-                LOG_ERROR << "virConnectOpen error: " << url;
-                break;
-            }
-
             domainPtr = virDomainLookupByName(connPtr, id.c_str());
             if (nullptr == domainPtr) {
                 virErrorPtr error = virGetLastError();
@@ -70,22 +66,22 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                 }
 
                 tinyxml2::XMLElement* root = doc.RootElement();
-                TaskResource task_resource;
+                std::shared_ptr<TaskResource> task_resource = std::make_shared<TaskResource>();
                 // cpu
-                tinyxml2::XMLElement* ele_root = root->FirstChildElement("cpu");
-                if (ele_root != nullptr) {
-                    tinyxml2::XMLElement* ele_topology = ele_root->FirstChildElement("topology");
+                tinyxml2::XMLElement* ele_cpu = root->FirstChildElement("cpu");
+                if (ele_cpu != nullptr) {
+                    tinyxml2::XMLElement* ele_topology = ele_cpu->FirstChildElement("topology");
                     if (ele_topology != nullptr) {
-                        task_resource.physical_cpu = ele_topology->IntAttribute("sockets");
-                        task_resource.physical_cores_per_cpu = ele_topology->IntAttribute("cores");
-                        task_resource.threads_per_cpu = ele_topology->IntAttribute("threads");
+                        task_resource->cpu_sockets = ele_topology->IntAttribute("sockets");
+                        task_resource->cpu_cores = ele_topology->IntAttribute("cores");
+                        task_resource->cpu_threads = ele_topology->IntAttribute("threads");
                     }
                 }
                 // mem
                 tinyxml2::XMLElement* ele_memory = root->FirstChildElement("memory");
                 if (ele_memory != nullptr) {
                     const char* str_memory = ele_memory->GetText();
-                    task_resource.mem_size = atol(str_memory);
+                    task_resource->mem_size = atol(str_memory);
                 }
                 //gpu
                 tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
@@ -119,7 +115,7 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                                     cur_gpu_id = device_id;
                                 }
 
-                                task_resource.gpus[cur_gpu_id].push_back(device_id);
+                                task_resource->gpus[cur_gpu_id].push_back(device_id);
                             }
                         }
 
@@ -149,7 +145,7 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                                         virDomainBlockInfo blockinfo;
                                         if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
                                             int64_t disk_size = blockinfo.capacity;
-                                            task_resource.disks_data[nindex] = disk_size / 1024 / 1024;
+                                            task_resource->disks[nindex] = disk_size / 1024L;
                                         }
                                     }
                                 } else if (fname.find("ubuntu") != std::string::npos) {
@@ -159,7 +155,7 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                                         virDomainBlockInfo blockinfo;
                                         if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
                                             int64_t disk_size = blockinfo.capacity;
-                                            task_resource.disk_system_size = disk_size / 1024 / 1024;
+                                            task_resource->disk_system_size = disk_size / 1024L;
                                         }
                                     }
                                 }
@@ -170,7 +166,7 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
                     }
                 }
 
-                m_mpTaskResource[id] = task_resource;
+                m_task_resource[id] = task_resource;
                 free(pContent);
             }
         } while(0);
@@ -178,26 +174,31 @@ void TaskResourceManager::init(const std::vector<std::string> &tasks) {
         if (nullptr != domainPtr) {
             virDomainFree(domainPtr);
         }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
     }
+
+    if (nullptr != connPtr) {
+        virConnectClose(connPtr);
+    }
+
+    return true;
 }
 
-const TaskResource & TaskResourceManager::GetTaskResource(const std::string &task_id) const {
-    auto it = m_mpTaskResource.find(task_id);
-    if (it == m_mpTaskResource.end()) {
-        return g_default_task_resource;
-    } else {
+std::shared_ptr<TaskResource> TaskResourceManager::getTaskResource(const std::string &task_id) const {
+    RwMutex::ReadLock rlock(m_mtx);
+    auto it = m_task_resource.find(task_id);
+    if (it != m_task_resource.end()) {
         return it->second;
+    } else {
+        return nullptr;
     }
 }
 
-void TaskResourceManager::AddTaskResource(const std::string &task_id, const TaskResource &resource) {
-    m_mpTaskResource[task_id] = resource;
+void TaskResourceManager::addTaskResource(const std::string &task_id, const std::shared_ptr<TaskResource> &resource) {
+    RwMutex::WriteLock wlock(m_mtx);
+    m_task_resource[task_id] = resource;
 }
 
-void TaskResourceManager::Delete(const std::string &task_id) {
-    m_mpTaskResource.erase(task_id);
+void TaskResourceManager::delTaskResource(const std::string &task_id) {
+    RwMutex::WriteLock wlock(m_mtx);
+    m_task_resource.erase(task_id);
 }

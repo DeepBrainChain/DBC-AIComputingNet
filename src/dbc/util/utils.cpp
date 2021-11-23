@@ -1,40 +1,54 @@
 #include "utils.h"
 
-std::string size_to_string(int64_t n, int64_t scale) {
-    int64_t rest = 0;
-    n = n * scale;
-    int64_t size = n;
+std::string run_shell(const std::string& cmd, const char* modes) {
+    if (cmd.empty()) return "";
 
-    if(size < 1024) {
-        return std::to_string(size) + "B";
+    std::string ret;
+    std::string strcmd = cmd + " 2>&1";
+    FILE * fp = nullptr;
+    char buffer[1024] = {0};
+    fp = popen(strcmd.c_str(), modes);
+    if (fp != nullptr) {
+        fgets(buffer, sizeof(buffer), fp);
+        pclose(fp);
+        ret = std::string(buffer);
     } else {
-        size /= 1024;
-        rest = n - size * 1024;
+        ret = std::string("run_shell failed! ") + strcmd + std::string(" ") + std::to_string(errno) + ":" + strerror(errno);
     }
 
-    if(size < 1024) {
-        return std::to_string(size) + "." + std::to_string(rest * 100).substr(0, 2) + "KB";
-    } else {
-        size /= 1024;
-        rest = n - size * 1024 * 1024;
-    }
-
-    if(size < 1024) {
-        return std::to_string(size) + "." + std::to_string(rest * 100).substr(0, 2) + "MB";
-    } else {
-        size /= 1024;
-        rest = n - size * 1024 * 1024 * 1024;
-    }
-
-    if (size < 1024) {
-        return std::to_string(size) + "." + std::to_string(rest * 100).substr(0, 2) + "GB";
-    } else {
-        size /= 1024;
-        rest = n - size * 1024 * 1024 * 1024 * 1024;
-        return std::to_string(size) + "." + std::to_string(rest * 100).substr(0, 2) + "TB";
-    }
+    return util::rtrim(ret, '\n');
 }
 
+static uint64_t power(unsigned int base, unsigned int expo)
+{
+    return (expo == 0) ? 1 : base * power(base, expo - 1);
+}
+
+std::string scale_size(uint64_t size, char* up)
+{
+    char buf[128] = {0};
+    uint64_t bytes = size * 1024LU;
+
+    for (int i = 1; up[i] != 0; i++) {
+        uint64_t n = power(1024, i);
+        uint64_t a = bytes / n;
+
+        int32_t k = bytes % n;
+        if (k == 0) {
+            snprintf(buf, sizeof(buf), "%lu%c", a, up[i]);
+        } else {
+            snprintf(buf, sizeof(buf), "%.2f", bytes * (double)1.0 / (double)n);
+            std::stringstream ss;
+            ss << atof(buf) << up[i];
+            snprintf(buf, sizeof(buf), "%s", ss.str().c_str());
+        }
+
+        if (a < 1024)
+            break;
+    }
+
+    return std::move(std::string(buf));
+}
 
 std::string get_public_ip() {
     int try_count = 0;

@@ -58,7 +58,39 @@
 
 namespace fs = boost::filesystem;
 
-//using namespace boost::asio::ip;
+static const char* color_black = "\033[1;30m";
+static const char* color_blue = "\033[1;34m";
+static const char* color_red = "\033[1;31m";
+static const char* color_green = "\033[1;32m";
+static const char* color_reset = "\033[0m";
+
+#define printf_black(...) \
+    do {                            \
+    char line[1024] = {0}; \
+    snprintf(line, 1024, __VA_ARGS__); \
+    printf("%s%s%s", color_black, line, color_reset); \
+    } while(0);
+
+#define printf_blue(...) \
+    do {                            \
+    char line[1024] = {0}; \
+    snprintf(line, 1024, __VA_ARGS__); \
+    printf("%s%s%s", color_blue, line, color_reset); \
+    } while(0);
+
+#define printf_red(...) \
+    do {                            \
+    char line[1024] = {0}; \
+    snprintf(line, 1024, __VA_ARGS__); \
+    printf("%s%s%s", color_red, line, color_reset); \
+    } while(0);
+
+#define printf_green(...) \
+    do {                            \
+    char line[1024] = {0}; \
+    snprintf(line, 1024, __VA_ARGS__); \
+    printf("%s%s%s", color_green, line, color_reset); \
+    } while(0);
 
 /**
 * this function tries to raise the file descriptor limit to the requested number.
@@ -88,67 +120,17 @@ inline int32_t RaiseFileDescriptorLimit(int nMinFD)
 #endif
 }
 
-
-static std::string run_shell(const std::string& cmd, const char* modes = "r") {
-    if (cmd.empty()) return "";
-
-    std::string ret;
-    std::string strcmd = cmd + " 2>&1";
-    FILE * fp = nullptr;
-    char buffer[1024] = {0};
-    fp = popen(strcmd.c_str(), modes);
-    if (fp != nullptr) {
-        fgets(buffer, sizeof(buffer), fp);
-        pclose(fp);
-        ret = std::string(buffer);
-    } else {
-        ret = std::string("run_shell failed! ") + strcmd + std::string(" ") + std::to_string(errno) + ":" + strerror(errno);
-    }
-
-    return util::rtrim(ret, '\n');
-}
-
-static std::string read_info(const char* file, const char* modes = "r") {
-    FILE *fp = fopen(file, modes);
-    if(NULL == fp) return "";
-
-    char szBuf[1024] = {0};
-    fgets(szBuf, sizeof(szBuf) - 1, fp);
-    fclose(fp);
-
-    return std::string(szBuf);
-}
-
-// B => TB GB KB
-std::string size_to_string(int64_t n, int64_t scale = 1);
-
-inline uint64_t power(unsigned int base, unsigned int expo)
-{
-    return (expo == 0) ? 1 : base * power(base, expo - 1);
-}
+std::string run_shell(const std::string& cmd, const char* modes = "r");
 
 // size: KB
-static const char *scale_size(uint64_t size)
-{
-    static char up[] = { 'B', 'K', 'M', 'G', 'T', 'P', 0 };
-    static char buf[BUFSIZ];
-    int i;
-    uint32_t base = 1024;
-    uint64_t bytes = size * 1024LU;
+std::string scale_size(uint64_t size, char* up = "BKMGTP\0");
 
-    if (4 >= snprintf(buf, sizeof(buf), "%lu%c", bytes, up[0]))
-        return buf;
+inline std::string size2GB(uint64_t size) {
+    return scale_size(size, "BKMG\0");
+}
 
-    for (i = 1; up[i] != 0; i++) {
-        if (4 >= snprintf(buf, sizeof(buf), "%.1f%c",
-                          (float)(bytes * 1.0 / power(base, i)), up[i]))
-            return buf;
-        if (4 >= snprintf(buf, sizeof(buf), "%lu%c",
-                          (uint64_t)(bytes * 1.0 / power(base, i)), up[i]))
-            return buf;
-    }
-
-    return buf;
+inline std::string size2MB(uint64_t size) {
+    return scale_size(size, "BKM\0");
 }
 
 // 获取公网ip地址
@@ -163,6 +145,15 @@ uint32_t str_to_u32(const std::string& str);
 int64_t str_to_i64(const std::string& str);
 uint64_t str_to_u64(const std::string& str);
 float str_to_f(const std::string& str);
+
+inline std::string f2s(float f) {
+    char buf[64] = {0};
+    snprintf(buf, sizeof(buf), "%.2f", f);
+    std::stringstream ss;
+    ss << atof(buf);
+    snprintf(buf, sizeof(buf), "%s", ss.str().c_str());
+    return ss.str();
+}
 
 void printhex(unsigned char *buf, int len);
 

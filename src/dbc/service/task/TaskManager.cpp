@@ -11,188 +11,60 @@
 #include "rapidjson/error/error.h"
 #include "log/log.h"
 #include "util/system_info.h"
-#include "../../config/conf_manager.h"
-
-std::vector<std::string> split(const std::string &str, const std::string &delim) {
-    std::vector<std::string> res;
-    if ("" == str) return res;
-    //先将要切割的字符串从string类型转换为char*类型
-    char *strs = new char[str.length() + 1]; //不要忘了
-    strcpy(strs, str.c_str());
-
-    char *d = new char[delim.length() + 1];
-    strcpy(d, delim.c_str());
-
-    char *p = strtok(strs, d);
-    while (p) {
-        std::string s = p; //分割得到的字符串转换为string类型
-        res.push_back(s); //存入结果数组
-        p = strtok(NULL, d);
-    }
-
-    return res;
-}
+#include "config/conf_manager.h"
+#include "tinyxml2.h"
 
 TaskManager::TaskManager() {
 
 }
 
 TaskManager::~TaskManager() {
-    m_vm_client.Stop();
+    this->stop();
 }
 
-FResult TaskManager::Init() {
-    // load db
-    FResult fret = init_db();
-    int32_t ret = std::get<0>(fret);
-    std::string ret_msg = std::get<1>(fret);
-    if (ret != E_SUCCESS) {
-        return fret;
+FResult TaskManager::init() {
+    if (!TaskInfoMgr::instance().init()) {
+        return {E_DEFAULT, "task info manager init failed"};
     }
 
-    // add new log backend for every vm task
-    for (auto& it : m_tasks) {
+    if (!TaskIptableMgr::instance().init()) {
+        return {E_DEFAULT, "task iptable manager init failed"};
+    }
+
+    if (!WalletSessionIDMgr::instance().init()) {
+        return {E_DEFAULT, "wallet sessionid manager init failed"};
+    }
+
+    if (!WalletRentTaskMgr::instance().init()) {
+        return {E_DEFAULT, "wallet renttask manager init failed;"};
+    }
+
+    auto tasks = TaskInfoMgr::instance().getTasks();
+    for (auto& it : tasks) {
         dbclog::instance().add_task_log_backend(it.second->task_id);
     }
 
-    // remove invalid tasks
-    fret = remove_invalid_tasks();
-    ret = std::get<0>(fret);
-    ret_msg = std::get<1>(fret);
-    if (ret != E_SUCCESS) {
-        return fret;
+    if (!restore_tasks()) {
+        return {E_DEFAULT, "restore tasks failed"};
     }
 
-    m_vm_client.Start();
-    // set operation to none when initializing the task manager if a crash occurred during the last run.
-    for (auto& it : m_tasks) {
-        int32_t operation = it.second->operation;
-        it.second->__set_operation(T_OP_None);
-        if (operation == T_OP_Create) {
-            DeleteTask("", it.second->task_id);
-        }
-    }
+    shell_remove_reject_iptable_from_system();
 
-    // restore tasks
-    fret = restore_tasks();
-    ret = std::get<0>(fret);
-    ret_msg = std::get<1>(fret);
-    if (ret != E_SUCCESS) {
-        return fret;
-    }
+    std::vector<std::string> taskids = TaskInfoMgr::instance().getAllTaskId();
+    TaskResourceMgr::instance().init(taskids);
 
-    // remove reject iptable
-    remove_reject_iptable();
-
-    // init resource
-    std::vector<std::string> taskids;
-    for (auto& it : m_tasks) {
-        taskids.push_back(it.first);
-    }
-    m_task_resource_mgr.init(taskids);
     return {E_SUCCESS, ""};
 }
 
-FResult TaskManager::init_db() {
-    // tasks
-    bool ret = m_task_db.init_db(env_manager::instance().get_db_path(), "task.db");
-    if (!ret) {
-        LOG_ERROR << "init task_db failed";
-        return {E_DEFAULT, "init task_db failed"};
-    }
-    m_task_db.load_tasks(m_tasks);
-
-    // iptables
-    ret = m_iptable_db.init_db(env_manager::instance().get_db_path(), "iptable.db");
-    if (!ret) {
-        LOG_ERROR << "init iptable_db failed";
-        return {E_DEFAULT, "init iptable_db failed"};
-    }
-    m_iptable_db.load_iptables(m_iptables);
-
-    // sessionids
-    ret = m_sessionid_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
-    if (!ret) {
-        LOG_ERROR << "init sessionid_db failed";
-        return {E_DEFAULT, "init sessionid.db failed"};
-    }
-
-    do {
-        std::map<std::string, std::shared_ptr<dbc::rent_sessionid>> wallet_sessionid;
-        m_sessionid_db.load(wallet_sessionid);
-        for (auto &it: wallet_sessionid) {
-            m_wallet_sessionid.insert({it.first, it.second->session_id});
-            m_sessionid_wallet.insert({it.second->session_id, it.first});
-        }
-    } while (0);
-
-    // wallet tasks
-    ret = m_wallet_task_db.init_db(env_manager::instance().get_db_path(), "rent_task.db");
-    if (!ret) {
-        LOG_ERROR << "init wallet_task_db failed";
-        return {E_DEFAULT, "init wallet_task.db failed"};
-    }
-    m_wallet_task_db.load_data(m_wallet_tasks);
-
-    return {E_SUCCESS, "ok"};
-}
-
-FResult TaskManager::remove_invalid_tasks() {
-    std::string url = "qemu+tcp://localhost:16509/system";
-    virConnectPtr connPtr = virConnectOpen(url.c_str());
-    if (nullptr == connPtr) {
-        return {E_DEFAULT, "virConnectOpen error: " + url};
-    }
-
-    std::map<std::string, std::shared_ptr<dbc::TaskInfo> > tasks = m_tasks;
-    for (auto& it_task : tasks) {
-        virDomainPtr domainPtr = virDomainLookupByName(connPtr, it_task.first.c_str());
-        if (nullptr == domainPtr) {
-            LOG_WARNING << "domain not exist: " << it_task.first;
-            delete_task_data(it_task.first);
-        } else {
-            virDomainFree(domainPtr);
-        }
-    }
-    virConnectClose(connPtr);
-
-    for (auto& it : m_wallet_tasks) {
-        bool bwrite = false;
-        std::vector<std::string> ids;
-        for (auto& task_id : it.second->task_ids) {
-            auto it_task = m_tasks.find(task_id);
-            if (it_task == m_tasks.end()) {
-                bwrite = true;
-            } else {
-                ids.push_back(task_id);
-            }
-        }
-
-        if (bwrite) {
-            it.second->task_ids = ids;
-            m_wallet_task_db.write_data(it.second);
-        }
-    }
-
-    return {E_SUCCESS, "ok"};
-}
- 
-FResult TaskManager::restore_tasks() {
+bool TaskManager::restore_tasks() {
     httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
     std::string cur_renter_wallet;
     int64_t cur_rent_end = 0;
 
-    std::set<std::string> wallets_set;
-    for (auto& it : m_wallet_sessionid) {
-        wallets_set.insert(it.first);
-    }
-    for (auto& it : m_wallet_tasks) {
-        wallets_set.insert(it.first);
-    }
-
-    for (auto& it : wallets_set) {
+    std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
+    for (auto& it : wallets) {
         std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-                + it + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+                               + it + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
         std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             do {
@@ -221,16 +93,24 @@ FResult TaskManager::restore_tasks() {
         }
     }
 
+    std::string url = "qemu+tcp://localhost:16509/system";
+    virConnectPtr connPtr = virConnectOpen(url.c_str());
+    if (nullptr == connPtr) {
+        return false;
+    }
+
     // 将不是当前租用者的task都停掉
     //【如果存在当前租用者，就把验证人创建的虚拟机也一起关闭】
     //【如果不存在当前租用者，就先不要关闭验证人的虚拟机】
-    for (auto& it : m_wallet_tasks) {
+    auto renttasks = WalletRentTaskMgr::instance().getRentTasks();
+    for (auto& it : renttasks) {
         if (it.first != cur_renter_wallet) {
             for (auto& id : it.second->task_ids) {
                 if (cur_renter_wallet.empty()) {
                     if (!util::check_id(id)) continue;
                 }
-                m_vm_client.AddTask(id, T_OP_Stop, "");
+
+                close_task(connPtr, id);
             }
         }
     }
@@ -238,142 +118,192 @@ FResult TaskManager::restore_tasks() {
     // 如果不存在当前租用者，恢复验证人task
     if (cur_renter_wallet.empty()) {
         std::map<std::string, std::shared_ptr<dbc::TaskInfo> > check_tasks;
-        for (auto& it : m_wallet_tasks) {
+        for (auto& it : renttasks) {
             for (auto& task_id : it.second->task_ids) {
-                auto iter = m_tasks.find(task_id);
-                if (iter != m_tasks.end() && iter->first.find("vm_check_") != std::string::npos) {
-                    check_tasks.insert({iter->first, iter->second});
+                auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+                if (taskinfo != nullptr && taskinfo->task_id.find("vm_check_") != std::string::npos) {
+                    check_tasks.insert({taskinfo->task_id, taskinfo});
                 }
             }
+
+            if (!check_tasks.empty())
+                break;
         }
 
         for (auto& it_task : check_tasks) {
             int32_t task_status = it_task.second->status;
             if (task_status == ETaskStatus::TS_Running) {
-                m_vm_client.AddTask(it_task.first, T_OP_Start, "");
+                start_task(connPtr, it_task.first);
             }
         }
     }
-
     // 如果存在当前正在租用的用户，恢复租用者task
-    if (!cur_renter_wallet.empty()) {
-        // 将没有归属的task（除了验证人task）都归到当前租用的用户下
-        auto it = m_wallet_tasks.find(cur_renter_wallet);
-        if (it == m_wallet_tasks.end()) {
-            std::map<std::string, std::shared_ptr<dbc::TaskInfo> > tmp_tasks = m_tasks;
-            for (auto& it : m_wallet_tasks) {
-                for (auto& id : it.second->task_ids) {
-                    tmp_tasks.erase(id);
+    else {
+        do {
+            // 将没有归属的task（除了验证人task）都归到当前租用的用户下
+            auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
+            auto it = wallet_renttasks.find(cur_renter_wallet);
+            if (it == wallet_renttasks.end()) {
+                auto tmp_tasks = TaskInfoMgr::instance().getTasks();
+                for (auto &it: wallet_renttasks) {
+                    for (auto &id: it.second->task_ids) {
+                        tmp_tasks.erase(id);
+                    }
                 }
-            }
 
-            std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
-            renttask->rent_wallet = cur_renter_wallet;
-            renttask->rent_end = cur_rent_end;
-            for (auto& id : tmp_tasks) {
-                if (util::check_id(id.first)) { // 排除验证人task
-                    renttask->task_ids.push_back(id.first);
+                std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
+                renttask->rent_wallet = cur_renter_wallet;
+                renttask->rent_end = cur_rent_end;
+                for (auto &id: tmp_tasks) {
+                    if (util::check_id(id.first)) { // 排除验证人task
+                        renttask->task_ids.push_back(id.first);
+                    }
                 }
+                WalletRentTaskMgr::instance().update(renttask);
             }
-            m_wallet_tasks[cur_renter_wallet] = renttask;
-        }
- 
-        auto iter = m_wallet_tasks.find(cur_renter_wallet);
+        } while(0);
+
+        auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
+        auto iter = wallet_renttasks.find(cur_renter_wallet);
         for (auto& id : iter->second->task_ids) {
-            auto it_task = m_tasks.find(id);
-            if (it_task != m_tasks.end()) {
-                int32_t task_status = it_task->second->status;
-                if (task_status == ETaskStatus::TS_Running) {
-                    m_vm_client.AddTask(it_task->first, T_OP_Start, "");
+            auto taskinfo = TaskInfoMgr::instance().getTaskInfo(id);
+            if (taskinfo != nullptr) {
+                if (taskinfo->status == ETaskStatus::TS_Running) {
+                    start_task(connPtr, taskinfo->task_id);
                 }
             }
         }
     }
 
-    return { E_SUCCESS, "ok" };
+    virConnectClose(connPtr);
+    return true;
 }
 
-void TaskManager::delete_task_data(const std::string &task_id) {
-    m_tasks.erase(task_id);
-    m_task_db.delete_task(task_id);
-
-    auto it_iptable = m_iptables.find(task_id);
-    if (it_iptable != m_iptables.end()) {
-        std::string host_ip = it_iptable->second->host_ip;
-        std::string transform_port = it_iptable->second->ssh_port;
-        std::string vm_local_ip = it_iptable->second->vm_local_ip;
-        shell_delete_iptable(host_ip, transform_port, vm_local_ip);
+void TaskManager::start_task(virConnectPtr connPtr, const std::string &task_id) {
+    virDomainPtr domainPtr = virDomainLookupByName(connPtr, task_id.c_str());
+    if (nullptr == domainPtr) {
+        return;
     }
-    m_iptables.erase(task_id);
-    m_iptable_db.delete_iptable(task_id);
 
-    for (auto& it : m_wallet_tasks) {
-        std::shared_ptr<dbc::rent_task> it_rent_task = it.second;
-        std::vector<std::string> &vec = it_rent_task->task_ids;
-        bool bwrite = false;
-        for (auto iter = vec.begin(); iter != vec.end(); ) {
-            if (*iter == task_id) {
-                iter = vec.erase(iter);
-                bwrite = true;
-                break;
-            } else {
-                ++iter;
-            }
-        }
+    virDomainInfo info;
+    if (virDomainGetInfo(domainPtr, &info) < 0) {
+        virDomainFree(domainPtr);
+        return;
+    }
 
-        if (bwrite) {
-            m_wallet_task_db.write_data(it_rent_task);
-            break;
+    if (info.state != VIR_DOMAIN_RUNNING && info.state != VIR_DOMAIN_PAUSED) {
+        if (virDomainCreate(domainPtr) < 0) {
+            virDomainFree(domainPtr);
+            return;
         }
     }
 
-    m_task_resource_mgr.Delete(task_id);
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo != nullptr) {
+        taskinfo->status = ETaskStatus::TS_Running;
+        TaskInfoMgr::instance().update(taskinfo);
+
+        add_iptable_to_system(task_id);
+    }
+
+    virDomainFree(domainPtr);
 }
 
-void TaskManager::shell_delete_iptable(const std::string &public_ip, const std::string &transform_port,
-                                              const std::string &vm_local_ip) {
+void TaskManager::close_task(virConnectPtr connPtr, const std::string &task_id) {
+    virDomainPtr domainPtr = virDomainLookupByName(connPtr, task_id.c_str());
+    if (nullptr == domainPtr) {
+        return;
+    }
+
+    virDomainInfo info;
+    if (virDomainGetInfo(domainPtr, &info) < 0) {
+        virDomainFree(domainPtr);
+        return;
+    }
+
+    if (info.state == VIR_DOMAIN_RUNNING || info.state == VIR_DOMAIN_PAUSED) {
+        if (virDomainDestroy(domainPtr) < 0) {
+            virDomainFree(domainPtr);
+            return;
+        }
+    }
+
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo != nullptr) {
+        taskinfo->status = ETaskStatus::TS_ShutOff;
+        TaskInfoMgr::instance().update(taskinfo);
+        remove_iptable_from_system(task_id);
+    }
+
+    virDomainFree(domainPtr);
+}
+
+void TaskManager::remove_iptable_from_system(const std::string& task_id) {
+    auto iptable = TaskIptableMgr::instance().getIptable(task_id);
+    if (iptable != nullptr) {
+        std::string host_ip = iptable->host_ip;
+        std::string transform_port = iptable->ssh_port;
+        std::string vm_local_ip = iptable->vm_local_ip;
+
+        shell_remove_iptable_from_system(host_ip, transform_port, vm_local_ip);
+    }
+}
+
+void TaskManager::add_iptable_to_system(const std::string &task_id) {
+    auto iptable = TaskIptableMgr::instance().getIptable(task_id);
+    if (iptable != nullptr) {
+        std::string host_ip = iptable->host_ip;
+        std::string transform_port = iptable->ssh_port;
+        std::string vm_local_ip = iptable->vm_local_ip;
+
+        shell_add_iptable_to_system(host_ip, transform_port, vm_local_ip);
+    }
+}
+
+void TaskManager::shell_remove_iptable_from_system(const std::string &public_ip, const std::string &transform_port,
+                                                   const std::string &vm_local_ip) {
     std::string cmd;
 
     // 1804
     if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
         cmd += "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + public_ip +
-                " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
+               " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
-                " -j DNAT --to-destination " + vm_local_ip + ":22";
+               " -j DNAT --to-destination " + vm_local_ip + ":22";
         auto pos = vm_local_ip.rfind('.');
         std::string ip = vm_local_ip.substr(0, pos) + ".1";
         cmd += " && sudo iptables -t nat -D POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-                " -j SNAT --to " + ip;
+               " -j SNAT --to " + ip;
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
+               vm_local_ip + ":20000-60000";
         cmd += " && sudo iptables -t nat -D PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
+               vm_local_ip + ":20000-60000";
         cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-                " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+               " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-                " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+               " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
     }
 
-    // 2004
+        // 2004
     else if (SystemInfo::instance().ostype() == OS_TYPE::OS_2004) {
         cmd += "sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
-                + " -j DNAT --to-destination " + vm_local_ip + ":22";
+               + " -j DNAT --to-destination " + vm_local_ip + ":22";
         auto pos = vm_local_ip.rfind('.');
         std::string ip = vm_local_ip.substr(0, pos) + ".0/24";
         cmd += " && sudo iptables -t nat -D POSTROUTING -s " + ip + " -j SNAT --to-source " + public_ip;
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
-                + vm_local_ip + ":6000-60000";
+               + vm_local_ip + ":6000-60000";
     }
 
     run_shell(cmd.c_str());
 }
 
-void TaskManager::shell_add_iptable(const std::string &public_ip, const std::string &transform_port,
-                                       const std::string &vm_local_ip) {
+void TaskManager::shell_add_iptable_to_system(const std::string &public_ip, const std::string &transform_port,
+                                              const std::string &vm_local_ip) {
     // 1804
     if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
         std::string rule = "sudo iptables -t nat -C PREROUTING --protocol tcp --destination " + public_ip +
-                " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
+                           " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -381,7 +311,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
 
         rule = "sudo iptables -t nat -C PREROUTING -p tcp --dport " + transform_port +
-                " -j DNAT --to-destination " + vm_local_ip + ":22";
+               " -j DNAT --to-destination " + vm_local_ip + ":22";
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -391,7 +321,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         auto pos = vm_local_ip.rfind('.');
         std::string ip = vm_local_ip.substr(0, pos) + ".1";
         rule = "sudo iptables -t nat -C POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-                " -j SNAT --to " + ip;
+               " -j SNAT --to " + ip;
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -399,7 +329,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
 
         rule = "sudo iptables -t nat -C PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
+               vm_local_ip + ":20000-60000";
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -407,7 +337,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
 
         rule = "sudo iptables -t nat -C PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
+               vm_local_ip + ":20000-60000";
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -415,7 +345,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
 
         rule = "sudo iptables -t nat -C POSTROUTING -d " + vm_local_ip +
-                " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+               " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -423,7 +353,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
 
         rule = "sudo iptables -t nat -C POSTROUTING -d " + vm_local_ip +
-                " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+               " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -431,13 +361,13 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
     }
 
-    // 2004
+        // 2004
     else if (SystemInfo::instance().ostype() == OS_TYPE::OS_2004) {
         //std::string cmd = "sudo iptables -F && sudo iptables -F -t nat";
         //run_shell(cmd.c_str());
 
         std::string rule = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
-                + " -j DNAT --to-destination " + vm_local_ip + ":22";
+                           + " -j DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -454,7 +384,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
         }
 
         rule = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
-                + vm_local_ip + ":6000-60000";
+               + vm_local_ip + ":6000-60000";
         ret = run_shell(rule.c_str());
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
@@ -463,7 +393,7 @@ void TaskManager::shell_add_iptable(const std::string &public_ip, const std::str
     }
 }
 
-void TaskManager::remove_reject_iptable() {
+void TaskManager::shell_remove_reject_iptable_from_system() {
     std::string cmd = "sudo iptables -t filter --list-rules |grep reject |awk '{print $0}' |tr \"\n\" \"|\"";
     std::string str = run_shell(cmd.c_str());
     std::vector<std::string> vec;
@@ -477,40 +407,209 @@ void TaskManager::remove_reject_iptable() {
     }
 }
 
-void TaskManager::remove_iptable(const std::string& task_id) {
-    auto it = m_iptables.find(task_id);
-    if (it != m_iptables.end()) {
-        std::string host_ip = it->second->host_ip;
-        std::string transform_port = it->second->ssh_port;
-        std::string vm_local_ip = it->second->vm_local_ip;
-        shell_delete_iptable(host_ip, transform_port, vm_local_ip);
+void TaskManager::delete_task(virConnectPtr connPtr, const std::string &task_id) {
+    // domain
+    virDomainPtr domainPtr = virDomainLookupByName(connPtr, task_id.c_str());
+    if (nullptr != domainPtr) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
+            virDomainFree(domainPtr);
+        } else {
+            if (info.state == VIR_DOMAIN_RUNNING || info.state == VIR_DOMAIN_PAUSED) {
+                virDomainDestroy(domainPtr);
+            }
+
+            virDomainUndefine(domainPtr);
+            virDomainFree(domainPtr);
+        }
+    }
+
+    // data
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    TaskInfoMgr::instance().delTaskInfo(task_id);
+
+    auto iptable = TaskIptableMgr::instance().getIptable(task_id);
+    if (iptable != nullptr) {
+        std::string host_ip = iptable->host_ip;
+        std::string transform_port = iptable->ssh_port;
+        std::string vm_local_ip = iptable->vm_local_ip;
+        shell_remove_iptable_from_system(host_ip, transform_port, vm_local_ip);
+    }
+    TaskIptableMgr::instance().delIptable(task_id);
+
+    WalletRentTaskMgr::instance().delRentTask(task_id);
+
+    TaskResourceMgr::instance().delTaskResource(task_id);
+
+    // disk
+    if (taskinfo != nullptr)
+        delete_disk_system_file(task_id, taskinfo->image_name);
+
+    delete_disk_data_file(task_id);
+}
+
+void TaskManager::delete_disk_system_file(const std::string &task_id, const std::string& disk_system_file_name) {
+    std::string filename = util::GetFileNameFromPath(disk_system_file_name);
+    std::string name = util::GetFileNameWithoutExt(filename);
+    std::string ext = util::GetFileExt(filename);
+    std::string image_full_path = "/data/" + name + "_" + task_id + "." + ext;
+    if (fs::is_regular_file(image_full_path)) {
+        remove(image_full_path.c_str());
+        TASK_LOG_INFO(task_id, "remove disk(system) file: " << image_full_path);
     }
 }
 
-void TaskManager::restore_iptable(const std::string &task_id) {
-    auto it = m_iptables.find(task_id);
-    if (it != m_iptables.end()) {
-        std::string host_ip = it->second->host_ip;
-        std::string transform_port = it->second->ssh_port;
-        std::string vm_local_ip = it->second->vm_local_ip;
-        shell_add_iptable(host_ip, transform_port, vm_local_ip);
+void TaskManager::delete_disk_data_file(const std::string &task_id) {
+    DIR *dir = opendir("/data");
+    std::list<std::string> files;
+    struct dirent *pDir = nullptr;
+    if (nullptr != dir) {
+        while ((pDir = readdir(dir)) != nullptr) {
+            if (!strcmp(pDir->d_name, ".") || !strcmp(pDir->d_name, "..")) {
+                continue;
+            }
+
+            if (pDir->d_type == DT_DIR) {
+                continue;
+            } else {
+                struct stat file_stat{};
+                std::string filename = std::string("/data/") + pDir->d_name;
+                if (stat(filename.c_str(), &file_stat) >= 0) {
+                    if (S_ISDIR(file_stat.st_mode)) {
+                        continue;
+                    }
+                }
+            }
+
+            std::string full_path_name = std::string("/data/") + pDir->d_name;
+            if (full_path_name.find(task_id) != std::string::npos
+                && full_path_name.find("data_") != std::string::npos) {
+                files.push_back(full_path_name);
+            }
+        }
+
+        closedir(dir);
+    }
+
+    for (auto& it : files) {
+        if (fs::is_regular_file(it)) {
+            remove(it.c_str());
+            TASK_LOG_INFO(task_id, "remove disk(data) file: " << it);
+        }
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-
-FResult TaskManager::CreateTask(const std::string& wallet, const std::string &task_id,
-                                const std::string &login_password, const std::string &additional,
-                                int64_t rent_end, USER_ROLE role) {
-    auto it = m_tasks.find(task_id);
-    if (it != m_tasks.end()) {
-        return {E_DEFAULT, "task_id already exist"};
+void TaskManager::start() {
+    m_running = true;
+    if (m_process_thread == nullptr) {
+        m_process_thread = new std::thread(&TaskManager::process_task_thread_func, this);
     }
 
-    if (login_password.empty()) {
-        return {E_DEFAULT, "login_password is empty"};
+    if (m_prune_thread == nullptr) {
+        m_prune_thread = new std::thread(&TaskManager::prune_task_thread_func, this);
+    }
+}
+
+void TaskManager::stop() {
+    m_running = false;
+    if (m_process_thread != nullptr && m_process_thread->joinable()) {
+        m_process_thread->join();
+    }
+    delete m_process_thread;
+
+    if (m_prune_thread != nullptr && m_prune_thread->joinable()) {
+        m_prune_thread->join();
+    }
+    delete m_prune_thread;
+}
+
+static std::string generate_pwd() {
+    char chr[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+                   'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                   'O', 'P', 'Q', 'R', 'S', 'T',
+                   'U', 'V', 'W', 'X', 'Y', 'Z',
+                   'a', 'b', 'c', 'd', 'e', 'f', 'g',
+                   'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                   'o', 'p', 'q', 'r', 's', 't',
+                   'u', 'v', 'w', 'x', 'y', 'z',
+                   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+    };
+    srand(time(NULL));
+    std::string strpwd;
+    int nlen = 10; //10位密码
+    char buf[3] = { 0 };
+    int idx0 = rand() % 52;
+    sprintf(buf, "%c", chr[idx0]);
+    strpwd.append(buf);
+
+    int idx_0 = rand() % nlen;
+    int idx_1 = rand() % nlen;
+    int idx_2 = rand() % nlen;
+
+    for (int i = 1; i < nlen; i++) {
+        int idx;
+        if (i == idx_0 || i == idx_1 || i == idx_2) {
+            idx = rand() % 62;
+        }
+        else {
+            idx = rand() % 62;
+        }
+        sprintf(buf, "%c", chr[idx]);
+        strpwd.append(buf);
     }
 
+    return strpwd;
+}
+
+FResult TaskManager::createTask(const std::string& wallet, const std::string &additional,
+                                int64_t rent_end, USER_ROLE role, std::string& task_id) {
+    TaskCreateParams createparams;
+    FResult fret = parse_create_params(additional, role, createparams);
+    if (std::get<0>(fret) != E_SUCCESS) {
+        return fret;
+    }
+
+    task_id = createparams.task_id;
+
+    std::shared_ptr<dbc::TaskInfo> taskinfo = std::make_shared<dbc::TaskInfo>();
+    taskinfo->__set_task_id(createparams.task_id);
+    taskinfo->__set_image_name(createparams.image_name);
+    taskinfo->__set_login_password(createparams.login_password);
+    taskinfo->__set_ssh_port(std::to_string(createparams.ssh_port));
+    int64_t now = time(nullptr);
+    taskinfo->__set_create_time(now);
+    taskinfo->__set_last_start_time(now);
+    taskinfo->__set_vm_xml(createparams.vm_xml);
+    taskinfo->__set_vm_xml_url(createparams.vm_xml_url);
+    taskinfo->__set_status(TS_Creating);
+    TaskInfoMgr::instance().addTaskInfo(taskinfo);
+
+    std::shared_ptr<TaskResource> task_resource = std::make_shared<TaskResource>();
+    task_resource->cpu_sockets = createparams.cpu_sockets;
+    task_resource->cpu_cores = createparams.cpu_cores;
+    task_resource->cpu_threads = createparams.cpu_threads;
+    task_resource->gpus = createparams.gpus;
+    task_resource->mem_size = createparams.mem_size;
+    task_resource->disk_system_size = g_disk_system_size * 1024L * 1024L;
+    task_resource->disks = createparams.disks;
+    TaskResourceMgr::instance().addTaskResource(taskinfo->task_id, task_resource);
+
+    std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
+    renttask->rent_wallet = wallet;
+    renttask->rent_end = rent_end;
+    renttask->task_ids.push_back(taskinfo->task_id);
+    WalletRentTaskMgr::instance().addRentTask(renttask);
+
+    dbclog::instance().add_task_log_backend(taskinfo->task_id);
+
+    ETaskEvent ev;
+    ev.task_id = taskinfo->task_id;
+    ev.op = T_OP_Create;
+    add_process_task(ev);
+    return FResultOK;
+}
+
+FResult TaskManager::parse_create_params(const std::string &additional, USER_ROLE role, TaskCreateParams& params) {
     if (additional.empty()) {
         return {E_DEFAULT, "additional is empty"};
     }
@@ -521,20 +620,32 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
         return {E_DEFAULT, "additional(json) parse failed"};
     }
 
-    std::string image_name, ssh_port, s_gpu_count, s_cpu_cores, s_mem_rate;
+    std::string image_name, s_ssh_port, s_gpu_count, s_cpu_cores, s_mem_size,
+            s_disk_size, vm_xml, vm_xml_url;
     JSON_PARSE_STRING(doc, "image_name", image_name)
-    JSON_PARSE_STRING(doc, "ssh_port", ssh_port)
+    JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)
     JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
     JSON_PARSE_STRING(doc, "cpu_cores", s_cpu_cores)
-    JSON_PARSE_STRING(doc, "mem_rate", s_mem_rate)
-    std::string vm_xml, vm_xml_url;
+    JSON_PARSE_STRING(doc, "mem_size", s_mem_size)     //G
+    JSON_PARSE_STRING(doc, "disk_size", s_disk_size)   //G
     JSON_PARSE_STRING(doc, "vm_xml", vm_xml)
     JSON_PARSE_STRING(doc, "vm_xml_url", vm_xml_url)
 
-    // check字段格式
-    /*
+    // ssh_port
+    if (!util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
+        return {E_DEFAULT, "ssh_port is invalid"};
+    }
+
+    std::string login_password = generate_pwd();
+    std::string task_id;
+    int32_t cpu_cores = 0, sockets = 0, cores = 0, threads = 0;
+    int32_t gpu_count = 0;
+    std::map<std::string, std::list<std::string>> gpus;
+    uint64_t mem_size = 0; // KB
+    std::map<int32_t, uint64_t> disks; // KB (下标从1开始)
+
     if (vm_xml.empty() && vm_xml_url.empty()) {
-    */
+        // image
         if (image_name.empty() || image_name.substr(image_name.size() - 5) != "qcow2") {
             return {E_DEFAULT, "image_name is empty or image_name is invalid"};
         }
@@ -544,396 +655,578 @@ FResult TaskManager::CreateTask(const std::string& wallet, const std::string &ta
         if (!boost::filesystem::exists(image_path, error_code) || error_code) {
             return {E_DEFAULT, "image does not exist"};
         }
+
         if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
             return {E_DEFAULT, "image is not a regular file"};
         }
 
-        std::regex reg("^[\\d]*[.]?[\\d]*$");
-        if (!std::regex_match(ssh_port, reg) || atoi(ssh_port.c_str()) <= 0) {
-            return {E_DEFAULT, "ssh_port is invalid"};
+        // task_id
+        task_id = util::create_task_id();
+        if (role == USER_ROLE::UR_VERIFIER) {
+            task_id = "vm_check_" + std::to_string(time(nullptr));
         }
 
-        if (!std::regex_match(s_gpu_count, reg) || atoi(s_gpu_count.c_str()) < 0) {
-            return {E_DEFAULT, "gpu_count is invalid"};
-        }
-
-        if (!std::regex_match(s_cpu_cores, reg) || atoi(s_cpu_cores.c_str()) <= 0) {
+        // cpu
+        if (!util::is_digits(s_cpu_cores) || atoi(s_cpu_cores.c_str()) <= 0) {
             return {E_DEFAULT, "cpu_cores is invalid"};
         }
 
-        if (!std::regex_match(s_mem_rate, reg) || atof(s_mem_rate.c_str()) <= 0) {
-            return {E_DEFAULT, "mem_rate is invalid"};
+        cpu_cores = atoi(s_cpu_cores.c_str());
+
+        if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().cpuinfo().total_cores)
+            cpu_cores = SystemInfo::instance().cpuinfo().total_cores;
+
+        if (role == USER_ROLE::UR_VERIFIER)
+            cpu_cores = SystemInfo::instance().cpuinfo().total_cores;
+
+        // gpu
+        if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) <= 0) {
+            return {E_DEFAULT, "gpu_count is invalid"};
         }
-    /*
-    } else {
-        if (vm_xml_url.empty()) {
-            std::string real_xml_name = vm_xml.substr(0, vm_xml.size() - 4) + "_" + task_id + ".xml";
-            real_xml_name = "/data/" + real_xml_name;
-            std::string file_content;
-            boost::filesystem::load_string_file(real_xml_name, file_content);
-            rapidjson::Document doc;
-            rapidjson::ParseResult ok = doc.Parse(file_content.c_str());
-            if (!ok) {
-                return {E_DEFAULT, std::string("json parse error: ") +
-                                   rapidjson::GetParseError_En(ok.Code()) + "(" + std::to_string(ok.Offset()) +
-                                   ")"};
+
+        gpu_count = atoi(s_gpu_count.c_str());
+
+        if (gpu_count <= 0 || gpu_count > SystemInfo::instance().gpuinfo().size())
+            gpu_count = SystemInfo::instance().gpuinfo().size();
+
+        if (role == USER_ROLE::UR_VERIFIER)
+            gpu_count = SystemInfo::instance().gpuinfo().size();
+
+        // mem
+        if (!util::is_digits(s_mem_size) || atoi(s_mem_size.c_str()) <= 0) {
+            return {E_DEFAULT, "mem_size is invalid"};
+        }
+
+        mem_size = atoi(s_mem_size.c_str()) * 1024L * 1024L;
+
+        if (mem_size <= 0 || mem_size > SystemInfo::instance().meminfo().mem_free)
+            mem_size = SystemInfo::instance().meminfo().mem_free;
+
+        if (role == USER_ROLE::UR_VERIFIER)
+            mem_size = SystemInfo::instance().meminfo().mem_free;
+
+        // disk
+        if (!util::is_digits(s_disk_size) || atoi(s_disk_size.c_str()) <= 0) {
+            return {E_DEFAULT, "disk_size is invalid"};
+        }
+
+        uint64_t disk_size = atoi(s_disk_size.c_str()) * 1024L * 1024L;
+
+        if (disk_size <= 0 || disk_size > (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75)
+            disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75;
+
+        if (role == USER_ROLE::UR_VERIFIER)
+            disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75;
+
+        disks[1] = disk_size;
+
+        // check
+        if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
+            LOG_ERROR << "allocate cpu failed";
+            return {E_DEFAULT, "allocate cpu failed"};
+        }
+
+        if (!allocate_gpu(gpu_count, gpus)) {
+            LOG_ERROR << "allocate gpu failed";
+            return {E_DEFAULT, "allocate gpu failed"};
+        }
+
+        if (!allocate_mem(mem_size)) {
+            LOG_ERROR << "allocate mem failed";
+            return {E_DEFAULT, "allocate mem failed"};
+        }
+
+        if (!allocate_disk(disk_size)) {
+            LOG_ERROR << "allocate disk failed";
+            return {E_DEFAULT, "allocate disk failed"};
+        }
+    }
+    else {
+        if (role != USER_ROLE::UR_RENTER) {
+            return {E_DEFAULT, "only renter can create task with vm_xml"};
+        }
+
+        std::string xml_file_path;
+
+        if (!vm_xml.empty()) {
+            xml_file_path = "/data/" + vm_xml;
+            boost::filesystem::path xml_path(xml_file_path);
+            if (!boost::filesystem::exists(xml_path)) {
+                return {E_DEFAULT, xml_file_path + " not exist"};
+            }
+        }
+        else if (!vm_xml_url.empty()) {
+            std::string xml_file_content;
+            if (vm_xml_url.substr(0, 7) == "http://") {
+                auto pos = vm_xml_url.find('/', 7);
+                std::string s_host = vm_xml_url.substr(7, pos - 7);
+                int32_t host_port = 80;
+                auto pos_1 = s_host.find(":");
+                if (pos_1 != std::string::npos) {
+                    host_port = atoi(s_host.substr(pos_1 + 1));
+                    s_host = s_host.substr(0, pos_1);
+                }
+                std::string s_path = vm_xml_url.substr(pos);
+
+                httplib::Client cli(s_host, host_port);
+                std::shared_ptr<httplib::Response> resp = cli.Get(s_path.c_str(),
+                                                                  [&](const char *data, size_t data_length) {
+                                                                      xml_file_content.append(data, data_length);
+                                                                      return true;
+                                                                  });
+            } else if (vm_xml_url.substr(0, 8) == "https://") {
+                auto pos = vm_xml_url.find('/', 8);
+                std::string s_host = vm_xml_url.substr(8, pos - 8);
+                int32_t host_port = 443;
+                auto pos_1 = s_host.find(":");
+                if (pos_1 != std::string::npos) {
+                    host_port = atoi(s_host.substr(pos_1 + 1));
+                    s_host = s_host.substr(0, pos_1);
+                }
+                std::string s_path = vm_xml_url.substr(pos);
+
+                httplib::SSLClient cli(s_host, host_port);
+                std::shared_ptr<httplib::Response> resp = cli.Get(s_path.c_str(),
+                                                                  [&](const char *data, size_t data_length) {
+                                                                      xml_file_content.append(data, data_length);
+                                                                      return true;
+                                                                  });
+            } else {
+                return {E_DEFAULT, vm_xml_url + " is invalid (please use http:// or https://)"};
             }
 
-            //todo: 检查资源够不够
-
-        } else {
-            //todo: 下载xml文件，并检查资源够不够
-
+            xml_file_path = "/data/" + util::GetFileNameFromPath(vm_xml_url);
+            util::write_file(xml_file_path, xml_file_content);
+            vm_xml = util::GetFileNameFromPath(xml_file_path);
         }
-    }
-    */
 
-    // check资源够不够
-    int32_t cpu_count = atoi(s_cpu_cores.c_str());
-    //cpu数量必须是(sockets * threads)的整数倍
-    int32_t sockets = SystemInfo::instance().cpuinfo().physical_cores;
-    int32_t threads = SystemInfo::instance().cpuinfo().threads_per_cpu;
-    int32_t left = cpu_count % (sockets * threads);
-    if (left != 0)
-        cpu_count += (sockets * threads) - left;
-    int32_t gpu_count = atoi(s_gpu_count.c_str());
-    float mem_rate = atof(s_mem_rate.c_str());
+        ParseVmXmlParams xml_params;
+        FResult fret = parse_vm_xml(xml_file_path, xml_params);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
 
-    if (cpu_count > SystemInfo::instance().cpuinfo().total_cores)
-        cpu_count = SystemInfo::instance().cpuinfo().total_cores;
+        task_id = std::move(xml_params.task_id);
+        image_name = std::move(xml_params.image_name);
+        sockets = xml_params.cpu_sockets;
+        cores = xml_params.cpu_cores;
+        threads = xml_params.cpu_threads;
+        cpu_cores = sockets * cores * threads;
+        gpus = xml_params.gpus;
+        gpu_count = gpus.size();
+        mem_size = xml_params.mem_size;
+        disks = xml_params.disks;
 
-    if (role == USER_ROLE::UR_VERIFIER) {
-        cpu_count = SystemInfo::instance().cpuinfo().total_cores;
-    }
-
-    if (!check_cpu(cpu_count)) {
-        LOG_ERROR << "check cpu failed";
-        return {E_DEFAULT, "cpu not enough"};
-    }
-
-    if (gpu_count > SystemInfo::instance().gpuinfo().size())
-        gpu_count = SystemInfo::instance().gpuinfo().size();
-
-    if (role == USER_ROLE::UR_VERIFIER) {
-        gpu_count = SystemInfo::instance().gpuinfo().size();
-    }
-
-    if (!check_gpu(gpu_count)) {
-        LOG_ERROR << "check gpu failed";
-        return {E_DEFAULT, "gpu not enough"};
-    }
-
-    if (mem_rate > 1.0f)
-        mem_rate = 1.0f;
-
-    if (role == USER_ROLE::UR_VERIFIER) {
-        mem_rate = 1.0f;
-    }
-
-    if (!check_mem(mem_rate)) {
-        LOG_ERROR << "check mem failed";
-        return {E_DEFAULT, "mem not enough"};
-    }
-
-    if (!check_disk()) {
-        LOG_ERROR << "check disk failed";
-        return {E_DEFAULT, "disk not enough"};
-    }
-
-    LOG_INFO << "cpu gpu mem disk check ok";
-
-    std::shared_ptr<dbc::TaskInfo> taskinfo = std::make_shared<dbc::TaskInfo>();
-    taskinfo->__set_task_id(task_id);
-    taskinfo->__set_image_name(image_name);
-    taskinfo->__set_login_password(login_password);
-    taskinfo->__set_ssh_port(ssh_port);
-    taskinfo->__set_status(TS_Creating);
-    taskinfo->__set_operation(T_OP_Create);
-    int64_t now = time(nullptr);
-    taskinfo->__set_create_time(now);
-    taskinfo->__set_last_start_time(now);
-    taskinfo->hardware_resource.__set_gpu_count(gpu_count);
-    taskinfo->hardware_resource.__set_cpu_cores(cpu_count);
-    taskinfo->hardware_resource.__set_mem_rate(mem_rate);
-    taskinfo->__set_vm_xml(vm_xml);
-    taskinfo->__set_vm_xml_url(vm_xml_url);
-
-    // add task resource
-    add_task_resource(task_id, cpu_count, mem_rate, gpu_count);
-
-    m_tasks[task_id] = taskinfo;
-    m_task_db.write_task(taskinfo);
-
-    std::shared_ptr<dbc::rent_task> rent_task = std::make_shared<dbc::rent_task>();
-    rent_task->rent_wallet = wallet;
-    rent_task->rent_end = rent_end;
-    rent_task->task_ids.push_back(task_id);
-    m_wallet_tasks[wallet] = rent_task;
-    m_wallet_task_db.write_data(rent_task);
-
-    dbclog::instance().add_task_log_backend(taskinfo->task_id);
-    // m_process_tasks.push_back(taskinfo);
-    m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name,
-                        m_task_resource_mgr.GetTaskResource(taskinfo->task_id), "dbc", taskinfo->login_password);
-
-    return {E_SUCCESS, ""};
-}
-
-bool TaskManager::check_cpu(int32_t cpu_count) {
-    int32_t sockets = SystemInfo::instance().cpuinfo().physical_cores;
-    int32_t cores_per_socket = SystemInfo::instance().cpuinfo().physical_cores_per_cpu;
-    int32_t threads_per_core = SystemInfo::instance().cpuinfo().threads_per_cpu;
-
-    int32_t cur_cores = 0;
-    for (auto& it : m_tasks) {
-        if (it.second->status != TS_None) {
-            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(it.first);
-            cur_cores += task_resource.physical_cores_per_cpu;
+        // check
+        // image
+        fret = check_image(image_name);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
+        // cpu
+        fret = check_cpu(sockets, cores, threads);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
+        // gpu
+        fret = check_gpu(gpus);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
+        // disk
+        fret = check_disk(disks);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
         }
     }
 
-    int32_t can_use = cores_per_socket - cur_cores;
-    int32_t need_count = cpu_count / (sockets * threads_per_core);
-    if (need_count <= 0) need_count = 1;
-    return can_use >= need_count;
+    // params
+    params.task_id = task_id;
+    params.login_password = login_password;
+    params.image_name = image_name;
+    params.ssh_port = atoi(s_ssh_port.c_str());
+    params.cpu_sockets = sockets;
+    params.cpu_cores = cores;
+    params.cpu_threads = threads;
+    params.gpus = gpus;
+    params.mem_size = mem_size;
+    params.disks = disks;
+    params.vm_xml = vm_xml;
+    params.vm_xml_url = vm_xml_url;
+
+    return {E_SUCCESS, "ok"};
 }
 
-bool TaskManager::check_gpu(int32_t gpu_count) {
-    const std::map<std::string, gpu_info>& gpulist = SystemInfo::instance().gpuinfo();
+bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads) {
+    int32_t nTotalCores = SystemInfo::instance().cpuinfo().total_cores;
+    if (total_cores > nTotalCores) return false;
 
-    int32_t cur_gpus = 0;
-    for (auto& it : m_tasks) {
-        if (it.second->status != TS_None) {
-            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(it.first);
-            cur_gpus += task_resource.gpus.size();
+    int32_t nSockets = SystemInfo::instance().cpuinfo().physical_cores;
+    int32_t nCores = SystemInfo::instance().cpuinfo().physical_cores_per_cpu;
+    int32_t nThreads = SystemInfo::instance().cpuinfo().threads_per_cpu;
+    int32_t ret_total_cores = total_cores;
+    threads = nThreads;
+
+    for (int n = 1; n <= nSockets; n++) {
+        int32_t tmp_cores = total_cores;
+        while (tmp_cores % (n * threads) != 0)
+            tmp_cores += 1;
+
+        if (tmp_cores / (n * threads) <= nCores) {
+            sockets = n;
+            cores_per_socket = tmp_cores / (n * threads);
+            ret_total_cores = tmp_cores;
+            break;
         }
     }
 
-    return (gpulist.size() - cur_gpus) >= gpu_count;
-}
-
-bool TaskManager::check_mem(float mem_rate) {
-    uint64_t mem_total = SystemInfo::instance().meminfo().mem_total; //KB
-
-    uint64_t cur_mem = 0;
-    for (auto& it : m_tasks) {
-        if (it.second->status != TS_None) {
-            const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(it.first);
-            cur_mem += task_resource.mem_size;
-        }
-    }
-
-    uint64_t need_size = mem_total * (double)mem_rate;
-    return (mem_total - cur_mem) >= need_size;
-}
-
-bool TaskManager::check_disk() {
-    int64_t disk_avalible_size = SystemInfo::instance().diskinfo().disk_awalible / 1024L; // MB
-    if (disk_avalible_size * 0.75 < 100L * 1024L) {
+    if (ret_total_cores == sockets * cores_per_socket * threads) {
+        total_cores = ret_total_cores;
+        return true;
+    } else {
         return false;
     }
-
-    return true;
 }
 
-void TaskManager::add_task_resource(const std::string& task_id, int32_t cpu_count, float mem_rate, int32_t gpu_count) {
-    TaskResource task_resource;
-    int32_t threads_count = SystemInfo::instance().cpuinfo().threads_per_cpu;
-    int32_t sockets_count = SystemInfo::instance().cpuinfo().physical_cores;
-    int32_t cores_per_socket = SystemInfo::instance().cpuinfo().physical_cores_per_cpu;
-    task_resource.physical_cpu = sockets_count;
-    task_resource.threads_per_cpu = threads_count;
-    task_resource.physical_cores_per_cpu = cpu_count / (sockets_count * threads_count);
-    if (task_resource.physical_cores_per_cpu <= 0) task_resource.physical_cores_per_cpu = 1;
-    LOG_INFO << "socket: " << task_resource.physical_cpu
-             << ", cores: " << task_resource.physical_cores_per_cpu
-             << ", threads: " << task_resource.threads_per_cpu;
-
-    int64_t mem_total = SystemInfo::instance().meminfo().mem_total; // KB
-    task_resource.mem_size = (mem_total * (double)mem_rate > 1000000000) ? 1000000000 : (mem_total * (double)mem_rate);
-    LOG_INFO << "memory: " << size_to_string(task_resource.mem_size, 1024L);
-
+bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus) {
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
-    for (auto& it : m_tasks) {
-        if (it.second->status != TS_None) {
-            const TaskResource& resource = m_task_resource_mgr.GetTaskResource(it.first);
-            const std::map<std::string, std::list<std::string>>& gpus = resource.gpus;
-            for (auto& it1 : gpus) {
-                can_use_gpu.erase(it1.first);
+    auto tasks = TaskInfoMgr::instance().getTasks();
+    for (auto& it : tasks) {
+        if (it.second->status != TS_ShutOff) {
+            auto task_resource = TaskResourceMgr::instance().getTaskResource(it.first);
+            if (task_resource != nullptr) {
+                const std::map<std::string, std::list<std::string>> &gpus = task_resource->gpus;
+                for (auto &it1: gpus) {
+                    can_use_gpu.erase(it1.first);
+                }
             }
         }
     }
 
     int cur_count = 0;
     for (auto& it : can_use_gpu) {
-        task_resource.gpus[it.first] = it.second.devices;
-
+        gpus[it.first] = it.second.devices;
         cur_count++;
         if (cur_count == gpu_count) break;
     }
 
-    std::string str_gpu;
-    const std::map<std::string, std::list<std::string>>& task_gpus = task_resource.gpus;
-    for (auto& it : task_gpus)
-        str_gpu += it.first + " | ";
-    LOG_INFO << "gpus: " << str_gpu;
-
-    task_resource.disk_system_size = g_disk_system_size * 1024L; // MB
-    int64_t disk_total_size = SystemInfo::instance().diskinfo().disk_total / 1024L; // MB
-    task_resource.disks_data[1] = (disk_total_size - g_disk_system_size * 1024L) * 0.75;
-    LOG_INFO << "disk_system_size:" << size_to_string(task_resource.disk_system_size, 1024L * 1024L)
-             << ", disk_data_1: " << size_to_string(task_resource.disks_data[1], 1024L * 1024L);
-
-    m_task_resource_mgr.AddTaskResource(task_id, task_resource);
+    return cur_count == gpu_count;
 }
 
-FResult TaskManager::StartTask(const std::string& wallet, const std::string &task_id) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
-        return {E_DEFAULT, "task_id not exist"};
-    }
-
-    auto taskinfo = it->second;
-    if (taskinfo->operation != T_OP_None) {
-        return {E_DEFAULT, "task is busy, please try again later"};
-    }
-
-    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
-    if (vm_status == VS_SHUT_OFF || vm_status == VS_PAUSED) {
-        taskinfo->__set_status(TS_Starting);
-        taskinfo->__set_operation(T_OP_Start);
-        taskinfo->__set_last_start_time(time(nullptr));
-        // m_process_tasks.push_back(taskinfo);
-        m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name);
-        m_task_db.write_task(taskinfo);
-        return {E_SUCCESS, ""};
-    } else {
-        return {E_DEFAULT, "task is already starting"};
-    }
+bool TaskManager::allocate_mem(uint64_t mem_size) {
+    return mem_size <= SystemInfo::instance().meminfo().mem_free;
 }
 
-FResult TaskManager::StopTask(const std::string& wallet, const std::string &task_id) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
-        return {E_DEFAULT, "task_id not exist"};
-    }
-
-    auto taskinfo = it->second;
-    if (taskinfo->operation != T_OP_None) {
-        return {E_DEFAULT, "task is busy, please try again later"};
-    }
-
-    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
-    if (vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
-        taskinfo->__set_status(TS_Stopping);
-        taskinfo->__set_operation(T_OP_Stop);
-        taskinfo->__set_last_stop_time(time(nullptr));
-        // m_process_tasks.push_back(taskinfo);
-        m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name);
-        m_task_db.write_task(taskinfo);
-        return {E_SUCCESS, ""};
-    } else {
-        return {E_DEFAULT, "task is not running"};
-    }
+bool TaskManager::allocate_disk(uint64_t disk_size) {
+    return disk_size <= SystemInfo::instance().diskinfo().disk_available;
 }
 
-FResult TaskManager::RestartTask(const std::string& wallet, const std::string &task_id) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
-        return {E_DEFAULT, "task_id not exist"};
+FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params) {
+    std::string file_content;
+    boost::filesystem::load_string_file(xml_file_path, file_content);
+    if (file_content.empty()) {
+        return {E_DEFAULT, util::GetFileNameFromPath(xml_file_path) + " file content is empty"};
     }
 
-    auto taskinfo = it->second;
-    if (taskinfo->operation != T_OP_None) {
-        return {E_DEFAULT, "task is busy, please try again later"};
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLError err = doc.Parse(file_content.c_str());
+    if (err != tinyxml2::XML_SUCCESS) {
+        return {E_DEFAULT, util::GetFileNameFromPath(xml_file_path) + " file(xml) parse error"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
-    if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
-        taskinfo->__set_status(TS_Restarting);
-        taskinfo->__set_operation(T_OP_ReStart);
-        taskinfo->__set_last_start_time(time(nullptr));
-        // m_process_tasks.push_back(taskinfo);
-        m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name);
-        m_task_db.write_task(taskinfo);
-        return {E_SUCCESS, ""};
-    } else {
-        return {E_DEFAULT, "task is starting..."};
+    tinyxml2::XMLElement* root = doc.RootElement();
+    // task_id
+    tinyxml2::XMLElement* el_name = root->FirstChildElement("name");
+    params.task_id = el_name->GetText();
+
+    // image_name
+    tinyxml2::XMLElement* el_devices = root->FirstChildElement("devices");
+    tinyxml2::XMLElement* el_disk_system = el_devices->FirstChildElement("disk"); //认为第一块disk为系统盘
+    tinyxml2::XMLElement* el_source = el_disk_system->FirstChildElement("source");
+    std::string image_file = el_source->Attribute("file");
+    params.image_name = util::GetFileNameFromPath(image_file);
+
+    // cpu
+    tinyxml2::XMLElement* el_cpu = root->FirstChildElement("cpu");
+    tinyxml2::XMLElement* el_topology = el_cpu->FirstChildElement("topology");
+    params.cpu_sockets = el_topology->IntAttribute("sockets");
+    params.cpu_cores = el_topology->IntAttribute("cores");
+    params.cpu_threads = el_topology->IntAttribute("threads");
+
+    // gpu
+    tinyxml2::XMLElement* ele_hostdev = el_devices->FirstChildElement("hostdev");
+    std::string cur_gpu_id;
+    while (ele_hostdev != nullptr) {
+        tinyxml2::XMLElement* ele_source = ele_hostdev->FirstChildElement("source");
+        if (ele_source != nullptr) {
+            tinyxml2::XMLElement* ele_address = ele_source->FirstChildElement("address");
+            if (ele_address != nullptr) {
+                std::string str_bus = ele_address->Attribute("bus");
+                std::string str_slot = ele_address->Attribute("slot");
+                std::string str_function = ele_address->Attribute("function");
+
+                auto pos1 = str_bus.find("0x");
+                if (pos1 != std::string::npos)
+                    str_bus = str_bus.substr(2);
+
+                auto pos2 = str_slot.find("0x");
+                if (pos2 != std::string::npos)
+                    str_slot = str_slot.substr(2);
+
+                auto pos3 = str_function.find("0x");
+                if (pos3 != std::string::npos)
+                    str_function = str_function.substr(2);
+
+                std::string device_id = str_bus + ":" + str_slot + "." + str_function;
+
+                if (atoi(str_function.c_str()) == 0) {
+                    cur_gpu_id = device_id;
+                }
+
+                params.gpus[cur_gpu_id].push_back(device_id);
+            }
+        }
+
+        ele_hostdev = ele_hostdev->NextSiblingElement("hostdev");
     }
+
+    // mem
+    tinyxml2::XMLElement* el_memory = root->FirstChildElement("memory");
+    if (el_memory != nullptr) {
+        const char* str_memory = el_memory->GetText();
+        params.mem_size = atol(str_memory);
+    }
+
+    // disk
+    tinyxml2::XMLElement* ele_disk = el_devices->FirstChildElement("disk");
+    ele_disk = ele_disk->NextSiblingElement("disk"); // 跳过第一块disk（系统盘）
+    int disk_index = 1;
+    while (ele_disk != nullptr) {
+        tinyxml2::XMLElement* ele_source = ele_disk->FirstChildElement("source");
+        std::string disk_file = ele_source->Attribute("file");
+        std::string disk_filename = util::GetFileNameFromPath(disk_file);
+        std::string file_ext = util::GetFileExt(disk_filename);
+        if (file_ext == "qcow2") {
+            std::string cmd = "qemu-img info " + disk_file + " | grep \"virtual size\" | awk -F '(' '{print $2}' | awk -F ' ' '{print $1}'";
+            std::string s_disk_size = run_shell(cmd.c_str());
+            params.disks[disk_index] = atol(s_disk_size.c_str()) / 1024L;
+            disk_index++;
+        }
+
+        ele_disk = ele_disk->NextSiblingElement("disk");
+    }
+
+    return {E_SUCCESS, "ok"};
 }
 
-FResult TaskManager::ResetTask(const std::string& wallet, const std::string &task_id) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
-        return {E_DEFAULT, "task_id not exist"};
+FResult TaskManager::check_image(const std::string &image_name) {
+    if (image_name.empty() || image_name.substr(image_name.size() - 5) != "qcow2") {
+        return {E_DEFAULT, "image_name is empty or image_name is invalid"};
     }
 
-    auto taskinfo = it->second;
-    if (taskinfo->operation != T_OP_None) {
-        return {E_DEFAULT, "task is busy, please try again later"};
+    boost::filesystem::path image_path("/data/" + image_name);
+    if (!boost::filesystem::exists(image_path)) {
+        return {E_DEFAULT, "image not exist"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
-    if (vm_status == VS_RUNNING) {
-        taskinfo->__set_status(TS_Resetting);
-        taskinfo->__set_operation(T_OP_Reset);
-        taskinfo->__set_last_start_time(time(nullptr));
-        // m_process_tasks.push_back(taskinfo);
-        m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name);
-        m_task_db.write_task(taskinfo);
-        return {E_SUCCESS, ""};
-    } else {
-        return {E_DEFAULT, "task is not running"};
+    if (!boost::filesystem::is_regular_file(image_path)) {
+        return {E_DEFAULT, "image is not a regular file"};
     }
+
+    return FResultOK;
 }
 
-FResult TaskManager::DeleteTask(const std::string& wallet, const std::string &task_id) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
-        return {E_DEFAULT, "task_id not exist"};
+FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
+    int32_t cpu_cores = sockets * cores * threads;
+    if (cpu_cores > SystemInfo::instance().cpuinfo().total_cores ||
+        sockets > SystemInfo::instance().cpuinfo().physical_cores ||
+        cores > SystemInfo::instance().cpuinfo().physical_cores_per_cpu ||
+        threads > SystemInfo::instance().cpuinfo().threads_per_cpu) {
+        return {E_DEFAULT, "cpu config is invalid"};
     }
 
-    auto taskinfo = it->second;
-    if (taskinfo->operation != T_OP_None) {
-        return {E_DEFAULT, "task is busy, please try again later"};
-    }
-
-    EVmStatus vm_status = m_vm_client.GetDomainStatusReadOnly(task_id);
-    if (vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
-        taskinfo->__set_status(TS_Deleting);
-        taskinfo->__set_operation(T_OP_Delete);
-        taskinfo->__set_last_stop_time(time(nullptr));
-        // m_process_tasks.push_back(taskinfo);
-        m_vm_client.AddTask(taskinfo->task_id, taskinfo->operation, taskinfo->image_name);
-        m_task_db.write_task(taskinfo);
-        return {E_SUCCESS, ""};
-    } else {
-        return {E_DEFAULT, "please try again after a minute"};
-    }
+    return FResultOK;
 }
 
-std::shared_ptr<dbc::TaskInfo> TaskManager::FindTask(const std::string& wallet, const std::string &task_id) {
-    std::shared_ptr<dbc::TaskInfo> ptr = nullptr;
-    auto it = m_wallet_tasks.find(wallet);
-    if (it != m_wallet_tasks.end()) {
-        for (auto& it_id : it->second->task_ids) {
-            if (it_id == task_id) {
-                auto it_task = m_tasks.find(it_id);
-                if (it_task != m_tasks.end()) {
-                    ptr = it_task->second;
-                    break;
+FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string>> &gpus) {
+    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
+    auto tasks = TaskInfoMgr::instance().getTasks();
+    for (auto& it : tasks) {
+        if (it.second->status != TS_ShutOff) {
+            auto task_resource = TaskResourceMgr::instance().getTaskResource(it.first);
+            if (task_resource != nullptr) {
+                const std::map<std::string, std::list<std::string>> &gpus = task_resource->gpus;
+                for (auto &it1: gpus) {
+                    can_use_gpu.erase(it1.first);
                 }
             }
         }
     }
 
-    return ptr;
+    for (auto& it : gpus) {
+        auto it_gpu = can_use_gpu.find(it.first);
+        if (it_gpu == can_use_gpu.end()) {
+            return {E_DEFAULT, "gpu " + it.first + " is already in use"};
+        }
+
+        for (auto& it_device : it.second) {
+            std::list<std::string>& can_use_devices = it_gpu->second.devices;
+            auto found = std::find(can_use_devices.begin(), can_use_devices.end(), it_device);
+            if (found == can_use_devices.end()) {
+                return {E_DEFAULT, "gpu device " + it_device + " not found in system"};
+            }
+        }
+    }
+
+    return FResultOK;
 }
 
-FResult TaskManager::GetTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines,
+FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
+    uint64_t disk_available = SystemInfo::instance().diskinfo().disk_available;
+    uint64_t need_size = 0;
+    for (auto& it : disks) {
+        need_size += it.second;
+    }
+
+    if (need_size > disk_available)
+        return {E_DEFAULT, "no enough disk, can available size: " + std::to_string(disk_available)};
+    else
+        return FResultOK;
+}
+
+std::shared_ptr<dbc::TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
+    std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
+    auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    for (auto& id : renttask->task_ids) {
+        if (id == task_id) {
+            taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+            break;
+        }
+    }
+
+    return taskinfo;
+}
+
+FResult TaskManager::startTask(const std::string& wallet, const std::string &task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    //TODO： check task resource
+
+
+    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VS_None || vm_status == VS_SHUT_OFF) {
+        taskinfo->__set_status(TS_Starting);
+        taskinfo->__set_last_start_time(time(nullptr));
+        TaskInfoMgr::instance().update(taskinfo);
+
+        ETaskEvent ev;
+        ev.task_id = task_id;
+        ev.op = T_OP_Start;
+        add_process_task(ev);
+        return FResultOK;
+    } else {
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+    }
+}
+
+FResult TaskManager::stopTask(const std::string& wallet, const std::string &task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VS_None || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
+        taskinfo->__set_status(TS_Stopping);
+        taskinfo->__set_last_stop_time(time(nullptr));
+        TaskInfoMgr::instance().update(taskinfo);
+
+        ETaskEvent ev;
+        ev.task_id = task_id;
+        ev.op = T_OP_Stop;
+        add_process_task(ev);
+        return FResultOK;
+    } else {
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+    }
+}
+
+FResult TaskManager::restartTask(const std::string& wallet, const std::string &task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    // TODO: check task resource
+
+
+    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VS_None || vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+        taskinfo->__set_status(TS_Restarting);
+        taskinfo->__set_last_start_time(time(nullptr));
+        TaskInfoMgr::instance().update(taskinfo);
+
+        ETaskEvent ev;
+        ev.task_id = task_id;
+        ev.op = T_OP_ReStart;
+        add_process_task(ev);
+        return FResultOK;
+    } else {
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+    }
+}
+
+FResult TaskManager::resetTask(const std::string& wallet, const std::string &task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VS_RUNNING) {
+        taskinfo->__set_status(TS_Resetting);
+        taskinfo->__set_last_start_time(time(nullptr));
+        TaskInfoMgr::instance().update(taskinfo);
+
+        ETaskEvent ev;
+        ev.task_id = task_id;
+        ev.op = T_OP_Reset;
+        add_process_task(ev);
+        return FResultOK;
+    } else {
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+    }
+}
+
+FResult TaskManager::deleteTask(const std::string& wallet, const std::string &task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VS_None || vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
+        taskinfo->__set_status(TS_Deleting);
+        taskinfo->__set_last_stop_time(time(nullptr));
+        TaskInfoMgr::instance().update(taskinfo);
+
+        ETaskEvent ev;
+        ev.task_id = task_id;
+        ev.op = T_OP_Delete;
+        add_process_task(ev);
+        return FResultOK;
+    } else {
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+    }
+}
+
+FResult TaskManager::getTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines,
                                 std::string &log_content) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
         log_content = "";
         return {E_DEFAULT, "task_id not exist"};
     } else {
@@ -941,599 +1234,422 @@ FResult TaskManager::GetTaskLog(const std::string &task_id, ETaskLogDirection di
     }
 }
 
-void TaskManager::ListAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
-    auto it = m_wallet_tasks.find(wallet);
-    if (it != m_wallet_tasks.end()) {
-        for (auto& it_id : it->second->task_ids) {
-            auto it_task = m_tasks.find(it_id);
-            if (it_task != m_tasks.end()) {
-                vec.push_back(it_task->second);
-            }
+void TaskManager::listAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
+    auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    for (auto& it_id : renttask->task_ids) {
+        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
+        if (taskinfo != nullptr) {
+            vec.push_back(taskinfo);
         }
     }
 }
 
-void TaskManager::ListRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
-    auto it = m_wallet_tasks.find(wallet);
-    if (it != m_wallet_tasks.end()) {
-        for (auto& it_id : it->second->task_ids) {
-            auto it_task = m_tasks.find(it_id);
-            if (it_task != m_tasks.end()) {
-                if (it_task->second->status == TS_Running)
-                    vec.push_back(it_task->second);
-            }
+void TaskManager::listRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
+    auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    for (auto& it_id : renttask->task_ids) {
+        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
+        if (taskinfo != nullptr && taskinfo->status == TS_Running) {
+            vec.push_back(taskinfo);
         }
     }
 }
 
-int32_t TaskManager::GetRunningTaskSize(const std::string& wallet) {
+int32_t TaskManager::getRunningTasksSize(const std::string& wallet) {
     int32_t count = 0;
-    auto it = m_wallet_tasks.find(wallet);
-    if (it != m_wallet_tasks.end()) {
-        for (auto& it_id : it->second->task_ids) {
-            auto it_task = m_tasks.find(it_id);
-            if (it_task != m_tasks.end()) {
-                if (it_task->second->status != TS_None)
-                    count += 1;
-            }
+    auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    for (auto& it_id : renttask->task_ids) {
+        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
+        if (taskinfo != nullptr && taskinfo->status == TS_Running) {
+            count += 1;
         }
     }
 
     return count;
 }
 
-ETaskStatus TaskManager::GetTaskStatus(const std::string &task_id) {
-    auto it = m_tasks.find(task_id);
-    if (it == m_tasks.end()) {
-        return TS_None;
+ETaskStatus TaskManager::getTaskStatus(const std::string &task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return TS_ShutOff;
     } else {
-        return (ETaskStatus) it->second->status;
+        return (ETaskStatus) taskinfo->status;
     }
 }
 
-void TaskManager::DeleteOtherCheckTask(const std::string& wallet) {
-    for (auto& it : m_wallet_tasks) {
+void TaskManager::deleteAllCheckTasks() {
+    std::vector<std::string> check_ids;
+    std::vector<std::string> ids = TaskInfoMgr::instance().getAllTaskId();
+    for (auto& id : ids) {
+        if (id.find("vm_check_") != std::string::npos) {
+            check_ids.push_back(id);
+        }
+    }
+
+    std::string url = "qemu+tcp://localhost:16509/system";
+    virConnectPtr connPtr = virConnectOpen(url.c_str());
+    if (nullptr == connPtr) {
+        return;
+    }
+
+    for (auto& task_id : check_ids) {
+        delete_task(connPtr, task_id);
+    }
+
+    virConnectClose(connPtr);
+}
+
+void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
+    auto renttasks = WalletRentTaskMgr::instance().getRentTasks();
+    std::vector<std::string> check_ids;
+    for (auto& it : renttasks) {
         if (it.first != wallet) {
-            for (auto& it_id : it.second->task_ids) {
-                auto it_task = m_tasks.find(it_id);
-                if (it_task != m_tasks.end()) {
-                    if (it_task->second->task_id.find("vm_check_") != std::string::npos) {
-                        m_vm_client.AddTask(it_task->second->task_id, T_OP_Delete, it_task->second->image_name);
+            for (auto& id : it.second->task_ids) {
+                auto taskinfo = TaskInfoMgr::instance().getTaskInfo(id);
+                if (taskinfo != nullptr) {
+                    if (taskinfo->task_id.find("vm_check_") != std::string::npos) {
+                        check_ids.push_back(taskinfo->task_id);
                     }
                 }
             }
         }
     }
+
+    std::string url = "qemu+tcp://localhost:16509/system";
+    virConnectPtr connPtr = virConnectOpen(url.c_str());
+    if (nullptr == connPtr) {
+        return;
+    }
+
+    for (auto& task_id : check_ids) {
+        delete_task(connPtr, task_id);
+    }
+
+    virConnectClose(connPtr);
 }
 
-void TaskManager::DeleteAllCheckTasks() {
-    for (auto& it : m_tasks) {
-        if (it.second->task_id.find("vm_check_") != std::string::npos) {
-            m_vm_client.AddTask(it.second->task_id, T_OP_Delete, it.second->image_name);
+std::string TaskManager::createSessionId(const std::string &wallet) {
+    auto wallet_session = WalletSessionIDMgr::instance().getSessionIdByWallet(wallet);
+    if (wallet_session == nullptr) {
+        std::string session_id = util::create_session_id();
+        std::shared_ptr<dbc::rent_sessionid> ptr = std::make_shared<dbc::rent_sessionid>();
+        ptr->rent_wallet = wallet;
+        ptr->session_id = session_id;
+        WalletSessionIDMgr::instance().addWalletSessionId(ptr);
+        return session_id;
+    } else {
+        return wallet_session->session_id;
+    }
+}
+
+std::string TaskManager::getSessionId(const std::string &wallet) {
+    auto it = WalletSessionIDMgr::instance().getSessionIdByWallet(wallet);
+    if (it != nullptr) {
+        return it->session_id;
+    } else {
+        return "";
+    }
+}
+
+std::string TaskManager::checkSessionId(const std::string &session_id, const std::string &session_id_sign) {
+    auto it = WalletSessionIDMgr::instance().findSessionId(session_id);
+    if (it == nullptr) {
+        return "";
+    }
+
+    if (util::verify_sign(session_id_sign, session_id, it->rent_wallet)) {
+        return it->rent_wallet;
+    } else {
+        return "";
+    }
+}
+
+void TaskManager::add_process_task(const ETaskEvent& ev) {
+    std::unique_lock<std::mutex> lock(m_process_mtx);
+    m_process_tasks.push(ev);
+    m_process_cond.notify_one();
+}
+
+void TaskManager::process_task_thread_func() {
+    while (m_running) {
+        ETaskEvent ev;
+        {
+            std::unique_lock<std::mutex> lock(m_process_mtx);
+            m_process_cond.wait(lock, [this] {
+                return !m_running || !m_process_tasks.empty();
+            });
+
+            if (!m_running)
+                break;
+
+            ev = m_process_tasks.front();
+            m_process_tasks.pop();
         }
+
+        process_task(ev);
     }
 }
 
-std::string TaskManager::CheckSessionId(const std::string &session_id, const std::string &session_id_sign) {
-    auto it = m_sessionid_wallet.find(session_id);
-    if (it == m_sessionid_wallet.end()) {
-        return "";
-    }
+void TaskManager::process_task(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
 
-    std::string rent_wallet = it->second;
-    if (util::verify_sign(session_id_sign, session_id, rent_wallet)) {
-        return it->second;
-    } else {
-        return "";
+    int32_t res_code = E_DEFAULT;
+    std::string res_msg;
+    switch (ev.op) {
+        case T_OP_Create:
+            process_create(taskinfo);
+            break;
+        case T_OP_Start:
+            process_start(taskinfo);
+            break;
+        case T_OP_Stop:
+            process_stop(taskinfo);
+            break;
+        case T_OP_ReStart:
+            process_restart(taskinfo);
+            break;
+        case T_OP_Reset:
+            process_reset(taskinfo);
+            break;
+        case T_OP_Delete:
+            process_delete(taskinfo);
+            break;
+        default:
+            TASK_LOG_ERROR(taskinfo->task_id, "unknown op:" << ev.op);
+            break;
     }
 }
 
-std::string TaskManager::CreateSessionId(const std::string &wallet) {
-    auto it = m_wallet_sessionid.find(wallet);
-    if (it == m_wallet_sessionid.end()) {
-        std::string id = util::create_session_id();
-        m_wallet_sessionid[wallet] = id;
-        m_wallet_sessionid[id] = wallet;
-        std::shared_ptr<dbc::rent_sessionid> sessionid(new dbc::rent_sessionid());
-        sessionid->rent_wallet = wallet;
-        sessionid->session_id = id;
-        m_sessionid_db.write(sessionid);
-        return id;
-    } else {
-        return it->second;
+void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo) {
+    auto task_resource = TaskResourceMgr::instance().getTaskResource(taskinfo->task_id);
+    if (task_resource == nullptr) {
+        taskinfo->status = TS_CreateError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "not found task resource");
+        return;
     }
-}
 
-std::string TaskManager::GetSessionId(const std::string &wallet) {
-    auto it = m_wallet_sessionid.find(wallet);
-    if (it != m_wallet_sessionid.end()) {
-        return it->second;
+    ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, task_resource);
+    if (err_code != E_SUCCESS) {
+        taskinfo->status = TS_CreateError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "create domain failed");
     } else {
-        return "";
+        std::string local_ip = m_vm_client.GetDomainLocalIP(taskinfo->task_id);
+        if (!local_ip.empty()) {
+            if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id, g_vm_login_username, taskinfo->login_password)) {
+                m_vm_client.DestoryDomain(taskinfo->task_id);
+
+                taskinfo->status = TS_CreateError;
+                TaskInfoMgr::instance().update(taskinfo);
+                TASK_LOG_ERROR(taskinfo->task_id, "set domain password failed");
+                return;
+            }
+
+            if (!create_task_iptable(taskinfo->task_id, taskinfo->ssh_port, local_ip)) {
+                m_vm_client.DestoryDomain(taskinfo->task_id);
+
+                taskinfo->status = TS_CreateError;
+                TaskInfoMgr::instance().update(taskinfo);
+                TASK_LOG_ERROR(taskinfo->task_id, "create task iptable failed");
+                return;
+            }
+
+            taskinfo->status = TS_Running;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_INFO(taskinfo->task_id, "create task successful");
+        }
+        else {
+            m_vm_client.DestoryDomain(taskinfo->task_id);
+
+            taskinfo->status = TS_CreateError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "get domain local ip failed");
+        }
     }
 }
 
 bool TaskManager::create_task_iptable(const std::string &domain_name, const std::string &transform_port, const std::string &vm_local_ip) {
     std::string public_ip = SystemInfo::instance().publicip();
     if (!public_ip.empty() && !transform_port.empty() && !vm_local_ip.empty()) {
-        shell_add_iptable(public_ip, transform_port, vm_local_ip);
+        shell_add_iptable_to_system(public_ip, transform_port, vm_local_ip);
 
-        std::shared_ptr<dbc::task_iptable> iptable(new dbc::task_iptable());
+        std::shared_ptr<dbc::task_iptable> iptable = std::make_shared<dbc::task_iptable>();
         iptable->task_id = domain_name;
         iptable->__set_host_ip(public_ip);
         iptable->__set_vm_local_ip(vm_local_ip);
         iptable->__set_ssh_port(transform_port);
-        m_iptables[domain_name] = iptable;
-        m_iptable_db.write_iptable(iptable);
+        TaskIptableMgr::instance().addIptable(iptable);
 
-        LOG_INFO << "transform_port successful, public_ip:" << public_ip << " ssh_port:" << transform_port
-                    << " local_ip:" << vm_local_ip;
-        TASK_LOG_INFO(domain_name, "transform_port successful, public_ip:" << public_ip << " ssh_port:" << transform_port
-            << " local_ip:" << vm_local_ip);
+        TASK_LOG_INFO(domain_name, "transform ssh_port successful, "
+                                   "public_ip:" << public_ip << " ssh_port:" << transform_port
+                                   << " local_ip:" << vm_local_ip);
         return true;
     } else {
-        LOG_ERROR << "transform_port failed, ip or port is empty" << public_ip << ":" << transform_port;
-        TASK_LOG_ERROR(domain_name, "transform_port failed, ip or port is empty" << public_ip << ":" << transform_port);
+        TASK_LOG_ERROR(domain_name, "transform ssh_port failed, ip or port is empty, " << public_ip << ":" << transform_port);
         return false;
     }
 }
 
-void TaskManager::ProcessTask() {
-    /*
-    LOG_INFO << "TaskManager::ProcessTask (" << m_process_tasks.size() << ")";
-
-    if (m_process_tasks.empty()) return;
-
-    auto taskinfo = m_process_tasks.front();
-    m_process_tasks.pop_front();
-
-    if (taskinfo->operation == T_OP_Create) {
-        const TaskResource& task_resource = m_task_resource_mgr.GetTaskResource(taskinfo->task_id);
-
-        if (E_SUCCESS == m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, task_resource)) {
-            bool succ = create_task_iptable(taskinfo->task_id, taskinfo->ssh_port);
-            if (!succ) {
-                m_vm_client.DestoryDomain(taskinfo->task_id);
-                m_vm_client.UndefineDomain(taskinfo->task_id);
-                delete_task_data(taskinfo->task_id);
-
-                LOG_ERROR << "transform failed (" << taskinfo->task_id << ")";
-            } else {
-                succ = set_vm_password(taskinfo->task_id, "dbc", taskinfo->login_password);
-                if (!succ) {
-                    m_vm_client.DestoryDomain(taskinfo->task_id);
-                    m_vm_client.UndefineDomain(taskinfo->task_id);
-                    delete_task_data(taskinfo->task_id);
-
-                    LOG_ERROR << "set_vm_password failed (" << taskinfo->task_id << ")";
-                } else {
-                    taskinfo->__set_status(TS_Running);
-                    taskinfo->__set_operation(T_OP_None);
-                    m_task_db.write_task(taskinfo);
-
-                    LOG_INFO << "create task " << taskinfo->task_id << " successful";
-                }
-            }
-        } else {
-            delete_task_data(taskinfo->task_id);
-
-            LOG_ERROR << "create task " << taskinfo->task_id << " failed";
-        }
-    } else if (taskinfo->operation == T_OP_Start) {
-        EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
-        if (vm_status == VS_SHUT_OFF) {
-            if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
-                taskinfo->__set_status(TS_Running);
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-                restore_iptable(taskinfo->task_id);
-
-                LOG_INFO << "restart task " << taskinfo->task_id << " successful";
-            } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
-            }
-        } else if (vm_status == VS_PAUSED) {
-            if (E_SUCCESS == m_vm_client.ResumeDomain(taskinfo->task_id)) {
-                taskinfo->__set_status(TS_Running);
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-                restore_iptable(taskinfo->task_id);
-
-                LOG_INFO << "start task " << taskinfo->task_id << " successful";
-            } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_ERROR << "start task " << taskinfo->task_id << " failed";
-            }
-        }
-    } else if (taskinfo->operation == T_OP_Stop) {
-        if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
-            taskinfo->__set_status(TS_Stopping);
-            taskinfo->__set_operation(T_OP_None);
-            m_task_db.write_task(taskinfo);
-            remove_iptable(taskinfo->task_id);
-
-            LOG_INFO << "stop task " << taskinfo->task_id << " successful";
-        } else {
-            taskinfo->__set_operation(T_OP_None);
-            m_task_db.write_task(taskinfo);
-
-            LOG_ERROR << "stop task " << taskinfo->task_id << " failed";
-        }
-    } else if (taskinfo->operation == T_OP_ReStart) {
-        EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
-        if (vm_status == VS_SHUT_OFF) {
-            if (E_SUCCESS == m_vm_client.StartDomain(taskinfo->task_id)) {
-                taskinfo->__set_status(TS_Running);
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-                restore_iptable(taskinfo->task_id);
-
-                LOG_INFO << "restart task " << taskinfo->task_id << " successful";
-            } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
-            }
-        } else if (vm_status == VS_RUNNING) {
-            if (E_SUCCESS == m_vm_client.RebootDomain(taskinfo->task_id)) {
-                taskinfo->__set_status(TS_Running);
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-                restore_iptable(taskinfo->task_id);
-
-                LOG_INFO << "restart task " << taskinfo->task_id << " successful";
-            } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
-            }
-        }
-    } else if (taskinfo->operation == T_OP_Reset) {
-        if (E_SUCCESS == m_vm_client.ResetDomain(taskinfo->task_id)) {
-            taskinfo->__set_status(TS_Running);
-            taskinfo->__set_operation(T_OP_None);
-            m_task_db.write_task(taskinfo);
-
-            LOG_INFO << "reset task " << taskinfo->task_id << " successful";
-        } else {
-            taskinfo->__set_operation(T_OP_None);
-            m_task_db.write_task(taskinfo);
-
-            LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
-        }
-    } else if (taskinfo->operation == T_OP_Delete) {
-        EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
-        if (vm_status == VS_SHUT_OFF) {
-            if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
-                delete_task_data(taskinfo->task_id);
-
-                LOG_INFO << "delete task " << taskinfo->task_id << " successful";
-            } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
-            }
-        } else if (vm_status == VS_RUNNING) {
-            if (E_SUCCESS == m_vm_client.DestoryDomain(taskinfo->task_id)) {
-                sleep(1);
-                if (E_SUCCESS == m_vm_client.UndefineDomain(taskinfo->task_id)) {
-                    delete_task_data(taskinfo->task_id);
-
-                    LOG_INFO << "delete task " << taskinfo->task_id << " successful";
-                } else {
-                    taskinfo->__set_operation(T_OP_None);
-                    m_task_db.write_task(taskinfo);
-
-                    LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
-                }
-            } else {
-                taskinfo->__set_operation(T_OP_None);
-                m_task_db.write_task(taskinfo);
-
-                LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
-            }
-        }
-    }*/
-}
-
-std::string req_machine_status() {
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-            + conf_manager::instance().get_node_id() + R"("]})";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        rapidjson::Document doc;
-        doc.Parse(resp->body.c_str());
-        if (!doc.IsObject()) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        if (!doc.HasMember("result")) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        if (!v_result.HasMember("machineStatus")) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
-        if (!v_machineStatus.IsString()) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        std::string machine_status = v_machineStatus.GetString();
-        return machine_status;
+void TaskManager::process_start(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
+    ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
+    if (err_code != E_SUCCESS) {
+        taskinfo->status = TS_StartError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "start task failed");
     } else {
-        return "";
+        taskinfo->status = TS_Running;
+        TaskInfoMgr::instance().update(taskinfo);
+        add_iptable_to_system(taskinfo->task_id);
+        TASK_LOG_INFO(taskinfo->task_id, "start task successful");
     }
 }
 
-int64_t req_rent_end(const std::string &wallet) {
-    int64_t cur_rent_end = 0;
-
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-            + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        do {
-            rapidjson::Document doc;
-            doc.Parse(resp->body.c_str());
-            if (!doc.IsObject()) break;
-            if (!doc.HasMember("result")) break;
-
-            const rapidjson::Value &v_result = doc["result"];
-            if (!v_result.IsObject()) break;
-
-            if (v_result.HasMember("rentEnd")) {
-                const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
-                if (!v_rentEnd.IsNumber()) break;
-
-                int64_t rentEnd = v_rentEnd.GetInt64();
-                if (rentEnd > 0) {
-                    cur_rent_end = rentEnd;
-                    break;
-                }
-            }
-        } while (0);
+void TaskManager::process_stop(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
+    ERR_CODE err_code = m_vm_client.DestoryDomain(taskinfo->task_id);
+    if (err_code != E_SUCCESS) {
+        taskinfo->status = TS_StopError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "stop task failed");
     }
-
-    return cur_rent_end;
-}
-
-int64_t req_cur_block() {
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []}")";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        rapidjson::Document doc;
-        doc.Parse(resp->body.c_str());
-        if (!doc.IsObject()) {
-            return 0;
-        }
-
-        if (!doc.HasMember("result")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) {
-            return 0;
-        }
-
-        if (!v_result.HasMember("block")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_block = v_result["block"];
-        if (!v_block.IsObject()) {
-            return 0;
-        }
-
-        if (!v_block.HasMember("header")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_header = v_block["header"];
-        if (!v_header.IsObject()) {
-            return 0;
-        }
-
-        if (!v_header.HasMember("number")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_number = v_header["number"];
-        if (!v_number.IsString()) {
-            return 0;
-        }
-
-        char* p;
-        int64_t n = 0;
-        try {
-            n = strtol(v_number.GetString(), &p, 16);
-        } catch(...) {
-            n = 0;
-        }
-
-        return n;
-    } else {
-        return 0;
+    else {
+        taskinfo->status = TS_ShutOff;
+        TaskInfoMgr::instance().update(taskinfo);
+        remove_iptable_from_system(taskinfo->task_id);
+        TASK_LOG_INFO(taskinfo->task_id, "stop task successful");
     }
 }
 
-void TaskManager::PruneTask() {
-    remove_reject_iptable();
-
-    std::string machine_status = req_machine_status();
-    if (machine_status.empty()) return;
-
-    for (auto& it : m_wallet_tasks) {
-        if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
-            machine_status == "committeeVerifying" || machine_status == "committeeRefused") {
-            std::vector<std::string> ids = it.second->task_ids;
-            for (auto& task_id : ids) {
-                if (task_id.find("vm_check_") == std::string::npos) {
-                    StopTask(it.first, task_id);
-                }
-            }
-        } else if (machine_status == "waitingFulfill" || machine_status == "online") {
-            std::vector<std::string> ids = it.second->task_ids;
-            for (auto& task_id : ids) {
-                if (task_id.find("vm_check_") == std::string::npos) {
-                    StopTask(it.first, task_id);
-                } else {
-                    DeleteTask(it.first, task_id);
-                }
-            }
-        } else if (machine_status == "creating" || machine_status == "rented") {
-            std::vector<std::string> ids = it.second->task_ids;
-            for (auto& task_id : ids) {
-                if (task_id.find("vm_check_") != std::string::npos) {
-                    DeleteTask(it.first, task_id);
-                }
-            }
+void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
+    EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+    if (vm_status == VS_SHUT_OFF) {
+        ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
+        if (err_code != E_SUCCESS) {
+            taskinfo->status = TS_RestartError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
         }
-
-        if (machine_status == "waitingFulfill" || machine_status == "online" ||
-            machine_status == "creating" || machine_status == "rented") {
-            int64_t rent_end = req_rent_end(it.first);
-            if (rent_end <= 0) {
-                std::vector<std::string> ids = it.second->task_ids;
-                for (auto& task_id : ids) {
-                    StopTask(it.first, task_id);
-                }
-
-                // 1小时出120个块
-                int64_t wallet_rent_end = it.second->rent_end;
-                int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
-                int64_t cur_block = req_cur_block();
-                if (reserve_end > cur_block) {
-                    ids = it.second->task_ids;
-                    for (auto& task_id : ids) {
-                        DeleteTask(it.first, task_id);
-                    }
-                }
-            } else {
-                if (rent_end > it.second->rent_end) {
-                    it.second->rent_end = rent_end;
-                    m_wallet_task_db.write_data(it.second);
-                }
-            }
+        else {
+            taskinfo->status = TS_Running;
+            TaskInfoMgr::instance().update(taskinfo);
+            add_iptable_to_system(taskinfo->task_id);
+            TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
+        }
+    } else if (vm_status == VS_RUNNING) {
+        ERR_CODE err_code = m_vm_client.RebootDomain(taskinfo->task_id);
+        if (err_code != E_SUCCESS) {
+            taskinfo->status = TS_RestartError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
+        }
+        else {
+            taskinfo->status = TS_Running;
+            TaskInfoMgr::instance().update(taskinfo);
+            add_iptable_to_system(taskinfo->task_id);
+            TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
         }
     }
 }
 
-void TaskManager::AsyncVMTaskThreadResult(std::shared_ptr<dbc::vm_task_thread_result> vm_task_result) {
-    auto it = m_tasks.find(vm_task_result->domain_name);
-    if (it == m_tasks.end()) {
-        LOG_ERROR <<  "task_id " << vm_task_result->domain_name << " not exist";
+void TaskManager::process_reset(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
+    ERR_CODE err_code = m_vm_client.ResetDomain(taskinfo->task_id);
+    if (err_code != E_SUCCESS) {
+        taskinfo->status = TS_ResetError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "reset task failed");
+    }
+    else {
+        taskinfo->status = TS_Running;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_INFO(taskinfo->task_id, "reset task successful");
+    }
+}
+
+void TaskManager::process_delete(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
+    std::string url = "qemu+tcp://localhost:16509/system";
+    virConnectPtr connPtr = virConnectOpen(url.c_str());
+    if (nullptr == connPtr) {
         return;
     }
 
-    auto taskinfo = it->second;
-    taskinfo->__set_operation(T_OP_None);
-    switch (vm_task_result->operation) {
-        case T_OP_Create:
-            if (vm_task_result->result_code == E_SUCCESS) {
-                if (create_task_iptable(taskinfo->task_id, taskinfo->ssh_port, vm_task_result->vm_local_ip)) {
-                    taskinfo->__set_status(TS_Running);
-                    m_task_db.write_task(taskinfo);
-                    LOG_INFO << "create task " << taskinfo->task_id << " successful";
+    delete_task(connPtr, taskinfo->task_id);
+
+    virConnectClose(connPtr);
+}
+
+void TaskManager::prune_task_thread_func() {
+    while (m_running) {
+        sleep(60);
+        if (!m_running) break;
+
+        shell_remove_reject_iptable_from_system();
+
+        std::string machine_status = m_httpclient.request_machine_status();
+        if (machine_status.empty()) continue;
+
+        std::string url = "qemu+tcp://localhost:16509/system";
+        virConnectPtr connPtr = virConnectOpen(url.c_str());
+        if (nullptr == connPtr) {
+            continue;
+        }
+
+        auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
+        for (auto &it: wallet_renttasks) {
+            if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
+                machine_status == "committeeVerifying" || machine_status == "committeeRefused") {
+                std::vector<std::string> ids = it.second->task_ids;
+                for (auto &task_id: ids) {
+                    if (task_id.find("vm_check_") == std::string::npos) {
+                        close_task(connPtr, task_id);
+                    }
                 }
-                else {
-                    taskinfo->__set_operation(T_OP_Create);
-                    m_vm_client.AddTask(taskinfo->task_id, T_OP_Delete, taskinfo->image_name);
-                    LOG_ERROR << "create task " << taskinfo->task_id << " failed";
+            } else if (machine_status == "waitingFulfill" || machine_status == "online") {
+                std::vector<std::string> ids = it.second->task_ids;
+                for (auto &task_id: ids) {
+                    if (task_id.find("vm_check_") == std::string::npos) {
+                        close_task(connPtr, task_id);
+                    } else {
+                        delete_task(connPtr, task_id);
+                    }
+                }
+            } else if (machine_status == "creating" || machine_status == "rented") {
+                std::vector<std::string> ids = it.second->task_ids;
+                for (auto &task_id: ids) {
+                    if (task_id.find("vm_check_") != std::string::npos) {
+                        delete_task(connPtr, task_id);
+                    }
                 }
             }
-            else {
-                LOG_ERROR << "create task " << taskinfo->task_id << " failed";
+
+            if (machine_status == "waitingFulfill" || machine_status == "online" ||
+                machine_status == "creating" || machine_status == "rented") {
+                int64_t rent_end = m_httpclient.request_rent_end(it.first);
+                if (rent_end <= 0) {
+                    std::vector<std::string> ids = it.second->task_ids;
+                    for (auto &task_id: ids) {
+                        close_task(connPtr, task_id);
+                    }
+
+                    // 1小时出120个块
+                    int64_t wallet_rent_end = it.second->rent_end;
+                    int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
+                    int64_t cur_block = m_httpclient.request_cur_block();
+                    if (reserve_end > cur_block) {
+                        ids = it.second->task_ids;
+                        for (auto &task_id: ids) {
+                            delete_task(connPtr, task_id);
+                        }
+                    }
+                } else {
+                    if (rent_end > it.second->rent_end) {
+                        it.second->rent_end = rent_end;
+                        WalletRentTaskMgr::instance().updateRentEnd(it.first, rent_end);
+                    }
+                }
             }
-            break;
-        case T_OP_Start:
-            if (vm_task_result->result_code == E_SUCCESS) {
-                taskinfo->__set_status(TS_Running);
-                m_task_db.write_task(taskinfo);
-                restore_iptable(taskinfo->task_id);
-                LOG_INFO << "start task " << taskinfo->task_id << " successful";
-            }
-            else {
-                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
-                m_task_db.write_task(taskinfo);
-                LOG_ERROR << "start task " << taskinfo->task_id << " failed";
-            }
-            break;
-        case T_OP_Stop:
-            if (vm_task_result->result_code == E_SUCCESS) {
-                taskinfo->__set_status(TS_Stopping);
-                m_task_db.write_task(taskinfo);
-                remove_iptable(taskinfo->task_id);
-                LOG_INFO << "stop task " << taskinfo->task_id << " successful";
-            }
-            else {
-                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
-                m_task_db.write_task(taskinfo);
-                LOG_ERROR << "stop task " << taskinfo->task_id << " failed";
-            }
-            break;
-        case T_OP_ReStart:
-            if (vm_task_result->result_code == E_SUCCESS) {
-                taskinfo->__set_status(TS_Running);
-                m_task_db.write_task(taskinfo);
-                restore_iptable(taskinfo->task_id);
-                LOG_INFO << "restart task " << taskinfo->task_id << " successful";
-            }
-            else {
-                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
-                m_task_db.write_task(taskinfo);
-                LOG_ERROR << "restart task " << taskinfo->task_id << " failed";
-            }
-            break;
-        case T_OP_Reset:
-            if (vm_task_result->result_code == E_SUCCESS) {
-                taskinfo->__set_status(TS_Running);
-                m_task_db.write_task(taskinfo);
-                LOG_INFO << "reset task " << taskinfo->task_id << " successful";
-            }
-            else {
-                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
-                m_task_db.write_task(taskinfo);
-                LOG_ERROR << "reset task " << taskinfo->task_id << " failed";
-            }
-            break;
-        case T_OP_Delete:
-            if (vm_task_result->result_code == E_SUCCESS) {
-                delete_task_data(taskinfo->task_id);
-                LOG_INFO << "delete task " << taskinfo->task_id << " successful";
-            }
-            else {
-                taskinfo->__set_status(m_vm_client.GetDomainStatusReadOnly(taskinfo->task_id) == VS_RUNNING ? TS_Running : TS_Stopping);
-                m_task_db.write_task(taskinfo);
-                LOG_ERROR << "delete task " << taskinfo->task_id << " failed";
-            }
-            break;
-        default:
-            LOG_ERROR << "unknown operation, task_id " << taskinfo->task_id;
-            break;
+        }
+
+        virConnectClose(connPtr);
     }
 }
 
