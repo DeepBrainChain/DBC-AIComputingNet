@@ -295,11 +295,26 @@ VmClient::VmClient() {
 }
 
 VmClient::~VmClient() {
+    if (m_connPtr != nullptr) {
+        virConnectClose(m_connPtr);
+    }
+}
 
+bool VmClient::Init() {
+    if (m_connPtr == nullptr) {
+        std::string url = getUrl();
+        m_connPtr = virConnectOpen(url.c_str());
+    }
+    return m_connPtr != nullptr;
 }
 
 int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name,
                                const std::shared_ptr<TaskResource>& task_resource) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     // gpu
     std::map<std::string, std::list<std::string>> mpGpu = task_resource->gpus;
     std::string vga_pci;
@@ -343,7 +358,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
 
     // 创建虚拟磁盘（数据盘）
     std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
-    uint64_t disk_total_size = task_resource->disks.begin()->second / 1024L; // GB
+    uint64_t disk_total_size = task_resource->disks.begin()->second / 1024L / 1024L; // GB
     LOG_INFO << "data_file: " << data_file;
     TASK_LOG_INFO(domain_name, "data_file: " << data_file);
     std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
@@ -357,27 +372,15 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
                                            task_resource->cpu_cores, task_resource->cpu_threads,
                                            vga_pci, to_image_path, data_file);
 
-    virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            LOG_ERROR << "virConnectOpen error: " << url;
-            TASK_LOG_ERROR(domain_name, "virConnectOpen error: " << url);
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainDefineXML(connPtr, xml_content.c_str());
+        domainPtr = virDomainDefineXML(m_connPtr, xml_content.c_str());
         if (nullptr == domainPtr) {
             errorNum = E_VIRT_DOMAIN_EXIST;
 
             virErrorPtr error = virGetLastError();
-            LOG_ERROR << "virDomainDefineXML error: " << error->message;
-            TASK_LOG_ERROR(domain_name, "virDomainDefineXML error: " << error->message);
-            virFreeError(error);
+            TASK_LOG_ERROR(domain_name, "virDomainDefineXML error: " << (error ? error->message : ""));
             break;
         }
 
@@ -385,10 +388,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
             errorNum = E_VIRT_INTERNAL_ERROR;
 
             virErrorPtr error = virGetLastError();
-            LOG_ERROR << "virDomainCreate error: " << error->message;
-            TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << error->message);
-            virFreeError(error);
-            break;
+            TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
         }
     } while (0);
 
@@ -396,255 +396,289 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
         virDomainFree(domainPtr);
     }
 
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
-    }
-
     return errorNum;
 }
 
 int32_t VmClient::StartDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-       if (virDomainCreate(domainPtr) < 0) {
-           virErrorPtr error = virGetLastError();
-           LOG_ERROR << "virDomainReboot error: " << error->message;
-           virFreeError(error);
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
+            errorNum = E_DEFAULT;
 
-           errorNum = E_DEFAULT;
-           break;
-       }
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
+            break;
+        }
+
+        if (info.state == VIR_DOMAIN_NOSTATE || info.state == VIR_DOMAIN_SHUTOFF) {
+            if (virDomainCreate(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
+            }
+        }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
 }
 
 int32_t VmClient::SuspendDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-        if (virDomainSuspend(domainPtr) < 0) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
             errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
+        }
+
+        if (info.state == VIR_DOMAIN_RUNNING) {
+            if (virDomainSuspend(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainSuspend error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
 }
 
 int32_t VmClient::ResumeDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-        if (virDomainResume(domainPtr) < 0) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
             errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
+        }
+
+        if (info.state == VIR_DOMAIN_PMSUSPENDED) {
+            if (virDomainResume(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainResume error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
 }
 
 int32_t VmClient::RebootDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-        if (virDomainReboot(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
             errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
+        }
+
+        if (info.state == VIR_DOMAIN_RUNNING) {
+            if (virDomainReboot(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainReboot error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
 }
 
 int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-        if (virDomainShutdown(domainPtr) < 0) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
             errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
+        }
+
+        if (info.state == VIR_DOMAIN_RUNNING) {
+            if (virDomainShutdown(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainShutdown error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
 }
 
-int32_t VmClient::DestoryDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+int32_t VmClient::DestroyDomain(const std::string &domain_name) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-        if (virDomainDestroy(domainPtr) < 0) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
             errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
+        }
+
+        if (info.state != VIR_DOMAIN_SHUTOFF) {
+            if (virDomainDestroy(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainDestroy error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
 }
 
 int32_t VmClient::UndefineDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
         if (virDomainUndefine(domainPtr) < 0) {
             errorNum = E_DEFAULT;
-            break;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
         }
     } while(0);
 
@@ -652,44 +686,97 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
         virDomainFree(domainPtr);
     }
 
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
+    return errorNum;
+}
+
+int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
+    virDomainPtr domainPtr = nullptr;
+    int32_t errorNum = E_SUCCESS;
+
+    do {
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
+            errorNum = E_VIRT_DOMAIN_NOT_FOUND;
+            break;
+        }
+
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
+            errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
+            break;
+        }
+
+        if (info.state != VIR_DOMAIN_SHUTOFF) {
+            if (virDomainDestroy(domainPtr) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainDestroy error: " << (error ? error->message : ""));
+            }
+        }
+
+        if (virDomainUndefine(domainPtr) < 0) {
+            errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
+        }
+    } while(0);
+
+    if (nullptr != domainPtr) {
+        virDomainFree(domainPtr);
     }
 
     return errorNum;
 }
 
 int32_t VmClient::ResetDomain(const std::string &domain_name) {
-    virConnectPtr connPtr = nullptr;
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return E_DEFAULT;
+    }
+
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            errorNum = E_VIRT_CONNECT_ERROR;
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             errorNum = E_VIRT_DOMAIN_NOT_FOUND;
             break;
         }
 
-        if (virDomainReset(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
+        virDomainInfo info;
+        if (virDomainGetInfo(domainPtr, &info) < 0) {
             errorNum = E_DEFAULT;
+
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
+        }
+
+        if (info.state == VIR_DOMAIN_RUNNING) {
+            if (virDomainReset(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainReset error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return errorNum;
@@ -703,45 +790,34 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
 
 }
 
-EVmStatus VmClient::GetDomainStatus(const std::string &domain_name) {
-    EVmStatus vm_status = VS_None;
-    virConnectPtr connPtr = nullptr;
+virDomainState VmClient::GetDomainStatus(const std::string &domain_name) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return VIR_DOMAIN_NOSTATE;
+    }
+
+    virDomainState vm_status = VIR_DOMAIN_NOSTATE;
     virDomainPtr domainPtr = nullptr;
 
     do {
-        std::string url = getUrl();
-        connPtr = virConnectOpenReadOnly(url.c_str());
-        if (nullptr == connPtr) {
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             break;
         }
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
             break;
         }
 
-        if (info.state == VIR_DOMAIN_RUNNING) {
-            vm_status = VS_RUNNING;
-        } else if (info.state == VIR_DOMAIN_PAUSED) {
-            vm_status = VS_PAUSED;
-        } else if (info.state == VIR_DOMAIN_SHUTOFF) {
-            vm_status = VS_SHUT_OFF;
-        } else {
-            vm_status = VS_None;
-        }
+        vm_status = (virDomainState) info.state;
     } while(0);
 
     if (nullptr != domainPtr) {
         virDomainFree(domainPtr);
-    }
-
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
     }
 
     return vm_status;
@@ -820,18 +896,18 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
 }
 
 std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return "";
+    }
+
     std::string vm_local_ip;
-    virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;
 
     do {
-        connPtr = virConnectOpen(getUrl().c_str());
-        if (nullptr == connPtr) {
-            break;
-        }
-
-        domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             break;
         }
 
@@ -867,33 +943,22 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
         virDomainFree(domainPtr);
     }
 
-    if (nullptr != connPtr) {
-        virConnectClose(connPtr);
-    }
-
     return vm_local_ip;
 }
 
 bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return false;
+    }
+
     bool ret = false;
-    virConnectPtr conn_ptr = nullptr;
     virDomainPtr domain_ptr = nullptr;
     do {
-        conn_ptr = virConnectOpen(getUrl().c_str());
-        if (conn_ptr == nullptr) {
-            ret = false;
-            virErrorPtr error = virGetLastError();
-            LOG_ERROR << "connect virt error: " << error->message;
-            virFreeError(error);
-            break;
-        }
-
-        domain_ptr = virDomainLookupByName(conn_ptr, domain_name.c_str());
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (domain_ptr == nullptr) {
             ret = false;
-            virErrorPtr error = virGetLastError();
-            LOG_ERROR << "virDomainLookupByName error: " << error->message;
-            virFreeError(error);
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             break;
         }
 
@@ -901,12 +966,11 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
         int succ = -1;
         // max: 5min
         while (succ != 0 && try_count < 100) {
-            LOG_INFO << "set_vm_password try_count: " << (try_count + 1);
+            TASK_LOG_ERROR(domain_name, "set_vm_password try_count: " << (try_count + 1));
             succ = virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), 0);
             if (succ != 0) {
                 virErrorPtr error = virGetLastError();
-                LOG_ERROR << "virDomainSetUserPassword error: " << error->message;
-                virFreeError(error);
+                TASK_LOG_ERROR(domain_name, "virDomainSetUserPassword error: " << (error ? error->message : ""));
             }
 
             try_count++;
@@ -915,13 +979,9 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
 
         if (succ == 0) {
             ret = true;
-            LOG_INFO << "set vm password successful, task_id:" << domain_name << ", user:" << username << ", pwd:"
-                     << pwd;
             TASK_LOG_INFO(domain_name, "set vm user password successful, user:" << username << ", pwd:" << pwd);
         } else {
             ret = false;
-            LOG_ERROR << "set vm password failed, task_id:" << domain_name << ", user:" << username << ", pwd:"
-                     << pwd;
             TASK_LOG_ERROR(domain_name, "set vm user password failed, user:" << username << ", pwd:" << pwd);
         }
     } while(0);
@@ -930,11 +990,22 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
         virDomainFree(domain_ptr);
     }
 
-    if (conn_ptr != nullptr) {
-        virConnectClose(conn_ptr);
+    return ret;
+}
+
+bool VmClient::IsExistDomain(const std::string &domain_name) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return false;
     }
 
-    return ret;
+    virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+    if (nullptr == domainPtr) {
+        return false;
+    } else {
+        virDomainFree(domainPtr);
+        return true;
+    }
 }
 
 /*

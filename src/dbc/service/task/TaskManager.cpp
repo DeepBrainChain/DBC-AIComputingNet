@@ -23,6 +23,10 @@ TaskManager::~TaskManager() {
 }
 
 FResult TaskManager::init() {
+    if (!m_vm_client.Init()) {
+        return {E_DEFAULT, "init vmclient failed"};
+    }
+
     if (!TaskInfoMgr::instance().init()) {
         return {E_DEFAULT, "task info manager init failed"};
     }
@@ -93,12 +97,6 @@ bool TaskManager::restore_tasks() {
         }
     }
 
-    std::string url = "qemu+tcp://localhost:16509/system";
-    virConnectPtr connPtr = virConnectOpen(url.c_str());
-    if (nullptr == connPtr) {
-        return false;
-    }
-
     // 将不是当前租用者的task都停掉
     //【如果存在当前租用者，就把验证人创建的虚拟机也一起关闭】
     //【如果不存在当前租用者，就先不要关闭验证人的虚拟机】
@@ -110,7 +108,7 @@ bool TaskManager::restore_tasks() {
                     if (!util::check_id(id)) continue;
                 }
 
-                close_task(connPtr, id);
+                close_task(id);
             }
         }
     }
@@ -133,7 +131,7 @@ bool TaskManager::restore_tasks() {
         for (auto& it_task : check_tasks) {
             int32_t task_status = it_task.second->status;
             if (task_status == ETaskStatus::TS_Running) {
-                start_task(connPtr, it_task.first);
+                start_task(it_task.first);
             }
         }
     }
@@ -169,73 +167,36 @@ bool TaskManager::restore_tasks() {
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(id);
             if (taskinfo != nullptr) {
                 if (taskinfo->status == ETaskStatus::TS_Running) {
-                    start_task(connPtr, taskinfo->task_id);
+                    start_task(taskinfo->task_id);
                 }
             }
         }
     }
 
-    virConnectClose(connPtr);
     return true;
 }
 
-void TaskManager::start_task(virConnectPtr connPtr, const std::string &task_id) {
-    virDomainPtr domainPtr = virDomainLookupByName(connPtr, task_id.c_str());
-    if (nullptr == domainPtr) {
-        return;
-    }
+void TaskManager::start_task(const std::string &task_id) {
+    if (m_vm_client.StartDomain(task_id)) {
+        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+        if (taskinfo != nullptr) {
+            taskinfo->status = ETaskStatus::TS_Running;
+            TaskInfoMgr::instance().update(taskinfo);
 
-    virDomainInfo info;
-    if (virDomainGetInfo(domainPtr, &info) < 0) {
-        virDomainFree(domainPtr);
-        return;
-    }
-
-    if (info.state != VIR_DOMAIN_RUNNING && info.state != VIR_DOMAIN_PAUSED) {
-        if (virDomainCreate(domainPtr) < 0) {
-            virDomainFree(domainPtr);
-            return;
+            add_iptable_to_system(task_id);
         }
     }
-
-    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-    if (taskinfo != nullptr) {
-        taskinfo->status = ETaskStatus::TS_Running;
-        TaskInfoMgr::instance().update(taskinfo);
-
-        add_iptable_to_system(task_id);
-    }
-
-    virDomainFree(domainPtr);
 }
 
-void TaskManager::close_task(virConnectPtr connPtr, const std::string &task_id) {
-    virDomainPtr domainPtr = virDomainLookupByName(connPtr, task_id.c_str());
-    if (nullptr == domainPtr) {
-        return;
-    }
-
-    virDomainInfo info;
-    if (virDomainGetInfo(domainPtr, &info) < 0) {
-        virDomainFree(domainPtr);
-        return;
-    }
-
-    if (info.state == VIR_DOMAIN_RUNNING || info.state == VIR_DOMAIN_PAUSED) {
-        if (virDomainDestroy(domainPtr) < 0) {
-            virDomainFree(domainPtr);
-            return;
+void TaskManager::close_task(const std::string &task_id) {
+    if (m_vm_client.DestroyDomain(task_id)) {
+        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+        if (taskinfo != nullptr) {
+            taskinfo->status = ETaskStatus::TS_ShutOff;
+            TaskInfoMgr::instance().update(taskinfo);
+            remove_iptable_from_system(task_id);
         }
     }
-
-    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-    if (taskinfo != nullptr) {
-        taskinfo->status = ETaskStatus::TS_ShutOff;
-        TaskInfoMgr::instance().update(taskinfo);
-        remove_iptable_from_system(task_id);
-    }
-
-    virDomainFree(domainPtr);
 }
 
 void TaskManager::remove_iptable_from_system(const std::string& task_id) {
@@ -407,22 +368,9 @@ void TaskManager::shell_remove_reject_iptable_from_system() {
     }
 }
 
-void TaskManager::delete_task(virConnectPtr connPtr, const std::string &task_id) {
+void TaskManager::delete_task(const std::string &task_id) {
     // domain
-    virDomainPtr domainPtr = virDomainLookupByName(connPtr, task_id.c_str());
-    if (nullptr != domainPtr) {
-        virDomainInfo info;
-        if (virDomainGetInfo(domainPtr, &info) < 0) {
-            virDomainFree(domainPtr);
-        } else {
-            if (info.state == VIR_DOMAIN_RUNNING || info.state == VIR_DOMAIN_PAUSED) {
-                virDomainDestroy(domainPtr);
-            }
-
-            virDomainUndefine(domainPtr);
-            virDomainFree(domainPtr);
-        }
-    }
+    m_vm_client.DestroyAndUndefineDomain(task_id);
 
     // data
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -1113,11 +1061,15 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
         return {E_DEFAULT, "task_id not exist"};
     }
 
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
     //TODO： check task resource
 
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_None || vm_status == VS_SHUT_OFF) {
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF) {
         taskinfo->__set_status(TS_Starting);
         taskinfo->__set_last_start_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1138,8 +1090,12 @@ FResult TaskManager::stopTask(const std::string& wallet, const std::string &task
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_None || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_PAUSED) {
         taskinfo->__set_status(TS_Stopping);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1160,11 +1116,15 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
         return {E_DEFAULT, "task_id not exist"};
     }
 
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
     // TODO: check task resource
 
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_None || vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING) {
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_RUNNING) {
         taskinfo->__set_status(TS_Restarting);
         taskinfo->__set_last_start_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1185,8 +1145,12 @@ FResult TaskManager::resetTask(const std::string& wallet, const std::string &tas
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_RUNNING) {
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_RUNNING) {
         taskinfo->__set_status(TS_Resetting);
         taskinfo->__set_last_start_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1207,8 +1171,9 @@ FResult TaskManager::deleteTask(const std::string& wallet, const std::string &ta
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VS_None || vm_status == VS_SHUT_OFF || vm_status == VS_RUNNING || vm_status == VS_PAUSED) {
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF ||
+        vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_PAUSED) {
         taskinfo->__set_status(TS_Deleting);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1285,17 +1250,9 @@ void TaskManager::deleteAllCheckTasks() {
         }
     }
 
-    std::string url = "qemu+tcp://localhost:16509/system";
-    virConnectPtr connPtr = virConnectOpen(url.c_str());
-    if (nullptr == connPtr) {
-        return;
-    }
-
     for (auto& task_id : check_ids) {
-        delete_task(connPtr, task_id);
+        delete_task(task_id);
     }
-
-    virConnectClose(connPtr);
 }
 
 void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
@@ -1314,17 +1271,9 @@ void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
         }
     }
 
-    std::string url = "qemu+tcp://localhost:16509/system";
-    virConnectPtr connPtr = virConnectOpen(url.c_str());
-    if (nullptr == connPtr) {
-        return;
-    }
-
     for (auto& task_id : check_ids) {
-        delete_task(connPtr, task_id);
+        delete_task(task_id);
     }
-
-    virConnectClose(connPtr);
 }
 
 std::string TaskManager::createSessionId(const std::string &wallet) {
@@ -1438,7 +1387,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         std::string local_ip = m_vm_client.GetDomainLocalIP(taskinfo->task_id);
         if (!local_ip.empty()) {
             if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id, g_vm_login_username, taskinfo->login_password)) {
-                m_vm_client.DestoryDomain(taskinfo->task_id);
+                m_vm_client.DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
                 TaskInfoMgr::instance().update(taskinfo);
@@ -1447,7 +1396,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
             }
 
             if (!create_task_iptable(taskinfo->task_id, taskinfo->ssh_port, local_ip)) {
-                m_vm_client.DestoryDomain(taskinfo->task_id);
+                m_vm_client.DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
                 TaskInfoMgr::instance().update(taskinfo);
@@ -1460,7 +1409,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
             TASK_LOG_INFO(taskinfo->task_id, "create task successful");
         }
         else {
-            m_vm_client.DestoryDomain(taskinfo->task_id);
+            m_vm_client.DestroyDomain(taskinfo->task_id);
 
             taskinfo->status = TS_CreateError;
             TaskInfoMgr::instance().update(taskinfo);
@@ -1506,7 +1455,7 @@ void TaskManager::process_start(const std::shared_ptr<dbc::TaskInfo> &taskinfo) 
 }
 
 void TaskManager::process_stop(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    ERR_CODE err_code = m_vm_client.DestoryDomain(taskinfo->task_id);
+    ERR_CODE err_code = m_vm_client.DestroyDomain(taskinfo->task_id);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_StopError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -1521,8 +1470,8 @@ void TaskManager::process_stop(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
 }
 
 void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    EVmStatus vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
-    if (vm_status == VS_SHUT_OFF) {
+    virDomainState vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+    if (vm_status == VIR_DOMAIN_SHUTOFF) {
         ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
         if (err_code != E_SUCCESS) {
             taskinfo->status = TS_RestartError;
@@ -1535,7 +1484,7 @@ void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo
             add_iptable_to_system(taskinfo->task_id);
             TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
         }
-    } else if (vm_status == VS_RUNNING) {
+    } else if (vm_status == VIR_DOMAIN_RUNNING) {
         ERR_CODE err_code = m_vm_client.RebootDomain(taskinfo->task_id);
         if (err_code != E_SUCCESS) {
             taskinfo->status = TS_RestartError;
@@ -1566,15 +1515,7 @@ void TaskManager::process_reset(const std::shared_ptr<dbc::TaskInfo> &taskinfo) 
 }
 
 void TaskManager::process_delete(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    std::string url = "qemu+tcp://localhost:16509/system";
-    virConnectPtr connPtr = virConnectOpen(url.c_str());
-    if (nullptr == connPtr) {
-        return;
-    }
-
-    delete_task(connPtr, taskinfo->task_id);
-
-    virConnectClose(connPtr);
+    delete_task(taskinfo->task_id);
 }
 
 void TaskManager::prune_task_thread_func() {
@@ -1587,12 +1528,6 @@ void TaskManager::prune_task_thread_func() {
         std::string machine_status = m_httpclient.request_machine_status();
         if (machine_status.empty()) continue;
 
-        std::string url = "qemu+tcp://localhost:16509/system";
-        virConnectPtr connPtr = virConnectOpen(url.c_str());
-        if (nullptr == connPtr) {
-            continue;
-        }
-
         auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
         for (auto &it: wallet_renttasks) {
             if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
@@ -1600,23 +1535,23 @@ void TaskManager::prune_task_thread_func() {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
-                        close_task(connPtr, task_id);
+                        close_task(task_id);
                     }
                 }
             } else if (machine_status == "waitingFulfill" || machine_status == "online") {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
-                        close_task(connPtr, task_id);
+                        close_task(task_id);
                     } else {
-                        delete_task(connPtr, task_id);
+                        delete_task(task_id);
                     }
                 }
             } else if (machine_status == "creating" || machine_status == "rented") {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") != std::string::npos) {
-                        delete_task(connPtr, task_id);
+                        delete_task(task_id);
                     }
                 }
             }
@@ -1627,7 +1562,7 @@ void TaskManager::prune_task_thread_func() {
                 if (rent_end <= 0) {
                     std::vector<std::string> ids = it.second->task_ids;
                     for (auto &task_id: ids) {
-                        close_task(connPtr, task_id);
+                        close_task(task_id);
                     }
 
                     // 1小时出120个块
@@ -1637,7 +1572,7 @@ void TaskManager::prune_task_thread_func() {
                     if (reserve_end > cur_block) {
                         ids = it.second->task_ids;
                         for (auto &task_id: ids) {
-                            delete_task(connPtr, task_id);
+                            delete_task(task_id);
                         }
                     }
                 } else {
@@ -1648,8 +1583,6 @@ void TaskManager::prune_task_thread_func() {
                 }
             }
         }
-
-        virConnectClose(connPtr);
     }
 }
 

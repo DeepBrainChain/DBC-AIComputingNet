@@ -80,20 +80,32 @@ std::string task_status_string(int32_t status) {
     return status_string;
 }
 
-std::string vm_status_string(int32_t status) {
+std::string vm_status_string(virDomainState status) {
     std::string status_string = "none";
     switch (status) {
-        case VS_None:
+        case VIR_DOMAIN_NOSTATE:
             status_string = "none";
             break;
-        case VS_PAUSED:
+        case VIR_DOMAIN_PAUSED:
             status_string = "paused";
             break;
-        case VS_RUNNING:
+        case VIR_DOMAIN_RUNNING:
             status_string = "running";
             break;
-        case VS_SHUT_OFF:
+        case VIR_DOMAIN_SHUTOFF:
             status_string = "shut_off";
+            break;
+        case VIR_DOMAIN_BLOCKED:
+            status_string = "blocked";
+            break;
+        case VIR_DOMAIN_SHUTDOWN:
+            status_string = "being shutdown";
+            break;
+        case VIR_DOMAIN_CRASHED:
+            status_string = "crashed";
+            break;
+        case VIR_DOMAIN_PMSUSPENDED:
+            status_string = "suspended";
             break;
         default:
             break;

@@ -316,32 +316,25 @@ void rest_api_service::rest_task(const std::shared_ptr<dbc::network::http_reques
     }
 
     if (path_list.size() == 2) {
-        const std::string &second_param = path_list[1];
-        // start <task_id>
+        const std::string &second_param = path_list[0];
         if (second_param == "start") {
             rest_start_task(httpReq, path);
         }
-        // /tasks/<task_id>/restart
         else if (second_param == "restart") {
             rest_restart_task(httpReq, path);
         }
-        // /tasks/<task_id>/stop 停止某个task
         else if (second_param == "stop") {
             rest_stop_task(httpReq, path);
         }
-        // /tasks/<task_id>/reset
         else if (second_param == "reset") {
             rest_reset_task(httpReq, path);
         }
-        // /tasks/<task_id>/destroy
         else if (second_param == "delete") {
             rest_delete_task(httpReq, path);
         }
-        // /tasks/<task_id>/logs
         else if (second_param == "logs") {
             rest_task_logs(httpReq, path);
         }
-        // /tasks/<task_id>/modify
         else if (second_param == "modify") {
             rest_modify_task(httpReq, path);
         }

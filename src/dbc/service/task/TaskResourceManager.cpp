@@ -50,9 +50,6 @@ bool TaskResourceManager::init(const std::vector<std::string> &taskids) {
         do {
             domainPtr = virDomainLookupByName(connPtr, id.c_str());
             if (nullptr == domainPtr) {
-                virErrorPtr error = virGetLastError();
-                LOG_ERROR << "virDomainLookupByName " << id << " error: " << error->message;
-                virFreeError(error);
                 break;
             }
 

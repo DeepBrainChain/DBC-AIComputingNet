@@ -12,6 +12,8 @@ public:
 
     virtual ~VmClient();
 
+    bool Init();
+
     int32_t CreateDomain(const std::string& domain_name, const std::string& image,
                          const std::shared_ptr<TaskResource>& task_resource);
 
@@ -25,13 +27,15 @@ public:
 
     int32_t ShutdownDomain(const std::string& domain_name);
 
-    int32_t DestoryDomain(const std::string& domain_name);
+    int32_t DestroyDomain(const std::string& domain_name);
 
     int32_t ResetDomain(const std::string& domain_name);
 
     int32_t UndefineDomain(const std::string& domain_name);
 
-    EVmStatus GetDomainStatus(const std::string& domain_name);
+    int32_t DestroyAndUndefineDomain(const std::string& domain_name);
+
+    virDomainState GetDomainStatus(const std::string& domain_name);
 
     void ListAllDomains(std::vector<std::string>& domains);
 
@@ -43,6 +47,10 @@ public:
 
     bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
 
+    bool IsExistDomain(const std::string& domain_name);
+
+private:
+    virConnectPtr m_connPtr = nullptr;
 };
 
 /*

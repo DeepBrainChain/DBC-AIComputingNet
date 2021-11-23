@@ -171,17 +171,19 @@ void SystemInfo::update_mem_info(mem_info &info) {
 
     info.mem_total = kb_main_total;
     info.mem_free = kb_main_free;
-    info.mem_usage = (info.mem_total - info.mem_free) * 1.0 / info.mem_total;
-
-    if (kb_main_total < m_reserved_memory * 1024L * 1024L)
-        info.mem_total = 0LU;
-    else
-        info.mem_total = kb_main_total - m_reserved_memory * 1024L * 1024L;
 
     if (kb_main_free < m_reserved_memory * 1024L * 1024L)
         info.mem_free = 0LU;
     else
         info.mem_free = kb_main_free - m_reserved_memory * 1024L * 1024L;
+
+    if (kb_main_total < m_reserved_memory * 1024L * 1024L) {
+        info.mem_total = 0LU;
+        info.mem_usage = 0;
+    } else {
+        info.mem_total = kb_main_total - m_reserved_memory * 1024L * 1024L;
+        info.mem_usage = (info.mem_total - info.mem_free) * 1.0 / info.mem_total;
+    }
 
     unsigned long mem_used = kb_main_total - kb_main_free - (kb_page_cache + kb_slab_reclaimable) - kb_main_buffers;
     if (mem_used < 0)
@@ -309,8 +311,6 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
     info.disk_available = (diskInfo.f_bavail * block_size) >> 10; //非超级用户可用空间
     info.disk_free = (diskInfo.f_bfree * block_size) >> 10; //磁盘所有剩余空间
     info.disk_usage = (info.disk_total - info.disk_available) * 1.0 / info.disk_total;
-
-    std::cout << "disk:" << info.disk_total << std::endl;
 
     std::string cmd = "df -l " + std::string(dpath) + " | tail -1";
     std::string tmp = run_shell(cmd.c_str());

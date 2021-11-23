@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 #include <list>
+#include <libvirt/libvirt.h>
+#include <libvirt/virterror.h>
 
 #define MAX_LIST_TASK_COUNT                                     10000
 #define MAX_TASK_COUNT_PER_REQ                                  10
@@ -60,13 +62,6 @@ enum ETaskStatus {
     TS_DeleteError
 };
 
-enum EVmStatus {
-    VS_None,
-    VS_PAUSED,
-    VS_RUNNING,
-    VS_SHUT_OFF
-};
-
 enum ETaskLogDirection {
     LD_Head,
     LD_Tail
@@ -74,7 +69,7 @@ enum ETaskLogDirection {
 
 std::string task_status_string(int32_t status);
 std::string task_operation_string(int32_t op);
-std::string vm_status_string(int32_t status);
+std::string vm_status_string(virDomainState status);
 
 // 系统盘大小（GB）
 static const int32_t g_disk_system_size = 350;

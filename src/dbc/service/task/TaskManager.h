@@ -68,9 +68,9 @@ public:
 protected:
     bool restore_tasks();
 
-    void start_task(virConnectPtr connPtr, const std::string &task_id);
+    void start_task(const std::string &task_id);
 
-    void close_task(virConnectPtr connPtr, const std::string &task_id);
+    void close_task(const std::string &task_id);
 
     void remove_iptable_from_system(const std::string& task_id);
 
@@ -84,7 +84,7 @@ protected:
 
     void shell_remove_reject_iptable_from_system();
 
-    void delete_task(virConnectPtr connPtr, const std::string& task_id);
+    void delete_task(const std::string& task_id);
 
     void delete_disk_system_file(const std::string &task_id, const std::string& disk_system_file_name);
 
