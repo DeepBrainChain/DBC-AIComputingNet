@@ -4,3 +4,4 @@
 * * * * * (cd /home/crontab;sleep 30;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
 * * * * * (cd /home/crontab;sleep 40;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
 * * * * * (cd /home/crontab;sleep 50;/bin/bash ./dbcmonitor.sh >/dev/null 2>&1)
+3 0 * * * (cd /home/crontab;/bin/bash ./logmonitor.sh >/dev/null 2>&1)

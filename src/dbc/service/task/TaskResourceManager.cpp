@@ -162,6 +162,20 @@ bool TaskResourceManager::init(const std::vector<std::string> &taskids) {
                         ele_disk = ele_disk->NextSiblingElement("disk");
                     }
                 }
+                // vnc
+                if (ele_devices != nullptr) {
+                    tinyxml2::XMLElement* ele_graphics = ele_devices->FirstChildElement("graphics");
+                    while (ele_graphics != nullptr) {
+                        std::string graphics_type = ele_graphics->Attribute("type");
+                        if (graphics_type == "vnc") {
+                            std::string vnc_port = ele_graphics->Attribute("port");
+                            std::string vnc_pwd = ele_graphics->Attribute("passwd");
+                            task_resource->vnc_port = vnc_port.empty() ? -1 : atoi(vnc_port.c_str());
+                            task_resource->vnc_password = vnc_pwd;
+                        }
+                        ele_graphics = ele_graphics->NextSiblingElement("graphics");
+                    }
+                }
 
                 m_task_resource[id] = task_resource;
                 free(pContent);

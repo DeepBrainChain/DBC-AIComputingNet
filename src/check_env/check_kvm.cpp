@@ -6,8 +6,11 @@
 #include <boost/program_options.hpp>
 #include "util/SystemResourceManager.h"
 #include <sys/sysinfo.h>
+#include "virImpl.h"
 
 namespace check_kvm {
+    static const char* qemu_url = "qemu+tcp://localhost:16509/system";
+
     static std::vector<std::string> SplitStr(const std::string &s, const char &c) {
         std::string buff;
         std::vector<std::string> v;
@@ -32,8 +35,9 @@ namespace check_kvm {
     static std::string createXmlStr(const std::string &uuid, const std::string &domain_name,
                                     int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                                     const std::string &vedio_pci, const std::string &image_file,
-                                    const std::string &disk_file) {
+                                    const std::string &disk_file, int32_t vnc_port, const std::string& vnc_pwd) {
         tinyxml2::XMLDocument doc;
+        bool is_windows = image_file.find("win") != std::string::npos;
 
         // <domain>
         tinyxml2::XMLElement *root = doc.NewElement("domain");
@@ -70,17 +74,24 @@ namespace check_kvm {
         tinyxml2::XMLElement *os_node = doc.NewElement("os");
         tinyxml2::XMLElement *os_sub_node = doc.NewElement("type");
         os_sub_node->SetAttribute("arch", "x86_64");
-        os_sub_node->SetAttribute("machine", "pc-1.2");
+        os_sub_node->SetAttribute("machine", is_windows ? "q35" : "pc-1.2");
         os_sub_node->SetText("hvm");
         os_node->LinkEndChild(os_sub_node);
 
-        tinyxml2::XMLElement *os_sub_node2 = doc.NewElement("boot");
-        os_sub_node2->SetAttribute("dev", "hd");
-        os_node->LinkEndChild(os_sub_node2);
+        if (!is_windows) {
+            tinyxml2::XMLElement *os_sub_node2 = doc.NewElement("boot");
+            os_sub_node2->SetAttribute("dev", "hd");
+            os_node->LinkEndChild(os_sub_node2);
 
-        tinyxml2::XMLElement *os_sub_node3 = doc.NewElement("boot");
-        os_sub_node3->SetAttribute("dev", "cdrom");
-        os_node->LinkEndChild(os_sub_node3);
+            tinyxml2::XMLElement *os_sub_node3 = doc.NewElement("boot");
+            os_sub_node3->SetAttribute("dev", "cdrom");
+            os_node->LinkEndChild(os_sub_node3);
+        }
+        else {
+            tinyxml2::XMLElement *os_bootmenu_node = doc.NewElement("bootmenu");
+            os_bootmenu_node->SetAttribute("enable", "yes");
+            os_node->LinkEndChild(os_bootmenu_node);
+        }
         root->LinkEndChild(os_node);
 
         // <features>
@@ -89,11 +100,38 @@ namespace check_kvm {
         features_node->LinkEndChild(features_sub_node1);
         tinyxml2::XMLElement *features_sub_node2 = doc.NewElement("apic");
         features_node->LinkEndChild(features_sub_node2);
-        tinyxml2::XMLElement *features_sub_node3 = doc.NewElement("kvm");
+
+        tinyxml2::XMLElement *features_sub_node3 = doc.NewElement("hyperv");
+        tinyxml2::XMLElement *node_relaxed = doc.NewElement("relaxed");
+        node_relaxed->SetAttribute("state", "on");
+        features_sub_node3->LinkEndChild(node_relaxed);
+        tinyxml2::XMLElement *node_vapic = doc.NewElement("vapic");
+        node_vapic->SetAttribute("state", "on");
+        features_sub_node3->LinkEndChild(node_vapic);
+        tinyxml2::XMLElement *node_spinlocks = doc.NewElement("spinlocks");
+        node_spinlocks->SetAttribute("state", "on");
+        node_spinlocks->SetAttribute("retries", "8191");
+        features_sub_node3->LinkEndChild(node_spinlocks);
+        tinyxml2::XMLElement *node_vendor_id = doc.NewElement("vendor_id");
+        node_vendor_id->SetAttribute("state", "on");
+        node_vendor_id->SetAttribute("value", "1234567890ab");
+        features_sub_node3->LinkEndChild(node_vendor_id);
+        features_node->LinkEndChild(features_sub_node3);
+
+        tinyxml2::XMLElement *features_sub_node4 = doc.NewElement("kvm");
         tinyxml2::XMLElement *node_hidden = doc.NewElement("hidden");
         node_hidden->SetAttribute("state", "on");
-        features_sub_node3->LinkEndChild(node_hidden);
-        features_node->LinkEndChild(features_sub_node3);
+        features_sub_node4->LinkEndChild(node_hidden);
+        features_node->LinkEndChild(features_sub_node4);
+
+        tinyxml2::XMLElement* node_vmport = doc.NewElement("vmport");
+        node_vmport->SetAttribute("state", "off");
+        features_node->LinkEndChild(node_vmport);
+
+        tinyxml2::XMLElement* node_ioapic = doc.NewElement("ioapic");
+        node_ioapic->SetAttribute("driver", "kvm");
+        features_node->LinkEndChild(node_ioapic);
+
         root->LinkEndChild(features_node);
 
         // <cpu>
@@ -111,8 +149,39 @@ namespace check_kvm {
         root->LinkEndChild(cpu_node);
 
         tinyxml2::XMLElement *clock_node = doc.NewElement("clock");
-        clock_node->SetAttribute("offset", "utc");
+        if (!is_windows) {
+            clock_node->SetAttribute("offset", "utc");
+        }
+        else {
+            clock_node->SetAttribute("offset", "localtime");
+            tinyxml2::XMLElement *clock_rtc_node = doc.NewElement("timer");
+            clock_rtc_node->SetAttribute("name", "rtc");
+            clock_rtc_node->SetAttribute("tickpolicy", "catchup");
+            clock_node->LinkEndChild(clock_rtc_node);
+            tinyxml2::XMLElement *clock_pit_node = doc.NewElement("timer");
+            clock_pit_node->SetAttribute("name", "pit");
+            clock_pit_node->SetAttribute("tickpolicy", "delay");
+            clock_node->LinkEndChild(clock_pit_node);
+            tinyxml2::XMLElement *clock_hpet_node = doc.NewElement("timer");
+            clock_hpet_node->SetAttribute("name", "hpet");
+            clock_hpet_node->SetAttribute("present", "no");
+            clock_node->LinkEndChild(clock_hpet_node);
+            tinyxml2::XMLElement *clock_hypervclock_node = doc.NewElement("timer");
+            clock_hypervclock_node->SetAttribute("name", "hypervclock");
+            clock_hypervclock_node->SetAttribute("present", "yes");
+            clock_node->LinkEndChild(clock_hypervclock_node);
+        }
         root->LinkEndChild(clock_node);
+
+        // tinyxml2::XMLElement *on_poweroff_node = doc.NewElement("on_poweroff");
+        // on_poweroff_node->SetText("destroy");
+        // root->LinkEndChild(on_poweroff_node);
+        // tinyxml2::XMLElement *on_reboot_node = doc.NewElement("on_reboot");
+        // on_reboot_node->SetText("restart");
+        // root->LinkEndChild(on_reboot_node);
+        // tinyxml2::XMLElement *on_crash_node = doc.NewElement("on_crash");
+        // on_crash_node->SetText("destroy");
+        // root->LinkEndChild(on_crash_node);
 
         // <pm>
         /*
@@ -186,9 +255,16 @@ namespace check_kvm {
         image_node->LinkEndChild(source_node);
 
         tinyxml2::XMLElement *target_node = doc.NewElement("target");
-        target_node->SetAttribute("dev", "hda");
-        target_node->SetAttribute("bus", "ide");
+        target_node->SetAttribute("dev", is_windows ? "vda" : "hda");
+        target_node->SetAttribute("bus", is_windows ? "virtio" : "ide");
         image_node->LinkEndChild(target_node);
+
+        if (is_windows) {
+            // set boot order
+            tinyxml2::XMLElement *boot_order_node = doc.NewElement("boot");
+            boot_order_node->SetAttribute("order", "1");
+            image_node->LinkEndChild(boot_order_node);
+        }
         dev_node->LinkEndChild(image_node);
 
         // disk (data)
@@ -205,7 +281,7 @@ namespace check_kvm {
         disk_data_node->LinkEndChild(disk_source_node);
 
         tinyxml2::XMLElement *disk_target_node = doc.NewElement("target");
-        disk_target_node->SetAttribute("dev", "vda");
+        disk_target_node->SetAttribute("dev", is_windows ? "vdb" : "vda");
         disk_target_node->SetAttribute("bus", "virtio");
         disk_data_node->LinkEndChild(disk_target_node);
 
@@ -216,7 +292,7 @@ namespace check_kvm {
         agent_node->SetAttribute("type", "unix");
         tinyxml2::XMLElement *agent_source_node = doc.NewElement("source");
         agent_source_node->SetAttribute("mode", "bind");
-        agent_source_node->SetAttribute("path", "/tmp/channel.sock");
+        agent_source_node->SetAttribute("path", ("/tmp/channel_" + uuid + ".sock").c_str());
         agent_node->LinkEndChild(agent_source_node);
         tinyxml2::XMLElement *agent_target_node = doc.NewElement("target");
         agent_target_node->SetAttribute("type", "virtio");
@@ -230,21 +306,30 @@ namespace check_kvm {
         tinyxml2::XMLElement *interface_source_node = doc.NewElement("source");
         interface_source_node->SetAttribute("network", "default");
         interface_node->LinkEndChild(interface_source_node);
+        tinyxml2::XMLElement *interface_model_node = doc.NewElement("model");
+        interface_model_node->SetAttribute("type", "virtio");
+        interface_node->LinkEndChild(interface_model_node);
         dev_node->LinkEndChild(interface_node);
 
         // vnc
         tinyxml2::XMLElement *graphics_node = doc.NewElement("graphics");
         graphics_node->SetAttribute("type", "vnc");
-        graphics_node->SetAttribute("port", "-1");
-        graphics_node->SetAttribute("autoport", "yes");
+        graphics_node->SetAttribute("port", std::to_string(vnc_port).c_str());
+        graphics_node->SetAttribute("autoport", vnc_port == -1 ? "yes" : "no");
         graphics_node->SetAttribute("listen", "0.0.0.0");
         graphics_node->SetAttribute("keymap", "en-us");
-        graphics_node->SetAttribute("passwd", "dbtu@supper2017");
+        graphics_node->SetAttribute("passwd", vnc_pwd.c_str());
         tinyxml2::XMLElement *listen_node = doc.NewElement("listen");
         listen_node->SetAttribute("type", "address");
         listen_node->SetAttribute("address", "0.0.0.0");
         graphics_node->LinkEndChild(listen_node);
         dev_node->LinkEndChild(graphics_node);
+
+        if (is_windows) {
+            tinyxml2::XMLElement *memballoon_node = doc.NewElement("memballoon");
+            memballoon_node->SetAttribute("model", "none");
+            dev_node->LinkEndChild(memballoon_node);
+        }
         root->LinkEndChild(dev_node);
 
         // cpu (qemu:commandline)
@@ -253,29 +338,33 @@ namespace check_kvm {
         node_qemu_arg1->SetAttribute("value", "-cpu");
         node_qemu_commandline->LinkEndChild(node_qemu_arg1);
         tinyxml2::XMLElement *node_qemu_arg2 = doc.NewElement("qemu:arg");
-        node_qemu_arg2->SetAttribute("value", "host");
+        node_qemu_arg2->SetAttribute("value", "host,kvm=off,hv_vendor_id=null");
         node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+        tinyxml2::XMLElement *node_qemu_arg3 = doc.NewElement("qemu:arg");
+        node_qemu_arg3->SetAttribute("value", "-machine");
+        node_qemu_commandline->LinkEndChild(node_qemu_arg3);
+        tinyxml2::XMLElement *node_qemu_arg4 = doc.NewElement("qemu:arg");
+        node_qemu_arg4->SetAttribute("value", "kernel_irqchip=on");
+        node_qemu_commandline->LinkEndChild(node_qemu_arg4);
         root->LinkEndChild(node_qemu_commandline);
 
-        //doc.SaveFile("domain.xml");
+        doc.SaveFile("domain_test.xml");
         tinyxml2::XMLPrinter printer;
         doc.Print(&printer);
         return printer.CStr();
     }
 
-    static std::string getUrl() {
-        std::stringstream sstream;
-        sstream << "qemu+tcp://";
-        sstream << "localhost";
-        sstream << ":";
-        sstream << 16509;
-        sstream << "/system";
-        return sstream.str();
+    static void printLastError() {
+        virErrorPtr error = virGetLastError();
+        if (error) {
+            std::cout << "vir error: " << error->message << std::endl;
+            virFreeError(error);
+        }
     }
 
-    bool CreateDomain(const std::string &domain_name, const std::string &image_name,
+    std::string preCreateDomain(const std::string &domain_name, const std::string &image_name,
                          int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
-                         const std::string& vga_pci, int64_t mem) {
+                         const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd) {
         bool ret = true;
 
         std::cout << "domain_name: " << domain_name << std::endl;
@@ -326,262 +415,15 @@ namespace check_kvm {
 
         std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
                                                cpuNumTotal, sockets, cores_per_socket, threads_per_core,
-                                               vga_pci, to_image_path, data_file);
-
-        virConnectPtr connPtr = nullptr;
-        virDomainPtr domainPtr = nullptr;
-        int32_t errorNum = 0;
-        do {
-            std::string url = getUrl();
-            connPtr = virConnectOpen(url.c_str());
-            if (nullptr == connPtr) {
-                ret = false;
-                std::cout << "virConnectOpen error: " << url << std::endl;
-                break;
-            }
-
-            domainPtr = virDomainDefineXML(connPtr, xml_content.c_str());
-            if (nullptr == domainPtr) {
-                ret = false;
-
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainDefineXML error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            if (virDomainCreate(domainPtr) < 0) {
-                ret = false;
-
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainCreate error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-        } while (0);
-
-        if (nullptr != domainPtr) {
-            virDomainFree(domainPtr);
-        }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
-
-        return ret;
+                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd);
+        return xml_content;
     }
-
-    EVmStatus GetDomainStatus(const std::string &domain_name) {
-        EVmStatus vm_status = VS_SHUT_OFF;
-        virConnectPtr connPtr = nullptr;
-        virDomainPtr domainPtr = nullptr;
-
-        do {
-            std::string url = getUrl();
-            connPtr = virConnectOpen(url.c_str());
-            if (nullptr == connPtr) {
-                virErrorPtr error = virGetLastError();
-                std::cout << "virConnectOpen error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
-            if (nullptr == domainPtr) {
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            virDomainInfo info;
-            if (virDomainGetInfo(domainPtr, &info) < 0) {
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainGetInfo error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            if (info.state == VIR_DOMAIN_RUNNING) {
-                vm_status = VS_RUNNING;
-            } else if (info.state == VIR_DOMAIN_PAUSED) {
-                vm_status = VS_PAUSED;
-            } else if (info.state == VIR_DOMAIN_SHUTOFF) {
-                vm_status = VS_SHUT_OFF;
-            } else {
-                vm_status = VS_SHUT_OFF;
-            }
-        } while(0);
-
-        if (nullptr != domainPtr) {
-            virDomainFree(domainPtr);
-        }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
-
-
-        return vm_status;
-    }
-
-    bool DestoryDomain(const std::string &domain_name) {
-        bool ret = true;
-        virConnectPtr connPtr = nullptr;
-        virDomainPtr domainPtr = nullptr;
-
-        do {
-            std::string url = getUrl();
-            connPtr = virConnectOpen(url.c_str());
-            if (nullptr == connPtr) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainGetInfo error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
-            if (nullptr == domainPtr) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            if (virDomainDestroy(domainPtr) < 0) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-        } while(0);
-
-        if (nullptr != domainPtr) {
-            virDomainFree(domainPtr);
-        }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
-
-        return ret;
-    }
-
-    bool UndefineDomain(const std::string &domain_name) {
-        bool ret = true;
-        virConnectPtr connPtr = nullptr;
-        virDomainPtr domainPtr = nullptr;
-
-        do {
-            std::string url = getUrl();
-            connPtr = virConnectOpen(url.c_str());
-            if (nullptr == connPtr) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virConnectOpen error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
-            if (nullptr == domainPtr) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            if (virDomainUndefine(domainPtr) < 0) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainUndefine error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-        } while(0);
-
-        if (nullptr != domainPtr) {
-            virDomainFree(domainPtr);
-        }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
-
-        return ret;
-    }
-
 
     //////////////////////////////////////////////////////////////////////////////////
-    std::string get_vm_local_ip(const std::string& domain_name) {
-        std::string vm_local_ip;
-        virConnectPtr connPtr = nullptr;
-        virDomainPtr domainPtr = nullptr;
-        do {
-            connPtr = virConnectOpen("qemu+tcp://localhost:16509/system");
-            if (nullptr == connPtr) {
-                virErrorPtr error = virGetLastError();
-                std::cout << "virConnectOpen error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
-            if (nullptr == domainPtr) {
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            int32_t try_count = 0;
-            // max: 30s
-            while (vm_local_ip.empty() && try_count < 100) {
-                std::cout << "get vm_local_ip try_count: " << (try_count + 1) << std::endl;
-                virDomainInterfacePtr *ifaces = nullptr;
-                int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
-                                                               VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
-                for (int i = 0; i < ifaces_count; i++) {
-                    /*
-                    std::string if_name = ifaces[i]->name;
-                    std::string if_hwaddr;
-                    if (ifaces[i]->hwaddr)
-                        if_hwaddr = ifaces[i]->hwaddr;
-                    */
-                    for (int j = 0; j < ifaces[i]->naddrs; j++) {
-                        virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
-                        vm_local_ip = ip_addr->addr;
-                        if (!vm_local_ip.empty()) break;
-                        //printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
-                    }
-
-                    if (!vm_local_ip.empty()) break;
-                }
-
-                try_count += 1;
-                sleep(3);
-            }
-        } while (0);
-
-        if (nullptr != domainPtr) {
-            virDomainFree(domainPtr);
-        }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
-
-        return vm_local_ip;
-    }
-
     void transform_port(const std::string &public_ip, const std::string &transform_port,
                         const std::string &vm_local_ip) {
         std::string cmd;
-        cmd += "sudo iptables --table nat -I PREROUTING --protocol tcp --destination " + public_ip +
+        cmd += "sudo iptables -t nat -I PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         cmd += " && sudo iptables -t nat -I PREROUTING -p tcp --dport " + transform_port +
                 " -j DNAT --to-destination " + vm_local_ip + ":22";
@@ -599,67 +441,6 @@ namespace check_kvm {
                 " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
 
         run_shell(cmd.c_str());
-    }
-
-    bool set_vm_password(const std::string &domain_name, const std::string &username, const std::string &pwd) {
-        bool ret = false;
-        virConnectPtr conn_ptr = nullptr;
-        virDomainPtr domain_ptr = nullptr;
-        do {
-            conn_ptr = virConnectOpen("qemu+tcp://localhost/system");
-            if (conn_ptr == nullptr) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "connect virt error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            domain_ptr = virDomainLookupByName(conn_ptr, domain_name.c_str());
-            if (domain_ptr == nullptr) {
-                ret = false;
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            int try_count = 0;
-            int succ = -1;
-            // max: 5min
-            while (succ != 0 && try_count < 100) {
-                std::cout << "set_vm_password try_count: " << (try_count + 1) << std::endl;
-                succ = virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), 0);
-                if (succ != 0) {
-                    virErrorPtr error = virGetLastError();
-                    std::cout << "virDomainSetUserPassword error: " << error->message << std::endl;
-                    virFreeError(error);
-                }
-
-                try_count++;
-                sleep(3);
-            }
-
-            if (succ == 0) {
-                ret = true;
-                std::cout << "set vm password successful, task_id:" << domain_name << ", user:" << username << ", pwd:"
-                << pwd << std::endl;
-            } else {
-                ret = false;
-                std::cout << "set vm password failed, task_id:" << domain_name << ", user:" << username << ", pwd:"
-                << pwd << std::endl;
-            }
-        } while(0);
-
-        if (domain_ptr != nullptr) {
-            virDomainFree(domain_ptr);
-        }
-
-        if (conn_ptr != nullptr) {
-            virConnectClose(conn_ptr);
-        }
-
-        return ret;
     }
 
     void delete_image_file(const std::string &task_id, const std::string& image_name) {
@@ -685,7 +466,7 @@ namespace check_kvm {
     void delete_iptable(const std::string &public_ip, const std::string &transform_port,
                         const std::string &vm_local_ip) {
         std::string cmd;
-        cmd += "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + public_ip +
+        cmd += "sudo iptables -t nat -D PREROUTING --protocol tcp --destination " + public_ip +
                 " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
                 " -j DNAT --to-destination " + vm_local_ip + ":22";
@@ -707,115 +488,18 @@ namespace check_kvm {
         std::cout << "delete iptable: " << public_ip << ", " << transform_port << ", " << vm_local_ip << std::endl;
     }
 
-    void delete_domain(const std::string& domain_name, const std::string& image_name,
-                       const std::string& public_ip, const std::string& ssh_port, const std::string& vm_local_ip) {
-        EVmStatus vm_status = GetDomainStatus(domain_name);
-        if (vm_status == VS_SHUT_OFF) {
-            if (UndefineDomain(domain_name)) {
-                delete_image_file(domain_name, image_name);
-                delete_disk_file(domain_name);
-                if (!vm_local_ip.empty())
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
-
-                std::cout << "delete task " << domain_name << " successful" << std::endl;
-            } else {
-                std::cout << "delete task " << domain_name << " failed" << std::endl;
-            }
-        } else if (vm_status == VS_RUNNING) {
-            if (DestoryDomain(domain_name)) {
-                sleep(1);
-                if (UndefineDomain(domain_name)) {
-                    delete_image_file(domain_name, image_name);
-                    delete_disk_file(domain_name);
-                    if (!vm_local_ip.empty())
-                        delete_iptable(public_ip, ssh_port, vm_local_ip);
-
-                    std::cout << "delete task " << domain_name << " successful" << std::endl;
-                } else {
-                    std::cout << "delete task " << domain_name << " failed" << std::endl;
-                }
-            } else {
-                std::cout << "delete task " << domain_name << " failed" << std::endl;
-            }
-        }
-    }
-
-    void pre_check(const std::string& domain_name, const std::string& image_name,
-                   const std::string& public_ip, const std::string& ssh_port) {
-        virConnectPtr connPtr = nullptr;
-        virDomainPtr domainPtr = nullptr;
-
-        do {
-            std::string url = getUrl();
-            connPtr = virConnectOpen(url.c_str());
-            if (nullptr == connPtr) {
-                virErrorPtr error = virGetLastError();
-                std::cout << "virDomainGetInfo error: " << error->message << std::endl;
-                virFreeError(error);
-                break;
-            }
-
-            domainPtr = virDomainLookupByName(connPtr, domain_name.c_str());
-            if (nullptr != domainPtr) {
-                virDomainInfo info;
-                if (virDomainGetInfo(domainPtr, &info) < 0) {
-                    virErrorPtr error = virGetLastError();
-                    std::cout << "virDomainGetInfo error: " << error->message << std::endl;
-                    virFreeError(error);
-                    break;
-                }
-
-                EVmStatus vm_status = VS_SHUT_OFF;
-                if (info.state == VIR_DOMAIN_RUNNING) {
-                    vm_status = VS_RUNNING;
-                } else if (info.state == VIR_DOMAIN_PAUSED) {
-                    vm_status = VS_PAUSED;
-                } else if (info.state == VIR_DOMAIN_SHUTOFF) {
-                    vm_status = VS_SHUT_OFF;
-                } else {
-                    vm_status = VS_SHUT_OFF;
-                }
-
-                if (vm_status == VS_RUNNING) {
-                    if (virDomainDestroy(domainPtr) < 0) {
-                        virErrorPtr error = virGetLastError();
-                        std::cout << "virDomainLookupByName error: " << error->message << std::endl;
-                        virFreeError(error);
-                        break;
-                    }
-                }
-
-                std::string vm_local_ip;
-
-
-                if (virDomainUndefine(domainPtr) < 0) {
-                    virErrorPtr error = virGetLastError();
-                    std::cout << "virDomainUndefine error: " << error->message << std::endl;
-                    virFreeError(error);
-                    break;
-                }
-
-                delete_image_file(domain_name, image_name);
-                delete_disk_file(domain_name);
-                //if (!vm_local_ip.empty())
-                //    delete_iptable(public_ip, ssh_port, vm_local_ip);
-            }
-        } while(0);
-
-        if (nullptr != domainPtr) {
-            virDomainFree(domainPtr);
-        }
-
-        if (nullptr != connPtr) {
-            virConnectClose(connPtr);
-        }
-    }
 
     void test_kvm(int argc, char** argv) {
         std::string domain_name = "domain_test";
         std::string image_name = "ubuntu.qcow2";
 
         std::string ssh_port = "6789";
+
+        std::string vm_user = "dbc";
+        std::string vm_pwd = "vm123456";
+
+        int32_t vnc_port = -1;
+        std::string vnc_pwd = "dbtu@supper2017";
 
         const ::DeviceCpu& cpus = SystemResourceMgr::instance().GetCpu();
         int sockets = cpus.sockets;
@@ -840,7 +524,10 @@ namespace check_kvm {
         {
             boost::program_options::options_description opts("dbc command options");
             opts.add_options()
-            ("localip", boost::program_options::value<std::string>(), "");
+            ("localip", boost::program_options::value<std::string>(), "")
+            ("image", boost::program_options::value<std::string>(), "")
+            ("vnc_port", boost::program_options::value<int32_t>(), "")
+            ("vnc_pwd", boost::program_options::value<std::string>(), "");
 
             try {
                 boost::program_options::variables_map vm;
@@ -848,8 +535,22 @@ namespace check_kvm {
                 boost::program_options::notify(vm);
 
                 if (vm.count("localip")) {
-                    delete_domain(domain_name, image_name, public_ip, ssh_port, vm["localip"].as<std::string>());
+                    // delete_domain(domain_name, image_name, public_ip, ssh_port, vm["localip"].as<std::string>());
                     return;
+                }
+                if (vm.count("image")) {
+                    image_name = vm["image"].as<std::string>();
+                }
+                if (vm.count("vnc_port")) {
+                    int32_t port = vm["vnc_port"].as<int32_t>();
+                    if (port < 5900 || port > 6000) {
+                        std::cout << "vnc port should between 5900 and 6000" << std::endl;
+                        return;
+                    }
+                    vnc_port = port;
+                }
+                if (vm.count("vnc_pwd")) {
+                    vnc_pwd = vm["vnc_pwd"].as<std::string>();
                 }
             }
             catch (const std::exception &e) {
@@ -859,48 +560,101 @@ namespace check_kvm {
             }
         }
 
-        pre_check(domain_name, image_name, public_ip, ssh_port);
-
-        std::string vm_local_ip;
+        boost::filesystem::path image_path("/data/" + image_name);
+        boost::system::error_code error_code;
+        if (!boost::filesystem::exists(image_path, error_code) || error_code) {
+            std::cout << "image does not exist" << std::endl;
+            return;
+        }
+        if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
+            std::cout << "image is not a regular file" << std::endl;
+            return ;
+        }
 
         try {
-            if (CreateDomain(domain_name, image_name, sockets, cores, threads,
-                             vga_gpu, memory_total)) {
-                vm_local_ip = get_vm_local_ip(domain_name);
-                if (vm_local_ip.empty()) {
-                    std::cout << "get vm_local_ip is empty" << std::endl;
+            virTool virt;
+            if (!virt.openConnect(qemu_url)) {
+                printLastError();
+                std::cout << "open connect failed" << std::endl;
+                print_red("check vm %s failed", domain_name.c_str());
+                return;
+            }
+            {
+                std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
+                if (domain) {
+                    domain->deleteDomain();
+                    // delete_iptable(public_ip, ssh_port, vm_local_ip);
+                }
+                std::string xml_content = preCreateDomain(domain_name, image_name, sockets, cores, threads,
+                                vga_gpu, memory_total, vnc_port, vnc_pwd);
+                sleep(3);
+                domain = virt.defineDomain(xml_content.c_str());
+                if (!domain) {
+                    printLastError();
                     delete_image_file(domain_name, image_name);
                     delete_disk_file(domain_name);
-
+                    print_red("define vm %s failed", domain_name.c_str());
                     print_red("check vm %s failed", domain_name.c_str());
-                } else {
-                    std::cout << "vm_local_ip: " << vm_local_ip << std::endl;
-
-                    transform_port(public_ip, ssh_port, vm_local_ip);
-
-                    if (!set_vm_password(domain_name, "dbc", "vm123456")) {
-                        std::cout << "set_vm_password failed" << std::endl;
-                        delete_image_file(domain_name, image_name);
-                        delete_disk_file(domain_name);
-                        delete_iptable(public_ip, ssh_port, vm_local_ip);
-
-                        print_red("check vm %s failed", domain_name.c_str());
-                    } else {
-                        print_green("check vm %s successful", domain_name.c_str());
+                    return;
+                }
+                sleep(3);
+                if (domain->startDomain() < 0) {
+                    printLastError();
+                    domain->deleteDomain();
+                    print_red("create vm %s failed", domain_name.c_str());
+                    print_red("check vm %s failed", domain_name.c_str());
+                    return;
+                }
+                std::string vm_local_ip;
+                int32_t try_count = 0;
+                while(vm_local_ip.empty() && try_count++ < 100) {
+                    if (try_count == 40) {
+                        // domain->rebootDomain(VIR_DOMAIN_REBOOT_ACPI_POWER_BTN | VIR_DOMAIN_REBOOT_GUEST_AGENT |
+                        // VIR_DOMAIN_REBOOT_INITCTL | VIR_DOMAIN_REBOOT_SIGNAL | VIR_DOMAIN_REBOOT_PARAVIRT);
+                        // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
+                        // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
+                    }
+                    sleep(3);
+                    std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
+                    if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
+                        printLastError();
                     }
                 }
-            } else {
-                delete_image_file(domain_name, image_name);
-                delete_disk_file(domain_name);
-
-                print_red("check vm %s failed", domain_name.c_str());
+                if (image_name.find("win") == std::string::npos) {
+                    if (vm_local_ip.empty()) {
+                        domain->deleteDomain();
+                        std::cout << "get vm_local_ip is empty" << std::endl;
+                        print_red("check vm %s failed", domain_name.c_str());
+                        return;
+                    }
+                    std::cout << "vm local ip:" << vm_local_ip << std::endl;
+                    transform_port(public_ip, ssh_port, vm_local_ip);
+                    try_count = 0;
+                    int succ = -1;
+                    while (succ < 0 && try_count++ < 100) {
+                        sleep(3);
+                        std::cout << "set_vm_password try_count: " << try_count << std::endl;
+                        succ = domain->setDomainUserPassword(vm_user.c_str(), vm_pwd.c_str());
+                        if (succ < 0) {
+                            printLastError();
+                        }
+                    }
+                    if (succ < 0) {
+                        std::cout << "set_vm_password failed" << std::endl;
+                        domain->deleteDomain();
+                        delete_iptable(public_ip, ssh_port, vm_local_ip);
+                        print_red("check vm %s failed", domain_name.c_str());
+                        return;
+                    }
+                    std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
+                }
+                else {
+                    std::cout << "windows cannot get local ip and set user password now, please connect vm using vnc" << std::endl;
+                }
+                std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
+                print_green("check vm %s successful", domain_name.c_str());
             }
-
-            sleep(15);
-
-            //delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
         } catch (...) {
-            //delete_domain(domain_name, image_name, public_ip, ssh_port, vm_local_ip);
         }
     }
 }

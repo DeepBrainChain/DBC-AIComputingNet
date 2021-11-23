@@ -24,6 +24,9 @@ struct TaskResource {
     //disk (KB)
     uint64_t disk_system_size = 0; //系统盘
     std::map<int32_t, uint64_t> disks; //[1]: 是初始创建的数据盘, [2]、[3]、、依次为挂载盘  (不包括系统盘)
+
+    int16_t vnc_port;
+    std::string vnc_password;
 };
 
 class TaskResourceManager : public Singleton<TaskResourceManager> {

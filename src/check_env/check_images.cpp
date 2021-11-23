@@ -19,7 +19,8 @@ struct ImageItem {
 
 static const ImageItem images[] = {
     {"ubuntu.qcow2", "98141663e1f51209c888c2def13f2437"},
-    {"ubuntu-2004.qcow2", "8de92f8383738d265bba5f2e789f19e0"}
+    {"ubuntu-2004.qcow2", "8de92f8383738d265bba5f2e789f19e0"},
+    {"win.qcow2", "d097866626601d9265ecb005455a1b19"}
 };
 
 
