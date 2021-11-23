@@ -592,6 +592,8 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     task_resource->mem_size = createparams.mem_size;
     task_resource->disk_system_size = g_disk_system_size * 1024L * 1024L;
     task_resource->disks = createparams.disks;
+    task_resource->vnc_port = createparams.vnc_port;
+    task_resource->vnc_password = createparams.vnc_password;
     TaskResourceMgr::instance().addTaskResource(taskinfo->task_id, task_resource);
 
     std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
@@ -621,7 +623,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
 
     std::string image_name, s_ssh_port, s_gpu_count, s_cpu_cores, s_mem_size,
-            s_disk_size, vm_xml, vm_xml_url;
+            s_disk_size, vm_xml, vm_xml_url, s_vnc_port;
     JSON_PARSE_STRING(doc, "image_name", image_name)
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)
     JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
@@ -630,10 +632,21 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "disk_size", s_disk_size)   //G
     JSON_PARSE_STRING(doc, "vm_xml", vm_xml)
     JSON_PARSE_STRING(doc, "vm_xml_url", vm_xml_url)
+    JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port)
 
     // ssh_port
     if (!util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
         return {E_DEFAULT, "ssh_port is invalid"};
+    }
+
+    // vnc port
+    if (s_vnc_port.empty()) {
+        return {E_DEFAULT, "vnc port is not specified"};
+    }
+
+    int vnc_port = atoi(s_vnc_port.c_str());
+    if (!util::is_digits(s_vnc_port) || vnc_port < 5900 || vnc_port > 6000) {
+        return {E_DEFAULT, "vnc port out of range, it should be between 5900 and 6000"};
     }
 
     std::string login_password = generate_pwd();
@@ -643,6 +656,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     std::map<std::string, std::list<std::string>> gpus;
     uint64_t mem_size = 0; // KB
     std::map<int32_t, uint64_t> disks; // KB (下标从1开始)
+    std::string vnc_password = login_password;
 
     if (vm_xml.empty() && vm_xml_url.empty()) {
         // image
@@ -816,6 +830,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         gpu_count = gpus.size();
         mem_size = xml_params.mem_size;
         disks = xml_params.disks;
+        vnc_port = xml_params.vnc_port;
+        vnc_password = xml_params.vnc_password;
 
         // check
         // image
@@ -853,6 +869,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.disks = disks;
     params.vm_xml = vm_xml;
     params.vm_xml_url = vm_xml_url;
+    params.vnc_port = vnc_port;
+    params.vnc_password = vnc_password;
 
     return {E_SUCCESS, "ok"};
 }
@@ -1014,6 +1032,19 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
         }
 
         ele_disk = ele_disk->NextSiblingElement("disk");
+    }
+
+    // vnc
+    tinyxml2::XMLElement* ele_graphics = el_devices->FirstChildElement("graphics");
+    while (ele_graphics != nullptr) {
+        std::string graphics_type = ele_graphics->Attribute("type");
+        if (graphics_type == "vnc") {
+            std::string vnc_port = ele_graphics->Attribute("port");
+            std::string vnc_pwd = ele_graphics->Attribute("passwd");
+            params.vnc_port = vnc_port.empty() ? -1 : atoi(vnc_port.c_str());
+            params.vnc_password = vnc_pwd;
+        }
+        ele_graphics = ele_graphics->NextSiblingElement("graphics");
     }
 
     return {E_SUCCESS, "ok"};

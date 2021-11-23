@@ -11,7 +11,7 @@
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                          const std::string& vedio_pci, const std::string & image_file,
-                         const std::string& disk_file)
+                         const std::string& disk_file, int32_t vnc_port, const std::string& vnc_pwd)
 {
     tinyxml2::XMLDocument doc;
 
@@ -246,11 +246,11 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     // vnc
     tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
     graphics_node->SetAttribute("type", "vnc");
-    graphics_node->SetAttribute("port", "-1");
-    graphics_node->SetAttribute("autoport", "yes");
+    graphics_node->SetAttribute("port", std::to_string(vnc_port).c_str());
+    graphics_node->SetAttribute("autoport", vnc_port == -1 ? "yes" : "no");
     graphics_node->SetAttribute("listen", "0.0.0.0");
     graphics_node->SetAttribute("keymap", "en-us");
-    graphics_node->SetAttribute("passwd", "dbtu@supper2017");
+    graphics_node->SetAttribute("passwd", vnc_pwd.c_str());
     tinyxml2::XMLElement* listen_node = doc.NewElement("listen");
     listen_node->SetAttribute("type", "address");
     listen_node->SetAttribute("address", "0.0.0.0");
@@ -355,7 +355,8 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
                                            cpuNumTotal, task_resource->cpu_sockets,
                                            task_resource->cpu_cores, task_resource->cpu_threads,
-                                           vga_pci, to_image_path, data_file);
+                                           vga_pci, to_image_path, data_file,
+                                           task_resource->vnc_port, task_resource->vnc_password);
 
     virConnectPtr connPtr = nullptr;
     virDomainPtr domainPtr = nullptr;

@@ -126,6 +126,9 @@ struct TaskCreateParams {
 
     std::string vm_xml;
     std::string vm_xml_url;
+
+    int16_t vnc_port;
+    std::string vnc_password;
 };
 
 struct ParseVmXmlParams {
@@ -141,6 +144,9 @@ struct ParseVmXmlParams {
     uint64_t mem_size; // KB
 
     std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
+
+    int16_t vnc_port;
+    std::string vnc_password;
 };
 
 /*

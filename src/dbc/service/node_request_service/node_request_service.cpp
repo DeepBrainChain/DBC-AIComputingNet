@@ -928,12 +928,16 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             int32_t cpu_cores = task_resource == nullptr ? 0 : task_resource->total_cores();
             uint32_t gpu_count = task_resource == nullptr ? 0 : task_resource->gpus.size();
             int64_t mem_size = task_resource == nullptr ? 0 : task_resource->mem_size;
+            int32_t vnc_port = task_resource == nullptr ? -1 : task_resource->vnc_port;
+            std::string vnc_password = task_resource == nullptr ? "" : task_resource->vnc_password;
 
             ss_tasks << ", \"cpu_cores\":" << cpu_cores;
             ss_tasks << ", \"gpu_count\":" << gpu_count;
             ss_tasks << ", \"mem_size\":" << "\"" << size2GB(mem_size) << "\"";
             ss_tasks << ", \"disk_system\":" << "\"" << g_disk_system_size << "G\"";
             ss_tasks << ", \"disk_data\":" << "\"" << size2GB(disk_data_size) << "\"";
+            ss_tasks << ", \"vnc_port\":" << "\"" << vnc_port << "\"";
+            ss_tasks << ", \"vnc_password\":" << "\"" << vnc_password << "\"";
 
             struct tm _tm{};
             time_t tt = task->create_time;
