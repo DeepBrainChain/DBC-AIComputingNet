@@ -25,6 +25,8 @@ struct req_body {
     std::string wallet;
     std::string session_id;
     std::string session_id_sign;
+    std::string vm_xml;
+    std::string vm_xml_url;
     std::string pub_key;
 
     // task logs
@@ -50,6 +52,17 @@ public:
     //////////////////////////////////////////////////////////////////////////
     // /tasks
     void rest_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    // list task
+    void rest_list_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_list_task_req_msg(const std::string &head_session_id,
+                                                                         const req_body& body);
+
+    void on_node_list_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
+                               const std::shared_ptr<dbc::network::message>& rsp_msg);
+
+    void on_node_list_task_timer(const std::shared_ptr<core_timer> &timer);
 
     // create task
     void rest_create_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
@@ -116,17 +129,6 @@ public:
                                     const std::shared_ptr<dbc::network::message>& rsp_msg);
 
     void on_node_delete_task_timer(const std::shared_ptr<core_timer> &timer);
-
-    // list task
-    void rest_list_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
-
-    std::shared_ptr<dbc::network::message> create_node_list_task_req_msg(const std::string &head_session_id,
-                                                                         const req_body& body);
-
-    void on_node_list_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                  const std::shared_ptr<dbc::network::message>& rsp_msg);
-
-    void on_node_list_task_timer(const std::shared_ptr<core_timer> &timer);
 
     // modify task
     void rest_modify_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);

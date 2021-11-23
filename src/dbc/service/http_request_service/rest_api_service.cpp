@@ -351,6 +351,326 @@ void rest_api_service::rest_task(const std::shared_ptr<dbc::network::http_reques
     httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid requests uri");
 }
 
+// list task
+void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+        LOG_ERROR << "http request is not post";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+        return;
+    }
+
+    req_body body;
+
+    std::vector<std::string> path_list;
+    util::split_path(path, path_list);
+    if (path_list.empty()) {
+        body.task_id = "";
+    } else if (path_list.size() == 1) {
+        body.task_id = path_list[0];
+    } else {
+        LOG_ERROR << "path_list's size > 1";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks");
+        return;
+    }
+
+    std::string s_body = httpReq->read_body();
+    if (s_body.empty()) {
+        LOG_ERROR << "http request body is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+        return;
+    }
+
+    if (!doc.IsObject()) {
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+        return;
+    }
+
+    // peer_nodes_list
+    std::string peer_node_id;
+    if (doc.HasMember("peer_nodes_list")) {
+        if (doc["peer_nodes_list"].IsArray()) {
+            uint32_t list_size = doc["peer_nodes_list"].Size();
+            if (list_size < 1) {
+                LOG_ERROR << "peer_nodes_list's size < 1";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
+                return;
+            }
+
+            // 暂时只支持一次操作1个节点
+            std::string node(doc["peer_nodes_list"][0].GetString());
+            body.peer_nodes_list.push_back(node);
+            peer_node_id = node;
+        } else {
+            LOG_ERROR << "peer_nodes_list is not array";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no peer_nodes_list";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+        return;
+    }
+    // additional
+    if (doc.HasMember("additional")) {
+        if (doc["additional"].IsObject()) {
+            const rapidjson::Value &obj = doc["additional"];
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            obj.Accept(writer);
+            body.additional = buffer.GetString();
+        } else {
+            LOG_ERROR << "additional is not object";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
+            return;
+        }
+    } else {
+        LOG_ERROR << "has no additional";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
+        return;
+    }
+    // session_id
+    if (doc.HasMember("session_id")) {
+        if (doc["session_id"].IsString()) {
+            body.session_id = doc["session_id"].GetString();
+        } else {
+            LOG_ERROR << "session_id is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
+            return;
+        }
+    }
+    // session_id_sign
+    if (doc.HasMember("session_id_sign")) {
+        if (doc["session_id_sign"].IsString()) {
+            body.session_id_sign = doc["session_id_sign"].GetString();
+        } else {
+            LOG_ERROR << "session_id_sign is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
+            return;
+        }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
+    }
+    // pub_key
+    body.pub_key = conf_manager::instance().get_pub_key();
+    if (body.pub_key.empty()) {
+        LOG_ERROR << "pub_key is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
+        return;
+    }
+
+    std::string head_session_id = util::create_session_id();
+
+    auto node_req_msg = create_node_list_task_req_msg(head_session_id, body);
+    if (nullptr == node_req_msg) {
+        LOG_ERROR << "create node request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
+        return;
+    }
+
+    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+        LOG_ERROR << "create request session failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        return;
+    }
+
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+        LOG_ERROR << "broadcast request failed";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+        return;
+    }
+}
+
+std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_req_msg(const std::string &head_session_id,
+                                                                                       const req_body& body) {
+    auto req_content = std::make_shared<dbc::node_list_task_req>();
+    // header
+    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_msg_name(NODE_LIST_TASK_REQ);
+    req_content->header.__set_nonce(util::create_nonce());
+    req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    exten_info["sign"] = body.sign;
+    exten_info["nonce"] = body.nonce;
+    req_content->header.__set_exten_info(exten_info);
+    std::vector<std::string> path;
+    path.push_back(conf_manager::instance().get_node_id());
+    req_content->header.__set_path(path);
+
+    // body
+    dbc::node_list_task_req_data req_data;
+    req_data.__set_task_id(body.task_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
+
+    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    req_msg->set_name(NODE_LIST_TASK_REQ);
+    req_msg->set_content(req_content);
+
+    return req_msg;
+}
+
+void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
+                                             const std::shared_ptr<dbc::network::message>& rsp_msg) {
+    auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_task_rsp>(rsp_msg->content);
+    if (!node_rsp_msg) {
+        LOG_ERROR << "node_rsp_msg is nullptr";
+        return;
+    }
+
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
+}
+
+void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer> &timer) {
+    if (nullptr == timer) {
+        LOG_ERROR << "timer is nullptr";
+        return;
+    }
+
+    const std::string &session_id = timer->get_session_id();
+    std::shared_ptr<service_session> session = get_session(session_id);
+    if (nullptr == session) {
+        LOG_ERROR << "session is nullptr";
+        return;
+    }
+
+    variables_map &vm = session->get_context().get_args();
+    if (0 == vm.count(HTTP_REQUEST_KEY)) {
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
+        session->clear();
+        this->remove_session(session_id);
+        return;
+    }
+
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list task timeout");
+    }
+
+    session->clear();
+    this->remove_session(session_id);
+}
+
 // create task
 void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
@@ -435,47 +755,25 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
+    // vm_xml
+    if (doc.HasMember("vm_xml")) {
+        if (doc["vm_xml"].IsString()) {
+            body.vm_xml = doc["vm_xml"].GetString();
         } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+            LOG_ERROR << "vm_xml is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "vm_xml is not string");
             return;
         }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
     }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
+    // vm_xml_url
+    if (doc.HasMember("vm_xml_url")) {
+        if (doc["vm_xml_url"].IsString()) {
+            body.vm_xml_url = doc["vm_xml_url"].GetString();
         } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+            LOG_ERROR << "vm_xml_url is not string";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "vm_xml_url is not string");
             return;
         }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
     }
     // session_id
     if (doc.HasMember("session_id")) {
@@ -496,6 +794,58 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -673,7 +1023,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -746,48 +1096,6 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -807,6 +1115,58 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -986,7 +1346,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -1059,48 +1419,6 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -1120,6 +1438,58 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -1300,7 +1670,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -1373,48 +1743,6 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -1434,6 +1762,58 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -1614,7 +1994,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -1687,48 +2067,6 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -1748,6 +2086,58 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -1928,7 +2318,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -2001,48 +2391,6 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -2062,6 +2410,58 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -2224,316 +2624,6 @@ void rest_api_service::on_node_delete_task_timer(const std::shared_ptr<core_time
     this->remove_session(session_id);
 }
 
-// list task
-void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        LOG_ERROR << "http request is not post";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
-        return;
-    }
-
-    req_body body;
-
-    std::vector<std::string> path_list;
-    util::split_path(path, path_list);
-    if (path_list.empty()) {
-        body.task_id = "";
-    } else if (path_list.size() == 1) {
-        body.task_id = path_list[0];
-    } else {
-        LOG_ERROR << "path_list's size > 1";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks");
-        return;
-    }
-
-    std::string s_body = httpReq->read_body();
-    if (s_body.empty()) {
-        LOG_ERROR << "http request body is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
-        return;
-    }
-
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
-    if (!ok) {
-        std::stringstream ss;
-        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
-        return;
-    }
-
-    if (!doc.IsObject()) {
-        LOG_ERROR << "invalid json";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
-        return;
-    }
-
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
-
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
-        return;
-    }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
-    }
-
-    std::string head_session_id = util::create_session_id();
-
-    auto node_req_msg = create_node_list_task_req_msg(head_session_id, body);
-    if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
-        return;
-    }
-
-    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
-        LOG_ERROR << "create request session failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
-        return;
-    }
-
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
-        return;
-    }
-}
-
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_req_msg(const std::string &head_session_id,
-                                                                                       const req_body& body) {
-    auto req_content = std::make_shared<dbc::node_list_task_req>();
-    // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
-    req_content->header.__set_msg_name(NODE_LIST_TASK_REQ);
-    req_content->header.__set_nonce(util::create_nonce());
-    req_content->header.__set_session_id(head_session_id);
-    std::map<std::string, std::string> exten_info;
-    exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
-    req_content->header.__set_exten_info(exten_info);
-    std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
-    req_content->header.__set_path(path);
-
-    // body
-    dbc::node_list_task_req_data req_data;
-    req_data.__set_task_id(body.task_id);
-    req_data.__set_peer_nodes_list(body.peer_nodes_list);
-    req_data.__set_additional(body.additional);
-    req_data.__set_wallet(body.wallet);
-    req_data.__set_session_id(body.session_id);
-    req_data.__set_session_id_sign(body.session_id_sign);
-
-    // encrypt
-    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
-    req_data.write(&proto);
-
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
-
-        if (!pub_key.empty() && !priv_key.empty()) {
-            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
-            req_content->body.__set_data(s_data);
-        } else {
-            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
-            return nullptr;
-        }
-    } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
-        return nullptr;
-    }
-
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
-    req_msg->set_name(NODE_LIST_TASK_REQ);
-    req_msg->set_content(req_content);
-
-    return req_msg;
-}
-
-void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                             const std::shared_ptr<dbc::network::message>& rsp_msg) {
-    auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_task_rsp>(rsp_msg->content);
-    if (!node_rsp_msg) {
-        LOG_ERROR << "node_rsp_msg is nullptr";
-        return;
-    }
-
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
-
-    // decrypt
-    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
-    if (pub_key.empty() || priv_key.empty()) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
-        LOG_ERROR << "pub_key or priv_key is empty";
-        return;
-    }
-
-    std::string ori_message;
-    try {
-        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
-        if (!succ || ori_message.empty()) {
-            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
-            LOG_ERROR << "rsq decrypt error1";
-            return;
-        }
-    } catch (std::exception &e) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
-        LOG_ERROR << "req decrypt error2";
-        return;
-    }
-
-    rapidjson::Document doc;
-    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
-    if (!ok) {
-        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
-        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        return;
-    }
-
-    httpReq->reply_comm_rest_succ2(ori_message);
-}
-
-void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer> &timer) {
-    if (nullptr == timer) {
-        LOG_ERROR << "timer is nullptr";
-        return;
-    }
-
-    const std::string &session_id = timer->get_session_id();
-    std::shared_ptr<service_session> session = get_session(session_id);
-    if (nullptr == session) {
-        LOG_ERROR << "session is nullptr";
-        return;
-    }
-
-    variables_map &vm = session->get_context().get_args();
-    if (0 == vm.count(HTTP_REQUEST_KEY)) {
-        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
-        session->clear();
-        this->remove_session(session_id);
-        return;
-    }
-
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
-    if (nullptr != hreq_context) {
-        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list task timeout");
-    }
-
-    session->clear();
-    this->remove_session(session_id);
-}
-
 // modify task
 void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
@@ -2625,48 +2715,6 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -2686,6 +2734,58 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -2906,7 +3006,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         body.head_or_tail = GET_LOG_TAIL;
     }
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -2979,48 +3079,6 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no <nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
     // session_id
     if (doc.HasMember("session_id")) {
         if (doc["session_id"].IsString()) {
@@ -3040,6 +3098,58 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
             return;
         }
+    }
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        // sign
+        if (doc.HasMember("sign")) {
+            if (doc["sign"].IsString()) {
+                body.sign = doc["sign"].GetString();
+            } else {
+                LOG_ERROR << "sign is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no sign";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+            return;
+        }
+        // nonce
+        if (doc.HasMember("nonce")) {
+            if (doc["nonce"].IsString()) {
+                body.nonce = doc["nonce"].GetString();
+            } else {
+                LOG_ERROR << "nonce is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no nonce";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
+            return;
+        }
+        // wallet
+        if (doc.HasMember("wallet")) {
+            if (doc["wallet"].IsString()) {
+                body.wallet = doc["wallet"].GetString();
+            } else {
+                LOG_ERROR << "wallet is not string";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
+                return;
+            }
+        } else {
+            LOG_ERROR << "has no wallet";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+            return;
+        }
+    } else {
+        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+        std::string nonce = util::create_nonce();
+        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+        body.sign = nonce_sign;
+        body.nonce = nonce;
+        body.wallet = default_wallet;
     }
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
@@ -3338,68 +3448,15 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
         return;
     }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
+    std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
+    std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
+    std::string nonce = util::create_nonce();
+    std::string nonce_sign = util::sign(nonce, default_wallet_priv);
+    body.sign = nonce_sign;
+    body.nonce = nonce;
+    body.wallet = default_wallet;
+
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
     if (body.pub_key.empty()) {
@@ -3696,26 +3753,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
         return;
     }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     // pub_key
     body.pub_key = conf_manager::instance().get_pub_key();
     if (body.pub_key.empty()) {
