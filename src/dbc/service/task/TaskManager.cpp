@@ -544,11 +544,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     task_resource->vnc_password = createparams.vnc_password;
     TaskResourceMgr::instance().addTaskResource(taskinfo->task_id, task_resource);
 
-    std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
-    renttask->rent_wallet = wallet;
-    renttask->rent_end = rent_end;
-    renttask->task_ids.push_back(taskinfo->task_id);
-    WalletRentTaskMgr::instance().addRentTask(renttask);
+    WalletRentTaskMgr::instance().addRentTask(wallet, taskinfo->task_id, rent_end);
 
     dbclog::instance().add_task_log_backend(taskinfo->task_id);
 
@@ -641,6 +637,9 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (role == USER_ROLE::UR_VERIFIER)
             cpu_cores = SystemInfo::instance().cpuinfo().total_cores;
 
+        if (cpu_cores <= 0) {
+            return {E_DEFAULT, "system cpu cores is 0"};
+        }
         // gpu
         if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) <= 0) {
             return {E_DEFAULT, "gpu_count is invalid"};
@@ -667,6 +666,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (role == USER_ROLE::UR_VERIFIER)
             mem_size = SystemInfo::instance().meminfo().mem_free;
 
+        if (mem_size <= 0) {
+            return {E_DEFAULT, "system mem_free size is 0"};
+        }
+
         // disk
         if (!util::is_digits(s_disk_size) || atoi(s_disk_size.c_str()) <= 0) {
             return {E_DEFAULT, "disk_size is invalid"};
@@ -681,6 +684,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75;
 
         disks[1] = disk_size;
+
+        if (disk_size <= 0) {
+            return {E_DEFAULT, "disk(data) size is 0"};
+        }
 
         // check
         if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
@@ -858,7 +865,7 @@ bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::lis
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
     auto tasks = TaskInfoMgr::instance().getTasks();
     for (auto& it : tasks) {
-        if (it.second->status != TS_ShutOff) {
+        if (it.second->status != TS_ShutOff && it.second->status < TS_Error) {
             auto task_resource = TaskResourceMgr::instance().getTaskResource(it.first);
             if (task_resource != nullptr) {
                 const std::map<std::string, std::list<std::string>> &gpus = task_resource->gpus;
@@ -880,11 +887,11 @@ bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::lis
 }
 
 bool TaskManager::allocate_mem(uint64_t mem_size) {
-    return mem_size <= SystemInfo::instance().meminfo().mem_free;
+    return mem_size > 0 && mem_size <= SystemInfo::instance().meminfo().mem_free;
 }
 
 bool TaskManager::allocate_disk(uint64_t disk_size) {
-    return disk_size <= SystemInfo::instance().diskinfo().disk_available;
+    return disk_size > 0 && disk_size <= SystemInfo::instance().diskinfo().disk_available;
 }
 
 FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params) {
@@ -1031,7 +1038,7 @@ FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
     auto tasks = TaskInfoMgr::instance().getTasks();
     for (auto& it : tasks) {
-        if (it.second->status != TS_ShutOff) {
+        if (it.second->status != TS_ShutOff && it.second->status < TS_Error) {
             auto task_resource = TaskResourceMgr::instance().getTaskResource(it.first);
             if (task_resource != nullptr) {
                 const std::map<std::string, std::list<std::string>> &gpus = task_resource->gpus;

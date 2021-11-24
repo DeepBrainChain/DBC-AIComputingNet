@@ -46,6 +46,23 @@ public:
 
     void delRentTask(const std::string& task_id);
 
+    void addRentTask(const std::string& wallet, const std::string& task_id, int64_t rent_end) {
+        RwMutex::WriteLock wlock(m_mtx);
+        auto it = m_wallet_renttasks.find(wallet);
+        if (it == m_wallet_renttasks.end()) {
+            std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
+            renttask->rent_wallet = wallet;
+            renttask->rent_end = rent_end;
+            renttask->task_ids.push_back(task_id);
+            m_wallet_renttasks[wallet] = renttask;
+            m_db.write_data(renttask);
+        } else {
+            it->second->task_ids.push_back(task_id);
+            it->second->rent_end = rent_end;
+            m_db.write_data(it->second);
+        }
+    }
+
     void addRentTask(const std::shared_ptr<dbc::rent_task>& renttask) {
         RwMutex::WriteLock wlock(m_mtx);
         m_wallet_renttasks[renttask->rent_wallet] = renttask;
