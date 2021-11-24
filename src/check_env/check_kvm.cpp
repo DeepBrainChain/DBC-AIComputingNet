@@ -348,7 +348,7 @@ namespace check_kvm {
         node_qemu_commandline->LinkEndChild(node_qemu_arg4);
         root->LinkEndChild(node_qemu_commandline);
 
-        doc.SaveFile("domain_test.xml");
+        // doc.SaveFile("domain_test.xml");
         tinyxml2::XMLPrinter printer;
         doc.Print(&printer);
         return printer.CStr();
@@ -362,7 +362,7 @@ namespace check_kvm {
         }
     }
 
-    std::string preCreateDomain(const std::string &domain_name, const std::string &image_name,
+    std::string CreateDomainXML(const std::string &domain_name, const std::string &image_name,
                          int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
                          const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd) {
         bool ret = true;
@@ -585,7 +585,7 @@ namespace check_kvm {
                     domain->deleteDomain();
                     // delete_iptable(public_ip, ssh_port, vm_local_ip);
                 }
-                std::string xml_content = preCreateDomain(domain_name, image_name, sockets, cores, threads,
+                std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
                                 vga_gpu, memory_total, vnc_port, vnc_pwd);
                 sleep(3);
                 domain = virt.defineDomain(xml_content.c_str());
@@ -608,12 +608,6 @@ namespace check_kvm {
                 std::string vm_local_ip;
                 int32_t try_count = 0;
                 while(vm_local_ip.empty() && try_count++ < 100) {
-                    if (try_count == 40) {
-                        // domain->rebootDomain(VIR_DOMAIN_REBOOT_ACPI_POWER_BTN | VIR_DOMAIN_REBOOT_GUEST_AGENT |
-                        // VIR_DOMAIN_REBOOT_INITCTL | VIR_DOMAIN_REBOOT_SIGNAL | VIR_DOMAIN_REBOOT_PARAVIRT);
-                        // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
-                        // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
-                    }
                     sleep(3);
                     std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
                     if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
@@ -621,6 +615,22 @@ namespace check_kvm {
                     }
                 }
                 if (image_name.find("win") == std::string::npos) {
+                    try_count = 100;
+                    while(vm_local_ip.empty() && try_count++ < 200) {
+                        if (try_count == 101) {
+                            // domain->rebootDomain(VIR_DOMAIN_REBOOT_GUEST_AGENT);
+                            // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
+                            // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
+                            std::cout << "retry destroy and start domain" << std::endl;
+                            domain->destroyDomain();
+                            domain->startDomain();
+                        }
+                        sleep(3);
+                        std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
+                        if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
+                            printLastError();
+                        }
+                    }
                     if (vm_local_ip.empty()) {
                         domain->deleteDomain();
                         std::cout << "get vm_local_ip is empty" << std::endl;
@@ -649,7 +659,7 @@ namespace check_kvm {
                     std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
                 }
                 else {
-                    std::cout << "windows cannot get local ip and set user password now, please connect vm using vnc" << std::endl;
+                    std::cout << "windows vm cannot get local ip and set user password now, please connect using vnc" << std::endl;
                 }
                 std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
                 print_green("check vm %s successful", domain_name.c_str());

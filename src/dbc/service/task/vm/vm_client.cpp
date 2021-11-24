@@ -367,6 +367,10 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     LOG_INFO << "create qcow2 image(data) result: " << create_ret;
     TASK_LOG_INFO(domain_name, "create qcow2 image(data): " << cmd_create_img << ", result: " << create_ret);
 
+    // vnc
+    LOG_INFO << "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password;
+    TASK_LOG_INFO(domain_name, "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password);
+
     std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
                                            cpuNumTotal, task_resource->cpu_sockets,
                                            task_resource->cpu_cores, task_resource->cpu_threads,
@@ -915,6 +919,22 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
         int32_t try_count = 0;
         while (vm_local_ip.empty() && try_count < 1000) {
             LOG_INFO << "transform_port try_count: " << (try_count + 1);
+            if ((try_count + 1) % 300 == 0) { // Approximately 15 minutes
+                LOG_INFO << "retry destroy and start domain " << domain_name;
+                if (virDomainDestroy(domainPtr) < 0) {
+                    virErrorPtr error = virGetLastError();
+                    LOG_ERROR << "retry destroy domain " << domain_name << " error: " << error ? error->message : "";
+                    if (error) virFreeError(error);
+                    break;
+                }
+                if (virDomainCreate(domainPtr) < 0) {
+                    virErrorPtr error = virGetLastError();
+                    LOG_ERROR << "retry create domain " << domain_name << " error: " << error ? error->message : "";
+                    if (error) virFreeError(error);
+                    break;
+                }
+                sleep(3);
+            }
             virDomainInterfacePtr *ifaces = nullptr;
             int ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
                                                            VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
