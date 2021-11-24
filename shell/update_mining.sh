@@ -65,10 +65,10 @@ old_http_port=$(cat $workpath/conf/core.conf | grep "http_port=" | awk -F '=' '{
 new_net_listen_port=$(cat ./update_temp/dbc_mining_node/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
 new_http_port=$(cat ./update_temp/dbc_mining_node/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
 
-cp -rfp $workpath/conf/peer.conf ./update_temp/dbc_client_node/conf
+cp -rfp $workpath/conf/peer.conf ./update_temp/dbc_mining_node/conf
 
 cp -rfp ./update_temp/dbc_mining_node/dbc $workpath/
-cp -rfp ./update_temp/dbc_client_node/shell $workpath/
+cp -rfp ./update_temp/dbc_mining_node/shell $workpath/
 cp -rfp ./update_temp/dbc_mining_node/conf $workpath/
 
 sed -i "s/net_listen_port=${new_net_listen_port}/net_listen_port=${old_net_listen_port}/" $workpath/conf/core.conf
