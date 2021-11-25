@@ -12,6 +12,11 @@ public:
 
     bool init();
 
+    std::map<std::string, std::shared_ptr<dbc::rent_sessionid>> getAllWalletSessions() {
+        RwMutex::ReadLock rlock(m_mtx);
+        return m_wallet_sessionid;
+    }
+
     std::shared_ptr<dbc::rent_sessionid> getSessionIdByWallet(const std::string& wallet) const {
         RwMutex::ReadLock rlock(m_mtx);
         auto it = m_wallet_sessionid.find(wallet);
