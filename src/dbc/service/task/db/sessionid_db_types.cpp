@@ -22,6 +22,11 @@ namespace dbc {
     void rent_sessionid::__set_session_id(const std::string& val) {
         this->session_id = val;
     }
+
+    void rent_sessionid::__set_multisig_signers(const std::vector<std::string> & val) {
+        this->multisig_signers = val;
+        __isset.multisig_signers = true;
+    }
     std::ostream& operator<<(std::ostream& out, const rent_sessionid& obj)
     {
         obj.printTo(out);
@@ -60,17 +65,37 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                    case 2:
-                        if (ftype == ::apache::thrift::protocol::T_STRING) {
-                            xfer += iprot->readString(this->session_id);
-                            isset_session_id = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id);
+                        isset_session_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_signers.clear();
+                            uint32_t _size0;
+                            ::apache::thrift::protocol::TType _etype3;
+                            xfer += iprot->readListBegin(_etype3, _size0);
+                            this->multisig_signers.resize(_size0);
+                            uint32_t _i4;
+                            for (_i4 = 0; _i4 < _size0; ++_i4)
+                            {
+                                xfer += iprot->readString(this->multisig_signers[_i4]);
+                            }
+                            xfer += iprot->readListEnd();
                         }
-                        break;
-                        default:
-                            xfer += iprot->skip(ftype);
-                            break;
+                        this->__isset.multisig_signers = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -97,6 +122,19 @@ namespace dbc {
         xfer += oprot->writeString(this->session_id);
         xfer += oprot->writeFieldEnd();
 
+        if (this->__isset.multisig_signers) {
+            xfer += oprot->writeFieldBegin("multisig_signers", ::apache::thrift::protocol::T_LIST, 3);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_signers.size()));
+                std::vector<std::string> ::const_iterator _iter5;
+                for (_iter5 = this->multisig_signers.begin(); _iter5 != this->multisig_signers.end(); ++_iter5)
+                {
+                    xfer += oprot->writeString((*_iter5));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -106,15 +144,21 @@ namespace dbc {
         using ::std::swap;
         swap(a.rent_wallet, b.rent_wallet);
         swap(a.session_id, b.session_id);
+        swap(a.multisig_signers, b.multisig_signers);
+        swap(a.__isset, b.__isset);
     }
 
-    rent_sessionid::rent_sessionid(const rent_sessionid& other0) {
-        rent_wallet = other0.rent_wallet;
-        session_id = other0.session_id;
+    rent_sessionid::rent_sessionid(const rent_sessionid& other6) {
+        rent_wallet = other6.rent_wallet;
+        session_id = other6.session_id;
+        multisig_signers = other6.multisig_signers;
+        __isset = other6.__isset;
     }
-    rent_sessionid& rent_sessionid::operator=(const rent_sessionid& other1) {
-        rent_wallet = other1.rent_wallet;
-        session_id = other1.session_id;
+    rent_sessionid& rent_sessionid::operator=(const rent_sessionid& other7) {
+        rent_wallet = other7.rent_wallet;
+        session_id = other7.session_id;
+        multisig_signers = other7.multisig_signers;
+        __isset = other7.__isset;
         return *this;
     }
     void rent_sessionid::printTo(std::ostream& out) const {
@@ -122,6 +166,7 @@ namespace dbc {
         out << "rent_sessionid(";
         out << "rent_wallet=" << to_string(rent_wallet);
         out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "multisig_signers="; (__isset.multisig_signers ? (out << to_string(multisig_signers)) : (out << "<null>"));
         out << ")";
     }
 

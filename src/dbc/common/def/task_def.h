@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <vector>
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 
@@ -91,16 +92,8 @@ enum MACHINE_STATUS {
 enum USER_ROLE {
     UR_NONE,
     UR_VERIFIER,
-    UR_RENTER
-};
-
-struct AuthoriseResult {
-    bool success = false;
-    MACHINE_STATUS machine_status;
-    USER_ROLE user_role;
-
-    std::string rent_wallet;
-    int64_t rent_end = 0;
+    UR_RENTER_WALLET,
+    UR_RENTER_SESSION_ID
 };
 
 struct TaskCreateParams {

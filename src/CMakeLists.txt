@@ -14,18 +14,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
 include_directories(
         dbc
         ./3rd
-        ./3rd/crypto/secp256k1/include
-        ./3rd/crypto/secp256k1/contrib
+        ./3rd/crypto/secp256k1/include ./3rd/crypto/secp256k1/contrib
         ./3rd/db
-        ./3rd/network
-        ./3rd/network/libevent
-        ./3rd/network/libevent/event2
+        ./3rd/network ./3rd/network/libevent ./3rd/network/libevent/event2
         #./3rd/network/openssl
         #./3rd/network/openssl/internal
         #./3rd/network/openssl/openssl
-        ./3rd/network/rapidjson
-        ./3rd/network/rapidjson/internal
-        ./3rd/network/rapidjson/error
+        ./3rd/network/rapidjson ./3rd/network/rapidjson/internal ./3rd/network/rapidjson/error
         ./3rd/cli
         ./3rd/snappy
         ./3rd/xml
@@ -36,32 +31,17 @@ include_directories(
 
 set(service_src_dir
         dbc
-        dbc/common
-        dbc/common/def
-        dbc/util
-        dbc/util/utils
-        dbc/util/validator
-        dbc/util/memory
-        dbc/util/math
-        dbc/util/filter
-        dbc/util/crypto
-        dbc/util/crypto/ctaes
+        dbc/common dbc/common/def
+        dbc/util dbc/util/utils dbc/util/validator dbc/util/memory dbc/util/math
+        dbc/util/filter dbc/util/crypto dbc/util/crypto/ctaes
         dbc/config
-        dbc/network
-        dbc/network/compress
-        dbc/network/protocol
+        dbc/network dbc/network/compress dbc/network/protocol
         dbc/log
         dbc/timer
         dbc/service_module
         dbc/server
-        dbc/service
-        dbc/service/message
-        dbc/service/message/protocol_coder
-        dbc/service/service_info
-        dbc/service/task
-        dbc/service/task/db
-        dbc/service/task/vm
-        dbc/service/task/docker
+        dbc/service dbc/service/message dbc/service/message/protocol_coder dbc/service/service_info
+        dbc/service/task dbc/service/task/db dbc/service/task/vm dbc/service/task/docker
         dbc/service/http_request_service
         dbc/service/node_request_service
         dbc/service/peer_request_service
@@ -86,12 +66,7 @@ link_directories(${3RD_LIB_PATH}/tweetnacl)
 add_executable(dbc ./main.cpp ${dbc_src_files})
 
 if (LINUX)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lsc_cli -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
-endif ()
-
-if (APPLE)
-    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 libedit.a libncurses.a -ldl -lz)
-    TARGET_LINK_LIBRARIES(dbc -lsnappy -lgmp)
+    TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lcpp_substrate -lsr25519crust -ltweetnacl -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 endif ()
 
 ## check_env ##
@@ -106,7 +81,7 @@ endforeach()
 
 add_executable(check_env ${check_env_src_files})
 
-target_link_libraries(check_env ${Boost_LIBRARIES} -lsc_cli -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
+target_link_libraries(check_env ${Boost_LIBRARIES} -lcpp_substrate -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 
 ## sign_tool ##
 aux_source_directory(dbc/common sign_tool_src_files)
@@ -124,5 +99,5 @@ add_executable(sign_tool ./sign_tool/main.cpp ${sign_tool_src_files})
 
 target_link_directories(sign_tool PRIVATE ${3RD_LIB_PATH}/openssl)
 
-target_link_libraries(sign_tool ${Boost_LIBRARIES} -lsc_cli -lsr25519crust -ltweetnacl
+target_link_libraries(sign_tool ${Boost_LIBRARIES} -lcpp_substrate -lsr25519crust -ltweetnacl
         -luuid -lcrypto -lssl -lsecp256k1 -pthread -ldl -lz -static-libstdc++)

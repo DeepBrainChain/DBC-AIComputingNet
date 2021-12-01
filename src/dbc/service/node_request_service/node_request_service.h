@@ -20,6 +20,28 @@
 namespace bp = boost::process;
 using namespace boost::asio::ip;
 
+struct AuthorityParams {
+    std::string wallet;
+    std::string nonce;
+    std::string sign;
+    std::vector<std::string> multisig_wallets;
+    int32_t multisig_threshold;
+    std::vector<dbc::multisig_sign_item> multisig_signs;
+    std::string session_id;
+    std::string session_id_sign;
+};
+
+struct AuthoriseResult {
+    bool success = false;
+    std::string errmsg;
+
+    MACHINE_STATUS machine_status;
+    USER_ROLE user_role;
+
+    std::string rent_wallet;
+    int64_t rent_end = 0;
+};
+
 class node_request_service : public service_module, public Singleton<node_request_service> {
 public:
     node_request_service() = default;
@@ -43,39 +65,39 @@ protected:
 
     void on_node_list_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_task_req_data>& data);
+    void task_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_create_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data);
+    void task_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_start_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_start(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_start_task_req_data>& data);
+    void task_start(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_start_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_restart_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_restart(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_restart_task_req_data>& data);
+    void task_restart(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_restart_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_stop_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_stop(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data);
+    void task_stop(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_reset_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_reset(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_reset_task_req_data>& data);
+    void task_reset(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_reset_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_delete_task_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_delete(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_task_req_data>& data);
+    void task_delete(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_task_logs_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void task_logs(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_task_logs_req_data>& data);
+    void task_logs(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_task_logs_req_data>& data, const AuthoriseResult& result);
 
     void on_node_session_id_req(const std::shared_ptr<dbc::network::message>& msg);
 
-    void node_session_id(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data);
+    void node_session_id(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data, const AuthoriseResult& result);
 
     void on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
@@ -96,8 +118,6 @@ private:
 
     bool check_req_header_nonce(const std::string& nonce);
 
-    bool check_nonce(const std::string& nonce);
-
     bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
 
     std::string request_machine_status();
@@ -108,8 +128,14 @@ private:
 
     int64_t is_renter(const std::string& wallet);
 
-    void check_authority(const std::string& request_wallet, const std::string& session_id,
-                         const std::string& session_id_sign, AuthoriseResult& result);
+    FResult check_nonce(const std::string& wallet, const std::string& nonce, const std::string& sign);
+
+    FResult check_nonce(const std::vector<std::string>& multisig_wallets, int32_t multisig_threshold,
+                        const std::vector<dbc::multisig_sign_item>& multisig_signs);
+
+    std::tuple<std::string, std::string> parse_wallet(const AuthorityParams& params);
+
+    void check_authority(const AuthorityParams& params, AuthoriseResult& result);
 
 protected:
     bool m_is_computing_node = false;

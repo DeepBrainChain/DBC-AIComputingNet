@@ -263,63 +263,77 @@ void TaskManager::shell_add_iptable_to_system(const std::string &public_ip, cons
                                               const std::string &vm_local_ip) {
     // 1804
     if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
-        std::string rule = "sudo iptables -t nat -C PREROUTING --protocol tcp --destination " + public_ip +
+        std::string rule = "sudo iptables -t nat -I PREROUTING --protocol tcp --destination " + public_ip +
                            " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
-        rule = "sudo iptables -t nat -C PREROUTING -p tcp --dport " + transform_port +
+        rule = "sudo iptables -t nat -I PREROUTING -p tcp --dport " + transform_port +
                " -j DNAT --to-destination " + vm_local_ip + ":22";
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
         auto pos = vm_local_ip.rfind('.');
         std::string ip = vm_local_ip.substr(0, pos) + ".1";
-        rule = "sudo iptables -t nat -C POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
+        rule = "sudo iptables -t nat -I POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
                " -j SNAT --to " + ip;
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
-        rule = "sudo iptables -t nat -C PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+        rule = "sudo iptables -t nat -I PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
                vm_local_ip + ":20000-60000";
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
-        rule = "sudo iptables -t nat -C PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+        rule = "sudo iptables -t nat -I PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
                vm_local_ip + ":20000-60000";
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
-        rule = "sudo iptables -t nat -C POSTROUTING -d " + vm_local_ip +
+        rule = "sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
                " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
-        rule = "sudo iptables -t nat -C POSTROUTING -d " + vm_local_ip +
+        rule = "sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
                " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
     }
 
         // 2004
@@ -327,30 +341,36 @@ void TaskManager::shell_add_iptable_to_system(const std::string &public_ip, cons
         //std::string cmd = "sudo iptables -F && sudo iptables -F -t nat";
         //run_shell(cmd.c_str());
 
-        std::string rule = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
+        std::string rule = "sudo iptables -t nat -I PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
                            + " -j DNAT --to-destination " + vm_local_ip + ":22";
         std::string ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
         auto pos = vm_local_ip.rfind('.');
         std::string local_ip = vm_local_ip.substr(0, pos) + ".0/24";
-        rule = "sudo iptables -t nat -C POSTROUTING -s " + local_ip + " -j SNAT --to-source " + public_ip;
+        rule = "sudo iptables -t nat -I POSTROUTING -s " + local_ip + " -j SNAT --to-source " + public_ip;
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
 
-        rule = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
+        rule = "sudo iptables -t nat -I PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
                + vm_local_ip + ":6000-60000";
         ret = run_shell(rule.c_str());
+        /*
         if (ret.find("No") != std::string::npos) {
             util::replace(rule, "-C", "-I");
             run_shell(rule.c_str());
         }
+        */
     }
 }
 
@@ -471,7 +491,7 @@ void TaskManager::stop() {
     delete m_prune_thread;
 }
 
-static std::string generate_pwd() {
+static std::string genpwd() {
     char chr[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G',
                    'H', 'I', 'J', 'K', 'L', 'M', 'N',
                    'O', 'P', 'Q', 'R', 'S', 'T',
@@ -480,29 +500,22 @@ static std::string generate_pwd() {
                    'h', 'i', 'j', 'k', 'l', 'm', 'n',
                    'o', 'p', 'q', 'r', 's', 't',
                    'u', 'v', 'w', 'x', 'y', 'z',
-                   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+                   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                   '_', '/', '+', '[', ']', '@', '#', '^'
     };
-    srand(time(NULL));
+
+    struct timeval tv{};
+    gettimeofday(&tv, nullptr);
+    srand(tv.tv_usec);
     std::string strpwd;
-    int nlen = 10; //10位密码
-    char buf[3] = { 0 };
     int idx0 = rand() % 52;
+    char buf[2] = { 0 };
     sprintf(buf, "%c", chr[idx0]);
     strpwd.append(buf);
 
-    int idx_0 = rand() % nlen;
-    int idx_1 = rand() % nlen;
-    int idx_2 = rand() % nlen;
-
-    for (int i = 1; i < nlen; i++) {
-        int idx;
-        if (i == idx_0 || i == idx_1 || i == idx_2) {
-            idx = rand() % 62;
-        }
-        else {
-            idx = rand() % 62;
-        }
-        sprintf(buf, "%c", chr[idx]);
+    for (int i = 0; i < 15; i++) {
+        int idx0 = rand() % 70;
+        sprintf(buf, "%c", chr[idx0]);
         strpwd.append(buf);
     }
 
@@ -593,7 +606,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         return {E_DEFAULT, "vnc port out of range, it should be between 5900 and 6000"};
     }
 
-    std::string login_password = generate_pwd();
+    std::string login_password = genpwd();
     std::string task_id;
     int32_t cpu_cores = 0, sockets = 0, cores = 0, threads = 0;
     int32_t gpu_count = 0;
@@ -641,13 +654,13 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             return {E_DEFAULT, "system cpu cores is 0"};
         }
         // gpu
-        if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) <= 0) {
+        if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) < 0) {
             return {E_DEFAULT, "gpu_count is invalid"};
         }
 
         gpu_count = atoi(s_gpu_count.c_str());
 
-        if (gpu_count <= 0 || gpu_count > SystemInfo::instance().gpuinfo().size())
+        if (gpu_count < 0 || gpu_count > SystemInfo::instance().gpuinfo().size())
             gpu_count = SystemInfo::instance().gpuinfo().size();
 
         if (role == USER_ROLE::UR_VERIFIER)
@@ -711,7 +724,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         }
     }
     else {
-        if (role != USER_ROLE::UR_RENTER) {
+        if (role != USER_ROLE::UR_RENTER_WALLET && role != USER_ROLE::UR_RENTER_SESSION_ID) {
             return {E_DEFAULT, "only renter can create task with vm_xml"};
         }
 
@@ -862,6 +875,8 @@ bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& 
 }
 
 bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus) {
+    if (gpu_count <= 0) return true;
+
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
     auto tasks = TaskInfoMgr::instance().getTasks();
     for (auto& it : tasks) {
@@ -1314,13 +1329,14 @@ void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
     }
 }
 
-std::string TaskManager::createSessionId(const std::string &wallet) {
+std::string TaskManager::createSessionId(const std::string &wallet, const std::vector<std::string>& multisig_signers) {
     auto wallet_session = WalletSessionIDMgr::instance().getSessionIdByWallet(wallet);
     if (wallet_session == nullptr) {
         std::string session_id = util::create_session_id();
         std::shared_ptr<dbc::rent_sessionid> ptr = std::make_shared<dbc::rent_sessionid>();
         ptr->rent_wallet = wallet;
         ptr->session_id = session_id;
+        ptr->__set_multisig_signers(multisig_signers);
         WalletSessionIDMgr::instance().addWalletSessionId(ptr);
         return session_id;
     } else {
@@ -1338,6 +1354,9 @@ std::string TaskManager::getSessionId(const std::string &wallet) {
 }
 
 std::string TaskManager::checkSessionId(const std::string &session_id, const std::string &session_id_sign) {
+    if (session_id.empty() || session_id_sign.empty())
+        return "";
+
     auto it = WalletSessionIDMgr::instance().findSessionId(session_id);
     if (it == nullptr) {
         return "";
@@ -1345,9 +1364,15 @@ std::string TaskManager::checkSessionId(const std::string &session_id, const std
 
     if (util::verify_sign(session_id_sign, session_id, it->rent_wallet)) {
         return it->rent_wallet;
-    } else {
-        return "";
     }
+
+    for (auto& it_wallet : it->multisig_signers) {
+        if (util::verify_sign(session_id_sign, session_id, it_wallet)) {
+            return it->rent_wallet;
+        }
+    }
+
+    return "";
 }
 
 void TaskManager::add_process_task(const ETaskEvent& ev) {

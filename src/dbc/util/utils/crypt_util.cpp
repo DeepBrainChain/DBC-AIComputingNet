@@ -1,5 +1,5 @@
 #include "crypt_util.h"
-#include "substrate.h"
+#include "cpp_substrate.h"
 #include <uuid/uuid.h>
 #include "../crypto/base58.h"
 #include "common/common.h"
@@ -18,7 +18,7 @@ namespace util {
     }
 
     int32_t create_node_info(machine_node_info &info) {
-        substrate_WalletKepair *data = create_keypair();
+        substrate_AccountData *data = create_account();
         std::string pub_key = data->public_key;
         pub_key = pub_key.substr(2);
         std::string priv_key = data->secret_seed;
@@ -27,14 +27,7 @@ namespace util {
         info.node_id = pub_key;
         info.node_private_key = priv_key;
 
-        /*
-        std::cout << std::setw(20) << "secret_phrase: " << data->secret_phrase << std::endl
-                  << std::setw(20) << "secret_seed: " << data->secret_seed << std::endl
-                  << std::setw(20) << "public_key: " << data->public_key << std::endl
-                  << std::setw(20) << "address_ss58: " << data->address_ss58 << std::endl;
-        */
-
-        free_keypair(data);
+        free_account(data);
         return E_SUCCESS;
     }
 
@@ -95,7 +88,7 @@ namespace util {
         if (priv_key.substr(0, 2) != "0x") {
             priv_key = "0x" + priv_key;
         }
-        substrate_WalletKepair *data = inspect_key(priv_key.c_str());
+        substrate_AccountData *data = inspect_key(priv_key.c_str());
 
         /*
         std::cout << std::setw(20) << "secret_phrase: " << data->secret_phrase << std::endl
@@ -105,7 +98,7 @@ namespace util {
         */
 
         std::string pubkey(data->public_key);
-        free_keypair(data);
+        free_account(data);
 
         return pubkey.substr(2);
     }
@@ -116,7 +109,7 @@ namespace util {
             priv_key = "0x" + priv_key;
         }
         std::string message_hex = to_hex(message);
-        substrate_SignData *signdata = secret_sign(priv_key.c_str(), message_hex.c_str());
+        substrate_SignData *signdata = priv_sign(priv_key.c_str(), message_hex.c_str());
         std::string sig = signdata->signature;
         free_signdata(signdata);
         return sig;
@@ -128,7 +121,7 @@ namespace util {
             pub_key = "0x" + pub_key;
         }
         std::string message_hex = to_hex(message);
-        bool succ = public_verify(signature.c_str(), message_hex.c_str(), pub_key.c_str());
+        bool succ = pub_verify(signature.c_str(), message_hex.c_str(), pub_key.c_str());
         return succ;
     }
 

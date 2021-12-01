@@ -23,15 +23,6 @@ struct network_address {
   2: required i16 port
 }
 
-struct peer_node_info {
-  1: required string peer_node_id,
-  2: required i32 core_version,
-  3: required i32 protocol_version,
-  4: required i32 live_time_stamp,
-  5: required network_address addr,
-  6: optional list<string> service_list
-}
-
 //////////////////////////////////////////////////////////////////////////
 //shake hand
 struct shake_hand_req {
@@ -41,31 +32,44 @@ struct shake_hand_req {
 struct shake_hand_resp {
   1: empty body
 }
-
 //////////////////////////////////////////////////////////////////////////
-//get_peer_nodes
-struct get_peer_nodes_req {
-  1: empty body
+struct multisig_sign_item {
+  1: required string wallet,
+  2: required string nonce,
+  3: required string sign
 }
-
-struct get_peer_nodes_resp_body {
-  1: required list<peer_node_info> peer_nodes_list
-}
-
-struct get_peer_nodes_resp {
-  1: get_peer_nodes_resp_body body
-}
-
 //////////////////////////////////////////////////////////////////////////
-//peer_nodes_broadcast
-struct peer_nodes_broadcast_req_body {
-  1: required list<peer_node_info> peer_nodes_list
+// list task
+// request
+struct node_list_task_req_data {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
-struct peer_nodes_broadcast_req {
-  1: peer_nodes_broadcast_req_body body
+struct node_list_task_req_body {
+    1: required string data
 }
 
+struct node_list_task_req {
+  1: node_list_task_req_body body
+}
+// response
+struct node_list_task_rsp_body {
+  1: required string data
+}
+
+struct node_list_task_rsp {
+  1: node_list_task_rsp_body body
+}
 //////////////////////////////////////////////////////////////////////////
 // create task
 // request
@@ -73,8 +77,13 @@ struct node_create_task_req_data {
   1: required list<string> peer_nodes_list,
   2: required string additional,
   3: required string wallet,
-  4: required string session_id,
-  5: required string session_id_sign
+  4: required string nonce,
+  5: required string sign,
+  6: required list<string> multisig_wallets,
+  7: required i32 multisig_threshold,
+  8: required list<multisig_sign_item> multisig_signs,
+  9: required string session_id,
+  10: required string session_id_sign
 }
 
 struct node_create_task_req_body {
@@ -100,8 +109,13 @@ struct node_start_task_req_data {
   2: required list<string> peer_nodes_list,
   3: required string additional,
   4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
 struct node_start_task_req_body {
@@ -127,8 +141,13 @@ struct node_stop_task_req_data {
   2: required list<string> peer_nodes_list,
   3: required string additional,
   4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
 struct node_stop_task_req_body {
@@ -154,8 +173,13 @@ struct node_restart_task_req_data {
   2: required list<string> peer_nodes_list,
   3: required string additional,
   4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
 struct node_restart_task_req_body {
@@ -181,8 +205,13 @@ struct node_reset_task_req_data {
   2: required list<string> peer_nodes_list,
   3: required string additional,
   4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
 struct node_reset_task_req_body {
@@ -208,8 +237,13 @@ struct node_delete_task_req_data {
   2: required list<string> peer_nodes_list,
   3: required string additional,
   4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
 struct node_delete_task_req_body {
@@ -233,12 +267,17 @@ struct node_delete_task_rsp {
 struct node_task_logs_req_data {
   1: required string task_id,
   2: required i16 head_or_tail,
-  3: required i32 number_of_lines,
+  3: required i32 number_of_lines, 
   4: required list<string> peer_nodes_list,
   5: required string additional,
   6: required string wallet,
-  7: required string session_id,
-  8: required string session_id_sign
+  7: required string nonce,
+  8: required string sign,
+  9: required list<string> multisig_wallets,
+  10: required i32 multisig_threshold,
+  11: required list<multisig_sign_item> multisig_signs,
+  12: required string session_id,
+  13: required string session_id_sign
 }
 
 struct node_task_logs_req_body {
@@ -257,33 +296,6 @@ struct node_task_logs_rsp {
   1: node_task_logs_rsp_body body
 }
 //////////////////////////////////////////////////////////////////////////
-// list task
-// request
-struct node_list_task_req_data {
-  1: required string task_id,
-  2: required list<string> peer_nodes_list,
-  3: required string additional,
-  4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
-}
-
-struct node_list_task_req_body {
-    1: required string data
-}
-
-struct node_list_task_req {
-  1: node_list_task_req_body body
-}
-// response
-struct node_list_task_rsp_body {
-  1: required string data
-}
-
-struct node_list_task_rsp {
-  1: node_list_task_rsp_body body
-}
-//////////////////////////////////////////////////////////////////////////
 // modify task
 // request
 struct node_modify_task_req_data {
@@ -291,8 +303,13 @@ struct node_modify_task_req_data {
   2: required list<string> peer_nodes_list,
   3: required string additional,
   4: required string wallet,
-  5: required string session_id,
-  6: required string session_id_sign
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
 }
 
 struct node_modify_task_req_body {
@@ -316,7 +333,12 @@ struct node_modify_task_rsp {
 struct node_session_id_req_data {
   1: required list<string> peer_nodes_list,
   2: required string additional,
-  3: required string wallet
+  3: required string wallet,
+  4: required string nonce,
+  5: required string sign,
+  6: required list<string> multisig_wallets,
+  7: required i32 multisig_threshold,
+  8: required list<multisig_sign_item> multisig_signs
 }
 
 struct node_session_id_req_body {
@@ -341,8 +363,13 @@ struct node_query_node_info_req_data {
   1: required list<string> peer_nodes_list,
   2: required string additional,
   3: required string wallet,
-  4: required string session_id,
-  5: required string session_id_sign
+  4: required string nonce,
+  5: required string sign,
+  6: required list<string> multisig_wallets,
+  7: required i32 multisig_threshold,
+  8: required list<multisig_sign_item> multisig_signs,
+  9: required string session_id,
+  10: required string session_id_sign
 }
 
 struct node_query_node_info_req_body {
@@ -369,7 +396,7 @@ struct node_service_info {
   3: optional i64 time_stamp,
   4: optional map<string,string> kvs
 }
-
+ 
 struct service_broadcast_req_body {
   1: required map<string, node_service_info> node_service_info_map
 }
@@ -402,3 +429,37 @@ struct ver_resp_body {
 struct ver_resp {
   1: ver_resp_body body
 }
+
+struct peer_node_info {
+  1: required string peer_node_id,
+  2: required i32 core_version,
+  3: required i32 protocol_version,
+  4: required i32 live_time_stamp,
+  5: required network_address addr,
+  6: optional list<string> service_list
+}
+
+//////////////////////////////////////////////////////////////////////////
+//get_peer_nodes
+struct get_peer_nodes_req {
+  1: empty body
+}
+
+struct get_peer_nodes_resp_body {
+  1: required list<peer_node_info> peer_nodes_list
+}
+
+struct get_peer_nodes_resp {
+  1: get_peer_nodes_resp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
+//peer_nodes_broadcast
+struct peer_nodes_broadcast_req_body {
+  1: required list<peer_node_info> peer_nodes_list
+}
+
+struct peer_nodes_broadcast_req {
+  1: peer_nodes_broadcast_req_body body
+}
+

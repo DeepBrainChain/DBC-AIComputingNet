@@ -16,6 +16,10 @@ namespace dbc {
 
     class rent_sessionid;
 
+    typedef struct _rent_sessionid__isset {
+        _rent_sessionid__isset() : multisig_signers(false) {}
+        bool multisig_signers :1;
+    } _rent_sessionid__isset;
 
     class rent_sessionid : public virtual ::apache::thrift::TBase {
     public:
@@ -28,16 +32,25 @@ namespace dbc {
         virtual ~rent_sessionid() throw();
         std::string rent_wallet;
         std::string session_id;
+        std::vector<std::string>  multisig_signers;
+
+        _rent_sessionid__isset __isset;
 
         void __set_rent_wallet(const std::string& val);
 
         void __set_session_id(const std::string& val);
+
+        void __set_multisig_signers(const std::vector<std::string> & val);
 
         bool operator == (const rent_sessionid & rhs) const
         {
             if (!(rent_wallet == rhs.rent_wallet))
                 return false;
             if (!(session_id == rhs.session_id))
+                return false;
+            if (__isset.multisig_signers != rhs.__isset.multisig_signers)
+                return false;
+            else if (__isset.multisig_signers && !(multisig_signers == rhs.multisig_signers))
                 return false;
             return true;
         }

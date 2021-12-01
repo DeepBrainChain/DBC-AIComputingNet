@@ -59,7 +59,7 @@ public:
 
     void deleteOtherCheckTasks(const std::string& wallet);
 
-    std::string createSessionId(const std::string& wallet);
+    std::string createSessionId(const std::string& wallet, const std::vector<std::string>& multisig_signers = std::vector<std::string>());
 
     std::string getSessionId(const std::string& wallet);
 

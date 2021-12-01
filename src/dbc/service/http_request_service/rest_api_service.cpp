@@ -292,6 +292,182 @@ int32_t rest_api_service::create_request_session(const std::string& timer_id,
     return E_SUCCESS;
 }
 
+static bool parse_req_params(const rapidjson::Document &doc, req_body& httpbody, std::string& error) {
+    // peer_nodes_list【必填】
+    if (doc.HasMember("peer_nodes_list")) {
+        if (doc["peer_nodes_list"].IsArray()) {
+            uint32_t list_size = doc["peer_nodes_list"].Size();
+            if (list_size > 0) {
+                std::string nodeid = doc["peer_nodes_list"][0].GetString();
+                httpbody.peer_nodes_list.push_back(nodeid);
+            }
+        } else {
+            error = "peer_nodes_list is not array";
+            return false;
+        }
+    } else {
+        error = "has no peer_nodes_list";
+        return false;
+    }
+    // additional【必填】
+    if (doc.HasMember("additional")) {
+        if (doc["additional"].IsObject()) {
+            const rapidjson::Value &obj = doc["additional"];
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            obj.Accept(writer);
+            httpbody.additional = buffer.GetString();
+        } else {
+            error = "additional is not object";
+            return false;
+        }
+    } else {
+        error = "has no additional";
+        return false;
+    }
+    // wallet【可选】
+    if (doc.HasMember("wallet")) {
+        if (doc["wallet"].IsString()) {
+            httpbody.wallet = doc["wallet"].GetString();
+        } else {
+            error = "wallet is not string";
+            return false;
+        }
+    }
+    // nonce【可选】
+    if (doc.HasMember("nonce")) {
+        if (doc["nonce"].IsString()) {
+            httpbody.nonce = doc["nonce"].GetString();
+        } else {
+            error = "nonce is not string";
+            return false;
+        }
+    }
+    // sign【可选】
+    if (doc.HasMember("sign")) {
+        if (doc["sign"].IsString()) {
+            httpbody.sign = doc["sign"].GetString();
+        } else {
+            error = "sign is not string";
+            return false;
+        }
+    }
+    // multisig_accounts
+    if (doc.HasMember("multisig_accounts")) {
+        const rapidjson::Value& v_multisig_accounts = doc["multisig_accounts"];
+        if (v_multisig_accounts.IsObject()) {
+            if (v_multisig_accounts.HasMember("wallets")) {
+                const rapidjson::Value& v_wallets = v_multisig_accounts["wallets"];
+                if (v_wallets.IsArray()) {
+                    for (rapidjson::SizeType i = 0; i < v_wallets.Size(); i++) {
+                        httpbody.multisig_accounts.wallets.emplace_back(v_wallets[i].GetString());
+                    }
+                } else {
+                    error = "multisig_accounts member wallets is not array";
+                    return false;
+                }
+            } else {
+                error = "multisig_accounts has no member wallets";
+                return false;
+            }
+
+            if (v_multisig_accounts.HasMember("threshold")) {
+                const rapidjson::Value& v_threshold = v_multisig_accounts["threshold"];
+                if (v_threshold.IsString()) {
+                    httpbody.multisig_accounts.threshold = atoi(v_multisig_accounts["threshold"].GetString());
+                } else {
+                    error = "multisig_accounts member threshold is not string";
+                    return false;
+                }
+            } else {
+                error = "multisig_accounts has no member threshold";
+                return false;
+            }
+
+            if (v_multisig_accounts.HasMember("signs")) {
+                const rapidjson::Value& v_signs = v_multisig_accounts["signs"];
+                if (v_signs.IsArray()) {
+                    for (rapidjson::SizeType i = 0; i < v_signs.Size(); i++) {
+                        const rapidjson::Value& vSign = v_signs[i];
+                        sign_item item;
+                        item.wallet = vSign["wallet"].GetString();
+                        item.nonce = vSign["nonce"].GetString();
+                        item.sign = vSign["sign"].GetString();
+                        httpbody.multisig_accounts.signs.push_back(item);
+                    }
+                } else {
+                    error = "multisig_accounts member signs is not array";
+                    return false;
+                }
+            } else {
+                error = "multisig_accounts has no member signs";
+                return false;
+            }
+        } else {
+            error = "multisig_accounts is not object";
+            return false;
+        }
+    }
+    // session_id【可选】
+    if (doc.HasMember("session_id")) {
+        if (doc["session_id"].IsString()) {
+            httpbody.session_id = doc["session_id"].GetString();
+        } else {
+            error = "session_id is not string";
+            return false;
+        }
+    }
+    // session_id_sign【可选】
+    if (doc.HasMember("session_id_sign")) {
+        if (doc["session_id_sign"].IsString()) {
+            httpbody.session_id_sign = doc["session_id_sign"].GetString();
+        } else {
+            error = "session_id_sign is not string";
+            return false;
+        }
+    }
+    // pub_key
+    httpbody.pub_key = conf_manager::instance().get_pub_key();
+    if (httpbody.pub_key.empty()) {
+        error = "pub_key is empty";
+        return false;
+    }
+
+    return true;
+}
+
+static bool check_wallet_sign(const req_body &httpbody) {
+    return !httpbody.wallet.empty() && !httpbody.nonce.empty() && !httpbody.sign.empty();
+}
+
+static bool check_multisig_wallets(const req_body &httpbody) {
+    bool valid = true;
+    if (httpbody.multisig_accounts.threshold > httpbody.multisig_accounts.wallets.size() ||
+                          httpbody.multisig_accounts.threshold > httpbody.multisig_accounts.signs.size()) {
+        valid = false;
+    } else {
+        for (auto &it: httpbody.multisig_accounts.signs) {
+            if (httpbody.multisig_accounts.wallets.end() ==
+                std::find(httpbody.multisig_accounts.wallets.begin(), httpbody.multisig_accounts.wallets.end(),
+                          it.wallet)) {
+                valid = false;
+                break;
+            }
+
+            if (it.wallet.empty() || it.nonce.empty() || it.sign.empty()) {
+                valid = false;
+                break;
+            }
+        }
+    }
+
+    return valid;
+}
+
+static bool has_peer_nodeid(const req_body& httpbody) {
+    return !httpbody.peer_nodes_list.empty() && !httpbody.peer_nodes_list[0].empty();
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // /tasks
@@ -389,127 +565,25 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -521,7 +595,7 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -544,8 +618,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -557,6 +629,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -680,8 +765,6 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    req_body body;
-
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
@@ -705,147 +788,27 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    req_body body;
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
+
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // vm_xml
-    if (doc.HasMember("vm_xml")) {
-        if (doc["vm_xml"].IsString()) {
-            body.vm_xml = doc["vm_xml"].GetString();
-        } else {
-            LOG_ERROR << "vm_xml is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "vm_xml is not string");
-            return;
-        }
-    }
-    // vm_xml_url
-    if (doc.HasMember("vm_xml_url")) {
-        if (doc["vm_xml_url"].IsString()) {
-            body.vm_xml_url = doc["vm_xml_url"].GetString();
-        } else {
-            LOG_ERROR << "vm_xml_url is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "vm_xml_url is not string");
-            return;
-        }
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -857,7 +820,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -879,8 +842,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -891,6 +852,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -1046,127 +1020,25 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -1178,7 +1050,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -1201,8 +1073,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -1214,6 +1084,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -1369,127 +1252,25 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -1501,7 +1282,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -1525,8 +1306,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -1538,6 +1317,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -1693,127 +1485,25 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -1825,7 +1515,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -1849,8 +1539,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -1862,6 +1550,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -2017,127 +1718,25 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -2149,7 +1748,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -2173,8 +1772,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -2186,6 +1783,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -2341,127 +1951,25 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -2473,7 +1981,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -2497,8 +2005,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -2510,6 +2016,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -2665,127 +2184,25 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -2797,7 +2214,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -2821,8 +2238,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -2834,6 +2249,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -3029,127 +2457,25 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
 
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // session_id
-    if (doc.HasMember("session_id")) {
-        if (doc["session_id"].IsString()) {
-            body.session_id = doc["session_id"].GetString();
-        } else {
-            LOG_ERROR << "session_id is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id is not string");
-            return;
-        }
-    }
-    // session_id_sign
-    if (doc.HasMember("session_id_sign")) {
-        if (doc["session_id_sign"].IsString()) {
-            body.session_id_sign = doc["session_id_sign"].GetString();
-        } else {
-            LOG_ERROR << "session_id_sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id_sign is not string");
-            return;
-        }
-    }
+
     if (body.session_id.empty() || body.session_id_sign.empty()) {
-        // sign
-        if (doc.HasMember("sign")) {
-            if (doc["sign"].IsString()) {
-                body.sign = doc["sign"].GetString();
-            } else {
-                LOG_ERROR << "sign is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no sign";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
             return;
         }
-        // nonce
-        if (doc.HasMember("nonce")) {
-            if (doc["nonce"].IsString()) {
-                body.nonce = doc["nonce"].GetString();
-            } else {
-                LOG_ERROR << "nonce is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no nonce";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-            return;
-        }
-        // wallet
-        if (doc.HasMember("wallet")) {
-            if (doc["wallet"].IsString()) {
-                body.wallet = doc["wallet"].GetString();
-            } else {
-                LOG_ERROR << "wallet is not string";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-                return;
-            }
-        } else {
-            LOG_ERROR << "has no wallet";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
-            return;
-        }
-    } else {
-        std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-        std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-        std::string nonce = util::create_nonce();
-        std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-        body.sign = nonce_sign;
-        body.nonce = nonce;
-        body.wallet = default_wallet;
-    }
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
-        return;
     }
 
     std::string head_session_id = util::create_session_id();
@@ -3161,7 +2487,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -3184,8 +2510,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -3199,6 +2523,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -3402,59 +2739,10 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size > 0) {
-                // 暂时只支持一次操作1个节点
-                std::string node(doc["peer_nodes_list"][0].GetString());
-                body.peer_nodes_list.push_back(node);
-                peer_node_id = node;
-            }
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
-        return;
-    }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-
-    std::string default_wallet = "5G6Bb5Lo9em2wxm2NcSGiV4APxp5Fr9LtvMSLEspRVSq1yUF";
-    std::string default_wallet_priv = "40026534725af303953cae37951088b6cdb4825c9b11068b75902cf0121d0f27";
-    std::string nonce = util::create_nonce();
-    std::string nonce_sign = util::sign(nonce, default_wallet_priv);
-    body.sign = nonce_sign;
-    body.nonce = nonce;
-    body.wallet = default_wallet;
-
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
         return;
     }
 
@@ -3475,7 +2763,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
             return;
         }
 
-        if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+        if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
             LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
@@ -3499,8 +2787,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -3511,6 +2797,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
@@ -3661,97 +2960,22 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
         return;
     }
 
-    // peer_nodes_list
-    std::string peer_node_id;
-    if (doc.HasMember("peer_nodes_list")) {
-        if (doc["peer_nodes_list"].IsArray()) {
-            uint32_t list_size = doc["peer_nodes_list"].Size();
-            if (list_size < 1) {
-                LOG_ERROR << "peer_nodes_list's size < 1";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list's size < 1");
-                return;
-            }
-
-            // 暂时只支持一次操作1个节点
-            std::string node(doc["peer_nodes_list"][0].GetString());
-            body.peer_nodes_list.push_back(node);
-            peer_node_id = node;
-        } else {
-            LOG_ERROR << "peer_nodes_list is not array";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodes_list is not array");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no peer_nodes_list";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no peer_nodes_list");
-        return;
-    }
-    // additional
-    if (doc.HasMember("additional")) {
-        if (doc["additional"].IsObject()) {
-            const rapidjson::Value &obj = doc["additional"];
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            obj.Accept(writer);
-            body.additional = buffer.GetString();
-        } else {
-            LOG_ERROR << "additional is not object";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional is not object");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no additional";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no additional");
-        return;
-    }
-    // sign
-    if (doc.HasMember("sign")) {
-        if (doc["sign"].IsString()) {
-            body.sign = doc["sign"].GetString();
-        } else {
-            LOG_ERROR << "sign is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "sign is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no sign";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no sign");
-        return;
-    }
-    // nonce
-    if (doc.HasMember("nonce")) {
-        if (doc["nonce"].IsString()) {
-            body.nonce = doc["nonce"].GetString();
-        } else {
-            LOG_ERROR << "nonce is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "nonce is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no nonce";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no nonce");
-        return;
-    }
-    // wallet
-    if (doc.HasMember("wallet")) {
-        if (doc["wallet"].IsString()) {
-            body.wallet = doc["wallet"].GetString();
-        } else {
-            LOG_ERROR << "wallet is not string";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet is not string");
-            return;
-        }
-    } else {
-        LOG_ERROR << "has no wallet";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "has no wallet");
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
         return;
     }
 
-    // pub_key
-    body.pub_key = conf_manager::instance().get_pub_key();
-    if (body.pub_key.empty()) {
-        LOG_ERROR << "pub_key is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "pub_key is empty");
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
+        return;
+    }
+
+    if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+        LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
         return;
     }
 
@@ -3764,7 +2988,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id, peer_node_id)) {
+    if (E_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
@@ -3788,8 +3012,6 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
     req_content->header.__set_session_id(head_session_id);
     std::map<std::string, std::string> exten_info;
     exten_info["pub_key"] = body.pub_key;
-    exten_info["sign"] = body.sign;
-    exten_info["nonce"] = body.nonce;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
     path.push_back(conf_manager::instance().get_node_id());
@@ -3800,8 +3022,19 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
-    req_data.__set_session_id(body.session_id);
-    req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();

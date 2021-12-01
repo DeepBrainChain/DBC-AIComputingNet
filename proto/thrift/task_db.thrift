@@ -18,6 +18,12 @@ struct TaskInfo {
     9: optional i64 last_stop_time,     //上一次的关闭时间
     10: HardwareResource hardware_resource,      //硬件资源（如：gpu、cpu）
     11: optional string vm_xml,         //自定义xml文件名
-    12: optional string vm_xml_url      //自定义xml文件下载地址
+    12: optional string vm_xml_url     //自定义xml文件下载地址
 }
 
+
+struct rent_task {
+    1: required string rent_wallet,
+    2: required list<string> task_ids,
+    3: required i64 rent_end
+}

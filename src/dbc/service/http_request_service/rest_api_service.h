@@ -15,19 +15,32 @@ constexpr int MIN_INIT_HTTP_SERVER_TIME = 5000; //ms
 constexpr int MAX_WAIT_HTTP_RESPONSE_TIME = 30000; //ms
 constexpr int MAX_SESSION_COUNT = 1024;
 
-struct req_body {
-    std::string task_id;
+struct sign_item {
+    std::string wallet;
+    std::string nonce;
+    std::string sign;
+};
 
+struct multisig {
+    std::vector<std::string> wallets;
+    int32_t threshold;
+    std::vector<sign_item> signs;
+};
+
+struct req_body {
     std::vector<std::string> peer_nodes_list;
     std::string additional;
-    std::string sign;
-    std::string nonce;
     std::string wallet;
+    std::string nonce;
+    std::string sign;
+    multisig multisig_accounts;
     std::string session_id;
     std::string session_id_sign;
     std::string vm_xml;
     std::string vm_xml_url;
     std::string pub_key;
+
+    std::string task_id;
 
     // task logs
     int16_t head_or_tail = GET_LOG_TAIL;
@@ -36,7 +49,6 @@ struct req_body {
     // peers
     std::string option;
     int16_t flag = flag_global;
-
 };
 
 class rest_api_service : public service_module, public dbc::network::http_request_event, public Singleton<rest_api_service> {
