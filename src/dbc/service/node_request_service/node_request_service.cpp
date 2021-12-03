@@ -316,214 +316,6 @@ void send_response_error(const std::string& msg_name, const dbc::network::base_h
     }
 }
 
-std::string node_request_service::request_machine_status() {
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-            + conf_manager::instance().get_node_id() + R"("]})";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        rapidjson::Document doc;
-        doc.Parse(resp->body.c_str());
-        if (!doc.IsObject()) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        if (!doc.HasMember("result")) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        if (!v_result.HasMember("machineStatus")) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        const rapidjson::Value &v_machineStatus = v_result["machineStatus"];
-        if (!v_machineStatus.IsString()) {
-            LOG_ERROR << "parse response failed";
-            return "";
-        }
-
-        std::string machine_status = v_machineStatus.GetString();
-        return machine_status;
-    } else {
-        return "";
-    }
-}
-
-int64_t node_request_service::get_cur_block() {
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []}")";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        rapidjson::Document doc;
-        doc.Parse(resp->body.c_str());
-        if (!doc.IsObject()) {
-            return 0;
-        }
-
-        if (!doc.HasMember("result")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) {
-            return 0;
-        }
-
-        if (!v_result.HasMember("block")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_block = v_result["block"];
-        if (!v_block.IsObject()) {
-            return 0;
-        }
-
-        if (!v_block.HasMember("header")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_header = v_block["header"];
-        if (!v_header.IsObject()) {
-            return 0;
-        }
-
-        if (!v_header.HasMember("number")) {
-            return 0;
-        }
-
-        const rapidjson::Value &v_number = v_header["number"];
-        if (!v_number.IsString()) {
-            return 0;
-        }
-
-        char* p;
-        int64_t n = 0;
-        try {
-            n = strtol(v_number.GetString(), &p, 16);
-        } catch(...) {
-            n = 0;
-        }
-
-        return n;
-    } else {
-        return 0;
-    }
-}
-
-bool node_request_service::in_verify_time(const std::string &wallet) {
-    int64_t cur_block = 0;
-    cur_block = get_cur_block();
-
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineCommittee_getCommitteeOps", "params": [")"
-            + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        rapidjson::Document doc;
-        doc.Parse(resp->body.c_str());
-        if (!doc.IsObject()) {
-            LOG_ERROR << "parse response failed";
-            return false;
-        }
-
-        if (!doc.HasMember("result")) {
-            LOG_ERROR << "parse response failed";
-            return false;
-        }
-
-        const rapidjson::Value &v_result = doc["result"];
-        if (!v_result.IsObject()) {
-            LOG_ERROR << "parse response failed";
-            return false;
-        }
-
-        if (!v_result.HasMember("verifyTime")) {
-            LOG_ERROR << "parse response failed";
-            return false;
-        }
-
-        const rapidjson::Value &v_verifyTime = v_result["verifyTime"];
-        if (!v_verifyTime.IsArray()) {
-            LOG_ERROR << "parse response failed";
-            return false;
-        }
-
-        // 不是验证人
-        if (v_verifyTime.Size() != 3) {
-            LOG_ERROR << "verify_time's size != 3";
-            return false;
-        }
-
-        // 是否在验证时间内
-        int64_t v1 = v_verifyTime[0].GetInt64();
-        int64_t v2 = v_verifyTime[1].GetInt64();
-        int64_t v3 = v_verifyTime[2].GetInt64();
-
-        if ((cur_block >= v1 && cur_block <= v1 + 480) ||
-            (cur_block >= v2 && cur_block <= v2 + 480) ||
-            (cur_block >= v3 && cur_block <= v3 + 480))
-        {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
-    }
-}
-
-int64_t node_request_service::is_renter(const std::string &wallet) {
-    int64_t cur_rent_end = 0;
-
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-            + conf_manager::instance().get_node_id() + R"("]})";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-    if (resp != nullptr) {
-        do {
-            rapidjson::Document doc;
-            doc.Parse(resp->body.c_str());
-            if (!doc.IsObject()) break;
-            if (!doc.HasMember("result")) break;
-
-            const rapidjson::Value &v_result = doc["result"];
-            if (!v_result.IsObject()) break;
-
-            if (v_result.HasMember("renter")) {
-                const rapidjson::Value &v_renter = v_result["renter"];
-                if (!v_renter.IsString()) break;
-
-                std::string str_renter = v_renter.GetString();
-                if (str_renter != wallet) {
-                    break;
-                }
-            }
-
-            if (v_result.HasMember("rentEnd")) {
-                const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
-                if (!v_rentEnd.IsNumber()) break;
-
-                int64_t rentEnd = v_rentEnd.GetInt64();
-                if (rentEnd > 0) {
-                    cur_rent_end = rentEnd;
-                    break;
-                }
-            }
-        } while (0);
-    }
-
-    return cur_rent_end;
-}
-
 FResult node_request_service::check_nonce(const std::string &wallet, const std::string &nonce, const std::string &sign) {
     if (wallet.empty()) {
         LOG_ERROR << "wallet is empty";
@@ -622,7 +414,7 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
 
 void node_request_service::check_authority(const AuthorityParams& params, AuthoriseResult& result) {
-    std::string str_status = request_machine_status();
+    std::string str_status = m_httpclient.request_machine_status();
     if (str_status.empty()) {
         result.success = false;
         result.errmsg = "query machine_status failed";
@@ -643,7 +435,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!strMultisigWallet.empty()) {
-            bool ret = in_verify_time(strMultisigWallet);
+            bool ret = m_httpclient.in_verify_time(strMultisigWallet);
             if (!ret) {
                 result.success = false;
                 result.errmsg = "not in verify time period";
@@ -657,7 +449,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!result.success && !strWallet.empty()) {
-            bool ret = in_verify_time(strWallet);
+            bool ret = m_httpclient.in_verify_time(strWallet);
             if (!ret) {
                 result.success = false;
                 result.errmsg = "not in verify time period";
@@ -701,7 +493,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!strMultisigWallet.empty()) {
-                int64_t rent_end = is_renter(strMultisigWallet);
+                int64_t rent_end = m_httpclient.request_rent_end(strMultisigWallet);
                 if (rent_end > 0) {
                     result.success = true;
                     result.user_role = USER_ROLE::UR_RENTER_WALLET;
@@ -720,7 +512,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!result.success && !strWallet.empty()) {
-                int64_t rent_end = is_renter(strWallet);
+                int64_t rent_end = m_httpclient.request_rent_end(strWallet);
                 if (rent_end > 0) {
                     result.success = true;
                     result.user_role = USER_ROLE::UR_RENTER_WALLET;
@@ -734,7 +526,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 }
             }
         } else {
-            int64_t rent_end = is_renter(rent_wallet);
+            int64_t rent_end = m_httpclient.request_rent_end(rent_wallet);
             if (rent_end > 0) {
                 result.success = true;
                 result.user_role = USER_ROLE::UR_RENTER_SESSION_ID;

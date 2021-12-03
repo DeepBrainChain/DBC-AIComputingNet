@@ -109,8 +109,6 @@ protected:
 
     void on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    void on_vm_task_thread_result(const std::shared_ptr<dbc::network::message> &msg);
-
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
 
 private:
@@ -119,14 +117,6 @@ private:
     bool check_req_header_nonce(const std::string& nonce);
 
     bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
-
-    std::string request_machine_status();
-
-    bool in_verify_time(const std::string& wallet);
-
-    int64_t get_cur_block();
-
-    int64_t is_renter(const std::string& wallet);
 
     FResult check_nonce(const std::string& wallet, const std::string& nonce, const std::string& sign);
 
@@ -146,6 +136,7 @@ protected:
     uint32_t m_prune_task_timer_id = INVALID_TIMER_ID;
 
     lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
+    HttpChainClient m_httpclient;
 };
 
 #endif

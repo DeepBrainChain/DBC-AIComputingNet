@@ -61,49 +61,18 @@ FResult TaskManager::init() {
 }
 
 bool TaskManager::restore_tasks() {
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
+    HttpChainClient httpclient;
+    sleep(1);
     std::string cur_renter_wallet;
     int64_t cur_rent_end = 0;
 
     std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
     for (auto& it : wallets) {
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-                               + conf_manager::instance().get_node_id() + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-        if (resp != nullptr) {
-            do {
-                rapidjson::Document doc;
-                doc.Parse(resp->body.c_str());
-                if (!doc.IsObject()) break;
-                if (!doc.HasMember("result")) break;
-
-                const rapidjson::Value &v_result = doc["result"];
-                if (!v_result.IsObject()) break;
-
-                if (v_result.HasMember("renter")) {
-                    const rapidjson::Value &v_renter = v_result["renter"];
-                    if (!v_renter.IsString()) break;
-
-                    std::string str_renter = v_renter.GetString();
-                    if (str_renter != it) {
-                        break;
-                    }
-                }
-
-                if (v_result.HasMember("rentEnd")) {
-                    const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
-                    if (!v_rentEnd.IsNumber()) break;
-
-                    int64_t rentEnd = v_rentEnd.GetInt64();
-                    if (rentEnd > 0) {
-                        cur_renter_wallet = it;
-                        cur_rent_end = rentEnd;
-                        break;
-                    }
-                }
-            } while (0);
-
-            if (!cur_renter_wallet.empty()) break;
+        int64_t rent_end = httpclient.request_rent_end(it);
+        if (rent_end > 0) {
+            cur_renter_wallet = it;
+            cur_rent_end = rent_end;
+            break;
         }
     }
 
