@@ -470,6 +470,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
     // 验证完，已上线，但未租用
     else if (str_status == "waitingFulfill" || str_status == "online") {
         result.machine_status = MACHINE_STATUS::MS_ONLINE;
+        m_task_scheduler.deleteAllCheckTasks();
         result.success = false;
         result.errmsg = "machine is not be rented";
     }

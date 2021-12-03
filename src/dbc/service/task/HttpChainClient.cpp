@@ -3,8 +3,7 @@
 #include "log/log.h"
 
 HttpChainClient::HttpChainClient() {
-    if (m_httpclient == nullptr)
-        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
+
 }
 
 HttpChainClient::~HttpChainClient() {
@@ -12,7 +11,9 @@ HttpChainClient::~HttpChainClient() {
 }
 
 std::string HttpChainClient::request_machine_status() {
-    if (m_httpclient == nullptr || !m_httpclient->is_valid()) return "";
+    if (m_httpclient == nullptr)
+        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
+    if (!m_httpclient->is_valid()) return "";
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
                            + conf_manager::instance().get_node_id() + R"("]})";
@@ -38,7 +39,9 @@ std::string HttpChainClient::request_machine_status() {
 }
 
 int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
-    if (m_httpclient == nullptr || !m_httpclient->is_valid()) return 0;
+    if (m_httpclient == nullptr)
+        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
+    if (!m_httpclient->is_valid()) return 0;
 
     int64_t cur_rent_end = 0;
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
@@ -77,7 +80,9 @@ int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
 }
 
 int64_t HttpChainClient::request_cur_block() {
-    if (m_httpclient == nullptr || !m_httpclient->is_valid()) return 0;
+    if (m_httpclient == nullptr)
+        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
+    if (!m_httpclient->is_valid()) return 0;
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []}")";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
@@ -117,7 +122,9 @@ int64_t HttpChainClient::request_cur_block() {
 }
 
 bool HttpChainClient::in_verify_time(const std::string &wallet) {
-    if (m_httpclient == nullptr || !m_httpclient->is_valid()) return false;
+    if (m_httpclient == nullptr)
+        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
+    if (!m_httpclient->is_valid()) return false;
 
     int64_t cur_block = request_cur_block();
     if (cur_block <= 0) return false;
