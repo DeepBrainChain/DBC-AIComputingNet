@@ -59,7 +59,7 @@ int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
     if (!m_httpclient->is_valid()) return cur_rent_end;
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-                           + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+                           + conf_manager::instance().get_node_id() + R"("]})";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
     if (resp != nullptr) {
         do {
@@ -70,6 +70,16 @@ int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
 
             const rapidjson::Value &v_result = doc["result"];
             if (!v_result.IsObject()) break;
+
+            if (v_result.HasMember("renter")) {
+                const rapidjson::Value &v_renter = v_result["renter"];
+                if (!v_renter.IsString()) break;
+
+                std::string str_renter = v_renter.GetString();
+                if (str_renter != wallet) {
+                    break;
+                }
+            }
 
             if (v_result.HasMember("rentEnd")) {
                 const rapidjson::Value &v_rentEnd = v_result["rentEnd"];

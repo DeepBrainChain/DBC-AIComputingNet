@@ -68,7 +68,7 @@ bool TaskManager::restore_tasks() {
     std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
     for (auto& it : wallets) {
         std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-                               + it + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+                               + conf_manager::instance().get_node_id() + R"("]})";
         std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             do {
@@ -79,6 +79,16 @@ bool TaskManager::restore_tasks() {
 
                 const rapidjson::Value &v_result = doc["result"];
                 if (!v_result.IsObject()) break;
+
+                if (v_result.HasMember("renter")) {
+                    const rapidjson::Value &v_renter = v_result["renter"];
+                    if (!v_renter.IsString()) break;
+
+                    std::string str_renter = v_renter.GetString();
+                    if (str_renter != it) {
+                        break;
+                    }
+                }
 
                 if (v_result.HasMember("rentEnd")) {
                     const rapidjson::Value &v_rentEnd = v_result["rentEnd"];
