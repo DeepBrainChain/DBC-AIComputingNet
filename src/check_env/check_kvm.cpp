@@ -400,13 +400,21 @@ namespace check_kvm {
         }
         std::string to_image_path = "/data/" + to_image_name + "_" + domain_name + "." + to_ext;
         std::cout << "image_file: " << to_image_path << std::endl;
-        boost::filesystem::copy_file(from_image_path, to_image_path);
+        boost::system::error_code error_code;
+        boost::filesystem::copy_file(from_image_path, to_image_path, boost::filesystem::copy_option::overwrite_if_exists, error_code);
+        if (error_code) {
+            std::cout << "copy image file error: " << error_code.message() << std::endl;
+            return "";
+        }
 
         // 创建虚拟磁盘（数据盘）
         std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
         int64_t disk_total_size = SystemResourceMgr::instance().GetDisk().total / 1024; // GB
         disk_total_size = (disk_total_size - 350) * 0.1;
         std::cout << "data_file: " << data_file << std::endl;
+        if (boost::filesystem::exists(data_file)) {
+            remove(data_file.c_str());
+        }
         std::string cmd_create_img =
                 "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
         std::cout << "create qcow2 image(data): " << cmd_create_img << std::endl;
@@ -493,7 +501,7 @@ namespace check_kvm {
         std::string domain_name = "domain_test";
         std::string image_name = "ubuntu.qcow2";
 
-        std::string ssh_port = "6789";
+        std::string ssh_port = "5682";
 
         std::string vm_user = "dbc";
         std::string vm_pwd = "vm123456";
@@ -527,7 +535,8 @@ namespace check_kvm {
             ("localip", boost::program_options::value<std::string>(), "")
             ("image", boost::program_options::value<std::string>(), "")
             ("vnc_port", boost::program_options::value<int32_t>(), "")
-            ("vnc_pwd", boost::program_options::value<std::string>(), "");
+            ("vnc_pwd", boost::program_options::value<std::string>(), "")
+            ("domain_name", boost::program_options::value<std::string>(), "");
 
             try {
                 boost::program_options::variables_map vm;
@@ -551,6 +560,9 @@ namespace check_kvm {
                 }
                 if (vm.count("vnc_pwd")) {
                     vnc_pwd = vm["vnc_pwd"].as<std::string>();
+                }
+                if (vm.count("domain_name")) {
+                    domain_name = vm["domain_name"].as<std::string>();
                 }
             }
             catch (const std::exception &e) {
@@ -582,11 +594,19 @@ namespace check_kvm {
             {
                 std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
                 if (domain) {
-                    domain->deleteDomain();
+                    if (domain->deleteDomain() < 0) {
+                        printLastError();
+                        return;
+                    }
                     // delete_iptable(public_ip, ssh_port, vm_local_ip);
                 }
                 std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
                                 vga_gpu, memory_total, vnc_port, vnc_pwd);
+                if (xml_content.empty()) {
+                    std::cout << "domain xml empty" << std::endl;
+                    print_red("check vm %s failed", domain_name.c_str());
+                    return;
+                }
                 sleep(3);
                 domain = virt.defineDomain(xml_content.c_str());
                 if (!domain) {

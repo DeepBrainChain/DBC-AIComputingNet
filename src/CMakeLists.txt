@@ -81,7 +81,7 @@ endforeach()
 
 add_executable(check_env ${check_env_src_files})
 
-target_link_libraries(check_env ${Boost_LIBRARIES} -lcpp_substrate -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
+target_link_libraries(check_env ${Boost_LIBRARIES} -lsr25519crust -lcrypt -levent -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 
 ## sign_tool ##
 aux_source_directory(dbc/common sign_tool_src_files)
