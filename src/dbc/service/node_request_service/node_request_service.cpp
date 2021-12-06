@@ -349,41 +349,45 @@ FResult node_request_service::check_nonce(const std::string &wallet, const std::
 
 FResult node_request_service::check_nonce(const std::vector<std::string>& multisig_wallets, int32_t multisig_threshold,
                                           const std::vector<dbc::multisig_sign_item>& multisig_signs) {
+    if (multisig_wallets.empty() || multisig_signs.empty() || multisig_threshold <= 0) {
+        return {E_DEFAULT, "multisig wallet is emtpty"};
+    }
+
     if (multisig_threshold > multisig_wallets.size() || multisig_threshold > multisig_signs.size()) {
         LOG_ERROR << "threshold is invalid";
         return {E_DEFAULT, "threshold is invalid"};
-    } else {
-        for (auto &it: multisig_signs) {
-            if (multisig_wallets.end() == std::find(multisig_wallets.begin(), multisig_wallets.end(), it.wallet)) {
-                LOG_ERROR << "multisig sign_wallet " + it.wallet + " not found in wallets";
-                return {E_DEFAULT, "multisig sign_wallet " + it.wallet + " not found in wallets"};
-            }
+    }
 
-            if (it.nonce.empty()) {
-                LOG_ERROR << "multisig nonce is empty";
-                return {E_DEFAULT, "multisig nonce is empty"};
-            }
-
-            if (it.sign.empty()) {
-                LOG_ERROR << "multisig sign is empty";
-                return {E_DEFAULT, "multisig sign is empty"};
-            }
-
-            if (!util::verify_sign(it.sign, it.nonce, it.wallet)) {
-                LOG_ERROR << "verify multisig sign failed";
-                return {E_DEFAULT, "verify multisig sign failed"};
-            }
-
-            if (m_nonceCache.contains(it.nonce)) {
-                LOG_ERROR << "multisig nonce is already exist";
-                return {E_DEFAULT, "multisig nonce is already exist"};
-            } else {
-                m_nonceCache.insert(it.nonce, 1);
-            }
+    for (auto &it: multisig_signs) {
+        if (multisig_wallets.end() == std::find(multisig_wallets.begin(), multisig_wallets.end(), it.wallet)) {
+            LOG_ERROR << "multisig sign_wallet " + it.wallet + " not found in wallets";
+            return {E_DEFAULT, "multisig sign_wallet " + it.wallet + " not found in wallets"};
         }
 
-        return {E_SUCCESS, "ok"};
+        if (it.nonce.empty()) {
+            LOG_ERROR << "multisig nonce is empty";
+            return {E_DEFAULT, "multisig nonce is empty"};
+        }
+
+        if (it.sign.empty()) {
+            LOG_ERROR << "multisig sign is empty";
+            return {E_DEFAULT, "multisig sign is empty"};
+        }
+
+        if (!util::verify_sign(it.sign, it.nonce, it.wallet)) {
+            LOG_ERROR << "verify multisig sign failed";
+            return {E_DEFAULT, "verify multisig sign failed"};
+        }
+
+        if (m_nonceCache.contains(it.nonce)) {
+            LOG_ERROR << "multisig nonce is already exist";
+            return {E_DEFAULT, "multisig nonce is already exist"};
+        } else {
+            m_nonceCache.insert(it.nonce, 1);
+        }
     }
+
+    return {E_SUCCESS, "ok"};
 }
 
 std::tuple<std::string, std::string> node_request_service::parse_wallet(const AuthorityParams& params) {
