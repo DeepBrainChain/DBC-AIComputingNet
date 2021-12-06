@@ -623,24 +623,15 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         cpu_cores = atoi(s_cpu_cores.c_str());
 
-        if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().cpuinfo().total_cores)
-            cpu_cores = SystemInfo::instance().cpuinfo().total_cores;
-
         if (role == USER_ROLE::UR_VERIFIER)
             cpu_cores = SystemInfo::instance().cpuinfo().total_cores;
 
-        if (cpu_cores <= 0) {
-            return {E_DEFAULT, "system cpu cores is 0"};
-        }
         // gpu
         if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) < 0) {
             return {E_DEFAULT, "gpu_count is invalid"};
         }
 
         gpu_count = atoi(s_gpu_count.c_str());
-
-        if (gpu_count < 0 || gpu_count > SystemInfo::instance().gpuinfo().size())
-            gpu_count = SystemInfo::instance().gpuinfo().size();
 
         if (role == USER_ROLE::UR_VERIFIER)
             gpu_count = SystemInfo::instance().gpuinfo().size();
@@ -652,15 +643,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         mem_size = atoi(s_mem_size.c_str()) * 1024L * 1024L;
 
-        if (mem_size <= 0 || mem_size > SystemInfo::instance().meminfo().mem_free)
-            mem_size = SystemInfo::instance().meminfo().mem_free;
-
         if (role == USER_ROLE::UR_VERIFIER)
             mem_size = SystemInfo::instance().meminfo().mem_free;
-
-        if (mem_size <= 0) {
-            return {E_DEFAULT, "system mem_free size is 0"};
-        }
 
         // disk
         if (!util::is_digits(s_disk_size) || atoi(s_disk_size.c_str()) <= 0) {
@@ -669,17 +653,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         uint64_t disk_size = atoi(s_disk_size.c_str()) * 1024L * 1024L;
 
-        if (disk_size <= 0 || disk_size > (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75)
-            disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75;
-
         if (role == USER_ROLE::UR_VERIFIER)
-            disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size) * 0.75;
+            disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size * 1024L * 1024L) * 0.75;
 
         disks[1] = disk_size;
-
-        if (disk_size <= 0) {
-            return {E_DEFAULT, "disk(data) size is 0"};
-        }
 
         // check
         if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
@@ -885,7 +862,7 @@ bool TaskManager::allocate_mem(uint64_t mem_size) {
 }
 
 bool TaskManager::allocate_disk(uint64_t disk_size) {
-    return disk_size > 0 && disk_size <= SystemInfo::instance().diskinfo().disk_available;
+    return disk_size > 0 && disk_size <= (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size * 1024L * 1024L) * 0.75;
 }
 
 FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params) {
@@ -1018,7 +995,7 @@ FResult TaskManager::check_image(const std::string &image_name) {
 
 FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
     int32_t cpu_cores = sockets * cores * threads;
-    if (cpu_cores > SystemInfo::instance().cpuinfo().total_cores ||
+    if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().cpuinfo().total_cores ||
         sockets > SystemInfo::instance().cpuinfo().physical_cores ||
         cores > SystemInfo::instance().cpuinfo().physical_cores_per_cpu ||
         threads > SystemInfo::instance().cpuinfo().threads_per_cpu) {
@@ -1062,7 +1039,7 @@ FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string
 }
 
 FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
-    uint64_t disk_available = SystemInfo::instance().diskinfo().disk_available;
+    uint64_t disk_available = SystemInfo::instance().diskinfo().disk_available - g_disk_system_size * 1024L * 1024L;
     uint64_t need_size = 0;
     for (auto& it : disks) {
         need_size += it.second;
@@ -1233,20 +1210,26 @@ FResult TaskManager::getTaskLog(const std::string &task_id, ETaskLogDirection di
 
 void TaskManager::listAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
     auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
-    for (auto& it_id : renttask->task_ids) {
-        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
-        if (taskinfo != nullptr) {
-            vec.push_back(taskinfo);
+    if (renttask != nullptr) {
+        std::vector<std::string> ids = renttask->task_ids;
+        for (auto &it_id: ids) {
+            auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
+            if (taskinfo != nullptr) {
+                vec.push_back(taskinfo);
+            }
         }
     }
 }
 
 void TaskManager::listRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec) {
     auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
-    for (auto& it_id : renttask->task_ids) {
-        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
-        if (taskinfo != nullptr && taskinfo->status == TS_Running) {
-            vec.push_back(taskinfo);
+    if (renttask != nullptr) {
+        std::vector<std::string> ids = renttask->task_ids;
+        for (auto &it_id: ids) {
+            auto taskinfo = TaskInfoMgr::instance().getTaskInfo(it_id);
+            if (taskinfo != nullptr && taskinfo->status == TS_Running) {
+                vec.push_back(taskinfo);
+            }
         }
     }
 }

@@ -84,7 +84,7 @@ int64_t HttpChainClient::request_cur_block() {
         m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
     if (!m_httpclient->is_valid()) return 0;
 
-    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []}")";
+    std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
     if (resp != nullptr) {
         rapidjson::Document doc;
@@ -129,10 +129,9 @@ bool HttpChainClient::in_verify_time(const std::string &wallet) {
     int64_t cur_block = request_cur_block();
     if (cur_block <= 0) return false;
 
-    httplib::SSLClient cli(conf_manager::instance().get_dbc_chain_domain(), 443);
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineCommittee_getCommitteeOps", "params": [")"
                            + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
-    std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+    std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
     if (resp != nullptr) {
         rapidjson::Document doc;
         doc.Parse(resp->body.c_str());
@@ -163,7 +162,6 @@ bool HttpChainClient::in_verify_time(const std::string &wallet) {
             return false;
         }
 
-        // 不是验证人
         if (v_verifyTime.Size() != 3) {
             LOG_ERROR << "verify_time's size != 3";
             return false;
