@@ -5,7 +5,7 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "util/httplib.h"
 
-class HttpChainClient : public Singleton<HttpChainClient> {
+class HttpChainClient {
 public:
     HttpChainClient();
 
@@ -14,6 +14,8 @@ public:
     std::string request_machine_status();
 
     int64_t request_rent_end(const std::string &wallet);
+
+    bool in_verify_time(const std::string &wallet);
 
     int64_t request_cur_block();
 
