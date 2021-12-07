@@ -57,7 +57,7 @@ void test_image(const ImageItem& item) {
     boost::system::error_code error_code;
     image_path = "/data/" + item.image_name;
     if (!boost::filesystem::exists(image_path, error_code) || error_code) {
-        std::cout << item.image_name << " does not exist" << std::endl;
+        // std::cout << item.image_name << " does not exist" << std::endl;
         return ;
     }
     if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {

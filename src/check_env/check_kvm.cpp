@@ -529,9 +529,18 @@ namespace check_kvm {
         }
         std::cout << "public_ip: " << public_ip << std::endl;
 
+        virTool virt;
+        if (!virt.openConnect(qemu_url)) {
+            printLastError();
+            std::cout << "open connect failed" << std::endl;
+            print_red("check vm %s failed", domain_name.c_str());
+            return;
+        }
+
         {
             boost::program_options::options_description opts("dbc command options");
             opts.add_options()
+            ("ssh_port", boost::program_options::value<std::string>(), "")
             ("localip", boost::program_options::value<std::string>(), "")
             ("image", boost::program_options::value<std::string>(), "")
             ("vnc_port", boost::program_options::value<int32_t>(), "")
@@ -543,8 +552,21 @@ namespace check_kvm {
                 boost::program_options::store(boost::program_options::parse_command_line(argc, argv, opts), vm);
                 boost::program_options::notify(vm);
 
+                if (vm.count("ssh_port")) {
+                    ssh_port = vm["ssh_port"].as<std::string>();
+                }
+                if (vm.count("domain_name")) {
+                    domain_name = vm["domain_name"].as<std::string>();
+                }
                 if (vm.count("localip")) {
                     // delete_domain(domain_name, image_name, public_ip, ssh_port, vm["localip"].as<std::string>());
+                    std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
+                    if (domain) {
+                        if (domain->deleteDomain() < 0) {
+                            printLastError();
+                        }
+                    }
+                    delete_iptable(public_ip, ssh_port, vm["localip"].as<std::string>());
                     return;
                 }
                 if (vm.count("image")) {
@@ -560,9 +582,6 @@ namespace check_kvm {
                 }
                 if (vm.count("vnc_pwd")) {
                     vnc_pwd = vm["vnc_pwd"].as<std::string>();
-                }
-                if (vm.count("domain_name")) {
-                    domain_name = vm["domain_name"].as<std::string>();
                 }
             }
             catch (const std::exception &e) {
@@ -584,106 +603,97 @@ namespace check_kvm {
         }
 
         try {
-            virTool virt;
-            if (!virt.openConnect(qemu_url)) {
-                printLastError();
-                std::cout << "open connect failed" << std::endl;
+            std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
+            if (domain) {
+                if (domain->deleteDomain() < 0) {
+                    printLastError();
+                    return;
+                }
+                // delete_iptable(public_ip, ssh_port, vm_local_ip);
+            }
+            std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
+                            vga_gpu, memory_total, vnc_port, vnc_pwd);
+            if (xml_content.empty()) {
+                std::cout << "domain xml empty" << std::endl;
                 print_red("check vm %s failed", domain_name.c_str());
                 return;
             }
-            {
-                std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
-                if (domain) {
-                    if (domain->deleteDomain() < 0) {
-                        printLastError();
-                        return;
+            sleep(3);
+            domain = virt.defineDomain(xml_content.c_str());
+            if (!domain) {
+                printLastError();
+                delete_image_file(domain_name, image_name);
+                delete_disk_file(domain_name);
+                print_red("define vm %s failed", domain_name.c_str());
+                print_red("check vm %s failed", domain_name.c_str());
+                return;
+            }
+            sleep(3);
+            if (domain->startDomain() < 0) {
+                printLastError();
+                domain->deleteDomain();
+                print_red("create vm %s failed", domain_name.c_str());
+                print_red("check vm %s failed", domain_name.c_str());
+                return;
+            }
+            std::string vm_local_ip;
+            int32_t try_count = 0;
+            while(vm_local_ip.empty() && try_count++ < 100) {
+                sleep(3);
+                std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
+                if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
+                    printLastError();
+                }
+            }
+            if (image_name.find("win") == std::string::npos) {
+                try_count = 100;
+                while(vm_local_ip.empty() && try_count++ < 200) {
+                    if (try_count == 101) {
+                        // domain->rebootDomain(VIR_DOMAIN_REBOOT_GUEST_AGENT);
+                        // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
+                        // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
+                        std::cout << "retry destroy and start domain" << std::endl;
+                        domain->destroyDomain();
+                        domain->startDomain();
                     }
-                    // delete_iptable(public_ip, ssh_port, vm_local_ip);
-                }
-                std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
-                                vga_gpu, memory_total, vnc_port, vnc_pwd);
-                if (xml_content.empty()) {
-                    std::cout << "domain xml empty" << std::endl;
-                    print_red("check vm %s failed", domain_name.c_str());
-                    return;
-                }
-                sleep(3);
-                domain = virt.defineDomain(xml_content.c_str());
-                if (!domain) {
-                    printLastError();
-                    delete_image_file(domain_name, image_name);
-                    delete_disk_file(domain_name);
-                    print_red("define vm %s failed", domain_name.c_str());
-                    print_red("check vm %s failed", domain_name.c_str());
-                    return;
-                }
-                sleep(3);
-                if (domain->startDomain() < 0) {
-                    printLastError();
-                    domain->deleteDomain();
-                    print_red("create vm %s failed", domain_name.c_str());
-                    print_red("check vm %s failed", domain_name.c_str());
-                    return;
-                }
-                std::string vm_local_ip;
-                int32_t try_count = 0;
-                while(vm_local_ip.empty() && try_count++ < 100) {
                     sleep(3);
                     std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
                     if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
                         printLastError();
                     }
                 }
-                if (image_name.find("win") == std::string::npos) {
-                    try_count = 100;
-                    while(vm_local_ip.empty() && try_count++ < 200) {
-                        if (try_count == 101) {
-                            // domain->rebootDomain(VIR_DOMAIN_REBOOT_GUEST_AGENT);
-                            // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
-                            // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
-                            std::cout << "retry destroy and start domain" << std::endl;
-                            domain->destroyDomain();
-                            domain->startDomain();
-                        }
-                        sleep(3);
-                        std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
-                        if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
-                            printLastError();
-                        }
-                    }
-                    if (vm_local_ip.empty()) {
-                        domain->deleteDomain();
-                        std::cout << "get vm_local_ip is empty" << std::endl;
-                        print_red("check vm %s failed", domain_name.c_str());
-                        return;
-                    }
-                    std::cout << "vm local ip:" << vm_local_ip << std::endl;
-                    transform_port(public_ip, ssh_port, vm_local_ip);
-                    try_count = 0;
-                    int succ = -1;
-                    while (succ < 0 && try_count++ < 100) {
-                        sleep(3);
-                        std::cout << "set_vm_password try_count: " << try_count << std::endl;
-                        succ = domain->setDomainUserPassword(vm_user.c_str(), vm_pwd.c_str());
-                        if (succ < 0) {
-                            printLastError();
-                        }
-                    }
+                if (vm_local_ip.empty()) {
+                    domain->deleteDomain();
+                    std::cout << "get vm_local_ip is empty" << std::endl;
+                    print_red("check vm %s failed", domain_name.c_str());
+                    return;
+                }
+                std::cout << "vm local ip:" << vm_local_ip << std::endl;
+                transform_port(public_ip, ssh_port, vm_local_ip);
+                try_count = 0;
+                int succ = -1;
+                while (succ < 0 && try_count++ < 100) {
+                    sleep(3);
+                    std::cout << "set_vm_password try_count: " << try_count << std::endl;
+                    succ = domain->setDomainUserPassword(vm_user.c_str(), vm_pwd.c_str());
                     if (succ < 0) {
-                        std::cout << "set_vm_password failed" << std::endl;
-                        domain->deleteDomain();
-                        delete_iptable(public_ip, ssh_port, vm_local_ip);
-                        print_red("check vm %s failed", domain_name.c_str());
-                        return;
+                        printLastError();
                     }
-                    std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
                 }
-                else {
-                    std::cout << "windows vm cannot get local ip and set user password now, please connect using vnc" << std::endl;
+                if (succ < 0) {
+                    std::cout << "set_vm_password failed" << std::endl;
+                    domain->deleteDomain();
+                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                    print_red("check vm %s failed", domain_name.c_str());
+                    return;
                 }
-                std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
-                print_green("check vm %s successful", domain_name.c_str());
+                std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
             }
+            else {
+                std::cout << "windows vm cannot get local ip and set user password now, please connect using vnc" << std::endl;
+            }
+            std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
+            print_green("check vm %s successful", domain_name.c_str());
         } catch (...) {
         }
     }
