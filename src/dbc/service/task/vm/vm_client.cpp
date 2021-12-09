@@ -7,6 +7,7 @@
 #include <uuid/uuid.h>
 #include "service/message/message_id.h"
 #include "service/message/vm_task_result_types.h"
+#include "../db/snapshotinfo_types.h"
 
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
@@ -277,6 +278,58 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     //doc.SaveFile("domain.xml");
     tinyxml2::XMLPrinter printer;
     doc.Print( &printer );
+    return printer.CStr();
+}
+
+static std::string createSnapshotXml(const std::shared_ptr<dbc::snapshotInfo>& info) {
+    tinyxml2::XMLDocument doc;
+    // <domainsnapshot>
+    tinyxml2::XMLElement *root = doc.NewElement("domainsnapshot");
+    doc.InsertEndChild(root);
+
+    // description
+    tinyxml2::XMLElement *desc = doc.NewElement("description");
+    desc->SetText(info->description.c_str());
+    root->LinkEndChild(desc);
+
+    // name
+    tinyxml2::XMLElement *name = doc.NewElement("name");
+    name->SetText(info->name.c_str());
+    root->LinkEndChild(name);
+
+    // disks
+    tinyxml2::XMLElement *disks = doc.NewElement("disks");
+    // // system disk
+    // tinyxml2::XMLElement *disk1 = doc.NewElement("disk");
+    // disk1->SetAttribute("name", "hda");
+    // disk1->SetAttribute("snapshot", "external");
+    // tinyxml2::XMLElement *disk1driver = doc.NewElement("driver");
+    // disk1driver->SetAttribute("type", "qcow2");
+    // disk1->LinkEndChild(disk1driver);
+    // disks->LinkEndChild(disk1);
+    // // data disk
+    // tinyxml2::XMLElement *disk2 = doc.NewElement("disk");
+    // disk2->SetAttribute("name", "vda");
+    // disk2->SetAttribute("snapshot", "no");
+    // disks->LinkEndChild(disk2);
+    // root->LinkEndChild(disks);
+    for (const auto& diskinfo : info->disks) {
+        tinyxml2::XMLElement *disk = doc.NewElement("disk");
+        disk->SetAttribute("name", diskinfo.name.c_str());
+        disk->SetAttribute("snapshot", diskinfo.snapshot.c_str());
+        tinyxml2::XMLElement *diskdriver = doc.NewElement("driver");
+        diskdriver->SetAttribute("type", diskinfo.driver_type.c_str());
+        disk->LinkEndChild(diskdriver);
+        if (!diskinfo.source_file.empty()) {
+            tinyxml2::XMLElement *sourcefile = doc.NewElement("source");
+            sourcefile->SetAttribute("file", diskinfo.source_file.c_str());
+            disk->LinkEndChild(sourcefile);
+        }
+    }
+
+    // doc.SaveFile((info->name + ".xml").c_str());
+    tinyxml2::XMLPrinter printer;
+    doc.Print(&printer);
     return printer.CStr();
 }
 
@@ -694,7 +747,7 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     return errorNum;
 }
 
-int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name) {
+int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsigned int undefineFlags) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
         return E_DEFAULT;
@@ -729,11 +782,20 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name) {
             }
         }
 
-        if (virDomainUndefine(domainPtr) < 0) {
+        int virRet = 0;
+        if (undefineFlags == 0) {
+            virRet = virDomainUndefine(domainPtr);
+        } else {
+            virRet = virDomainUndefineFlags(domainPtr, undefineFlags);
+        }
+        if (virRet < 0) {
             errorNum = E_DEFAULT;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
+            if (error) {
+                virFreeError(error);
+            }
         }
     } while(0);
 
@@ -1027,6 +1089,214 @@ bool VmClient::IsExistDomain(const std::string &domain_name) {
         virDomainFree(domainPtr);
         return true;
     }
+}
+
+bool VmClient::ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks){
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        return false;
+    }
+
+    bool ret = false;
+    virDomainPtr domain_ptr = nullptr;
+    char* pContent = nullptr;
+    do {
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            break;
+        }
+        pContent = virDomainGetXMLDesc(domain_ptr, VIR_DOMAIN_XML_SECURE);
+        if (!pContent) {
+            LOG_ERROR << domain_name << " get domain xml desc failed";
+            break;
+        }
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            LOG_ERROR << domain_name << " parse xml desc failed";
+            break;
+        }
+        tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement* devices_node = root->FirstChildElement("devices");
+        if (!devices_node) {
+            LOG_ERROR << domain_name << "not find devices node";
+            break;
+        }
+        tinyxml2::XMLElement* disk_node = devices_node->FirstChildElement("disk");
+        while (disk_node) {
+            domainDiskInfo ddInfo;
+            tinyxml2::XMLElement* disk_driver_node = disk_node->FirstChildElement("driver");
+            if (disk_driver_node) {
+                ddInfo.driverName = disk_driver_node->Attribute("name");
+                ddInfo.driverType = disk_driver_node->Attribute("type");
+            }
+            tinyxml2::XMLElement* disk_source_node = disk_node->FirstChildElement("source");
+            if (disk_source_node) {
+                ddInfo.sourceFile = disk_source_node->Attribute("file");
+            }
+            tinyxml2::XMLElement* disk_target_node = disk_node->FirstChildElement("target");
+            if (disk_target_node) {
+                ddInfo.targetDev = disk_target_node->Attribute("dev");
+                ddInfo.targetBus = disk_target_node->Attribute("bus");
+            }
+            disks[ddInfo.targetDev] = ddInfo;
+            disk_node = disk_node->NextSiblingElement("disk");
+        }
+        ret = true;
+    } while(0);
+
+    if (pContent) {
+        free(pContent);
+    }
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+    return ret;
+}
+
+FResult VmClient::CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info) {
+    int32_t ret_code = E_DEFAULT;
+    std::string ret_msg;
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        ret_msg = "connPtr is nullptr";
+        return {ret_code, ret_msg};
+    }
+
+    std::string snapXMLDesc = createSnapshotXml(info);
+    if (snapXMLDesc.empty()) {
+        LOG_ERROR << domain_name << " snapshot xml is empty";
+        ret_msg = "domain snapshot xml is empty";
+        return {ret_code, ret_msg};
+    }
+
+    virDomainPtr domainPtr = nullptr;
+    virDomainSnapshotPtr snapshotPtr = nullptr;
+    do {
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domainPtr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            ret_msg = "lookup domain:" + domain_name + " is nullptr";
+            break;
+        }
+
+        unsigned int createFlags = VIR_DOMAIN_SNAPSHOT_CREATE_HALT | VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
+                                   VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE | VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC;
+
+        snapshotPtr = virDomainSnapshotCreateXML(domainPtr, snapXMLDesc.c_str(), createFlags);
+        if (snapshotPtr == nullptr) {
+            virErrorPtr error = virGetLastError();
+            TASK_LOG_ERROR(domain_name, "virDomainSnapshotCreateXML error: " << (error ? error->message : ""));
+            ret_code = error ? error->code : E_VIRT_INTERNAL_ERROR;
+            ret_msg = error ? error->message : "virDomainSnapshotCreateXML error";
+            if (error) {
+                virFreeError(error);
+            }
+            break;
+        }
+        ret_code = E_SUCCESS;
+    } while (0);
+
+    if (nullptr != snapshotPtr) {
+        virDomainSnapshotFree(snapshotPtr);
+    }
+    if (nullptr != domainPtr) {
+        virDomainFree(domainPtr);
+    }
+
+    return {ret_code, ret_msg};
+}
+
+std::shared_ptr<dbc::snapshotInfo> VmClient::GetDomainSnapshot(const std::string& domain_name, const std::string& snapshot_name) {
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        return nullptr;
+    }
+
+    virDomainPtr domain_ptr = nullptr;
+    virDomainSnapshotPtr snapshot_ptr = nullptr;
+    char* pContent = nullptr;
+    std::shared_ptr<dbc::snapshotInfo> ssInfo = nullptr;
+    do {
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            break;
+        }
+
+        snapshot_ptr = virDomainSnapshotLookupByName(domain_ptr, snapshot_name.c_str(), 0);
+        if (snapshot_ptr == nullptr) {
+            LOG_ERROR << " lookup snapshot:" << snapshot_name << " is nullptr";
+            break;
+        }
+
+        pContent = virDomainSnapshotGetXMLDesc(snapshot_ptr, 0);
+        if (pContent == nullptr) {
+            LOG_ERROR << "snapshot:" << snapshot_name << " virDomainSnapshotGetXMLDesc return nullptr";
+            break;
+        }
+
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            LOG_ERROR << "parse domain snapshot xml desc error: " << err << ", snap: " << snapshot_name;
+            break;
+        }
+
+        ssInfo = std::make_shared<dbc::snapshotInfo>();
+        ssInfo->__set_name(snapshot_name);
+        
+        tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement *desc = root->FirstChildElement("description");
+        if (desc) {
+            ssInfo->__set_description(desc->GetText());
+        }
+        tinyxml2::XMLElement *state = root->FirstChildElement("state");
+        if (state) {
+            ssInfo->__set_state(state->GetText());
+        }
+        tinyxml2::XMLElement *creationTime = root->FirstChildElement("creationTime");
+        if (creationTime) {
+            ssInfo->__set_creationTime(atoll(creationTime->GetText()));
+        }
+        tinyxml2::XMLElement *disks = root->FirstChildElement("disks");
+        if (disks) {
+            std::vector<dbc::snapshotDiskInfo> vecDisk;
+            tinyxml2::XMLElement *disk = disks->FirstChildElement("disk");
+            while (disk) {
+                dbc::snapshotDiskInfo dsinfo;
+                dsinfo.__set_name(disk->Attribute("name"));
+                dsinfo.__set_snapshot(disk->Attribute("snapshot"));
+                tinyxml2::XMLElement *driver = disk->FirstChildElement("driver");
+                if (driver) {
+                    dsinfo.__set_driver_type(driver->Attribute("type"));
+                }
+                tinyxml2::XMLElement *source = disk->FirstChildElement("source");
+                if (source) {
+                    dsinfo.__set_source_file(source->Attribute("file"));
+                }
+                vecDisk.push_back(dsinfo);
+                disk = disk->NextSiblingElement("disk");
+            }
+            if (!vecDisk.empty()) {
+                ssInfo->__set_disks(vecDisk);
+            }
+        }
+        ssInfo->__set_error_code(0);
+        ssInfo->__set_error_message("");
+    } while(0);
+
+    if (pContent) {
+        free(pContent);
+    }
+    if (snapshot_ptr) {
+        virDomainSnapshotFree(snapshot_ptr);
+    }
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+    return ssInfo;
 }
 
 /*

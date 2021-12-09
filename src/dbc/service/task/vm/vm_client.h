@@ -6,6 +6,18 @@
 #include <libvirt/virterror.h>
 #include "../TaskResourceManager.h"
 
+namespace dbc {
+    class snapshotInfo;
+}
+
+struct domainDiskInfo {
+    std::string driverName;
+    std::string driverType;
+    std::string sourceFile;
+    std::string targetDev;
+    std::string targetBus;
+};
+
 class VmClient {
 public:
     VmClient();
@@ -33,7 +45,7 @@ public:
 
     int32_t UndefineDomain(const std::string& domain_name);
 
-    int32_t DestroyAndUndefineDomain(const std::string& domain_name);
+    int32_t DestroyAndUndefineDomain(const std::string& domain_name, unsigned int undefineFlags = 0);
 
     virDomainState GetDomainStatus(const std::string& domain_name);
 
@@ -48,6 +60,13 @@ public:
     bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
 
     bool IsExistDomain(const std::string& domain_name);
+
+    bool ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks);
+
+    // snapshot
+    FResult CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info);
+
+    std::shared_ptr<dbc::snapshotInfo> GetDomainSnapshot(const std::string& domain_name, const std::string& snapshot_name);
 
 private:
     virConnectPtr m_connPtr = nullptr;

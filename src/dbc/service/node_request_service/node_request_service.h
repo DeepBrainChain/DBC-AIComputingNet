@@ -36,7 +36,7 @@ struct AuthoriseResult {
     std::string errmsg;
 
     MACHINE_STATUS machine_status;
-    USER_ROLE user_role;
+    USER_ROLE user_role = USER_ROLE::UR_NONE;
 
     std::string rent_wallet;
     int64_t rent_end = 0;
@@ -110,6 +110,18 @@ protected:
     void on_net_service_broadcast_req(const std::shared_ptr<dbc::network::message> &msg);
 
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
+
+    void on_node_list_snapshot_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void snapshot_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_snapshot_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_create_snapshot_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void snapshot_create(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_snapshot_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_delete_snapshot_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void snapshot_delete(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_snapshot_req_data>& data, const AuthoriseResult& result);
 
 private:
     bool check_req_header(const std::shared_ptr<dbc::network::message> &msg);

@@ -61,6 +61,15 @@ void matrix_coder::init_decode_invoker() {
 
     BIND_DECODE_INVOKER(node_session_id_req);
     BIND_DECODE_INVOKER(node_session_id_rsp);
+
+    BIND_DECODE_INVOKER(node_list_snapshot_req);
+    BIND_DECODE_INVOKER(node_list_snapshot_rsp);
+
+    BIND_DECODE_INVOKER(node_create_snapshot_req);
+    BIND_DECODE_INVOKER(node_create_snapshot_rsp);
+
+    BIND_DECODE_INVOKER(node_delete_snapshot_req);
+    BIND_DECODE_INVOKER(node_delete_snapshot_rsp);
 }
 
 void matrix_coder::init_encode_invoker() {
@@ -108,6 +117,15 @@ void matrix_coder::init_encode_invoker() {
 
     BIND_ENCODE_INVOKER(node_session_id_req);
     BIND_ENCODE_INVOKER(node_session_id_rsp);
+
+    BIND_ENCODE_INVOKER(node_list_snapshot_req);
+    BIND_ENCODE_INVOKER(node_list_snapshot_rsp);
+
+    BIND_ENCODE_INVOKER(node_create_snapshot_req);
+    BIND_ENCODE_INVOKER(node_create_snapshot_rsp);
+
+    BIND_ENCODE_INVOKER(node_delete_snapshot_req);
+    BIND_ENCODE_INVOKER(node_delete_snapshot_rsp);
 }
 
 std::shared_ptr<dbc::network::protocol> matrix_coder::get_protocol(int32_t type) {

@@ -56,6 +56,7 @@ FResult TaskManager::init() {
 
     std::vector<std::string> taskids = TaskInfoMgr::instance().getAllTaskId();
     TaskResourceMgr::instance().init(taskids);
+    SnapshotManager::instance().init(taskids);
 
     return {E_SUCCESS, ""};
 }
@@ -368,8 +369,9 @@ void TaskManager::shell_remove_reject_iptable_from_system() {
 }
 
 void TaskManager::delete_task(const std::string &task_id) {
+    int32_t snapshotCount = SnapshotManager::instance().getTaskSnapshotCount(task_id);
     // domain
-    m_vm_client.DestroyAndUndefineDomain(task_id);
+    m_vm_client.DestroyAndUndefineDomain(task_id, snapshotCount > 0 ? VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA : 0);
 
     // data
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -387,6 +389,22 @@ void TaskManager::delete_task(const std::string &task_id) {
     WalletRentTaskMgr::instance().delRentTask(task_id);
 
     TaskResourceMgr::instance().delTaskResource(task_id);
+
+    // need to delete snapshot source file ?
+    {
+        std::vector<std::shared_ptr<dbc::snapshotInfo>> snaps;
+        SnapshotManager::instance().listTaskSnapshot(task_id, snaps, false);
+        for (const auto& snap : snaps) {
+            if (snap->disks.empty()) continue;
+            for (const auto& disk : snap->disks) {
+                if (!disk.source_file.empty() && fs::is_regular_file(disk.source_file)) {
+                    remove(disk.source_file.c_str());
+                    TASK_LOG_INFO(task_id, "remove snapshot file: " << disk.source_file);
+                }
+            }
+        }
+    }
+    SnapshotManager::instance().delTaskSnapshot(task_id);
 
     // disk
     if (taskinfo != nullptr)
@@ -1051,9 +1069,138 @@ FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
         return FResultOK;
 }
 
+FResult TaskManager::parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info) {
+    if (additional.empty()) {
+        return {E_DEFAULT, "additional is empty"};
+    }
+
+    rapidjson::Document doc;
+    doc.Parse(additional.c_str());
+    if (!doc.IsObject()) {
+        return {E_DEFAULT, "additional(json) parse failed"};
+    }
+
+    std::string snapshot_name, description;
+    JSON_PARSE_STRING(doc, "name", snapshot_name)
+    JSON_PARSE_STRING(doc, "description", description)
+
+    if (snapshot_name.empty()) {
+        return {E_DEFAULT, "snapshot name is not specified"};
+    }
+
+    if (SnapshotManager::instance().getTaskSnapshot(task_id, snapshot_name, false) != nullptr) {
+        return {E_DEFAULT, "snapshot name is already exist"};
+    }
+
+    if (description.empty()) {
+        return {E_DEFAULT, "snapshot description is not specified"};
+    }
+
+    info->__set_name(snapshot_name);
+    info->__set_description(description);
+
+    std::map<std::string, domainDiskInfo> ddInfos;
+    if (!m_vm_client.ListDomainDiskInfo(task_id, ddInfos) || ddInfos.empty()) {
+        return {E_DEFAULT, "can not get vm disk info"};
+    }
+    for (const auto & disk : ddInfos) {
+        LOG_INFO << "list domain disk name:" << disk.second.targetDev << ", driver name:" << disk.second.driverName
+        << ", driver type:" << disk.second.driverType << ", source file:" << disk.second.sourceFile << ", target bus:" << disk.second.targetBus;
+    }
+
+    std::vector<dbc::snapshotDiskInfo> disks;
+    if(doc.HasMember("disks")) {
+        const rapidjson::Value& obj_disks = doc["disks"];
+        if (!obj_disks.IsArray()) {
+            return {E_DEFAULT, "additional disks must be an array"};
+        }
+        for (size_t i = 0; i < obj_disks.Size(); i++) {
+            const rapidjson::Value& v = obj_disks[i];
+            if (!v.IsObject()) {
+                return {E_DEFAULT, "parse additional disks item json failed"};
+            }
+            dbc::snapshotDiskInfo disk;
+            if (!v.HasMember("name") || !v["name"].IsString()) {
+                return {E_DEFAULT, "parse additional disks item name json failed"};
+            }
+            disk.__set_name(v["name"].GetString());
+            if (ddInfos.find(disk.name) == ddInfos.end()) {
+                return {E_DEFAULT, "additional disks item name not exist in task:" + task_id};
+            }
+            if (!v.HasMember("snapshot")) {
+                disk.__set_snapshot("external");
+            } else {
+                if (!v["snapshot"].IsString()) {
+                    return {E_DEFAULT, "parse additional disks item snapshot json failed"};
+                }
+                disk.__set_snapshot(v["snapshot"].GetString());
+                if (disk.snapshot.empty()) {
+                    return {E_DEFAULT, "additional disks item snapshot can not empty"};
+                }
+                if (!(disk.snapshot == "external" || disk.snapshot == "no")) {
+                    return {E_DEFAULT, "invalid additional disks item snapshot value:" + disk.snapshot};
+                }
+            }
+            if (!v.HasMember("driver")) {
+                disk.__set_driver_type("qcow2");
+            } else {
+                if (!v["driver"].IsString()) {
+                    return {E_DEFAULT, "parse additional disks item driver json failed"};
+                }
+                disk.__set_driver_type(v["driver"].GetString());
+                if (disk.driver_type.empty()) {
+                    return {E_DEFAULT, "additional disks item driver can not empty"};
+                }
+                if (disk.driver_type != "qcow2") {
+                    return {E_DEFAULT, "additional disks item driver only support qcow2"};
+                }
+            }
+            if (v.HasMember("source_file")) {
+                if (!v["source_file"].IsString()) {
+                    return {E_DEFAULT, "parse additional disks item source_file json failed"};
+                }
+                disk.__set_source_file(v["source_file"].GetString());
+                boost::system::error_code err;
+                if (boost::filesystem::exists(disk.source_file, err)) {
+                    return {E_DEFAULT, "disks item source_file already exist"};
+                }
+                if (err) {
+                    return {E_DEFAULT, "check disk item source_file error:" + err.message()};
+                }
+            }
+            disks.push_back(disk);
+        }
+    } else {
+        for (const auto &disk : ddInfos) {
+            if (disk.second.driverType != "qcow2") {
+                continue;
+            }
+            dbc::snapshotDiskInfo sdInfo;
+            sdInfo.__set_name(disk.second.targetDev);
+            sdInfo.__set_driver_type(disk.second.driverType);
+            sdInfo.__set_snapshot("external");
+            disks.push_back(sdInfo);
+        }
+    }
+    
+    if (disks.empty()) {
+        return {E_DEFAULT, "disks is empty"};
+    }
+    info->__set_disks(disks);
+    for (const auto& disk : info->disks) {
+        LOG_INFO << "parse additional disk name:" << disk.name << ", driver type:" << disk.driver_type
+                 << ", snapshot type:" << disk.snapshot << ", source file:" << disk.source_file;
+    }
+
+    return FResultOK;
+}
+
 std::shared_ptr<dbc::TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
     std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
     auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    if (renttask == nullptr) {
+        return nullptr;
+    }
     for (auto& id : renttask->task_ids) {
         if (id == task_id) {
             taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -1337,6 +1484,106 @@ std::string TaskManager::checkSessionId(const std::string &session_id, const std
     return "";
 }
 
+FResult TaskManager::createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id) {
+    {
+        std::shared_ptr<dbc::snapshotInfo> temp = SnapshotManager::instance().getCreatingSnapshot(task_id);
+        if (temp != nullptr && !temp->__isset.error_code) {
+            return {E_DEFAULT, "task snapshot is busy, please wait a moment"};
+        }
+    }
+    std::shared_ptr<dbc::snapshotInfo> sInfo = std::make_shared<dbc::snapshotInfo>();
+    FResult fret = parse_create_snapshot_params(additional, task_id, sInfo);
+    if (std::get<0>(fret) != E_SUCCESS) {
+        return fret;
+    }
+    
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
+    //TODO： check task resource
+    SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
+
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_SHUTOFF) {
+        taskinfo->__set_status(TS_CreatingSnapshot);
+        taskinfo->__set_last_stop_time(time(nullptr));
+        TaskInfoMgr::instance().update(taskinfo);
+
+        ETaskEvent ev;
+        ev.task_id = task_id;
+        ev.op = T_OP_CreateSnapshot;
+        add_process_task(ev);
+        return FResultOK;
+    } else {
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+    }
+}
+
+FResult TaskManager::deleteSnapshot(const std::string& wallet, const std::string &task_id, const std::string& snapshot_name) {
+    return {E_DEFAULT, "The function is not implemented yet."};
+}
+
+FResult TaskManager::listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<std::shared_ptr<dbc::snapshotInfo>>& snaps) {
+    // auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    // if (renttask == nullptr) {
+    //     return {E_DEFAULT, "this wallet has none rent task"};
+    // }
+    // std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
+    // for (auto& id : renttask->task_ids) {
+    //     if (id == task_id) {
+    //         taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    //         break;
+    //     }
+    // }
+    // if (taskinfo == nullptr) {
+    //     return {E_DEFAULT, "task_id not exist"};
+    // }
+    SnapshotManager::instance().listTaskSnapshot(task_id, snaps);
+    return {E_SUCCESS, "ok"};
+}
+
+std::shared_ptr<dbc::snapshotInfo> TaskManager::getTaskSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name) {
+    // auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    // if (renttask == nullptr) {
+    //     return nullptr;
+    // }
+    // std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
+    // for (auto& id : renttask->task_ids) {
+    //     if (id == task_id) {
+    //         taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    //         break;
+    //     }
+    // }
+    // if (taskinfo == nullptr) {
+    //     return nullptr;
+    // }
+    return SnapshotManager::instance().getTaskSnapshot(task_id, snapshot_name);
+}
+
+std::shared_ptr<dbc::snapshotInfo> TaskManager::getCreatingSnapshot(const std::string& wallet, const std::string& task_id) {
+    // auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
+    // if (renttask == nullptr) {
+    //     return nullptr;
+    // }
+    // std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
+    // for (auto& id : renttask->task_ids) {
+    //     if (id == task_id) {
+    //         taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    //         break;
+    //     }
+    // }
+    // if (taskinfo == nullptr) {
+    //     return nullptr;
+    // }
+    return SnapshotManager::instance().getCreatingSnapshot(task_id);
+}
+
 void TaskManager::add_process_task(const ETaskEvent& ev) {
     std::unique_lock<std::mutex> lock(m_process_mtx);
     m_process_tasks.push(ev);
@@ -1387,6 +1634,9 @@ void TaskManager::process_task(const ETaskEvent& ev) {
             break;
         case T_OP_Delete:
             process_delete(taskinfo);
+            break;
+        case T_OP_CreateSnapshot:
+            process_create_snapshot(taskinfo);
             break;
         default:
             TASK_LOG_ERROR(taskinfo->task_id, "unknown op:" << ev.op);
@@ -1541,6 +1791,32 @@ void TaskManager::process_reset(const std::shared_ptr<dbc::TaskInfo> &taskinfo) 
 
 void TaskManager::process_delete(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
     delete_task(taskinfo->task_id);
+}
+
+void TaskManager::process_create_snapshot(const std::shared_ptr<dbc::TaskInfo>& taskinfo) {
+    std::shared_ptr<dbc::snapshotInfo> info = SnapshotManager::instance().getCreatingSnapshot(taskinfo->task_id);
+    if (info == nullptr) {
+        LOG_ERROR << "can not find snapshot:" << info->name << " info when creating a snapshot on vm:" << taskinfo->task_id;
+        return;
+    }
+    FResult result = m_vm_client.CreateSnapshot(taskinfo->task_id, info);
+    if (std::get<0>(result) != E_SUCCESS) {
+        taskinfo->status = TS_CreateSnapshotError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "create task snapshot:" << info->name << " failed");
+        SnapshotManager::instance().updateCreatingSnapshot(taskinfo->task_id, std::get<0>(result), std::get<1>(result));
+    } else {
+        taskinfo->status = TS_ShutOff;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_INFO(taskinfo->task_id, "create task snapshot:" << info->name << " successful, description:" << info->description);
+        SnapshotManager::instance().delCreatingSnapshot(taskinfo->task_id);
+        std::shared_ptr<dbc::snapshotInfo> newInfo = m_vm_client.GetDomainSnapshot(taskinfo->task_id, info->name);
+        if (newInfo) {
+            SnapshotManager::instance().addTaskSnapshot(taskinfo->task_id, newInfo);
+        } else {
+            TASK_LOG_ERROR(taskinfo->task_id, "can not find snapshot:" << info->name);
+        }
+    }
 }
 
 void TaskManager::prune_task_thread_func() {

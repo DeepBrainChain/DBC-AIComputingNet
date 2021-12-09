@@ -463,3 +463,104 @@ struct peer_nodes_broadcast_req {
   1: peer_nodes_broadcast_req_body body
 }
 
+//////////////////////////////////////////////////////////////////////////
+// list snapshot
+// request
+struct node_list_snapshot_req_data {
+  1: required string task_id,
+  2: required string snapshot_name,
+  3: required list<string> peer_nodes_list,
+  4: required string additional,
+  5: required string wallet,
+  6: required string nonce,
+  7: required string sign,
+  8: required list<string> multisig_wallets,
+  9: required i32 multisig_threshold,
+  10: required list<multisig_sign_item> multisig_signs,
+  11: required string session_id,
+  12: required string session_id_sign
+}
+
+struct node_list_snapshot_req_body {
+    1: required string data
+}
+
+struct node_list_snapshot_req {
+  1: node_list_snapshot_req_body body
+}
+// response
+struct node_list_snapshot_rsp_body {
+  1: required string data
+}
+
+struct node_list_snapshot_rsp {
+  1: node_list_snapshot_rsp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
+// create snapshot
+// request
+struct node_create_snapshot_req_data {
+  1: required string task_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
+}
+
+struct node_create_snapshot_req_body {
+  1: required string data;
+}
+
+struct node_create_snapshot_req {
+  1: node_create_snapshot_req_body body
+}
+// response
+struct node_create_snapshot_rsp_body {
+  1: required string data;
+}
+
+struct node_create_snapshot_rsp {
+  1: node_create_snapshot_rsp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
+// delete snapshot
+// request
+struct node_delete_snapshot_req_data {
+  1: required string task_id,
+  2: required string snapshot_name,
+  3: required list<string> peer_nodes_list,
+  4: required string additional,
+  5: required string wallet,
+  6: required string nonce,
+  7: required string sign,
+  8: required list<string> multisig_wallets,
+  9: required i32 multisig_threshold,
+  10: required list<multisig_sign_item> multisig_signs,
+  11: required string session_id,
+  12: required string session_id_sign
+}
+
+struct node_delete_snapshot_req_body {
+  1: required string data
+}
+
+struct node_delete_snapshot_req {
+  1: node_delete_snapshot_req_body body
+}
+// response
+struct node_delete_snapshot_rsp_body {
+  1: required string data
+}
+
+struct node_delete_snapshot_rsp {
+  1: node_delete_snapshot_rsp_body body
+}
+

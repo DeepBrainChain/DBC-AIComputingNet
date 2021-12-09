@@ -21,6 +21,9 @@ std::string task_operation_string(int32_t op) {
         case T_OP_Delete:
             operation_string = "delete";
             break;
+        case T_OP_CreateSnapshot:
+            operation_string = "create snapshot";
+            break;
         default:
             break;
     }
@@ -55,6 +58,9 @@ std::string task_status_string(int32_t status) {
         case TS_Deleting:
             status_string = "deleting";
             break;
+        case TS_CreatingSnapshot:
+            status_string = "creating snapshot";
+            break;
         case TS_Error:
             status_string = "error";
             break;
@@ -72,6 +78,9 @@ std::string task_status_string(int32_t status) {
             break;
         case TS_DeleteError:
             status_string = "delete error";
+            break;
+        case TS_CreateSnapshotError:
+            status_string = "create snapshot error";
             break;
         default:
             break;

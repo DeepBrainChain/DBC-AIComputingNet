@@ -61,6 +61,20 @@
 
 // peer nodes
 
+// list snapshot
+#define NODE_LIST_SNAPSHOT_REQ      "node_list_snapshot_req"
+#define NODE_LIST_SNAPSHOT_RSP      "node_list_snapshot_rsp"
+#define NODE_LIST_SNAPSHOT_TIMER    "node_list_snapshot_timer"
+
+// create snapshot
+#define NODE_CREATE_SNAPSHOT_REQ        "node_create_snapshot_req"
+#define NODE_CREATE_SNAPSHOT_RSP        "node_create_snapshot_rsp"
+#define NODE_CREATE_SNAPSHOT_TIMER      "node_create_snapshot_timer"
+
+// delete snapshot
+#define NODE_DELETE_SNAPSHOT_REQ      "node_delete_snapshot_req"
+#define NODE_DELETE_SNAPSHOT_RSP      "node_delete_snapshot_rsp"
+#define NODE_DELETE_SNAPSHOT_TIMER    "node_delete_snapshot_timer"
 
 // service broadcast
 #define SERVICE_BROADCAST_REQ          "service_broadcast_req"

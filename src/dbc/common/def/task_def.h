@@ -36,7 +36,8 @@ enum ETaskOp {
     T_OP_Stop,      //停止
     T_OP_ReStart,   //重启
     T_OP_Reset,     //reset
-    T_OP_Delete     //删除
+    T_OP_Delete,    //删除
+    T_OP_CreateSnapshot  //创建快照
 };
 
 struct ETaskEvent {
@@ -53,6 +54,7 @@ enum ETaskStatus {
     TS_Restarting,  //正在重启
     TS_Resetting,   //正在reset
     TS_Deleting,    //正在删除
+    TS_CreatingSnapshot,  //正在创建快照
 
     TS_Error,   //出错
     TS_CreateError,
@@ -60,7 +62,8 @@ enum ETaskStatus {
     TS_StopError,
     TS_RestartError,
     TS_ResetError,
-    TS_DeleteError
+    TS_DeleteError,
+    TS_CreateSnapshotError
 };
 
 enum ETaskLogDirection {

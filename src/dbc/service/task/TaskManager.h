@@ -14,6 +14,7 @@
 #include "WalletSessionIDManager.h"
 #include "WalletRentTaskManager.h"
 #include "TaskResourceManager.h"
+#include "SnapshotManager.h"
 
 namespace bp = boost::process;
 
@@ -65,6 +66,17 @@ public:
 
     std::string checkSessionId(const std::string& session_id, const std::string& session_id_sign);
 
+    // snapshot
+    FResult createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id);
+
+    FResult deleteSnapshot(const std::string& wallet, const std::string &task_id, const std::string& snapshot_name);
+
+    FResult listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<std::shared_ptr<dbc::snapshotInfo>>& snaps);
+
+    std::shared_ptr<dbc::snapshotInfo> getTaskSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name);
+
+    std::shared_ptr<dbc::snapshotInfo> getCreatingSnapshot(const std::string& wallet, const std::string& task_id);
+
 protected:
     bool restore_tasks();
 
@@ -110,6 +122,8 @@ protected:
 
     FResult check_disk(const std::map<int32_t, uint64_t>& disks);
 
+    FResult parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info);
+
     void process_task_thread_func();
 
     void add_process_task(const ETaskEvent& ev);
@@ -129,6 +143,8 @@ protected:
     void process_reset(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
     void process_delete(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void process_create_snapshot(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
     void prune_task_thread_func();
 
