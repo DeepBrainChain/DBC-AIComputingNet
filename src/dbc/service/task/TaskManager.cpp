@@ -1054,10 +1054,12 @@ FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
 std::shared_ptr<dbc::TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
     std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
     auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
-    for (auto& id : renttask->task_ids) {
-        if (id == task_id) {
-            taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-            break;
+    if (renttask != nullptr) {
+        for (auto &id: renttask->task_ids) {
+            if (id == task_id) {
+                taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+                break;
+            }
         }
     }
 
