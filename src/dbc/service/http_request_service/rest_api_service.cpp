@@ -3157,8 +3157,8 @@ void rest_api_service::rest_peers(const std::shared_ptr<dbc::network::http_reque
 void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list, std::string &data_json) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"error_code\":0";
-    ss << ", \"data\":{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
     ss << "\"peer_nodes\":[";
     int peers_count = 0;
     for (auto& iter : peer_nodes_list) {
@@ -3167,6 +3167,8 @@ void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list,
         ss << "\"node_id\":" << "\"" << iter.peer_node_id << "\"";
         ss << ", \"addr\":" << "\"" << iter.addr.ip << ":" << iter.addr.port << "\"";
         ss << "}";
+
+        peers_count++;
     }
     ss << "]}";
     ss << "}";
