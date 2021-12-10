@@ -561,6 +561,86 @@ GET /api/v1/tasks/fpWczv5NEsHLTu7CMhweT1G5bD2LaMCcWzGFDmKjAZUrTu1rX/result
 }
 ```
 
+
+### (9)查看节点特定任务的快照列表或某个快照的详细信息
+
+```
+GET /api/v1/snapshot/<task_id>/{snapshot_name}
+
+{snapshot_name} 字段作为可选项,
+如果snapshot_name为空，即/api/v1/snapshot/<task_id> 等价于snapshot -a -t task_id,表示查询出特定任务的快照列表;
+如果snapshot_name不为空，例如 /api/v1/snapshot/<task_id>/snap_name 等价于 snapshot -s snap_name -t task_id，表示筛选出特定任务的特定快照的详细信息。
+```
+
+[Query Parameters]
+
+
+```
+无
+```
+
+
+[Response Samples]
+
+
+```
+GET /api/v1/snapshot/fpWczv5NEsHLTu7CMhweT1G5bD2LaMCcWzGFDmKjAZUrTu1rX
+
+
+{
+  "error_code": 0,
+  "data": [
+    {
+      "snapshot_name": "snap1",
+      "description": "my desc",
+      "create_time": "2021-12-10 14:00:00",
+      "state": "disk-snapshot"
+    },
+    {
+      "snapshot_name": "snap2",
+      "description": "my desc 2",
+      "create_time": "2021-12-11 14:00:00",
+      "state": "disk-snapshot"
+    }
+  ]
+}
+```
+
+
+### (10)给节点的特定任务创建快照
+
+```
+GET /api/v1/snapshot/<task_id>/create
+
+task_id表示需要创建快照的任务。
+需要在请求的additional里面写明需要创建的快照的name, description, disks等信息。
+```
+
+[Query Parameters]
+
+
+```
+无
+```
+
+
+[Response Samples]
+
+
+```
+GET /api/v1/snapshot/fpWczv5NEsHLTu7CMhweT1G5bD2LaMCcWzGFDmKjAZUrTu1rX/create
+
+
+{
+  "error_code": 0,
+  "data": {
+    "snapshot_name": "snap1",
+    "description": "my desc",
+    "state": "creating"
+  }
+}
+```
+
 # 错误码
 
  

@@ -317,15 +317,19 @@ static std::string createSnapshotXml(const std::shared_ptr<dbc::snapshotInfo>& i
         tinyxml2::XMLElement *disk = doc.NewElement("disk");
         disk->SetAttribute("name", diskinfo.name.c_str());
         disk->SetAttribute("snapshot", diskinfo.snapshot.c_str());
-        tinyxml2::XMLElement *diskdriver = doc.NewElement("driver");
-        diskdriver->SetAttribute("type", diskinfo.driver_type.c_str());
-        disk->LinkEndChild(diskdriver);
-        if (!diskinfo.source_file.empty()) {
-            tinyxml2::XMLElement *sourcefile = doc.NewElement("source");
-            sourcefile->SetAttribute("file", diskinfo.source_file.c_str());
-            disk->LinkEndChild(sourcefile);
+        if (diskinfo.snapshot != "no") {
+            tinyxml2::XMLElement *diskdriver = doc.NewElement("driver");
+            diskdriver->SetAttribute("type", diskinfo.driver_type.c_str());
+            disk->LinkEndChild(diskdriver);
+            if (!diskinfo.source_file.empty()) {
+                tinyxml2::XMLElement *sourcefile = doc.NewElement("source");
+                sourcefile->SetAttribute("file", diskinfo.source_file.c_str());
+                disk->LinkEndChild(sourcefile);
+            }
         }
+        disks->LinkEndChild(disk);
     }
+    root->LinkEndChild(disks);
 
     // doc.SaveFile((info->name + ".xml").c_str());
     tinyxml2::XMLPrinter printer;

@@ -83,6 +83,7 @@ int32_t node_request_service::init(bpo::variables_map &options) {
         auto fresult = m_task_scheduler.init();
         int32_t ret = std::get<0>(fresult);
         if (ret != E_SUCCESS) {
+            LOG_ERROR << std::get<1>(fresult);
             return E_DEFAULT;
         } else {
             m_task_scheduler.start();

@@ -1164,9 +1164,9 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
                 if (boost::filesystem::exists(disk.source_file, err)) {
                     return {E_DEFAULT, "disks item source_file already exist"};
                 }
-                if (err) {
-                    return {E_DEFAULT, "check disk item source_file error:" + err.message()};
-                }
+                // if (err) {
+                //     return {E_DEFAULT, "check disk item source_file error:" + err.message()};
+                // }
             }
             disks.push_back(disk);
         }
