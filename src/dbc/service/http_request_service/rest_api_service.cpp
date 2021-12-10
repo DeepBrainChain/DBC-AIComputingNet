@@ -2669,8 +2669,8 @@ void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_servi
                      std::string &data_json) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"error_code\":0";
-    ss << ", \"data\":{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
     ss << "\"mining_nodes\":[";
     int service_count = 0;
     for (auto &it : *service_list) {
