@@ -1760,7 +1760,9 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
             std::stringstream ss;
             ss << "{";
             ss << "\"errcode\":" << E_SUCCESS;
-            ss << ", \"message\":" << "\"" << session_id << "\"";
+            ss << ", \"message\":{";
+            ss << "\"session_id\":\"" << session_id << "\"";
+            ss << "}";
             ss << "}";
 
             const std::map<std::string, std::string>& mp = header.exten_info;
@@ -1782,7 +1784,7 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
             }
         }
     } else {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "you are not renter of this machine";
         send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "check authority failed");
     }
 }

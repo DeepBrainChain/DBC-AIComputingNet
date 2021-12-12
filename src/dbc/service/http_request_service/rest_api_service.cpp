@@ -24,12 +24,12 @@ int32_t rest_api_service::init() {
     service_module::init();
 
     const dbc::network::http_path_handler uri_prefixes[] = {
-            {"/tasks", false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/",             true,  std::bind(&rest_api_service::rest_client_version, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/tasks",        false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
             {"/mining_nodes", false, std::bind(&rest_api_service::rest_mining_nodes, this, std::placeholders::_1, std::placeholders::_2)},
             {"/peers",        false, std::bind(&rest_api_service::rest_peers, this, std::placeholders::_1, std::placeholders::_2)},
             {"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
-            {"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
-            {"",              true,  std::bind(&rest_api_service::rest_api_version, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)}
     };
 
     for (const auto &uri_prefixe : uri_prefixes) {
@@ -469,6 +469,14 @@ static bool has_peer_nodeid(const req_body& httpbody) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// /
+void rest_api_service::rest_client_version(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+    rapidjson::Document document;
+    rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
+    rapidjson::Value obj(rapidjson::kObjectType);
+    obj.AddMember("client_version", STRING_REF(dbcversion()), allocator);
+    httpReq->reply_comm_rest_succ(obj);
+}
 
 // /tasks
 void rest_api_service::rest_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
@@ -3343,24 +3351,6 @@ void rest_api_service::rest_config(const std::shared_ptr<dbc::network::http_requ
     data.AddMember("result", "ok", allocator);
     SUCC_REPLY(data)
 
-    return nullptr;
-    */
-}
-
-// /
-void rest_api_service::rest_api_version(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    /*
-    rapidjson::Document document;
-    rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
-
-    rapidjson::Value data(rapidjson::kObjectType);
-
-    data.AddMember("version", STRING_REF(REST_API_VERSION), allocator);
-
-    std::string node_id = conf_manager::instance().get_node_id();
-
-    data.AddMember("node_id", STRING_REF(node_id), allocator);
-    SUCC_REPLY(data)
     return nullptr;
     */
 }
