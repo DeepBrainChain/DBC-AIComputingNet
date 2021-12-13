@@ -1182,7 +1182,7 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
             disks.push_back(sdInfo);
         }
     }
-    
+
     if (disks.empty()) {
         return {E_DEFAULT, "disks is empty"};
     }
@@ -1198,13 +1198,12 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
 std::shared_ptr<dbc::TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
     std::shared_ptr<dbc::TaskInfo> taskinfo = nullptr;
     auto renttask = WalletRentTaskMgr::instance().getRentTask(wallet);
-    if (renttask == nullptr) {
-        return nullptr;
-    }
-    for (auto& id : renttask->task_ids) {
-        if (id == task_id) {
-            taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-            break;
+    if (renttask != nullptr) {
+        for (auto &id: renttask->task_ids) {
+            if (id == task_id) {
+                taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+                break;
+            }
         }
     }
 
@@ -1496,7 +1495,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
     if (std::get<0>(fret) != E_SUCCESS) {
         return fret;
     }
-    
+
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
         return {E_DEFAULT, "task_id not exist"};

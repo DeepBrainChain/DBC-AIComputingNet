@@ -24,13 +24,13 @@ int32_t rest_api_service::init() {
     service_module::init();
 
     const dbc::network::http_path_handler uri_prefixes[] = {
-            {"/tasks", false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/",             true,  std::bind(&rest_api_service::rest_client_version, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/tasks",        false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
             {"/mining_nodes", false, std::bind(&rest_api_service::rest_mining_nodes, this, std::placeholders::_1, std::placeholders::_2)},
             {"/peers",        false, std::bind(&rest_api_service::rest_peers, this, std::placeholders::_1, std::placeholders::_2)},
             {"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
             {"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
-            {"/snapshot",     false, std::bind(&rest_api_service::rest_snapshot, this, std::placeholders::_1, std::placeholders::_2)},
-            {"",              true,  std::bind(&rest_api_service::rest_api_version, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/snapshot",     false, std::bind(&rest_api_service::rest_snapshot, this, std::placeholders::_1, std::placeholders::_2)}
     };
 
     for (const auto &uri_prefixe : uri_prefixes) {

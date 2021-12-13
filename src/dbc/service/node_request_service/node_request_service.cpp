@@ -276,8 +276,8 @@ template <typename T>
 void send_response_ok(const std::string& msg_name, const dbc::network::base_header& header) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"result_code\":" << E_SUCCESS;
-    ss << ", \"result_message\":" << "\"ok\"";
+    ss << "\"errcode\":" << E_SUCCESS;
+    ss << ", \"message\":" << "\"ok\"";
     ss << "}";
 
     const std::map<std::string, std::string>& mp = header.exten_info;
@@ -302,8 +302,8 @@ void send_response_error(const std::string& msg_name, const dbc::network::base_h
                          const std::string& result_msg) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"result_code\":" << result;
-    ss << ", \"result_message\":" << "\"" << result_msg << "\"";
+    ss << "\"errcode\":" << result;
+    ss << ", \"message\":" << "\"" << result_msg << "\"";
     ss << "}";
 
     const std::map<std::string, std::string>& mp = header.exten_info;
@@ -625,8 +625,8 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
                                            const std::shared_ptr<dbc::node_query_node_info_req_data>& data) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"result_code\":" << 0;
-    ss << ",\"result_message\":" << "{";
+    ss << "\"errcode\":" << 0;
+    ss << ",\"message\":" << "{";
     ss << "\"version\":" << "\"" << dbcversion() << "\"";
     ss << ",\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().publicip()) << "\"";
     ss << ",\"os\":" << "\"" << SystemInfo::instance().osname() << "\"";
@@ -890,10 +890,10 @@ void node_request_service::task_list(const dbc::network::base_header& header,
     std::stringstream ss;
     ss << "{";
     if (ret_code == E_SUCCESS) {
-        ss << "\"status\":" << E_SUCCESS;
+        ss << "\"errcode\":" << E_SUCCESS;
         ss << ", \"message\":" << ss_tasks.str();
     } else {
-        ss << "\"status\":" << ret_code;
+        ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "\"" << ret_msg << "\"";
     }
     ss << "}";
@@ -1013,7 +1013,7 @@ void node_request_service::task_create(const dbc::network::base_header& header,
     std::stringstream ss;
     if (ret_code == E_SUCCESS) {
         ss << "{";
-        ss << "\"status\":" << ret_code;
+        ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "{";
         ss << "\"task_id\":" << "\"" << task_id << "\"";
         auto taskinfo = m_task_scheduler.findTask(result.rent_wallet, task_id);
@@ -1029,7 +1029,7 @@ void node_request_service::task_create(const dbc::network::base_header& header,
         ss << "}";
     } else {
         ss << "{";
-        ss << "\"status\":" << ret_code;
+        ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "\"" << ret_msg << "\"";
         ss << "}";
     }
@@ -1648,8 +1648,8 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     if (ret_code == E_SUCCESS) {
         std::stringstream ss;
         ss << "{";
-        ss << "\"result_code\":" << E_SUCCESS;
-        ss << ", \"result_message\":";
+        ss << "\"errcode\":" << E_SUCCESS;
+        ss << ", \"message\":";
         ss << "{";
         ss << "\"task_id\":" << "\"" << data->task_id << "\"";
         ss << ", \"log_content\":" << "[" << log_content << "]";
@@ -1766,8 +1766,10 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
         } else {
             std::stringstream ss;
             ss << "{";
-            ss << "\"status\":" << E_SUCCESS;
-            ss << ", \"message\":" << "\"" << session_id << "\"";
+            ss << "\"errcode\":" << E_SUCCESS;
+            ss << ", \"message\":{";
+            ss << "\"session_id\":\"" << session_id << "\"";
+            ss << "}";
             ss << "}";
 
             const std::map<std::string, std::string>& mp = header.exten_info;
@@ -1789,7 +1791,7 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
             }
         }
     } else {
-        LOG_INFO << "check authority failed";
+        LOG_INFO << "you are not renter of this machine";
         send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "check authority failed");
     }
 }

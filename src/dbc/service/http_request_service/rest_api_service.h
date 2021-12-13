@@ -65,6 +65,9 @@ public:
     void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
 
     //////////////////////////////////////////////////////////////////////////
+    // /
+    void rest_client_version(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
     // /tasks
     void rest_task(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
 
@@ -202,9 +205,6 @@ public:
 
     // /config/
     void rest_config(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
-
-    // /
-    void rest_api_version(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
 
     void on_binary_forward(const std::shared_ptr<dbc::network::message> &msg);
 
