@@ -169,7 +169,7 @@ void TaskManager::start_task(const std::string &task_id) {
 }
 
 void TaskManager::close_task(const std::string &task_id) {
-    if (m_vm_client.DestroyDomain(task_id)) {
+    if (m_vm_client.DestroyDomain(task_id) == E_SUCCESS) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
             taskinfo->status = ETaskStatus::TS_ShutOff;
