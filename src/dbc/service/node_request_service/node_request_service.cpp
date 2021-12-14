@@ -2148,10 +2148,10 @@ void node_request_service::snapshot_list(const dbc::network::base_header& header
     std::stringstream ss;
     ss << "{";
     if (ret_code == E_SUCCESS) {
-        ss << "\"status\":" << E_SUCCESS;
+        ss << "\"errcode\":" << E_SUCCESS;
         ss << ", \"message\":" << ss_snapshots.str();
     } else {
-        ss << "\"status\":" << ret_code;
+        ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "\"" << ret_msg << "\"";
     }
     ss << "}";
@@ -2278,7 +2278,7 @@ void node_request_service::snapshot_create(const dbc::network::base_header& head
     std::stringstream ss;
     if (ret_code == E_SUCCESS) {
         ss << "{";
-        ss << "\"status\":" << ret_code;
+        ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "{";
         // ss << "\"task_id\":" << "\"" << data->task_id << "\"";
         auto snapshot = m_task_scheduler.getCreatingSnapshot(result.rent_wallet, data->task_id);
@@ -2296,7 +2296,7 @@ void node_request_service::snapshot_create(const dbc::network::base_header& head
         ss << "}";
     } else {
         ss << "{";
-        ss << "\"status\":" << ret_code;
+        ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "\"" << ret_msg << "\"";
         ss << "}";
     }
