@@ -880,6 +880,24 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
 
             ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.getTaskStatus(task->task_id)) << "\"";
+
+            std::map<std::string, domainDiskInfo> disks;
+            m_task_scheduler.listTaskDiskInfo(task->task_id, disks);
+            if (!disks.empty()) {
+                ss_tasks << ", \"disks\":[";
+                int idx = 0;
+                for (const auto &disk : disks) {
+                    if (idx > 0)
+                        ss_tasks << ",";
+                    ss_tasks << "{";
+                    ss_tasks << "\"name\":" << "\"" << disk.second.targetDev << "\"";
+                    ss_tasks << ", \"type\":" << "\"" << disk.second.driverType << "\"";
+                    ss_tasks << ", \"source_file\":" << "\"" << disk.second.sourceFile << "\"";
+                    ss_tasks << "}";
+                    idx++;
+                }
+                ss_tasks << "]";
+            }
             ss_tasks << "}";
         } else {
             ret_code = E_DEFAULT;

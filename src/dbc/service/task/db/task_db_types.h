@@ -81,7 +81,7 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const HardwareResource& obj);
 
     typedef struct _TaskInfo__isset {
-        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false) {}
+        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false), data_file_name(false) {}
         bool image_name :1;
         bool login_password :1;
         bool ssh_port :1;
@@ -93,6 +93,7 @@ namespace dbc {
         bool hardware_resource :1;
         bool vm_xml :1;
         bool vm_xml_url :1;
+        bool data_file_name :1;
     } _TaskInfo__isset;
 
     class TaskInfo : public virtual ::apache::thrift::TBase {
@@ -100,7 +101,7 @@ namespace dbc {
 
         TaskInfo(const TaskInfo&);
         TaskInfo& operator=(const TaskInfo&);
-        TaskInfo() : task_id(), image_name(), login_password(), ssh_port(), status(0), operation(0), create_time(0), last_start_time(0), last_stop_time(0), vm_xml(), vm_xml_url() {
+        TaskInfo() : task_id(), image_name(), login_password(), ssh_port(), status(0), operation(0), create_time(0), last_start_time(0), last_stop_time(0), vm_xml(), vm_xml_url(), data_file_name() {
         }
 
         virtual ~TaskInfo() throw();
@@ -116,6 +117,7 @@ namespace dbc {
         HardwareResource hardware_resource;
         std::string vm_xml;
         std::string vm_xml_url;
+        std::string data_file_name;
 
         _TaskInfo__isset __isset;
 
@@ -142,6 +144,8 @@ namespace dbc {
         void __set_vm_xml(const std::string& val);
 
         void __set_vm_xml_url(const std::string& val);
+
+        void __set_data_file_name(const std::string& val);
 
         bool operator == (const TaskInfo & rhs) const
         {
@@ -188,6 +192,10 @@ namespace dbc {
             if (__isset.vm_xml_url != rhs.__isset.vm_xml_url)
                 return false;
             else if (__isset.vm_xml_url && !(vm_xml_url == rhs.vm_xml_url))
+                return false;
+            if (__isset.data_file_name != rhs.__isset.data_file_name)
+                return false;
+            else if (__isset.data_file_name && !(data_file_name == rhs.data_file_name))
                 return false;
             return true;
         }

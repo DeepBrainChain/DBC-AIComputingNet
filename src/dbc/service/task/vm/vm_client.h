@@ -26,7 +26,7 @@ public:
 
     bool Init();
 
-    int32_t CreateDomain(const std::string& domain_name, const std::string& image,
+    int32_t CreateDomain(const std::string& domain_name, const std::string& image, const std::string& data_file,
                          const std::shared_ptr<TaskResource>& task_resource);
 
     int32_t StartDomain(const std::string& domain_name);

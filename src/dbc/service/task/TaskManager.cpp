@@ -532,6 +532,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     std::shared_ptr<dbc::TaskInfo> taskinfo = std::make_shared<dbc::TaskInfo>();
     taskinfo->__set_task_id(createparams.task_id);
     taskinfo->__set_image_name(createparams.image_name);
+    taskinfo->__set_data_file_name(createparams.data_file_name);
     taskinfo->__set_login_password(createparams.login_password);
     taskinfo->__set_ssh_port(std::to_string(createparams.ssh_port));
     int64_t now = time(nullptr);
@@ -577,7 +578,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
 
     std::string image_name, s_ssh_port, s_gpu_count, s_cpu_cores, s_mem_size,
-            s_disk_size, vm_xml, vm_xml_url, s_vnc_port;
+            s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name;
     JSON_PARSE_STRING(doc, "image_name", image_name)
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)
     JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
@@ -587,6 +588,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "vm_xml", vm_xml)
     JSON_PARSE_STRING(doc, "vm_xml_url", vm_xml_url)
     JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port)
+    JSON_PARSE_STRING(doc, "data_file_name", data_file_name)
 
     // ssh_port
     if (!util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
@@ -626,6 +628,19 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
             return {E_DEFAULT, "image is not a regular file"};
+        }
+
+        // data disk file name
+        if (!data_file_name.empty()) {
+            boost::filesystem::path data_path("/data/" + data_file_name);
+            boost::system::error_code error_code;
+            if (!boost::filesystem::exists(data_path, error_code) || error_code) {
+                return {E_DEFAULT, "data file does not exist"};
+            }
+
+            if (!boost::filesystem::is_regular_file(data_path, error_code) || error_code) {
+                return {E_DEFAULT, "data file is not a regular file"};
+            }
         }
 
         // task_id
@@ -764,6 +779,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         task_id = std::move(xml_params.task_id);
         image_name = std::move(xml_params.image_name);
+        data_file_name = std::move(xml_params.data_file_name);
         sockets = xml_params.cpu_sockets;
         cores = xml_params.cpu_cores;
         threads = xml_params.cpu_threads;
@@ -778,6 +794,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         // check
         // image
         fret = check_image(image_name);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
+        fret = check_data_image(data_file_name);
         if (std::get<0>(fret) != E_SUCCESS) {
             return fret;
         }
@@ -802,6 +822,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.task_id = task_id;
     params.login_password = login_password;
     params.image_name = image_name;
+    params.data_file_name = data_file_name;
     params.ssh_port = atoi(s_ssh_port.c_str());
     params.cpu_sockets = sockets;
     params.cpu_cores = cores;
@@ -908,6 +929,14 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
     std::string image_file = el_source->Attribute("file");
     params.image_name = util::GetFileNameFromPath(image_file);
 
+    // disk_file_name
+    el_disk_system = el_disk_system->NextSiblingElement("disk"); //认为第二块disk为数据盘
+    if (el_disk_system) {
+        tinyxml2::XMLElement* el_source2 = el_disk_system->FirstChildElement("source");
+        std::string data_file = el_source2->Attribute("file");
+        params.data_file_name = util::GetFileNameFromPath(data_file);
+    }
+
     // cpu
     tinyxml2::XMLElement* el_cpu = root->FirstChildElement("cpu");
     tinyxml2::XMLElement* el_topology = el_cpu->FirstChildElement("topology");
@@ -1008,6 +1037,20 @@ FResult TaskManager::check_image(const std::string &image_name) {
         return {E_DEFAULT, "image is not a regular file"};
     }
 
+    return FResultOK;
+}
+
+FResult TaskManager::check_data_image(const std::string& data_image_name) {
+    if (!data_image_name.empty()) {
+        boost::filesystem::path image_path("/data/" + data_image_name);
+        if (!boost::filesystem::exists(image_path)) {
+            return {E_DEFAULT, "image not exist"};
+        }
+
+        if (!boost::filesystem::is_regular_file(image_path)) {
+            return {E_DEFAULT, "image is not a regular file"};
+        }
+    }
     return FResultOK;
 }
 
@@ -1137,7 +1180,7 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
                 if (disk.snapshot.empty()) {
                     return {E_DEFAULT, "additional disks item snapshot can not empty"};
                 }
-                if (!(disk.snapshot == "external" || disk.snapshot == "no")) {
+                if (!(disk.snapshot == "external" || disk.snapshot == "no" || disk.snapshot == "internal")) {
                     return {E_DEFAULT, "invalid additional disks item snapshot value:" + disk.snapshot};
                 }
             }
@@ -1483,6 +1526,13 @@ std::string TaskManager::checkSessionId(const std::string &session_id, const std
     return "";
 }
 
+void TaskManager::listTaskDiskInfo(const std::string& task_id, std::map<std::string, domainDiskInfo>& disks) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo != nullptr) {
+        m_vm_client.ListDomainDiskInfo(task_id, disks);
+    }
+}
+
 FResult TaskManager::createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id) {
     {
         std::shared_ptr<dbc::snapshotInfo> temp = SnapshotManager::instance().getCreatingSnapshot(task_id);
@@ -1652,7 +1702,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         return;
     }
 
-    ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, task_resource);
+    ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_CreateError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -1805,8 +1855,10 @@ void TaskManager::process_create_snapshot(const std::shared_ptr<dbc::TaskInfo>& 
         TASK_LOG_ERROR(taskinfo->task_id, "create task snapshot:" << info->name << " failed");
         SnapshotManager::instance().updateCreatingSnapshot(taskinfo->task_id, std::get<0>(result), std::get<1>(result));
     } else {
+        // task will be closed after the snapshot is created whether it is running or not.
         taskinfo->status = TS_ShutOff;
         TaskInfoMgr::instance().update(taskinfo);
+        remove_iptable_from_system(taskinfo->task_id);
         TASK_LOG_INFO(taskinfo->task_id, "create task snapshot:" << info->name << " successful, description:" << info->description);
         SnapshotManager::instance().delCreatingSnapshot(taskinfo->task_id);
         std::shared_ptr<dbc::snapshotInfo> newInfo = m_vm_client.GetDomainSnapshot(taskinfo->task_id, info->name);

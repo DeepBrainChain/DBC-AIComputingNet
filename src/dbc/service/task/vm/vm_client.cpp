@@ -321,7 +321,7 @@ static std::string createSnapshotXml(const std::shared_ptr<dbc::snapshotInfo>& i
             tinyxml2::XMLElement *diskdriver = doc.NewElement("driver");
             diskdriver->SetAttribute("type", diskinfo.driver_type.c_str());
             disk->LinkEndChild(diskdriver);
-            if (!diskinfo.source_file.empty()) {
+            if (!diskinfo.source_file.empty() && diskinfo.snapshot == "external") {
                 tinyxml2::XMLElement *sourcefile = doc.NewElement("source");
                 sourcefile->SetAttribute("file", diskinfo.source_file.c_str());
                 disk->LinkEndChild(sourcefile);
@@ -365,7 +365,7 @@ bool VmClient::Init() {
     return m_connPtr != nullptr;
 }
 
-int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name,
+int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name, const std::string& data_file_name,
                                const std::shared_ptr<TaskResource>& task_resource) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
@@ -418,11 +418,15 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     uint64_t disk_total_size = task_resource->disks.begin()->second / 1024L / 1024L; // GB
     LOG_INFO << "data_file: " << data_file;
     TASK_LOG_INFO(domain_name, "data_file: " << data_file);
-    std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
-    LOG_INFO << "create qcow2 image(data): " << cmd_create_img;
-    std::string create_ret = run_shell(cmd_create_img.c_str());
-    LOG_INFO << "create qcow2 image(data) result: " << create_ret;
-    TASK_LOG_INFO(domain_name, "create qcow2 image(data): " << cmd_create_img << ", result: " << create_ret);
+    if (data_file_name.empty()) {
+        std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
+        LOG_INFO << "create qcow2 image(data): " << cmd_create_img;
+        std::string create_ret = run_shell(cmd_create_img.c_str());
+        LOG_INFO << "create qcow2 image(data) result: " << create_ret;
+        TASK_LOG_INFO(domain_name, "create qcow2 image(data): " << cmd_create_img << ", result: " << create_ret);
+    } else {
+        boost::filesystem::copy_file("/data/" + data_file_name, data_file);
+    }
 
     // vnc
     LOG_INFO << "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password;

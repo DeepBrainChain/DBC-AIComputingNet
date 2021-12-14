@@ -210,6 +210,11 @@ namespace dbc {
         this->vm_xml_url = val;
         __isset.vm_xml_url = true;
     }
+
+    void TaskInfo::__set_data_file_name(const std::string& val) {
+        this->data_file_name = val;
+        __isset.data_file_name = true;
+    }
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj)
     {
         obj.printTo(out);
@@ -335,9 +340,17 @@ namespace dbc {
                                                                     xfer += iprot->skip(ftype);
                                                                 }
                                                                 break;
-                                                                default:
-                                                                    xfer += iprot->skip(ftype);
+                                                                case 13:
+                                                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                                        xfer += iprot->readString(this->data_file_name);
+                                                                        this->__isset.data_file_name = true;
+                                                                    } else {
+                                                                        xfer += iprot->skip(ftype);
+                                                                    }
                                                                     break;
+                                                                    default:
+                                                                        xfer += iprot->skip(ftype);
+                                                                        break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -412,6 +425,11 @@ namespace dbc {
             xfer += oprot->writeString(this->vm_xml_url);
             xfer += oprot->writeFieldEnd();
         }
+        if (this->__isset.data_file_name) {
+            xfer += oprot->writeFieldBegin("data_file_name", ::apache::thrift::protocol::T_STRING, 13);
+            xfer += oprot->writeString(this->data_file_name);
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -431,6 +449,7 @@ namespace dbc {
         swap(a.hardware_resource, b.hardware_resource);
         swap(a.vm_xml, b.vm_xml);
         swap(a.vm_xml_url, b.vm_xml_url);
+        swap(a.data_file_name, b.data_file_name);
         swap(a.__isset, b.__isset);
     }
 
@@ -447,6 +466,7 @@ namespace dbc {
         hardware_resource = other2.hardware_resource;
         vm_xml = other2.vm_xml;
         vm_xml_url = other2.vm_xml_url;
+        data_file_name = other2.data_file_name;
         __isset = other2.__isset;
     }
     TaskInfo& TaskInfo::operator=(const TaskInfo& other3) {
@@ -462,6 +482,7 @@ namespace dbc {
         hardware_resource = other3.hardware_resource;
         vm_xml = other3.vm_xml;
         vm_xml_url = other3.vm_xml_url;
+        data_file_name = other3.data_file_name;
         __isset = other3.__isset;
         return *this;
     }
@@ -480,6 +501,7 @@ namespace dbc {
         out << ", " << "hardware_resource=" << to_string(hardware_resource);
         out << ", " << "vm_xml="; (__isset.vm_xml ? (out << to_string(vm_xml)) : (out << "<null>"));
         out << ", " << "vm_xml_url="; (__isset.vm_xml_url ? (out << to_string(vm_xml_url)) : (out << "<null>"));
+        out << ", " << "data_file_name="; (__isset.data_file_name ? (out << to_string(data_file_name)) : (out << "<null>"));
         out << ")";
     }
 

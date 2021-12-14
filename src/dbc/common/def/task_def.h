@@ -102,7 +102,8 @@ enum USER_ROLE {
 struct TaskCreateParams {
     std::string task_id;
     std::string login_password;
-    std::string image_name;
+    std::string image_name;     // system disk image name
+    std::string data_file_name; // data disk file name
     int16_t ssh_port;
 
     int32_t cpu_sockets = 0;
@@ -125,6 +126,7 @@ struct TaskCreateParams {
 struct ParseVmXmlParams {
     std::string task_id;
     std::string image_name;
+    std::string data_file_name;
 
     int32_t cpu_sockets;
     int32_t cpu_cores;

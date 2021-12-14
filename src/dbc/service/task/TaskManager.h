@@ -66,6 +66,9 @@ public:
 
     std::string checkSessionId(const std::string& session_id, const std::string& session_id_sign);
 
+    // this function do not check renter's wallet of task
+    void listTaskDiskInfo(const std::string& task_id, std::map<std::string, domainDiskInfo>& disks);
+
     // snapshot
     FResult createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id);
 
@@ -115,6 +118,8 @@ protected:
     FResult parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params);
 
     FResult check_image(const std::string& image_name);
+
+    FResult check_data_image(const std::string& data_image_name);
 
     FResult check_cpu(int32_t sockets, int32_t cores, int32_t threads);
 
