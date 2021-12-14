@@ -37,7 +37,7 @@ public:
 
     int32_t get_http_port() const { return m_http_port; }
 
-    std::string get_dbc_chain_domain() const { return m_dbc_chain_domain; }
+    std::vector<std::string> get_dbc_chain_domain() const { return m_dbc_chain_domain; }
 
     const std::vector<std::string> &get_ip_seeds() { return m_internal_ip_seeds; }
 
@@ -123,7 +123,7 @@ private:
     std::string m_http_ip;
     int32_t m_http_port = 20001;
 
-    std::string m_dbc_chain_domain;
+    std::vector<std::string> m_dbc_chain_domain;
 
     std::vector<std::string> m_internal_ip_seeds;
     std::vector<std::string> m_internal_dns_seeds;
