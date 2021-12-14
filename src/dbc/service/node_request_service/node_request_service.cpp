@@ -80,6 +80,8 @@ int32_t node_request_service::init(bpo::variables_map &options) {
     service_module::init();
 
     if (m_is_computing_node) {
+        m_httpclient.connect_chain();
+
         auto fresult = m_task_scheduler.init();
         int32_t ret = std::get<0>(fresult);
         if (ret != E_SUCCESS) {

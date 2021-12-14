@@ -23,6 +23,8 @@ TaskManager::~TaskManager() {
 }
 
 FResult TaskManager::init() {
+    m_httpclient.connect_chain();
+
     if (!m_vm_client.Init()) {
         return {E_DEFAULT, "init vmclient failed"};
     }
@@ -62,13 +64,12 @@ FResult TaskManager::init() {
 }
 
 bool TaskManager::restore_tasks() {
-    HttpChainClient httpclient;
     std::string cur_renter_wallet;
     int64_t cur_rent_end = 0;
 
     std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
     for (auto& it : wallets) {
-        int64_t rent_end = httpclient.request_rent_end(it);
+        int64_t rent_end = m_httpclient.request_rent_end(it);
         if (rent_end > 0) {
             cur_renter_wallet = it;
             cur_rent_end = rent_end;

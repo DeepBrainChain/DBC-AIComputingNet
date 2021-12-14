@@ -19,7 +19,6 @@ public:
 
     int64_t request_cur_block();
 
-private:
     bool connect_chain();
 
 private:
