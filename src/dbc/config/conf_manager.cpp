@@ -67,7 +67,7 @@ int32_t conf_manager::parse_local_conf() {
         ("max_connect_count", bpo::value<int32_t>()->default_value(1024), "")
         ("http_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
         ("http_port", bpo::value<int32_t>()->default_value(20001), "")
-        ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "httpinfo.dbcwallet.io")
+        ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
         ("version", bpo::value<std::string>()->default_value("0.3.7.3"), "");
 
     const boost::filesystem::path &conf_path = env_manager::instance().get_conf_path();
