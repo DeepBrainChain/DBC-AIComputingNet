@@ -63,7 +63,6 @@ FResult TaskManager::init() {
 
 bool TaskManager::restore_tasks() {
     HttpChainClient httpclient;
-    sleep(1);
     std::string cur_renter_wallet;
     int64_t cur_rent_end = 0;
 
