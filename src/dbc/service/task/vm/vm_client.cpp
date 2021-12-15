@@ -1191,8 +1191,14 @@ FResult VmClient::CreateSnapshot(const std::string& domain_name, const std::shar
 
         unsigned int createFlags = VIR_DOMAIN_SNAPSHOT_CREATE_HALT | VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
                                    VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE | VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC;
-
-        snapshotPtr = virDomainSnapshotCreateXML(domainPtr, snapXMLDesc.c_str(), createFlags);
+        bool bExternal = false;
+        for (const auto& disk : info->disks) {
+            if (disk.snapshot == "external") {
+                bExternal = true;
+                break;
+            }
+        }
+        snapshotPtr = virDomainSnapshotCreateXML(domainPtr, snapXMLDesc.c_str(), bExternal ? createFlags : 0);
         if (snapshotPtr == nullptr) {
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainSnapshotCreateXML error: " << (error ? error->message : ""));

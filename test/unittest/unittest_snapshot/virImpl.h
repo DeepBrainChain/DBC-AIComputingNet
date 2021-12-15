@@ -26,6 +26,8 @@ struct DomainSnapshotInfo {
 
 std::ostream& operator<<(std::ostream& out, const DomainSnapshotInfo& obj);
 
+std::shared_ptr<virError> getLastError();
+
 int getDomainSnapshotInfo(virDomainSnapshotPtr snapshot, DomainSnapshotInfo &info);
 
 class virDomainSnapshotImpl {
@@ -111,6 +113,13 @@ public:
     int32_t undefineDomain();
 
     int32_t deleteDomain();
+
+    /**
+     * @brief Determine if the domain is currently running
+     * 
+     * @return 1 if running, 0 if inactive, -1 on error
+     */
+    int32_t isDomainActive();
 
     int32_t getDomainDisks(std::vector<std::string> &disks);
 
@@ -231,6 +240,14 @@ public:
      */
     int32_t getSnapshotNums(unsigned int flags);
 
+    int32_t blockCommit(const char *disk, const char *base, const char *top, unsigned long bandwith, unsigned int flags);
+
+    int32_t blockPull(const char *disk, unsigned long bandwith, unsigned int flags);
+
+    int32_t blockRebase(const char *disk, const char *base, unsigned long bandwith, unsigned int flags);
+
+    int32_t getBlockJobInfo(const char *disk, virDomainBlockJobInfoPtr info, unsigned int flags);
+
 protected:
     std::shared_ptr<virDomain> domain_;
 };
@@ -251,8 +268,9 @@ protected:
 
 protected:
     std::shared_ptr<virConnect> conn_;
-    int callback_id_;
-    int agent_callback_id_;
+    int dom_event_lifecycle_callback_id_;
+    int dom_event_agent_callback_id_;
+    int dom_event_block_job_callback_id_;
     int thread_quit_;
     std::thread *thread_event_loop_;
 };
