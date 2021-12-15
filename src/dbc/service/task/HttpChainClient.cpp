@@ -23,8 +23,8 @@ bool HttpChainClient::connect_chain() {
     std::vector<std::string> vec = conf_manager::instance().get_dbc_chain_domain();
     for (int i = 0; i < vec.size(); i++) {
         std::vector<std::string> addr = util::split(vec[i], ":");
-        if (addr.size() >= 2) {
-            httplib::SSLClient cli(addr[0], atoi(addr[1].c_str()));
+        if (!addr.empty()) {
+            httplib::SSLClient cli(addr[0], addr.size() > 1 ? atoi(addr[1].c_str()) : 443);
             if (cli.is_valid()) {
                 struct timeval tv1{};
                 gettimeofday(&tv1, 0);
@@ -50,8 +50,8 @@ bool HttpChainClient::connect_chain() {
         m_httpclient = nullptr;
 
         std::vector<std::string> addr = util::split(it.second, ":");
-        if (addr.size() >= 2) {
-            m_httpclient = new httplib::SSLClient(addr[0], atoi(addr[1].c_str()));
+        if (!addr.empty()) {
+            m_httpclient = new httplib::SSLClient(addr[0], addr.size() > 1 ? atoi(addr[1].c_str()) : 443);
             if (m_httpclient->is_valid())
                 break;
         }
