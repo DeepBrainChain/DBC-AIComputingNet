@@ -637,6 +637,23 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
     ss << ",\"used_usage\":" << "\"" << f2s(SystemInfo::instance().cpu_usage() * 100) << "%" << "\"";
     ss << "}";
+
+    ss << ",\"gpu\":" << "{";
+    const std::map<std::string, gpu_info> gpu_infos = SystemInfo::instance().gpuinfo();
+    int gpu_count = gpu_infos.size();
+    ss << "\"gpu_count\":" << "\"" << gpu_count << "\"";
+    int gpu_used = 0;
+    std::map<std::string, std::shared_ptr<dbc::TaskInfo> > task_list = TaskInfoManager::instance().getTasks();
+    // m_task_scheduler.listAllTask(result.rent_wallet, task_list);
+    for (const auto& taskinfo : task_list) {
+        if (taskinfo.second->status != TS_ShutOff && taskinfo.second->status < TS_Error) {
+            std::shared_ptr<TaskResource> task_resource = TaskResourceMgr::instance().getTaskResource(taskinfo.second->task_id);
+            gpu_used += task_resource->gpus.size();
+        }
+    }
+    ss << ",\"gpu_used\":" << "\"" << gpu_used << "\"";
+    ss << "}";
+
     mem_info tmp_meminfo = SystemInfo::instance().meminfo();
     ss << ",\"mem\":" <<  "{";
     ss << "\"size\":" << "\"" << size2GB(tmp_meminfo.mem_total) << "\"";

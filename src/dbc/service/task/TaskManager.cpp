@@ -24,7 +24,7 @@ TaskManager::~TaskManager() {
 
 FResult TaskManager::init() {
     if (!m_vm_client.Init()) {
-        return {E_DEFAULT, "init vmclient failed"};
+        return {E_DEFAULT, "connect libvirt tcp service failed"};
     }
 
     if (!TaskInfoMgr::instance().init()) {
