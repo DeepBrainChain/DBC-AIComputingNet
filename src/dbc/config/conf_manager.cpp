@@ -131,7 +131,9 @@ int32_t conf_manager::parse_local_conf() {
     m_http_ip = core_args["http_ip"].as<std::string>();
     m_http_port = core_args["http_port"].as<int32_t>();
 
-    m_dbc_chain_domain = core_args["dbc_chain_domain"].as<std::vector<std::string>>();
+    if (core_args.count("dbc_chain_domain") > 0) {
+        m_dbc_chain_domain = core_args["dbc_chain_domain"].as<std::vector<std::string>>();
+    }
 
     m_version = core_args["version"].as<std::string>();
 
