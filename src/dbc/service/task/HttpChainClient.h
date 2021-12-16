@@ -19,8 +19,11 @@ public:
 
     int64_t request_cur_block();
 
+    bool connect_chain();
+
 private:
     httplib::SSLClient* m_httpclient = nullptr;
+    std::mutex m_mtx;
 };
 
 

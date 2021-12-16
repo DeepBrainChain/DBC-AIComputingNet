@@ -30,6 +30,7 @@ dbc_package()
 
     mkdir -p $dbc_repo_dir/shell
     if [ $type == 'client' ];then
+        sed -i '/dbc_chain_domain/d' $dbc_repo_dir/conf/core.conf
         rm -rf $dbc_repo_dir/conf/container.conf
         cp $shell_dir/client/*.sh $dbc_repo_dir/shell/
         cp $shell_dir/update_client.sh $dbc_repo_dir/update.sh
@@ -63,5 +64,8 @@ dbc_package
 tar -czvf $tar_ball dbc_$type\_node
 
 rm -rf $dbc_repo_dir
+
+touch ./package/version
+echo "latest_version="$version > ./package/version
 
 echo "package complete: $version $type"

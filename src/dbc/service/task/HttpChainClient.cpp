@@ -10,10 +10,58 @@ HttpChainClient::~HttpChainClient() {
     delete m_httpclient;
 }
 
+bool HttpChainClient::connect_chain() {
+    std::lock_guard<std::mutex> lock(m_mtx);
+    if (m_httpclient != nullptr && m_httpclient->is_valid()) {
+        return true;
+    }
+
+    delete m_httpclient;
+    m_httpclient = nullptr;
+
+    std::map<int64_t, std::string> mp;
+    std::vector<std::string> vec = conf_manager::instance().get_dbc_chain_domain();
+    for (int i = 0; i < vec.size(); i++) {
+        std::vector<std::string> addr = util::split(vec[i], ":");
+        if (!addr.empty()) {
+            httplib::SSLClient cli(addr[0], addr.size() > 1 ? atoi(addr[1].c_str()) : 443);
+            if (cli.is_valid()) {
+                struct timeval tv1{};
+                gettimeofday(&tv1, 0);
+
+                std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
+                std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+                if (resp == nullptr) {
+                    mp[0xFFFFFFFF + i] = vec[i];
+                    continue;
+                }
+
+                struct timeval tv2{};
+                gettimeofday(&tv2, 0);
+
+                int64_t msec = (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) - (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
+                mp[msec] = vec[i];
+            }
+        }
+    }
+
+    for (auto& it : mp) {
+        delete m_httpclient;
+        m_httpclient = nullptr;
+
+        std::vector<std::string> addr = util::split(it.second, ":");
+        if (!addr.empty()) {
+            m_httpclient = new httplib::SSLClient(addr[0], addr.size() > 1 ? atoi(addr[1].c_str()) : 443);
+            if (m_httpclient->is_valid())
+                break;
+        }
+    }
+
+    return (m_httpclient != nullptr && m_httpclient->is_valid());
+}
+
 std::string HttpChainClient::request_machine_status() {
-    if (m_httpclient == nullptr)
-        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
-    if (!m_httpclient->is_valid()) return "";
+    if (!connect_chain()) return "";
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
                            + conf_manager::instance().get_node_id() + R"("]})";
@@ -39,9 +87,7 @@ std::string HttpChainClient::request_machine_status() {
 }
 
 int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
-    if (m_httpclient == nullptr)
-        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
-    if (!m_httpclient->is_valid()) return 0;
+    if (!connect_chain()) return 0;
 
     int64_t cur_rent_end = 0;
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
@@ -80,9 +126,7 @@ int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
 }
 
 int64_t HttpChainClient::request_cur_block() {
-    if (m_httpclient == nullptr)
-        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
-    if (!m_httpclient->is_valid()) return 0;
+    if (!connect_chain()) return 0;
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
@@ -122,9 +166,7 @@ int64_t HttpChainClient::request_cur_block() {
 }
 
 bool HttpChainClient::in_verify_time(const std::string &wallet) {
-    if (m_httpclient == nullptr)
-        m_httpclient = new httplib::SSLClient(conf_manager::instance().get_dbc_chain_domain(), 443);
-    if (!m_httpclient->is_valid()) return false;
+    if (!connect_chain()) return false;
 
     int64_t cur_block = request_cur_block();
     if (cur_block <= 0) return false;

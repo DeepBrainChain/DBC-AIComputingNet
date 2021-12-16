@@ -12,9 +12,47 @@
 #include "tweetnacl/tweetnacl.h"
 
 static std::string g_internal_ip_seeds[] = {
-    "111.44.254.182:5001",
-    "111.44.254.182:5003",
-    "111.44.254.182:5005"
+        "115.231.234.43:5001",
+        "115.231.234.43:5003",
+        "115.231.234.43:5005",
+        "115.231.234.43:5007",
+        "115.231.234.43:5009",
+
+        "115.231.234.32:5001",
+        "115.231.234.32:5003",
+        "115.231.234.32:5005",
+        "115.231.234.32:5007",
+        "115.231.234.32:5009",
+
+        "115.231.234.40:5001",
+        "115.231.234.40:5003",
+        "115.231.234.40:5005",
+        "115.231.234.40:5007",
+        "115.231.234.40:5009",
+
+        "115.231.234.34:5001",
+        "115.231.234.34:5003",
+        "115.231.234.34:5005",
+        "115.231.234.34:5007",
+        "115.231.234.34:5009",
+
+        "115.231.234.35:5001",
+        "115.231.234.35:5003",
+        "115.231.234.35:5005",
+        "115.231.234.35:5007",
+        "115.231.234.35:5009",
+
+        "115.231.234.41:5001",
+        "115.231.234.41:5003",
+        "115.231.234.41:5005",
+        "115.231.234.41:5007",
+        "115.231.234.41:5009",
+
+        "115.231.234.37:5001",
+        "115.231.234.37:5003",
+        "115.231.234.37:5005",
+        "115.231.234.37:5007",
+        "115.231.234.37:5009"
 };
 
 static std::string g_internal_dns_seeds[] = {
@@ -67,7 +105,7 @@ int32_t conf_manager::parse_local_conf() {
         ("max_connect_count", bpo::value<int32_t>()->default_value(1024), "")
         ("http_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
         ("http_port", bpo::value<int32_t>()->default_value(20001), "")
-        ("dbc_chain_domain", bpo::value<std::string>()->default_value("httpinfotest2.dbcwallet.io"), "")
+        ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
         ("version", bpo::value<std::string>()->default_value("0.3.7.3"), "");
 
     const boost::filesystem::path &conf_path = env_manager::instance().get_conf_path();
@@ -93,7 +131,9 @@ int32_t conf_manager::parse_local_conf() {
     m_http_ip = core_args["http_ip"].as<std::string>();
     m_http_port = core_args["http_port"].as<int32_t>();
 
-    m_dbc_chain_domain = core_args["dbc_chain_domain"].as<std::string>();
+    if (core_args.count("dbc_chain_domain") > 0) {
+        m_dbc_chain_domain = core_args["dbc_chain_domain"].as<std::vector<std::string>>();
+    }
 
     m_version = core_args["version"].as<std::string>();
 
