@@ -5,21 +5,21 @@ cd $workpath
 
 . ./conf/core.conf
 
-mkdir -p update_temp
-rm -rf update_temp/*
+mkdir -p update_cache
+rm -rf update_cache/*
 
 # version
-wget -P ./update_temp http://111.44.254.179:22244/dbc/version
+wget -P ./update_cache http://121.57.95.175:20027/index.html/dbc/version
 if [ $? -ne 0 ]; then
   echo "wget dbc version failed!"
   exit 1
 fi
 
-source ./update_temp/version
+source ./update_cache/version
 
 if [[ -n ${version} && ("${latest_version}" < "${version}" || "${latest_version}" == "${version}") ]]
 then
-    echo "dbc is already latest!"
+    echo "dbc is already latest version!"
     exit 1
 fi
 
@@ -51,25 +51,25 @@ fi
 
 client_file=dbc_client_node_${latest_version}.tar.gz
 
-wget -P ./update_temp http://111.44.254.179:22244/dbc/${client_file}
+wget -P ./update_cache http://121.57.95.175:20027/index.html/dbc/${client_file}
 if [ $? -ne 0 ]; then
   echo "wget dbc package failed!"
   exit 1
 fi
 
-tar -zxvf ./update_temp/${client_file} -C ./update_temp/
+tar -zxvf ./update_cache/${client_file} -C ./update_cache/
 
 old_net_listen_port=$(cat $workpath/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
 old_http_port=$(cat $workpath/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
 
-new_net_listen_port=$(cat ./update_temp/dbc_client_node/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
-new_http_port=$(cat ./update_temp/dbc_client_node/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
+new_net_listen_port=$(cat ./update_cache/dbc_client_node/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
+new_http_port=$(cat ./update_cache/dbc_client_node/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
 
-cp -rfp $workpath/conf/peer.conf ./update_temp/dbc_client_node/conf
+cp -rfp $workpath/conf/peer.conf ./update_cache/dbc_client_node/conf
 
-cp -rfp ./update_temp/dbc_client_node/dbc $workpath/
-cp -rfp ./update_temp/dbc_client_node/shell $workpath/
-cp -rfp ./update_temp/dbc_client_node/conf $workpath/
+cp -rfp ./update_cache/dbc_client_node/dbc $workpath/
+cp -rfp ./update_cache/dbc_client_node/shell $workpath/
+cp -rfp ./update_cache/dbc_client_node/conf $workpath/
 
 sed -i "s/net_listen_port=${new_net_listen_port}/net_listen_port=${old_net_listen_port}/" $workpath/conf/core.conf
 sed -i "s/http_port=${new_http_port}/http_port=${old_http_port}/" $workpath/conf/core.conf
