@@ -18,48 +18,39 @@ fi
 
 time=$(date "+%Y-%m-%d-%H:%M:%S")
 
-. ./dbc_process.conf
-
 check_process() {
-    whami=$(whoami)
-    i=0
-    while [ $i -le $process_list_num ]
+  for  fline  in  `cat ./dbc_dir.conf`; do
+    trytimes=0
+    while [ $trytimes -lt 3 ]
     do
-        trytimes=0
-        while [ $trytimes -lt 5 ]
-        do
-            trytimes=`expr $trytimes + 1`
-            # group中所有进程名，机器数量的信息
-            process_path=`echo ${process[$i]}|awk -F',' '{print $1}'`
-            process_full_name=$process_path
+        trytimes=`expr $trytimes + 1`
 
-            process_num=`ps aux|grep "$process_full_name"|grep ${whami}|grep -v "grep"|grep -v "gdb"|grep -vE "vim|rm|scp"|wc -l`
-            if [ $process_num -eq 0 ]; then
-                echo "$time 进程 $process_full_name 不存在" >> $runlog
-                cd $process_path/shell
-                echo "$time 调用stop脚本，stop脚本输出如下" >> $runlog
-                /bin/bash ./stop.sh >> $runlog 2>&1
-                sleep 1
-                echo "$time 调用start脚本，start产生结果如下" >> $runlog
-                /bin/bash ./start.sh >> $runlog 2>&1
-                sleep 1
-                cd $workdir
-            else
-                echo "check result:$time 进程 $process_full_name 工作正常" >> $runlog
-                break
-            fi
-        done
-
-        if [ $trytimes -ge 5 ]; then
-            echo "$time 进程 $process_full_name 重试 $trytimes 仍然失败" >> $runlog
-        elif [ $trytimes -eq 1 ]; then
-            echo "$time 进程 $process_full_name 检测正常，第 $trytimes 次检查" >> $runlog
+        process_path=$fline
+        process_num=`ps aux|grep "$process_path"|grep -v "grep"|grep -v "gdb"|grep -vE "vim|rm|scp"|wc -l`
+        if [ $process_num -eq 0 ]; then
+            echo "$time 进程 $process_path 不存在" >> $runlog
+            cd $process_path/shell
+            echo "$time 调用stop脚本，stop脚本输出如下" >> $runlog
+            /bin/bash ./stop.sh >> $runlog 2>&1
+            sleep 1
+            echo "$time 调用start脚本，start产生结果如下" >> $runlog
+            /bin/bash ./start.sh >> $runlog 2>&1
+            sleep 1
+            cd $workdir
         else
-            echo "$time 第 `expr $trytimes  - 1` 次，进程 $process_full_name 拉起成功" >> $runlog
+            echo "check result:$time 进程 $process_path 工作正常" >> $runlog
+            break
         fi
-
-        i=`expr $i + 1`
     done
+
+    if [ $trytimes -ge 5 ]; then
+        echo "$time 进程 $process_path 重试 $trytimes 仍然失败" >> $runlog
+    elif [ $trytimes -eq 1 ]; then
+        echo "$time 进程 $process_path 检测正常，第 $trytimes 次检查" >> $runlog
+    else
+        echo "$time 第 `expr $trytimes  - 1` 次，进程 $process_path 拉起成功" >> $runlog
+    fi
+  done
 }
 
 shellname=`basename $0`
@@ -72,7 +63,12 @@ fi
 cd $workdir
 cd - >/dev/null 2>&1
 
-# 获取进程数目
-process_list_num=`echo ${!process[@]} |awk '{print $NF}'`
+for  fline  in  `cat ./dbc_dir.conf`; do
+  process_path=$fline
+  if [[ ! -d "$process_path" ]]; then
+    temp=`echo $process_path | sed 's#\/#\\\/#g'`
+    sed -i "/${temp}/d" ./dbc_dir.conf
+  fi
+done
 
 check_process

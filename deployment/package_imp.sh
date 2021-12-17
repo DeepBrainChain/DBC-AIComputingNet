@@ -27,20 +27,17 @@ dbc_package()
     strip --strip-all $dbc_repo_dir/dbc
 
     cp -rf $base_dir/conf $dbc_repo_dir/
+    sed -i "/version=/c version=$version" $dbc_repo_dir/conf/core.conf
 
     mkdir -p $dbc_repo_dir/shell
     if [ $type == 'client' ];then
         sed -i '/dbc_chain_domain/d' $dbc_repo_dir/conf/core.conf
         rm -rf $dbc_repo_dir/conf/container.conf
         cp $shell_dir/client/*.sh $dbc_repo_dir/shell/
-        cp $shell_dir/update_client.sh $dbc_repo_dir/update.sh
-        chmod +x $dbc_repo_dir/update.sh
     fi
 
     if [ $type == 'mining' ]; then
         cp $shell_dir/mining/*.sh $dbc_repo_dir/shell/
-        cp $shell_dir/update_mining.sh $dbc_repo_dir/update.sh
-        chmod +x $dbc_repo_dir/update.sh
     fi
 
     cp -r $shell_dir/crontab $dbc_repo_dir/shell
