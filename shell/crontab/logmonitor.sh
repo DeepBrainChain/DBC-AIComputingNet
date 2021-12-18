@@ -46,19 +46,13 @@ foreach_logs() {
 }
 
 foreach_process() {
-  i=0
-  while [ $i -le $process_list_num ]
-  do
-    process_path=`echo ${process[$i]}|awk -F',' '{print $1}'`
-    process_full_name=$process_path
-    if [ -d $process_full_name/logs ];then
-      foreach_logs $process_full_name/logs
+  for  fline  in  `cat ./dbc_dir.conf`; do
+    process_path=$fline
+
+    if [ -d $process_path/logs ];then
+      foreach_logs $process_path/logs
     fi
-    i=`expr $i + 1`
   done
 }
 
-. ./dbc_process.conf
-process_list_num=`echo ${!process[@]} |awk '{print $NF}'`
-# echo $process_list_num
 foreach_process
