@@ -5,6 +5,7 @@ if [ $# -lt 1 ]; then
 	exit 0
 fi
 
+download_url=http://121.57.95.175:20027/index.html/dbc
 dir_num=$#
 arr_dir=($*)
 cur_path=$(cd .; pwd)
@@ -12,29 +13,66 @@ cur_path=$(cd .; pwd)
 workpath=$(cd $(dirname $0) && pwd)
 cd $workpath
 
-download_url=http://121.57.95.175:20027/index.html/dbc
+# close_old_dbc_mining_service
+service_count=$(systemctl list-unit-files --type=service | grep "restart_dbc.service" | wc -l)
+if [ $service_count -ne 0 ]; then
+  service_count=$(systemctl status restart_dbc.service | grep "Active" | grep "running" | wc -l)
+  if [ $service_count -ne 0 ]; then
+    systemctl stop restart_dbc.service
+  fi
+  systemctl disable restart_dbc.service
+fi
 
-# update
+process_num=$(ps -ef | grep -v grep | grep "restart_dbc.sh" | wc -l)
+if [ ${process_num} -ne 0 ]; then
+  pids=$(ps -ef | grep -v grep | grep "restart_dbc.sh" | awk '{print $2}')
+  for pid in $pids; do
+    kill -9 $pid
+  done
+fi
+
+if [ -f "/etc/systemd/system/restart_dbc.service" ]; then
+  rm -f /etc/systemd/system/restart_dbc.service
+fi
+
+if [ -f "/etc/systemd/system/restart_dbc.sh" ]; then
+  rm -f /etc/systemd/system/restart_dbc.sh
+fi
+
+service_count=$(systemctl list-unit-files --type=service | grep "dbc.service" | wc -l)
+if [ $service_count -ne 0 ]; then
+  service_count=$(systemctl status dbc.service | grep "Active" | grep "running" | wc -l)
+  if [ $service_count -ne 0 ]; then
+    systemctl stop dbc.service
+  fi
+  systemctl disable dbc.service
+fi
+
+if [ -f "/lib/systemd/system/dbc.service" ]; then
+  rm -f /lib/systemd/system/dbc.service
+fi
+
 mkdir -p update_cache
 rm -rf update_cache/*
 
+echo "download package file..."
 # download version file
-if [[ ! -f "./update_cache/version" ]]; then
-  wget -P ./update_cache $download_url/version
-  if [ $? -ne 0 ]; then
-    echo "update failed: wget dbc version file failed!"
-    exit 1
-  fi
+wget -P ./update_cache $download_url/version
+if [ $? -ne 0 ]; then
+  echo "file:${download_url}/version download failed!"
+  echo "install failed!"
+  exit 0
 fi
 source ./update_cache/version
 
 # download package file
 node_file=dbc_mining_node_${latest_version}.tar.gz
-if [[ ! -f "./update_cache/${node_file}" ]]; then
+if [ ! -f "./update_cache/${node_file}" ]; then
   wget -P ./update_cache $download_url/${node_file}
   if [ $? -ne 0 ]; then
-    echo "update failed: wget ${node_file} failed!"
-    exit 1
+    echo "file:$download_url/${node_file} download failed!"
+    echo "install failed!"
+    exit 0
   fi
 fi
 tar -zxvf ./update_cache/${node_file} -C ./update_cache/
@@ -92,32 +130,13 @@ if [[ -d "/home/crontab" && -f "/home/crontab/dbc_dir.conf" ]]; then
   rm -rf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
 fi
 
-rm -rf /home/crontab
-cp -rp ./update_cache/dbc_mining_node/shell/crontab /home
+if [ -d "/home/crontab" ]; then
+  rm -rf /home/crontab
+fi
+cp -rf ./update_cache/dbc_mining_node/shell/crontab /home
 if [[ -f "./update_cache/dbc_mining_node/dbc_dir_old.conf" ]]; then
   cat ./update_cache/dbc_mining_node/dbc_dir_old.conf > /home/crontab/dbc_dir.conf
 fi
-
-# close old dbc_mining_node
-sudo systemctl stop restart_dbc.service
-sudo systemctl disable restart_dbc.service
-
-process_num=`ps -ef |grep -v grep |grep "restart_dbc.sh" | wc -l`
-if [ ${process_num} -ne 0 ]
-then
-    pids=`ps -ef |grep -v grep |grep "restart_dbc.sh" |awk '{print $2}'`
-    for pid in $pids
-    do
-        kill -9 $pid
-    done
-fi
-
-sudo rm -f /etc/systemd/system/restart_dbc.service
-sudo rm -f /etc/systemd/system/restart_dbc.sh
-
-sudo systemctl stop dbc.service
-sudo systemctl disable dbc.service
-sudo rm -f /lib/systemd/system/dbc.service
 
 # update
 for ((i=1;i<=$dir_num;i++)); do
@@ -134,11 +153,6 @@ for ((i=1;i<=$dir_num;i++)); do
   rm -rf $install_dir/update.sh
 
   source $install_dir/conf/core.conf
-  if [[ -n ${version} && ("${latest_version}" < "${version}" || "${latest_version}" == "${version}") ]]
-  then
-      echo "$install_dir is already latest version!"
-      continue
-  fi
 
   # update
   /bin/bash $install_dir/shell/stop.sh
@@ -165,18 +179,13 @@ for ((i=1;i<=$dir_num;i++)); do
   chmod +x $install_dir/shell/crontab/*.sh
 
   /bin/bash $install_dir/shell/start.sh
-  sleep 3
-  process_mining_num=`ps -ef | grep -v grep | grep  "$install_dir/shell/../dbc" | wc -l`
-  if [ ${process_mining_num} -eq 0 ]
-  then
-      echo "update ${install_dir} failed: start failed!"
-      continue
-  fi
 
   install_dir_fullpath=$(cd ${install_dir}; pwd)
   if [ -z "`grep "$install_dir_fullpath" /home/crontab/dbc_dir.conf`" ]; then
     echo $install_dir_fullpath >> /home/crontab/dbc_dir.conf
   fi
+
+  echo "update $install_dir success!"
 done
 
 crontab /home/crontab/crontab.on
