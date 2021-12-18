@@ -107,7 +107,7 @@ if [[ -d "/home/crontab" && -f "/home/crontab/dbc_process.conf" ]]; then
   cp /home/crontab/dbc_process.conf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
   for  fline  in  `cat ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf`; do
     if [[ $fline == *=* ]]; then
-      ffullpath=`echo $fline|awk -F'='` '{print $2}'|awk -F'"' '{print $2}'
+      ffullpath=`echo $fline|awk -F'=' '{print $2}'|awk -F'"' '{print $2}'`
       echo $ffullpath >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
     else
       echo $fline >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
@@ -121,7 +121,7 @@ if [[ -d "/home/crontab" && -f "/home/crontab/dbc_dir.conf" ]]; then
   cp /home/crontab/dbc_dir.conf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
   for  fline  in  `cat ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf`; do
     if [[ $fline == *=* ]]; then
-      ffullpath=`echo $fline|awk -F'='` '{print $2}'|awk -F'"' '{print $2}'
+      ffullpath=`echo $fline|awk -F'=' '{print $2}'|awk -F'"' '{print $2}'`
       echo $ffullpath >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
     else
       echo $fline >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
