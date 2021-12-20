@@ -3,12 +3,12 @@
 
 #include "util/utils.h"
 
-struct DownloadEvent {
+struct DownloadImageEvent {
     std::string task_id;
     std::vector<std::string> images;
 };
 
-struct UploadEvent {
+struct UploadImageEvent {
     std::string image;
 };
 
@@ -18,13 +18,13 @@ public:
 
     virtual ~ImageManager();
 
-    void PushDownloadEvent(const DownloadEvent &ev);
+    void PushDownloadEvent(const DownloadImageEvent &ev);
 
-    void PushUploadEvent(const UploadEvent &ev);
+    void PushUploadEvent(const UploadImageEvent &ev);
 
 private:
-    std::list<DownloadEvent> m_download_events;
-    std::list<UploadEvent> m_upload_events;
+    std::list<DownloadImageEvent> m_download_events;
+    std::list<UploadImageEvent> m_upload_events;
 };
 
 
