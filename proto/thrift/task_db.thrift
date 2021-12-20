@@ -19,7 +19,9 @@ struct TaskInfo {
     10: HardwareResource hardware_resource,      //硬件资源（如：gpu、cpu）
     11: optional string vm_xml,         //自定义xml文件名
     12: optional string vm_xml_url,     //自定义xml文件下载地址
-    13: optional string data_file_name  //数据磁盘镜像文件名
+    13: optional string data_file_name, //数据磁盘镜像文件名
+    14: optional string operation_system,  //操作系统(如：generic, ubuntu 18.04,windows 10)
+    15: optional string bios_mode       //BIOS 模式(如：legacy, uefi)
 }
 
 

@@ -121,6 +121,9 @@ struct TaskCreateParams {
 
     int16_t vnc_port;
     std::string vnc_password;
+    
+    std::string operation_system; //操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
+    std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 };
 
 struct ParseVmXmlParams {
@@ -140,6 +143,9 @@ struct ParseVmXmlParams {
 
     int16_t vnc_port;
     std::string vnc_password;
+
+    std::string operation_system; //操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
+    std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 };
 
 /*

@@ -12,7 +12,8 @@
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                          const std::string& vedio_pci, const std::string & image_file,
-                         const std::string& disk_file, int32_t vnc_port, const std::string& vnc_pwd)
+                         const std::string& disk_file, int32_t vnc_port, const std::string& vnc_pwd,
+                         bool is_windows = false, bool uefi = false)
 {
     tinyxml2::XMLDocument doc;
 
@@ -51,17 +52,33 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* os_node = doc.NewElement("os");
     tinyxml2::XMLElement* os_sub_node = doc.NewElement("type");
     os_sub_node->SetAttribute("arch", "x86_64");
-    os_sub_node->SetAttribute("machine", "pc-1.2");
+    os_sub_node->SetAttribute("machine", is_windows ? "q35" : "pc-1.2");
     os_sub_node->SetText("hvm");
     os_node->LinkEndChild(os_sub_node);
 
-    tinyxml2::XMLElement* os_sub_node2 = doc.NewElement("boot");
-    os_sub_node2->SetAttribute("dev", "hd");
-    os_node->LinkEndChild(os_sub_node2);
+    if (!is_windows) {
+        tinyxml2::XMLElement* os_sub_node2 = doc.NewElement("boot");
+        os_sub_node2->SetAttribute("dev", "hd");
+        os_node->LinkEndChild(os_sub_node2);
 
-    tinyxml2::XMLElement* os_sub_node3 = doc.NewElement("boot");
-    os_sub_node3->SetAttribute("dev", "cdrom");
-    os_node->LinkEndChild(os_sub_node3);
+        tinyxml2::XMLElement* os_sub_node3 = doc.NewElement("boot");
+        os_sub_node3->SetAttribute("dev", "cdrom");
+        os_node->LinkEndChild(os_sub_node3);
+    } else {
+        // uefi引导设置
+        if (uefi) {
+            tinyxml2::XMLElement *os_loader = doc.NewElement("loader");
+            os_loader->SetAttribute("readonly", "yes");
+            // 如果加载程序路径指向 UEFI 映像，则类型应为pflash。
+            os_loader->SetAttribute("type", "pflash");
+            // os_loader->SetAttribute("type", "rom");
+            os_loader->SetText("/usr/share/OVMF/OVMF_CODE.fd");
+            os_node->LinkEndChild(os_loader);
+        }
+        tinyxml2::XMLElement *os_bootmenu_node = doc.NewElement("bootmenu");
+        os_bootmenu_node->SetAttribute("enable", "yes");
+        os_node->LinkEndChild(os_bootmenu_node);
+    }
     root->LinkEndChild(os_node);
 
     // <features>
@@ -120,7 +137,27 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     root->LinkEndChild(cpu_node);
 
     tinyxml2::XMLElement* clock_node = doc.NewElement("clock");
-    clock_node->SetAttribute("offset", "utc");
+    if (!is_windows) {
+        clock_node->SetAttribute("offset", "utc");
+    } else {
+        clock_node->SetAttribute("offset", "localtime");
+        tinyxml2::XMLElement *clock_rtc_node = doc.NewElement("timer");
+        clock_rtc_node->SetAttribute("name", "rtc");
+        clock_rtc_node->SetAttribute("tickpolicy", "catchup");
+        clock_node->LinkEndChild(clock_rtc_node);
+        tinyxml2::XMLElement *clock_pit_node = doc.NewElement("timer");
+        clock_pit_node->SetAttribute("name", "pit");
+        clock_pit_node->SetAttribute("tickpolicy", "delay");
+        clock_node->LinkEndChild(clock_pit_node);
+        tinyxml2::XMLElement *clock_hpet_node = doc.NewElement("timer");
+        clock_hpet_node->SetAttribute("name", "hpet");
+        clock_hpet_node->SetAttribute("present", "no");
+        clock_node->LinkEndChild(clock_hpet_node);
+        tinyxml2::XMLElement *clock_hypervclock_node = doc.NewElement("timer");
+        clock_hypervclock_node->SetAttribute("name", "hypervclock");
+        clock_hypervclock_node->SetAttribute("present", "yes");
+        clock_node->LinkEndChild(clock_hypervclock_node);
+    }
     root->LinkEndChild(clock_node);
 
     // <pm>
@@ -136,15 +173,24 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     */
 
     tinyxml2::XMLElement* dev_node = doc.NewElement("devices");
-    /*
-    tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
-    tinyxml2::XMLElement* model_node = doc.NewElement("model");
-    model_node->SetAttribute("type", "vga");
-    model_node->SetAttribute("vram", "16384");
-    model_node->SetAttribute("heads", "1");
-    vedio_node->LinkEndChild(model_node);
-    dev_node->LinkEndChild(vedio_node);
-    */
+    if (is_windows) {
+        tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
+        tinyxml2::XMLElement* model_node = doc.NewElement("model");
+        // model_node->SetAttribute("type", "vga"); //default "cirrus"
+        model_node->SetAttribute("type", "qxl");
+        model_node->SetAttribute("ram", "65536");
+        model_node->SetAttribute("vram", "65536");
+        model_node->SetAttribute("vgamem", "16384");
+        model_node->SetAttribute("heads", "1");
+        model_node->SetAttribute("primary", "yes");
+        vedio_node->LinkEndChild(model_node);
+        dev_node->LinkEndChild(vedio_node);
+
+        tinyxml2::XMLElement* input_node = doc.NewElement("input");
+        input_node->SetAttribute("type", "tablet");
+        input_node->SetAttribute("bus", "usb");
+        dev_node->LinkEndChild(input_node);
+    }
 
     if(vedio_pci != "") {
         std::vector<std::string> vedios = util::split(vedio_pci, "|");
@@ -195,9 +241,16 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     image_node->LinkEndChild(source_node);
 
     tinyxml2::XMLElement* target_node = doc.NewElement("target");
-    target_node->SetAttribute("dev", "hda");
-    target_node->SetAttribute("bus", "ide");
+    target_node->SetAttribute("dev", is_windows ? "vda" : "hda");
+    target_node->SetAttribute("bus", is_windows ? "virtio" : "ide");
     image_node->LinkEndChild(target_node);
+
+    if (is_windows) {
+        // set boot order
+        tinyxml2::XMLElement *boot_order_node = doc.NewElement("boot");
+        boot_order_node->SetAttribute("order", "1");
+        image_node->LinkEndChild(boot_order_node);
+    }
     dev_node->LinkEndChild(image_node);
 
     // disk (data)
@@ -214,7 +267,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     disk_data_node->LinkEndChild(disk_source_node);
 
     tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
-    disk_target_node->SetAttribute("dev", "vda");
+    disk_target_node->SetAttribute("dev", is_windows ? "vdb" : "vda");
     disk_target_node->SetAttribute("bus", "virtio");
     disk_data_node->LinkEndChild(disk_target_node);
 
@@ -257,6 +310,12 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     listen_node->SetAttribute("address", "0.0.0.0");
     graphics_node->LinkEndChild(listen_node);
     dev_node->LinkEndChild(graphics_node);
+
+    if (is_windows) {
+        tinyxml2::XMLElement *memballoon_node = doc.NewElement("memballoon");
+        memballoon_node->SetAttribute("model", "none");
+        dev_node->LinkEndChild(memballoon_node);
+    }
     root->LinkEndChild(dev_node);
 
     // cpu (qemu:commandline)
@@ -366,7 +425,7 @@ bool VmClient::Init() {
 }
 
 int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name, const std::string& data_file_name,
-                               const std::shared_ptr<TaskResource>& task_resource) {
+                               const std::shared_ptr<TaskResource>& task_resource, bool is_windows, bool uefi) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
         return E_DEFAULT;
@@ -411,7 +470,11 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     std::string to_image_path = "/data/" + to_image_name + "_" + domain_name + "." + to_ext;
     LOG_INFO << "image_copy_file: " << to_image_path;
     TASK_LOG_INFO(domain_name, "image_copy_file: " << to_image_path);
-    boost::filesystem::copy_file(from_image_path, to_image_path);
+    // boost::filesystem::copy_file(from_image_path, to_image_path);
+    std::string cmd_back_system_image = "qemu-img create -f qcow2 -b " + from_image_path + " " + to_image_path;
+    std::string create_system_image_ret = run_shell(cmd_back_system_image);
+    LOG_INFO << "create system image back cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret;
+    TASK_LOG_INFO(domain_name, "create system image back cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
 
     // 创建虚拟磁盘（数据盘）
     std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
@@ -436,7 +499,8 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
                                            cpuNumTotal, task_resource->cpu_sockets,
                                            task_resource->cpu_cores, task_resource->cpu_threads,
                                            vga_pci, to_image_path, data_file,
-                                           task_resource->vnc_port, task_resource->vnc_password);
+                                           task_resource->vnc_port, task_resource->vnc_password,
+                                           is_windows, uefi);
 
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
@@ -1152,6 +1216,53 @@ bool VmClient::ListDomainDiskInfo(const std::string& domain_name, std::map<std::
             disk_node = disk_node->NextSiblingElement("disk");
         }
         ret = true;
+    } while(0);
+
+    if (pContent) {
+        free(pContent);
+    }
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+    return ret;
+}
+
+int32_t VmClient::IsDomainHasNvram(const std::string& domain_name) {
+    int32_t ret = -1;
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        return ret;
+    }
+
+    virDomainPtr domain_ptr = nullptr;
+    char* pContent = nullptr;
+    do {
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            break;
+        }
+        pContent = virDomainGetXMLDesc(domain_ptr, 0);
+        if (!pContent) {
+            LOG_ERROR << domain_name << " get domain xml desc failed";
+            break;
+        }
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            LOG_ERROR << domain_name << " parse xml desc failed";
+            break;
+        }
+        tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement* os_node = root->FirstChildElement("os");
+        if (os_node) {
+            tinyxml2::XMLElement* os_nvram_node = os_node->FirstChildElement("nvram");
+            if (os_nvram_node && os_nvram_node->GetText() != NULL) {
+                ret = 1;
+                break;
+            }
+        }
+        ret = 0;
     } while(0);
 
     if (pContent) {

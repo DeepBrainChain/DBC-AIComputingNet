@@ -10,6 +10,7 @@
 
 namespace check_kvm {
     static const char* qemu_url = "qemu+tcp://localhost:16509/system";
+    static int32_t max_gpu_count = 1024;
 
     static std::vector<std::string> SplitStr(const std::string &s, const char &c) {
         std::string buff;
@@ -35,7 +36,7 @@ namespace check_kvm {
     static std::string createXmlStr(const std::string &uuid, const std::string &domain_name,
                                     int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                                     const std::string &vedio_pci, const std::string &image_file,
-                                    const std::string &disk_file, int32_t vnc_port, const std::string& vnc_pwd) {
+                                    const std::string &disk_file, int32_t vnc_port, const std::string& vnc_pwd, bool uefi = false) {
         tinyxml2::XMLDocument doc;
         bool is_windows = image_file.find("win") != std::string::npos;
 
@@ -88,6 +89,16 @@ namespace check_kvm {
             os_node->LinkEndChild(os_sub_node3);
         }
         else {
+            // uefi引导设置
+            if (uefi) {
+                tinyxml2::XMLElement *os_loader = doc.NewElement("loader");
+                os_loader->SetAttribute("readonly", "yes");
+                // 如果加载程序路径指向 UEFI 映像，则类型应为pflash。
+                os_loader->SetAttribute("type", "pflash");
+                // os_loader->SetAttribute("type", "rom");
+                os_loader->SetText("/usr/share/OVMF/OVMF_CODE.fd");
+                os_node->LinkEndChild(os_loader);
+            }
             tinyxml2::XMLElement *os_bootmenu_node = doc.NewElement("bootmenu");
             os_bootmenu_node->SetAttribute("enable", "yes");
             os_node->LinkEndChild(os_bootmenu_node);
@@ -196,19 +207,29 @@ namespace check_kvm {
         */
 
         tinyxml2::XMLElement *dev_node = doc.NewElement("devices");
-        /*
-        tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
-        tinyxml2::XMLElement* model_node = doc.NewElement("model");
-        model_node->SetAttribute("type", "vga");
-        model_node->SetAttribute("vram", "16384");
-        model_node->SetAttribute("heads", "1");
-        vedio_node->LinkEndChild(model_node);
-        dev_node->LinkEndChild(vedio_node);
-        */
+        
+        if (is_windows) {
+            tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
+            tinyxml2::XMLElement* model_node = doc.NewElement("model");
+            // model_node->SetAttribute("type", "vga"); //default "cirrus"
+            model_node->SetAttribute("type", "qxl");
+            model_node->SetAttribute("ram", "65536");
+            model_node->SetAttribute("vram", "65536");
+            model_node->SetAttribute("vgamem", "16384");
+            model_node->SetAttribute("heads", "1");
+            model_node->SetAttribute("primary", "yes");
+            vedio_node->LinkEndChild(model_node);
+            dev_node->LinkEndChild(vedio_node);
+
+            tinyxml2::XMLElement* input_node = doc.NewElement("input");
+            input_node->SetAttribute("type", "tablet");
+            input_node->SetAttribute("bus", "usb");
+            dev_node->LinkEndChild(input_node);
+        }
 
         if (vedio_pci != "") {
             std::vector<std::string> vedios = SplitStr(vedio_pci, '|');
-            for (int i = 0; i < vedios.size(); ++i) {
+            for (int i = 0; i < vedios.size() && i < max_gpu_count; ++i) {
                 std::vector<std::string> infos = SplitStr(vedios[i], ':');
                 if (infos.size() != 2) {
                     std::cout << vedios[i] << "  error" << std::endl;
@@ -364,7 +385,7 @@ namespace check_kvm {
 
     std::string CreateDomainXML(const std::string &domain_name, const std::string &image_name,
                          int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
-                         const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd) {
+                         const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd, bool uefi = false) {
         bool ret = true;
 
         std::cout << "domain_name: " << domain_name << std::endl;
@@ -423,7 +444,7 @@ namespace check_kvm {
 
         std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
                                                cpuNumTotal, sockets, cores_per_socket, threads_per_core,
-                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd);
+                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd, uefi);
         return xml_content;
     }
 
@@ -509,6 +530,8 @@ namespace check_kvm {
         int32_t vnc_port = -1;
         std::string vnc_pwd = "dbtu@supper2017";
 
+        bool uefi_load = false;
+
         const ::DeviceCpu& cpus = SystemResourceMgr::instance().GetCpu();
         int sockets = cpus.sockets;
         int cores = cpus.cores_per_socket - 1;
@@ -545,7 +568,9 @@ namespace check_kvm {
             ("image", boost::program_options::value<std::string>(), "")
             ("vnc_port", boost::program_options::value<int32_t>(), "")
             ("vnc_pwd", boost::program_options::value<std::string>(), "")
-            ("domain_name", boost::program_options::value<std::string>(), "");
+            ("domain_name", boost::program_options::value<std::string>(), "")
+            ("uefi", "uefi loader")
+            ("max_gpus", boost::program_options::value<int32_t>(), "max gpu count");
 
             try {
                 boost::program_options::variables_map vm;
@@ -583,6 +608,12 @@ namespace check_kvm {
                 if (vm.count("vnc_pwd")) {
                     vnc_pwd = vm["vnc_pwd"].as<std::string>();
                 }
+                if (vm.count("uefi")) {
+                    uefi_load = true;
+                }
+                if (vm.count("max_gpus")) {
+                    max_gpu_count = vm["max_gpus"].as<int32_t>();
+                }
             }
             catch (const std::exception &e) {
                 std::cout << "invalid command option " << e.what() << std::endl;
@@ -605,14 +636,18 @@ namespace check_kvm {
         try {
             std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
             if (domain) {
+                std::string vm_local_ip;
+                domain->getDomainInterfaceAddress(vm_local_ip);
                 if (domain->deleteDomain() < 0) {
                     printLastError();
                     return;
                 }
-                // delete_iptable(public_ip, ssh_port, vm_local_ip);
+                if (!vm_local_ip.empty()) {
+                    delete_iptable(public_ip, ssh_port, vm_local_ip);
+                }
             }
             std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
-                            vga_gpu, memory_total, vnc_port, vnc_pwd);
+                            vga_gpu, memory_total, vnc_port, vnc_pwd, uefi_load);
             if (xml_content.empty()) {
                 std::cout << "domain xml empty" << std::endl;
                 print_red("check vm %s failed", domain_name.c_str());
@@ -638,38 +673,30 @@ namespace check_kvm {
             }
             std::string vm_local_ip;
             int32_t try_count = 0;
-            while(vm_local_ip.empty() && try_count++ < 100) {
+            while(vm_local_ip.empty() && try_count++ < 200) {
+                if (try_count == 100) {
+                    // domain->rebootDomain(VIR_DOMAIN_REBOOT_GUEST_AGENT);
+                    // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
+                    // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
+                    std::cout << "retry destroy and start domain" << std::endl;
+                    domain->destroyDomain();
+                    domain->startDomain();
+                }
                 sleep(3);
                 std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
                 if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
                     printLastError();
                 }
             }
+            if (vm_local_ip.empty()) {
+                domain->deleteDomain();
+                std::cout << "get vm_local_ip is empty" << std::endl;
+                print_red("check vm %s failed", domain_name.c_str());
+                return;
+            }
+            std::cout << "vm local ip:" << vm_local_ip << std::endl;
+            transform_port(public_ip, ssh_port, vm_local_ip);
             if (image_name.find("win") == std::string::npos) {
-                try_count = 100;
-                while(vm_local_ip.empty() && try_count++ < 200) {
-                    if (try_count == 101) {
-                        // domain->rebootDomain(VIR_DOMAIN_REBOOT_GUEST_AGENT);
-                        // std::string tmp = run_shell(("virsh reboot --mode agent " + domain_name).c_str());
-                        // std::cout << "virsh reboot --mode agent " << domain_name << " return:" << tmp << std::endl;
-                        std::cout << "retry destroy and start domain" << std::endl;
-                        domain->destroyDomain();
-                        domain->startDomain();
-                    }
-                    sleep(3);
-                    std::cout << "get vm_local_ip try_count: " << try_count << std::endl;
-                    if (domain->getDomainInterfaceAddress(vm_local_ip) < 0) {
-                        printLastError();
-                    }
-                }
-                if (vm_local_ip.empty()) {
-                    domain->deleteDomain();
-                    std::cout << "get vm_local_ip is empty" << std::endl;
-                    print_red("check vm %s failed", domain_name.c_str());
-                    return;
-                }
-                std::cout << "vm local ip:" << vm_local_ip << std::endl;
-                transform_port(public_ip, ssh_port, vm_local_ip);
                 try_count = 0;
                 int succ = -1;
                 while (succ < 0 && try_count++ < 100) {
@@ -690,7 +717,7 @@ namespace check_kvm {
                 std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
             }
             else {
-                std::cout << "windows vm cannot get local ip and set user password now, please connect using vnc" << std::endl;
+                std::cout << "windows vm cannot set user password now, please connect using vnc" << std::endl;
             }
             std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
             print_green("check vm %s successful", domain_name.c_str());
