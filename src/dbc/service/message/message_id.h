@@ -4,6 +4,21 @@
 #include <iostream>
 #include <string>
 
+// list images
+#define NODE_LIST_IMAGES_REQ      "node_list_images_req"
+#define NODE_LIST_IMAGES_RSP      "node_list_images_rsp"
+#define NODE_LIST_IMAGES_TIMER    "node_list_images_timer"
+
+// download image
+#define NODE_DOWNLOAD_IMAGE_REQ      "node_download_image_req"
+#define NODE_DOWNLOAD_IMAGE_RSP      "node_download_image_rsp"
+#define NODE_DOWNLOAD_IMAGE_TIMER    "node_download_image_timer"
+
+// upload image
+#define NODE_UPLOAD_IMAGE_REQ      "node_upload_image_req"
+#define NODE_UPLOAD_IMAGE_RSP      "node_upload_image_rsp"
+#define NODE_UPLOAD_IMAGE_TIMER    "node_upload_image_timer"
+
 // create task
 #define NODE_CREATE_TASK_REQ        "node_create_task_req"
 #define NODE_CREATE_TASK_RSP        "node_create_task_rsp"

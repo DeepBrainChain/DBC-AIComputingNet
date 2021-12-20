@@ -39,6 +39,93 @@ struct multisig_sign_item {
   3: required string sign
 }
 //////////////////////////////////////////////////////////////////////////
+// list images
+// request
+struct node_list_images_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional
+}
+
+struct node_list_images_req_body {
+    1: required string data
+}
+
+struct node_list_images_req {
+  1: node_list_images_req_body body
+}
+// response
+struct node_list_images_rsp_body {
+  1: required string data
+}
+
+struct node_list_images_rsp {
+  1: node_list_images_rsp_body body
+}
+//////////////////////////////////////////////////////////////////////////
+// download image
+// request
+struct node_download_image_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string image,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
+}
+
+struct node_download_image_req_body {
+    1: required string data
+}
+
+struct node_download_image_req {
+  1: node_download_image_req_body body
+}
+// response
+struct node_download_image_rsp_body {
+  1: required string data
+}
+
+struct node_download_image_rsp {
+  1: node_download_image_rsp_body body
+}
+//////////////////////////////////////////////////////////////////////////
+// upload image
+// request
+struct node_upload_image_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string image,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
+}
+
+struct node_upload_image_req_body {
+  1: required string data
+}
+
+struct node_upload_image_req {
+  1: node_upload_image_req_body body
+}
+// response
+struct node_upload_image_rsp_body {
+  1: required string data
+}
+
+struct node_upload_image_rsp {
+  1: node_upload_image_rsp_body body
+}
+//////////////////////////////////////////////////////////////////////////
 // list task
 // request
 struct node_list_task_req_data {
@@ -267,7 +354,7 @@ struct node_delete_task_rsp {
 struct node_task_logs_req_data {
   1: required string task_id,
   2: required i16 head_or_tail,
-  3: required i32 number_of_lines, 
+  3: required i32 number_of_lines,
   4: required list<string> peer_nodes_list,
   5: required string additional,
   6: required string wallet,
@@ -396,7 +483,7 @@ struct node_service_info {
   3: optional i64 time_stamp,
   4: optional map<string,string> kvs
 }
- 
+
 struct service_broadcast_req_body {
   1: required map<string, node_service_info> node_service_info_map
 }
