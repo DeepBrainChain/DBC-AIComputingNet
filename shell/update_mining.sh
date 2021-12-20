@@ -1,34 +1,88 @@
 #!/bin/bash
 
+if [ $# -lt 1 ]; then
+	echo "usage: $0 [install_dir] [install_dir] ..."
+	exit 0
+fi
+
+download_url=http://121.57.95.175:20027/index.html/dbc
+dir_num=$#
+arr_dir=($*)
+cur_path=$(cd .; pwd)
+
 workpath=$(cd $(dirname $0) && pwd)
 cd $workpath
 
-. ./conf/core.conf
+# close_old_dbc_mining_service
+service_count=$(systemctl list-unit-files --type=service | grep "restart_dbc.service" | wc -l)
+if [ $service_count -ne 0 ]; then
+  service_count=$(systemctl status restart_dbc.service | grep "Active" | grep "running" | wc -l)
+  if [ $service_count -ne 0 ]; then
+    systemctl stop restart_dbc.service
+  fi
+  systemctl disable restart_dbc.service
+fi
+
+process_num=$(ps -ef | grep -v grep | grep "restart_dbc.sh" | wc -l)
+if [ ${process_num} -ne 0 ]; then
+  pids=$(ps -ef | grep -v grep | grep "restart_dbc.sh" | awk '{print $2}')
+  for pid in $pids; do
+    kill -9 $pid
+  done
+fi
+
+if [ -f "/etc/systemd/system/restart_dbc.service" ]; then
+  rm -f /etc/systemd/system/restart_dbc.service
+fi
+
+if [ -f "/etc/systemd/system/restart_dbc.sh" ]; then
+  rm -f /etc/systemd/system/restart_dbc.sh
+fi
+
+service_count=$(systemctl list-unit-files --type=service | grep "dbc.service" | wc -l)
+if [ $service_count -ne 0 ]; then
+  service_count=$(systemctl status dbc.service | grep "Active" | grep "running" | wc -l)
+  if [ $service_count -ne 0 ]; then
+    systemctl stop dbc.service
+  fi
+  systemctl disable dbc.service
+fi
+
+if [ -f "/lib/systemd/system/dbc.service" ]; then
+  rm -f /lib/systemd/system/dbc.service
+fi
 
 mkdir -p update_cache
 rm -rf update_cache/*
 
-# version
-wget -P ./update_cache http://121.57.95.175:20027/index.html/dbc/version
+echo "download package file..."
+# download version file
+wget -P ./update_cache $download_url/version
 if [ $? -ne 0 ]; then
-  echo "wget dbc version failed!"
-  exit 1
+  echo "file:${download_url}/version download failed!"
+  echo "install failed!"
+  exit 0
 fi
-
 source ./update_cache/version
 
-if [[ -n ${version} && ("${latest_version}" < "${version}" || "${latest_version}" == "${version}") ]]
-then
-    echo "dbc is already latest version!"
-    exit 1
+# download package file
+node_file=dbc_mining_node_${latest_version}.tar.gz
+if [ ! -f "./update_cache/${node_file}" ]; then
+  wget -P ./update_cache $download_url/${node_file}
+  if [ $? -ne 0 ]; then
+    echo "file:$download_url/${node_file} download failed!"
+    echo "install failed!"
+    exit 0
+  fi
 fi
+tar -zxvf ./update_cache/${node_file} -C ./update_cache/
 
-# update
-crontab /home/crontab/crontab.off
-
-echo "wait local monitor exit"
-for((i=0; i<90; i++));
-do
+# close monitor
+if [[ -d "/home/crontab" && -f "/home/crontab/crontab.off" ]]; then
+  crontab /home/crontab/crontab.off
+  echo "wait local monitor exit"
+  for((i=0; i<90; i++));
+  do
     monitor_count=`ps aux | grep ";/bin/bash ./dbcmonitor.sh" | grep -v grep | wc -l`
     if [ ${monitor_count} -eq 0 ]
     then
@@ -37,48 +91,104 @@ do
 
     echo -n "."
     sleep 1
-done
+  done
 
-monitor_count=`ps aux | grep ";/bin/bash ./dbcmonitor.sh" | grep -v grep | wc -l`
-if [ ${monitor_count} -ne 0 ]; then
+  monitor_count=`ps aux | grep ";/bin/bash ./dbcmonitor.sh" | grep -v grep | wc -l`
+  if [ ${monitor_count} -ne 0 ]; then
     echo -e "\nlocal monitor exit failed!"
     exit 1
-else
+  else
     echo -e "\nlocal monitor exit success!"
+  fi
 fi
 
-/bin/bash ./shell/stop.sh
-
-mining_file=dbc_mining_node_${latest_version}.tar.gz
-
-wget -P ./update_cache http://121.57.95.175:20027/index.html/dbc/${mining_file}
-if [ $? -ne 0 ]; then
-  echo "wget dbc package failed!"
-  exit 1
+if [[ -d "/home/crontab" && -f "/home/crontab/dbc_process.conf" ]]; then
+  rm -rf ./update_cache/dbc_mining_node/dbc_dir_old.conf
+  cp /home/crontab/dbc_process.conf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
+  for  fline  in  `cat ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf`; do
+    if [[ $fline == *=* ]]; then
+      ffullpath=`echo $fline|awk -F'=' '{print $2}'|awk -F'"' '{print $2}'`
+      echo $ffullpath >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
+    else
+      echo $fline >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
+    fi
+  done
+  rm -rf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
 fi
 
-tar -zxvf ./update_cache/${mining_file} -C ./update_cache/
+if [[ -d "/home/crontab" && -f "/home/crontab/dbc_dir.conf" ]]; then
+  rm -rf ./update_cache/dbc_mining_node/dbc_dir_old.conf
+  cp /home/crontab/dbc_dir.conf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
+  for  fline  in  `cat ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf`; do
+    if [[ $fline == *=* ]]; then
+      ffullpath=`echo $fline|awk -F'=' '{print $2}'|awk -F'"' '{print $2}'`
+      echo $ffullpath >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
+    else
+      echo $fline >> ./update_cache/dbc_mining_node/dbc_dir_old.conf
+    fi
+  done
+  rm -rf ./update_cache/dbc_mining_node/dbc_dir_old_cache.conf
+fi
 
-old_net_listen_port=$(cat $workpath/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
-old_http_port=$(cat $workpath/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
+if [ -d "/home/crontab" ]; then
+  rm -rf /home/crontab
+fi
+cp -rf ./update_cache/dbc_mining_node/shell/crontab /home
+if [[ -f "./update_cache/dbc_mining_node/dbc_dir_old.conf" ]]; then
+  cat ./update_cache/dbc_mining_node/dbc_dir_old.conf > /home/crontab/dbc_dir.conf
+fi
 
-new_net_listen_port=$(cat ./update_cache/dbc_mining_node/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
-new_http_port=$(cat ./update_cache/dbc_mining_node/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
+# update
+for ((i=1;i<=$dir_num;i++)); do
+  arr_install_dir=${arr_dir[$i-1]}
+  cd $cur_path
+  install_dir=$(cd $arr_install_dir; pwd)
+  cd $workpath
 
-cp -rfp $workpath/conf/peer.conf ./update_cache/dbc_mining_node/conf
+  if [[ ! -d "$install_dir" ]]; then
+    echo "$install_dir not exist!"
+    continue
+  fi
 
-cp -rfp ./update_cache/dbc_mining_node/dbc $workpath/
-cp -rfp ./update_cache/dbc_mining_node/shell $workpath/
-cp -rfp ./update_cache/dbc_mining_node/conf $workpath/
+  rm -rf $install_dir/update.sh
 
-sed -i "s/net_listen_port=${new_net_listen_port}/net_listen_port=${old_net_listen_port}/" $workpath/conf/core.conf
-sed -i "s/http_port=${new_http_port}/http_port=${old_http_port}/" $workpath/conf/core.conf
+  source $install_dir/conf/core.conf
 
-chmod +x $workpath/dbc
-chmod +x $workpath/shell/*.sh
-chmod +x $workpath/shell/crontab/*.sh
+  # update
+  /bin/bash $install_dir/shell/stop.sh
+
+  old_net_listen_port=$(cat $install_dir/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
+  old_http_port=$(cat $install_dir/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
+
+  cp -fp $install_dir/conf/peer.conf ./update_cache/dbc_mining_node/peer_old.conf
+
+  new_net_listen_port=$(cat ./update_cache/dbc_mining_node/conf/core.conf | grep "net_listen_port=" | awk -F '=' '{print $2}')
+  new_http_port=$(cat ./update_cache/dbc_mining_node/conf/core.conf | grep "http_port=" | awk -F '=' '{print $2}')
+
+  cp -rfp ./update_cache/dbc_mining_node/dbc $install_dir/
+  cp -rfp ./update_cache/dbc_mining_node/shell $install_dir/
+  cp -rfp ./update_cache/dbc_mining_node/conf $install_dir/
+
+  sed -i "s/net_listen_port=${new_net_listen_port}/net_listen_port=${old_net_listen_port}/" $install_dir/conf/core.conf
+  sed -i "s/http_port=${new_http_port}/http_port=${old_http_port}/" $install_dir/conf/core.conf
+
+  cat ./update_cache/dbc_mining_node/peer_old.conf >> $install_dir/conf/peer.conf
+
+  chmod +x $install_dir/dbc
+  chmod +x $install_dir/shell/*.sh
+  chmod +x $install_dir/shell/crontab/*.sh
+
+  /bin/bash $install_dir/shell/start.sh
+
+  install_dir_fullpath=$(cd ${install_dir}; pwd)
+  if [ -z "`grep "$install_dir_fullpath" /home/crontab/dbc_dir.conf`" ]; then
+    echo $install_dir_fullpath >> /home/crontab/dbc_dir.conf
+  fi
+
+  echo "update $install_dir success!"
+done
 
 crontab /home/crontab/crontab.on
-/bin/bash ./shell/start.sh
+echo -e "local monitor open success!"
 
-echo "update dbc_mining_node success!"
+echo "update all dbc mining nodes success!"

@@ -169,7 +169,6 @@ for ((i=1;i<=$dir_num;i++)); do
   cp -rfp ./update_cache/dbc_client_node/shell $install_dir/
   cp -rfp ./update_cache/dbc_client_node/conf $install_dir/
 
-  sed -i "/http_ip=127.0.0.1/c http_ip=0.0.0.0" $install_dir/conf/core.conf
   sed -i "s/net_listen_port=${new_net_listen_port}/net_listen_port=${old_net_listen_port}/" $install_dir/conf/core.conf
   sed -i "s/http_port=${new_http_port}/http_port=${old_http_port}/" $install_dir/conf/core.conf
 
@@ -192,4 +191,4 @@ done
 crontab /home/crontab/crontab.on
 echo -e "local monitor open success!"
 
-echo "update all dbc client nodes success!"
+echo "update all dbc seed nodes success!"
