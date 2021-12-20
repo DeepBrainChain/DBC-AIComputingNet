@@ -517,6 +517,2009 @@ namespace dbc {
     }
 
 
+    node_list_images_req_data::~node_list_images_req_data() throw() {
+    }
+
+
+    void node_list_images_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+        this->peer_nodes_list = val;
+    }
+
+    void node_list_images_req_data::__set_additional(const std::string& val) {
+        this->additional = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_images_req_data& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_images_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_peer_nodes_list = false;
+        bool isset_additional = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->peer_nodes_list.clear();
+                            uint32_t _size10;
+                            ::apache::thrift::protocol::TType _etype13;
+                            xfer += iprot->readListBegin(_etype13, _size10);
+                            this->peer_nodes_list.resize(_size10);
+                            uint32_t _i14;
+                            for (_i14 = 0; _i14 < _size10; ++_i14)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i14]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->additional);
+                        isset_additional = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_peer_nodes_list)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_additional)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_list_images_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_images_req_data");
+
+        xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+            std::vector<std::string> ::const_iterator _iter15;
+            for (_iter15 = this->peer_nodes_list.begin(); _iter15 != this->peer_nodes_list.end(); ++_iter15)
+            {
+                xfer += oprot->writeString((*_iter15));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->additional);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_images_req_data &a, node_list_images_req_data &b) {
+        using ::std::swap;
+        swap(a.peer_nodes_list, b.peer_nodes_list);
+        swap(a.additional, b.additional);
+    }
+
+    node_list_images_req_data::node_list_images_req_data(const node_list_images_req_data& other16) {
+        peer_nodes_list = other16.peer_nodes_list;
+        additional = other16.additional;
+    }
+    node_list_images_req_data& node_list_images_req_data::operator=(const node_list_images_req_data& other17) {
+        peer_nodes_list = other17.peer_nodes_list;
+        additional = other17.additional;
+        return *this;
+    }
+    void node_list_images_req_data::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_images_req_data(";
+        out << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ")";
+    }
+
+
+    node_list_images_req_body::~node_list_images_req_body() throw() {
+    }
+
+
+    void node_list_images_req_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_images_req_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_images_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_list_images_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_images_req_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_images_req_body &a, node_list_images_req_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_list_images_req_body::node_list_images_req_body(const node_list_images_req_body& other18) {
+        data = other18.data;
+    }
+    node_list_images_req_body& node_list_images_req_body::operator=(const node_list_images_req_body& other19) {
+        data = other19.data;
+        return *this;
+    }
+    void node_list_images_req_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_images_req_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_list_images_req::~node_list_images_req() throw() {
+    }
+
+
+    void node_list_images_req::__set_body(const node_list_images_req_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_images_req& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_images_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_list_images_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_images_req");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_images_req &a, node_list_images_req &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_list_images_req::node_list_images_req(const node_list_images_req& other20) {
+        body = other20.body;
+        __isset = other20.__isset;
+    }
+    node_list_images_req& node_list_images_req::operator=(const node_list_images_req& other21) {
+        body = other21.body;
+        __isset = other21.__isset;
+        return *this;
+    }
+    void node_list_images_req::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_images_req(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_list_images_rsp_body::~node_list_images_rsp_body() throw() {
+    }
+
+
+    void node_list_images_rsp_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_images_rsp_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_images_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_list_images_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_images_rsp_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_images_rsp_body &a, node_list_images_rsp_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_list_images_rsp_body::node_list_images_rsp_body(const node_list_images_rsp_body& other22) {
+        data = other22.data;
+    }
+    node_list_images_rsp_body& node_list_images_rsp_body::operator=(const node_list_images_rsp_body& other23) {
+        data = other23.data;
+        return *this;
+    }
+    void node_list_images_rsp_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_images_rsp_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_list_images_rsp::~node_list_images_rsp() throw() {
+    }
+
+
+    void node_list_images_rsp::__set_body(const node_list_images_rsp_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_images_rsp& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_images_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_list_images_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_images_rsp");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_images_rsp &a, node_list_images_rsp &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_list_images_rsp::node_list_images_rsp(const node_list_images_rsp& other24) {
+        body = other24.body;
+        __isset = other24.__isset;
+    }
+    node_list_images_rsp& node_list_images_rsp::operator=(const node_list_images_rsp& other25) {
+        body = other25.body;
+        __isset = other25.__isset;
+        return *this;
+    }
+    void node_list_images_rsp::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_images_rsp(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_download_image_req_data::~node_download_image_req_data() throw() {
+    }
+
+
+    void node_download_image_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+        this->peer_nodes_list = val;
+    }
+
+    void node_download_image_req_data::__set_additional(const std::string& val) {
+        this->additional = val;
+    }
+
+    void node_download_image_req_data::__set_image(const std::string& val) {
+        this->image = val;
+    }
+
+    void node_download_image_req_data::__set_wallet(const std::string& val) {
+        this->wallet = val;
+    }
+
+    void node_download_image_req_data::__set_nonce(const std::string& val) {
+        this->nonce = val;
+    }
+
+    void node_download_image_req_data::__set_sign(const std::string& val) {
+        this->sign = val;
+    }
+
+    void node_download_image_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+        this->multisig_wallets = val;
+    }
+
+    void node_download_image_req_data::__set_multisig_threshold(const int32_t val) {
+        this->multisig_threshold = val;
+    }
+
+    void node_download_image_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+        this->multisig_signs = val;
+    }
+
+    void node_download_image_req_data::__set_session_id(const std::string& val) {
+        this->session_id = val;
+    }
+
+    void node_download_image_req_data::__set_session_id_sign(const std::string& val) {
+        this->session_id_sign = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_download_image_req_data& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_download_image_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_peer_nodes_list = false;
+        bool isset_additional = false;
+        bool isset_image = false;
+        bool isset_wallet = false;
+        bool isset_nonce = false;
+        bool isset_sign = false;
+        bool isset_multisig_wallets = false;
+        bool isset_multisig_threshold = false;
+        bool isset_multisig_signs = false;
+        bool isset_session_id = false;
+        bool isset_session_id_sign = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->peer_nodes_list.clear();
+                            uint32_t _size26;
+                            ::apache::thrift::protocol::TType _etype29;
+                            xfer += iprot->readListBegin(_etype29, _size26);
+                            this->peer_nodes_list.resize(_size26);
+                            uint32_t _i30;
+                            for (_i30 = 0; _i30 < _size26; ++_i30)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i30]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->additional);
+                        isset_additional = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->image);
+                        isset_image = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->wallet);
+                        isset_wallet = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->nonce);
+                        isset_nonce = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->sign);
+                        isset_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 7:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_wallets.clear();
+                            uint32_t _size31;
+                            ::apache::thrift::protocol::TType _etype34;
+                            xfer += iprot->readListBegin(_etype34, _size31);
+                            this->multisig_wallets.resize(_size31);
+                            uint32_t _i35;
+                            for (_i35 = 0; _i35 < _size31; ++_i35)
+                            {
+                                xfer += iprot->readString(this->multisig_wallets[_i35]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_wallets = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 8:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->multisig_threshold);
+                        isset_multisig_threshold = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 9:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_signs.clear();
+                            uint32_t _size36;
+                            ::apache::thrift::protocol::TType _etype39;
+                            xfer += iprot->readListBegin(_etype39, _size36);
+                            this->multisig_signs.resize(_size36);
+                            uint32_t _i40;
+                            for (_i40 = 0; _i40 < _size36; ++_i40)
+                            {
+                                xfer += this->multisig_signs[_i40].read(iprot);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_signs = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 10:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id);
+                        isset_session_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 11:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id_sign);
+                        isset_session_id_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_peer_nodes_list)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_additional)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_image)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_wallet)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_nonce)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_wallets)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_threshold)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_signs)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_download_image_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_download_image_req_data");
+
+        xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+            std::vector<std::string> ::const_iterator _iter41;
+            for (_iter41 = this->peer_nodes_list.begin(); _iter41 != this->peer_nodes_list.end(); ++_iter41)
+            {
+                xfer += oprot->writeString((*_iter41));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->additional);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("image", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->image);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->wallet);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeString(this->nonce);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 6);
+        xfer += oprot->writeString(this->sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+            std::vector<std::string> ::const_iterator _iter42;
+            for (_iter42 = this->multisig_wallets.begin(); _iter42 != this->multisig_wallets.end(); ++_iter42)
+            {
+                xfer += oprot->writeString((*_iter42));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 8);
+        xfer += oprot->writeI32(this->multisig_threshold);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+            std::vector<multisig_sign_item> ::const_iterator _iter43;
+            for (_iter43 = this->multisig_signs.begin(); _iter43 != this->multisig_signs.end(); ++_iter43)
+            {
+                xfer += (*_iter43).write(oprot);
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeString(this->session_id);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 11);
+        xfer += oprot->writeString(this->session_id_sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_download_image_req_data &a, node_download_image_req_data &b) {
+        using ::std::swap;
+        swap(a.peer_nodes_list, b.peer_nodes_list);
+        swap(a.additional, b.additional);
+        swap(a.image, b.image);
+        swap(a.wallet, b.wallet);
+        swap(a.nonce, b.nonce);
+        swap(a.sign, b.sign);
+        swap(a.multisig_wallets, b.multisig_wallets);
+        swap(a.multisig_threshold, b.multisig_threshold);
+        swap(a.multisig_signs, b.multisig_signs);
+        swap(a.session_id, b.session_id);
+        swap(a.session_id_sign, b.session_id_sign);
+    }
+
+    node_download_image_req_data::node_download_image_req_data(const node_download_image_req_data& other44) {
+        peer_nodes_list = other44.peer_nodes_list;
+        additional = other44.additional;
+        image = other44.image;
+        wallet = other44.wallet;
+        nonce = other44.nonce;
+        sign = other44.sign;
+        multisig_wallets = other44.multisig_wallets;
+        multisig_threshold = other44.multisig_threshold;
+        multisig_signs = other44.multisig_signs;
+        session_id = other44.session_id;
+        session_id_sign = other44.session_id_sign;
+    }
+    node_download_image_req_data& node_download_image_req_data::operator=(const node_download_image_req_data& other45) {
+        peer_nodes_list = other45.peer_nodes_list;
+        additional = other45.additional;
+        image = other45.image;
+        wallet = other45.wallet;
+        nonce = other45.nonce;
+        sign = other45.sign;
+        multisig_wallets = other45.multisig_wallets;
+        multisig_threshold = other45.multisig_threshold;
+        multisig_signs = other45.multisig_signs;
+        session_id = other45.session_id;
+        session_id_sign = other45.session_id_sign;
+        return *this;
+    }
+    void node_download_image_req_data::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_download_image_req_data(";
+        out << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "image=" << to_string(image);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
+        out << ")";
+    }
+
+
+    node_download_image_req_body::~node_download_image_req_body() throw() {
+    }
+
+
+    void node_download_image_req_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_download_image_req_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_download_image_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_download_image_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_download_image_req_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_download_image_req_body &a, node_download_image_req_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_download_image_req_body::node_download_image_req_body(const node_download_image_req_body& other46) {
+        data = other46.data;
+    }
+    node_download_image_req_body& node_download_image_req_body::operator=(const node_download_image_req_body& other47) {
+        data = other47.data;
+        return *this;
+    }
+    void node_download_image_req_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_download_image_req_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_download_image_req::~node_download_image_req() throw() {
+    }
+
+
+    void node_download_image_req::__set_body(const node_download_image_req_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_download_image_req& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_download_image_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_download_image_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_download_image_req");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_download_image_req &a, node_download_image_req &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_download_image_req::node_download_image_req(const node_download_image_req& other48) {
+        body = other48.body;
+        __isset = other48.__isset;
+    }
+    node_download_image_req& node_download_image_req::operator=(const node_download_image_req& other49) {
+        body = other49.body;
+        __isset = other49.__isset;
+        return *this;
+    }
+    void node_download_image_req::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_download_image_req(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_download_image_rsp_body::~node_download_image_rsp_body() throw() {
+    }
+
+
+    void node_download_image_rsp_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_download_image_rsp_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_download_image_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_download_image_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_download_image_rsp_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_download_image_rsp_body &a, node_download_image_rsp_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_download_image_rsp_body::node_download_image_rsp_body(const node_download_image_rsp_body& other50) {
+        data = other50.data;
+    }
+    node_download_image_rsp_body& node_download_image_rsp_body::operator=(const node_download_image_rsp_body& other51) {
+        data = other51.data;
+        return *this;
+    }
+    void node_download_image_rsp_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_download_image_rsp_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_download_image_rsp::~node_download_image_rsp() throw() {
+    }
+
+
+    void node_download_image_rsp::__set_body(const node_download_image_rsp_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_download_image_rsp& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_download_image_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_download_image_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_download_image_rsp");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_download_image_rsp &a, node_download_image_rsp &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_download_image_rsp::node_download_image_rsp(const node_download_image_rsp& other52) {
+        body = other52.body;
+        __isset = other52.__isset;
+    }
+    node_download_image_rsp& node_download_image_rsp::operator=(const node_download_image_rsp& other53) {
+        body = other53.body;
+        __isset = other53.__isset;
+        return *this;
+    }
+    void node_download_image_rsp::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_download_image_rsp(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_upload_image_req_data::~node_upload_image_req_data() throw() {
+    }
+
+
+    void node_upload_image_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+        this->peer_nodes_list = val;
+    }
+
+    void node_upload_image_req_data::__set_additional(const std::string& val) {
+        this->additional = val;
+    }
+
+    void node_upload_image_req_data::__set_image(const std::string& val) {
+        this->image = val;
+    }
+
+    void node_upload_image_req_data::__set_wallet(const std::string& val) {
+        this->wallet = val;
+    }
+
+    void node_upload_image_req_data::__set_nonce(const std::string& val) {
+        this->nonce = val;
+    }
+
+    void node_upload_image_req_data::__set_sign(const std::string& val) {
+        this->sign = val;
+    }
+
+    void node_upload_image_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+        this->multisig_wallets = val;
+    }
+
+    void node_upload_image_req_data::__set_multisig_threshold(const int32_t val) {
+        this->multisig_threshold = val;
+    }
+
+    void node_upload_image_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+        this->multisig_signs = val;
+    }
+
+    void node_upload_image_req_data::__set_session_id(const std::string& val) {
+        this->session_id = val;
+    }
+
+    void node_upload_image_req_data::__set_session_id_sign(const std::string& val) {
+        this->session_id_sign = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_upload_image_req_data& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_upload_image_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_peer_nodes_list = false;
+        bool isset_additional = false;
+        bool isset_image = false;
+        bool isset_wallet = false;
+        bool isset_nonce = false;
+        bool isset_sign = false;
+        bool isset_multisig_wallets = false;
+        bool isset_multisig_threshold = false;
+        bool isset_multisig_signs = false;
+        bool isset_session_id = false;
+        bool isset_session_id_sign = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->peer_nodes_list.clear();
+                            uint32_t _size54;
+                            ::apache::thrift::protocol::TType _etype57;
+                            xfer += iprot->readListBegin(_etype57, _size54);
+                            this->peer_nodes_list.resize(_size54);
+                            uint32_t _i58;
+                            for (_i58 = 0; _i58 < _size54; ++_i58)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i58]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->additional);
+                        isset_additional = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->image);
+                        isset_image = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->wallet);
+                        isset_wallet = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->nonce);
+                        isset_nonce = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->sign);
+                        isset_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 7:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_wallets.clear();
+                            uint32_t _size59;
+                            ::apache::thrift::protocol::TType _etype62;
+                            xfer += iprot->readListBegin(_etype62, _size59);
+                            this->multisig_wallets.resize(_size59);
+                            uint32_t _i63;
+                            for (_i63 = 0; _i63 < _size59; ++_i63)
+                            {
+                                xfer += iprot->readString(this->multisig_wallets[_i63]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_wallets = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 8:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->multisig_threshold);
+                        isset_multisig_threshold = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 9:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_signs.clear();
+                            uint32_t _size64;
+                            ::apache::thrift::protocol::TType _etype67;
+                            xfer += iprot->readListBegin(_etype67, _size64);
+                            this->multisig_signs.resize(_size64);
+                            uint32_t _i68;
+                            for (_i68 = 0; _i68 < _size64; ++_i68)
+                            {
+                                xfer += this->multisig_signs[_i68].read(iprot);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_signs = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 10:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id);
+                        isset_session_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 11:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id_sign);
+                        isset_session_id_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_peer_nodes_list)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_additional)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_image)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_wallet)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_nonce)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_wallets)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_threshold)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_signs)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_upload_image_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_upload_image_req_data");
+
+        xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+            std::vector<std::string> ::const_iterator _iter69;
+            for (_iter69 = this->peer_nodes_list.begin(); _iter69 != this->peer_nodes_list.end(); ++_iter69)
+            {
+                xfer += oprot->writeString((*_iter69));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->additional);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("image", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->image);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->wallet);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeString(this->nonce);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 6);
+        xfer += oprot->writeString(this->sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+            std::vector<std::string> ::const_iterator _iter70;
+            for (_iter70 = this->multisig_wallets.begin(); _iter70 != this->multisig_wallets.end(); ++_iter70)
+            {
+                xfer += oprot->writeString((*_iter70));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 8);
+        xfer += oprot->writeI32(this->multisig_threshold);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+            std::vector<multisig_sign_item> ::const_iterator _iter71;
+            for (_iter71 = this->multisig_signs.begin(); _iter71 != this->multisig_signs.end(); ++_iter71)
+            {
+                xfer += (*_iter71).write(oprot);
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeString(this->session_id);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 11);
+        xfer += oprot->writeString(this->session_id_sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_upload_image_req_data &a, node_upload_image_req_data &b) {
+        using ::std::swap;
+        swap(a.peer_nodes_list, b.peer_nodes_list);
+        swap(a.additional, b.additional);
+        swap(a.image, b.image);
+        swap(a.wallet, b.wallet);
+        swap(a.nonce, b.nonce);
+        swap(a.sign, b.sign);
+        swap(a.multisig_wallets, b.multisig_wallets);
+        swap(a.multisig_threshold, b.multisig_threshold);
+        swap(a.multisig_signs, b.multisig_signs);
+        swap(a.session_id, b.session_id);
+        swap(a.session_id_sign, b.session_id_sign);
+    }
+
+    node_upload_image_req_data::node_upload_image_req_data(const node_upload_image_req_data& other72) {
+        peer_nodes_list = other72.peer_nodes_list;
+        additional = other72.additional;
+        image = other72.image;
+        wallet = other72.wallet;
+        nonce = other72.nonce;
+        sign = other72.sign;
+        multisig_wallets = other72.multisig_wallets;
+        multisig_threshold = other72.multisig_threshold;
+        multisig_signs = other72.multisig_signs;
+        session_id = other72.session_id;
+        session_id_sign = other72.session_id_sign;
+    }
+    node_upload_image_req_data& node_upload_image_req_data::operator=(const node_upload_image_req_data& other73) {
+        peer_nodes_list = other73.peer_nodes_list;
+        additional = other73.additional;
+        image = other73.image;
+        wallet = other73.wallet;
+        nonce = other73.nonce;
+        sign = other73.sign;
+        multisig_wallets = other73.multisig_wallets;
+        multisig_threshold = other73.multisig_threshold;
+        multisig_signs = other73.multisig_signs;
+        session_id = other73.session_id;
+        session_id_sign = other73.session_id_sign;
+        return *this;
+    }
+    void node_upload_image_req_data::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_upload_image_req_data(";
+        out << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "image=" << to_string(image);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
+        out << ")";
+    }
+
+
+    node_upload_image_req_body::~node_upload_image_req_body() throw() {
+    }
+
+
+    void node_upload_image_req_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_upload_image_req_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_upload_image_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_upload_image_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_upload_image_req_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_upload_image_req_body &a, node_upload_image_req_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_upload_image_req_body::node_upload_image_req_body(const node_upload_image_req_body& other74) {
+        data = other74.data;
+    }
+    node_upload_image_req_body& node_upload_image_req_body::operator=(const node_upload_image_req_body& other75) {
+        data = other75.data;
+        return *this;
+    }
+    void node_upload_image_req_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_upload_image_req_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_upload_image_req::~node_upload_image_req() throw() {
+    }
+
+
+    void node_upload_image_req::__set_body(const node_upload_image_req_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_upload_image_req& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_upload_image_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_upload_image_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_upload_image_req");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_upload_image_req &a, node_upload_image_req &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_upload_image_req::node_upload_image_req(const node_upload_image_req& other76) {
+        body = other76.body;
+        __isset = other76.__isset;
+    }
+    node_upload_image_req& node_upload_image_req::operator=(const node_upload_image_req& other77) {
+        body = other77.body;
+        __isset = other77.__isset;
+        return *this;
+    }
+    void node_upload_image_req::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_upload_image_req(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_upload_image_rsp_body::~node_upload_image_rsp_body() throw() {
+    }
+
+
+    void node_upload_image_rsp_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_upload_image_rsp_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_upload_image_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_upload_image_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_upload_image_rsp_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_upload_image_rsp_body &a, node_upload_image_rsp_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_upload_image_rsp_body::node_upload_image_rsp_body(const node_upload_image_rsp_body& other78) {
+        data = other78.data;
+    }
+    node_upload_image_rsp_body& node_upload_image_rsp_body::operator=(const node_upload_image_rsp_body& other79) {
+        data = other79.data;
+        return *this;
+    }
+    void node_upload_image_rsp_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_upload_image_rsp_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_upload_image_rsp::~node_upload_image_rsp() throw() {
+    }
+
+
+    void node_upload_image_rsp::__set_body(const node_upload_image_rsp_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_upload_image_rsp& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_upload_image_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_upload_image_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_upload_image_rsp");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_upload_image_rsp &a, node_upload_image_rsp &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_upload_image_rsp::node_upload_image_rsp(const node_upload_image_rsp& other80) {
+        body = other80.body;
+        __isset = other80.__isset;
+    }
+    node_upload_image_rsp& node_upload_image_rsp::operator=(const node_upload_image_rsp& other81) {
+        body = other81.body;
+        __isset = other81.__isset;
+        return *this;
+    }
+    void node_upload_image_rsp::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_upload_image_rsp(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
     node_list_task_req_data::~node_list_task_req_data() throw() {
     }
 
@@ -615,14 +2618,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size10;
-                            ::apache::thrift::protocol::TType _etype13;
-                            xfer += iprot->readListBegin(_etype13, _size10);
-                            this->peer_nodes_list.resize(_size10);
-                            uint32_t _i14;
-                            for (_i14 = 0; _i14 < _size10; ++_i14)
+                            uint32_t _size82;
+                            ::apache::thrift::protocol::TType _etype85;
+                            xfer += iprot->readListBegin(_etype85, _size82);
+                            this->peer_nodes_list.resize(_size82);
+                            uint32_t _i86;
+                            for (_i86 = 0; _i86 < _size82; ++_i86)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i14]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i86]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -667,14 +2670,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size15;
-                            ::apache::thrift::protocol::TType _etype18;
-                            xfer += iprot->readListBegin(_etype18, _size15);
-                            this->multisig_wallets.resize(_size15);
-                            uint32_t _i19;
-                            for (_i19 = 0; _i19 < _size15; ++_i19)
+                            uint32_t _size87;
+                            ::apache::thrift::protocol::TType _etype90;
+                            xfer += iprot->readListBegin(_etype90, _size87);
+                            this->multisig_wallets.resize(_size87);
+                            uint32_t _i91;
+                            for (_i91 = 0; _i91 < _size87; ++_i91)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i19]);
+                                xfer += iprot->readString(this->multisig_wallets[_i91]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -695,14 +2698,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size20;
-                            ::apache::thrift::protocol::TType _etype23;
-                            xfer += iprot->readListBegin(_etype23, _size20);
-                            this->multisig_signs.resize(_size20);
-                            uint32_t _i24;
-                            for (_i24 = 0; _i24 < _size20; ++_i24)
+                            uint32_t _size92;
+                            ::apache::thrift::protocol::TType _etype95;
+                            xfer += iprot->readListBegin(_etype95, _size92);
+                            this->multisig_signs.resize(_size92);
+                            uint32_t _i96;
+                            for (_i96 = 0; _i96 < _size92; ++_i96)
                             {
-                                xfer += this->multisig_signs[_i24].read(iprot);
+                                xfer += this->multisig_signs[_i96].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -773,10 +2776,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter25;
-            for (_iter25 = this->peer_nodes_list.begin(); _iter25 != this->peer_nodes_list.end(); ++_iter25)
+            std::vector<std::string> ::const_iterator _iter97;
+            for (_iter97 = this->peer_nodes_list.begin(); _iter97 != this->peer_nodes_list.end(); ++_iter97)
             {
-                xfer += oprot->writeString((*_iter25));
+                xfer += oprot->writeString((*_iter97));
             }
             xfer += oprot->writeListEnd();
         }
@@ -801,10 +2804,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter26;
-            for (_iter26 = this->multisig_wallets.begin(); _iter26 != this->multisig_wallets.end(); ++_iter26)
+            std::vector<std::string> ::const_iterator _iter98;
+            for (_iter98 = this->multisig_wallets.begin(); _iter98 != this->multisig_wallets.end(); ++_iter98)
             {
-                xfer += oprot->writeString((*_iter26));
+                xfer += oprot->writeString((*_iter98));
             }
             xfer += oprot->writeListEnd();
         }
@@ -817,10 +2820,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter27;
-            for (_iter27 = this->multisig_signs.begin(); _iter27 != this->multisig_signs.end(); ++_iter27)
+            std::vector<multisig_sign_item> ::const_iterator _iter99;
+            for (_iter99 = this->multisig_signs.begin(); _iter99 != this->multisig_signs.end(); ++_iter99)
             {
-                xfer += (*_iter27).write(oprot);
+                xfer += (*_iter99).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -854,31 +2857,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_list_task_req_data::node_list_task_req_data(const node_list_task_req_data& other28) {
-        task_id = other28.task_id;
-        peer_nodes_list = other28.peer_nodes_list;
-        additional = other28.additional;
-        wallet = other28.wallet;
-        nonce = other28.nonce;
-        sign = other28.sign;
-        multisig_wallets = other28.multisig_wallets;
-        multisig_threshold = other28.multisig_threshold;
-        multisig_signs = other28.multisig_signs;
-        session_id = other28.session_id;
-        session_id_sign = other28.session_id_sign;
+    node_list_task_req_data::node_list_task_req_data(const node_list_task_req_data& other100) {
+        task_id = other100.task_id;
+        peer_nodes_list = other100.peer_nodes_list;
+        additional = other100.additional;
+        wallet = other100.wallet;
+        nonce = other100.nonce;
+        sign = other100.sign;
+        multisig_wallets = other100.multisig_wallets;
+        multisig_threshold = other100.multisig_threshold;
+        multisig_signs = other100.multisig_signs;
+        session_id = other100.session_id;
+        session_id_sign = other100.session_id_sign;
     }
-    node_list_task_req_data& node_list_task_req_data::operator=(const node_list_task_req_data& other29) {
-        task_id = other29.task_id;
-        peer_nodes_list = other29.peer_nodes_list;
-        additional = other29.additional;
-        wallet = other29.wallet;
-        nonce = other29.nonce;
-        sign = other29.sign;
-        multisig_wallets = other29.multisig_wallets;
-        multisig_threshold = other29.multisig_threshold;
-        multisig_signs = other29.multisig_signs;
-        session_id = other29.session_id;
-        session_id_sign = other29.session_id_sign;
+    node_list_task_req_data& node_list_task_req_data::operator=(const node_list_task_req_data& other101) {
+        task_id = other101.task_id;
+        peer_nodes_list = other101.peer_nodes_list;
+        additional = other101.additional;
+        wallet = other101.wallet;
+        nonce = other101.nonce;
+        sign = other101.sign;
+        multisig_wallets = other101.multisig_wallets;
+        multisig_threshold = other101.multisig_threshold;
+        multisig_signs = other101.multisig_signs;
+        session_id = other101.session_id;
+        session_id_sign = other101.session_id_sign;
         return *this;
     }
     void node_list_task_req_data::printTo(std::ostream& out) const {
@@ -976,11 +2979,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_list_task_req_body::node_list_task_req_body(const node_list_task_req_body& other30) {
-        data = other30.data;
+    node_list_task_req_body::node_list_task_req_body(const node_list_task_req_body& other102) {
+        data = other102.data;
     }
-    node_list_task_req_body& node_list_task_req_body::operator=(const node_list_task_req_body& other31) {
-        data = other31.data;
+    node_list_task_req_body& node_list_task_req_body::operator=(const node_list_task_req_body& other103) {
+        data = other103.data;
         return *this;
     }
     void node_list_task_req_body::printTo(std::ostream& out) const {
@@ -1066,13 +3069,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_list_task_req::node_list_task_req(const node_list_task_req& other32) {
-        body = other32.body;
-        __isset = other32.__isset;
+    node_list_task_req::node_list_task_req(const node_list_task_req& other104) {
+        body = other104.body;
+        __isset = other104.__isset;
     }
-    node_list_task_req& node_list_task_req::operator=(const node_list_task_req& other33) {
-        body = other33.body;
-        __isset = other33.__isset;
+    node_list_task_req& node_list_task_req::operator=(const node_list_task_req& other105) {
+        body = other105.body;
+        __isset = other105.__isset;
         return *this;
     }
     void node_list_task_req::printTo(std::ostream& out) const {
@@ -1160,11 +3163,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_list_task_rsp_body::node_list_task_rsp_body(const node_list_task_rsp_body& other34) {
-        data = other34.data;
+    node_list_task_rsp_body::node_list_task_rsp_body(const node_list_task_rsp_body& other106) {
+        data = other106.data;
     }
-    node_list_task_rsp_body& node_list_task_rsp_body::operator=(const node_list_task_rsp_body& other35) {
-        data = other35.data;
+    node_list_task_rsp_body& node_list_task_rsp_body::operator=(const node_list_task_rsp_body& other107) {
+        data = other107.data;
         return *this;
     }
     void node_list_task_rsp_body::printTo(std::ostream& out) const {
@@ -1250,13 +3253,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_list_task_rsp::node_list_task_rsp(const node_list_task_rsp& other36) {
-        body = other36.body;
-        __isset = other36.__isset;
+    node_list_task_rsp::node_list_task_rsp(const node_list_task_rsp& other108) {
+        body = other108.body;
+        __isset = other108.__isset;
     }
-    node_list_task_rsp& node_list_task_rsp::operator=(const node_list_task_rsp& other37) {
-        body = other37.body;
-        __isset = other37.__isset;
+    node_list_task_rsp& node_list_task_rsp::operator=(const node_list_task_rsp& other109) {
+        body = other109.body;
+        __isset = other109.__isset;
         return *this;
     }
     void node_list_task_rsp::printTo(std::ostream& out) const {
@@ -1352,14 +3355,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size38;
-                            ::apache::thrift::protocol::TType _etype41;
-                            xfer += iprot->readListBegin(_etype41, _size38);
-                            this->peer_nodes_list.resize(_size38);
-                            uint32_t _i42;
-                            for (_i42 = 0; _i42 < _size38; ++_i42)
+                            uint32_t _size110;
+                            ::apache::thrift::protocol::TType _etype113;
+                            xfer += iprot->readListBegin(_etype113, _size110);
+                            this->peer_nodes_list.resize(_size110);
+                            uint32_t _i114;
+                            for (_i114 = 0; _i114 < _size110; ++_i114)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i42]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i114]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -1404,14 +3407,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size43;
-                            ::apache::thrift::protocol::TType _etype46;
-                            xfer += iprot->readListBegin(_etype46, _size43);
-                            this->multisig_wallets.resize(_size43);
-                            uint32_t _i47;
-                            for (_i47 = 0; _i47 < _size43; ++_i47)
+                            uint32_t _size115;
+                            ::apache::thrift::protocol::TType _etype118;
+                            xfer += iprot->readListBegin(_etype118, _size115);
+                            this->multisig_wallets.resize(_size115);
+                            uint32_t _i119;
+                            for (_i119 = 0; _i119 < _size115; ++_i119)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i47]);
+                                xfer += iprot->readString(this->multisig_wallets[_i119]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -1432,14 +3435,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size48;
-                            ::apache::thrift::protocol::TType _etype51;
-                            xfer += iprot->readListBegin(_etype51, _size48);
-                            this->multisig_signs.resize(_size48);
-                            uint32_t _i52;
-                            for (_i52 = 0; _i52 < _size48; ++_i52)
+                            uint32_t _size120;
+                            ::apache::thrift::protocol::TType _etype123;
+                            xfer += iprot->readListBegin(_etype123, _size120);
+                            this->multisig_signs.resize(_size120);
+                            uint32_t _i124;
+                            for (_i124 = 0; _i124 < _size120; ++_i124)
                             {
-                                xfer += this->multisig_signs[_i52].read(iprot);
+                                xfer += this->multisig_signs[_i124].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -1504,10 +3507,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter53;
-            for (_iter53 = this->peer_nodes_list.begin(); _iter53 != this->peer_nodes_list.end(); ++_iter53)
+            std::vector<std::string> ::const_iterator _iter125;
+            for (_iter125 = this->peer_nodes_list.begin(); _iter125 != this->peer_nodes_list.end(); ++_iter125)
             {
-                xfer += oprot->writeString((*_iter53));
+                xfer += oprot->writeString((*_iter125));
             }
             xfer += oprot->writeListEnd();
         }
@@ -1532,10 +3535,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter54;
-            for (_iter54 = this->multisig_wallets.begin(); _iter54 != this->multisig_wallets.end(); ++_iter54)
+            std::vector<std::string> ::const_iterator _iter126;
+            for (_iter126 = this->multisig_wallets.begin(); _iter126 != this->multisig_wallets.end(); ++_iter126)
             {
-                xfer += oprot->writeString((*_iter54));
+                xfer += oprot->writeString((*_iter126));
             }
             xfer += oprot->writeListEnd();
         }
@@ -1548,10 +3551,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter55;
-            for (_iter55 = this->multisig_signs.begin(); _iter55 != this->multisig_signs.end(); ++_iter55)
+            std::vector<multisig_sign_item> ::const_iterator _iter127;
+            for (_iter127 = this->multisig_signs.begin(); _iter127 != this->multisig_signs.end(); ++_iter127)
             {
-                xfer += (*_iter55).write(oprot);
+                xfer += (*_iter127).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -1584,29 +3587,29 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_create_task_req_data::node_create_task_req_data(const node_create_task_req_data& other56) {
-        peer_nodes_list = other56.peer_nodes_list;
-        additional = other56.additional;
-        wallet = other56.wallet;
-        nonce = other56.nonce;
-        sign = other56.sign;
-        multisig_wallets = other56.multisig_wallets;
-        multisig_threshold = other56.multisig_threshold;
-        multisig_signs = other56.multisig_signs;
-        session_id = other56.session_id;
-        session_id_sign = other56.session_id_sign;
+    node_create_task_req_data::node_create_task_req_data(const node_create_task_req_data& other128) {
+        peer_nodes_list = other128.peer_nodes_list;
+        additional = other128.additional;
+        wallet = other128.wallet;
+        nonce = other128.nonce;
+        sign = other128.sign;
+        multisig_wallets = other128.multisig_wallets;
+        multisig_threshold = other128.multisig_threshold;
+        multisig_signs = other128.multisig_signs;
+        session_id = other128.session_id;
+        session_id_sign = other128.session_id_sign;
     }
-    node_create_task_req_data& node_create_task_req_data::operator=(const node_create_task_req_data& other57) {
-        peer_nodes_list = other57.peer_nodes_list;
-        additional = other57.additional;
-        wallet = other57.wallet;
-        nonce = other57.nonce;
-        sign = other57.sign;
-        multisig_wallets = other57.multisig_wallets;
-        multisig_threshold = other57.multisig_threshold;
-        multisig_signs = other57.multisig_signs;
-        session_id = other57.session_id;
-        session_id_sign = other57.session_id_sign;
+    node_create_task_req_data& node_create_task_req_data::operator=(const node_create_task_req_data& other129) {
+        peer_nodes_list = other129.peer_nodes_list;
+        additional = other129.additional;
+        wallet = other129.wallet;
+        nonce = other129.nonce;
+        sign = other129.sign;
+        multisig_wallets = other129.multisig_wallets;
+        multisig_threshold = other129.multisig_threshold;
+        multisig_signs = other129.multisig_signs;
+        session_id = other129.session_id;
+        session_id_sign = other129.session_id_sign;
         return *this;
     }
     void node_create_task_req_data::printTo(std::ostream& out) const {
@@ -1703,11 +3706,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_create_task_req_body::node_create_task_req_body(const node_create_task_req_body& other58) {
-        data = other58.data;
+    node_create_task_req_body::node_create_task_req_body(const node_create_task_req_body& other130) {
+        data = other130.data;
     }
-    node_create_task_req_body& node_create_task_req_body::operator=(const node_create_task_req_body& other59) {
-        data = other59.data;
+    node_create_task_req_body& node_create_task_req_body::operator=(const node_create_task_req_body& other131) {
+        data = other131.data;
         return *this;
     }
     void node_create_task_req_body::printTo(std::ostream& out) const {
@@ -1793,13 +3796,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_create_task_req::node_create_task_req(const node_create_task_req& other60) {
-        body = other60.body;
-        __isset = other60.__isset;
+    node_create_task_req::node_create_task_req(const node_create_task_req& other132) {
+        body = other132.body;
+        __isset = other132.__isset;
     }
-    node_create_task_req& node_create_task_req::operator=(const node_create_task_req& other61) {
-        body = other61.body;
-        __isset = other61.__isset;
+    node_create_task_req& node_create_task_req::operator=(const node_create_task_req& other133) {
+        body = other133.body;
+        __isset = other133.__isset;
         return *this;
     }
     void node_create_task_req::printTo(std::ostream& out) const {
@@ -1887,11 +3890,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_create_task_rsp_body::node_create_task_rsp_body(const node_create_task_rsp_body& other62) {
-        data = other62.data;
+    node_create_task_rsp_body::node_create_task_rsp_body(const node_create_task_rsp_body& other134) {
+        data = other134.data;
     }
-    node_create_task_rsp_body& node_create_task_rsp_body::operator=(const node_create_task_rsp_body& other63) {
-        data = other63.data;
+    node_create_task_rsp_body& node_create_task_rsp_body::operator=(const node_create_task_rsp_body& other135) {
+        data = other135.data;
         return *this;
     }
     void node_create_task_rsp_body::printTo(std::ostream& out) const {
@@ -1977,13 +3980,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_create_task_rsp::node_create_task_rsp(const node_create_task_rsp& other64) {
-        body = other64.body;
-        __isset = other64.__isset;
+    node_create_task_rsp::node_create_task_rsp(const node_create_task_rsp& other136) {
+        body = other136.body;
+        __isset = other136.__isset;
     }
-    node_create_task_rsp& node_create_task_rsp::operator=(const node_create_task_rsp& other65) {
-        body = other65.body;
-        __isset = other65.__isset;
+    node_create_task_rsp& node_create_task_rsp::operator=(const node_create_task_rsp& other137) {
+        body = other137.body;
+        __isset = other137.__isset;
         return *this;
     }
     void node_create_task_rsp::printTo(std::ostream& out) const {
@@ -2092,14 +4095,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size66;
-                            ::apache::thrift::protocol::TType _etype69;
-                            xfer += iprot->readListBegin(_etype69, _size66);
-                            this->peer_nodes_list.resize(_size66);
-                            uint32_t _i70;
-                            for (_i70 = 0; _i70 < _size66; ++_i70)
+                            uint32_t _size138;
+                            ::apache::thrift::protocol::TType _etype141;
+                            xfer += iprot->readListBegin(_etype141, _size138);
+                            this->peer_nodes_list.resize(_size138);
+                            uint32_t _i142;
+                            for (_i142 = 0; _i142 < _size138; ++_i142)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i70]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i142]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -2144,14 +4147,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size71;
-                            ::apache::thrift::protocol::TType _etype74;
-                            xfer += iprot->readListBegin(_etype74, _size71);
-                            this->multisig_wallets.resize(_size71);
-                            uint32_t _i75;
-                            for (_i75 = 0; _i75 < _size71; ++_i75)
+                            uint32_t _size143;
+                            ::apache::thrift::protocol::TType _etype146;
+                            xfer += iprot->readListBegin(_etype146, _size143);
+                            this->multisig_wallets.resize(_size143);
+                            uint32_t _i147;
+                            for (_i147 = 0; _i147 < _size143; ++_i147)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i75]);
+                                xfer += iprot->readString(this->multisig_wallets[_i147]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -2172,14 +4175,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size76;
-                            ::apache::thrift::protocol::TType _etype79;
-                            xfer += iprot->readListBegin(_etype79, _size76);
-                            this->multisig_signs.resize(_size76);
-                            uint32_t _i80;
-                            for (_i80 = 0; _i80 < _size76; ++_i80)
+                            uint32_t _size148;
+                            ::apache::thrift::protocol::TType _etype151;
+                            xfer += iprot->readListBegin(_etype151, _size148);
+                            this->multisig_signs.resize(_size148);
+                            uint32_t _i152;
+                            for (_i152 = 0; _i152 < _size148; ++_i152)
                             {
-                                xfer += this->multisig_signs[_i80].read(iprot);
+                                xfer += this->multisig_signs[_i152].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -2250,10 +4253,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter81;
-            for (_iter81 = this->peer_nodes_list.begin(); _iter81 != this->peer_nodes_list.end(); ++_iter81)
+            std::vector<std::string> ::const_iterator _iter153;
+            for (_iter153 = this->peer_nodes_list.begin(); _iter153 != this->peer_nodes_list.end(); ++_iter153)
             {
-                xfer += oprot->writeString((*_iter81));
+                xfer += oprot->writeString((*_iter153));
             }
             xfer += oprot->writeListEnd();
         }
@@ -2278,10 +4281,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter82;
-            for (_iter82 = this->multisig_wallets.begin(); _iter82 != this->multisig_wallets.end(); ++_iter82)
+            std::vector<std::string> ::const_iterator _iter154;
+            for (_iter154 = this->multisig_wallets.begin(); _iter154 != this->multisig_wallets.end(); ++_iter154)
             {
-                xfer += oprot->writeString((*_iter82));
+                xfer += oprot->writeString((*_iter154));
             }
             xfer += oprot->writeListEnd();
         }
@@ -2294,10 +4297,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter83;
-            for (_iter83 = this->multisig_signs.begin(); _iter83 != this->multisig_signs.end(); ++_iter83)
+            std::vector<multisig_sign_item> ::const_iterator _iter155;
+            for (_iter155 = this->multisig_signs.begin(); _iter155 != this->multisig_signs.end(); ++_iter155)
             {
-                xfer += (*_iter83).write(oprot);
+                xfer += (*_iter155).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -2331,31 +4334,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_start_task_req_data::node_start_task_req_data(const node_start_task_req_data& other84) {
-        task_id = other84.task_id;
-        peer_nodes_list = other84.peer_nodes_list;
-        additional = other84.additional;
-        wallet = other84.wallet;
-        nonce = other84.nonce;
-        sign = other84.sign;
-        multisig_wallets = other84.multisig_wallets;
-        multisig_threshold = other84.multisig_threshold;
-        multisig_signs = other84.multisig_signs;
-        session_id = other84.session_id;
-        session_id_sign = other84.session_id_sign;
+    node_start_task_req_data::node_start_task_req_data(const node_start_task_req_data& other156) {
+        task_id = other156.task_id;
+        peer_nodes_list = other156.peer_nodes_list;
+        additional = other156.additional;
+        wallet = other156.wallet;
+        nonce = other156.nonce;
+        sign = other156.sign;
+        multisig_wallets = other156.multisig_wallets;
+        multisig_threshold = other156.multisig_threshold;
+        multisig_signs = other156.multisig_signs;
+        session_id = other156.session_id;
+        session_id_sign = other156.session_id_sign;
     }
-    node_start_task_req_data& node_start_task_req_data::operator=(const node_start_task_req_data& other85) {
-        task_id = other85.task_id;
-        peer_nodes_list = other85.peer_nodes_list;
-        additional = other85.additional;
-        wallet = other85.wallet;
-        nonce = other85.nonce;
-        sign = other85.sign;
-        multisig_wallets = other85.multisig_wallets;
-        multisig_threshold = other85.multisig_threshold;
-        multisig_signs = other85.multisig_signs;
-        session_id = other85.session_id;
-        session_id_sign = other85.session_id_sign;
+    node_start_task_req_data& node_start_task_req_data::operator=(const node_start_task_req_data& other157) {
+        task_id = other157.task_id;
+        peer_nodes_list = other157.peer_nodes_list;
+        additional = other157.additional;
+        wallet = other157.wallet;
+        nonce = other157.nonce;
+        sign = other157.sign;
+        multisig_wallets = other157.multisig_wallets;
+        multisig_threshold = other157.multisig_threshold;
+        multisig_signs = other157.multisig_signs;
+        session_id = other157.session_id;
+        session_id_sign = other157.session_id_sign;
         return *this;
     }
     void node_start_task_req_data::printTo(std::ostream& out) const {
@@ -2453,11 +4456,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_start_task_req_body::node_start_task_req_body(const node_start_task_req_body& other86) {
-        data = other86.data;
+    node_start_task_req_body::node_start_task_req_body(const node_start_task_req_body& other158) {
+        data = other158.data;
     }
-    node_start_task_req_body& node_start_task_req_body::operator=(const node_start_task_req_body& other87) {
-        data = other87.data;
+    node_start_task_req_body& node_start_task_req_body::operator=(const node_start_task_req_body& other159) {
+        data = other159.data;
         return *this;
     }
     void node_start_task_req_body::printTo(std::ostream& out) const {
@@ -2543,13 +4546,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_start_task_req::node_start_task_req(const node_start_task_req& other88) {
-        body = other88.body;
-        __isset = other88.__isset;
+    node_start_task_req::node_start_task_req(const node_start_task_req& other160) {
+        body = other160.body;
+        __isset = other160.__isset;
     }
-    node_start_task_req& node_start_task_req::operator=(const node_start_task_req& other89) {
-        body = other89.body;
-        __isset = other89.__isset;
+    node_start_task_req& node_start_task_req::operator=(const node_start_task_req& other161) {
+        body = other161.body;
+        __isset = other161.__isset;
         return *this;
     }
     void node_start_task_req::printTo(std::ostream& out) const {
@@ -2637,11 +4640,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_start_task_rsp_body::node_start_task_rsp_body(const node_start_task_rsp_body& other90) {
-        data = other90.data;
+    node_start_task_rsp_body::node_start_task_rsp_body(const node_start_task_rsp_body& other162) {
+        data = other162.data;
     }
-    node_start_task_rsp_body& node_start_task_rsp_body::operator=(const node_start_task_rsp_body& other91) {
-        data = other91.data;
+    node_start_task_rsp_body& node_start_task_rsp_body::operator=(const node_start_task_rsp_body& other163) {
+        data = other163.data;
         return *this;
     }
     void node_start_task_rsp_body::printTo(std::ostream& out) const {
@@ -2727,13 +4730,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_start_task_rsp::node_start_task_rsp(const node_start_task_rsp& other92) {
-        body = other92.body;
-        __isset = other92.__isset;
+    node_start_task_rsp::node_start_task_rsp(const node_start_task_rsp& other164) {
+        body = other164.body;
+        __isset = other164.__isset;
     }
-    node_start_task_rsp& node_start_task_rsp::operator=(const node_start_task_rsp& other93) {
-        body = other93.body;
-        __isset = other93.__isset;
+    node_start_task_rsp& node_start_task_rsp::operator=(const node_start_task_rsp& other165) {
+        body = other165.body;
+        __isset = other165.__isset;
         return *this;
     }
     void node_start_task_rsp::printTo(std::ostream& out) const {
@@ -2842,14 +4845,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size94;
-                            ::apache::thrift::protocol::TType _etype97;
-                            xfer += iprot->readListBegin(_etype97, _size94);
-                            this->peer_nodes_list.resize(_size94);
-                            uint32_t _i98;
-                            for (_i98 = 0; _i98 < _size94; ++_i98)
+                            uint32_t _size166;
+                            ::apache::thrift::protocol::TType _etype169;
+                            xfer += iprot->readListBegin(_etype169, _size166);
+                            this->peer_nodes_list.resize(_size166);
+                            uint32_t _i170;
+                            for (_i170 = 0; _i170 < _size166; ++_i170)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i98]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i170]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -2894,14 +4897,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size99;
-                            ::apache::thrift::protocol::TType _etype102;
-                            xfer += iprot->readListBegin(_etype102, _size99);
-                            this->multisig_wallets.resize(_size99);
-                            uint32_t _i103;
-                            for (_i103 = 0; _i103 < _size99; ++_i103)
+                            uint32_t _size171;
+                            ::apache::thrift::protocol::TType _etype174;
+                            xfer += iprot->readListBegin(_etype174, _size171);
+                            this->multisig_wallets.resize(_size171);
+                            uint32_t _i175;
+                            for (_i175 = 0; _i175 < _size171; ++_i175)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i103]);
+                                xfer += iprot->readString(this->multisig_wallets[_i175]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -2922,14 +4925,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size104;
-                            ::apache::thrift::protocol::TType _etype107;
-                            xfer += iprot->readListBegin(_etype107, _size104);
-                            this->multisig_signs.resize(_size104);
-                            uint32_t _i108;
-                            for (_i108 = 0; _i108 < _size104; ++_i108)
+                            uint32_t _size176;
+                            ::apache::thrift::protocol::TType _etype179;
+                            xfer += iprot->readListBegin(_etype179, _size176);
+                            this->multisig_signs.resize(_size176);
+                            uint32_t _i180;
+                            for (_i180 = 0; _i180 < _size176; ++_i180)
                             {
-                                xfer += this->multisig_signs[_i108].read(iprot);
+                                xfer += this->multisig_signs[_i180].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -3000,10 +5003,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter109;
-            for (_iter109 = this->peer_nodes_list.begin(); _iter109 != this->peer_nodes_list.end(); ++_iter109)
+            std::vector<std::string> ::const_iterator _iter181;
+            for (_iter181 = this->peer_nodes_list.begin(); _iter181 != this->peer_nodes_list.end(); ++_iter181)
             {
-                xfer += oprot->writeString((*_iter109));
+                xfer += oprot->writeString((*_iter181));
             }
             xfer += oprot->writeListEnd();
         }
@@ -3028,10 +5031,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter110;
-            for (_iter110 = this->multisig_wallets.begin(); _iter110 != this->multisig_wallets.end(); ++_iter110)
+            std::vector<std::string> ::const_iterator _iter182;
+            for (_iter182 = this->multisig_wallets.begin(); _iter182 != this->multisig_wallets.end(); ++_iter182)
             {
-                xfer += oprot->writeString((*_iter110));
+                xfer += oprot->writeString((*_iter182));
             }
             xfer += oprot->writeListEnd();
         }
@@ -3044,10 +5047,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter111;
-            for (_iter111 = this->multisig_signs.begin(); _iter111 != this->multisig_signs.end(); ++_iter111)
+            std::vector<multisig_sign_item> ::const_iterator _iter183;
+            for (_iter183 = this->multisig_signs.begin(); _iter183 != this->multisig_signs.end(); ++_iter183)
             {
-                xfer += (*_iter111).write(oprot);
+                xfer += (*_iter183).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -3081,31 +5084,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_stop_task_req_data::node_stop_task_req_data(const node_stop_task_req_data& other112) {
-        task_id = other112.task_id;
-        peer_nodes_list = other112.peer_nodes_list;
-        additional = other112.additional;
-        wallet = other112.wallet;
-        nonce = other112.nonce;
-        sign = other112.sign;
-        multisig_wallets = other112.multisig_wallets;
-        multisig_threshold = other112.multisig_threshold;
-        multisig_signs = other112.multisig_signs;
-        session_id = other112.session_id;
-        session_id_sign = other112.session_id_sign;
+    node_stop_task_req_data::node_stop_task_req_data(const node_stop_task_req_data& other184) {
+        task_id = other184.task_id;
+        peer_nodes_list = other184.peer_nodes_list;
+        additional = other184.additional;
+        wallet = other184.wallet;
+        nonce = other184.nonce;
+        sign = other184.sign;
+        multisig_wallets = other184.multisig_wallets;
+        multisig_threshold = other184.multisig_threshold;
+        multisig_signs = other184.multisig_signs;
+        session_id = other184.session_id;
+        session_id_sign = other184.session_id_sign;
     }
-    node_stop_task_req_data& node_stop_task_req_data::operator=(const node_stop_task_req_data& other113) {
-        task_id = other113.task_id;
-        peer_nodes_list = other113.peer_nodes_list;
-        additional = other113.additional;
-        wallet = other113.wallet;
-        nonce = other113.nonce;
-        sign = other113.sign;
-        multisig_wallets = other113.multisig_wallets;
-        multisig_threshold = other113.multisig_threshold;
-        multisig_signs = other113.multisig_signs;
-        session_id = other113.session_id;
-        session_id_sign = other113.session_id_sign;
+    node_stop_task_req_data& node_stop_task_req_data::operator=(const node_stop_task_req_data& other185) {
+        task_id = other185.task_id;
+        peer_nodes_list = other185.peer_nodes_list;
+        additional = other185.additional;
+        wallet = other185.wallet;
+        nonce = other185.nonce;
+        sign = other185.sign;
+        multisig_wallets = other185.multisig_wallets;
+        multisig_threshold = other185.multisig_threshold;
+        multisig_signs = other185.multisig_signs;
+        session_id = other185.session_id;
+        session_id_sign = other185.session_id_sign;
         return *this;
     }
     void node_stop_task_req_data::printTo(std::ostream& out) const {
@@ -3203,11 +5206,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_stop_task_req_body::node_stop_task_req_body(const node_stop_task_req_body& other114) {
-        data = other114.data;
+    node_stop_task_req_body::node_stop_task_req_body(const node_stop_task_req_body& other186) {
+        data = other186.data;
     }
-    node_stop_task_req_body& node_stop_task_req_body::operator=(const node_stop_task_req_body& other115) {
-        data = other115.data;
+    node_stop_task_req_body& node_stop_task_req_body::operator=(const node_stop_task_req_body& other187) {
+        data = other187.data;
         return *this;
     }
     void node_stop_task_req_body::printTo(std::ostream& out) const {
@@ -3293,13 +5296,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_stop_task_req::node_stop_task_req(const node_stop_task_req& other116) {
-        body = other116.body;
-        __isset = other116.__isset;
+    node_stop_task_req::node_stop_task_req(const node_stop_task_req& other188) {
+        body = other188.body;
+        __isset = other188.__isset;
     }
-    node_stop_task_req& node_stop_task_req::operator=(const node_stop_task_req& other117) {
-        body = other117.body;
-        __isset = other117.__isset;
+    node_stop_task_req& node_stop_task_req::operator=(const node_stop_task_req& other189) {
+        body = other189.body;
+        __isset = other189.__isset;
         return *this;
     }
     void node_stop_task_req::printTo(std::ostream& out) const {
@@ -3387,11 +5390,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_stop_task_rsp_body::node_stop_task_rsp_body(const node_stop_task_rsp_body& other118) {
-        data = other118.data;
+    node_stop_task_rsp_body::node_stop_task_rsp_body(const node_stop_task_rsp_body& other190) {
+        data = other190.data;
     }
-    node_stop_task_rsp_body& node_stop_task_rsp_body::operator=(const node_stop_task_rsp_body& other119) {
-        data = other119.data;
+    node_stop_task_rsp_body& node_stop_task_rsp_body::operator=(const node_stop_task_rsp_body& other191) {
+        data = other191.data;
         return *this;
     }
     void node_stop_task_rsp_body::printTo(std::ostream& out) const {
@@ -3477,13 +5480,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_stop_task_rsp::node_stop_task_rsp(const node_stop_task_rsp& other120) {
-        body = other120.body;
-        __isset = other120.__isset;
+    node_stop_task_rsp::node_stop_task_rsp(const node_stop_task_rsp& other192) {
+        body = other192.body;
+        __isset = other192.__isset;
     }
-    node_stop_task_rsp& node_stop_task_rsp::operator=(const node_stop_task_rsp& other121) {
-        body = other121.body;
-        __isset = other121.__isset;
+    node_stop_task_rsp& node_stop_task_rsp::operator=(const node_stop_task_rsp& other193) {
+        body = other193.body;
+        __isset = other193.__isset;
         return *this;
     }
     void node_stop_task_rsp::printTo(std::ostream& out) const {
@@ -3592,14 +5595,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size122;
-                            ::apache::thrift::protocol::TType _etype125;
-                            xfer += iprot->readListBegin(_etype125, _size122);
-                            this->peer_nodes_list.resize(_size122);
-                            uint32_t _i126;
-                            for (_i126 = 0; _i126 < _size122; ++_i126)
+                            uint32_t _size194;
+                            ::apache::thrift::protocol::TType _etype197;
+                            xfer += iprot->readListBegin(_etype197, _size194);
+                            this->peer_nodes_list.resize(_size194);
+                            uint32_t _i198;
+                            for (_i198 = 0; _i198 < _size194; ++_i198)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i126]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i198]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -3644,14 +5647,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size127;
-                            ::apache::thrift::protocol::TType _etype130;
-                            xfer += iprot->readListBegin(_etype130, _size127);
-                            this->multisig_wallets.resize(_size127);
-                            uint32_t _i131;
-                            for (_i131 = 0; _i131 < _size127; ++_i131)
+                            uint32_t _size199;
+                            ::apache::thrift::protocol::TType _etype202;
+                            xfer += iprot->readListBegin(_etype202, _size199);
+                            this->multisig_wallets.resize(_size199);
+                            uint32_t _i203;
+                            for (_i203 = 0; _i203 < _size199; ++_i203)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i131]);
+                                xfer += iprot->readString(this->multisig_wallets[_i203]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -3672,14 +5675,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size132;
-                            ::apache::thrift::protocol::TType _etype135;
-                            xfer += iprot->readListBegin(_etype135, _size132);
-                            this->multisig_signs.resize(_size132);
-                            uint32_t _i136;
-                            for (_i136 = 0; _i136 < _size132; ++_i136)
+                            uint32_t _size204;
+                            ::apache::thrift::protocol::TType _etype207;
+                            xfer += iprot->readListBegin(_etype207, _size204);
+                            this->multisig_signs.resize(_size204);
+                            uint32_t _i208;
+                            for (_i208 = 0; _i208 < _size204; ++_i208)
                             {
-                                xfer += this->multisig_signs[_i136].read(iprot);
+                                xfer += this->multisig_signs[_i208].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -3750,10 +5753,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter137;
-            for (_iter137 = this->peer_nodes_list.begin(); _iter137 != this->peer_nodes_list.end(); ++_iter137)
+            std::vector<std::string> ::const_iterator _iter209;
+            for (_iter209 = this->peer_nodes_list.begin(); _iter209 != this->peer_nodes_list.end(); ++_iter209)
             {
-                xfer += oprot->writeString((*_iter137));
+                xfer += oprot->writeString((*_iter209));
             }
             xfer += oprot->writeListEnd();
         }
@@ -3778,10 +5781,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter138;
-            for (_iter138 = this->multisig_wallets.begin(); _iter138 != this->multisig_wallets.end(); ++_iter138)
+            std::vector<std::string> ::const_iterator _iter210;
+            for (_iter210 = this->multisig_wallets.begin(); _iter210 != this->multisig_wallets.end(); ++_iter210)
             {
-                xfer += oprot->writeString((*_iter138));
+                xfer += oprot->writeString((*_iter210));
             }
             xfer += oprot->writeListEnd();
         }
@@ -3794,10 +5797,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter139;
-            for (_iter139 = this->multisig_signs.begin(); _iter139 != this->multisig_signs.end(); ++_iter139)
+            std::vector<multisig_sign_item> ::const_iterator _iter211;
+            for (_iter211 = this->multisig_signs.begin(); _iter211 != this->multisig_signs.end(); ++_iter211)
             {
-                xfer += (*_iter139).write(oprot);
+                xfer += (*_iter211).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -3831,31 +5834,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_restart_task_req_data::node_restart_task_req_data(const node_restart_task_req_data& other140) {
-        task_id = other140.task_id;
-        peer_nodes_list = other140.peer_nodes_list;
-        additional = other140.additional;
-        wallet = other140.wallet;
-        nonce = other140.nonce;
-        sign = other140.sign;
-        multisig_wallets = other140.multisig_wallets;
-        multisig_threshold = other140.multisig_threshold;
-        multisig_signs = other140.multisig_signs;
-        session_id = other140.session_id;
-        session_id_sign = other140.session_id_sign;
+    node_restart_task_req_data::node_restart_task_req_data(const node_restart_task_req_data& other212) {
+        task_id = other212.task_id;
+        peer_nodes_list = other212.peer_nodes_list;
+        additional = other212.additional;
+        wallet = other212.wallet;
+        nonce = other212.nonce;
+        sign = other212.sign;
+        multisig_wallets = other212.multisig_wallets;
+        multisig_threshold = other212.multisig_threshold;
+        multisig_signs = other212.multisig_signs;
+        session_id = other212.session_id;
+        session_id_sign = other212.session_id_sign;
     }
-    node_restart_task_req_data& node_restart_task_req_data::operator=(const node_restart_task_req_data& other141) {
-        task_id = other141.task_id;
-        peer_nodes_list = other141.peer_nodes_list;
-        additional = other141.additional;
-        wallet = other141.wallet;
-        nonce = other141.nonce;
-        sign = other141.sign;
-        multisig_wallets = other141.multisig_wallets;
-        multisig_threshold = other141.multisig_threshold;
-        multisig_signs = other141.multisig_signs;
-        session_id = other141.session_id;
-        session_id_sign = other141.session_id_sign;
+    node_restart_task_req_data& node_restart_task_req_data::operator=(const node_restart_task_req_data& other213) {
+        task_id = other213.task_id;
+        peer_nodes_list = other213.peer_nodes_list;
+        additional = other213.additional;
+        wallet = other213.wallet;
+        nonce = other213.nonce;
+        sign = other213.sign;
+        multisig_wallets = other213.multisig_wallets;
+        multisig_threshold = other213.multisig_threshold;
+        multisig_signs = other213.multisig_signs;
+        session_id = other213.session_id;
+        session_id_sign = other213.session_id_sign;
         return *this;
     }
     void node_restart_task_req_data::printTo(std::ostream& out) const {
@@ -3953,11 +5956,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_restart_task_req_body::node_restart_task_req_body(const node_restart_task_req_body& other142) {
-        data = other142.data;
+    node_restart_task_req_body::node_restart_task_req_body(const node_restart_task_req_body& other214) {
+        data = other214.data;
     }
-    node_restart_task_req_body& node_restart_task_req_body::operator=(const node_restart_task_req_body& other143) {
-        data = other143.data;
+    node_restart_task_req_body& node_restart_task_req_body::operator=(const node_restart_task_req_body& other215) {
+        data = other215.data;
         return *this;
     }
     void node_restart_task_req_body::printTo(std::ostream& out) const {
@@ -4043,13 +6046,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_restart_task_req::node_restart_task_req(const node_restart_task_req& other144) {
-        body = other144.body;
-        __isset = other144.__isset;
+    node_restart_task_req::node_restart_task_req(const node_restart_task_req& other216) {
+        body = other216.body;
+        __isset = other216.__isset;
     }
-    node_restart_task_req& node_restart_task_req::operator=(const node_restart_task_req& other145) {
-        body = other145.body;
-        __isset = other145.__isset;
+    node_restart_task_req& node_restart_task_req::operator=(const node_restart_task_req& other217) {
+        body = other217.body;
+        __isset = other217.__isset;
         return *this;
     }
     void node_restart_task_req::printTo(std::ostream& out) const {
@@ -4137,11 +6140,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_restart_task_rsp_body::node_restart_task_rsp_body(const node_restart_task_rsp_body& other146) {
-        data = other146.data;
+    node_restart_task_rsp_body::node_restart_task_rsp_body(const node_restart_task_rsp_body& other218) {
+        data = other218.data;
     }
-    node_restart_task_rsp_body& node_restart_task_rsp_body::operator=(const node_restart_task_rsp_body& other147) {
-        data = other147.data;
+    node_restart_task_rsp_body& node_restart_task_rsp_body::operator=(const node_restart_task_rsp_body& other219) {
+        data = other219.data;
         return *this;
     }
     void node_restart_task_rsp_body::printTo(std::ostream& out) const {
@@ -4227,13 +6230,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_restart_task_rsp::node_restart_task_rsp(const node_restart_task_rsp& other148) {
-        body = other148.body;
-        __isset = other148.__isset;
+    node_restart_task_rsp::node_restart_task_rsp(const node_restart_task_rsp& other220) {
+        body = other220.body;
+        __isset = other220.__isset;
     }
-    node_restart_task_rsp& node_restart_task_rsp::operator=(const node_restart_task_rsp& other149) {
-        body = other149.body;
-        __isset = other149.__isset;
+    node_restart_task_rsp& node_restart_task_rsp::operator=(const node_restart_task_rsp& other221) {
+        body = other221.body;
+        __isset = other221.__isset;
         return *this;
     }
     void node_restart_task_rsp::printTo(std::ostream& out) const {
@@ -4342,14 +6345,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size150;
-                            ::apache::thrift::protocol::TType _etype153;
-                            xfer += iprot->readListBegin(_etype153, _size150);
-                            this->peer_nodes_list.resize(_size150);
-                            uint32_t _i154;
-                            for (_i154 = 0; _i154 < _size150; ++_i154)
+                            uint32_t _size222;
+                            ::apache::thrift::protocol::TType _etype225;
+                            xfer += iprot->readListBegin(_etype225, _size222);
+                            this->peer_nodes_list.resize(_size222);
+                            uint32_t _i226;
+                            for (_i226 = 0; _i226 < _size222; ++_i226)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i154]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i226]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -4394,14 +6397,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size155;
-                            ::apache::thrift::protocol::TType _etype158;
-                            xfer += iprot->readListBegin(_etype158, _size155);
-                            this->multisig_wallets.resize(_size155);
-                            uint32_t _i159;
-                            for (_i159 = 0; _i159 < _size155; ++_i159)
+                            uint32_t _size227;
+                            ::apache::thrift::protocol::TType _etype230;
+                            xfer += iprot->readListBegin(_etype230, _size227);
+                            this->multisig_wallets.resize(_size227);
+                            uint32_t _i231;
+                            for (_i231 = 0; _i231 < _size227; ++_i231)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i159]);
+                                xfer += iprot->readString(this->multisig_wallets[_i231]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -4422,14 +6425,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size160;
-                            ::apache::thrift::protocol::TType _etype163;
-                            xfer += iprot->readListBegin(_etype163, _size160);
-                            this->multisig_signs.resize(_size160);
-                            uint32_t _i164;
-                            for (_i164 = 0; _i164 < _size160; ++_i164)
+                            uint32_t _size232;
+                            ::apache::thrift::protocol::TType _etype235;
+                            xfer += iprot->readListBegin(_etype235, _size232);
+                            this->multisig_signs.resize(_size232);
+                            uint32_t _i236;
+                            for (_i236 = 0; _i236 < _size232; ++_i236)
                             {
-                                xfer += this->multisig_signs[_i164].read(iprot);
+                                xfer += this->multisig_signs[_i236].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -4500,10 +6503,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter165;
-            for (_iter165 = this->peer_nodes_list.begin(); _iter165 != this->peer_nodes_list.end(); ++_iter165)
+            std::vector<std::string> ::const_iterator _iter237;
+            for (_iter237 = this->peer_nodes_list.begin(); _iter237 != this->peer_nodes_list.end(); ++_iter237)
             {
-                xfer += oprot->writeString((*_iter165));
+                xfer += oprot->writeString((*_iter237));
             }
             xfer += oprot->writeListEnd();
         }
@@ -4528,10 +6531,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter166;
-            for (_iter166 = this->multisig_wallets.begin(); _iter166 != this->multisig_wallets.end(); ++_iter166)
+            std::vector<std::string> ::const_iterator _iter238;
+            for (_iter238 = this->multisig_wallets.begin(); _iter238 != this->multisig_wallets.end(); ++_iter238)
             {
-                xfer += oprot->writeString((*_iter166));
+                xfer += oprot->writeString((*_iter238));
             }
             xfer += oprot->writeListEnd();
         }
@@ -4544,10 +6547,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter167;
-            for (_iter167 = this->multisig_signs.begin(); _iter167 != this->multisig_signs.end(); ++_iter167)
+            std::vector<multisig_sign_item> ::const_iterator _iter239;
+            for (_iter239 = this->multisig_signs.begin(); _iter239 != this->multisig_signs.end(); ++_iter239)
             {
-                xfer += (*_iter167).write(oprot);
+                xfer += (*_iter239).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -4581,31 +6584,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_reset_task_req_data::node_reset_task_req_data(const node_reset_task_req_data& other168) {
-        task_id = other168.task_id;
-        peer_nodes_list = other168.peer_nodes_list;
-        additional = other168.additional;
-        wallet = other168.wallet;
-        nonce = other168.nonce;
-        sign = other168.sign;
-        multisig_wallets = other168.multisig_wallets;
-        multisig_threshold = other168.multisig_threshold;
-        multisig_signs = other168.multisig_signs;
-        session_id = other168.session_id;
-        session_id_sign = other168.session_id_sign;
+    node_reset_task_req_data::node_reset_task_req_data(const node_reset_task_req_data& other240) {
+        task_id = other240.task_id;
+        peer_nodes_list = other240.peer_nodes_list;
+        additional = other240.additional;
+        wallet = other240.wallet;
+        nonce = other240.nonce;
+        sign = other240.sign;
+        multisig_wallets = other240.multisig_wallets;
+        multisig_threshold = other240.multisig_threshold;
+        multisig_signs = other240.multisig_signs;
+        session_id = other240.session_id;
+        session_id_sign = other240.session_id_sign;
     }
-    node_reset_task_req_data& node_reset_task_req_data::operator=(const node_reset_task_req_data& other169) {
-        task_id = other169.task_id;
-        peer_nodes_list = other169.peer_nodes_list;
-        additional = other169.additional;
-        wallet = other169.wallet;
-        nonce = other169.nonce;
-        sign = other169.sign;
-        multisig_wallets = other169.multisig_wallets;
-        multisig_threshold = other169.multisig_threshold;
-        multisig_signs = other169.multisig_signs;
-        session_id = other169.session_id;
-        session_id_sign = other169.session_id_sign;
+    node_reset_task_req_data& node_reset_task_req_data::operator=(const node_reset_task_req_data& other241) {
+        task_id = other241.task_id;
+        peer_nodes_list = other241.peer_nodes_list;
+        additional = other241.additional;
+        wallet = other241.wallet;
+        nonce = other241.nonce;
+        sign = other241.sign;
+        multisig_wallets = other241.multisig_wallets;
+        multisig_threshold = other241.multisig_threshold;
+        multisig_signs = other241.multisig_signs;
+        session_id = other241.session_id;
+        session_id_sign = other241.session_id_sign;
         return *this;
     }
     void node_reset_task_req_data::printTo(std::ostream& out) const {
@@ -4703,11 +6706,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_reset_task_req_body::node_reset_task_req_body(const node_reset_task_req_body& other170) {
-        data = other170.data;
+    node_reset_task_req_body::node_reset_task_req_body(const node_reset_task_req_body& other242) {
+        data = other242.data;
     }
-    node_reset_task_req_body& node_reset_task_req_body::operator=(const node_reset_task_req_body& other171) {
-        data = other171.data;
+    node_reset_task_req_body& node_reset_task_req_body::operator=(const node_reset_task_req_body& other243) {
+        data = other243.data;
         return *this;
     }
     void node_reset_task_req_body::printTo(std::ostream& out) const {
@@ -4793,13 +6796,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_reset_task_req::node_reset_task_req(const node_reset_task_req& other172) {
-        body = other172.body;
-        __isset = other172.__isset;
+    node_reset_task_req::node_reset_task_req(const node_reset_task_req& other244) {
+        body = other244.body;
+        __isset = other244.__isset;
     }
-    node_reset_task_req& node_reset_task_req::operator=(const node_reset_task_req& other173) {
-        body = other173.body;
-        __isset = other173.__isset;
+    node_reset_task_req& node_reset_task_req::operator=(const node_reset_task_req& other245) {
+        body = other245.body;
+        __isset = other245.__isset;
         return *this;
     }
     void node_reset_task_req::printTo(std::ostream& out) const {
@@ -4887,11 +6890,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_reset_task_rsp_body::node_reset_task_rsp_body(const node_reset_task_rsp_body& other174) {
-        data = other174.data;
+    node_reset_task_rsp_body::node_reset_task_rsp_body(const node_reset_task_rsp_body& other246) {
+        data = other246.data;
     }
-    node_reset_task_rsp_body& node_reset_task_rsp_body::operator=(const node_reset_task_rsp_body& other175) {
-        data = other175.data;
+    node_reset_task_rsp_body& node_reset_task_rsp_body::operator=(const node_reset_task_rsp_body& other247) {
+        data = other247.data;
         return *this;
     }
     void node_reset_task_rsp_body::printTo(std::ostream& out) const {
@@ -4977,13 +6980,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_reset_task_rsp::node_reset_task_rsp(const node_reset_task_rsp& other176) {
-        body = other176.body;
-        __isset = other176.__isset;
+    node_reset_task_rsp::node_reset_task_rsp(const node_reset_task_rsp& other248) {
+        body = other248.body;
+        __isset = other248.__isset;
     }
-    node_reset_task_rsp& node_reset_task_rsp::operator=(const node_reset_task_rsp& other177) {
-        body = other177.body;
-        __isset = other177.__isset;
+    node_reset_task_rsp& node_reset_task_rsp::operator=(const node_reset_task_rsp& other249) {
+        body = other249.body;
+        __isset = other249.__isset;
         return *this;
     }
     void node_reset_task_rsp::printTo(std::ostream& out) const {
@@ -5092,14 +7095,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size178;
-                            ::apache::thrift::protocol::TType _etype181;
-                            xfer += iprot->readListBegin(_etype181, _size178);
-                            this->peer_nodes_list.resize(_size178);
-                            uint32_t _i182;
-                            for (_i182 = 0; _i182 < _size178; ++_i182)
+                            uint32_t _size250;
+                            ::apache::thrift::protocol::TType _etype253;
+                            xfer += iprot->readListBegin(_etype253, _size250);
+                            this->peer_nodes_list.resize(_size250);
+                            uint32_t _i254;
+                            for (_i254 = 0; _i254 < _size250; ++_i254)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i182]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i254]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -5144,14 +7147,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size183;
-                            ::apache::thrift::protocol::TType _etype186;
-                            xfer += iprot->readListBegin(_etype186, _size183);
-                            this->multisig_wallets.resize(_size183);
-                            uint32_t _i187;
-                            for (_i187 = 0; _i187 < _size183; ++_i187)
+                            uint32_t _size255;
+                            ::apache::thrift::protocol::TType _etype258;
+                            xfer += iprot->readListBegin(_etype258, _size255);
+                            this->multisig_wallets.resize(_size255);
+                            uint32_t _i259;
+                            for (_i259 = 0; _i259 < _size255; ++_i259)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i187]);
+                                xfer += iprot->readString(this->multisig_wallets[_i259]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -5172,14 +7175,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size188;
-                            ::apache::thrift::protocol::TType _etype191;
-                            xfer += iprot->readListBegin(_etype191, _size188);
-                            this->multisig_signs.resize(_size188);
-                            uint32_t _i192;
-                            for (_i192 = 0; _i192 < _size188; ++_i192)
+                            uint32_t _size260;
+                            ::apache::thrift::protocol::TType _etype263;
+                            xfer += iprot->readListBegin(_etype263, _size260);
+                            this->multisig_signs.resize(_size260);
+                            uint32_t _i264;
+                            for (_i264 = 0; _i264 < _size260; ++_i264)
                             {
-                                xfer += this->multisig_signs[_i192].read(iprot);
+                                xfer += this->multisig_signs[_i264].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -5250,10 +7253,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter193;
-            for (_iter193 = this->peer_nodes_list.begin(); _iter193 != this->peer_nodes_list.end(); ++_iter193)
+            std::vector<std::string> ::const_iterator _iter265;
+            for (_iter265 = this->peer_nodes_list.begin(); _iter265 != this->peer_nodes_list.end(); ++_iter265)
             {
-                xfer += oprot->writeString((*_iter193));
+                xfer += oprot->writeString((*_iter265));
             }
             xfer += oprot->writeListEnd();
         }
@@ -5278,10 +7281,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter194;
-            for (_iter194 = this->multisig_wallets.begin(); _iter194 != this->multisig_wallets.end(); ++_iter194)
+            std::vector<std::string> ::const_iterator _iter266;
+            for (_iter266 = this->multisig_wallets.begin(); _iter266 != this->multisig_wallets.end(); ++_iter266)
             {
-                xfer += oprot->writeString((*_iter194));
+                xfer += oprot->writeString((*_iter266));
             }
             xfer += oprot->writeListEnd();
         }
@@ -5294,10 +7297,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter195;
-            for (_iter195 = this->multisig_signs.begin(); _iter195 != this->multisig_signs.end(); ++_iter195)
+            std::vector<multisig_sign_item> ::const_iterator _iter267;
+            for (_iter267 = this->multisig_signs.begin(); _iter267 != this->multisig_signs.end(); ++_iter267)
             {
-                xfer += (*_iter195).write(oprot);
+                xfer += (*_iter267).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -5331,31 +7334,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_delete_task_req_data::node_delete_task_req_data(const node_delete_task_req_data& other196) {
-        task_id = other196.task_id;
-        peer_nodes_list = other196.peer_nodes_list;
-        additional = other196.additional;
-        wallet = other196.wallet;
-        nonce = other196.nonce;
-        sign = other196.sign;
-        multisig_wallets = other196.multisig_wallets;
-        multisig_threshold = other196.multisig_threshold;
-        multisig_signs = other196.multisig_signs;
-        session_id = other196.session_id;
-        session_id_sign = other196.session_id_sign;
+    node_delete_task_req_data::node_delete_task_req_data(const node_delete_task_req_data& other268) {
+        task_id = other268.task_id;
+        peer_nodes_list = other268.peer_nodes_list;
+        additional = other268.additional;
+        wallet = other268.wallet;
+        nonce = other268.nonce;
+        sign = other268.sign;
+        multisig_wallets = other268.multisig_wallets;
+        multisig_threshold = other268.multisig_threshold;
+        multisig_signs = other268.multisig_signs;
+        session_id = other268.session_id;
+        session_id_sign = other268.session_id_sign;
     }
-    node_delete_task_req_data& node_delete_task_req_data::operator=(const node_delete_task_req_data& other197) {
-        task_id = other197.task_id;
-        peer_nodes_list = other197.peer_nodes_list;
-        additional = other197.additional;
-        wallet = other197.wallet;
-        nonce = other197.nonce;
-        sign = other197.sign;
-        multisig_wallets = other197.multisig_wallets;
-        multisig_threshold = other197.multisig_threshold;
-        multisig_signs = other197.multisig_signs;
-        session_id = other197.session_id;
-        session_id_sign = other197.session_id_sign;
+    node_delete_task_req_data& node_delete_task_req_data::operator=(const node_delete_task_req_data& other269) {
+        task_id = other269.task_id;
+        peer_nodes_list = other269.peer_nodes_list;
+        additional = other269.additional;
+        wallet = other269.wallet;
+        nonce = other269.nonce;
+        sign = other269.sign;
+        multisig_wallets = other269.multisig_wallets;
+        multisig_threshold = other269.multisig_threshold;
+        multisig_signs = other269.multisig_signs;
+        session_id = other269.session_id;
+        session_id_sign = other269.session_id_sign;
         return *this;
     }
     void node_delete_task_req_data::printTo(std::ostream& out) const {
@@ -5453,11 +7456,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_delete_task_req_body::node_delete_task_req_body(const node_delete_task_req_body& other198) {
-        data = other198.data;
+    node_delete_task_req_body::node_delete_task_req_body(const node_delete_task_req_body& other270) {
+        data = other270.data;
     }
-    node_delete_task_req_body& node_delete_task_req_body::operator=(const node_delete_task_req_body& other199) {
-        data = other199.data;
+    node_delete_task_req_body& node_delete_task_req_body::operator=(const node_delete_task_req_body& other271) {
+        data = other271.data;
         return *this;
     }
     void node_delete_task_req_body::printTo(std::ostream& out) const {
@@ -5543,13 +7546,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_delete_task_req::node_delete_task_req(const node_delete_task_req& other200) {
-        body = other200.body;
-        __isset = other200.__isset;
+    node_delete_task_req::node_delete_task_req(const node_delete_task_req& other272) {
+        body = other272.body;
+        __isset = other272.__isset;
     }
-    node_delete_task_req& node_delete_task_req::operator=(const node_delete_task_req& other201) {
-        body = other201.body;
-        __isset = other201.__isset;
+    node_delete_task_req& node_delete_task_req::operator=(const node_delete_task_req& other273) {
+        body = other273.body;
+        __isset = other273.__isset;
         return *this;
     }
     void node_delete_task_req::printTo(std::ostream& out) const {
@@ -5637,11 +7640,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_delete_task_rsp_body::node_delete_task_rsp_body(const node_delete_task_rsp_body& other202) {
-        data = other202.data;
+    node_delete_task_rsp_body::node_delete_task_rsp_body(const node_delete_task_rsp_body& other274) {
+        data = other274.data;
     }
-    node_delete_task_rsp_body& node_delete_task_rsp_body::operator=(const node_delete_task_rsp_body& other203) {
-        data = other203.data;
+    node_delete_task_rsp_body& node_delete_task_rsp_body::operator=(const node_delete_task_rsp_body& other275) {
+        data = other275.data;
         return *this;
     }
     void node_delete_task_rsp_body::printTo(std::ostream& out) const {
@@ -5727,13 +7730,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_delete_task_rsp::node_delete_task_rsp(const node_delete_task_rsp& other204) {
-        body = other204.body;
-        __isset = other204.__isset;
+    node_delete_task_rsp::node_delete_task_rsp(const node_delete_task_rsp& other276) {
+        body = other276.body;
+        __isset = other276.__isset;
     }
-    node_delete_task_rsp& node_delete_task_rsp::operator=(const node_delete_task_rsp& other205) {
-        body = other205.body;
-        __isset = other205.__isset;
+    node_delete_task_rsp& node_delete_task_rsp::operator=(const node_delete_task_rsp& other277) {
+        body = other277.body;
+        __isset = other277.__isset;
         return *this;
     }
     void node_delete_task_rsp::printTo(std::ostream& out) const {
@@ -5868,14 +7871,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size206;
-                            ::apache::thrift::protocol::TType _etype209;
-                            xfer += iprot->readListBegin(_etype209, _size206);
-                            this->peer_nodes_list.resize(_size206);
-                            uint32_t _i210;
-                            for (_i210 = 0; _i210 < _size206; ++_i210)
+                            uint32_t _size278;
+                            ::apache::thrift::protocol::TType _etype281;
+                            xfer += iprot->readListBegin(_etype281, _size278);
+                            this->peer_nodes_list.resize(_size278);
+                            uint32_t _i282;
+                            for (_i282 = 0; _i282 < _size278; ++_i282)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i210]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i282]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -5920,14 +7923,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size211;
-                            ::apache::thrift::protocol::TType _etype214;
-                            xfer += iprot->readListBegin(_etype214, _size211);
-                            this->multisig_wallets.resize(_size211);
-                            uint32_t _i215;
-                            for (_i215 = 0; _i215 < _size211; ++_i215)
+                            uint32_t _size283;
+                            ::apache::thrift::protocol::TType _etype286;
+                            xfer += iprot->readListBegin(_etype286, _size283);
+                            this->multisig_wallets.resize(_size283);
+                            uint32_t _i287;
+                            for (_i287 = 0; _i287 < _size283; ++_i287)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i215]);
+                                xfer += iprot->readString(this->multisig_wallets[_i287]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -5948,14 +7951,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size216;
-                            ::apache::thrift::protocol::TType _etype219;
-                            xfer += iprot->readListBegin(_etype219, _size216);
-                            this->multisig_signs.resize(_size216);
-                            uint32_t _i220;
-                            for (_i220 = 0; _i220 < _size216; ++_i220)
+                            uint32_t _size288;
+                            ::apache::thrift::protocol::TType _etype291;
+                            xfer += iprot->readListBegin(_etype291, _size288);
+                            this->multisig_signs.resize(_size288);
+                            uint32_t _i292;
+                            for (_i292 = 0; _i292 < _size288; ++_i292)
                             {
-                                xfer += this->multisig_signs[_i220].read(iprot);
+                                xfer += this->multisig_signs[_i292].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -6038,10 +8041,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 4);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter221;
-            for (_iter221 = this->peer_nodes_list.begin(); _iter221 != this->peer_nodes_list.end(); ++_iter221)
+            std::vector<std::string> ::const_iterator _iter293;
+            for (_iter293 = this->peer_nodes_list.begin(); _iter293 != this->peer_nodes_list.end(); ++_iter293)
             {
-                xfer += oprot->writeString((*_iter221));
+                xfer += oprot->writeString((*_iter293));
             }
             xfer += oprot->writeListEnd();
         }
@@ -6066,10 +8069,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter222;
-            for (_iter222 = this->multisig_wallets.begin(); _iter222 != this->multisig_wallets.end(); ++_iter222)
+            std::vector<std::string> ::const_iterator _iter294;
+            for (_iter294 = this->multisig_wallets.begin(); _iter294 != this->multisig_wallets.end(); ++_iter294)
             {
-                xfer += oprot->writeString((*_iter222));
+                xfer += oprot->writeString((*_iter294));
             }
             xfer += oprot->writeListEnd();
         }
@@ -6082,10 +8085,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 11);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter223;
-            for (_iter223 = this->multisig_signs.begin(); _iter223 != this->multisig_signs.end(); ++_iter223)
+            std::vector<multisig_sign_item> ::const_iterator _iter295;
+            for (_iter295 = this->multisig_signs.begin(); _iter295 != this->multisig_signs.end(); ++_iter295)
             {
-                xfer += (*_iter223).write(oprot);
+                xfer += (*_iter295).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -6121,35 +8124,35 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_task_logs_req_data::node_task_logs_req_data(const node_task_logs_req_data& other224) {
-        task_id = other224.task_id;
-        head_or_tail = other224.head_or_tail;
-        number_of_lines = other224.number_of_lines;
-        peer_nodes_list = other224.peer_nodes_list;
-        additional = other224.additional;
-        wallet = other224.wallet;
-        nonce = other224.nonce;
-        sign = other224.sign;
-        multisig_wallets = other224.multisig_wallets;
-        multisig_threshold = other224.multisig_threshold;
-        multisig_signs = other224.multisig_signs;
-        session_id = other224.session_id;
-        session_id_sign = other224.session_id_sign;
+    node_task_logs_req_data::node_task_logs_req_data(const node_task_logs_req_data& other296) {
+        task_id = other296.task_id;
+        head_or_tail = other296.head_or_tail;
+        number_of_lines = other296.number_of_lines;
+        peer_nodes_list = other296.peer_nodes_list;
+        additional = other296.additional;
+        wallet = other296.wallet;
+        nonce = other296.nonce;
+        sign = other296.sign;
+        multisig_wallets = other296.multisig_wallets;
+        multisig_threshold = other296.multisig_threshold;
+        multisig_signs = other296.multisig_signs;
+        session_id = other296.session_id;
+        session_id_sign = other296.session_id_sign;
     }
-    node_task_logs_req_data& node_task_logs_req_data::operator=(const node_task_logs_req_data& other225) {
-        task_id = other225.task_id;
-        head_or_tail = other225.head_or_tail;
-        number_of_lines = other225.number_of_lines;
-        peer_nodes_list = other225.peer_nodes_list;
-        additional = other225.additional;
-        wallet = other225.wallet;
-        nonce = other225.nonce;
-        sign = other225.sign;
-        multisig_wallets = other225.multisig_wallets;
-        multisig_threshold = other225.multisig_threshold;
-        multisig_signs = other225.multisig_signs;
-        session_id = other225.session_id;
-        session_id_sign = other225.session_id_sign;
+    node_task_logs_req_data& node_task_logs_req_data::operator=(const node_task_logs_req_data& other297) {
+        task_id = other297.task_id;
+        head_or_tail = other297.head_or_tail;
+        number_of_lines = other297.number_of_lines;
+        peer_nodes_list = other297.peer_nodes_list;
+        additional = other297.additional;
+        wallet = other297.wallet;
+        nonce = other297.nonce;
+        sign = other297.sign;
+        multisig_wallets = other297.multisig_wallets;
+        multisig_threshold = other297.multisig_threshold;
+        multisig_signs = other297.multisig_signs;
+        session_id = other297.session_id;
+        session_id_sign = other297.session_id_sign;
         return *this;
     }
     void node_task_logs_req_data::printTo(std::ostream& out) const {
@@ -6249,11 +8252,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_task_logs_req_body::node_task_logs_req_body(const node_task_logs_req_body& other226) {
-        data = other226.data;
+    node_task_logs_req_body::node_task_logs_req_body(const node_task_logs_req_body& other298) {
+        data = other298.data;
     }
-    node_task_logs_req_body& node_task_logs_req_body::operator=(const node_task_logs_req_body& other227) {
-        data = other227.data;
+    node_task_logs_req_body& node_task_logs_req_body::operator=(const node_task_logs_req_body& other299) {
+        data = other299.data;
         return *this;
     }
     void node_task_logs_req_body::printTo(std::ostream& out) const {
@@ -6339,13 +8342,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_task_logs_req::node_task_logs_req(const node_task_logs_req& other228) {
-        body = other228.body;
-        __isset = other228.__isset;
+    node_task_logs_req::node_task_logs_req(const node_task_logs_req& other300) {
+        body = other300.body;
+        __isset = other300.__isset;
     }
-    node_task_logs_req& node_task_logs_req::operator=(const node_task_logs_req& other229) {
-        body = other229.body;
-        __isset = other229.__isset;
+    node_task_logs_req& node_task_logs_req::operator=(const node_task_logs_req& other301) {
+        body = other301.body;
+        __isset = other301.__isset;
         return *this;
     }
     void node_task_logs_req::printTo(std::ostream& out) const {
@@ -6433,11 +8436,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_task_logs_rsp_body::node_task_logs_rsp_body(const node_task_logs_rsp_body& other230) {
-        data = other230.data;
+    node_task_logs_rsp_body::node_task_logs_rsp_body(const node_task_logs_rsp_body& other302) {
+        data = other302.data;
     }
-    node_task_logs_rsp_body& node_task_logs_rsp_body::operator=(const node_task_logs_rsp_body& other231) {
-        data = other231.data;
+    node_task_logs_rsp_body& node_task_logs_rsp_body::operator=(const node_task_logs_rsp_body& other303) {
+        data = other303.data;
         return *this;
     }
     void node_task_logs_rsp_body::printTo(std::ostream& out) const {
@@ -6523,13 +8526,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_task_logs_rsp::node_task_logs_rsp(const node_task_logs_rsp& other232) {
-        body = other232.body;
-        __isset = other232.__isset;
+    node_task_logs_rsp::node_task_logs_rsp(const node_task_logs_rsp& other304) {
+        body = other304.body;
+        __isset = other304.__isset;
     }
-    node_task_logs_rsp& node_task_logs_rsp::operator=(const node_task_logs_rsp& other233) {
-        body = other233.body;
-        __isset = other233.__isset;
+    node_task_logs_rsp& node_task_logs_rsp::operator=(const node_task_logs_rsp& other305) {
+        body = other305.body;
+        __isset = other305.__isset;
         return *this;
     }
     void node_task_logs_rsp::printTo(std::ostream& out) const {
@@ -6638,14 +8641,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size234;
-                            ::apache::thrift::protocol::TType _etype237;
-                            xfer += iprot->readListBegin(_etype237, _size234);
-                            this->peer_nodes_list.resize(_size234);
-                            uint32_t _i238;
-                            for (_i238 = 0; _i238 < _size234; ++_i238)
+                            uint32_t _size306;
+                            ::apache::thrift::protocol::TType _etype309;
+                            xfer += iprot->readListBegin(_etype309, _size306);
+                            this->peer_nodes_list.resize(_size306);
+                            uint32_t _i310;
+                            for (_i310 = 0; _i310 < _size306; ++_i310)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i238]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i310]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -6690,14 +8693,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size239;
-                            ::apache::thrift::protocol::TType _etype242;
-                            xfer += iprot->readListBegin(_etype242, _size239);
-                            this->multisig_wallets.resize(_size239);
-                            uint32_t _i243;
-                            for (_i243 = 0; _i243 < _size239; ++_i243)
+                            uint32_t _size311;
+                            ::apache::thrift::protocol::TType _etype314;
+                            xfer += iprot->readListBegin(_etype314, _size311);
+                            this->multisig_wallets.resize(_size311);
+                            uint32_t _i315;
+                            for (_i315 = 0; _i315 < _size311; ++_i315)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i243]);
+                                xfer += iprot->readString(this->multisig_wallets[_i315]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -6718,14 +8721,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size244;
-                            ::apache::thrift::protocol::TType _etype247;
-                            xfer += iprot->readListBegin(_etype247, _size244);
-                            this->multisig_signs.resize(_size244);
-                            uint32_t _i248;
-                            for (_i248 = 0; _i248 < _size244; ++_i248)
+                            uint32_t _size316;
+                            ::apache::thrift::protocol::TType _etype319;
+                            xfer += iprot->readListBegin(_etype319, _size316);
+                            this->multisig_signs.resize(_size316);
+                            uint32_t _i320;
+                            for (_i320 = 0; _i320 < _size316; ++_i320)
                             {
-                                xfer += this->multisig_signs[_i248].read(iprot);
+                                xfer += this->multisig_signs[_i320].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -6796,10 +8799,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter249;
-            for (_iter249 = this->peer_nodes_list.begin(); _iter249 != this->peer_nodes_list.end(); ++_iter249)
+            std::vector<std::string> ::const_iterator _iter321;
+            for (_iter321 = this->peer_nodes_list.begin(); _iter321 != this->peer_nodes_list.end(); ++_iter321)
             {
-                xfer += oprot->writeString((*_iter249));
+                xfer += oprot->writeString((*_iter321));
             }
             xfer += oprot->writeListEnd();
         }
@@ -6824,10 +8827,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter250;
-            for (_iter250 = this->multisig_wallets.begin(); _iter250 != this->multisig_wallets.end(); ++_iter250)
+            std::vector<std::string> ::const_iterator _iter322;
+            for (_iter322 = this->multisig_wallets.begin(); _iter322 != this->multisig_wallets.end(); ++_iter322)
             {
-                xfer += oprot->writeString((*_iter250));
+                xfer += oprot->writeString((*_iter322));
             }
             xfer += oprot->writeListEnd();
         }
@@ -6840,10 +8843,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter251;
-            for (_iter251 = this->multisig_signs.begin(); _iter251 != this->multisig_signs.end(); ++_iter251)
+            std::vector<multisig_sign_item> ::const_iterator _iter323;
+            for (_iter323 = this->multisig_signs.begin(); _iter323 != this->multisig_signs.end(); ++_iter323)
             {
-                xfer += (*_iter251).write(oprot);
+                xfer += (*_iter323).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -6877,31 +8880,31 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_modify_task_req_data::node_modify_task_req_data(const node_modify_task_req_data& other252) {
-        task_id = other252.task_id;
-        peer_nodes_list = other252.peer_nodes_list;
-        additional = other252.additional;
-        wallet = other252.wallet;
-        nonce = other252.nonce;
-        sign = other252.sign;
-        multisig_wallets = other252.multisig_wallets;
-        multisig_threshold = other252.multisig_threshold;
-        multisig_signs = other252.multisig_signs;
-        session_id = other252.session_id;
-        session_id_sign = other252.session_id_sign;
+    node_modify_task_req_data::node_modify_task_req_data(const node_modify_task_req_data& other324) {
+        task_id = other324.task_id;
+        peer_nodes_list = other324.peer_nodes_list;
+        additional = other324.additional;
+        wallet = other324.wallet;
+        nonce = other324.nonce;
+        sign = other324.sign;
+        multisig_wallets = other324.multisig_wallets;
+        multisig_threshold = other324.multisig_threshold;
+        multisig_signs = other324.multisig_signs;
+        session_id = other324.session_id;
+        session_id_sign = other324.session_id_sign;
     }
-    node_modify_task_req_data& node_modify_task_req_data::operator=(const node_modify_task_req_data& other253) {
-        task_id = other253.task_id;
-        peer_nodes_list = other253.peer_nodes_list;
-        additional = other253.additional;
-        wallet = other253.wallet;
-        nonce = other253.nonce;
-        sign = other253.sign;
-        multisig_wallets = other253.multisig_wallets;
-        multisig_threshold = other253.multisig_threshold;
-        multisig_signs = other253.multisig_signs;
-        session_id = other253.session_id;
-        session_id_sign = other253.session_id_sign;
+    node_modify_task_req_data& node_modify_task_req_data::operator=(const node_modify_task_req_data& other325) {
+        task_id = other325.task_id;
+        peer_nodes_list = other325.peer_nodes_list;
+        additional = other325.additional;
+        wallet = other325.wallet;
+        nonce = other325.nonce;
+        sign = other325.sign;
+        multisig_wallets = other325.multisig_wallets;
+        multisig_threshold = other325.multisig_threshold;
+        multisig_signs = other325.multisig_signs;
+        session_id = other325.session_id;
+        session_id_sign = other325.session_id_sign;
         return *this;
     }
     void node_modify_task_req_data::printTo(std::ostream& out) const {
@@ -6999,11 +9002,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_modify_task_req_body::node_modify_task_req_body(const node_modify_task_req_body& other254) {
-        data = other254.data;
+    node_modify_task_req_body::node_modify_task_req_body(const node_modify_task_req_body& other326) {
+        data = other326.data;
     }
-    node_modify_task_req_body& node_modify_task_req_body::operator=(const node_modify_task_req_body& other255) {
-        data = other255.data;
+    node_modify_task_req_body& node_modify_task_req_body::operator=(const node_modify_task_req_body& other327) {
+        data = other327.data;
         return *this;
     }
     void node_modify_task_req_body::printTo(std::ostream& out) const {
@@ -7089,13 +9092,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_modify_task_req::node_modify_task_req(const node_modify_task_req& other256) {
-        body = other256.body;
-        __isset = other256.__isset;
+    node_modify_task_req::node_modify_task_req(const node_modify_task_req& other328) {
+        body = other328.body;
+        __isset = other328.__isset;
     }
-    node_modify_task_req& node_modify_task_req::operator=(const node_modify_task_req& other257) {
-        body = other257.body;
-        __isset = other257.__isset;
+    node_modify_task_req& node_modify_task_req::operator=(const node_modify_task_req& other329) {
+        body = other329.body;
+        __isset = other329.__isset;
         return *this;
     }
     void node_modify_task_req::printTo(std::ostream& out) const {
@@ -7183,11 +9186,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_modify_task_rsp_body::node_modify_task_rsp_body(const node_modify_task_rsp_body& other258) {
-        data = other258.data;
+    node_modify_task_rsp_body::node_modify_task_rsp_body(const node_modify_task_rsp_body& other330) {
+        data = other330.data;
     }
-    node_modify_task_rsp_body& node_modify_task_rsp_body::operator=(const node_modify_task_rsp_body& other259) {
-        data = other259.data;
+    node_modify_task_rsp_body& node_modify_task_rsp_body::operator=(const node_modify_task_rsp_body& other331) {
+        data = other331.data;
         return *this;
     }
     void node_modify_task_rsp_body::printTo(std::ostream& out) const {
@@ -7273,13 +9276,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_modify_task_rsp::node_modify_task_rsp(const node_modify_task_rsp& other260) {
-        body = other260.body;
-        __isset = other260.__isset;
+    node_modify_task_rsp::node_modify_task_rsp(const node_modify_task_rsp& other332) {
+        body = other332.body;
+        __isset = other332.__isset;
     }
-    node_modify_task_rsp& node_modify_task_rsp::operator=(const node_modify_task_rsp& other261) {
-        body = other261.body;
-        __isset = other261.__isset;
+    node_modify_task_rsp& node_modify_task_rsp::operator=(const node_modify_task_rsp& other333) {
+        body = other333.body;
+        __isset = other333.__isset;
         return *this;
     }
     void node_modify_task_rsp::printTo(std::ostream& out) const {
@@ -7365,14 +9368,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size262;
-                            ::apache::thrift::protocol::TType _etype265;
-                            xfer += iprot->readListBegin(_etype265, _size262);
-                            this->peer_nodes_list.resize(_size262);
-                            uint32_t _i266;
-                            for (_i266 = 0; _i266 < _size262; ++_i266)
+                            uint32_t _size334;
+                            ::apache::thrift::protocol::TType _etype337;
+                            xfer += iprot->readListBegin(_etype337, _size334);
+                            this->peer_nodes_list.resize(_size334);
+                            uint32_t _i338;
+                            for (_i338 = 0; _i338 < _size334; ++_i338)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i266]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i338]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -7417,14 +9420,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size267;
-                            ::apache::thrift::protocol::TType _etype270;
-                            xfer += iprot->readListBegin(_etype270, _size267);
-                            this->multisig_wallets.resize(_size267);
-                            uint32_t _i271;
-                            for (_i271 = 0; _i271 < _size267; ++_i271)
+                            uint32_t _size339;
+                            ::apache::thrift::protocol::TType _etype342;
+                            xfer += iprot->readListBegin(_etype342, _size339);
+                            this->multisig_wallets.resize(_size339);
+                            uint32_t _i343;
+                            for (_i343 = 0; _i343 < _size339; ++_i343)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i271]);
+                                xfer += iprot->readString(this->multisig_wallets[_i343]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -7445,14 +9448,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size272;
-                            ::apache::thrift::protocol::TType _etype275;
-                            xfer += iprot->readListBegin(_etype275, _size272);
-                            this->multisig_signs.resize(_size272);
-                            uint32_t _i276;
-                            for (_i276 = 0; _i276 < _size272; ++_i276)
+                            uint32_t _size344;
+                            ::apache::thrift::protocol::TType _etype347;
+                            xfer += iprot->readListBegin(_etype347, _size344);
+                            this->multisig_signs.resize(_size344);
+                            uint32_t _i348;
+                            for (_i348 = 0; _i348 < _size344; ++_i348)
                             {
-                                xfer += this->multisig_signs[_i276].read(iprot);
+                                xfer += this->multisig_signs[_i348].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -7497,10 +9500,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter277;
-            for (_iter277 = this->peer_nodes_list.begin(); _iter277 != this->peer_nodes_list.end(); ++_iter277)
+            std::vector<std::string> ::const_iterator _iter349;
+            for (_iter349 = this->peer_nodes_list.begin(); _iter349 != this->peer_nodes_list.end(); ++_iter349)
             {
-                xfer += oprot->writeString((*_iter277));
+                xfer += oprot->writeString((*_iter349));
             }
             xfer += oprot->writeListEnd();
         }
@@ -7525,10 +9528,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter278;
-            for (_iter278 = this->multisig_wallets.begin(); _iter278 != this->multisig_wallets.end(); ++_iter278)
+            std::vector<std::string> ::const_iterator _iter350;
+            for (_iter350 = this->multisig_wallets.begin(); _iter350 != this->multisig_wallets.end(); ++_iter350)
             {
-                xfer += oprot->writeString((*_iter278));
+                xfer += oprot->writeString((*_iter350));
             }
             xfer += oprot->writeListEnd();
         }
@@ -7541,10 +9544,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter279;
-            for (_iter279 = this->multisig_signs.begin(); _iter279 != this->multisig_signs.end(); ++_iter279)
+            std::vector<multisig_sign_item> ::const_iterator _iter351;
+            for (_iter351 = this->multisig_signs.begin(); _iter351 != this->multisig_signs.end(); ++_iter351)
             {
-                xfer += (*_iter279).write(oprot);
+                xfer += (*_iter351).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -7567,25 +9570,25 @@ namespace dbc {
         swap(a.multisig_signs, b.multisig_signs);
     }
 
-    node_session_id_req_data::node_session_id_req_data(const node_session_id_req_data& other280) {
-        peer_nodes_list = other280.peer_nodes_list;
-        additional = other280.additional;
-        wallet = other280.wallet;
-        nonce = other280.nonce;
-        sign = other280.sign;
-        multisig_wallets = other280.multisig_wallets;
-        multisig_threshold = other280.multisig_threshold;
-        multisig_signs = other280.multisig_signs;
+    node_session_id_req_data::node_session_id_req_data(const node_session_id_req_data& other352) {
+        peer_nodes_list = other352.peer_nodes_list;
+        additional = other352.additional;
+        wallet = other352.wallet;
+        nonce = other352.nonce;
+        sign = other352.sign;
+        multisig_wallets = other352.multisig_wallets;
+        multisig_threshold = other352.multisig_threshold;
+        multisig_signs = other352.multisig_signs;
     }
-    node_session_id_req_data& node_session_id_req_data::operator=(const node_session_id_req_data& other281) {
-        peer_nodes_list = other281.peer_nodes_list;
-        additional = other281.additional;
-        wallet = other281.wallet;
-        nonce = other281.nonce;
-        sign = other281.sign;
-        multisig_wallets = other281.multisig_wallets;
-        multisig_threshold = other281.multisig_threshold;
-        multisig_signs = other281.multisig_signs;
+    node_session_id_req_data& node_session_id_req_data::operator=(const node_session_id_req_data& other353) {
+        peer_nodes_list = other353.peer_nodes_list;
+        additional = other353.additional;
+        wallet = other353.wallet;
+        nonce = other353.nonce;
+        sign = other353.sign;
+        multisig_wallets = other353.multisig_wallets;
+        multisig_threshold = other353.multisig_threshold;
+        multisig_signs = other353.multisig_signs;
         return *this;
     }
     void node_session_id_req_data::printTo(std::ostream& out) const {
@@ -7680,11 +9683,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_session_id_req_body::node_session_id_req_body(const node_session_id_req_body& other282) {
-        data = other282.data;
+    node_session_id_req_body::node_session_id_req_body(const node_session_id_req_body& other354) {
+        data = other354.data;
     }
-    node_session_id_req_body& node_session_id_req_body::operator=(const node_session_id_req_body& other283) {
-        data = other283.data;
+    node_session_id_req_body& node_session_id_req_body::operator=(const node_session_id_req_body& other355) {
+        data = other355.data;
         return *this;
     }
     void node_session_id_req_body::printTo(std::ostream& out) const {
@@ -7770,13 +9773,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_session_id_req::node_session_id_req(const node_session_id_req& other284) {
-        body = other284.body;
-        __isset = other284.__isset;
+    node_session_id_req::node_session_id_req(const node_session_id_req& other356) {
+        body = other356.body;
+        __isset = other356.__isset;
     }
-    node_session_id_req& node_session_id_req::operator=(const node_session_id_req& other285) {
-        body = other285.body;
-        __isset = other285.__isset;
+    node_session_id_req& node_session_id_req::operator=(const node_session_id_req& other357) {
+        body = other357.body;
+        __isset = other357.__isset;
         return *this;
     }
     void node_session_id_req::printTo(std::ostream& out) const {
@@ -7864,11 +9867,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_session_id_rsp_body::node_session_id_rsp_body(const node_session_id_rsp_body& other286) {
-        data = other286.data;
+    node_session_id_rsp_body::node_session_id_rsp_body(const node_session_id_rsp_body& other358) {
+        data = other358.data;
     }
-    node_session_id_rsp_body& node_session_id_rsp_body::operator=(const node_session_id_rsp_body& other287) {
-        data = other287.data;
+    node_session_id_rsp_body& node_session_id_rsp_body::operator=(const node_session_id_rsp_body& other359) {
+        data = other359.data;
         return *this;
     }
     void node_session_id_rsp_body::printTo(std::ostream& out) const {
@@ -7954,13 +9957,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_session_id_rsp::node_session_id_rsp(const node_session_id_rsp& other288) {
-        body = other288.body;
-        __isset = other288.__isset;
+    node_session_id_rsp::node_session_id_rsp(const node_session_id_rsp& other360) {
+        body = other360.body;
+        __isset = other360.__isset;
     }
-    node_session_id_rsp& node_session_id_rsp::operator=(const node_session_id_rsp& other289) {
-        body = other289.body;
-        __isset = other289.__isset;
+    node_session_id_rsp& node_session_id_rsp::operator=(const node_session_id_rsp& other361) {
+        body = other361.body;
+        __isset = other361.__isset;
         return *this;
     }
     void node_session_id_rsp::printTo(std::ostream& out) const {
@@ -8056,14 +10059,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size290;
-                            ::apache::thrift::protocol::TType _etype293;
-                            xfer += iprot->readListBegin(_etype293, _size290);
-                            this->peer_nodes_list.resize(_size290);
-                            uint32_t _i294;
-                            for (_i294 = 0; _i294 < _size290; ++_i294)
+                            uint32_t _size362;
+                            ::apache::thrift::protocol::TType _etype365;
+                            xfer += iprot->readListBegin(_etype365, _size362);
+                            this->peer_nodes_list.resize(_size362);
+                            uint32_t _i366;
+                            for (_i366 = 0; _i366 < _size362; ++_i366)
                             {
-                                xfer += iprot->readString(this->peer_nodes_list[_i294]);
+                                xfer += iprot->readString(this->peer_nodes_list[_i366]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -8108,14 +10111,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
-                            uint32_t _size295;
-                            ::apache::thrift::protocol::TType _etype298;
-                            xfer += iprot->readListBegin(_etype298, _size295);
-                            this->multisig_wallets.resize(_size295);
-                            uint32_t _i299;
-                            for (_i299 = 0; _i299 < _size295; ++_i299)
+                            uint32_t _size367;
+                            ::apache::thrift::protocol::TType _etype370;
+                            xfer += iprot->readListBegin(_etype370, _size367);
+                            this->multisig_wallets.resize(_size367);
+                            uint32_t _i371;
+                            for (_i371 = 0; _i371 < _size367; ++_i371)
                             {
-                                xfer += iprot->readString(this->multisig_wallets[_i299]);
+                                xfer += iprot->readString(this->multisig_wallets[_i371]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -8136,14 +10139,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
-                            uint32_t _size300;
-                            ::apache::thrift::protocol::TType _etype303;
-                            xfer += iprot->readListBegin(_etype303, _size300);
-                            this->multisig_signs.resize(_size300);
-                            uint32_t _i304;
-                            for (_i304 = 0; _i304 < _size300; ++_i304)
+                            uint32_t _size372;
+                            ::apache::thrift::protocol::TType _etype375;
+                            xfer += iprot->readListBegin(_etype375, _size372);
+                            this->multisig_signs.resize(_size372);
+                            uint32_t _i376;
+                            for (_i376 = 0; _i376 < _size372; ++_i376)
                             {
-                                xfer += this->multisig_signs[_i304].read(iprot);
+                                xfer += this->multisig_signs[_i376].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -8208,10 +10211,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string> ::const_iterator _iter305;
-            for (_iter305 = this->peer_nodes_list.begin(); _iter305 != this->peer_nodes_list.end(); ++_iter305)
+            std::vector<std::string> ::const_iterator _iter377;
+            for (_iter377 = this->peer_nodes_list.begin(); _iter377 != this->peer_nodes_list.end(); ++_iter377)
             {
-                xfer += oprot->writeString((*_iter305));
+                xfer += oprot->writeString((*_iter377));
             }
             xfer += oprot->writeListEnd();
         }
@@ -8236,10 +10239,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string> ::const_iterator _iter306;
-            for (_iter306 = this->multisig_wallets.begin(); _iter306 != this->multisig_wallets.end(); ++_iter306)
+            std::vector<std::string> ::const_iterator _iter378;
+            for (_iter378 = this->multisig_wallets.begin(); _iter378 != this->multisig_wallets.end(); ++_iter378)
             {
-                xfer += oprot->writeString((*_iter306));
+                xfer += oprot->writeString((*_iter378));
             }
             xfer += oprot->writeListEnd();
         }
@@ -8252,10 +10255,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item> ::const_iterator _iter307;
-            for (_iter307 = this->multisig_signs.begin(); _iter307 != this->multisig_signs.end(); ++_iter307)
+            std::vector<multisig_sign_item> ::const_iterator _iter379;
+            for (_iter379 = this->multisig_signs.begin(); _iter379 != this->multisig_signs.end(); ++_iter379)
             {
-                xfer += (*_iter307).write(oprot);
+                xfer += (*_iter379).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -8288,29 +10291,29 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_query_node_info_req_data::node_query_node_info_req_data(const node_query_node_info_req_data& other308) {
-        peer_nodes_list = other308.peer_nodes_list;
-        additional = other308.additional;
-        wallet = other308.wallet;
-        nonce = other308.nonce;
-        sign = other308.sign;
-        multisig_wallets = other308.multisig_wallets;
-        multisig_threshold = other308.multisig_threshold;
-        multisig_signs = other308.multisig_signs;
-        session_id = other308.session_id;
-        session_id_sign = other308.session_id_sign;
+    node_query_node_info_req_data::node_query_node_info_req_data(const node_query_node_info_req_data& other380) {
+        peer_nodes_list = other380.peer_nodes_list;
+        additional = other380.additional;
+        wallet = other380.wallet;
+        nonce = other380.nonce;
+        sign = other380.sign;
+        multisig_wallets = other380.multisig_wallets;
+        multisig_threshold = other380.multisig_threshold;
+        multisig_signs = other380.multisig_signs;
+        session_id = other380.session_id;
+        session_id_sign = other380.session_id_sign;
     }
-    node_query_node_info_req_data& node_query_node_info_req_data::operator=(const node_query_node_info_req_data& other309) {
-        peer_nodes_list = other309.peer_nodes_list;
-        additional = other309.additional;
-        wallet = other309.wallet;
-        nonce = other309.nonce;
-        sign = other309.sign;
-        multisig_wallets = other309.multisig_wallets;
-        multisig_threshold = other309.multisig_threshold;
-        multisig_signs = other309.multisig_signs;
-        session_id = other309.session_id;
-        session_id_sign = other309.session_id_sign;
+    node_query_node_info_req_data& node_query_node_info_req_data::operator=(const node_query_node_info_req_data& other381) {
+        peer_nodes_list = other381.peer_nodes_list;
+        additional = other381.additional;
+        wallet = other381.wallet;
+        nonce = other381.nonce;
+        sign = other381.sign;
+        multisig_wallets = other381.multisig_wallets;
+        multisig_threshold = other381.multisig_threshold;
+        multisig_signs = other381.multisig_signs;
+        session_id = other381.session_id;
+        session_id_sign = other381.session_id_sign;
         return *this;
     }
     void node_query_node_info_req_data::printTo(std::ostream& out) const {
@@ -8407,11 +10410,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_query_node_info_req_body::node_query_node_info_req_body(const node_query_node_info_req_body& other310) {
-        data = other310.data;
+    node_query_node_info_req_body::node_query_node_info_req_body(const node_query_node_info_req_body& other382) {
+        data = other382.data;
     }
-    node_query_node_info_req_body& node_query_node_info_req_body::operator=(const node_query_node_info_req_body& other311) {
-        data = other311.data;
+    node_query_node_info_req_body& node_query_node_info_req_body::operator=(const node_query_node_info_req_body& other383) {
+        data = other383.data;
         return *this;
     }
     void node_query_node_info_req_body::printTo(std::ostream& out) const {
@@ -8497,13 +10500,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_query_node_info_req::node_query_node_info_req(const node_query_node_info_req& other312) {
-        body = other312.body;
-        __isset = other312.__isset;
+    node_query_node_info_req::node_query_node_info_req(const node_query_node_info_req& other384) {
+        body = other384.body;
+        __isset = other384.__isset;
     }
-    node_query_node_info_req& node_query_node_info_req::operator=(const node_query_node_info_req& other313) {
-        body = other313.body;
-        __isset = other313.__isset;
+    node_query_node_info_req& node_query_node_info_req::operator=(const node_query_node_info_req& other385) {
+        body = other385.body;
+        __isset = other385.__isset;
         return *this;
     }
     void node_query_node_info_req::printTo(std::ostream& out) const {
@@ -8591,11 +10594,11 @@ namespace dbc {
         swap(a.data, b.data);
     }
 
-    node_query_node_info_rsp_body::node_query_node_info_rsp_body(const node_query_node_info_rsp_body& other314) {
-        data = other314.data;
+    node_query_node_info_rsp_body::node_query_node_info_rsp_body(const node_query_node_info_rsp_body& other386) {
+        data = other386.data;
     }
-    node_query_node_info_rsp_body& node_query_node_info_rsp_body::operator=(const node_query_node_info_rsp_body& other315) {
-        data = other315.data;
+    node_query_node_info_rsp_body& node_query_node_info_rsp_body::operator=(const node_query_node_info_rsp_body& other387) {
+        data = other387.data;
         return *this;
     }
     void node_query_node_info_rsp_body::printTo(std::ostream& out) const {
@@ -8681,13 +10684,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_query_node_info_rsp::node_query_node_info_rsp(const node_query_node_info_rsp& other316) {
-        body = other316.body;
-        __isset = other316.__isset;
+    node_query_node_info_rsp::node_query_node_info_rsp(const node_query_node_info_rsp& other388) {
+        body = other388.body;
+        __isset = other388.__isset;
     }
-    node_query_node_info_rsp& node_query_node_info_rsp::operator=(const node_query_node_info_rsp& other317) {
-        body = other317.body;
-        __isset = other317.__isset;
+    node_query_node_info_rsp& node_query_node_info_rsp::operator=(const node_query_node_info_rsp& other389) {
+        body = other389.body;
+        __isset = other389.__isset;
         return *this;
     }
     void node_query_node_info_rsp::printTo(std::ostream& out) const {
@@ -8753,14 +10756,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->service_list.clear();
-                            uint32_t _size318;
-                            ::apache::thrift::protocol::TType _etype321;
-                            xfer += iprot->readListBegin(_etype321, _size318);
-                            this->service_list.resize(_size318);
-                            uint32_t _i322;
-                            for (_i322 = 0; _i322 < _size318; ++_i322)
+                            uint32_t _size390;
+                            ::apache::thrift::protocol::TType _etype393;
+                            xfer += iprot->readListBegin(_etype393, _size390);
+                            this->service_list.resize(_size390);
+                            uint32_t _i394;
+                            for (_i394 = 0; _i394 < _size390; ++_i394)
                             {
-                                xfer += iprot->readString(this->service_list[_i322]);
+                                xfer += iprot->readString(this->service_list[_i394]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -8789,17 +10792,17 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
                             this->kvs.clear();
-                            uint32_t _size323;
-                            ::apache::thrift::protocol::TType _ktype324;
-                            ::apache::thrift::protocol::TType _vtype325;
-                            xfer += iprot->readMapBegin(_ktype324, _vtype325, _size323);
-                            uint32_t _i327;
-                            for (_i327 = 0; _i327 < _size323; ++_i327)
+                            uint32_t _size395;
+                            ::apache::thrift::protocol::TType _ktype396;
+                            ::apache::thrift::protocol::TType _vtype397;
+                            xfer += iprot->readMapBegin(_ktype396, _vtype397, _size395);
+                            uint32_t _i399;
+                            for (_i399 = 0; _i399 < _size395; ++_i399)
                             {
-                                std::string _key328;
-                                xfer += iprot->readString(_key328);
-                                std::string& _val329 = this->kvs[_key328];
-                                xfer += iprot->readString(_val329);
+                                std::string _key400;
+                                xfer += iprot->readString(_key400);
+                                std::string& _val401 = this->kvs[_key400];
+                                xfer += iprot->readString(_val401);
                             }
                             xfer += iprot->readMapEnd();
                         }
@@ -8830,10 +10833,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
-            std::vector<std::string> ::const_iterator _iter330;
-            for (_iter330 = this->service_list.begin(); _iter330 != this->service_list.end(); ++_iter330)
+            std::vector<std::string> ::const_iterator _iter402;
+            for (_iter402 = this->service_list.begin(); _iter402 != this->service_list.end(); ++_iter402)
             {
-                xfer += oprot->writeString((*_iter330));
+                xfer += oprot->writeString((*_iter402));
             }
             xfer += oprot->writeListEnd();
         }
@@ -8853,11 +10856,11 @@ namespace dbc {
             xfer += oprot->writeFieldBegin("kvs", ::apache::thrift::protocol::T_MAP, 4);
             {
                 xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->kvs.size()));
-                std::map<std::string, std::string> ::const_iterator _iter331;
-                for (_iter331 = this->kvs.begin(); _iter331 != this->kvs.end(); ++_iter331)
+                std::map<std::string, std::string> ::const_iterator _iter403;
+                for (_iter403 = this->kvs.begin(); _iter403 != this->kvs.end(); ++_iter403)
                 {
-                    xfer += oprot->writeString(_iter331->first);
-                    xfer += oprot->writeString(_iter331->second);
+                    xfer += oprot->writeString(_iter403->first);
+                    xfer += oprot->writeString(_iter403->second);
                 }
                 xfer += oprot->writeMapEnd();
             }
@@ -8877,19 +10880,19 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    node_service_info::node_service_info(const node_service_info& other332) {
-        service_list = other332.service_list;
-        name = other332.name;
-        time_stamp = other332.time_stamp;
-        kvs = other332.kvs;
-        __isset = other332.__isset;
+    node_service_info::node_service_info(const node_service_info& other404) {
+        service_list = other404.service_list;
+        name = other404.name;
+        time_stamp = other404.time_stamp;
+        kvs = other404.kvs;
+        __isset = other404.__isset;
     }
-    node_service_info& node_service_info::operator=(const node_service_info& other333) {
-        service_list = other333.service_list;
-        name = other333.name;
-        time_stamp = other333.time_stamp;
-        kvs = other333.kvs;
-        __isset = other333.__isset;
+    node_service_info& node_service_info::operator=(const node_service_info& other405) {
+        service_list = other405.service_list;
+        name = other405.name;
+        time_stamp = other405.time_stamp;
+        kvs = other405.kvs;
+        __isset = other405.__isset;
         return *this;
     }
     void node_service_info::printTo(std::ostream& out) const {
@@ -8943,17 +10946,17 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_MAP) {
                         {
                             this->node_service_info_map.clear();
-                            uint32_t _size334;
-                            ::apache::thrift::protocol::TType _ktype335;
-                            ::apache::thrift::protocol::TType _vtype336;
-                            xfer += iprot->readMapBegin(_ktype335, _vtype336, _size334);
-                            uint32_t _i338;
-                            for (_i338 = 0; _i338 < _size334; ++_i338)
+                            uint32_t _size406;
+                            ::apache::thrift::protocol::TType _ktype407;
+                            ::apache::thrift::protocol::TType _vtype408;
+                            xfer += iprot->readMapBegin(_ktype407, _vtype408, _size406);
+                            uint32_t _i410;
+                            for (_i410 = 0; _i410 < _size406; ++_i410)
                             {
-                                std::string _key339;
-                                xfer += iprot->readString(_key339);
-                                node_service_info& _val340 = this->node_service_info_map[_key339];
-                                xfer += _val340.read(iprot);
+                                std::string _key411;
+                                xfer += iprot->readString(_key411);
+                                node_service_info& _val412 = this->node_service_info_map[_key411];
+                                xfer += _val412.read(iprot);
                             }
                             xfer += iprot->readMapEnd();
                         }
@@ -8984,11 +10987,11 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("node_service_info_map", ::apache::thrift::protocol::T_MAP, 1);
         {
             xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->node_service_info_map.size()));
-            std::map<std::string, node_service_info> ::const_iterator _iter341;
-            for (_iter341 = this->node_service_info_map.begin(); _iter341 != this->node_service_info_map.end(); ++_iter341)
+            std::map<std::string, node_service_info> ::const_iterator _iter413;
+            for (_iter413 = this->node_service_info_map.begin(); _iter413 != this->node_service_info_map.end(); ++_iter413)
             {
-                xfer += oprot->writeString(_iter341->first);
-                xfer += _iter341->second.write(oprot);
+                xfer += oprot->writeString(_iter413->first);
+                xfer += _iter413->second.write(oprot);
             }
             xfer += oprot->writeMapEnd();
         }
@@ -9004,11 +11007,11 @@ namespace dbc {
         swap(a.node_service_info_map, b.node_service_info_map);
     }
 
-    service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other342) {
-        node_service_info_map = other342.node_service_info_map;
+    service_broadcast_req_body::service_broadcast_req_body(const service_broadcast_req_body& other414) {
+        node_service_info_map = other414.node_service_info_map;
     }
-    service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other343) {
-        node_service_info_map = other343.node_service_info_map;
+    service_broadcast_req_body& service_broadcast_req_body::operator=(const service_broadcast_req_body& other415) {
+        node_service_info_map = other415.node_service_info_map;
         return *this;
     }
     void service_broadcast_req_body::printTo(std::ostream& out) const {
@@ -9094,13 +11097,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    service_broadcast_req::service_broadcast_req(const service_broadcast_req& other344) {
-        body = other344.body;
-        __isset = other344.__isset;
+    service_broadcast_req::service_broadcast_req(const service_broadcast_req& other416) {
+        body = other416.body;
+        __isset = other416.__isset;
     }
-    service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other345) {
-        body = other345.body;
-        __isset = other345.__isset;
+    service_broadcast_req& service_broadcast_req::operator=(const service_broadcast_req& other417) {
+        body = other417.body;
+        __isset = other417.__isset;
         return *this;
     }
     void service_broadcast_req::printTo(std::ostream& out) const {
@@ -9308,23 +11311,23 @@ namespace dbc {
         swap(a.start_height, b.start_height);
     }
 
-    ver_req_body::ver_req_body(const ver_req_body& other346) {
-        node_id = other346.node_id;
-        core_version = other346.core_version;
-        protocol_version = other346.protocol_version;
-        time_stamp = other346.time_stamp;
-        addr_me = other346.addr_me;
-        addr_you = other346.addr_you;
-        start_height = other346.start_height;
+    ver_req_body::ver_req_body(const ver_req_body& other418) {
+        node_id = other418.node_id;
+        core_version = other418.core_version;
+        protocol_version = other418.protocol_version;
+        time_stamp = other418.time_stamp;
+        addr_me = other418.addr_me;
+        addr_you = other418.addr_you;
+        start_height = other418.start_height;
     }
-    ver_req_body& ver_req_body::operator=(const ver_req_body& other347) {
-        node_id = other347.node_id;
-        core_version = other347.core_version;
-        protocol_version = other347.protocol_version;
-        time_stamp = other347.time_stamp;
-        addr_me = other347.addr_me;
-        addr_you = other347.addr_you;
-        start_height = other347.start_height;
+    ver_req_body& ver_req_body::operator=(const ver_req_body& other419) {
+        node_id = other419.node_id;
+        core_version = other419.core_version;
+        protocol_version = other419.protocol_version;
+        time_stamp = other419.time_stamp;
+        addr_me = other419.addr_me;
+        addr_you = other419.addr_you;
+        start_height = other419.start_height;
         return *this;
     }
     void ver_req_body::printTo(std::ostream& out) const {
@@ -9416,13 +11419,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    ver_req::ver_req(const ver_req& other348) {
-        body = other348.body;
-        __isset = other348.__isset;
+    ver_req::ver_req(const ver_req& other420) {
+        body = other420.body;
+        __isset = other420.__isset;
     }
-    ver_req& ver_req::operator=(const ver_req& other349) {
-        body = other349.body;
-        __isset = other349.__isset;
+    ver_req& ver_req::operator=(const ver_req& other421) {
+        body = other421.body;
+        __isset = other421.__isset;
         return *this;
     }
     void ver_req::printTo(std::ostream& out) const {
@@ -9550,15 +11553,15 @@ namespace dbc {
         swap(a.protocol_version, b.protocol_version);
     }
 
-    ver_resp_body::ver_resp_body(const ver_resp_body& other350) {
-        node_id = other350.node_id;
-        core_version = other350.core_version;
-        protocol_version = other350.protocol_version;
+    ver_resp_body::ver_resp_body(const ver_resp_body& other422) {
+        node_id = other422.node_id;
+        core_version = other422.core_version;
+        protocol_version = other422.protocol_version;
     }
-    ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other351) {
-        node_id = other351.node_id;
-        core_version = other351.core_version;
-        protocol_version = other351.protocol_version;
+    ver_resp_body& ver_resp_body::operator=(const ver_resp_body& other423) {
+        node_id = other423.node_id;
+        core_version = other423.core_version;
+        protocol_version = other423.protocol_version;
         return *this;
     }
     void ver_resp_body::printTo(std::ostream& out) const {
@@ -9646,13 +11649,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    ver_resp::ver_resp(const ver_resp& other352) {
-        body = other352.body;
-        __isset = other352.__isset;
+    ver_resp::ver_resp(const ver_resp& other424) {
+        body = other424.body;
+        __isset = other424.__isset;
     }
-    ver_resp& ver_resp::operator=(const ver_resp& other353) {
-        body = other353.body;
-        __isset = other353.__isset;
+    ver_resp& ver_resp::operator=(const ver_resp& other425) {
+        body = other425.body;
+        __isset = other425.__isset;
         return *this;
     }
     void ver_resp::printTo(std::ostream& out) const {
@@ -9768,14 +11771,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->service_list.clear();
-                            uint32_t _size354;
-                            ::apache::thrift::protocol::TType _etype357;
-                            xfer += iprot->readListBegin(_etype357, _size354);
-                            this->service_list.resize(_size354);
-                            uint32_t _i358;
-                            for (_i358 = 0; _i358 < _size354; ++_i358)
+                            uint32_t _size426;
+                            ::apache::thrift::protocol::TType _etype429;
+                            xfer += iprot->readListBegin(_etype429, _size426);
+                            this->service_list.resize(_size426);
+                            uint32_t _i430;
+                            for (_i430 = 0; _i430 < _size426; ++_i430)
                             {
-                                xfer += iprot->readString(this->service_list[_i358]);
+                                xfer += iprot->readString(this->service_list[_i430]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -9835,10 +11838,10 @@ namespace dbc {
             xfer += oprot->writeFieldBegin("service_list", ::apache::thrift::protocol::T_LIST, 6);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->service_list.size()));
-                std::vector<std::string> ::const_iterator _iter359;
-                for (_iter359 = this->service_list.begin(); _iter359 != this->service_list.end(); ++_iter359)
+                std::vector<std::string> ::const_iterator _iter431;
+                for (_iter431 = this->service_list.begin(); _iter431 != this->service_list.end(); ++_iter431)
                 {
-                    xfer += oprot->writeString((*_iter359));
+                    xfer += oprot->writeString((*_iter431));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -9860,23 +11863,23 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    peer_node_info::peer_node_info(const peer_node_info& other360) {
-        peer_node_id = other360.peer_node_id;
-        core_version = other360.core_version;
-        protocol_version = other360.protocol_version;
-        live_time_stamp = other360.live_time_stamp;
-        addr = other360.addr;
-        service_list = other360.service_list;
-        __isset = other360.__isset;
+    peer_node_info::peer_node_info(const peer_node_info& other432) {
+        peer_node_id = other432.peer_node_id;
+        core_version = other432.core_version;
+        protocol_version = other432.protocol_version;
+        live_time_stamp = other432.live_time_stamp;
+        addr = other432.addr;
+        service_list = other432.service_list;
+        __isset = other432.__isset;
     }
-    peer_node_info& peer_node_info::operator=(const peer_node_info& other361) {
-        peer_node_id = other361.peer_node_id;
-        core_version = other361.core_version;
-        protocol_version = other361.protocol_version;
-        live_time_stamp = other361.live_time_stamp;
-        addr = other361.addr;
-        service_list = other361.service_list;
-        __isset = other361.__isset;
+    peer_node_info& peer_node_info::operator=(const peer_node_info& other433) {
+        peer_node_id = other433.peer_node_id;
+        core_version = other433.core_version;
+        protocol_version = other433.protocol_version;
+        live_time_stamp = other433.live_time_stamp;
+        addr = other433.addr;
+        service_list = other433.service_list;
+        __isset = other433.__isset;
         return *this;
     }
     void peer_node_info::printTo(std::ostream& out) const {
@@ -9967,13 +11970,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    get_peer_nodes_req::get_peer_nodes_req(const get_peer_nodes_req& other362) {
-        body = other362.body;
-        __isset = other362.__isset;
+    get_peer_nodes_req::get_peer_nodes_req(const get_peer_nodes_req& other434) {
+        body = other434.body;
+        __isset = other434.__isset;
     }
-    get_peer_nodes_req& get_peer_nodes_req::operator=(const get_peer_nodes_req& other363) {
-        body = other363.body;
-        __isset = other363.__isset;
+    get_peer_nodes_req& get_peer_nodes_req::operator=(const get_peer_nodes_req& other435) {
+        body = other435.body;
+        __isset = other435.__isset;
         return *this;
     }
     void get_peer_nodes_req::printTo(std::ostream& out) const {
@@ -10024,14 +12027,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size364;
-                            ::apache::thrift::protocol::TType _etype367;
-                            xfer += iprot->readListBegin(_etype367, _size364);
-                            this->peer_nodes_list.resize(_size364);
-                            uint32_t _i368;
-                            for (_i368 = 0; _i368 < _size364; ++_i368)
+                            uint32_t _size436;
+                            ::apache::thrift::protocol::TType _etype439;
+                            xfer += iprot->readListBegin(_etype439, _size436);
+                            this->peer_nodes_list.resize(_size436);
+                            uint32_t _i440;
+                            for (_i440 = 0; _i440 < _size436; ++_i440)
                             {
-                                xfer += this->peer_nodes_list[_i368].read(iprot);
+                                xfer += this->peer_nodes_list[_i440].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -10062,10 +12065,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<peer_node_info> ::const_iterator _iter369;
-            for (_iter369 = this->peer_nodes_list.begin(); _iter369 != this->peer_nodes_list.end(); ++_iter369)
+            std::vector<peer_node_info> ::const_iterator _iter441;
+            for (_iter441 = this->peer_nodes_list.begin(); _iter441 != this->peer_nodes_list.end(); ++_iter441)
             {
-                xfer += (*_iter369).write(oprot);
+                xfer += (*_iter441).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -10081,11 +12084,11 @@ namespace dbc {
         swap(a.peer_nodes_list, b.peer_nodes_list);
     }
 
-    get_peer_nodes_resp_body::get_peer_nodes_resp_body(const get_peer_nodes_resp_body& other370) {
-        peer_nodes_list = other370.peer_nodes_list;
+    get_peer_nodes_resp_body::get_peer_nodes_resp_body(const get_peer_nodes_resp_body& other442) {
+        peer_nodes_list = other442.peer_nodes_list;
     }
-    get_peer_nodes_resp_body& get_peer_nodes_resp_body::operator=(const get_peer_nodes_resp_body& other371) {
-        peer_nodes_list = other371.peer_nodes_list;
+    get_peer_nodes_resp_body& get_peer_nodes_resp_body::operator=(const get_peer_nodes_resp_body& other443) {
+        peer_nodes_list = other443.peer_nodes_list;
         return *this;
     }
     void get_peer_nodes_resp_body::printTo(std::ostream& out) const {
@@ -10171,13 +12174,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    get_peer_nodes_resp::get_peer_nodes_resp(const get_peer_nodes_resp& other372) {
-        body = other372.body;
-        __isset = other372.__isset;
+    get_peer_nodes_resp::get_peer_nodes_resp(const get_peer_nodes_resp& other444) {
+        body = other444.body;
+        __isset = other444.__isset;
     }
-    get_peer_nodes_resp& get_peer_nodes_resp::operator=(const get_peer_nodes_resp& other373) {
-        body = other373.body;
-        __isset = other373.__isset;
+    get_peer_nodes_resp& get_peer_nodes_resp::operator=(const get_peer_nodes_resp& other445) {
+        body = other445.body;
+        __isset = other445.__isset;
         return *this;
     }
     void get_peer_nodes_resp::printTo(std::ostream& out) const {
@@ -10228,14 +12231,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->peer_nodes_list.clear();
-                            uint32_t _size374;
-                            ::apache::thrift::protocol::TType _etype377;
-                            xfer += iprot->readListBegin(_etype377, _size374);
-                            this->peer_nodes_list.resize(_size374);
-                            uint32_t _i378;
-                            for (_i378 = 0; _i378 < _size374; ++_i378)
+                            uint32_t _size446;
+                            ::apache::thrift::protocol::TType _etype449;
+                            xfer += iprot->readListBegin(_etype449, _size446);
+                            this->peer_nodes_list.resize(_size446);
+                            uint32_t _i450;
+                            for (_i450 = 0; _i450 < _size446; ++_i450)
                             {
-                                xfer += this->peer_nodes_list[_i378].read(iprot);
+                                xfer += this->peer_nodes_list[_i450].read(iprot);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -10266,10 +12269,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<peer_node_info> ::const_iterator _iter379;
-            for (_iter379 = this->peer_nodes_list.begin(); _iter379 != this->peer_nodes_list.end(); ++_iter379)
+            std::vector<peer_node_info> ::const_iterator _iter451;
+            for (_iter451 = this->peer_nodes_list.begin(); _iter451 != this->peer_nodes_list.end(); ++_iter451)
             {
-                xfer += (*_iter379).write(oprot);
+                xfer += (*_iter451).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -10285,11 +12288,11 @@ namespace dbc {
         swap(a.peer_nodes_list, b.peer_nodes_list);
     }
 
-    peer_nodes_broadcast_req_body::peer_nodes_broadcast_req_body(const peer_nodes_broadcast_req_body& other380) {
-        peer_nodes_list = other380.peer_nodes_list;
+    peer_nodes_broadcast_req_body::peer_nodes_broadcast_req_body(const peer_nodes_broadcast_req_body& other452) {
+        peer_nodes_list = other452.peer_nodes_list;
     }
-    peer_nodes_broadcast_req_body& peer_nodes_broadcast_req_body::operator=(const peer_nodes_broadcast_req_body& other381) {
-        peer_nodes_list = other381.peer_nodes_list;
+    peer_nodes_broadcast_req_body& peer_nodes_broadcast_req_body::operator=(const peer_nodes_broadcast_req_body& other453) {
+        peer_nodes_list = other453.peer_nodes_list;
         return *this;
     }
     void peer_nodes_broadcast_req_body::printTo(std::ostream& out) const {
@@ -10375,13 +12378,13 @@ namespace dbc {
         swap(a.__isset, b.__isset);
     }
 
-    peer_nodes_broadcast_req::peer_nodes_broadcast_req(const peer_nodes_broadcast_req& other382) {
-        body = other382.body;
-        __isset = other382.__isset;
+    peer_nodes_broadcast_req::peer_nodes_broadcast_req(const peer_nodes_broadcast_req& other454) {
+        body = other454.body;
+        __isset = other454.__isset;
     }
-    peer_nodes_broadcast_req& peer_nodes_broadcast_req::operator=(const peer_nodes_broadcast_req& other383) {
-        body = other383.body;
-        __isset = other383.__isset;
+    peer_nodes_broadcast_req& peer_nodes_broadcast_req::operator=(const peer_nodes_broadcast_req& other455) {
+        body = other455.body;
+        __isset = other455.__isset;
         return *this;
     }
     void peer_nodes_broadcast_req::printTo(std::ostream& out) const {
@@ -10391,77 +12394,66 @@ namespace dbc {
         out << ")";
     }
 
-    node_list_snapshot_req_data::~node_list_snapshot_req_data() throw()
-    {
+
+    node_list_snapshot_req_data::~node_list_snapshot_req_data() throw() {
     }
 
-    void node_list_snapshot_req_data::__set_task_id(const std::string &val)
-    {
+
+    void node_list_snapshot_req_data::__set_task_id(const std::string& val) {
         this->task_id = val;
     }
 
-    void node_list_snapshot_req_data::__set_snapshot_name(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_snapshot_name(const std::string& val) {
         this->snapshot_name = val;
     }
 
-    void node_list_snapshot_req_data::__set_peer_nodes_list(const std::vector<std::string> &val)
-    {
+    void node_list_snapshot_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
         this->peer_nodes_list = val;
     }
 
-    void node_list_snapshot_req_data::__set_additional(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_additional(const std::string& val) {
         this->additional = val;
     }
 
-    void node_list_snapshot_req_data::__set_wallet(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
 
-    void node_list_snapshot_req_data::__set_nonce(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_nonce(const std::string& val) {
         this->nonce = val;
     }
 
-    void node_list_snapshot_req_data::__set_sign(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_sign(const std::string& val) {
         this->sign = val;
     }
 
-    void node_list_snapshot_req_data::__set_multisig_wallets(const std::vector<std::string> &val)
-    {
+    void node_list_snapshot_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
         this->multisig_wallets = val;
     }
 
-    void node_list_snapshot_req_data::__set_multisig_threshold(const int32_t val)
-    {
+    void node_list_snapshot_req_data::__set_multisig_threshold(const int32_t val) {
         this->multisig_threshold = val;
     }
 
-    void node_list_snapshot_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> &val)
-    {
+    void node_list_snapshot_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
         this->multisig_signs = val;
     }
 
-    void node_list_snapshot_req_data::__set_session_id(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_session_id(const std::string& val) {
         this->session_id = val;
     }
 
-    void node_list_snapshot_req_data::__set_session_id_sign(const std::string &val)
-    {
+    void node_list_snapshot_req_data::__set_session_id_sign(const std::string& val) {
         this->session_id_sign = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_list_snapshot_req_data &obj)
+    std::ostream& operator<<(std::ostream& out, const node_list_snapshot_req_data& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_list_snapshot_req_data::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_list_snapshot_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -10489,183 +12481,146 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->task_id);
-                    isset_task_id = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 2:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->snapshot_name);
-                    isset_snapshot_name = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 3:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->peer_nodes_list.clear();
-                        uint32_t _size2;
-                        ::apache::thrift::protocol::TType _etype5;
-                        xfer += iprot->readListBegin(_etype5, _size2);
-                        this->peer_nodes_list.resize(_size2);
-                        uint32_t _i6;
-                        for (_i6 = 0; _i6 < _size2; ++_i6)
-                        {
-                            xfer += iprot->readString(this->peer_nodes_list[_i6]);
-                        }
-                        xfer += iprot->readListEnd();
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->task_id);
+                        isset_task_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_peer_nodes_list = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 4:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->additional);
-                    isset_additional = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 5:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->wallet);
-                    isset_wallet = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 6:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->nonce);
-                    isset_nonce = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 7:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->sign);
-                    isset_sign = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 8:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->multisig_wallets.clear();
-                        uint32_t _size7;
-                        ::apache::thrift::protocol::TType _etype10;
-                        xfer += iprot->readListBegin(_etype10, _size7);
-                        this->multisig_wallets.resize(_size7);
-                        uint32_t _i11;
-                        for (_i11 = 0; _i11 < _size7; ++_i11)
-                        {
-                            xfer += iprot->readString(this->multisig_wallets[_i11]);
-                        }
-                        xfer += iprot->readListEnd();
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->snapshot_name);
+                        isset_snapshot_name = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_multisig_wallets = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 9:
-                if (ftype == ::apache::thrift::protocol::T_I32)
-                {
-                    xfer += iprot->readI32(this->multisig_threshold);
-                    isset_multisig_threshold = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 10:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->multisig_signs.clear();
-                        uint32_t _size12;
-                        ::apache::thrift::protocol::TType _etype15;
-                        xfer += iprot->readListBegin(_etype15, _size12);
-                        this->multisig_signs.resize(_size12);
-                        uint32_t _i16;
-                        for (_i16 = 0; _i16 < _size12; ++_i16)
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
-                            xfer += this->multisig_signs[_i16].read(iprot);
+                            this->peer_nodes_list.clear();
+                            uint32_t _size456;
+                            ::apache::thrift::protocol::TType _etype459;
+                            xfer += iprot->readListBegin(_etype459, _size456);
+                            this->peer_nodes_list.resize(_size456);
+                            uint32_t _i460;
+                            for (_i460 = 0; _i460 < _size456; ++_i460)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i460]);
+                            }
+                            xfer += iprot->readListEnd();
                         }
-                        xfer += iprot->readListEnd();
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_multisig_signs = true;
-                }
-                else
-                {
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->additional);
+                        isset_additional = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->wallet);
+                        isset_wallet = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->nonce);
+                        isset_nonce = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 7:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->sign);
+                        isset_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 8:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_wallets.clear();
+                            uint32_t _size461;
+                            ::apache::thrift::protocol::TType _etype464;
+                            xfer += iprot->readListBegin(_etype464, _size461);
+                            this->multisig_wallets.resize(_size461);
+                            uint32_t _i465;
+                            for (_i465 = 0; _i465 < _size461; ++_i465)
+                            {
+                                xfer += iprot->readString(this->multisig_wallets[_i465]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_wallets = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 9:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->multisig_threshold);
+                        isset_multisig_threshold = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 10:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_signs.clear();
+                            uint32_t _size466;
+                            ::apache::thrift::protocol::TType _etype469;
+                            xfer += iprot->readListBegin(_etype469, _size466);
+                            this->multisig_signs.resize(_size466);
+                            uint32_t _i470;
+                            for (_i470 = 0; _i470 < _size466; ++_i470)
+                            {
+                                xfer += this->multisig_signs[_i470].read(iprot);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_signs = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 11:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id);
+                        isset_session_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 12:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id_sign);
+                        isset_session_id_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            case 11:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->session_id);
-                    isset_session_id = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 12:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->session_id_sign);
-                    isset_session_id_sign = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -10699,8 +12654,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_list_snapshot_req_data::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_list_snapshot_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_list_snapshot_req_data");
@@ -10716,10 +12670,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 3);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string>::const_iterator _iter17;
-            for (_iter17 = this->peer_nodes_list.begin(); _iter17 != this->peer_nodes_list.end(); ++_iter17)
+            std::vector<std::string> ::const_iterator _iter471;
+            for (_iter471 = this->peer_nodes_list.begin(); _iter471 != this->peer_nodes_list.end(); ++_iter471)
             {
-                xfer += oprot->writeString((*_iter17));
+                xfer += oprot->writeString((*_iter471));
             }
             xfer += oprot->writeListEnd();
         }
@@ -10744,10 +12698,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string>::const_iterator _iter18;
-            for (_iter18 = this->multisig_wallets.begin(); _iter18 != this->multisig_wallets.end(); ++_iter18)
+            std::vector<std::string> ::const_iterator _iter472;
+            for (_iter472 = this->multisig_wallets.begin(); _iter472 != this->multisig_wallets.end(); ++_iter472)
             {
-                xfer += oprot->writeString((*_iter18));
+                xfer += oprot->writeString((*_iter472));
             }
             xfer += oprot->writeListEnd();
         }
@@ -10760,10 +12714,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 10);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item>::const_iterator _iter19;
-            for (_iter19 = this->multisig_signs.begin(); _iter19 != this->multisig_signs.end(); ++_iter19)
+            std::vector<multisig_sign_item> ::const_iterator _iter473;
+            for (_iter473 = this->multisig_signs.begin(); _iter473 != this->multisig_signs.end(); ++_iter473)
             {
-                xfer += (*_iter19).write(oprot);
+                xfer += (*_iter473).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -10782,8 +12736,7 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_list_snapshot_req_data &a, node_list_snapshot_req_data &b)
-    {
+    void swap(node_list_snapshot_req_data &a, node_list_snapshot_req_data &b) {
         using ::std::swap;
         swap(a.task_id, b.task_id);
         swap(a.snapshot_name, b.snapshot_name);
@@ -10799,83 +12752,69 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_list_snapshot_req_data::node_list_snapshot_req_data(const node_list_snapshot_req_data &other20)
-    {
-        task_id = other20.task_id;
-        snapshot_name = other20.snapshot_name;
-        peer_nodes_list = other20.peer_nodes_list;
-        additional = other20.additional;
-        wallet = other20.wallet;
-        nonce = other20.nonce;
-        sign = other20.sign;
-        multisig_wallets = other20.multisig_wallets;
-        multisig_threshold = other20.multisig_threshold;
-        multisig_signs = other20.multisig_signs;
-        session_id = other20.session_id;
-        session_id_sign = other20.session_id_sign;
+    node_list_snapshot_req_data::node_list_snapshot_req_data(const node_list_snapshot_req_data& other474) {
+        task_id = other474.task_id;
+        snapshot_name = other474.snapshot_name;
+        peer_nodes_list = other474.peer_nodes_list;
+        additional = other474.additional;
+        wallet = other474.wallet;
+        nonce = other474.nonce;
+        sign = other474.sign;
+        multisig_wallets = other474.multisig_wallets;
+        multisig_threshold = other474.multisig_threshold;
+        multisig_signs = other474.multisig_signs;
+        session_id = other474.session_id;
+        session_id_sign = other474.session_id_sign;
     }
-    node_list_snapshot_req_data &node_list_snapshot_req_data::operator=(const node_list_snapshot_req_data &other21)
-    {
-        task_id = other21.task_id;
-        snapshot_name = other21.snapshot_name;
-        peer_nodes_list = other21.peer_nodes_list;
-        additional = other21.additional;
-        wallet = other21.wallet;
-        nonce = other21.nonce;
-        sign = other21.sign;
-        multisig_wallets = other21.multisig_wallets;
-        multisig_threshold = other21.multisig_threshold;
-        multisig_signs = other21.multisig_signs;
-        session_id = other21.session_id;
-        session_id_sign = other21.session_id_sign;
+    node_list_snapshot_req_data& node_list_snapshot_req_data::operator=(const node_list_snapshot_req_data& other475) {
+        task_id = other475.task_id;
+        snapshot_name = other475.snapshot_name;
+        peer_nodes_list = other475.peer_nodes_list;
+        additional = other475.additional;
+        wallet = other475.wallet;
+        nonce = other475.nonce;
+        sign = other475.sign;
+        multisig_wallets = other475.multisig_wallets;
+        multisig_threshold = other475.multisig_threshold;
+        multisig_signs = other475.multisig_signs;
+        session_id = other475.session_id;
+        session_id_sign = other475.session_id_sign;
         return *this;
     }
-    void node_list_snapshot_req_data::printTo(std::ostream &out) const
-    {
+    void node_list_snapshot_req_data::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_list_snapshot_req_data(";
         out << "task_id=" << to_string(task_id);
-        out << ", "
-            << "snapshot_name=" << to_string(snapshot_name);
-        out << ", "
-            << "peer_nodes_list=" << to_string(peer_nodes_list);
-        out << ", "
-            << "additional=" << to_string(additional);
-        out << ", "
-            << "wallet=" << to_string(wallet);
-        out << ", "
-            << "nonce=" << to_string(nonce);
-        out << ", "
-            << "sign=" << to_string(sign);
-        out << ", "
-            << "multisig_wallets=" << to_string(multisig_wallets);
-        out << ", "
-            << "multisig_threshold=" << to_string(multisig_threshold);
-        out << ", "
-            << "multisig_signs=" << to_string(multisig_signs);
-        out << ", "
-            << "session_id=" << to_string(session_id);
-        out << ", "
-            << "session_id_sign=" << to_string(session_id_sign);
+        out << ", " << "snapshot_name=" << to_string(snapshot_name);
+        out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
         out << ")";
     }
 
-    node_list_snapshot_req_body::~node_list_snapshot_req_body() throw()
-    {
+
+    node_list_snapshot_req_body::~node_list_snapshot_req_body() throw() {
     }
 
-    void node_list_snapshot_req_body::__set_data(const std::string &val)
-    {
+
+    void node_list_snapshot_req_body::__set_data(const std::string& val) {
         this->data = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_list_snapshot_req_body &obj)
+    std::ostream& operator<<(std::ostream& out, const node_list_snapshot_req_body& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_list_snapshot_req_body::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_list_snapshot_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -10892,26 +12831,22 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->data);
-                    isset_data = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -10923,8 +12858,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_list_snapshot_req_body::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_list_snapshot_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_list_snapshot_req_body");
@@ -10938,45 +12872,41 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_list_snapshot_req_body &a, node_list_snapshot_req_body &b)
-    {
+    void swap(node_list_snapshot_req_body &a, node_list_snapshot_req_body &b) {
         using ::std::swap;
         swap(a.data, b.data);
     }
 
-    node_list_snapshot_req_body::node_list_snapshot_req_body(const node_list_snapshot_req_body &other22)
-    {
-        data = other22.data;
+    node_list_snapshot_req_body::node_list_snapshot_req_body(const node_list_snapshot_req_body& other476) {
+        data = other476.data;
     }
-    node_list_snapshot_req_body &node_list_snapshot_req_body::operator=(const node_list_snapshot_req_body &other23)
-    {
-        data = other23.data;
+    node_list_snapshot_req_body& node_list_snapshot_req_body::operator=(const node_list_snapshot_req_body& other477) {
+        data = other477.data;
         return *this;
     }
-    void node_list_snapshot_req_body::printTo(std::ostream &out) const
-    {
+    void node_list_snapshot_req_body::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_list_snapshot_req_body(";
         out << "data=" << to_string(data);
         out << ")";
     }
 
-    node_list_snapshot_req::~node_list_snapshot_req() throw()
-    {
+
+    node_list_snapshot_req::~node_list_snapshot_req() throw() {
     }
 
-    void node_list_snapshot_req::__set_body(const node_list_snapshot_req_body &val)
-    {
+
+    void node_list_snapshot_req::__set_body(const node_list_snapshot_req_body& val) {
         this->body = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_list_snapshot_req &obj)
+    std::ostream& operator<<(std::ostream& out, const node_list_snapshot_req& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_list_snapshot_req::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_list_snapshot_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -10988,29 +12918,26 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRUCT)
-                {
-                    xfer += this->body.read(iprot);
-                    this->__isset.body = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11020,8 +12947,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_list_snapshot_req::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_list_snapshot_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_list_snapshot_req");
@@ -11035,48 +12961,44 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_list_snapshot_req &a, node_list_snapshot_req &b)
-    {
+    void swap(node_list_snapshot_req &a, node_list_snapshot_req &b) {
         using ::std::swap;
         swap(a.body, b.body);
         swap(a.__isset, b.__isset);
     }
 
-    node_list_snapshot_req::node_list_snapshot_req(const node_list_snapshot_req &other24)
-    {
-        body = other24.body;
-        __isset = other24.__isset;
+    node_list_snapshot_req::node_list_snapshot_req(const node_list_snapshot_req& other478) {
+        body = other478.body;
+        __isset = other478.__isset;
     }
-    node_list_snapshot_req &node_list_snapshot_req::operator=(const node_list_snapshot_req &other25)
-    {
-        body = other25.body;
-        __isset = other25.__isset;
+    node_list_snapshot_req& node_list_snapshot_req::operator=(const node_list_snapshot_req& other479) {
+        body = other479.body;
+        __isset = other479.__isset;
         return *this;
     }
-    void node_list_snapshot_req::printTo(std::ostream &out) const
-    {
+    void node_list_snapshot_req::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_list_snapshot_req(";
         out << "body=" << to_string(body);
         out << ")";
     }
 
-    node_list_snapshot_rsp_body::~node_list_snapshot_rsp_body() throw()
-    {
+
+    node_list_snapshot_rsp_body::~node_list_snapshot_rsp_body() throw() {
     }
 
-    void node_list_snapshot_rsp_body::__set_data(const std::string &val)
-    {
+
+    void node_list_snapshot_rsp_body::__set_data(const std::string& val) {
         this->data = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_list_snapshot_rsp_body &obj)
+    std::ostream& operator<<(std::ostream& out, const node_list_snapshot_rsp_body& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_list_snapshot_rsp_body::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_list_snapshot_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -11093,26 +13015,22 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->data);
-                    isset_data = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11124,8 +13042,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_list_snapshot_rsp_body::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_list_snapshot_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_list_snapshot_rsp_body");
@@ -11139,45 +13056,41 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_list_snapshot_rsp_body &a, node_list_snapshot_rsp_body &b)
-    {
+    void swap(node_list_snapshot_rsp_body &a, node_list_snapshot_rsp_body &b) {
         using ::std::swap;
         swap(a.data, b.data);
     }
 
-    node_list_snapshot_rsp_body::node_list_snapshot_rsp_body(const node_list_snapshot_rsp_body &other26)
-    {
-        data = other26.data;
+    node_list_snapshot_rsp_body::node_list_snapshot_rsp_body(const node_list_snapshot_rsp_body& other480) {
+        data = other480.data;
     }
-    node_list_snapshot_rsp_body &node_list_snapshot_rsp_body::operator=(const node_list_snapshot_rsp_body &other27)
-    {
-        data = other27.data;
+    node_list_snapshot_rsp_body& node_list_snapshot_rsp_body::operator=(const node_list_snapshot_rsp_body& other481) {
+        data = other481.data;
         return *this;
     }
-    void node_list_snapshot_rsp_body::printTo(std::ostream &out) const
-    {
+    void node_list_snapshot_rsp_body::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_list_snapshot_rsp_body(";
         out << "data=" << to_string(data);
         out << ")";
     }
 
-    node_list_snapshot_rsp::~node_list_snapshot_rsp() throw()
-    {
+
+    node_list_snapshot_rsp::~node_list_snapshot_rsp() throw() {
     }
 
-    void node_list_snapshot_rsp::__set_body(const node_list_snapshot_rsp_body &val)
-    {
+
+    void node_list_snapshot_rsp::__set_body(const node_list_snapshot_rsp_body& val) {
         this->body = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_list_snapshot_rsp &obj)
+    std::ostream& operator<<(std::ostream& out, const node_list_snapshot_rsp& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_list_snapshot_rsp::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_list_snapshot_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -11189,29 +13102,26 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRUCT)
-                {
-                    xfer += this->body.read(iprot);
-                    this->__isset.body = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11221,8 +13131,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_list_snapshot_rsp::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_list_snapshot_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_list_snapshot_rsp");
@@ -11236,98 +13145,84 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_list_snapshot_rsp &a, node_list_snapshot_rsp &b)
-    {
+    void swap(node_list_snapshot_rsp &a, node_list_snapshot_rsp &b) {
         using ::std::swap;
         swap(a.body, b.body);
         swap(a.__isset, b.__isset);
     }
 
-    node_list_snapshot_rsp::node_list_snapshot_rsp(const node_list_snapshot_rsp &other28)
-    {
-        body = other28.body;
-        __isset = other28.__isset;
+    node_list_snapshot_rsp::node_list_snapshot_rsp(const node_list_snapshot_rsp& other482) {
+        body = other482.body;
+        __isset = other482.__isset;
     }
-    node_list_snapshot_rsp &node_list_snapshot_rsp::operator=(const node_list_snapshot_rsp &other29)
-    {
-        body = other29.body;
-        __isset = other29.__isset;
+    node_list_snapshot_rsp& node_list_snapshot_rsp::operator=(const node_list_snapshot_rsp& other483) {
+        body = other483.body;
+        __isset = other483.__isset;
         return *this;
     }
-    void node_list_snapshot_rsp::printTo(std::ostream &out) const
-    {
+    void node_list_snapshot_rsp::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_list_snapshot_rsp(";
         out << "body=" << to_string(body);
         out << ")";
     }
 
-    node_create_snapshot_req_data::~node_create_snapshot_req_data() throw()
-    {
+
+    node_create_snapshot_req_data::~node_create_snapshot_req_data() throw() {
     }
 
-    void node_create_snapshot_req_data::__set_task_id(const std::string &val)
-    {
+
+    void node_create_snapshot_req_data::__set_task_id(const std::string& val) {
         this->task_id = val;
     }
 
-    void node_create_snapshot_req_data::__set_peer_nodes_list(const std::vector<std::string> &val)
-    {
+    void node_create_snapshot_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
         this->peer_nodes_list = val;
     }
 
-    void node_create_snapshot_req_data::__set_additional(const std::string &val)
-    {
+    void node_create_snapshot_req_data::__set_additional(const std::string& val) {
         this->additional = val;
     }
 
-    void node_create_snapshot_req_data::__set_wallet(const std::string &val)
-    {
+    void node_create_snapshot_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
 
-    void node_create_snapshot_req_data::__set_nonce(const std::string &val)
-    {
+    void node_create_snapshot_req_data::__set_nonce(const std::string& val) {
         this->nonce = val;
     }
 
-    void node_create_snapshot_req_data::__set_sign(const std::string &val)
-    {
+    void node_create_snapshot_req_data::__set_sign(const std::string& val) {
         this->sign = val;
     }
 
-    void node_create_snapshot_req_data::__set_multisig_wallets(const std::vector<std::string> &val)
-    {
+    void node_create_snapshot_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
         this->multisig_wallets = val;
     }
 
-    void node_create_snapshot_req_data::__set_multisig_threshold(const int32_t val)
-    {
+    void node_create_snapshot_req_data::__set_multisig_threshold(const int32_t val) {
         this->multisig_threshold = val;
     }
 
-    void node_create_snapshot_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> &val)
-    {
+    void node_create_snapshot_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
         this->multisig_signs = val;
     }
 
-    void node_create_snapshot_req_data::__set_session_id(const std::string &val)
-    {
+    void node_create_snapshot_req_data::__set_session_id(const std::string& val) {
         this->session_id = val;
     }
 
-    void node_create_snapshot_req_data::__set_session_id_sign(const std::string &val)
-    {
+    void node_create_snapshot_req_data::__set_session_id_sign(const std::string& val) {
         this->session_id_sign = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_create_snapshot_req_data &obj)
+    std::ostream& operator<<(std::ostream& out, const node_create_snapshot_req_data& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_create_snapshot_req_data::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_create_snapshot_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -11354,172 +13249,138 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->task_id);
-                    isset_task_id = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 2:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->peer_nodes_list.clear();
-                        uint32_t _size30;
-                        ::apache::thrift::protocol::TType _etype33;
-                        xfer += iprot->readListBegin(_etype33, _size30);
-                        this->peer_nodes_list.resize(_size30);
-                        uint32_t _i34;
-                        for (_i34 = 0; _i34 < _size30; ++_i34)
-                        {
-                            xfer += iprot->readString(this->peer_nodes_list[_i34]);
-                        }
-                        xfer += iprot->readListEnd();
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->task_id);
+                        isset_task_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_peer_nodes_list = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 3:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->additional);
-                    isset_additional = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 4:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->wallet);
-                    isset_wallet = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 5:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->nonce);
-                    isset_nonce = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 6:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->sign);
-                    isset_sign = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 7:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->multisig_wallets.clear();
-                        uint32_t _size35;
-                        ::apache::thrift::protocol::TType _etype38;
-                        xfer += iprot->readListBegin(_etype38, _size35);
-                        this->multisig_wallets.resize(_size35);
-                        uint32_t _i39;
-                        for (_i39 = 0; _i39 < _size35; ++_i39)
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
-                            xfer += iprot->readString(this->multisig_wallets[_i39]);
+                            this->peer_nodes_list.clear();
+                            uint32_t _size484;
+                            ::apache::thrift::protocol::TType _etype487;
+                            xfer += iprot->readListBegin(_etype487, _size484);
+                            this->peer_nodes_list.resize(_size484);
+                            uint32_t _i488;
+                            for (_i488 = 0; _i488 < _size484; ++_i488)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i488]);
+                            }
+                            xfer += iprot->readListEnd();
                         }
-                        xfer += iprot->readListEnd();
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_multisig_wallets = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 8:
-                if (ftype == ::apache::thrift::protocol::T_I32)
-                {
-                    xfer += iprot->readI32(this->multisig_threshold);
-                    isset_multisig_threshold = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 9:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->multisig_signs.clear();
-                        uint32_t _size40;
-                        ::apache::thrift::protocol::TType _etype43;
-                        xfer += iprot->readListBegin(_etype43, _size40);
-                        this->multisig_signs.resize(_size40);
-                        uint32_t _i44;
-                        for (_i44 = 0; _i44 < _size40; ++_i44)
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->additional);
+                        isset_additional = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->wallet);
+                        isset_wallet = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->nonce);
+                        isset_nonce = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->sign);
+                        isset_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 7:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
-                            xfer += this->multisig_signs[_i44].read(iprot);
+                            this->multisig_wallets.clear();
+                            uint32_t _size489;
+                            ::apache::thrift::protocol::TType _etype492;
+                            xfer += iprot->readListBegin(_etype492, _size489);
+                            this->multisig_wallets.resize(_size489);
+                            uint32_t _i493;
+                            for (_i493 = 0; _i493 < _size489; ++_i493)
+                            {
+                                xfer += iprot->readString(this->multisig_wallets[_i493]);
+                            }
+                            xfer += iprot->readListEnd();
                         }
-                        xfer += iprot->readListEnd();
+                        isset_multisig_wallets = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_multisig_signs = true;
-                }
-                else
-                {
+                    break;
+                case 8:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->multisig_threshold);
+                        isset_multisig_threshold = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 9:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_signs.clear();
+                            uint32_t _size494;
+                            ::apache::thrift::protocol::TType _etype497;
+                            xfer += iprot->readListBegin(_etype497, _size494);
+                            this->multisig_signs.resize(_size494);
+                            uint32_t _i498;
+                            for (_i498 = 0; _i498 < _size494; ++_i498)
+                            {
+                                xfer += this->multisig_signs[_i498].read(iprot);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_signs = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 10:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id);
+                        isset_session_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 11:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id_sign);
+                        isset_session_id_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            case 10:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->session_id);
-                    isset_session_id = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 11:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->session_id_sign);
-                    isset_session_id_sign = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11551,8 +13412,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_create_snapshot_req_data::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_create_snapshot_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_create_snapshot_req_data");
@@ -11564,10 +13424,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string>::const_iterator _iter45;
-            for (_iter45 = this->peer_nodes_list.begin(); _iter45 != this->peer_nodes_list.end(); ++_iter45)
+            std::vector<std::string> ::const_iterator _iter499;
+            for (_iter499 = this->peer_nodes_list.begin(); _iter499 != this->peer_nodes_list.end(); ++_iter499)
             {
-                xfer += oprot->writeString((*_iter45));
+                xfer += oprot->writeString((*_iter499));
             }
             xfer += oprot->writeListEnd();
         }
@@ -11592,10 +13452,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string>::const_iterator _iter46;
-            for (_iter46 = this->multisig_wallets.begin(); _iter46 != this->multisig_wallets.end(); ++_iter46)
+            std::vector<std::string> ::const_iterator _iter500;
+            for (_iter500 = this->multisig_wallets.begin(); _iter500 != this->multisig_wallets.end(); ++_iter500)
             {
-                xfer += oprot->writeString((*_iter46));
+                xfer += oprot->writeString((*_iter500));
             }
             xfer += oprot->writeListEnd();
         }
@@ -11608,10 +13468,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item>::const_iterator _iter47;
-            for (_iter47 = this->multisig_signs.begin(); _iter47 != this->multisig_signs.end(); ++_iter47)
+            std::vector<multisig_sign_item> ::const_iterator _iter501;
+            for (_iter501 = this->multisig_signs.begin(); _iter501 != this->multisig_signs.end(); ++_iter501)
             {
-                xfer += (*_iter47).write(oprot);
+                xfer += (*_iter501).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -11630,8 +13490,7 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_create_snapshot_req_data &a, node_create_snapshot_req_data &b)
-    {
+    void swap(node_create_snapshot_req_data &a, node_create_snapshot_req_data &b) {
         using ::std::swap;
         swap(a.task_id, b.task_id);
         swap(a.peer_nodes_list, b.peer_nodes_list);
@@ -11646,79 +13505,66 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_create_snapshot_req_data::node_create_snapshot_req_data(const node_create_snapshot_req_data &other48)
-    {
-        task_id = other48.task_id;
-        peer_nodes_list = other48.peer_nodes_list;
-        additional = other48.additional;
-        wallet = other48.wallet;
-        nonce = other48.nonce;
-        sign = other48.sign;
-        multisig_wallets = other48.multisig_wallets;
-        multisig_threshold = other48.multisig_threshold;
-        multisig_signs = other48.multisig_signs;
-        session_id = other48.session_id;
-        session_id_sign = other48.session_id_sign;
+    node_create_snapshot_req_data::node_create_snapshot_req_data(const node_create_snapshot_req_data& other502) {
+        task_id = other502.task_id;
+        peer_nodes_list = other502.peer_nodes_list;
+        additional = other502.additional;
+        wallet = other502.wallet;
+        nonce = other502.nonce;
+        sign = other502.sign;
+        multisig_wallets = other502.multisig_wallets;
+        multisig_threshold = other502.multisig_threshold;
+        multisig_signs = other502.multisig_signs;
+        session_id = other502.session_id;
+        session_id_sign = other502.session_id_sign;
     }
-    node_create_snapshot_req_data &node_create_snapshot_req_data::operator=(const node_create_snapshot_req_data &other49)
-    {
-        task_id = other49.task_id;
-        peer_nodes_list = other49.peer_nodes_list;
-        additional = other49.additional;
-        wallet = other49.wallet;
-        nonce = other49.nonce;
-        sign = other49.sign;
-        multisig_wallets = other49.multisig_wallets;
-        multisig_threshold = other49.multisig_threshold;
-        multisig_signs = other49.multisig_signs;
-        session_id = other49.session_id;
-        session_id_sign = other49.session_id_sign;
+    node_create_snapshot_req_data& node_create_snapshot_req_data::operator=(const node_create_snapshot_req_data& other503) {
+        task_id = other503.task_id;
+        peer_nodes_list = other503.peer_nodes_list;
+        additional = other503.additional;
+        wallet = other503.wallet;
+        nonce = other503.nonce;
+        sign = other503.sign;
+        multisig_wallets = other503.multisig_wallets;
+        multisig_threshold = other503.multisig_threshold;
+        multisig_signs = other503.multisig_signs;
+        session_id = other503.session_id;
+        session_id_sign = other503.session_id_sign;
         return *this;
     }
-    void node_create_snapshot_req_data::printTo(std::ostream &out) const
-    {
+    void node_create_snapshot_req_data::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_create_snapshot_req_data(";
         out << "task_id=" << to_string(task_id);
-        out << ", "
-            << "peer_nodes_list=" << to_string(peer_nodes_list);
-        out << ", "
-            << "additional=" << to_string(additional);
-        out << ", "
-            << "wallet=" << to_string(wallet);
-        out << ", "
-            << "nonce=" << to_string(nonce);
-        out << ", "
-            << "sign=" << to_string(sign);
-        out << ", "
-            << "multisig_wallets=" << to_string(multisig_wallets);
-        out << ", "
-            << "multisig_threshold=" << to_string(multisig_threshold);
-        out << ", "
-            << "multisig_signs=" << to_string(multisig_signs);
-        out << ", "
-            << "session_id=" << to_string(session_id);
-        out << ", "
-            << "session_id_sign=" << to_string(session_id_sign);
+        out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
         out << ")";
     }
 
-    node_create_snapshot_req_body::~node_create_snapshot_req_body() throw()
-    {
+
+    node_create_snapshot_req_body::~node_create_snapshot_req_body() throw() {
     }
 
-    void node_create_snapshot_req_body::__set_data(const std::string &val)
-    {
+
+    void node_create_snapshot_req_body::__set_data(const std::string& val) {
         this->data = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_create_snapshot_req_body &obj)
+    std::ostream& operator<<(std::ostream& out, const node_create_snapshot_req_body& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_create_snapshot_req_body::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_create_snapshot_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -11735,26 +13581,22 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->data);
-                    isset_data = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11766,8 +13608,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_create_snapshot_req_body::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_create_snapshot_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_create_snapshot_req_body");
@@ -11781,45 +13622,41 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_create_snapshot_req_body &a, node_create_snapshot_req_body &b)
-    {
+    void swap(node_create_snapshot_req_body &a, node_create_snapshot_req_body &b) {
         using ::std::swap;
         swap(a.data, b.data);
     }
 
-    node_create_snapshot_req_body::node_create_snapshot_req_body(const node_create_snapshot_req_body &other50)
-    {
-        data = other50.data;
+    node_create_snapshot_req_body::node_create_snapshot_req_body(const node_create_snapshot_req_body& other504) {
+        data = other504.data;
     }
-    node_create_snapshot_req_body &node_create_snapshot_req_body::operator=(const node_create_snapshot_req_body &other51)
-    {
-        data = other51.data;
+    node_create_snapshot_req_body& node_create_snapshot_req_body::operator=(const node_create_snapshot_req_body& other505) {
+        data = other505.data;
         return *this;
     }
-    void node_create_snapshot_req_body::printTo(std::ostream &out) const
-    {
+    void node_create_snapshot_req_body::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_create_snapshot_req_body(";
         out << "data=" << to_string(data);
         out << ")";
     }
 
-    node_create_snapshot_req::~node_create_snapshot_req() throw()
-    {
+
+    node_create_snapshot_req::~node_create_snapshot_req() throw() {
     }
 
-    void node_create_snapshot_req::__set_body(const node_create_snapshot_req_body &val)
-    {
+
+    void node_create_snapshot_req::__set_body(const node_create_snapshot_req_body& val) {
         this->body = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_create_snapshot_req &obj)
+    std::ostream& operator<<(std::ostream& out, const node_create_snapshot_req& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_create_snapshot_req::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_create_snapshot_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -11831,29 +13668,26 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRUCT)
-                {
-                    xfer += this->body.read(iprot);
-                    this->__isset.body = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11863,8 +13697,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_create_snapshot_req::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_create_snapshot_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_create_snapshot_req");
@@ -11878,48 +13711,44 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_create_snapshot_req &a, node_create_snapshot_req &b)
-    {
+    void swap(node_create_snapshot_req &a, node_create_snapshot_req &b) {
         using ::std::swap;
         swap(a.body, b.body);
         swap(a.__isset, b.__isset);
     }
 
-    node_create_snapshot_req::node_create_snapshot_req(const node_create_snapshot_req &other52)
-    {
-        body = other52.body;
-        __isset = other52.__isset;
+    node_create_snapshot_req::node_create_snapshot_req(const node_create_snapshot_req& other506) {
+        body = other506.body;
+        __isset = other506.__isset;
     }
-    node_create_snapshot_req &node_create_snapshot_req::operator=(const node_create_snapshot_req &other53)
-    {
-        body = other53.body;
-        __isset = other53.__isset;
+    node_create_snapshot_req& node_create_snapshot_req::operator=(const node_create_snapshot_req& other507) {
+        body = other507.body;
+        __isset = other507.__isset;
         return *this;
     }
-    void node_create_snapshot_req::printTo(std::ostream &out) const
-    {
+    void node_create_snapshot_req::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_create_snapshot_req(";
         out << "body=" << to_string(body);
         out << ")";
     }
 
-    node_create_snapshot_rsp_body::~node_create_snapshot_rsp_body() throw()
-    {
+
+    node_create_snapshot_rsp_body::~node_create_snapshot_rsp_body() throw() {
     }
 
-    void node_create_snapshot_rsp_body::__set_data(const std::string &val)
-    {
+
+    void node_create_snapshot_rsp_body::__set_data(const std::string& val) {
         this->data = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_create_snapshot_rsp_body &obj)
+    std::ostream& operator<<(std::ostream& out, const node_create_snapshot_rsp_body& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_create_snapshot_rsp_body::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_create_snapshot_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -11936,26 +13765,22 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->data);
-                    isset_data = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -11967,8 +13792,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_create_snapshot_rsp_body::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_create_snapshot_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_create_snapshot_rsp_body");
@@ -11982,45 +13806,41 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_create_snapshot_rsp_body &a, node_create_snapshot_rsp_body &b)
-    {
+    void swap(node_create_snapshot_rsp_body &a, node_create_snapshot_rsp_body &b) {
         using ::std::swap;
         swap(a.data, b.data);
     }
 
-    node_create_snapshot_rsp_body::node_create_snapshot_rsp_body(const node_create_snapshot_rsp_body &other54)
-    {
-        data = other54.data;
+    node_create_snapshot_rsp_body::node_create_snapshot_rsp_body(const node_create_snapshot_rsp_body& other508) {
+        data = other508.data;
     }
-    node_create_snapshot_rsp_body &node_create_snapshot_rsp_body::operator=(const node_create_snapshot_rsp_body &other55)
-    {
-        data = other55.data;
+    node_create_snapshot_rsp_body& node_create_snapshot_rsp_body::operator=(const node_create_snapshot_rsp_body& other509) {
+        data = other509.data;
         return *this;
     }
-    void node_create_snapshot_rsp_body::printTo(std::ostream &out) const
-    {
+    void node_create_snapshot_rsp_body::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_create_snapshot_rsp_body(";
         out << "data=" << to_string(data);
         out << ")";
     }
 
-    node_create_snapshot_rsp::~node_create_snapshot_rsp() throw()
-    {
+
+    node_create_snapshot_rsp::~node_create_snapshot_rsp() throw() {
     }
 
-    void node_create_snapshot_rsp::__set_body(const node_create_snapshot_rsp_body &val)
-    {
+
+    void node_create_snapshot_rsp::__set_body(const node_create_snapshot_rsp_body& val) {
         this->body = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_create_snapshot_rsp &obj)
+    std::ostream& operator<<(std::ostream& out, const node_create_snapshot_rsp& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_create_snapshot_rsp::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_create_snapshot_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -12032,29 +13852,26 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRUCT)
-                {
-                    xfer += this->body.read(iprot);
-                    this->__isset.body = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -12064,8 +13881,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_create_snapshot_rsp::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_create_snapshot_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_create_snapshot_rsp");
@@ -12079,103 +13895,88 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_create_snapshot_rsp &a, node_create_snapshot_rsp &b)
-    {
+    void swap(node_create_snapshot_rsp &a, node_create_snapshot_rsp &b) {
         using ::std::swap;
         swap(a.body, b.body);
         swap(a.__isset, b.__isset);
     }
 
-    node_create_snapshot_rsp::node_create_snapshot_rsp(const node_create_snapshot_rsp &other56)
-    {
-        body = other56.body;
-        __isset = other56.__isset;
+    node_create_snapshot_rsp::node_create_snapshot_rsp(const node_create_snapshot_rsp& other510) {
+        body = other510.body;
+        __isset = other510.__isset;
     }
-    node_create_snapshot_rsp &node_create_snapshot_rsp::operator=(const node_create_snapshot_rsp &other57)
-    {
-        body = other57.body;
-        __isset = other57.__isset;
+    node_create_snapshot_rsp& node_create_snapshot_rsp::operator=(const node_create_snapshot_rsp& other511) {
+        body = other511.body;
+        __isset = other511.__isset;
         return *this;
     }
-    void node_create_snapshot_rsp::printTo(std::ostream &out) const
-    {
+    void node_create_snapshot_rsp::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_create_snapshot_rsp(";
         out << "body=" << to_string(body);
         out << ")";
     }
 
-    node_delete_snapshot_req_data::~node_delete_snapshot_req_data() throw()
-    {
+
+    node_delete_snapshot_req_data::~node_delete_snapshot_req_data() throw() {
     }
 
-    void node_delete_snapshot_req_data::__set_task_id(const std::string &val)
-    {
+
+    void node_delete_snapshot_req_data::__set_task_id(const std::string& val) {
         this->task_id = val;
     }
 
-    void node_delete_snapshot_req_data::__set_snapshot_name(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_snapshot_name(const std::string& val) {
         this->snapshot_name = val;
     }
 
-    void node_delete_snapshot_req_data::__set_peer_nodes_list(const std::vector<std::string> &val)
-    {
+    void node_delete_snapshot_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
         this->peer_nodes_list = val;
     }
 
-    void node_delete_snapshot_req_data::__set_additional(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_additional(const std::string& val) {
         this->additional = val;
     }
 
-    void node_delete_snapshot_req_data::__set_wallet(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
 
-    void node_delete_snapshot_req_data::__set_nonce(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_nonce(const std::string& val) {
         this->nonce = val;
     }
 
-    void node_delete_snapshot_req_data::__set_sign(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_sign(const std::string& val) {
         this->sign = val;
     }
 
-    void node_delete_snapshot_req_data::__set_multisig_wallets(const std::vector<std::string> &val)
-    {
+    void node_delete_snapshot_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
         this->multisig_wallets = val;
     }
 
-    void node_delete_snapshot_req_data::__set_multisig_threshold(const int32_t val)
-    {
+    void node_delete_snapshot_req_data::__set_multisig_threshold(const int32_t val) {
         this->multisig_threshold = val;
     }
 
-    void node_delete_snapshot_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> &val)
-    {
+    void node_delete_snapshot_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
         this->multisig_signs = val;
     }
 
-    void node_delete_snapshot_req_data::__set_session_id(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_session_id(const std::string& val) {
         this->session_id = val;
     }
 
-    void node_delete_snapshot_req_data::__set_session_id_sign(const std::string &val)
-    {
+    void node_delete_snapshot_req_data::__set_session_id_sign(const std::string& val) {
         this->session_id_sign = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_delete_snapshot_req_data &obj)
+    std::ostream& operator<<(std::ostream& out, const node_delete_snapshot_req_data& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_delete_snapshot_req_data::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_delete_snapshot_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -12203,183 +14004,146 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->task_id);
-                    isset_task_id = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 2:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->snapshot_name);
-                    isset_snapshot_name = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 3:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->peer_nodes_list.clear();
-                        uint32_t _size58;
-                        ::apache::thrift::protocol::TType _etype61;
-                        xfer += iprot->readListBegin(_etype61, _size58);
-                        this->peer_nodes_list.resize(_size58);
-                        uint32_t _i62;
-                        for (_i62 = 0; _i62 < _size58; ++_i62)
-                        {
-                            xfer += iprot->readString(this->peer_nodes_list[_i62]);
-                        }
-                        xfer += iprot->readListEnd();
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->task_id);
+                        isset_task_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_peer_nodes_list = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 4:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->additional);
-                    isset_additional = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 5:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->wallet);
-                    isset_wallet = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 6:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->nonce);
-                    isset_nonce = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 7:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->sign);
-                    isset_sign = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 8:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->multisig_wallets.clear();
-                        uint32_t _size63;
-                        ::apache::thrift::protocol::TType _etype66;
-                        xfer += iprot->readListBegin(_etype66, _size63);
-                        this->multisig_wallets.resize(_size63);
-                        uint32_t _i67;
-                        for (_i67 = 0; _i67 < _size63; ++_i67)
-                        {
-                            xfer += iprot->readString(this->multisig_wallets[_i67]);
-                        }
-                        xfer += iprot->readListEnd();
+                    break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->snapshot_name);
+                        isset_snapshot_name = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_multisig_wallets = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 9:
-                if (ftype == ::apache::thrift::protocol::T_I32)
-                {
-                    xfer += iprot->readI32(this->multisig_threshold);
-                    isset_multisig_threshold = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 10:
-                if (ftype == ::apache::thrift::protocol::T_LIST)
-                {
-                    {
-                        this->multisig_signs.clear();
-                        uint32_t _size68;
-                        ::apache::thrift::protocol::TType _etype71;
-                        xfer += iprot->readListBegin(_etype71, _size68);
-                        this->multisig_signs.resize(_size68);
-                        uint32_t _i72;
-                        for (_i72 = 0; _i72 < _size68; ++_i72)
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
-                            xfer += this->multisig_signs[_i72].read(iprot);
+                            this->peer_nodes_list.clear();
+                            uint32_t _size512;
+                            ::apache::thrift::protocol::TType _etype515;
+                            xfer += iprot->readListBegin(_etype515, _size512);
+                            this->peer_nodes_list.resize(_size512);
+                            uint32_t _i516;
+                            for (_i516 = 0; _i516 < _size512; ++_i516)
+                            {
+                                xfer += iprot->readString(this->peer_nodes_list[_i516]);
+                            }
+                            xfer += iprot->readListEnd();
                         }
-                        xfer += iprot->readListEnd();
+                        isset_peer_nodes_list = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
                     }
-                    isset_multisig_signs = true;
-                }
-                else
-                {
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->additional);
+                        isset_additional = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->wallet);
+                        isset_wallet = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->nonce);
+                        isset_nonce = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 7:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->sign);
+                        isset_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 8:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_wallets.clear();
+                            uint32_t _size517;
+                            ::apache::thrift::protocol::TType _etype520;
+                            xfer += iprot->readListBegin(_etype520, _size517);
+                            this->multisig_wallets.resize(_size517);
+                            uint32_t _i521;
+                            for (_i521 = 0; _i521 < _size517; ++_i521)
+                            {
+                                xfer += iprot->readString(this->multisig_wallets[_i521]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_wallets = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 9:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->multisig_threshold);
+                        isset_multisig_threshold = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 10:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multisig_signs.clear();
+                            uint32_t _size522;
+                            ::apache::thrift::protocol::TType _etype525;
+                            xfer += iprot->readListBegin(_etype525, _size522);
+                            this->multisig_signs.resize(_size522);
+                            uint32_t _i526;
+                            for (_i526 = 0; _i526 < _size522; ++_i526)
+                            {
+                                xfer += this->multisig_signs[_i526].read(iprot);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        isset_multisig_signs = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 11:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id);
+                        isset_session_id = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 12:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->session_id_sign);
+                        isset_session_id_sign = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            case 11:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->session_id);
-                    isset_session_id = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            case 12:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->session_id_sign);
-                    isset_session_id_sign = true;
-                }
-                else
-                {
-                    xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -12413,8 +14177,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_delete_snapshot_req_data::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_delete_snapshot_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_delete_snapshot_req_data");
@@ -12430,10 +14193,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 3);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
-            std::vector<std::string>::const_iterator _iter73;
-            for (_iter73 = this->peer_nodes_list.begin(); _iter73 != this->peer_nodes_list.end(); ++_iter73)
+            std::vector<std::string> ::const_iterator _iter527;
+            for (_iter527 = this->peer_nodes_list.begin(); _iter527 != this->peer_nodes_list.end(); ++_iter527)
             {
-                xfer += oprot->writeString((*_iter73));
+                xfer += oprot->writeString((*_iter527));
             }
             xfer += oprot->writeListEnd();
         }
@@ -12458,10 +14221,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
-            std::vector<std::string>::const_iterator _iter74;
-            for (_iter74 = this->multisig_wallets.begin(); _iter74 != this->multisig_wallets.end(); ++_iter74)
+            std::vector<std::string> ::const_iterator _iter528;
+            for (_iter528 = this->multisig_wallets.begin(); _iter528 != this->multisig_wallets.end(); ++_iter528)
             {
-                xfer += oprot->writeString((*_iter74));
+                xfer += oprot->writeString((*_iter528));
             }
             xfer += oprot->writeListEnd();
         }
@@ -12474,10 +14237,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 10);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
-            std::vector<multisig_sign_item>::const_iterator _iter75;
-            for (_iter75 = this->multisig_signs.begin(); _iter75 != this->multisig_signs.end(); ++_iter75)
+            std::vector<multisig_sign_item> ::const_iterator _iter529;
+            for (_iter529 = this->multisig_signs.begin(); _iter529 != this->multisig_signs.end(); ++_iter529)
             {
-                xfer += (*_iter75).write(oprot);
+                xfer += (*_iter529).write(oprot);
             }
             xfer += oprot->writeListEnd();
         }
@@ -12496,8 +14259,7 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_delete_snapshot_req_data &a, node_delete_snapshot_req_data &b)
-    {
+    void swap(node_delete_snapshot_req_data &a, node_delete_snapshot_req_data &b) {
         using ::std::swap;
         swap(a.task_id, b.task_id);
         swap(a.snapshot_name, b.snapshot_name);
@@ -12513,83 +14275,69 @@ namespace dbc {
         swap(a.session_id_sign, b.session_id_sign);
     }
 
-    node_delete_snapshot_req_data::node_delete_snapshot_req_data(const node_delete_snapshot_req_data &other76)
-    {
-        task_id = other76.task_id;
-        snapshot_name = other76.snapshot_name;
-        peer_nodes_list = other76.peer_nodes_list;
-        additional = other76.additional;
-        wallet = other76.wallet;
-        nonce = other76.nonce;
-        sign = other76.sign;
-        multisig_wallets = other76.multisig_wallets;
-        multisig_threshold = other76.multisig_threshold;
-        multisig_signs = other76.multisig_signs;
-        session_id = other76.session_id;
-        session_id_sign = other76.session_id_sign;
+    node_delete_snapshot_req_data::node_delete_snapshot_req_data(const node_delete_snapshot_req_data& other530) {
+        task_id = other530.task_id;
+        snapshot_name = other530.snapshot_name;
+        peer_nodes_list = other530.peer_nodes_list;
+        additional = other530.additional;
+        wallet = other530.wallet;
+        nonce = other530.nonce;
+        sign = other530.sign;
+        multisig_wallets = other530.multisig_wallets;
+        multisig_threshold = other530.multisig_threshold;
+        multisig_signs = other530.multisig_signs;
+        session_id = other530.session_id;
+        session_id_sign = other530.session_id_sign;
     }
-    node_delete_snapshot_req_data &node_delete_snapshot_req_data::operator=(const node_delete_snapshot_req_data &other77)
-    {
-        task_id = other77.task_id;
-        snapshot_name = other77.snapshot_name;
-        peer_nodes_list = other77.peer_nodes_list;
-        additional = other77.additional;
-        wallet = other77.wallet;
-        nonce = other77.nonce;
-        sign = other77.sign;
-        multisig_wallets = other77.multisig_wallets;
-        multisig_threshold = other77.multisig_threshold;
-        multisig_signs = other77.multisig_signs;
-        session_id = other77.session_id;
-        session_id_sign = other77.session_id_sign;
+    node_delete_snapshot_req_data& node_delete_snapshot_req_data::operator=(const node_delete_snapshot_req_data& other531) {
+        task_id = other531.task_id;
+        snapshot_name = other531.snapshot_name;
+        peer_nodes_list = other531.peer_nodes_list;
+        additional = other531.additional;
+        wallet = other531.wallet;
+        nonce = other531.nonce;
+        sign = other531.sign;
+        multisig_wallets = other531.multisig_wallets;
+        multisig_threshold = other531.multisig_threshold;
+        multisig_signs = other531.multisig_signs;
+        session_id = other531.session_id;
+        session_id_sign = other531.session_id_sign;
         return *this;
     }
-    void node_delete_snapshot_req_data::printTo(std::ostream &out) const
-    {
+    void node_delete_snapshot_req_data::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_delete_snapshot_req_data(";
         out << "task_id=" << to_string(task_id);
-        out << ", "
-            << "snapshot_name=" << to_string(snapshot_name);
-        out << ", "
-            << "peer_nodes_list=" << to_string(peer_nodes_list);
-        out << ", "
-            << "additional=" << to_string(additional);
-        out << ", "
-            << "wallet=" << to_string(wallet);
-        out << ", "
-            << "nonce=" << to_string(nonce);
-        out << ", "
-            << "sign=" << to_string(sign);
-        out << ", "
-            << "multisig_wallets=" << to_string(multisig_wallets);
-        out << ", "
-            << "multisig_threshold=" << to_string(multisig_threshold);
-        out << ", "
-            << "multisig_signs=" << to_string(multisig_signs);
-        out << ", "
-            << "session_id=" << to_string(session_id);
-        out << ", "
-            << "session_id_sign=" << to_string(session_id_sign);
+        out << ", " << "snapshot_name=" << to_string(snapshot_name);
+        out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
         out << ")";
     }
 
-    node_delete_snapshot_req_body::~node_delete_snapshot_req_body() throw()
-    {
+
+    node_delete_snapshot_req_body::~node_delete_snapshot_req_body() throw() {
     }
 
-    void node_delete_snapshot_req_body::__set_data(const std::string &val)
-    {
+
+    void node_delete_snapshot_req_body::__set_data(const std::string& val) {
         this->data = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_delete_snapshot_req_body &obj)
+    std::ostream& operator<<(std::ostream& out, const node_delete_snapshot_req_body& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_delete_snapshot_req_body::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_delete_snapshot_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -12606,26 +14354,22 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->data);
-                    isset_data = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -12637,8 +14381,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_delete_snapshot_req_body::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_delete_snapshot_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_delete_snapshot_req_body");
@@ -12652,45 +14395,41 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_delete_snapshot_req_body &a, node_delete_snapshot_req_body &b)
-    {
+    void swap(node_delete_snapshot_req_body &a, node_delete_snapshot_req_body &b) {
         using ::std::swap;
         swap(a.data, b.data);
     }
 
-    node_delete_snapshot_req_body::node_delete_snapshot_req_body(const node_delete_snapshot_req_body &other78)
-    {
-        data = other78.data;
+    node_delete_snapshot_req_body::node_delete_snapshot_req_body(const node_delete_snapshot_req_body& other532) {
+        data = other532.data;
     }
-    node_delete_snapshot_req_body &node_delete_snapshot_req_body::operator=(const node_delete_snapshot_req_body &other79)
-    {
-        data = other79.data;
+    node_delete_snapshot_req_body& node_delete_snapshot_req_body::operator=(const node_delete_snapshot_req_body& other533) {
+        data = other533.data;
         return *this;
     }
-    void node_delete_snapshot_req_body::printTo(std::ostream &out) const
-    {
+    void node_delete_snapshot_req_body::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_delete_snapshot_req_body(";
         out << "data=" << to_string(data);
         out << ")";
     }
 
-    node_delete_snapshot_req::~node_delete_snapshot_req() throw()
-    {
+
+    node_delete_snapshot_req::~node_delete_snapshot_req() throw() {
     }
 
-    void node_delete_snapshot_req::__set_body(const node_delete_snapshot_req_body &val)
-    {
+
+    void node_delete_snapshot_req::__set_body(const node_delete_snapshot_req_body& val) {
         this->body = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_delete_snapshot_req &obj)
+    std::ostream& operator<<(std::ostream& out, const node_delete_snapshot_req& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_delete_snapshot_req::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_delete_snapshot_req::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -12702,29 +14441,26 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRUCT)
-                {
-                    xfer += this->body.read(iprot);
-                    this->__isset.body = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -12734,8 +14470,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_delete_snapshot_req::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_delete_snapshot_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_delete_snapshot_req");
@@ -12749,48 +14484,44 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_delete_snapshot_req &a, node_delete_snapshot_req &b)
-    {
+    void swap(node_delete_snapshot_req &a, node_delete_snapshot_req &b) {
         using ::std::swap;
         swap(a.body, b.body);
         swap(a.__isset, b.__isset);
     }
 
-    node_delete_snapshot_req::node_delete_snapshot_req(const node_delete_snapshot_req &other80)
-    {
-        body = other80.body;
-        __isset = other80.__isset;
+    node_delete_snapshot_req::node_delete_snapshot_req(const node_delete_snapshot_req& other534) {
+        body = other534.body;
+        __isset = other534.__isset;
     }
-    node_delete_snapshot_req &node_delete_snapshot_req::operator=(const node_delete_snapshot_req &other81)
-    {
-        body = other81.body;
-        __isset = other81.__isset;
+    node_delete_snapshot_req& node_delete_snapshot_req::operator=(const node_delete_snapshot_req& other535) {
+        body = other535.body;
+        __isset = other535.__isset;
         return *this;
     }
-    void node_delete_snapshot_req::printTo(std::ostream &out) const
-    {
+    void node_delete_snapshot_req::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_delete_snapshot_req(";
         out << "body=" << to_string(body);
         out << ")";
     }
 
-    node_delete_snapshot_rsp_body::~node_delete_snapshot_rsp_body() throw()
-    {
+
+    node_delete_snapshot_rsp_body::~node_delete_snapshot_rsp_body() throw() {
     }
 
-    void node_delete_snapshot_rsp_body::__set_data(const std::string &val)
-    {
+
+    void node_delete_snapshot_rsp_body::__set_data(const std::string& val) {
         this->data = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_delete_snapshot_rsp_body &obj)
+    std::ostream& operator<<(std::ostream& out, const node_delete_snapshot_rsp_body& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_delete_snapshot_rsp_body::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_delete_snapshot_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -12807,26 +14538,22 @@ namespace dbc {
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRING)
-                {
-                    xfer += iprot->readString(this->data);
-                    isset_data = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data);
+                        isset_data = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -12838,8 +14565,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_delete_snapshot_rsp_body::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_delete_snapshot_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_delete_snapshot_rsp_body");
@@ -12853,45 +14579,41 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_delete_snapshot_rsp_body &a, node_delete_snapshot_rsp_body &b)
-    {
+    void swap(node_delete_snapshot_rsp_body &a, node_delete_snapshot_rsp_body &b) {
         using ::std::swap;
         swap(a.data, b.data);
     }
 
-    node_delete_snapshot_rsp_body::node_delete_snapshot_rsp_body(const node_delete_snapshot_rsp_body &other82)
-    {
-        data = other82.data;
+    node_delete_snapshot_rsp_body::node_delete_snapshot_rsp_body(const node_delete_snapshot_rsp_body& other536) {
+        data = other536.data;
     }
-    node_delete_snapshot_rsp_body &node_delete_snapshot_rsp_body::operator=(const node_delete_snapshot_rsp_body &other83)
-    {
-        data = other83.data;
+    node_delete_snapshot_rsp_body& node_delete_snapshot_rsp_body::operator=(const node_delete_snapshot_rsp_body& other537) {
+        data = other537.data;
         return *this;
     }
-    void node_delete_snapshot_rsp_body::printTo(std::ostream &out) const
-    {
+    void node_delete_snapshot_rsp_body::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_delete_snapshot_rsp_body(";
         out << "data=" << to_string(data);
         out << ")";
     }
 
-    node_delete_snapshot_rsp::~node_delete_snapshot_rsp() throw()
-    {
+
+    node_delete_snapshot_rsp::~node_delete_snapshot_rsp() throw() {
     }
 
-    void node_delete_snapshot_rsp::__set_body(const node_delete_snapshot_rsp_body &val)
-    {
+
+    void node_delete_snapshot_rsp::__set_body(const node_delete_snapshot_rsp_body& val) {
         this->body = val;
     }
-    std::ostream &operator<<(std::ostream &out, const node_delete_snapshot_rsp &obj)
+    std::ostream& operator<<(std::ostream& out, const node_delete_snapshot_rsp& obj)
     {
         obj.printTo(out);
         return out;
     }
 
-    uint32_t node_delete_snapshot_rsp::read(::apache::thrift::protocol::TProtocol *iprot)
-    {
+
+    uint32_t node_delete_snapshot_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
 
         ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
         uint32_t xfer = 0;
@@ -12903,29 +14625,26 @@ namespace dbc {
 
         using ::apache::thrift::protocol::TProtocolException;
 
+
         while (true)
         {
             xfer += iprot->readFieldBegin(fname, ftype, fid);
-            if (ftype == ::apache::thrift::protocol::T_STOP)
-            {
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
                 break;
             }
             switch (fid)
             {
-            case 1:
-                if (ftype == ::apache::thrift::protocol::T_STRUCT)
-                {
-                    xfer += this->body.read(iprot);
-                    this->__isset.body = true;
-                }
-                else
-                {
+                case 1:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->body.read(iprot);
+                        this->__isset.body = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
                     xfer += iprot->skip(ftype);
-                }
-                break;
-            default:
-                xfer += iprot->skip(ftype);
-                break;
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -12935,8 +14654,7 @@ namespace dbc {
         return xfer;
     }
 
-    uint32_t node_delete_snapshot_rsp::write(::apache::thrift::protocol::TProtocol *oprot) const
-    {
+    uint32_t node_delete_snapshot_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
         uint32_t xfer = 0;
         ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
         xfer += oprot->writeStructBegin("node_delete_snapshot_rsp");
@@ -12950,30 +14668,26 @@ namespace dbc {
         return xfer;
     }
 
-    void swap(node_delete_snapshot_rsp &a, node_delete_snapshot_rsp &b)
-    {
+    void swap(node_delete_snapshot_rsp &a, node_delete_snapshot_rsp &b) {
         using ::std::swap;
         swap(a.body, b.body);
         swap(a.__isset, b.__isset);
     }
 
-    node_delete_snapshot_rsp::node_delete_snapshot_rsp(const node_delete_snapshot_rsp &other84)
-    {
-        body = other84.body;
-        __isset = other84.__isset;
+    node_delete_snapshot_rsp::node_delete_snapshot_rsp(const node_delete_snapshot_rsp& other538) {
+        body = other538.body;
+        __isset = other538.__isset;
     }
-    node_delete_snapshot_rsp &node_delete_snapshot_rsp::operator=(const node_delete_snapshot_rsp &other85)
-    {
-        body = other85.body;
-        __isset = other85.__isset;
+    node_delete_snapshot_rsp& node_delete_snapshot_rsp::operator=(const node_delete_snapshot_rsp& other539) {
+        body = other539.body;
+        __isset = other539.__isset;
         return *this;
     }
-    void node_delete_snapshot_rsp::printTo(std::ostream &out) const
-    {
+    void node_delete_snapshot_rsp::printTo(std::ostream& out) const {
         using ::apache::thrift::to_string;
         out << "node_delete_snapshot_rsp(";
         out << "body=" << to_string(body);
         out << ")";
     }
-    
+
 } // namespace

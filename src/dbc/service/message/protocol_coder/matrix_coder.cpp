@@ -30,6 +30,15 @@ void matrix_coder::init_decode_invoker() {
 
     BIND_DECODE_INVOKER(peer_nodes_broadcast_req);
 
+    BIND_DECODE_INVOKER(node_list_images_req)
+    BIND_DECODE_INVOKER(node_list_images_rsp)
+
+    BIND_DECODE_INVOKER(node_download_image_req)
+    BIND_DECODE_INVOKER(node_download_image_rsp)
+
+    BIND_DECODE_INVOKER(node_upload_image_req)
+    BIND_DECODE_INVOKER(node_upload_image_rsp)
+
     BIND_DECODE_INVOKER(node_create_task_req);
     BIND_DECODE_INVOKER(node_create_task_rsp);
 
@@ -85,6 +94,15 @@ void matrix_coder::init_encode_invoker() {
     BIND_ENCODE_INVOKER(get_peer_nodes_resp);
 
     BIND_ENCODE_INVOKER(peer_nodes_broadcast_req);
+
+    BIND_ENCODE_INVOKER(node_list_images_req)
+    BIND_ENCODE_INVOKER(node_list_images_rsp)
+
+    BIND_ENCODE_INVOKER(node_download_image_req)
+    BIND_ENCODE_INVOKER(node_download_image_rsp)
+
+    BIND_ENCODE_INVOKER(node_upload_image_req)
+    BIND_ENCODE_INVOKER(node_upload_image_rsp)
 
     BIND_ENCODE_INVOKER(node_create_task_req);
     BIND_ENCODE_INVOKER(node_create_task_rsp);
