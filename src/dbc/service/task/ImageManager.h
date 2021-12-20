@@ -9,10 +9,14 @@ struct DownloadImageEvent {
 };
 
 struct UploadImageEvent {
+    std::string task_id;
     std::string image;
 };
 
-class ImageManager : Singleton<ImageManager> {
+class ImageDownloader;
+class ImageUploader;
+
+class ImageManager : public Singleton<ImageManager> {
 public:
     ImageManager();
 
@@ -23,9 +27,8 @@ public:
     void PushUploadEvent(const UploadImageEvent &ev);
 
 private:
-    std::list<DownloadImageEvent> m_download_events;
-    std::list<UploadImageEvent> m_upload_events;
+    ImageDownloader* m_downloader = nullptr;
+    ImageUploader* m_uploader = nullptr;
 };
-
 
 #endif
