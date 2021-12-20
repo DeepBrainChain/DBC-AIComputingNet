@@ -42,6 +42,9 @@ struct req_body {
 
     std::string task_id;
 
+    // images
+    std::string image_name;
+
     // task logs
     int16_t head_or_tail = GET_LOG_TAIL;
     int32_t number_of_lines = 100;
@@ -67,6 +70,42 @@ public:
     //////////////////////////////////////////////////////////////////////////
     // /
     void rest_client_version(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    // /images
+    void rest_images(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    // list image
+    void rest_list_images(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_list_images_req_msg(const std::string &head_session_id,
+                                                                           const req_body &body);
+
+    void on_node_list_images_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                 const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_list_images_timer(const std::shared_ptr<core_timer> &timer);
+
+    // download image
+    void rest_download_image(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_download_image_req_msg(const std::string &head_session_id,
+                                                                              const req_body &body);
+
+    void on_node_download_image_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                    const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_download_image_timer(const std::shared_ptr<core_timer> &timer);
+
+    // upload image
+    void rest_upload_image(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_upload_image_req_msg(const std::string &head_session_id,
+                                                                            const req_body &body);
+
+    void on_node_upload_image_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                  const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_upload_image_timer(const std::shared_ptr<core_timer> &timer);
 
     // /tasks
     void rest_task(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);

@@ -21,10 +21,12 @@ TaskManager::TaskManager() {
 
 TaskManager::~TaskManager() {
     this->stop();
+    delete m_imageMgr;
 }
 
 FResult TaskManager::init() {
     m_httpclient.connect_chain();
+    m_imageMgr = new ImageManager();
 
     if (!m_vm_client.Init()) {
         return {E_DEFAULT, "connect libvirt tcp service failed"};
@@ -1781,7 +1783,13 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
     getNeededBackingImage(taskinfo->image_name, diEvent.images);
     if (!diEvent.images.empty()) {
         diEvent.task_id = taskinfo->task_id;
-        ImageManager::instance().PushDownloadEvent(diEvent);
+        std::string _taskid = taskinfo->task_id;
+        ImageManager::instance().PushDownloadEvent(diEvent, [this, _taskid] () {
+            ETaskEvent ev;
+            ev.task_id = _taskid;
+            ev.op = T_OP_Create;
+            add_process_task(ev);
+        });
         return;
     }
 

@@ -22,7 +22,7 @@ public:
 
     virtual ~ImageManager();
 
-    void PushDownloadEvent(const DownloadImageEvent &ev);
+    void PushDownloadEvent(const DownloadImageEvent &ev, const std::function<void()>& after_callback = nullptr);
 
     void PushUploadEvent(const UploadImageEvent &ev);
 
@@ -30,5 +30,7 @@ private:
     ImageDownloader* m_downloader = nullptr;
     ImageUploader* m_uploader = nullptr;
 };
+
+typedef ImageManager ImageMgr;
 
 #endif

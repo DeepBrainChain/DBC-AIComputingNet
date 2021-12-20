@@ -1,16 +1,17 @@
 #include "ImageManager.h"
 #include "util/threadpool.h"
-
-struct ImageEvent {
-    std::string task_id;
-    std::string image;
-};
+#include "log/log.h"
 
 class ImageDownloader {
 public:
-    void add(const DownloadImageEvent &ev) {
+    ImageDownloader() {
+
+    }
+
+    void add(const DownloadImageEvent &ev, const std::function<void()>& after_callback) {
         m_taskid_total[ev.task_id] = ev.images.size();
         m_taskid_cur[ev.task_id] = 0;
+        m_taskid_after_callback[ev.task_id] = after_callback;
 
         struct timeval tv{};
         gettimeofday(&tv, 0);
@@ -25,13 +26,16 @@ public:
                 gettimeofday(&tv1, 0);
                 int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
 
-                std::string cmd = "cp /nfs_dbc_images/" + image + " /data";
+                std::string cmd = "cp /nfs_dbc_images/" + image + " /data/" + image + ".cache";
                 std::string ret = run_shell(cmd.c_str());
 
                 struct timeval tv2{};
                 gettimeofday(&tv2, 0);
                 int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-                std::cout << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms" << std::endl;
+                LOG_INFO << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms";
+
+                cmd = "mv /data/" + image + ".cache /data/" + image;
+                ret = run_shell(cmd.c_str());
 
                 m_taskid_cur[task_id]++;
                 if (m_taskid_cur[task_id] == m_taskid_total[task_id]) {
@@ -39,7 +43,18 @@ public:
                     gettimeofday(&tv, 0);
                     int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
                     int64_t msec = t - m_taskid_begin[task_id];
-                    std::cout << "download all file ok! use: " << msec << "ms" << std::endl;
+                    LOG_INFO << "download all file ok! use: " << msec << "ms";
+
+                    m_taskid_total.erase(task_id);
+                    m_taskid_cur.erase(task_id);
+                    m_taskid_begin.erase(task_id);
+                    auto it = m_taskid_after_callback.find(task_id);
+                    if (it != m_taskid_after_callback.end()) {
+                        if (it->second != nullptr) {
+                            it->second();
+                        }
+                    }
+                    m_taskid_after_callback.erase(task_id);
                 }
             });
         }
@@ -50,16 +65,62 @@ private:
     std::map<std::string, std::atomic<int>> m_taskid_total;
     std::map<std::string, std::atomic<int>> m_taskid_cur;
     std::map<std::string, int64_t> m_taskid_begin;
+    std::map<std::string, std::function<void()>> m_taskid_after_callback;
 };
 
 class ImageUploader {
 public:
-    void add(const UploadImageEvent &ev) {
+    ImageUploader() {
 
     }
 
+    void add(const UploadImageEvent &ev) {
+        m_taskid_total[ev.task_id] = 1;
+        m_taskid_cur[ev.task_id] = 0;
+
+        struct timeval tv{};
+        gettimeofday(&tv, 0);
+        int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+        m_taskid_begin[ev.task_id] = t;
+
+        std::string task_id = ev.task_id;
+        std::string image = ev.image;
+        m_threadpool.commit([this, task_id, image] () {
+            struct timeval tv1{};
+            gettimeofday(&tv1, 0);
+            int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
+
+            std::string cmd = "cp /data/" + image + " /nfs_dbc_images/" + image + ".cache";
+            std::string ret = run_shell(cmd.c_str());
+
+            struct timeval tv2{};
+            gettimeofday(&tv2, 0);
+            int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
+            LOG_INFO << "ret:" << ret << ", upload " << image << " ok! use: " << (t2 - t1) << "ms";
+
+            cmd = "mv /nfs_dbc_images/" + image + ".cache /nfs_dbc_images/" + image;
+            ret = run_shell(cmd.c_str());
+
+            m_taskid_cur[task_id]++;
+            if (m_taskid_cur[task_id] == m_taskid_total[task_id]) {
+                struct timeval tv{};
+                gettimeofday(&tv, 0);
+                int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+                int64_t msec = t - m_taskid_begin[task_id];
+                LOG_INFO << "upload all file ok! use: " << msec << "ms";
+
+                m_taskid_total.erase(task_id);
+                m_taskid_cur.erase(task_id);
+                m_taskid_begin.erase(task_id);
+            }
+        });
+    }
+
 private:
-    std::list<UploadImageEvent> m_upload_events;
+    threadpool m_threadpool{5};
+    std::map<std::string, std::atomic<int>> m_taskid_total;
+    std::map<std::string, std::atomic<int>> m_taskid_cur;
+    std::map<std::string, int64_t> m_taskid_begin;
 };
 
 ImageManager::ImageManager() {
@@ -72,9 +133,9 @@ ImageManager::~ImageManager() {
     delete m_uploader;
 }
 
-void ImageManager::PushDownloadEvent(const DownloadImageEvent &ev) {
+void ImageManager::PushDownloadEvent(const DownloadImageEvent &ev, const std::function<void()>& after_callback) {
     if (m_downloader != nullptr)
-        m_downloader->add(ev);
+        m_downloader->add(ev, after_callback);
 }
 
 void ImageManager::PushUploadEvent(const UploadImageEvent &ev) {

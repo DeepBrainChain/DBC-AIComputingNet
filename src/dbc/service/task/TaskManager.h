@@ -15,6 +15,7 @@
 #include "WalletRentTaskManager.h"
 #include "TaskResourceManager.h"
 #include "SnapshotManager.h"
+#include "ImageManager.h"
 
 namespace bp = boost::process;
 
@@ -170,6 +171,8 @@ protected:
 
     VmClient m_vm_client;
     HttpChainClient m_httpclient;
+
+    ImageManager *m_imageMgr = nullptr;
 };
 
 typedef TaskManager TaskMgr;
