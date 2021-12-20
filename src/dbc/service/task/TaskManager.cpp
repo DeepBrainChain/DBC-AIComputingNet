@@ -1695,6 +1695,19 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         return;
     }
 
+    //todo: 解析父快照，并发送给下载模块
+    // if (存在需要下载的快照)
+    // {
+    //    struct params {
+    //      task_id,
+    //      本地缺失的快照列表
+    //    }
+    //
+    //    ImageManager::instance().func(params);
+    //    return;
+    // }
+    //
+
     ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_CreateError;
