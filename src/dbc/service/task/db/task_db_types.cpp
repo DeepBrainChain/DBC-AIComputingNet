@@ -215,6 +215,16 @@ namespace dbc {
         this->data_file_name = val;
         __isset.data_file_name = true;
     }
+
+    void TaskInfo::__set_operation_system(const std::string& val) {
+        this->operation_system = val;
+        __isset.operation_system = true;
+    }
+
+    void TaskInfo::__set_bios_mode(const std::string& val) {
+        this->bios_mode = val;
+        __isset.bios_mode = true;
+    }
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj)
     {
         obj.printTo(out);
@@ -348,9 +358,25 @@ namespace dbc {
                                                                         xfer += iprot->skip(ftype);
                                                                     }
                                                                     break;
-                                                                    default:
-                                                                        xfer += iprot->skip(ftype);
+                                                                    case 14:
+                                                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                                            xfer += iprot->readString(this->operation_system);
+                                                                            this->__isset.operation_system = true;
+                                                                        } else {
+                                                                            xfer += iprot->skip(ftype);
+                                                                        }
                                                                         break;
+                                                                        case 15:
+                                                                            if (ftype == ::apache::thrift::protocol::T_STRING) {
+                                                                                xfer += iprot->readString(this->bios_mode);
+                                                                                this->__isset.bios_mode = true;
+                                                                            } else {
+                                                                                xfer += iprot->skip(ftype);
+                                                                            }
+                                                                            break;
+                                                                            default:
+                                                                                xfer += iprot->skip(ftype);
+                                                                                break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -430,6 +456,16 @@ namespace dbc {
             xfer += oprot->writeString(this->data_file_name);
             xfer += oprot->writeFieldEnd();
         }
+        if (this->__isset.operation_system) {
+            xfer += oprot->writeFieldBegin("operation_system", ::apache::thrift::protocol::T_STRING, 14);
+            xfer += oprot->writeString(this->operation_system);
+            xfer += oprot->writeFieldEnd();
+        }
+        if (this->__isset.bios_mode) {
+            xfer += oprot->writeFieldBegin("bios_mode", ::apache::thrift::protocol::T_STRING, 15);
+            xfer += oprot->writeString(this->bios_mode);
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -450,6 +486,8 @@ namespace dbc {
         swap(a.vm_xml, b.vm_xml);
         swap(a.vm_xml_url, b.vm_xml_url);
         swap(a.data_file_name, b.data_file_name);
+        swap(a.operation_system, b.operation_system);
+        swap(a.bios_mode, b.bios_mode);
         swap(a.__isset, b.__isset);
     }
 
@@ -467,6 +505,8 @@ namespace dbc {
         vm_xml = other2.vm_xml;
         vm_xml_url = other2.vm_xml_url;
         data_file_name = other2.data_file_name;
+        operation_system = other2.operation_system;
+        bios_mode = other2.bios_mode;
         __isset = other2.__isset;
     }
     TaskInfo& TaskInfo::operator=(const TaskInfo& other3) {
@@ -483,6 +523,8 @@ namespace dbc {
         vm_xml = other3.vm_xml;
         vm_xml_url = other3.vm_xml_url;
         data_file_name = other3.data_file_name;
+        operation_system = other3.operation_system;
+        bios_mode = other3.bios_mode;
         __isset = other3.__isset;
         return *this;
     }
@@ -502,6 +544,8 @@ namespace dbc {
         out << ", " << "vm_xml="; (__isset.vm_xml ? (out << to_string(vm_xml)) : (out << "<null>"));
         out << ", " << "vm_xml_url="; (__isset.vm_xml_url ? (out << to_string(vm_xml_url)) : (out << "<null>"));
         out << ", " << "data_file_name="; (__isset.data_file_name ? (out << to_string(data_file_name)) : (out << "<null>"));
+        out << ", " << "operation_system="; (__isset.operation_system ? (out << to_string(operation_system)) : (out << "<null>"));
+        out << ", " << "bios_mode="; (__isset.bios_mode ? (out << to_string(bios_mode)) : (out << "<null>"));
         out << ")";
     }
 

@@ -27,7 +27,7 @@ public:
     bool Init();
 
     int32_t CreateDomain(const std::string& domain_name, const std::string& image, const std::string& data_file,
-                         const std::shared_ptr<TaskResource>& task_resource);
+                         const std::shared_ptr<TaskResource>& task_resource, bool is_windows = false, bool uefi = false);
 
     int32_t StartDomain(const std::string& domain_name);
 
@@ -62,6 +62,8 @@ public:
     bool IsExistDomain(const std::string& domain_name);
 
     bool ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks);
+
+    int32_t IsDomainHasNvram(const std::string& domain_name);
 
     // snapshot
     FResult CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info);
