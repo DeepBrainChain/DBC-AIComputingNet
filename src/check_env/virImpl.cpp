@@ -107,6 +107,18 @@ int32_t virDomainImpl::resetDomain() {
 
 int32_t virDomainImpl::undefineDomain() {
     if (!domain_) return -1;
+    int32_t snaps = getSnapshotNums(1 << 10);
+    int32_t has_nvram = hasNvram();
+    unsigned int flags = 0;
+    if (snaps > 0) {
+        flags |= VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA;
+    }
+    if (has_nvram > 0) {
+        flags |= VIR_DOMAIN_UNDEFINE_NVRAM;
+    }
+    if (flags > 0) {
+        return virDomainUndefineFlags(domain_.get(), flags);
+    }
     return virDomainUndefine(domain_.get());
 }
 
@@ -131,6 +143,31 @@ int32_t virDomainImpl::deleteDomain() {
         }
     }
     return 0;
+}
+
+int32_t virDomainImpl::hasNvram() {
+    int32_t ret = -1;
+    if (!domain_) return ret;
+    char* pContent = virDomainGetXMLDesc(domain_.get(), 0);
+    if (!pContent) return ret;
+    do {
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) break;
+        tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement* os_node = root->FirstChildElement("os");
+        if (os_node) {
+            tinyxml2::XMLElement* os_nvram_node = os_node->FirstChildElement("nvram");
+            if (os_nvram_node && os_nvram_node->GetText() != NULL) {
+                ret = 1;
+                break;
+            }
+        }
+        ret = 0;
+    } while(0);
+
+    free(pContent);
+    return ret;
 }
 
 int32_t virDomainImpl::getDomainDisks(std::vector<std::string> &disks) {
@@ -198,6 +235,11 @@ cleanup:
 int32_t virDomainImpl::setDomainUserPassword(const char *user, const char *password) {
     if (!domain_) return -1;
     return virDomainSetUserPassword(domain_.get(), user, password, 0);
+}
+
+int32_t virDomainImpl::getSnapshotNums(unsigned int flags) {
+    if (!domain_) return -1;
+    return virDomainSnapshotNum(domain_.get(), flags);
 }
 
 /////////////////////////////////////////////////////////////////////////////////

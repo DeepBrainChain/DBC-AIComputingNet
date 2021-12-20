@@ -33,11 +33,15 @@ public:
 
     int32_t deleteDomain();
 
+    int32_t hasNvram();
+
     int32_t getDomainDisks(std::vector<std::string> &disks);
 
     int32_t getDomainInterfaceAddress(std::string &local_ip);
 
     int32_t setDomainUserPassword(const char *user, const char *password);
+
+    int32_t getSnapshotNums(unsigned int flags);
 
 protected:
     std::shared_ptr<virDomain> domain_;
