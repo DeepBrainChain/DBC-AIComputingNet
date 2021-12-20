@@ -127,6 +127,10 @@ protected:
 
     FResult check_disk(const std::map<int32_t, uint64_t>& disks);
 
+    FResult check_operation_system(const std::string& os);
+
+    FResult check_bios_mode(const std::string& bios_mode);
+
     FResult parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info);
 
     void process_task_thread_func();

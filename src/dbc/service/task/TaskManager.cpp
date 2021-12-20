@@ -348,9 +348,14 @@ void TaskManager::shell_remove_reject_iptable_from_system() {
 }
 
 void TaskManager::delete_task(const std::string &task_id) {
+    unsigned int undefineFlags = 0;
     int32_t snapshotCount = SnapshotManager::instance().getTaskSnapshotCount(task_id);
+    int32_t hasNvram = m_vm_client.IsDomainHasNvram(task_id);
+    if (snapshotCount > 0) undefineFlags |= VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA;
+    if (hasNvram > 0) undefineFlags |= VIR_DOMAIN_UNDEFINE_NVRAM;
+
     // domain
-    m_vm_client.DestroyAndUndefineDomain(task_id, snapshotCount > 0 ? VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA : 0);
+    m_vm_client.DestroyAndUndefineDomain(task_id, undefineFlags);
 
     // data
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -520,6 +525,8 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     taskinfo->__set_vm_xml(createparams.vm_xml);
     taskinfo->__set_vm_xml_url(createparams.vm_xml_url);
     taskinfo->__set_status(TS_Creating);
+    taskinfo->__set_operation_system(createparams.operation_system);
+    taskinfo->__set_bios_mode(createparams.bios_mode);
     TaskInfoMgr::instance().addTaskInfo(taskinfo);
 
     std::shared_ptr<TaskResource> task_resource = std::make_shared<TaskResource>();
@@ -557,7 +564,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
 
     std::string image_name, s_ssh_port, s_gpu_count, s_cpu_cores, s_mem_size,
-            s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name;
+            s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name, operation_system, bios_mode;
     JSON_PARSE_STRING(doc, "image_name", image_name)
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)
     JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
@@ -568,6 +575,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "vm_xml_url", vm_xml_url)
     JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port)
     JSON_PARSE_STRING(doc, "data_file_name", data_file_name)
+    JSON_PARSE_STRING(doc, "operation_system", operation_system)
+    JSON_PARSE_STRING(doc, "bios_mode", bios_mode)
 
     // ssh_port
     if (!util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
@@ -582,6 +591,14 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     int vnc_port = atoi(s_vnc_port.c_str());
     if (!util::is_digits(s_vnc_port) || vnc_port < 5900 || vnc_port > 6000) {
         return {E_DEFAULT, "vnc port out of range, it should be between 5900 and 6000"};
+    }
+
+    if (operation_system.empty()) {
+        operation_system = "generic";
+    }
+
+    if (bios_mode.empty()) {
+        bios_mode = "legacy";
     }
 
     std::string login_password = genpwd();
@@ -690,6 +707,17 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             LOG_ERROR << "allocate disk failed";
             return {E_DEFAULT, "allocate disk failed"};
         }
+
+        // check operation system
+        FResult fret = check_operation_system(operation_system);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
+        // check bios mode
+        fret = check_bios_mode(bios_mode);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
     }
     else {
         if (role != USER_ROLE::UR_RENTER_WALLET && role != USER_ROLE::UR_RENTER_SESSION_ID) {
@@ -769,6 +797,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         disks = xml_params.disks;
         vnc_port = xml_params.vnc_port;
         vnc_password = xml_params.vnc_password;
+        operation_system = xml_params.operation_system;
+        bios_mode = xml_params.bios_mode;
 
         // check
         // image
@@ -795,6 +825,16 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (std::get<0>(fret) != E_SUCCESS) {
             return fret;
         }
+        // check operation system
+        fret = check_operation_system(operation_system);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
+        // check bios mode
+        fret = check_bios_mode(bios_mode);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
     }
 
     // params
@@ -813,6 +853,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.vm_xml_url = vm_xml_url;
     params.vnc_port = vnc_port;
     params.vnc_password = vnc_password;
+    params.operation_system = operation_system;
+    params.bios_mode = bios_mode;
 
     return {E_SUCCESS, "ok"};
 }
@@ -901,12 +943,32 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
     tinyxml2::XMLElement* el_name = root->FirstChildElement("name");
     params.task_id = el_name->GetText();
 
+    // os
+    tinyxml2::XMLElement* el_os = root->FirstChildElement("os");
+    if (el_os) {
+        tinyxml2::XMLElement* el_os_loader = el_os->FirstChildElement("loader");
+        if (el_os_loader) {
+            std::string boot_loader = el_os_loader->GetText();
+            if (boot_loader.find("/usr/share/OVMF/OVMF") != std::string::npos) {
+                params.bios_mode = "uefi";
+            }
+        }
+    }
+    if (params.bios_mode.empty()) {
+        params.bios_mode = "legacy";
+    }
+
     // image_name
     tinyxml2::XMLElement* el_devices = root->FirstChildElement("devices");
     tinyxml2::XMLElement* el_disk_system = el_devices->FirstChildElement("disk"); //认为第一块disk为系统盘
     tinyxml2::XMLElement* el_source = el_disk_system->FirstChildElement("source");
     std::string image_file = el_source->Attribute("file");
     params.image_name = util::GetFileNameFromPath(image_file);
+    if (params.image_name.find("win") != std::string::npos) {
+        params.operation_system = "windows";
+    } else {
+        params.operation_system = "generic";
+    }
 
     // disk_file_name
     el_disk_system = el_disk_system->NextSiblingElement("disk"); //认为第二块disk为数据盘
@@ -1089,6 +1151,21 @@ FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
         return {E_DEFAULT, "no enough disk, can available size: " + std::to_string(disk_available)};
     else
         return FResultOK;
+}
+
+FResult TaskManager::check_operation_system(const std::string& os) {
+    if (os.empty()) return FResultOK;
+    if (os == "generic") return FResultOK;
+    if (os.find("ubuntu") != std::string::npos) return FResultOK;
+    if (os.find("win") != std::string::npos) return FResultOK;
+    return {E_DEFAULT, "unsupported operation system"};
+}
+
+FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
+    if (bios_mode.empty()) return FResultOK;
+    if (bios_mode == "legacy") return FResultOK;
+    if (bios_mode == "uefi") return FResultOK;
+    return {E_DEFAULT, "bios mode only supported [legacy] or [uefi]"};
 }
 
 FResult TaskManager::parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info) {
@@ -1695,7 +1772,9 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         return;
     }
 
-    ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource);
+    ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource,
+                                                 taskinfo->operation_system.find("win") != std::string::npos,
+                                                 taskinfo->bios_mode == "uefi");
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_CreateError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -1703,7 +1782,8 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
     } else {
         std::string local_ip = m_vm_client.GetDomainLocalIP(taskinfo->task_id);
         if (!local_ip.empty()) {
-            if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id, g_vm_login_username, taskinfo->login_password)) {
+            if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id,
+                taskinfo->operation_system.find("win") == std::string::npos ? g_vm_login_username : "admin", taskinfo->login_password)) {
                 m_vm_client.DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
