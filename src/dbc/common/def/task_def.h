@@ -82,7 +82,8 @@ static const int32_t g_reserved_memory = 32;
 // cpu预留核数（每个物理cpu的物理核数）
 static const int32_t g_reserved_physical_cores_per_cpu = 1;
 // 虚拟机登录用户名
-static const char* g_vm_login_username = "dbc";
+static const char* g_vm_ubuntu_login_username = "dbc";
+static const char* g_vm_windows_login_username = "Administrator";
 
 
 enum MACHINE_STATUS {

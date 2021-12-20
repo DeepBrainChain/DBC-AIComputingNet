@@ -13,6 +13,7 @@
 #include "util/system_info.h"
 #include "config/conf_manager.h"
 #include "tinyxml2.h"
+#include "ImageManager.h"
 
 TaskManager::TaskManager() {
 
@@ -1286,9 +1287,12 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
         return {E_DEFAULT, "disks is empty"};
     }
     info->__set_disks(disks);
-    for (const auto& disk : info->disks) {
+    for (auto& disk : info->disks) {
         LOG_INFO << "parse additional disk name:" << disk.name << ", driver type:" << disk.driver_type
                  << ", snapshot type:" << disk.snapshot << ", source file:" << disk.source_file;
+        if (disk.snapshot == "external" && disk.source_file.empty()) {
+            disk.source_file = "/data/" + task_id + "_" + snapshot_name + "_" + disk.name + ".qcow2";
+        }
     }
 
     return FResultOK;
@@ -1772,18 +1776,14 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         return;
     }
 
-    //todo: 解析父快照，并发送给下载模块
-    // if (存在需要下载的快照)
-    // {
-    //    struct params {
-    //      task_id,
-    //      本地缺失的快照列表
-    //    }
-    //
-    //    ImageManager::instance().func(params);
-    //    return;
-    // }
-    //
+    // todo: 解析父快照，并发送给下载模块
+    DownloadImageEvent diEvent;
+    getNeededBackingImage(taskinfo->image_name, diEvent.images);
+    if (!diEvent.images.empty()) {
+        diEvent.task_id = taskinfo->task_id;
+        ImageManager::instance().PushDownloadEvent(diEvent);
+        return;
+    }
 
     ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource,
                                                  taskinfo->operation_system.find("win") != std::string::npos,
@@ -1796,7 +1796,8 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         std::string local_ip = m_vm_client.GetDomainLocalIP(taskinfo->task_id);
         if (!local_ip.empty()) {
             if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id,
-                taskinfo->operation_system.find("win") == std::string::npos ? g_vm_login_username : "admin", taskinfo->login_password)) {
+                    taskinfo->operation_system.find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
+                    taskinfo->login_password)) {
                 m_vm_client.DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
@@ -1847,6 +1848,20 @@ bool TaskManager::create_task_iptable(const std::string &domain_name, const std:
     } else {
         TASK_LOG_ERROR(domain_name, "transform ssh_port failed, ip or port is empty, " << public_ip << ":" << transform_port);
         return false;
+    }
+}
+
+void TaskManager::getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images) {
+    std::string cur_image = "/data/" + image_name;
+    while (cur_image.find("/data/") != std::string::npos) {
+        boost::system::error_code error_code;
+        if (!boost::filesystem::exists(cur_image, error_code) || error_code) {
+            backing_images.push_back(cur_image);
+            break;
+        }
+
+        std::string cmd_get_backing_file = "qemu-img info " + cur_image + " | grep -i 'backing file' | awk -F ': ' '{print $2}'";
+        cur_image = run_shell(cmd_get_backing_file);
     }
 }
 

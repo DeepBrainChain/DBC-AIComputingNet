@@ -143,6 +143,8 @@ protected:
 
     bool create_task_iptable(const std::string &domain_name, const std::string &transform_port, const std::string &vm_local_ip);
 
+    static void getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images);
+
     void process_start(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
     void process_stop(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
