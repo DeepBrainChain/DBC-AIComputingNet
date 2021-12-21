@@ -66,6 +66,26 @@ FResult TaskManager::init() {
     return {E_SUCCESS, ""};
 }
 
+FResult TaskManager::listImages(const std::string& wallet, std::vector<std::string> &images) {
+    return ImageManager::instance().ListAllImages(images);
+}
+
+FResult TaskManager::downloadImage(const std::string& wallet, const std::string &image_name) {
+    DownloadImageEvent diEvent;
+    diEvent.task_id = util::create_task_id();
+    diEvent.images.push_back(image_name);
+    ImageManager::instance().PushDownloadEvent(diEvent, nullptr);
+    return FResultOK;
+}
+
+FResult TaskManager::uploadImage(const std::string& wallet, const std::string &image_name) {
+    UploadImageEvent uiEvent;
+    uiEvent.task_id = util::create_task_id();
+    uiEvent.image = image_name;
+    ImageManager::instance().PushUploadEvent(uiEvent);
+    return FResultOK;
+}
+
 bool TaskManager::restore_tasks() {
     std::string cur_renter_wallet;
     int64_t cur_rent_end = 0;
@@ -1864,7 +1884,8 @@ void TaskManager::getNeededBackingImage(const std::string &image_name, std::vect
     while (cur_image.find("/data/") != std::string::npos) {
         boost::system::error_code error_code;
         if (!boost::filesystem::exists(cur_image, error_code) || error_code) {
-            backing_images.push_back(cur_image);
+            boost::filesystem::path full_path(cur_image);
+            backing_images.push_back(full_path.filename().string());
             break;
         }
 

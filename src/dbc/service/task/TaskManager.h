@@ -31,6 +31,12 @@ public:
 
     void stop();
 
+    FResult listImages(const std::string& wallet, std::vector<std::string> &images);
+
+    FResult downloadImage(const std::string& wallet, const std::string &image_name);
+
+    FResult uploadImage(const std::string& wallet, const std::string &image_name);
+
     FResult createTask(const std::string& wallet, const std::string &additional,
                        int64_t rent_end, USER_ROLE role, std::string& task_id);
 

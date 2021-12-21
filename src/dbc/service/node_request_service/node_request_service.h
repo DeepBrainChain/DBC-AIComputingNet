@@ -59,6 +59,18 @@ protected:
 
     void init_subscription() override;
 
+    void on_node_list_images_req(const std::shared_ptr<dbc::network::message> &msg);
+
+    void list_images(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data);
+
+    void on_node_download_image_req(const std::shared_ptr<dbc::network::message> &msg);
+
+    void download_image(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_download_image_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_upload_image_req(const std::shared_ptr<dbc::network::message> &msg);
+
+    void upload_image(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_upload_image_req_data>& data, const AuthoriseResult& result);
+
     void on_node_query_node_info_req(const std::shared_ptr<dbc::network::message> &msg);
 
     void query_node_info(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);

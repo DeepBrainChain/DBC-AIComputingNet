@@ -133,6 +133,29 @@ ImageManager::~ImageManager() {
     delete m_uploader;
 }
 
+FResult ImageManager::ListAllImages(std::vector<std::string> images) {
+    try {
+        boost::filesystem::path imageFolder = "/nfs_dbc_images";
+        boost::filesystem::directory_iterator iterend;
+        for (boost::filesystem::directory_iterator iter(imageFolder); iter != iterend; iter++) {
+            if (boost::filesystem::is_regular_file(iter->path()) && iter->path().extension() == ".qcow2") {
+                images.push_back(iter->path().string());
+            }
+        }
+        return {E_SUCCESS, "ok"};
+    }
+    catch (const std::exception & e) {
+        return {E_DEFAULT, std::string("list images file error: ").append(e.what())};
+    }
+    catch (const boost::exception & e) {
+        return {E_DEFAULT, "list images file error: " + diagnostic_information(e)};
+    }
+    catch (...) {
+        return {E_DEFAULT, "unknowned list images error"};
+    }
+    return {E_DEFAULT, "list images error"};
+}
+
 void ImageManager::PushDownloadEvent(const DownloadImageEvent &ev, const std::function<void()>& after_callback) {
     if (m_downloader != nullptr)
         m_downloader->add(ev, after_callback);

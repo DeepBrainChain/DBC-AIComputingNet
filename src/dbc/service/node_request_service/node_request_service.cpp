@@ -149,6 +149,9 @@ void node_request_service::init_timer() {
 
 void node_request_service::init_invoker() {
     invoker_type invoker;
+    BIND_MESSAGE_INVOKER(NODE_LIST_IMAGES_REQ, &node_request_service::on_node_list_images_req);
+    BIND_MESSAGE_INVOKER(NODE_DOWNLOAD_IMAGE_REQ, &node_request_service::on_node_download_image_req);
+    BIND_MESSAGE_INVOKER(NODE_UPLOAD_IMAGE_REQ, &node_request_service::on_node_upload_image_req);
     BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req)
     BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req)
     BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req)
@@ -166,6 +169,9 @@ void node_request_service::init_invoker() {
 }
 
 void node_request_service::init_subscription() {
+    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_IMAGES_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_DOWNLOAD_IMAGE_REQ);
+    SUBSCRIBE_BUS_MESSAGE(NODE_UPLOAD_IMAGE_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
     SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
@@ -556,6 +562,312 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
     else {
         result.success = false;
         result.errmsg = "unknowned machine status";
+    }
+}
+
+
+void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::network::message> &msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_images_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_list_images_req_data> data = std::make_shared<dbc::node_list_images_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        list_images(node_req_msg->header, data);
+    } else {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::list_images(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data) {
+    int ret_code = E_SUCCESS;
+    std::string ret_msg = "ok";
+
+    std::vector<std::string> images;
+    auto fresult = m_task_scheduler.listImages("", images);
+    ret_code = std::get<0>(fresult);
+    ret_msg = std::get<1>(fresult);
+
+    std::stringstream ss;
+    if (ret_code == E_SUCCESS) {
+        ss << "{";
+        ss << "\"errcode\":" << ret_code;
+        ss << ", \"message\":" << "[";
+        int index = 0;
+        for (const auto & image : images) {
+            if (index > 0) {
+                ss << ",";
+            }
+            ss << "\"" << image << "\"";
+            ++index;
+        }
+        ss << "]";
+        ss << "}";
+    } else {
+        ss << "{";
+        ss << "\"errcode\":" << ret_code;
+        ss << ", \"message\":" << "\"" << ret_msg << "\"";
+        ss << "}";
+    }
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = conf_manager::instance().get_priv_key();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::node_list_images_rsp>(NODE_LIST_IMAGES_RSP, header, s_data);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+            send_response_error<dbc::node_list_images_rsp>(NODE_LIST_IMAGES_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+        }
+    } else {
+        LOG_ERROR << "request no pub_key";
+        send_response_error<dbc::node_list_images_rsp>(NODE_LIST_IMAGES_RSP, header, E_DEFAULT, "request no pub_key");
+    }
+}
+
+
+void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc::network::message> &msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_download_image_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_download_image_req_data> data = std::make_shared<dbc::node_download_image_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        AuthoriseResult result;
+        check_authority(params, result);
+        if (!result.success) {
+            LOG_ERROR << "check authority failed: " << result.errmsg;
+            send_response_error<dbc::node_download_image_rsp>(NODE_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+            return;
+        }
+
+        download_image(node_req_msg->header, data, result);
+    } else {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::download_image(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_download_image_req_data>& data, const AuthoriseResult& result) {
+    int ret_code = E_SUCCESS;
+    std::string ret_msg = "ok";
+
+    auto fresult = m_task_scheduler.downloadImage(result.rent_wallet, data->image);
+    ret_code = std::get<0>(fresult);
+    ret_msg = std::get<1>(fresult);
+
+    if (ret_code == E_SUCCESS) {
+        send_response_ok<dbc::node_download_image_rsp>(NODE_DOWNLOAD_IMAGE_RSP, header);
+    } else {
+        send_response_error<dbc::node_download_image_rsp>(NODE_DOWNLOAD_IMAGE_RSP, header, ret_code, ret_msg);
+    }
+}
+
+
+void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::network::message> &msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_upload_image_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (!m_is_computing_node) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = conf_manager::instance().get_priv_key();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_upload_image_req_data> data = std::make_shared<dbc::node_upload_image_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        dbc::network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    if (hit_self) {
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        AuthoriseResult result;
+        check_authority(params, result);
+        if (!result.success) {
+            LOG_ERROR << "check authority failed: " << result.errmsg;
+            send_response_error<dbc::node_upload_image_rsp>(NODE_UPLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+            return;
+        }
+
+        upload_image(node_req_msg->header, data, result);
+    } else {
+        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::upload_image(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_upload_image_req_data>& data, const AuthoriseResult& result) {
+    int ret_code = E_SUCCESS;
+    std::string ret_msg = "ok";
+
+    auto fresult = m_task_scheduler.uploadImage(result.rent_wallet, data->image);
+    ret_code = std::get<0>(fresult);
+    ret_msg = std::get<1>(fresult);
+
+    if (ret_code == E_SUCCESS) {
+        send_response_ok<dbc::node_upload_image_rsp>(NODE_UPLOAD_IMAGE_RSP, header);
+    } else {
+        send_response_error<dbc::node_upload_image_rsp>(NODE_UPLOAD_IMAGE_RSP, header, ret_code, ret_msg);
     }
 }
 
