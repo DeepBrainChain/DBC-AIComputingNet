@@ -633,20 +633,11 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     if (vm_xml.empty() && vm_xml_url.empty()) {
         // image
-        if (image_name.empty() || image_name.substr(image_name.size() - 5) != "qcow2") {
-            return {E_DEFAULT, "image_name is empty or image_name is invalid"};
+        FResult fret = check_image(image_name);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
         }
-
-        boost::filesystem::path image_path("/data/" + image_name);
-        boost::system::error_code error_code;
-        if (!boost::filesystem::exists(image_path, error_code) || error_code) {
-            return {E_DEFAULT, "image does not exist"};
-        }
-
-        if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
-            return {E_DEFAULT, "image is not a regular file"};
-        }
-
+        
         // data disk file name
         if (!data_file_name.empty()) {
             boost::filesystem::path data_path("/data/" + data_file_name);
@@ -730,7 +721,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         }
 
         // check operation system
-        FResult fret = check_operation_system(operation_system);
+        fret = check_operation_system(operation_system);
         if (std::get<0>(fret) != E_SUCCESS) {
             return fret;
         }
@@ -1090,12 +1081,20 @@ FResult TaskManager::check_image(const std::string &image_name) {
         return {E_DEFAULT, "image_name is empty or image_name is invalid"};
     }
 
+    boost::system::error_code error_code;
     boost::filesystem::path image_path("/data/" + image_name);
-    if (!boost::filesystem::exists(image_path)) {
-        return {E_DEFAULT, "image not exist"};
+    if (!boost::filesystem::exists(image_path, error_code) || error_code) {
+        std::vector<std::string> images;
+        ImageManager::instance().ListAllImages(images);
+        auto iter = std::find(images.begin(), images.end(), image_name);
+        if (iter != images.end()) {
+            image_path = "/nfs_dbc_images/" + image_name;
+        } else {
+            return {E_DEFAULT, "image not exist"};
+        }
     }
 
-    if (!boost::filesystem::is_regular_file(image_path)) {
+    if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
         return {E_DEFAULT, "image is not a regular file"};
     }
 
@@ -1802,6 +1801,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
     if (!diEvent.images.empty()) {
         diEvent.task_id = taskinfo->task_id;
         std::string _taskid = taskinfo->task_id;
+        LOG_INFO << "need download image: " << diEvent.images[0];
         ImageManager::instance().PushDownloadEvent(diEvent, [this, _taskid] () {
             ETaskEvent ev;
             ev.task_id = _taskid;

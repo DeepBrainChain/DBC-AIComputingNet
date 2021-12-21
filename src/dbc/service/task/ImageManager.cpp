@@ -27,6 +27,7 @@ public:
                 int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
 
                 std::string cmd = "cp /nfs_dbc_images/" + image + " /data/" + image + ".cache";
+                LOG_INFO << "begin download, cmd: " << cmd;
                 std::string ret = run_shell(cmd.c_str());
 
                 struct timeval tv2{};
