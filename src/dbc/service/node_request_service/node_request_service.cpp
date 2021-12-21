@@ -521,8 +521,8 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                     result.rent_end = rent_end;
 
                     std::vector<std::string> vec;
-                    for (auto& it : params.multisig_signs) {
-                        vec.push_back(it.wallet);
+                    for (auto& it : params.multisig_wallets) {
+                        vec.push_back(it);
                     }
                     m_task_scheduler.createSessionId(strMultisigWallet, vec);
                 } else {
