@@ -21,12 +21,10 @@ TaskManager::TaskManager() {
 
 TaskManager::~TaskManager() {
     this->stop();
-    delete m_imageMgr;
 }
 
 FResult TaskManager::init() {
     m_httpclient.connect_chain();
-    m_imageMgr = new ImageManager();
 
     if (!m_vm_client.Init()) {
         return {E_DEFAULT, "connect libvirt tcp service failed"};

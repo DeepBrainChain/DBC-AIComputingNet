@@ -22,7 +22,7 @@ public:
 
     virtual ~ImageManager();
 
-    FResult ListAllImages(std::vector<std::string> images);
+    FResult ListAllImages(std::vector<std::string> &images);
 
     void PushDownloadEvent(const DownloadImageEvent &ev, const std::function<void()>& after_callback = nullptr);
 

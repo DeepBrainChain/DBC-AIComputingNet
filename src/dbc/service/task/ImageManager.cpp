@@ -133,13 +133,13 @@ ImageManager::~ImageManager() {
     delete m_uploader;
 }
 
-FResult ImageManager::ListAllImages(std::vector<std::string> images) {
+FResult ImageManager::ListAllImages(std::vector<std::string> &images) {
     try {
         boost::filesystem::path imageFolder = "/nfs_dbc_images";
         boost::filesystem::directory_iterator iterend;
         for (boost::filesystem::directory_iterator iter(imageFolder); iter != iterend; iter++) {
-            if (boost::filesystem::is_regular_file(iter->path()) && iter->path().extension() == ".qcow2") {
-                images.push_back(iter->path().string());
+            if (boost::filesystem::is_regular_file(iter->path()) && iter->path().extension().string() == ".qcow2") {
+                images.push_back(iter->path().filename().string());
             }
         }
         return {E_SUCCESS, "ok"};
