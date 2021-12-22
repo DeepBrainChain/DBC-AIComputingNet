@@ -417,9 +417,9 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
     if (std::get<0>(ret2) == E_SUCCESS) {
         std::string accounts;
-        for (int i = 0; i < params.multisig_signs.size(); i++) {
+        for (int i = 0; i < params.multisig_wallets.size(); i++) {
             if (i > 0) accounts += ",";
-            accounts += params.multisig_signs[i].wallet;
+            accounts += params.multisig_wallets[i];
         }
         substrate_MultisigAccountID* p = create_multisig_account(accounts.c_str(), params.multisig_threshold);
         if (p != nullptr) {
