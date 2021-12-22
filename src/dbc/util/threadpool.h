@@ -53,7 +53,7 @@ public:
 
         std::future<RetType> future = task->get_future();
         {
-            std::lock_guard<std::mutex> lock(m_lock);
+            std::unique_lock<std::mutex> lock(m_lock);
             m_threadtasks.emplace([task](){
                 (*task)();
             });
@@ -77,7 +77,7 @@ public:
                         });
 
                         if (!m_run || m_threadtasks.empty())
-                            return;
+                            break;
 
                         threadtask = move(m_threadtasks.front());
                         m_threadtasks.pop();

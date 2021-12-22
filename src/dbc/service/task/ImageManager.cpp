@@ -8,7 +8,15 @@ public:
 
     }
 
+    ~ImageDownloader() {
+        delete m_threadpool;
+    }
+
     void add(const DownloadImageEvent &ev, const std::function<void()>& after_callback) {
+        if (m_threadpool == nullptr) {
+            m_threadpool = new threadpool(10);
+        }
+
         m_taskid_total[ev.task_id] = ev.images.size();
         m_taskid_cur[ev.task_id] = 0;
         m_taskid_after_callback[ev.task_id] = after_callback;
@@ -21,19 +29,19 @@ public:
         for (auto& it : ev.images) {
             std::string task_id = ev.task_id;
             std::string image = it;
-            m_threadpool.commit([this, task_id, image] () {
+            m_threadpool->commit([this, task_id, image] () {
                 struct timeval tv1{};
                 gettimeofday(&tv1, 0);
                 int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
 
                 std::string cmd = "cp /nfs_dbc_images/" + image + " /data/" + image + ".cache";
-                LOG_INFO << "begin download, cmd: " << cmd;
+                //LOG_INFO << "begin download, cmd: " << cmd;
                 std::string ret = run_shell(cmd.c_str());
 
                 struct timeval tv2{};
                 gettimeofday(&tv2, 0);
                 int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-                LOG_INFO << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms";
+                //LOG_INFO << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms";
 
                 cmd = "mv /data/" + image + ".cache /data/" + image;
                 ret = run_shell(cmd.c_str());
@@ -44,7 +52,7 @@ public:
                     gettimeofday(&tv, 0);
                     int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
                     int64_t msec = t - m_taskid_begin[task_id];
-                    LOG_INFO << "download all file ok! use: " << msec << "ms";
+                    //LOG_INFO << "download all file ok! use: " << msec << "ms";
 
                     m_taskid_total.erase(task_id);
                     m_taskid_cur.erase(task_id);
@@ -62,7 +70,7 @@ public:
     }
 
 private:
-    threadpool m_threadpool{10};
+    threadpool *m_threadpool = nullptr;
     std::map<std::string, std::atomic<int>> m_taskid_total;
     std::map<std::string, std::atomic<int>> m_taskid_cur;
     std::map<std::string, int64_t> m_taskid_begin;
@@ -75,7 +83,15 @@ public:
 
     }
 
+    ~ImageUploader() {
+        delete m_threadpool;
+    }
+
     void add(const UploadImageEvent &ev) {
+        if (m_threadpool == nullptr) {
+            m_threadpool = new threadpool(5);
+        }
+
         m_taskid_total[ev.task_id] = 1;
         m_taskid_cur[ev.task_id] = 0;
 
@@ -86,7 +102,7 @@ public:
 
         std::string task_id = ev.task_id;
         std::string image = ev.image;
-        m_threadpool.commit([this, task_id, image] () {
+        m_threadpool->commit([this, task_id, image] () {
             struct timeval tv1{};
             gettimeofday(&tv1, 0);
             int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
@@ -97,7 +113,7 @@ public:
             struct timeval tv2{};
             gettimeofday(&tv2, 0);
             int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-            LOG_INFO << "ret:" << ret << ", upload " << image << " ok! use: " << (t2 - t1) << "ms";
+            //LOG_INFO << "ret:" << ret << ", upload " << image << " ok! use: " << (t2 - t1) << "ms";
 
             cmd = "mv /nfs_dbc_images/" + image + ".cache /nfs_dbc_images/" + image;
             ret = run_shell(cmd.c_str());
@@ -108,7 +124,7 @@ public:
                 gettimeofday(&tv, 0);
                 int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
                 int64_t msec = t - m_taskid_begin[task_id];
-                LOG_INFO << "upload all file ok! use: " << msec << "ms";
+                //LOG_INFO << "upload all file ok! use: " << msec << "ms";
 
                 m_taskid_total.erase(task_id);
                 m_taskid_cur.erase(task_id);
@@ -118,7 +134,7 @@ public:
     }
 
 private:
-    threadpool m_threadpool{5};
+    threadpool *m_threadpool = nullptr;
     std::map<std::string, std::atomic<int>> m_taskid_total;
     std::map<std::string, std::atomic<int>> m_taskid_cur;
     std::map<std::string, int64_t> m_taskid_begin;
