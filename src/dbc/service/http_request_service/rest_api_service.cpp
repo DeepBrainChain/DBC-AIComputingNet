@@ -519,9 +519,11 @@ rest_api_service::rest_images(const std::shared_ptr<dbc::network::http_request> 
         const std::string &second_param = path_list[0];
         if (second_param == "download") {
             rest_download_image(httpReq, path);
+            return;
         }
         else if (second_param == "upload") {
             rest_upload_image(httpReq, path);
+            return;
         }
     }
 
