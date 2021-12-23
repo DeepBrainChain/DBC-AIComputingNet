@@ -35,13 +35,13 @@ public:
                 int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
 
                 std::string cmd = "cp /nfs_dbc_images/" + image + " /data/" + image + ".cache";
-                //LOG_INFO << "begin download, cmd: " << cmd;
+                LOG_INFO << "begin download, cmd: " << cmd;
                 std::string ret = run_shell(cmd.c_str());
 
                 struct timeval tv2{};
                 gettimeofday(&tv2, 0);
                 int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-                //LOG_INFO << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms";
+                LOG_INFO << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms";
 
                 cmd = "mv /data/" + image + ".cache /data/" + image;
                 ret = run_shell(cmd.c_str());
@@ -52,7 +52,7 @@ public:
                     gettimeofday(&tv, 0);
                     int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
                     int64_t msec = t - m_taskid_begin[task_id];
-                    //LOG_INFO << "download all file ok! use: " << msec << "ms";
+                    LOG_INFO << "download all file ok! use: " << msec << "ms";
 
                     m_taskid_total.erase(task_id);
                     m_taskid_cur.erase(task_id);
@@ -108,12 +108,13 @@ public:
             int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
 
             std::string cmd = "cp /data/" + image + " /nfs_dbc_images/" + image + ".cache";
+            LOG_INFO << "begin upload, cmd: " << cmd;
             std::string ret = run_shell(cmd.c_str());
 
             struct timeval tv2{};
             gettimeofday(&tv2, 0);
             int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-            //LOG_INFO << "ret:" << ret << ", upload " << image << " ok! use: " << (t2 - t1) << "ms";
+            LOG_INFO << "ret:" << ret << ", upload " << image << " ok! use: " << (t2 - t1) << "ms";
 
             cmd = "mv /nfs_dbc_images/" + image + ".cache /nfs_dbc_images/" + image;
             ret = run_shell(cmd.c_str());
@@ -124,7 +125,7 @@ public:
                 gettimeofday(&tv, 0);
                 int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
                 int64_t msec = t - m_taskid_begin[task_id];
-                //LOG_INFO << "upload all file ok! use: " << msec << "ms";
+                LOG_INFO << "upload all file ok! use: " << msec << "ms";
 
                 m_taskid_total.erase(task_id);
                 m_taskid_cur.erase(task_id);

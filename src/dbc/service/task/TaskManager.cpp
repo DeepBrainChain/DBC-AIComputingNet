@@ -69,6 +69,15 @@ FResult TaskManager::listImages(const std::string& wallet, std::vector<std::stri
 }
 
 FResult TaskManager::downloadImage(const std::string& wallet, const std::string &image_name) {
+    std::vector<std::string> images;
+    FResult ret = ImageManager::instance().ListAllImages(images);
+    if (std::get<0>(ret) != E_SUCCESS) {
+        return ret;
+    }
+    auto iter = std::find(images.begin(), images.end(), image_name);
+    if (iter == images.end()) {
+        return {E_NOT_FOUND, "image not exist"};
+    }
     DownloadImageEvent diEvent;
     diEvent.task_id = util::create_task_id();
     diEvent.images.push_back(image_name);
@@ -77,6 +86,15 @@ FResult TaskManager::downloadImage(const std::string& wallet, const std::string 
 }
 
 FResult TaskManager::uploadImage(const std::string& wallet, const std::string &image_name) {
+    std::vector<std::string> images;
+    FResult ret = ImageManager::instance().ListAllImages(images);
+    if (std::get<0>(ret) != E_SUCCESS) {
+        return ret;
+    }
+    auto iter = std::find(images.begin(), images.end(), image_name);
+    if (iter != images.end()) {
+        return {E_NOT_FOUND, "image already exist, please rename the image file that needs to be uploaded"};
+    }
     UploadImageEvent uiEvent;
     uiEvent.task_id = util::create_task_id();
     uiEvent.image = image_name;
