@@ -228,8 +228,9 @@ namespace check_kvm {
         }
 
         if (vedio_pci != "") {
+            int gpu_used = 0;
             std::vector<std::string> vedios = SplitStr(vedio_pci, '|');
-            for (int i = 0; i < vedios.size() && i < max_gpu_count; ++i) {
+            for (int i = 0; i < vedios.size(); ++i) {
                 std::vector<std::string> infos = SplitStr(vedios[i], ':');
                 if (infos.size() != 2) {
                     std::cout << vedios[i] << "  error" << std::endl;
@@ -240,6 +241,10 @@ namespace check_kvm {
                 if (infos2.size() != 2) {
                     std::cout << vedios[i] << "  error" << std::endl;
                     continue;
+                }
+
+                if (infos2[1] == "0" && ++gpu_used > max_gpu_count) {
+                    break;
                 }
 
                 tinyxml2::XMLElement *hostdev_node = doc.NewElement("hostdev");
