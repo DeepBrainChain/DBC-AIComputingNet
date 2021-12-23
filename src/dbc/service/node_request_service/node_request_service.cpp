@@ -411,9 +411,9 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
     if (std::get<0>(ret2) == E_SUCCESS) {
         std::string accounts;
-        for (int i = 0; i < params.multisig_signs.size(); i++) {
+        for (int i = 0; i < params.multisig_wallets.size(); i++) {
             if (i > 0) accounts += ",";
-            accounts += params.multisig_signs[i].wallet;
+            accounts += params.multisig_wallets[i];
         }
         substrate_MultisigAccountID* p = create_multisig_account(accounts.c_str(), params.multisig_threshold);
         if (p != nullptr) {
@@ -515,8 +515,8 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                     result.rent_end = rent_end;
 
                     std::vector<std::string> vec;
-                    for (auto& it : params.multisig_signs) {
-                        vec.push_back(it.wallet);
+                    for (auto& it : params.multisig_wallets) {
+                        vec.push_back(it);
                     }
                     m_task_scheduler.createSessionId(strMultisigWallet, vec);
                 } else {
