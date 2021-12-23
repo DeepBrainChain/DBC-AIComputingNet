@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
     SystemResourceManager::instance().Init();
 
-    check_images::test_images();
+    // check_images::test_images();
 
     check_kvm::test_kvm(argc, argv);
 
