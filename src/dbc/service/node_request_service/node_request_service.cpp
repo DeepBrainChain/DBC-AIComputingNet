@@ -2146,9 +2146,9 @@ void node_request_service::snapshot_list(const dbc::network::base_header& header
                         }
                         ss_snapshots << "{";
                         ss_snapshots << "\"disk_name\":" << "\"" << snapshot->disks[i].name << "\"";
-                        ss_snapshots << ", \"snapshot\":" << "\"" << snapshot->disks[i].snapshot << "\"";
+                        ss_snapshots << ", \"snapshot_type\":" << "\"" << snapshot->disks[i].snapshot << "\"";
                         ss_snapshots << ", \"driver_type\":" << "\"" << snapshot->disks[i].driver_type << "\"";
-                        ss_snapshots << ", \"source_file\":" << "\"" << snapshot->disks[i].source_file << "\"";
+                        ss_snapshots << ", \"snapshot_file\":" << "\"" << snapshot->disks[i].source_file << "\"";
                         ss_snapshots << "}";
                     }
                     ss_snapshots << "]";

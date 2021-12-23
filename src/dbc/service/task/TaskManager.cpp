@@ -1180,15 +1180,15 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
     }
 
     std::string snapshot_name, description;
-    JSON_PARSE_STRING(doc, "name", snapshot_name)
+    JSON_PARSE_STRING(doc, "snapshot_name", snapshot_name)
     JSON_PARSE_STRING(doc, "description", description)
 
     if (snapshot_name.empty()) {
-        return {E_DEFAULT, "snapshot name is not specified"};
+        return {E_DEFAULT, "snapshot_name is not specified"};
     }
 
     if (SnapshotManager::instance().getTaskSnapshot(task_id, snapshot_name, false) != nullptr) {
-        return {E_DEFAULT, "snapshot name is already exist"};
+        return {E_DEFAULT, "snapshot_name is already exist"};
     }
 
     if (description.empty()) {
@@ -1219,25 +1219,25 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
                 return {E_DEFAULT, "parse additional disks item json failed"};
             }
             dbc::snapshotDiskInfo disk;
-            if (!v.HasMember("name") || !v["name"].IsString()) {
-                return {E_DEFAULT, "parse additional disks item name json failed"};
+            if (!v.HasMember("disk_name") || !v["disk_name"].IsString()) {
+                return {E_DEFAULT, "parse additional disk_name json failed"};
             }
-            disk.__set_name(v["name"].GetString());
+            disk.__set_name(v["disk_name"].GetString());
             if (ddInfos.find(disk.name) == ddInfos.end()) {
-                return {E_DEFAULT, "additional disks item name not exist in task:" + task_id};
+                return {E_DEFAULT, "additional disk_name not exist in task:" + task_id};
             }
-            if (!v.HasMember("snapshot")) {
+            if (!v.HasMember("snapshot_type")) {
                 disk.__set_snapshot("external");
             } else {
-                if (!v["snapshot"].IsString()) {
-                    return {E_DEFAULT, "parse additional disks item snapshot json failed"};
+                if (!v["snapshot_type"].IsString()) {
+                    return {E_DEFAULT, "parse additional disks item snapshot_type json failed"};
                 }
-                disk.__set_snapshot(v["snapshot"].GetString());
+                disk.__set_snapshot(v["snapshot_type"].GetString());
                 if (disk.snapshot.empty()) {
-                    return {E_DEFAULT, "additional disks item snapshot can not empty"};
+                    return {E_DEFAULT, "additional disks item snapshot_type can not empty"};
                 }
                 if (!(disk.snapshot == "external" || disk.snapshot == "no" || disk.snapshot == "internal")) {
-                    return {E_DEFAULT, "invalid additional disks item snapshot value:" + disk.snapshot};
+                    return {E_DEFAULT, "invalid additional disks item snapshot_type value:" + disk.snapshot};
                 }
             }
             if (!v.HasMember("driver")) {
@@ -1254,18 +1254,29 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
                     return {E_DEFAULT, "additional disks item driver only support qcow2"};
                 }
             }
-            if (v.HasMember("source_file")) {
-                if (!v["source_file"].IsString()) {
-                    return {E_DEFAULT, "parse additional disks item source_file json failed"};
+            if (v.HasMember("snapshot_file_name")) {
+                if (!v["snapshot_file_name"].IsString()) {
+                    return {E_DEFAULT, "parse additional disks item snapshot_file_name json failed"};
                 }
-                disk.__set_source_file(v["source_file"].GetString());
+                std::string snapshot_file_name = v["snapshot_file_name"].GetString();
+                if (snapshot_file_name.find("/") != std::string::npos || snapshot_file_name.find(".qcow2") == std::string::npos) {
+                    return {E_DEFAULT, "invalid snapshot_file_name, use format: xxx.qcow2"};
+                }
+                std::string snapshot_file_path = "/data/" + snapshot_file_name;
+                boost::filesystem::path disk_source_file(snapshot_file_path);
+                if (disk_source_file.extension().string() != ".qcow2") {
+                    return {E_DEFAULT, "disk snapshot_file_name must end with .qcow2, such as xxx.qcow2"};
+                }
                 boost::system::error_code err;
-                if (boost::filesystem::exists(disk.source_file, err)) {
-                    return {E_DEFAULT, "disks item source_file already exist"};
+                if (boost::filesystem::exists(disk_source_file, err)) {
+                    return {E_DEFAULT, "disks item snapshot_file_name already exist"};
                 }
                 // if (err) {
-                //     return {E_DEFAULT, "check disk item source_file error:" + err.message()};
+                //     return {E_DEFAULT, "check disk item snapshot_file_name error:" + err.message()};
                 // }
+                disk.__set_source_file(snapshot_file_path);
+            } else {
+                disk.__set_source_file("/data/" + task_id + "_" + snapshot_name + "_" + disk.name + ".qcow2");
             }
             disks.push_back(disk);
         }
@@ -1278,6 +1289,7 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
             sdInfo.__set_name(disk.second.targetDev);
             sdInfo.__set_driver_type(disk.second.driverType);
             sdInfo.__set_snapshot("external");
+            sdInfo.__set_source_file("/data/" + task_id + "_" + snapshot_name + "_" + sdInfo.name + ".qcow2");
             disks.push_back(sdInfo);
         }
     }

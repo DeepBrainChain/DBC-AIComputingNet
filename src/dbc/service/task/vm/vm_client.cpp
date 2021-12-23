@@ -471,7 +471,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     LOG_INFO << "image_copy_file: " << to_image_path;
     TASK_LOG_INFO(domain_name, "image_copy_file: " << to_image_path);
     // boost::filesystem::copy_file(from_image_path, to_image_path);
-    std::string cmd_back_system_image = "qemu-img create -f qcow2 -b " + from_image_path + " " + to_image_path;
+    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_path + " " + to_image_path;
     std::string create_system_image_ret = run_shell(cmd_back_system_image);
     LOG_INFO << "create system image back cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret;
     TASK_LOG_INFO(domain_name, "create system image back cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
