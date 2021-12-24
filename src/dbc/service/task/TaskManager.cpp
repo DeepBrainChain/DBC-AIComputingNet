@@ -1616,6 +1616,15 @@ void TaskManager::listTaskDiskInfo(const std::string& task_id, std::map<std::str
 }
 
 FResult TaskManager::createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
     {
         std::shared_ptr<dbc::snapshotInfo> temp = SnapshotManager::instance().getCreatingSnapshot(task_id);
         if (temp != nullptr && !temp->__isset.error_code) {
@@ -1628,20 +1637,11 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
         return fret;
     }
 
-    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-    if (taskinfo == nullptr) {
-        return {E_DEFAULT, "task_id not exist"};
-    }
-
-    if (!m_vm_client.IsExistDomain(task_id)) {
-        return {E_DEFAULT, "domain not exist"};
-    }
-
     //TODO： check task resource
     SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
 
     virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_SHUTOFF) {
+    if (/*vm_status == VIR_DOMAIN_RUNNING || */vm_status == VIR_DOMAIN_SHUTOFF) {
         taskinfo->__set_status(TS_CreatingSnapshot);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1652,7 +1652,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
         add_process_task(ev);
         return FResultOK;
     } else {
-        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status) + ", please save the job and shutdown task before creating a snapshot"};
     }
 }
 
