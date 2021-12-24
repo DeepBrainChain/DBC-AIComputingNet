@@ -242,134 +242,44 @@ void TaskManager::add_iptable_to_system(const std::string &task_id) {
 
 void TaskManager::shell_remove_iptable_from_system(const std::string &public_ip, const std::string &transform_port,
                                                    const std::string &vm_local_ip) {
-    // 1804
-    if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
-        std::string cmd = "sudo iptables --table nat -C PREROUTING --protocol tcp --destination " + public_ip +
-               " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
-        std::string ret = run_shell(cmd.c_str());
-        if (ret.find("No") == std::string::npos) {
-            util::replace(cmd, "-C", "-D");
-            run_shell(cmd.c_str());
-        } else {
-            return;
-        }
-
-        cmd = "sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
-               " -j DNAT --to-destination " + vm_local_ip + ":22";
+    std::string cmd = "sudo iptables -t nat -C PREROUTING -p tcp --dport " + transform_port +
+                      " --jump DNAT --to-destination " + vm_local_ip + ":22";
+    std::string ret = run_shell(cmd.c_str());
+    if (ret.find("No") == std::string::npos) {
+        util::replace(cmd, "-C", "-D");
         run_shell(cmd.c_str());
-
-        auto pos = vm_local_ip.rfind('.');
-        std::string ip = vm_local_ip.substr(0, pos) + ".1";
-        cmd = "sudo iptables -t nat -D POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-               " -j SNAT --to " + ip;
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
-               vm_local_ip + ":20000-60000";
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -D PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
-               vm_local_ip + ":20000-60000";
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-               " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-               " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-        run_shell(cmd.c_str());
+    } else {
+        return;
     }
 
-    // 2004
-    else if (SystemInfo::instance().ostype() == OS_TYPE::OS_2004) {
-        std::string cmd = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
-               + " -j DNAT --to-destination " + vm_local_ip + ":22";
-        std::string ret = run_shell(cmd.c_str());
-        if (ret.find("No") == std::string::npos) {
-            util::replace(cmd, "-C", "-D");
-            run_shell(cmd.c_str());
-        } else {
-            return;
-        }
+    cmd = "sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+          vm_local_ip + ":20000-60000";
+    run_shell(cmd.c_str());
 
-        auto pos = vm_local_ip.rfind('.');
-        std::string ip = vm_local_ip.substr(0, pos) + ".0/24";
-        cmd = "sudo iptables -t nat -D POSTROUTING -s " + ip + " -j SNAT --to-source " + public_ip;
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
-               + vm_local_ip + ":6000-60000";
-        run_shell(cmd.c_str());
-    }
+    cmd = "sudo iptables -t nat -D PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+          vm_local_ip + ":20000-60000";
+    run_shell(cmd.c_str());
 }
 
 void TaskManager::shell_add_iptable_to_system(const std::string &public_ip, const std::string &transform_port,
                                               const std::string &vm_local_ip) {
-    // 1804
-    if (SystemInfo::instance().ostype() == OS_TYPE::OS_1804) {
-        std::string cmd = "sudo iptables -t nat -C PREROUTING --protocol tcp --destination " + public_ip +
-                           " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
-        std::string ret = run_shell(cmd.c_str());
-        if (ret.find("No") != std::string::npos) {
-            util::replace(cmd, "-C", "-I");
-            run_shell(cmd.c_str());
-        } else {
-            return;
-        }
-
-
-        cmd = "sudo iptables -t nat -I PREROUTING -p tcp --dport " + transform_port +
-               " -j DNAT --to-destination " + vm_local_ip + ":22";
+    std::string cmd = "sudo iptables -t nat -C PREROUTING -p tcp --dport " + transform_port +
+            " --jump DNAT --to-destination " + vm_local_ip + ":22";
+    std::string ret = run_shell(cmd.c_str());
+    if (ret.find("No") != std::string::npos) {
+        util::replace(cmd, "-C", "-I");
         run_shell(cmd.c_str());
-
-        auto pos = vm_local_ip.rfind('.');
-        std::string ip = vm_local_ip.substr(0, pos) + ".1";
-        cmd = "sudo iptables -t nat -I POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-               " -j SNAT --to " + ip;
-       run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -I PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
-               vm_local_ip + ":20000-60000";
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -I PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
-               vm_local_ip + ":20000-60000";
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
-               " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
-               " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-        run_shell(cmd.c_str());
+    } else {
+        return;
     }
 
-    // 2004
-    else if (SystemInfo::instance().ostype() == OS_TYPE::OS_2004) {
-        //std::string cmd = "sudo iptables -F && sudo iptables -F -t nat";
-        //run_shell(cmd.c_str());
+    cmd = "sudo iptables -t nat -I PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+          vm_local_ip + ":20000-60000";
+    run_shell(cmd.c_str());
 
-        std::string cmd = "sudo iptables -t nat -C PREROUTING -p tcp -d " + public_ip + " --dport " + transform_port
-                           + " -j DNAT --to-destination " + vm_local_ip + ":22";
-        std::string ret = run_shell(cmd.c_str());
-        if (ret.find("No") != std::string::npos) {
-            util::replace(cmd, "-C", "-I");
-            run_shell(cmd.c_str());
-        } else {
-            return;
-        }
-
-        auto pos = vm_local_ip.rfind('.');
-        std::string local_ip = vm_local_ip.substr(0, pos) + ".0/24";
-        cmd = "sudo iptables -t nat -I POSTROUTING -s " + local_ip + " -j SNAT --to-source " + public_ip;
-        run_shell(cmd.c_str());
-
-        cmd = "sudo iptables -t nat -I PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
-               + vm_local_ip + ":6000-60000";
-        run_shell(cmd.c_str());
-    }
+    cmd = "sudo iptables -t nat -I PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+          vm_local_ip + ":20000-60000";
+    run_shell(cmd.c_str());
 }
 
 void TaskManager::shell_remove_reject_iptable_from_system() {
@@ -1657,6 +1567,15 @@ void TaskManager::listTaskDiskInfo(const std::string& task_id, std::map<std::str
 }
 
 FResult TaskManager::createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+    if (taskinfo == nullptr) {
+        return {E_DEFAULT, "task_id not exist"};
+    }
+
+    if (!m_vm_client.IsExistDomain(task_id)) {
+        return {E_DEFAULT, "domain not exist"};
+    }
+
     {
         std::shared_ptr<dbc::snapshotInfo> temp = SnapshotManager::instance().getCreatingSnapshot(task_id);
         if (temp != nullptr && !temp->__isset.error_code) {
@@ -1669,20 +1588,11 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
         return fret;
     }
 
-    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-    if (taskinfo == nullptr) {
-        return {E_DEFAULT, "task_id not exist"};
-    }
-
-    if (!m_vm_client.IsExistDomain(task_id)) {
-        return {E_DEFAULT, "domain not exist"};
-    }
-
     //TODO： check task resource
     SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
 
     virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_SHUTOFF) {
+    if (/*vm_status == VIR_DOMAIN_RUNNING || */vm_status == VIR_DOMAIN_SHUTOFF) {
         taskinfo->__set_status(TS_CreatingSnapshot);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1693,7 +1603,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
         add_process_task(ev);
         return FResultOK;
     } else {
-        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
+        return {E_DEFAULT, "task is " + vm_status_string(vm_status) + ", please save the job and shutdown task before creating a snapshot"};
     }
 }
 
