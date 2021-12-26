@@ -33,6 +33,16 @@ namespace dbc {
         this->ssh_port = val;
         __isset.ssh_port = true;
     }
+
+    void task_iptable::__set_rdp_port(const std::string& val) {
+        this->rdp_port = val;
+        __isset.rdp_port = true;
+    }
+
+    void task_iptable::__set_custom_port(const std::vector<std::string> & val) {
+        this->custom_port = val;
+        __isset.custom_port = true;
+    }
     std::ostream& operator<<(std::ostream& out, const task_iptable& obj)
     {
         obj.printTo(out);
@@ -94,6 +104,34 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->rdp_port);
+                        this->__isset.rdp_port = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->custom_port.clear();
+                            uint32_t _size0;
+                            ::apache::thrift::protocol::TType _etype3;
+                            xfer += iprot->readListBegin(_etype3, _size0);
+                            this->custom_port.resize(_size0);
+                            uint32_t _i4;
+                            for (_i4 = 0; _i4 < _size0; ++_i4)
+                            {
+                                xfer += iprot->readString(this->custom_port[_i4]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        this->__isset.custom_port = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -132,6 +170,24 @@ namespace dbc {
             xfer += oprot->writeString(this->ssh_port);
             xfer += oprot->writeFieldEnd();
         }
+        if (this->__isset.rdp_port) {
+            xfer += oprot->writeFieldBegin("rdp_port", ::apache::thrift::protocol::T_STRING, 5);
+            xfer += oprot->writeString(this->rdp_port);
+            xfer += oprot->writeFieldEnd();
+        }
+        if (this->__isset.custom_port) {
+            xfer += oprot->writeFieldBegin("custom_port", ::apache::thrift::protocol::T_LIST, 6);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->custom_port.size()));
+                std::vector<std::string> ::const_iterator _iter5;
+                for (_iter5 = this->custom_port.begin(); _iter5 != this->custom_port.end(); ++_iter5)
+                {
+                    xfer += oprot->writeString((*_iter5));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -143,22 +199,28 @@ namespace dbc {
         swap(a.host_ip, b.host_ip);
         swap(a.vm_local_ip, b.vm_local_ip);
         swap(a.ssh_port, b.ssh_port);
+        swap(a.rdp_port, b.rdp_port);
+        swap(a.custom_port, b.custom_port);
         swap(a.__isset, b.__isset);
     }
 
-    task_iptable::task_iptable(const task_iptable& other0) {
-        task_id = other0.task_id;
-        host_ip = other0.host_ip;
-        vm_local_ip = other0.vm_local_ip;
-        ssh_port = other0.ssh_port;
-        __isset = other0.__isset;
+    task_iptable::task_iptable(const task_iptable& other6) {
+        task_id = other6.task_id;
+        host_ip = other6.host_ip;
+        vm_local_ip = other6.vm_local_ip;
+        ssh_port = other6.ssh_port;
+        rdp_port = other6.rdp_port;
+        custom_port = other6.custom_port;
+        __isset = other6.__isset;
     }
-    task_iptable& task_iptable::operator=(const task_iptable& other1) {
-        task_id = other1.task_id;
-        host_ip = other1.host_ip;
-        vm_local_ip = other1.vm_local_ip;
-        ssh_port = other1.ssh_port;
-        __isset = other1.__isset;
+    task_iptable& task_iptable::operator=(const task_iptable& other7) {
+        task_id = other7.task_id;
+        host_ip = other7.host_ip;
+        vm_local_ip = other7.vm_local_ip;
+        ssh_port = other7.ssh_port;
+        rdp_port = other7.rdp_port;
+        custom_port = other7.custom_port;
+        __isset = other7.__isset;
         return *this;
     }
     void task_iptable::printTo(std::ostream& out) const {
@@ -168,6 +230,8 @@ namespace dbc {
         out << ", " << "host_ip="; (__isset.host_ip ? (out << to_string(host_ip)) : (out << "<null>"));
         out << ", " << "vm_local_ip="; (__isset.vm_local_ip ? (out << to_string(vm_local_ip)) : (out << "<null>"));
         out << ", " << "ssh_port="; (__isset.ssh_port ? (out << to_string(ssh_port)) : (out << "<null>"));
+        out << ", " << "rdp_port="; (__isset.rdp_port ? (out << to_string(rdp_port)) : (out << "<null>"));
+        out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
         out << ")";
     }
 

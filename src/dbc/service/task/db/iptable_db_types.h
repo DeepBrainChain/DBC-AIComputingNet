@@ -17,10 +17,12 @@ namespace dbc {
     class task_iptable;
 
     typedef struct _task_iptable__isset {
-        _task_iptable__isset() : host_ip(false), vm_local_ip(false), ssh_port(false) {}
+        _task_iptable__isset() : host_ip(false), vm_local_ip(false), ssh_port(false), rdp_port(false), custom_port(false) {}
         bool host_ip :1;
         bool vm_local_ip :1;
         bool ssh_port :1;
+        bool rdp_port :1;
+        bool custom_port :1;
     } _task_iptable__isset;
 
     class task_iptable : public virtual ::apache::thrift::TBase {
@@ -28,7 +30,7 @@ namespace dbc {
 
         task_iptable(const task_iptable&);
         task_iptable& operator=(const task_iptable&);
-        task_iptable() : task_id(), host_ip(), vm_local_ip(), ssh_port() {
+        task_iptable() : task_id(), host_ip(), vm_local_ip(), ssh_port(), rdp_port() {
         }
 
         virtual ~task_iptable() throw();
@@ -36,6 +38,8 @@ namespace dbc {
         std::string host_ip;
         std::string vm_local_ip;
         std::string ssh_port;
+        std::string rdp_port;
+        std::vector<std::string>  custom_port;
 
         _task_iptable__isset __isset;
 
@@ -46,6 +50,10 @@ namespace dbc {
         void __set_vm_local_ip(const std::string& val);
 
         void __set_ssh_port(const std::string& val);
+
+        void __set_rdp_port(const std::string& val);
+
+        void __set_custom_port(const std::vector<std::string> & val);
 
         bool operator == (const task_iptable & rhs) const
         {
@@ -62,6 +70,14 @@ namespace dbc {
             if (__isset.ssh_port != rhs.__isset.ssh_port)
                 return false;
             else if (__isset.ssh_port && !(ssh_port == rhs.ssh_port))
+                return false;
+            if (__isset.rdp_port != rhs.__isset.rdp_port)
+                return false;
+            else if (__isset.rdp_port && !(rdp_port == rhs.rdp_port))
+                return false;
+            if (__isset.custom_port != rhs.__isset.custom_port)
+                return false;
+            else if (__isset.custom_port && !(custom_port == rhs.custom_port))
                 return false;
             return true;
         }
