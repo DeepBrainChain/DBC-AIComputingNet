@@ -65,25 +65,25 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                    case 2:
-                        if (ftype == ::apache::thrift::protocol::T_I32) {
-                            xfer += iprot->readI32(this->cpu_cores);
-                            this->__isset.cpu_cores = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
-                        }
-                        break;
-                        case 3:
-                            if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
-                                xfer += iprot->readDouble(this->mem_rate);
-                                this->__isset.mem_rate = true;
-                            } else {
-                                xfer += iprot->skip(ftype);
-                            }
-                            break;
-                            default:
-                                xfer += iprot->skip(ftype);
-                                break;
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->cpu_cores);
+                        this->__isset.cpu_cores = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
+                        xfer += iprot->readDouble(this->mem_rate);
+                        this->__isset.mem_rate = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -225,6 +225,16 @@ namespace dbc {
         this->bios_mode = val;
         __isset.bios_mode = true;
     }
+
+    void TaskInfo::__set_rdp_port(const std::string& val) {
+        this->rdp_port = val;
+        __isset.rdp_port = true;
+    }
+
+    void TaskInfo::__set_custom_port(const std::vector<std::string> & val) {
+        this->custom_port = val;
+        __isset.custom_port = true;
+    }
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj)
     {
         obj.printTo(out);
@@ -262,121 +272,149 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                    case 2:
-                        if (ftype == ::apache::thrift::protocol::T_STRING) {
-                            xfer += iprot->readString(this->image_name);
-                            this->__isset.image_name = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
-                        }
-                        break;
-                        case 3:
-                            if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                xfer += iprot->readString(this->login_password);
-                                this->__isset.login_password = true;
-                            } else {
-                                xfer += iprot->skip(ftype);
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->image_name);
+                        this->__isset.image_name = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->login_password);
+                        this->__isset.login_password = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 4:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->ssh_port);
+                        this->__isset.ssh_port = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 5:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->status);
+                        this->__isset.status = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 6:
+                    if (ftype == ::apache::thrift::protocol::T_I32) {
+                        xfer += iprot->readI32(this->operation);
+                        this->__isset.operation = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 7:
+                    if (ftype == ::apache::thrift::protocol::T_I64) {
+                        xfer += iprot->readI64(this->create_time);
+                        this->__isset.create_time = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 8:
+                    if (ftype == ::apache::thrift::protocol::T_I64) {
+                        xfer += iprot->readI64(this->last_start_time);
+                        this->__isset.last_start_time = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 9:
+                    if (ftype == ::apache::thrift::protocol::T_I64) {
+                        xfer += iprot->readI64(this->last_stop_time);
+                        this->__isset.last_stop_time = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 10:
+                    if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                        xfer += this->hardware_resource.read(iprot);
+                        this->__isset.hardware_resource = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 11:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->vm_xml);
+                        this->__isset.vm_xml = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 12:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->vm_xml_url);
+                        this->__isset.vm_xml_url = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 13:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->data_file_name);
+                        this->__isset.data_file_name = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 14:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->operation_system);
+                        this->__isset.operation_system = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 15:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->bios_mode);
+                        this->__isset.bios_mode = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 16:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->rdp_port);
+                        this->__isset.rdp_port = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 17:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->custom_port.clear();
+                            uint32_t _size2;
+                            ::apache::thrift::protocol::TType _etype5;
+                            xfer += iprot->readListBegin(_etype5, _size2);
+                            this->custom_port.resize(_size2);
+                            uint32_t _i6;
+                            for (_i6 = 0; _i6 < _size2; ++_i6)
+                            {
+                                xfer += iprot->readString(this->custom_port[_i6]);
                             }
-                            break;
-                            case 4:
-                                if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                    xfer += iprot->readString(this->ssh_port);
-                                    this->__isset.ssh_port = true;
-                                } else {
-                                    xfer += iprot->skip(ftype);
-                                }
-                                break;
-                                case 5:
-                                    if (ftype == ::apache::thrift::protocol::T_I32) {
-                                        xfer += iprot->readI32(this->status);
-                                        this->__isset.status = true;
-                                    } else {
-                                        xfer += iprot->skip(ftype);
-                                    }
-                                    break;
-                                    case 6:
-                                        if (ftype == ::apache::thrift::protocol::T_I32) {
-                                            xfer += iprot->readI32(this->operation);
-                                            this->__isset.operation = true;
-                                        } else {
-                                            xfer += iprot->skip(ftype);
-                                        }
-                                        break;
-                                        case 7:
-                                            if (ftype == ::apache::thrift::protocol::T_I64) {
-                                                xfer += iprot->readI64(this->create_time);
-                                                this->__isset.create_time = true;
-                                            } else {
-                                                xfer += iprot->skip(ftype);
-                                            }
-                                            break;
-                                            case 8:
-                                                if (ftype == ::apache::thrift::protocol::T_I64) {
-                                                    xfer += iprot->readI64(this->last_start_time);
-                                                    this->__isset.last_start_time = true;
-                                                } else {
-                                                    xfer += iprot->skip(ftype);
-                                                }
-                                                break;
-                                                case 9:
-                                                    if (ftype == ::apache::thrift::protocol::T_I64) {
-                                                        xfer += iprot->readI64(this->last_stop_time);
-                                                        this->__isset.last_stop_time = true;
-                                                    } else {
-                                                        xfer += iprot->skip(ftype);
-                                                    }
-                                                    break;
-                                                    case 10:
-                                                        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-                                                            xfer += this->hardware_resource.read(iprot);
-                                                            this->__isset.hardware_resource = true;
-                                                        } else {
-                                                            xfer += iprot->skip(ftype);
-                                                        }
-                                                        break;
-                                                        case 11:
-                                                            if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                                                xfer += iprot->readString(this->vm_xml);
-                                                                this->__isset.vm_xml = true;
-                                                            } else {
-                                                                xfer += iprot->skip(ftype);
-                                                            }
-                                                            break;
-                                                            case 12:
-                                                                if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                                                    xfer += iprot->readString(this->vm_xml_url);
-                                                                    this->__isset.vm_xml_url = true;
-                                                                } else {
-                                                                    xfer += iprot->skip(ftype);
-                                                                }
-                                                                break;
-                                                                case 13:
-                                                                    if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                                                        xfer += iprot->readString(this->data_file_name);
-                                                                        this->__isset.data_file_name = true;
-                                                                    } else {
-                                                                        xfer += iprot->skip(ftype);
-                                                                    }
-                                                                    break;
-                                                                    case 14:
-                                                                        if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                                                            xfer += iprot->readString(this->operation_system);
-                                                                            this->__isset.operation_system = true;
-                                                                        } else {
-                                                                            xfer += iprot->skip(ftype);
-                                                                        }
-                                                                        break;
-                                                                        case 15:
-                                                                            if (ftype == ::apache::thrift::protocol::T_STRING) {
-                                                                                xfer += iprot->readString(this->bios_mode);
-                                                                                this->__isset.bios_mode = true;
-                                                                            } else {
-                                                                                xfer += iprot->skip(ftype);
-                                                                            }
-                                                                            break;
-                                                                            default:
-                                                                                xfer += iprot->skip(ftype);
-                                                                                break;
+                            xfer += iprot->readListEnd();
+                        }
+                        this->__isset.custom_port = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -466,6 +504,24 @@ namespace dbc {
             xfer += oprot->writeString(this->bios_mode);
             xfer += oprot->writeFieldEnd();
         }
+        if (this->__isset.rdp_port) {
+            xfer += oprot->writeFieldBegin("rdp_port", ::apache::thrift::protocol::T_STRING, 16);
+            xfer += oprot->writeString(this->rdp_port);
+            xfer += oprot->writeFieldEnd();
+        }
+        if (this->__isset.custom_port) {
+            xfer += oprot->writeFieldBegin("custom_port", ::apache::thrift::protocol::T_LIST, 17);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->custom_port.size()));
+                std::vector<std::string> ::const_iterator _iter7;
+                for (_iter7 = this->custom_port.begin(); _iter7 != this->custom_port.end(); ++_iter7)
+                {
+                    xfer += oprot->writeString((*_iter7));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -488,44 +544,50 @@ namespace dbc {
         swap(a.data_file_name, b.data_file_name);
         swap(a.operation_system, b.operation_system);
         swap(a.bios_mode, b.bios_mode);
+        swap(a.rdp_port, b.rdp_port);
+        swap(a.custom_port, b.custom_port);
         swap(a.__isset, b.__isset);
     }
 
-    TaskInfo::TaskInfo(const TaskInfo& other2) {
-        task_id = other2.task_id;
-        image_name = other2.image_name;
-        login_password = other2.login_password;
-        ssh_port = other2.ssh_port;
-        status = other2.status;
-        operation = other2.operation;
-        create_time = other2.create_time;
-        last_start_time = other2.last_start_time;
-        last_stop_time = other2.last_stop_time;
-        hardware_resource = other2.hardware_resource;
-        vm_xml = other2.vm_xml;
-        vm_xml_url = other2.vm_xml_url;
-        data_file_name = other2.data_file_name;
-        operation_system = other2.operation_system;
-        bios_mode = other2.bios_mode;
-        __isset = other2.__isset;
+    TaskInfo::TaskInfo(const TaskInfo& other8) {
+        task_id = other8.task_id;
+        image_name = other8.image_name;
+        login_password = other8.login_password;
+        ssh_port = other8.ssh_port;
+        status = other8.status;
+        operation = other8.operation;
+        create_time = other8.create_time;
+        last_start_time = other8.last_start_time;
+        last_stop_time = other8.last_stop_time;
+        hardware_resource = other8.hardware_resource;
+        vm_xml = other8.vm_xml;
+        vm_xml_url = other8.vm_xml_url;
+        data_file_name = other8.data_file_name;
+        operation_system = other8.operation_system;
+        bios_mode = other8.bios_mode;
+        rdp_port = other8.rdp_port;
+        custom_port = other8.custom_port;
+        __isset = other8.__isset;
     }
-    TaskInfo& TaskInfo::operator=(const TaskInfo& other3) {
-        task_id = other3.task_id;
-        image_name = other3.image_name;
-        login_password = other3.login_password;
-        ssh_port = other3.ssh_port;
-        status = other3.status;
-        operation = other3.operation;
-        create_time = other3.create_time;
-        last_start_time = other3.last_start_time;
-        last_stop_time = other3.last_stop_time;
-        hardware_resource = other3.hardware_resource;
-        vm_xml = other3.vm_xml;
-        vm_xml_url = other3.vm_xml_url;
-        data_file_name = other3.data_file_name;
-        operation_system = other3.operation_system;
-        bios_mode = other3.bios_mode;
-        __isset = other3.__isset;
+    TaskInfo& TaskInfo::operator=(const TaskInfo& other9) {
+        task_id = other9.task_id;
+        image_name = other9.image_name;
+        login_password = other9.login_password;
+        ssh_port = other9.ssh_port;
+        status = other9.status;
+        operation = other9.operation;
+        create_time = other9.create_time;
+        last_start_time = other9.last_start_time;
+        last_stop_time = other9.last_stop_time;
+        hardware_resource = other9.hardware_resource;
+        vm_xml = other9.vm_xml;
+        vm_xml_url = other9.vm_xml_url;
+        data_file_name = other9.data_file_name;
+        operation_system = other9.operation_system;
+        bios_mode = other9.bios_mode;
+        rdp_port = other9.rdp_port;
+        custom_port = other9.custom_port;
+        __isset = other9.__isset;
         return *this;
     }
     void TaskInfo::printTo(std::ostream& out) const {
@@ -546,6 +608,8 @@ namespace dbc {
         out << ", " << "data_file_name="; (__isset.data_file_name ? (out << to_string(data_file_name)) : (out << "<null>"));
         out << ", " << "operation_system="; (__isset.operation_system ? (out << to_string(operation_system)) : (out << "<null>"));
         out << ", " << "bios_mode="; (__isset.bios_mode ? (out << to_string(bios_mode)) : (out << "<null>"));
+        out << ", " << "rdp_port="; (__isset.rdp_port ? (out << to_string(rdp_port)) : (out << "<null>"));
+        out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
         out << ")";
     }
 
@@ -604,37 +668,37 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                    case 2:
-                        if (ftype == ::apache::thrift::protocol::T_LIST) {
+                case 2:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->task_ids.clear();
+                            uint32_t _size10;
+                            ::apache::thrift::protocol::TType _etype13;
+                            xfer += iprot->readListBegin(_etype13, _size10);
+                            this->task_ids.resize(_size10);
+                            uint32_t _i14;
+                            for (_i14 = 0; _i14 < _size10; ++_i14)
                             {
-                                this->task_ids.clear();
-                                uint32_t _size4;
-                                ::apache::thrift::protocol::TType _etype7;
-                                xfer += iprot->readListBegin(_etype7, _size4);
-                                this->task_ids.resize(_size4);
-                                uint32_t _i8;
-                                for (_i8 = 0; _i8 < _size4; ++_i8)
-                                {
-                                    xfer += iprot->readString(this->task_ids[_i8]);
-                                }
-                                xfer += iprot->readListEnd();
+                                xfer += iprot->readString(this->task_ids[_i14]);
                             }
-                            isset_task_ids = true;
-                        } else {
-                            xfer += iprot->skip(ftype);
+                            xfer += iprot->readListEnd();
                         }
-                        break;
-                        case 3:
-                            if (ftype == ::apache::thrift::protocol::T_I64) {
-                                xfer += iprot->readI64(this->rent_end);
-                                isset_rent_end = true;
-                            } else {
-                                xfer += iprot->skip(ftype);
-                            }
-                            break;
-                            default:
-                                xfer += iprot->skip(ftype);
-                                break;
+                        isset_task_ids = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                case 3:
+                    if (ftype == ::apache::thrift::protocol::T_I64) {
+                        xfer += iprot->readI64(this->rent_end);
+                        isset_rent_end = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
+                default:
+                    xfer += iprot->skip(ftype);
+                    break;
             }
             xfer += iprot->readFieldEnd();
         }
@@ -662,10 +726,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("task_ids", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->task_ids.size()));
-            std::vector<std::string> ::const_iterator _iter9;
-            for (_iter9 = this->task_ids.begin(); _iter9 != this->task_ids.end(); ++_iter9)
+            std::vector<std::string> ::const_iterator _iter15;
+            for (_iter15 = this->task_ids.begin(); _iter15 != this->task_ids.end(); ++_iter15)
             {
-                xfer += oprot->writeString((*_iter9));
+                xfer += oprot->writeString((*_iter15));
             }
             xfer += oprot->writeListEnd();
         }
@@ -687,15 +751,15 @@ namespace dbc {
         swap(a.rent_end, b.rent_end);
     }
 
-    rent_task::rent_task(const rent_task& other10) {
-        rent_wallet = other10.rent_wallet;
-        task_ids = other10.task_ids;
-        rent_end = other10.rent_end;
+    rent_task::rent_task(const rent_task& other16) {
+        rent_wallet = other16.rent_wallet;
+        task_ids = other16.task_ids;
+        rent_end = other16.rent_end;
     }
-    rent_task& rent_task::operator=(const rent_task& other11) {
-        rent_wallet = other11.rent_wallet;
-        task_ids = other11.task_ids;
-        rent_end = other11.rent_end;
+    rent_task& rent_task::operator=(const rent_task& other17) {
+        rent_wallet = other17.rent_wallet;
+        task_ids = other17.task_ids;
+        rent_end = other17.rent_end;
         return *this;
     }
     void rent_task::printTo(std::ostream& out) const {

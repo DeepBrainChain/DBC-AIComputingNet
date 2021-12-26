@@ -105,7 +105,8 @@ struct TaskCreateParams {
     std::string image_name;     // system disk image name
     std::string data_file_name; // data disk file name
     int16_t ssh_port;
-
+    int16_t rdp_port;
+    std::vector<std::string> custom_port;
     int32_t cpu_sockets = 0;
     int32_t cpu_cores = 0;
     int32_t cpu_threads = 0;
