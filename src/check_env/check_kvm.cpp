@@ -36,9 +36,9 @@ namespace check_kvm {
     static std::string createXmlStr(const std::string &uuid, const std::string &domain_name,
                                     int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                                     const std::string &vedio_pci, const std::string &image_file,
-                                    const std::string &disk_file, int32_t vnc_port, const std::string& vnc_pwd, bool uefi = false) {
+                                    const std::string &disk_file, int32_t vnc_port, const std::string& vnc_pwd,
+                                    bool is_windows = false, bool uefi = false) {
         tinyxml2::XMLDocument doc;
-        bool is_windows = image_file.find("win") != std::string::npos;
 
         // <domain>
         tinyxml2::XMLElement *root = doc.NewElement("domain");
@@ -87,8 +87,7 @@ namespace check_kvm {
             tinyxml2::XMLElement *os_sub_node3 = doc.NewElement("boot");
             os_sub_node3->SetAttribute("dev", "cdrom");
             os_node->LinkEndChild(os_sub_node3);
-        }
-        else {
+        } else {
             // uefi引导设置
             if (uefi) {
                 tinyxml2::XMLElement *os_loader = doc.NewElement("loader");
@@ -162,8 +161,7 @@ namespace check_kvm {
         tinyxml2::XMLElement *clock_node = doc.NewElement("clock");
         if (!is_windows) {
             clock_node->SetAttribute("offset", "utc");
-        }
-        else {
+        } else {
             clock_node->SetAttribute("offset", "localtime");
             tinyxml2::XMLElement *clock_rtc_node = doc.NewElement("timer");
             clock_rtc_node->SetAttribute("name", "rtc");
@@ -274,6 +272,9 @@ namespace check_kvm {
         tinyxml2::XMLElement *driver_node = doc.NewElement("driver");
         driver_node->SetAttribute("name", "qemu");
         driver_node->SetAttribute("type", "qcow2");
+        driver_node->SetAttribute("cache", "none");
+        driver_node->SetAttribute("io", "native");
+        driver_node->SetAttribute("discard", "unmap");
         image_node->LinkEndChild(driver_node);
 
         tinyxml2::XMLElement *source_node = doc.NewElement("source");
@@ -281,8 +282,8 @@ namespace check_kvm {
         image_node->LinkEndChild(source_node);
 
         tinyxml2::XMLElement *target_node = doc.NewElement("target");
-        target_node->SetAttribute("dev", is_windows ? "vda" : "hda");
-        target_node->SetAttribute("bus", is_windows ? "virtio" : "ide");
+        target_node->SetAttribute("dev", "vda");
+        target_node->SetAttribute("bus", "virtio");
         image_node->LinkEndChild(target_node);
 
         if (is_windows) {
@@ -307,7 +308,7 @@ namespace check_kvm {
         disk_data_node->LinkEndChild(disk_source_node);
 
         tinyxml2::XMLElement *disk_target_node = doc.NewElement("target");
-        disk_target_node->SetAttribute("dev", is_windows ? "vdb" : "vda");
+        disk_target_node->SetAttribute("dev", "vdb");
         disk_target_node->SetAttribute("bus", "virtio");
         disk_data_node->LinkEndChild(disk_target_node);
 
@@ -390,7 +391,8 @@ namespace check_kvm {
 
     std::string CreateDomainXML(const std::string &domain_name, const std::string &image_name,
                          int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
-                         const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd, bool uefi = false) {
+                         const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd,
+                         bool is_windows = false, bool uefi = false) {
         bool ret = true;
 
         std::cout << "domain_name: " << domain_name << std::endl;
@@ -449,31 +451,31 @@ namespace check_kvm {
 
         std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
                                                cpuNumTotal, sockets, cores_per_socket, threads_per_core,
-                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd, uefi);
+                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd, is_windows, uefi);
         return xml_content;
     }
 
     //////////////////////////////////////////////////////////////////////////////////
-    void transform_port(const std::string &public_ip, const std::string &transform_port,
-                        const std::string &vm_local_ip) {
-        std::string cmd;
-        cmd += "sudo iptables -t nat -I PREROUTING --protocol tcp --destination " + public_ip +
-                " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
-        cmd += " && sudo iptables -t nat -I PREROUTING -p tcp --dport " + transform_port +
-                " -j DNAT --to-destination " + vm_local_ip + ":22";
-        auto pos = vm_local_ip.rfind('.');
-        std::string ip = vm_local_ip.substr(0, pos) + ".1";
-        cmd += " && sudo iptables -t nat -I POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-                " -j SNAT --to " + ip;
-        cmd += " && sudo iptables -t nat -I PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
-        cmd += " && sudo iptables -t nat -I PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
-        cmd += " && sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
-                " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-        cmd += " && sudo iptables -t nat -I POSTROUTING -d " + vm_local_ip +
-                " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+    void transform_port(const std::string &domain_name, const std::string &public_ip, const std::string &transform_port,
+                        const std::string &vm_local_ip, bool is_windows) {
+        // remove chain
+        std::string chain_name = "check_chain_" + domain_name;
+        std::string cmd = "sudo iptables -t nat -F " + chain_name;
+        run_shell(cmd.c_str());
+        cmd = "sudo iptables -t nat -D PREROUTING -j " + chain_name;
+        run_shell(cmd.c_str());
+        cmd = "sudo iptables -t nat -X " + chain_name;
+        run_shell(cmd.c_str());
 
+        // add chain and rules
+        cmd = "sudo iptables -t nat -N " + chain_name;
+        run_shell(cmd.c_str());
+        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --dport " + transform_port +
+                " -j DNAT --to-destination " + vm_local_ip + (is_windows ? ":3389" : ":22");
+        run_shell(cmd.c_str());
+
+        // add ref
+        cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name;
         run_shell(cmd.c_str());
     }
 
@@ -497,27 +499,36 @@ namespace check_kvm {
         remove(disk_file.c_str());
     }
 
-    void delete_iptable(const std::string &public_ip, const std::string &transform_port,
+    void delete_iptable(const std::string &domain_name, const std::string &public_ip, const std::string &transform_port,
                         const std::string &vm_local_ip) {
-        std::string cmd;
-        cmd += "sudo iptables -t nat -D PREROUTING --protocol tcp --destination " + public_ip +
-                " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
-        cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
-                " -j DNAT --to-destination " + vm_local_ip + ":22";
-        auto pos = vm_local_ip.rfind('.');
-        std::string ip = vm_local_ip.substr(0, pos) + ".1";
-        cmd += " && sudo iptables -t nat -D POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
-                " -j SNAT --to " + ip;
-        cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
-        cmd += " && sudo iptables -t nat -D PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
-                vm_local_ip + ":20000-60000";
-        cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-                " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-        cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-                " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
-
+        // remove chain
+        std::string chain_name = "check_chain_" + domain_name;
+        std::string cmd = "sudo iptables -t nat -F " + chain_name;
         run_shell(cmd.c_str());
+        cmd = "sudo iptables -t nat -D PREROUTING -j " + chain_name;
+        run_shell(cmd.c_str());
+        cmd = "sudo iptables -t nat -X " + chain_name;
+        run_shell(cmd.c_str());
+
+        if (!vm_local_ip.empty()) {
+            cmd = "sudo iptables -t nat -D PREROUTING --protocol tcp --destination " + public_ip +
+                    " --destination-port " + transform_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
+            cmd += " && sudo iptables -t nat -D PREROUTING -p tcp --dport " + transform_port +
+                    " -j DNAT --to-destination " + vm_local_ip + ":22";
+            auto pos = vm_local_ip.rfind('.');
+            std::string ip = vm_local_ip.substr(0, pos) + ".1";
+            cmd += " && sudo iptables -t nat -D POSTROUTING -p tcp --dport " + transform_port + " -d " + vm_local_ip +
+                    " -j SNAT --to " + ip;
+            cmd += " && sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 20000:60000 -j DNAT --to-destination " +
+                    vm_local_ip + ":20000-60000";
+            cmd += " && sudo iptables -t nat -D PREROUTING -p udp -m udp --dport 20000:60000 -j DNAT --to-destination " +
+                    vm_local_ip + ":20000-60000";
+            cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
+                    " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+            cmd += " && sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
+                    " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+            run_shell(cmd.c_str());
+        }
 
         std::cout << "delete iptable: " << public_ip << ", " << transform_port << ", " << vm_local_ip << std::endl;
     }
@@ -535,6 +546,7 @@ namespace check_kvm {
         int32_t vnc_port = -1;
         std::string vnc_pwd = "dbtu@supper2017";
 
+        bool is_windows = false;
         bool uefi_load = false;
 
         const ::DeviceCpu& cpus = SystemResourceMgr::instance().GetCpu();
@@ -574,6 +586,7 @@ namespace check_kvm {
             ("vnc_port", boost::program_options::value<int32_t>(), "")
             ("vnc_pwd", boost::program_options::value<std::string>(), "")
             ("domain_name", boost::program_options::value<std::string>(), "")
+            ("windows", "windows virtual machine")
             ("uefi", "uefi loader")
             ("max_gpus", boost::program_options::value<int32_t>(), "max gpu count");
 
@@ -596,7 +609,7 @@ namespace check_kvm {
                             printLastError();
                         }
                     }
-                    delete_iptable(public_ip, ssh_port, vm["localip"].as<std::string>());
+                    delete_iptable(domain_name, public_ip, ssh_port, vm["localip"].as<std::string>());
                     return;
                 }
                 if (vm.count("image")) {
@@ -612,6 +625,11 @@ namespace check_kvm {
                 }
                 if (vm.count("vnc_pwd")) {
                     vnc_pwd = vm["vnc_pwd"].as<std::string>();
+                }
+                if (vm.count("windows")) {
+                    is_windows = true;
+                    ssh_port = "3389";
+                    vm_user = "Administrator";// "admin";
                 }
                 if (vm.count("uefi")) {
                     uefi_load = true;
@@ -647,12 +665,10 @@ namespace check_kvm {
                     printLastError();
                     return;
                 }
-                if (!vm_local_ip.empty()) {
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
-                }
+                delete_iptable(domain_name, public_ip, ssh_port, vm_local_ip);
             }
             std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
-                            vga_gpu, memory_total, vnc_port, vnc_pwd, uefi_load);
+                            vga_gpu, memory_total, vnc_port, vnc_pwd, is_windows, uefi_load);
             if (xml_content.empty()) {
                 std::cout << "domain xml empty" << std::endl;
                 print_red("check vm %s failed", domain_name.c_str());
@@ -700,30 +716,27 @@ namespace check_kvm {
                 return;
             }
             std::cout << "vm local ip:" << vm_local_ip << std::endl;
-            transform_port(public_ip, ssh_port, vm_local_ip);
-            if (image_name.find("win") == std::string::npos) {
-                try_count = 0;
-                int succ = -1;
-                while (succ < 0 && try_count++ < 100) {
-                    sleep(3);
-                    std::cout << "set_vm_password try_count: " << try_count << std::endl;
-                    succ = domain->setDomainUserPassword(vm_user.c_str(), vm_pwd.c_str());
-                    if (succ < 0) {
-                        printLastError();
-                    }
-                }
+            transform_port(domain_name, public_ip, ssh_port, vm_local_ip, is_windows);
+
+            try_count = 0;
+            int succ = -1;
+            while (succ < 0 && try_count++ < 100) {
+                sleep(3);
+                std::cout << "set_vm_password try_count: " << try_count << std::endl;
+                succ = domain->setDomainUserPassword(vm_user.c_str(), vm_pwd.c_str());
                 if (succ < 0) {
-                    std::cout << "set_vm_password failed" << std::endl;
-                    domain->deleteDomain();
-                    delete_iptable(public_ip, ssh_port, vm_local_ip);
-                    print_red("check vm %s failed", domain_name.c_str());
-                    return;
+                    printLastError();
                 }
-                std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
             }
-            else {
-                std::cout << "windows vm cannot set user password now, please connect using vnc" << std::endl;
+            if (succ < 0) {
+                std::cout << "set_vm_password failed" << std::endl;
+                domain->deleteDomain();
+                delete_iptable(domain_name, public_ip, ssh_port, vm_local_ip);
+                print_red("check vm %s failed", domain_name.c_str());
+                return;
             }
+            std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
+
             std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
             print_green("check vm %s successful", domain_name.c_str());
         } catch (...) {
