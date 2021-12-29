@@ -32,7 +32,7 @@ bool HttpChainClient::connect_chain() {
                 std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
                 std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
                 if (resp == nullptr) {
-                    mp[0xFFFFFFFF + i] = vec[i];
+                    mp[0xFFFFFFFFL + i] = vec[i];
                     continue;
                 }
 
