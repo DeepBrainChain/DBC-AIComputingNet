@@ -61,6 +61,9 @@ std::string task_status_string(int32_t status) {
         case TS_CreatingSnapshot:
             status_string = "creating snapshot";
             break;
+        case TS_PMSuspended:
+            status_string = "pm_suspended";
+            break;
         case TS_Error:
             status_string = "error";
             break;
