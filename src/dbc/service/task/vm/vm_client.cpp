@@ -241,8 +241,8 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     image_node->LinkEndChild(source_node);
 
     tinyxml2::XMLElement* target_node = doc.NewElement("target");
-    target_node->SetAttribute("dev", is_windows ? "vda" : "hda");
-    target_node->SetAttribute("bus", is_windows ? "virtio" : "ide");
+    target_node->SetAttribute("dev", "vda");
+    target_node->SetAttribute("bus", "virtio");
     image_node->LinkEndChild(target_node);
 
     if (is_windows) {
@@ -267,7 +267,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     disk_data_node->LinkEndChild(disk_source_node);
 
     tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
-    disk_target_node->SetAttribute("dev", is_windows ? "vdb" : "vda");
+    disk_target_node->SetAttribute("dev", "vdb");
     disk_target_node->SetAttribute("bus", "virtio");
     disk_data_node->LinkEndChild(disk_target_node);
 
@@ -278,7 +278,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     agent_node->SetAttribute("type", "unix");
     tinyxml2::XMLElement* agent_source_node = doc.NewElement("source");
     agent_source_node->SetAttribute("mode", "bind");
-    agent_source_node->SetAttribute("path", "/tmp/channel.sock");
+    agent_source_node->SetAttribute("path", ("/tmp/channel_" + uuid + ".sock").c_str());
     agent_node->LinkEndChild(agent_source_node);
     tinyxml2::XMLElement* agent_target_node = doc.NewElement("target");
     agent_target_node->SetAttribute("type", "virtio");

@@ -1839,7 +1839,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         std::string local_ip = m_vm_client.GetDomainLocalIP(taskinfo->task_id);
         if (!local_ip.empty()) {
             if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id,
-                taskinfo->operation_system.find("win") == std::string::npos ? g_vm_login_username : "admin", taskinfo->login_password)) {
+                taskinfo->operation_system.find("win") == std::string::npos ? g_vm_login_username : g_vm_login_username_win, taskinfo->login_password)) {
                 m_vm_client.DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
