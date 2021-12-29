@@ -871,7 +871,9 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
             ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().publicip() << "\"";
             ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
-            ss_tasks << ", \"user_name\":" << "\"" << g_vm_login_username << "\"";
+            ss_tasks << ", \"user_name\":" << "\""
+                     << (task->operation_system.find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username)
+                     << "\"";
             ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
 
             std::shared_ptr<TaskResource> task_resource = TaskResourceMgr::instance().getTaskResource(data->task_id);
