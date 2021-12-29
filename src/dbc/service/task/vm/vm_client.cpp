@@ -562,6 +562,13 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
             }
+        } else if (info.state == VIR_DOMAIN_PMSUSPENDED) {
+            if (virDomainPMWakeup(domainPtr, 0) < 0) {
+                errorNum = E_DEFAULT;
+
+                virErrorPtr error = virGetLastError();
+                TASK_LOG_ERROR(domain_name, "virDomainPMWakeup error: " << (error ? error->message : ""));
+            }
         }
     } while(0);
 

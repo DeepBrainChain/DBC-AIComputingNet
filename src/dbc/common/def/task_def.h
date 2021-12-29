@@ -55,6 +55,7 @@ enum ETaskStatus {
     TS_Resetting,   //正在reset
     TS_Deleting,    //正在删除
     TS_CreatingSnapshot,  //正在创建快照
+    TS_PMSuspended, //虚拟机已进入睡眠状态
 
     TS_Error,   //出错
     TS_CreateError,

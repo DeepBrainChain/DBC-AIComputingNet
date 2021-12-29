@@ -1420,7 +1420,7 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
 
 
     virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF) {
+    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_PMSUSPENDED) {
         taskinfo->__set_status(TS_Starting);
         taskinfo->__set_last_start_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1446,7 +1446,7 @@ FResult TaskManager::stopTask(const std::string& wallet, const std::string &task
     }
 
     virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_PAUSED) {
+    if (vm_status != VIR_DOMAIN_SHUTOFF) {
         taskinfo->__set_status(TS_Stopping);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -1491,6 +1491,8 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
 }
 
 FResult TaskManager::resetTask(const std::string& wallet, const std::string &task_id) {
+    return FResultOK;
+
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
         return {E_DEFAULT, "task_id not exist"};
@@ -1523,20 +1525,15 @@ FResult TaskManager::deleteTask(const std::string& wallet, const std::string &ta
     }
 
     virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
-    if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF ||
-        vm_status == VIR_DOMAIN_RUNNING || vm_status == VIR_DOMAIN_PAUSED) {
-        taskinfo->__set_status(TS_Deleting);
-        taskinfo->__set_last_stop_time(time(nullptr));
-        TaskInfoMgr::instance().update(taskinfo);
+    taskinfo->__set_status(TS_Deleting);
+    taskinfo->__set_last_stop_time(time(nullptr));
+    TaskInfoMgr::instance().update(taskinfo);
 
-        ETaskEvent ev;
-        ev.task_id = task_id;
-        ev.op = T_OP_Delete;
-        add_process_task(ev);
-        return FResultOK;
-    } else {
-        return {E_DEFAULT, "task is " + vm_status_string(vm_status)};
-    }
+    ETaskEvent ev;
+    ev.task_id = task_id;
+    ev.op = T_OP_Delete;
+    add_process_task(ev);
+    return FResultOK;
 }
 
 FResult TaskManager::getTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines,
@@ -1606,6 +1603,8 @@ ETaskStatus TaskManager::getTaskStatus(const std::string &task_id) {
             ev.task_id = task_id;
             ev.op = T_OP_Stop;
             add_process_task(ev);
+        } else if (ts == TS_Running && vm_status == VIR_DOMAIN_PMSUSPENDED) {
+            return TS_PMSuspended;
         }
 
         return ts;
