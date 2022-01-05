@@ -13,6 +13,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                          const std::string& vedio_pci, const std::string & image_file,
                          const std::string& disk_file, int32_t vnc_port, const std::string& vnc_pwd,
+                         const std::vector<std::string>& multicast,
                          bool is_windows = false, bool uefi = false)
 {
     tinyxml2::XMLDocument doc;
@@ -297,6 +298,20 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     interface_node->LinkEndChild(interface_model_node);
     dev_node->LinkEndChild(interface_node);
 
+    // multicast
+    if (!multicast.empty()) {
+        for (const auto &address : multicast) {
+            std::vector<std::string> vecSplit = util::split(address, ":");
+            tinyxml2::XMLElement* mcast_node = doc.NewElement("interface");
+            mcast_node->SetAttribute("type", "mcast");
+            tinyxml2::XMLElement* mcast_source_node = doc.NewElement("source");
+            mcast_source_node->SetAttribute("address", vecSplit[0].c_str());
+            mcast_source_node->SetAttribute("port", vecSplit[1].c_str());
+            mcast_node->LinkEndChild(mcast_source_node);
+            dev_node->LinkEndChild(mcast_node);
+        }
+    }
+
     // vnc
     tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
     graphics_node->SetAttribute("type", "vnc");
@@ -425,7 +440,8 @@ bool VmClient::Init() {
 }
 
 int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name, const std::string& data_file_name,
-                               const std::shared_ptr<TaskResource>& task_resource, bool is_windows, bool uefi) {
+                               const std::shared_ptr<TaskResource>& task_resource, const std::vector<std::string>& multicast,
+                               bool is_windows, bool uefi) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
         return E_DEFAULT;
@@ -491,6 +507,12 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
         boost::filesystem::copy_file("/data/" + data_file_name, data_file);
     }
 
+    if (!multicast.empty()) {
+        for (const auto & mcast : multicast) {
+            TASK_LOG_INFO(domain_name, "add multicast address: " << mcast);
+        }
+    }
+
     // vnc
     LOG_INFO << "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password;
     TASK_LOG_INFO(domain_name, "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password);
@@ -500,6 +522,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
                                            task_resource->cpu_cores, task_resource->cpu_threads,
                                            vga_pci, to_image_path, data_file,
                                            task_resource->vnc_port, task_resource->vnc_password,
+                                           multicast,
                                            is_windows, uefi);
 
     virDomainPtr domainPtr = nullptr;
@@ -1106,6 +1129,55 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
     }
 
     return vm_local_ip;
+}
+
+int32_t VmClient::GetDomainAgentInterfaceAddress(const std::string& domain_name, std::vector<std::tuple<std::string, std::string>> &address) {
+    if (m_connPtr == nullptr) {
+        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        return -1;
+    }
+
+    virDomainPtr domainPtr = nullptr;
+    virDomainInterfacePtr *ifaces = nullptr;
+    int ifaces_count = -1;
+
+    do {
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (nullptr == domainPtr) {
+            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
+            break;
+        }
+
+        ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
+            VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT, 0);
+        for (int i = 0; i < ifaces_count; i++) {
+            /*
+            std::string if_name = ifaces[i]->name;
+            std::string if_hwaddr;
+            if (ifaces[i]->hwaddr)
+                if_hwaddr = ifaces[i]->hwaddr;
+            */
+            for (int j = 0; j < ifaces[i]->naddrs; j++) {
+                virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
+                //printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
+                if (ip_addr->type == 0 && strncmp(ip_addr->addr, "127.", 4) != 0 && strncmp(ip_addr->addr, "192.168.", 8) != 0) {
+                    address.push_back(std::make_tuple(ifaces[i]->hwaddr, ip_addr->addr));
+                }
+            }
+        }
+    } while(0);
+
+    if (ifaces && ifaces_count > 0) {
+        for (int i = 0; i < ifaces_count; i++) {
+            virDomainInterfaceFree(ifaces[i]);
+        }
+    }
+    if (ifaces)
+        free(ifaces);
+    if (nullptr != domainPtr) {
+        virDomainFree(domainPtr);
+    }
+    return ifaces_count;
 }
 
 bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd) {

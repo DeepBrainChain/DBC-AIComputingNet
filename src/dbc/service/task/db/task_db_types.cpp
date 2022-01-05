@@ -235,6 +235,11 @@ namespace dbc {
         this->custom_port = val;
         __isset.custom_port = true;
     }
+
+    void TaskInfo::__set_multicast(const std::vector<std::string> & val) {
+        this->multicast = val;
+        __isset.multicast = true;
+    }
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj)
     {
         obj.printTo(out);
@@ -412,6 +417,26 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
+                case 18:
+                    if (ftype == ::apache::thrift::protocol::T_LIST) {
+                        {
+                            this->multicast.clear();
+                            uint32_t _size7;
+                            ::apache::thrift::protocol::TType _etype10;
+                            xfer += iprot->readListBegin(_etype10, _size7);
+                            this->multicast.resize(_size7);
+                            uint32_t _i11;
+                            for (_i11 = 0; _i11 < _size7; ++_i11)
+                            {
+                                xfer += iprot->readString(this->multicast[_i11]);
+                            }
+                            xfer += iprot->readListEnd();
+                        }
+                        this->__isset.multicast = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -522,6 +547,19 @@ namespace dbc {
             }
             xfer += oprot->writeFieldEnd();
         }
+        if (this->__isset.multicast) {
+            xfer += oprot->writeFieldBegin("multicast", ::apache::thrift::protocol::T_LIST, 18);
+            {
+                xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multicast.size()));
+                std::vector<std::string> ::const_iterator _iter13;
+                for (_iter13 = this->multicast.begin(); _iter13 != this->multicast.end(); ++_iter13)
+                {
+                    xfer += oprot->writeString((*_iter13));
+                }
+                xfer += oprot->writeListEnd();
+            }
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -546,6 +584,7 @@ namespace dbc {
         swap(a.bios_mode, b.bios_mode);
         swap(a.rdp_port, b.rdp_port);
         swap(a.custom_port, b.custom_port);
+        swap(a.multicast, b.multicast);
         swap(a.__isset, b.__isset);
     }
 
@@ -567,6 +606,7 @@ namespace dbc {
         bios_mode = other8.bios_mode;
         rdp_port = other8.rdp_port;
         custom_port = other8.custom_port;
+        multicast = other8.multicast;
         __isset = other8.__isset;
     }
     TaskInfo& TaskInfo::operator=(const TaskInfo& other9) {
@@ -587,6 +627,7 @@ namespace dbc {
         bios_mode = other9.bios_mode;
         rdp_port = other9.rdp_port;
         custom_port = other9.custom_port;
+        multicast = other9.multicast;
         __isset = other9.__isset;
         return *this;
     }
@@ -610,6 +651,7 @@ namespace dbc {
         out << ", " << "bios_mode="; (__isset.bios_mode ? (out << to_string(bios_mode)) : (out << "<null>"));
         out << ", " << "rdp_port="; (__isset.rdp_port ? (out << to_string(rdp_port)) : (out << "<null>"));
         out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
+        out << ", " << "multicast="; (__isset.multicast ? (out << to_string(multicast)) : (out << "<null>"));
         out << ")";
     }
 
