@@ -81,7 +81,7 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const HardwareResource& obj);
 
     typedef struct _TaskInfo__isset {
-        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false), data_file_name(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false) {}
+        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false), data_file_name(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false) {}
         bool image_name :1;
         bool login_password :1;
         bool ssh_port :1;
@@ -98,6 +98,7 @@ namespace dbc {
         bool bios_mode :1;
         bool rdp_port :1;
         bool custom_port :1;
+        bool multicast :1;
     } _TaskInfo__isset;
 
     class TaskInfo : public virtual ::apache::thrift::TBase {
@@ -126,6 +127,7 @@ namespace dbc {
         std::string bios_mode;
         std::string rdp_port;
         std::vector<std::string>  custom_port;
+        std::vector<std::string>  multicast;
 
         _TaskInfo__isset __isset;
 
@@ -162,6 +164,8 @@ namespace dbc {
         void __set_rdp_port(const std::string& val);
 
         void __set_custom_port(const std::vector<std::string> & val);
+
+        void __set_multicast(const std::vector<std::string> & val);
 
         bool operator == (const TaskInfo & rhs) const
         {
@@ -228,6 +232,10 @@ namespace dbc {
             if (__isset.custom_port != rhs.__isset.custom_port)
                 return false;
             else if (__isset.custom_port && !(custom_port == rhs.custom_port))
+                return false;
+            if (__isset.multicast != rhs.__isset.multicast)
+                return false;
+            else if (__isset.multicast && !(multicast == rhs.multicast))
                 return false;
             return true;
         }

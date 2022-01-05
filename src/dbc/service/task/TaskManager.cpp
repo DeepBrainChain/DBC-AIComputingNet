@@ -585,6 +585,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     taskinfo->__set_status(TS_Creating);
     taskinfo->__set_operation_system(createparams.operation_system);
     taskinfo->__set_bios_mode(createparams.bios_mode);
+    taskinfo->__set_multicast(createparams.multicast);
     TaskInfoMgr::instance().addTaskInfo(taskinfo);
 
     std::shared_ptr<TaskResource> task_resource = std::make_shared<TaskResource>();
@@ -623,7 +624,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     std::string image_name, s_ssh_port, s_rdp_port, s_gpu_count, s_cpu_cores, s_mem_size,
             s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name, operation_system, bios_mode;
-    std::vector<std::string> custom_ports;
+    std::vector<std::string> custom_ports, multicast;
 
     JSON_PARSE_STRING(doc, "image_name", image_name)
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)
@@ -636,6 +637,18 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
                 if (v_item.IsString()) {
                     std::string str = v_item.GetString();
                     custom_ports.push_back(str);
+                }
+            }
+        }
+    }
+    if (doc.HasMember("multicast")) {
+        const rapidjson::Value& v_multicast = doc["multicast"];
+        if (v_multicast.IsArray()) {
+            for (rapidjson::SizeType i = 0; i < v_multicast.Size(); i++) {
+                const rapidjson::Value& v_item = v_multicast[i];
+                if (v_item.IsString()) {
+                    std::string str = v_item.GetString();
+                    multicast.push_back(str);
                 }
             }
         }
@@ -790,6 +803,11 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (std::get<0>(fret) != E_SUCCESS) {
             return fret;
         }
+        // check multicast
+        fret = check_multicast(multicast);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
     }
     else {
         if (role != USER_ROLE::UR_RENTER_WALLET && role != USER_ROLE::UR_RENTER_SESSION_ID) {
@@ -871,6 +889,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         vnc_password = xml_params.vnc_password;
         operation_system = xml_params.operation_system;
         bios_mode = xml_params.bios_mode;
+        multicast = xml_params.multicast;
 
         // check
         // image
@@ -907,6 +926,11 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (std::get<0>(fret) != E_SUCCESS) {
             return fret;
         }
+        // check multicast
+        fret = check_multicast(multicast);
+        if (std::get<0>(fret) != E_SUCCESS) {
+            return fret;
+        }
     }
 
     // params
@@ -929,6 +953,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.vnc_password = vnc_password;
     params.operation_system = operation_system;
     params.bios_mode = bios_mode;
+    params.multicast = multicast;
 
     return {E_SUCCESS, "ok"};
 }
@@ -1122,6 +1147,21 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
         ele_disk = ele_disk->NextSiblingElement("disk");
     }
 
+    // interface
+    tinyxml2::XMLElement* ele_interface = el_devices->FirstChildElement("interface");
+    while(ele_interface != nullptr) {
+        std::string interface_type = ele_interface->Attribute("type");
+        if (interface_type == "mcast") {
+            tinyxml2::XMLElement* ele_interface_source = ele_interface->FirstChildElement("source");
+            if (ele_interface_source != nullptr) {
+                std::string mcast_address = ele_interface_source->Attribute("address");
+                std::string mcast_port = ele_interface_source->Attribute("port");
+                params.multicast.push_back(mcast_address + ":" + mcast_port);
+            }
+        }
+        ele_interface = ele_interface->NextSiblingElement("interface");
+    }
+
     // vnc
     tinyxml2::XMLElement* ele_graphics = el_devices->FirstChildElement("graphics");
     while (ele_graphics != nullptr) {
@@ -1248,6 +1288,21 @@ FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
     if (bios_mode == "legacy") return FResultOK;
     if (bios_mode == "uefi") return FResultOK;
     return {E_DEFAULT, "bios mode only supported [legacy] or [uefi]"};
+}
+
+FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) {
+    if (multicast.empty()) return FResultOK;
+    for (const auto& address : multicast) {
+        std::vector<std::string> vecSplit = util::split(address, ":");
+        if (vecSplit.size() != 2) {
+            return {E_DEFAULT, "multicast format: ip:port"};
+        }
+        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string(vecSplit[0]), atoi(vecSplit[1]));
+        if (!ep.address().is_multicast()) {
+            return {E_DEFAULT, "address is not a multicast address"};
+        }
+    }
+    return FResultOK;
 }
 
 FResult TaskManager::parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info) {
@@ -1611,6 +1666,12 @@ ETaskStatus TaskManager::getTaskStatus(const std::string &task_id) {
     }
 }
 
+int32_t TaskManager::getTaskAgentInterfaceAddress(const std::string &task_id, std::vector<std::tuple<std::string, std::string>> &address) {
+    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    if (vm_status != VIR_DOMAIN_RUNNING) return -1;
+    return m_vm_client.GetDomainAgentInterfaceAddress(task_id, address);
+}
+
 void TaskManager::deleteAllCheckTasks() {
     std::vector<std::string> check_ids;
     std::vector<std::string> ids = TaskInfoMgr::instance().getAllTaskId();
@@ -1885,6 +1946,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
     }
 
     ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource,
+                                                 taskinfo->multicast,
                                                  taskinfo->operation_system.find("win") != std::string::npos,
                                                  taskinfo->bios_mode == "uefi");
     if (err_code != E_SUCCESS) {

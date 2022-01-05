@@ -63,6 +63,8 @@ public:
 
     ETaskStatus getTaskStatus(const std::string &task_id);
 
+    int32_t getTaskAgentInterfaceAddress(const std::string &task_id, std::vector<std::tuple<std::string, std::string>> &address);
+
     void deleteAllCheckTasks();
 
     void deleteOtherCheckTasks(const std::string& wallet);
@@ -139,6 +141,8 @@ protected:
     FResult check_operation_system(const std::string& os);
 
     FResult check_bios_mode(const std::string& bios_mode);
+
+    FResult check_multicast(const std::vector<std::string>& multicast);
 
     FResult parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info);
 

@@ -1214,6 +1214,22 @@ void node_request_service::task_list(const dbc::network::base_header& header,
 
             ss_tasks << ", \"status\":" << "\"" << task_status_string(m_task_scheduler.getTaskStatus(task->task_id)) << "\"";
 
+            if (!task->multicast.empty()) {
+                std::vector<std::tuple<std::string, std::string>> address;
+                int addr_ret = m_task_scheduler.getTaskAgentInterfaceAddress(task->task_id, address);
+                if (addr_ret >= 0 && !address.empty()) {
+                    ss_tasks << ", \"local_address\":[";
+                    int idx = 0;
+                    for (const auto &addr : address) {
+                        if (idx > 0)
+                            ss_tasks << ",";
+                        ss_tasks << "\"" << std::get<1>(addr) << "\"";
+                        idx++;
+                    }
+                    ss_tasks << "]";
+                }
+            }
+
             std::map<std::string, domainDiskInfo> disks;
             m_task_scheduler.listTaskDiskInfo(task->task_id, disks);
             if (!disks.empty()) {

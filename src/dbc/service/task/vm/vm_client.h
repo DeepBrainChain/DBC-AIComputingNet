@@ -27,7 +27,8 @@ public:
     bool Init();
 
     int32_t CreateDomain(const std::string& domain_name, const std::string& image, const std::string& data_file,
-                         const std::shared_ptr<TaskResource>& task_resource, bool is_windows = false, bool uefi = false);
+                         const std::shared_ptr<TaskResource>& task_resource, const std::vector<std::string>& multicast,
+                         bool is_windows = false, bool uefi = false);
 
     int32_t StartDomain(const std::string& domain_name);
 
@@ -56,6 +57,8 @@ public:
     FResult GetDomainLog(const std::string& domain_name, ETaskLogDirection direction, int32_t linecount, std::string &log_content);
 
     std::string GetDomainLocalIP(const std::string &domain_name);
+
+    int32_t GetDomainAgentInterfaceAddress(const std::string& domain_name, std::vector<std::tuple<std::string, std::string>> &address);
 
     bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
 
