@@ -37,6 +37,7 @@ namespace check_kvm {
                                     int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                                     const std::string &vedio_pci, const std::string &image_file,
                                     const std::string &disk_file, int32_t vnc_port, const std::string& vnc_pwd,
+                                    const std::vector<std::string>& multicast,
                                     bool is_windows = false, bool uefi = false) {
         tinyxml2::XMLDocument doc;
 
@@ -156,6 +157,13 @@ namespace check_kvm {
         tinyxml2::XMLElement *node_cache = doc.NewElement("cache");
         node_cache->SetAttribute("mode", "passthrough");
         cpu_node->LinkEndChild(node_cache);
+        if (is_windows) {
+            // add at 2022.01.06 -- 使windows虚拟机中任务管理器的cpu显示不再是虚拟机
+            tinyxml2::XMLElement *cpu_feature = doc.NewElement("feature");
+            cpu_feature->SetAttribute("policy", "disable");
+            cpu_feature->SetAttribute("name", "hypervisor");
+            cpu_node->LinkEndChild(cpu_feature);
+        }
         root->LinkEndChild(cpu_node);
 
         tinyxml2::XMLElement *clock_node = doc.NewElement("clock");
@@ -338,6 +346,20 @@ namespace check_kvm {
         interface_node->LinkEndChild(interface_model_node);
         dev_node->LinkEndChild(interface_node);
 
+        // multicast
+        if (!multicast.empty()) {
+            for (const auto &address : multicast) {
+                std::vector<std::string> vecSplit = SplitStr(address, ':');
+                tinyxml2::XMLElement* mcast_node = doc.NewElement("interface");
+                mcast_node->SetAttribute("type", "mcast");
+                tinyxml2::XMLElement* mcast_source_node = doc.NewElement("source");
+                mcast_source_node->SetAttribute("address", vecSplit[0].c_str());
+                mcast_source_node->SetAttribute("port", vecSplit[1].c_str());
+                mcast_node->LinkEndChild(mcast_source_node);
+                dev_node->LinkEndChild(mcast_node);
+            }
+        }
+
         // vnc
         tinyxml2::XMLElement *graphics_node = doc.NewElement("graphics");
         graphics_node->SetAttribute("type", "vnc");
@@ -361,12 +383,14 @@ namespace check_kvm {
 
         // cpu (qemu:commandline)
         tinyxml2::XMLElement *node_qemu_commandline = doc.NewElement("qemu:commandline");
-        tinyxml2::XMLElement *node_qemu_arg1 = doc.NewElement("qemu:arg");
-        node_qemu_arg1->SetAttribute("value", "-cpu");
-        node_qemu_commandline->LinkEndChild(node_qemu_arg1);
-        tinyxml2::XMLElement *node_qemu_arg2 = doc.NewElement("qemu:arg");
-        node_qemu_arg2->SetAttribute("value", "host,kvm=off,hv_vendor_id=null");
-        node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+        if (!is_windows) {
+            tinyxml2::XMLElement *node_qemu_arg1 = doc.NewElement("qemu:arg");
+            node_qemu_arg1->SetAttribute("value", "-cpu");
+            node_qemu_commandline->LinkEndChild(node_qemu_arg1);
+            tinyxml2::XMLElement *node_qemu_arg2 = doc.NewElement("qemu:arg");
+            node_qemu_arg2->SetAttribute("value", "host,kvm=off,hv_vendor_id=null");
+            node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+        }
         tinyxml2::XMLElement *node_qemu_arg3 = doc.NewElement("qemu:arg");
         node_qemu_arg3->SetAttribute("value", "-machine");
         node_qemu_commandline->LinkEndChild(node_qemu_arg3);
@@ -392,6 +416,7 @@ namespace check_kvm {
     std::string CreateDomainXML(const std::string &domain_name, const std::string &image_name,
                          int32_t sockets, int32_t cores_per_socket, int32_t threads_per_core,
                          const std::string& vga_pci, int64_t mem, int32_t vnc_port, const std::string& vnc_pwd,
+                         const std::vector<std::string>& multicast,
                          bool is_windows = false, bool uefi = false) {
         bool ret = true;
 
@@ -449,9 +474,16 @@ namespace check_kvm {
         std::string create_ret = run_shell(cmd_create_img.c_str());
         std::cout << create_ret << std::endl;
 
+        if (!multicast.empty()) {
+            for (const auto & mcast : multicast) {
+                std::cout << "add multicast address: " << mcast << std::endl;
+            }
+        }
+
         std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
                                                cpuNumTotal, sockets, cores_per_socket, threads_per_core,
-                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd, is_windows, uefi);
+                                               vga_pci, to_image_path, data_file, vnc_port, vnc_pwd,
+                                               multicast, is_windows, uefi);
         return xml_content;
     }
 
@@ -549,6 +581,8 @@ namespace check_kvm {
         bool is_windows = false;
         bool uefi_load = false;
 
+        std::vector<std::string> multicast;
+
         const ::DeviceCpu& cpus = SystemResourceMgr::instance().GetCpu();
         int sockets = cpus.sockets;
         int cores = cpus.cores_per_socket - 1;
@@ -582,13 +616,14 @@ namespace check_kvm {
             opts.add_options()
             ("ssh_port", boost::program_options::value<std::string>(), "")
             ("localip", boost::program_options::value<std::string>(), "")
-            ("image", boost::program_options::value<std::string>(), "")
-            ("vnc_port", boost::program_options::value<int32_t>(), "")
-            ("vnc_pwd", boost::program_options::value<std::string>(), "")
-            ("domain_name", boost::program_options::value<std::string>(), "")
+            ("image", boost::program_options::value<std::string>(), "specify the image name used to create vm")
+            ("vnc_port", boost::program_options::value<int32_t>(), "specify vnc port")
+            ("vnc_pwd", boost::program_options::value<std::string>(), "specify vnc password")
+            ("domain_name", boost::program_options::value<std::string>(), "specify domain name")
             ("windows", "windows virtual machine")
             ("uefi", "uefi loader")
-            ("max_gpus", boost::program_options::value<int32_t>(), "max gpu count");
+            ("max_gpus", boost::program_options::value<int32_t>(), "max gpu count")
+            ("multicast", boost::program_options::value<std::string>(), "multicast address");
 
             try {
                 boost::program_options::variables_map vm;
@@ -637,6 +672,25 @@ namespace check_kvm {
                 if (vm.count("max_gpus")) {
                     max_gpu_count = vm["max_gpus"].as<int32_t>();
                 }
+                if (vm.count("multicast")) {
+                    multicast = SplitStr(vm["multicast"].as<std::string>(), ',');
+                    if (multicast.empty()) {
+                        std::cout << "multicast address format: 230.0.0.1:5558" << std::endl;
+                        return;
+                    }
+                    for (const auto& address : multicast) {
+                        std::vector<std::string> vecSplit = SplitStr(address, ':');
+                        if (vecSplit.size() != 2) {
+                            std::cout << "multicast address format: 230.0.0.1:5558" << std::endl;
+                            return;
+                        }
+                        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string(vecSplit[0]), atoi(vecSplit[1].c_str()));
+                        if (!ep.address().is_multicast()) {
+                            std::cout << "address is not a multicast address" << std::endl;
+                            return;
+                        }
+                    }
+                }
             }
             catch (const std::exception &e) {
                 std::cout << "invalid command option " << e.what() << std::endl;
@@ -668,7 +722,7 @@ namespace check_kvm {
                 delete_iptable(domain_name, public_ip, ssh_port, vm_local_ip);
             }
             std::string xml_content = CreateDomainXML(domain_name, image_name, sockets, cores, threads,
-                            vga_gpu, memory_total, vnc_port, vnc_pwd, is_windows, uefi_load);
+                            vga_gpu, memory_total, vnc_port, vnc_pwd, multicast, is_windows, uefi_load);
             if (xml_content.empty()) {
                 std::cout << "domain xml empty" << std::endl;
                 print_red("check vm %s failed", domain_name.c_str());

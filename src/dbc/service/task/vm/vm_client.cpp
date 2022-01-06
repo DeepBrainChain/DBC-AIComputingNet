@@ -135,6 +135,13 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* node_cache = doc.NewElement("cache");
     node_cache->SetAttribute("mode", "passthrough");
     cpu_node->LinkEndChild(node_cache);
+    if (is_windows) {
+        // add at 2022.01.06 -- 使windows虚拟机中任务管理器的cpu显示不再是虚拟机
+        tinyxml2::XMLElement* cpu_feature = doc.NewElement("feature");
+        cpu_feature->SetAttribute("policy", "disable");
+        cpu_feature->SetAttribute("name", "hypervisor");
+        cpu_node->LinkEndChild(cpu_feature);
+    }
     root->LinkEndChild(cpu_node);
 
     tinyxml2::XMLElement* clock_node = doc.NewElement("clock");
@@ -335,12 +342,14 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
 
     // cpu (qemu:commandline)
     tinyxml2::XMLElement* node_qemu_commandline = doc.NewElement("qemu:commandline");
-    tinyxml2::XMLElement* node_qemu_arg1 = doc.NewElement("qemu:arg");
-    node_qemu_arg1->SetAttribute("value", "-cpu");
-    node_qemu_commandline->LinkEndChild(node_qemu_arg1);
-    tinyxml2::XMLElement* node_qemu_arg2 = doc.NewElement("qemu:arg");
-    node_qemu_arg2->SetAttribute("value", "host,kvm=off,hv_vendor_id=null");
-    node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+    if (!is_windows) {
+        tinyxml2::XMLElement* node_qemu_arg1 = doc.NewElement("qemu:arg");
+        node_qemu_arg1->SetAttribute("value", "-cpu");
+        node_qemu_commandline->LinkEndChild(node_qemu_arg1);
+        tinyxml2::XMLElement* node_qemu_arg2 = doc.NewElement("qemu:arg");
+        node_qemu_arg2->SetAttribute("value", "host,kvm=off,hv_vendor_id=null");
+        node_qemu_commandline->LinkEndChild(node_qemu_arg2);
+    }
     tinyxml2::XMLElement* node_qemu_arg3 = doc.NewElement("qemu:arg");
     node_qemu_arg3->SetAttribute("value", "-machine");
     node_qemu_commandline->LinkEndChild(node_qemu_arg3);
