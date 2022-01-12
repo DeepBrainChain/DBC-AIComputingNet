@@ -5,7 +5,7 @@ if [ $# -lt 1 ]; then
 	exit 0
 fi
 
-download_url=http://121.57.95.175:20027/index.html/dbc
+download_url=http://36.102.233.175:20027/index.html/dbc
 dir_num=$#
 arr_dir=($*)
 cur_path=$(cd .; pwd)

@@ -869,6 +869,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
         if (nullptr != task) {
             ss_tasks << "{";
             ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
+            ss_tasks << ", \"os\":" << "\"" << task->operation_system << "\"";
             ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().publicip() << "\"";
             ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
             ss_tasks << ", \"user_name\":" << "\""
