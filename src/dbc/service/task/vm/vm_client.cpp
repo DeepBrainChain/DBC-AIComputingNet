@@ -53,7 +53,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* os_node = doc.NewElement("os");
     tinyxml2::XMLElement* os_sub_node = doc.NewElement("type");
     os_sub_node->SetAttribute("arch", "x86_64");
-    os_sub_node->SetAttribute("machine", is_windows ? "q35" : "pc-1.2");
+    os_sub_node->SetAttribute("machine", is_windows ? "q35" : "pc");
     os_sub_node->SetText("hvm");
     os_node->LinkEndChild(os_sub_node);
 
@@ -172,10 +172,10 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     /*
     tinyxml2::XMLElement* node_pm = doc.NewElement("pm");
     tinyxml2::XMLElement* node_suspend_to_mem = doc.NewElement("suspend-to-mem");
-    node_suspend_to_mem->SetAttribute("enabled", "on");
+    node_suspend_to_mem->SetAttribute("enabled", "no");
     node_pm->LinkEndChild(node_suspend_to_mem);
     tinyxml2::XMLElement* node_suspend_to_disk = doc.NewElement("suspend-to-disk");
-    node_suspend_to_disk->SetAttribute("enabled", "on");
+    node_suspend_to_disk->SetAttribute("enabled", "no");
     node_pm->LinkEndChild(node_suspend_to_disk);
     root->LinkEndChild(node_pm);
     */
