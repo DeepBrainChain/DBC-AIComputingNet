@@ -682,8 +682,11 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
         if (boost::filesystem::is_regular_file("/data/ubuntu-2004.qcow2", error_code) && !error_code) {
             images.push_back("ubuntu-2004.qcow2");
         }
-        if (boost::filesystem::is_regular_file("/data/win.qcow2", error_code) && !error_code) {
-            images.push_back("win.qcow2");
+        if (boost::filesystem::is_regular_file("/data/windows_1909.qcow2", error_code) && !error_code) {
+            images.push_back("windows_1909.qcow2");
+        }
+        if (boost::filesystem::is_regular_file("/data/windows_21h1.qcow2", error_code) && !error_code) {
+            images.push_back("windows_21h1.qcow2");
         }
     }
     ss << ",\"images\":" << "[";
@@ -872,6 +875,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << ", \"os\":" << "\"" << task->operation_system << "\"";
             ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().publicip() << "\"";
             ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
+            ss_tasks << ", \"rdp_port\":" << "\"" << task->rdp_port << "\"";
             ss_tasks << ", \"user_name\":" << "\""
                      << (task->operation_system.find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username)
                      << "\"";
