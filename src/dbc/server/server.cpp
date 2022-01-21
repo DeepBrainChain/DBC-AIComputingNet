@@ -149,7 +149,8 @@ int32_t server::parse_command_line(int argc, const char *const argv[],
         ("id", "get local node id")
         ("daemon,d", "run as daemon process")
         ("ai_training,a", "run as ai training service provider")
-        ("name,n", bpo::value<std::string>(), "node name");
+        ("name,n", bpo::value<std::string>(), "node name")
+        ("version,v", "dbc version");
 
     try {
         bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
@@ -161,7 +162,10 @@ int32_t server::parse_command_line(int argc, const char *const argv[],
         return E_BAD_PARAM;
     }
 
-    if (vm.count("daemon") || vm.count("d")) {
+    if (vm.count("version")) {
+        std::cout << "version: " << dbcversion() << std::endl;
+        return E_EXIT_PARSE_COMMAND_LINE;
+    } else if (vm.count("daemon") || vm.count("d")) {
         return on_daemon();
     } else if (vm.count("id")) {
         bpo::variables_map vm;
