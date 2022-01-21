@@ -1475,7 +1475,7 @@ FResult TaskManager::stopTask(const std::string& wallet, const std::string &task
     }
 }
 
-FResult TaskManager::restartTask(const std::string& wallet, const std::string &task_id) {
+FResult TaskManager::restartTask(const std::string& wallet, const std::string &task_id, bool force_reboot) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
         return {E_DEFAULT, "task_id not exist"};
@@ -1496,7 +1496,7 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
 
         ETaskEvent ev;
         ev.task_id = task_id;
-        ev.op = T_OP_ReStart;
+        ev.op = force_reboot ? T_OP_ForceReboot : T_OP_ReStart;
         add_process_task(ev);
         return FResultOK;
     } else {
@@ -1864,6 +1864,9 @@ void TaskManager::process_task(const ETaskEvent& ev) {
         case T_OP_ReStart:
             process_restart(taskinfo);
             break;
+        case T_OP_ForceReboot:
+            process_force_reboot(taskinfo);
+            break;
         case T_OP_Reset:
             process_reset(taskinfo);
             break;
@@ -2017,6 +2020,42 @@ void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo
             TaskInfoMgr::instance().update(taskinfo);
             add_iptable_to_system(taskinfo->task_id);
             TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
+        }
+    }
+}
+
+void TaskManager::process_force_reboot(const std::shared_ptr<dbc::TaskInfo>& taskinfo) {
+    virDomainState vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+    if (vm_status == VIR_DOMAIN_SHUTOFF) {
+        ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
+        if (err_code != E_SUCCESS) {
+            taskinfo->status = TS_RestartError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
+        } else {
+            taskinfo->status = TS_Running;
+            TaskInfoMgr::instance().update(taskinfo);
+            add_iptable_to_system(taskinfo->task_id);
+            TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
+        }
+    } else /*if (vm_status == VIR_DOMAIN_RUNNING)*/ {
+        ERR_CODE err_code = m_vm_client.DestroyDomain(taskinfo->task_id);
+        if (err_code != E_SUCCESS) {
+            taskinfo->status = TS_RestartError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
+        } else {
+            sleep(3);
+            if ((err_code = m_vm_client.StartDomain(taskinfo->task_id)) == E_SUCCESS) {
+                taskinfo->status = TS_Running;
+                TaskInfoMgr::instance().update(taskinfo);
+                add_iptable_to_system(taskinfo->task_id);
+                TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
+            } else {
+                taskinfo->status = TS_RestartError;
+                TaskInfoMgr::instance().update(taskinfo);
+                TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
+            }
         }
     }
 }

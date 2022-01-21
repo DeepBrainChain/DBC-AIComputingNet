@@ -1389,7 +1389,7 @@ void node_request_service::task_restart(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.restartTask(result.rent_wallet, data->task_id);
+    auto fresult = m_task_scheduler.restartTask(result.rent_wallet, data->task_id, data->force_reboot != 0);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 

@@ -34,7 +34,8 @@ enum ETaskOp {
     T_OP_Create,    //创建
     T_OP_Start,     //启动
     T_OP_Stop,      //停止
-    T_OP_ReStart,   //重启
+    T_OP_ReStart,   //重启(reboot domain)
+    T_OP_ForceReboot,  //强制重启(destroy domain && start domain)
     T_OP_Reset,     //reset
     T_OP_Delete,    //删除
     T_OP_CreateSnapshot  //创建快照

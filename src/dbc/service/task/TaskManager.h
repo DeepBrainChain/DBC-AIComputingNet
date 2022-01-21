@@ -37,7 +37,7 @@ public:
 
     FResult stopTask(const std::string& wallet, const std::string &task_id);
 
-    FResult restartTask(const std::string& wallet, const std::string &task_id);
+    FResult restartTask(const std::string& wallet, const std::string &task_id, bool force_reboot = false);
 
     FResult resetTask(const std::string& wallet, const std::string &task_id);
 
@@ -156,6 +156,8 @@ protected:
     void process_stop(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
     void process_restart(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+
+    void process_force_reboot(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
     void process_reset(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
 
