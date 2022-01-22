@@ -42,6 +42,9 @@ struct req_body {
 
     std::string task_id;
 
+    // restart force
+    int16_t force_reboot = 0;
+
     // task logs
     int16_t head_or_tail = GET_LOG_TAIL;
     int32_t number_of_lines = 100;
