@@ -1926,8 +1926,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
             taskinfo->status = TS_Running;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_INFO(taskinfo->task_id, "create task successful");
-        }
-        else {
+        } else {
             m_vm_client.DestroyDomain(taskinfo->task_id);
 
             taskinfo->status = TS_CreateError;
@@ -1984,8 +1983,7 @@ void TaskManager::process_stop(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
         taskinfo->status = TS_StopError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "stop task failed");
-    }
-    else {
+    } else {
         taskinfo->status = TS_ShutOff;
         TaskInfoMgr::instance().update(taskinfo);
         remove_iptable_from_system(taskinfo->task_id);
@@ -2001,8 +1999,7 @@ void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
-        }
-        else {
+        } else {
             taskinfo->status = TS_Running;
             TaskInfoMgr::instance().update(taskinfo);
             add_iptable_to_system(taskinfo->task_id);
@@ -2014,8 +2011,7 @@ void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
-        }
-        else {
+        } else {
             taskinfo->status = TS_Running;
             TaskInfoMgr::instance().update(taskinfo);
             add_iptable_to_system(taskinfo->task_id);
@@ -2066,8 +2062,7 @@ void TaskManager::process_reset(const std::shared_ptr<dbc::TaskInfo> &taskinfo) 
         taskinfo->status = TS_ResetError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "reset task failed");
-    }
-    else {
+    } else {
         taskinfo->status = TS_Running;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_INFO(taskinfo->task_id, "reset task successful");
