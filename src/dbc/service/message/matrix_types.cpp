@@ -5544,6 +5544,11 @@ namespace dbc {
     void node_restart_task_req_data::__set_session_id_sign(const std::string& val) {
         this->session_id_sign = val;
     }
+
+    void node_restart_task_req_data::__set_force_reboot(const int16_t val) {
+        this->force_reboot = val;
+        __isset.force_reboot = true;
+    }
     std::ostream& operator<<(std::ostream& out, const node_restart_task_req_data& obj)
     {
         obj.printTo(out);
@@ -5707,6 +5712,14 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
+                case 12:
+                    if (ftype == ::apache::thrift::protocol::T_I16) {
+                        xfer += iprot->readI16(this->force_reboot);
+                        this->__isset.force_reboot = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -5814,6 +5827,11 @@ namespace dbc {
         xfer += oprot->writeString(this->session_id_sign);
         xfer += oprot->writeFieldEnd();
 
+        if (this->__isset.force_reboot) {
+            xfer += oprot->writeFieldBegin("force_reboot", ::apache::thrift::protocol::T_I16, 12);
+            xfer += oprot->writeI16(this->force_reboot);
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -5832,6 +5850,8 @@ namespace dbc {
         swap(a.multisig_signs, b.multisig_signs);
         swap(a.session_id, b.session_id);
         swap(a.session_id_sign, b.session_id_sign);
+        swap(a.force_reboot, b.force_reboot);
+        swap(a.__isset, b.__isset);
     }
 
     node_restart_task_req_data::node_restart_task_req_data(const node_restart_task_req_data& other212) {
@@ -5846,6 +5866,8 @@ namespace dbc {
         multisig_signs = other212.multisig_signs;
         session_id = other212.session_id;
         session_id_sign = other212.session_id_sign;
+        force_reboot = other212.force_reboot;
+        __isset = other212.__isset;
     }
     node_restart_task_req_data& node_restart_task_req_data::operator=(const node_restart_task_req_data& other213) {
         task_id = other213.task_id;
@@ -5859,6 +5881,8 @@ namespace dbc {
         multisig_signs = other213.multisig_signs;
         session_id = other213.session_id;
         session_id_sign = other213.session_id_sign;
+        force_reboot = other213.force_reboot;
+        __isset = other213.__isset;
         return *this;
     }
     void node_restart_task_req_data::printTo(std::ostream& out) const {
@@ -5875,6 +5899,7 @@ namespace dbc {
         out << ", " << "multisig_signs=" << to_string(multisig_signs);
         out << ", " << "session_id=" << to_string(session_id);
         out << ", " << "session_id_sign=" << to_string(session_id_sign);
+        out << ", " << "force_reboot="; (__isset.force_reboot ? (out << to_string(force_reboot)) : (out << "<null>"));
         out << ")";
     }
 

@@ -2195,6 +2195,18 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
 
     req_body body;
 
+    std::map<std::string, std::string> query_table;
+    util::split_path_into_kvs(path, query_table);
+
+    std::string force_reboot = query_table.find("force_reboot") != query_table.end() ? query_table["force_reboot"] : "";
+    int16_t enforce = 0;
+    if (force_reboot == "true") {
+        enforce = 1;
+    } else if (!force_reboot.empty()) {
+        enforce = atoi(force_reboot) == 0 ? 0 : 1;
+    }
+    body.force_reboot = enforce;
+
     body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
@@ -2294,6 +2306,9 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     req_data.__set_sign(body.sign);
     req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
     req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    if (body.force_reboot != 0) {
+        req_data.__set_force_reboot(body.force_reboot);
+    }
     std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
     for (auto& it : body.multisig_accounts.signs) {
         dbc::multisig_sign_item item;
@@ -3130,8 +3145,8 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     std::map<std::string, std::string> query_table;
     util::split_path_into_kvs(path, query_table);
 
-    std::string head_or_tail = query_table["flag"];
-    std::string number_of_lines = query_table["line_num"];
+    std::string head_or_tail = query_table.find("flag") != query_table.end() ? query_table["flag"] : "";
+    std::string number_of_lines = query_table.find("line_num") != query_table.end() ? query_table["line_num"] : "";
 
     if (head_or_tail.empty()) {
         head_or_tail = "tail";

@@ -52,6 +52,7 @@ bool HttpChainClient::connect_chain() {
         std::vector<std::string> addr = util::split(it.second, ":");
         if (!addr.empty()) {
             m_httpclient = new httplib::SSLClient(addr[0], addr.size() > 1 ? atoi(addr[1].c_str()) : 443);
+            m_httpclient->set_timeout_sec(30);
             if (m_httpclient->is_valid())
                 break;
         }

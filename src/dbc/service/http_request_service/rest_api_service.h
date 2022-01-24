@@ -44,6 +44,9 @@ struct req_body {
 
     // images
     std::string image_name;
+    
+    // restart force
+    int16_t force_reboot = 0;
 
     // task logs
     int16_t head_or_tail = GET_LOG_TAIL;

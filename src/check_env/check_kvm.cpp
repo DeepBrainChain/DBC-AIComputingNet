@@ -76,7 +76,7 @@ namespace check_kvm {
         tinyxml2::XMLElement *os_node = doc.NewElement("os");
         tinyxml2::XMLElement *os_sub_node = doc.NewElement("type");
         os_sub_node->SetAttribute("arch", "x86_64");
-        os_sub_node->SetAttribute("machine", is_windows ? "q35" : "pc-1.2");
+        os_sub_node->SetAttribute("machine", is_windows ? "q35" : "pc");
         os_sub_node->SetText("hvm");
         os_node->LinkEndChild(os_sub_node);
 
@@ -204,10 +204,10 @@ namespace check_kvm {
         /*
         tinyxml2::XMLElement* node_pm = doc.NewElement("pm");
         tinyxml2::XMLElement* node_suspend_to_mem = doc.NewElement("suspend-to-mem");
-        node_suspend_to_mem->SetAttribute("enabled", "on");
+        node_suspend_to_mem->SetAttribute("enabled", "no");
         node_pm->LinkEndChild(node_suspend_to_mem);
         tinyxml2::XMLElement* node_suspend_to_disk = doc.NewElement("suspend-to-disk");
-        node_suspend_to_disk->SetAttribute("enabled", "on");
+        node_suspend_to_disk->SetAttribute("enabled", "no");
         node_pm->LinkEndChild(node_suspend_to_disk);
         root->LinkEndChild(node_pm);
         */
@@ -282,7 +282,7 @@ namespace check_kvm {
         driver_node->SetAttribute("type", "qcow2");
         driver_node->SetAttribute("cache", "none");
         driver_node->SetAttribute("io", "native");
-        driver_node->SetAttribute("discard", "unmap");
+        // driver_node->SetAttribute("discard", "unmap");
         image_node->LinkEndChild(driver_node);
 
         tinyxml2::XMLElement *source_node = doc.NewElement("source");
@@ -614,8 +614,9 @@ namespace check_kvm {
         {
             boost::program_options::options_description opts("dbc command options");
             opts.add_options()
-            ("ssh_port", boost::program_options::value<std::string>(), "")
-            ("localip", boost::program_options::value<std::string>(), "")
+            ("ssh_port", boost::program_options::value<std::string>(), "specify ssh port in ubuntu or rdp port in windows")
+            ("localip", boost::program_options::value<std::string>(), "remove vm and delete local ip in iptables")
+            ("delete", "delete virtual machine")
             ("image", boost::program_options::value<std::string>(), "specify the image name used to create vm")
             ("vnc_port", boost::program_options::value<int32_t>(), "specify vnc port")
             ("vnc_pwd", boost::program_options::value<std::string>(), "specify vnc password")
@@ -645,6 +646,16 @@ namespace check_kvm {
                         }
                     }
                     delete_iptable(domain_name, public_ip, ssh_port, vm["localip"].as<std::string>());
+                    return;
+                }
+                if (vm.count("delete")) {
+                    std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
+                    if (domain) {
+                        if (domain->deleteDomain() < 0) {
+                            printLastError();
+                        }
+                    }
+                    delete_iptable(domain_name, public_ip, ssh_port, "");
                     return;
                 }
                 if (vm.count("image")) {
