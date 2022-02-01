@@ -33,7 +33,7 @@ public:
 protected:
     virtual int32_t parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm);
 
-    virtual int32_t on_daemon();
+    virtual void on_daemon();
 
 private:
     bool m_stop = false;

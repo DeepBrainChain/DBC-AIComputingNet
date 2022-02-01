@@ -14,10 +14,22 @@
 #include "util/system_info.h"
 
 int32_t server::init(int argc, char *argv[]) {
-    LOG_INFO << "begin server init ...";
-
     int32_t ret = E_SUCCESS;
     variables_map args;
+
+    // parse command line
+    ret = parse_command_line(argc, argv, args);
+    if (E_SUCCESS != ret) {
+        return ret;
+    }
+
+    // init log
+    ret = dbclog::instance().init();
+    if (E_SUCCESS != ret) {
+        return 0;
+    }
+
+    LOG_INFO << "begin server init ...";
 
     // crypto service
     LOG_INFO << "begin to init crypto service";
@@ -27,15 +39,6 @@ int32_t server::init(int argc, char *argv[]) {
         return ret;
     }
     LOG_INFO << "init crypto service successful";
-
-    // parse command line
-    LOG_INFO << "begin to parse command line";
-    ret = parse_command_line(argc, argv, args);
-    if (E_SUCCESS != ret) {
-        LOG_ERROR << "parse command line failed";
-        return ret;
-    }
-    LOG_INFO << "parse command line successful";
 
     // env_manager
     LOG_INFO << "begin to init env manager";
@@ -146,7 +149,6 @@ int32_t server::parse_command_line(int argc, const char *const argv[],
                                                  boost::program_options::variables_map &vm) {
     options_description opts("dbc command options");
     opts.add_options()
-        ("id", "get local node id")
         ("daemon,d", "run as daemon process")
         ("ai_training,a", "run as ai training service provider")
         ("name,n", bpo::value<std::string>(), "node name")
@@ -164,28 +166,16 @@ int32_t server::parse_command_line(int argc, const char *const argv[],
 
     if (vm.count("version")) {
         std::cout << "version: " << dbcversion() << std::endl;
-        return E_EXIT_PARSE_COMMAND_LINE;
-    } else if (vm.count("daemon") || vm.count("d")) {
-        return on_daemon();
-    } else if (vm.count("id")) {
-        bpo::variables_map vm;
-        ERR_CODE ret = env_manager::instance().init();
-        if (E_SUCCESS != ret) {
-            return ret;
-        }
-
-        ret = conf_manager::instance().init();
-        if (E_SUCCESS != ret) {
-            return ret;
-        }
-
-        std::cout << conf_manager::instance().get_node_id() << std::endl;
-        return E_EXIT_PARSE_COMMAND_LINE;
+        return E_DEFAULT;
+    } else if (vm.count("daemon")) {
+        on_daemon();
+        return E_SUCCESS;
     } else {
         return E_SUCCESS;
     }
 }
 
+/*
 int32_t server::on_daemon() {
     if (daemon(1, 1)) {
         LOG_ERROR << "dbc daemon error: " << strerror(errno);
@@ -205,4 +195,44 @@ int32_t server::on_daemon() {
 
     m_daemon = true;
     return E_SUCCESS;
+}
+*/
+
+void server::on_daemon()
+{
+    pid_t pid;
+
+    if ((pid = fork()) != 0) {
+        ::exit(0);
+    }
+
+    setsid();
+    signal(SIGINT, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+
+    // ignore pipe
+    struct sigaction sig;
+    sig.sa_handler = SIG_IGN;
+    sig.sa_flags = 0;
+    sigemptyset(&sig.sa_mask);
+    sigaction(SIGPIPE, &sig, NULL);
+
+    if ((pid = fork()) != 0) 	{
+        ::exit(0);
+    }
+
+    //chdir("/");
+
+    umask(0);
+
+    for (int i = 3; i < 64; i++)
+        close(i);
+
+    m_daemon = true;
 }
