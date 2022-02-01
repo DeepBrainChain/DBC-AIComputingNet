@@ -9,9 +9,10 @@ std::string run_shell(const std::string& cmd, const char* modes) {
     char buffer[1024] = {0};
     fp = popen(strcmd.c_str(), modes);
     if (fp != nullptr) {
-        fgets(buffer, sizeof(buffer), fp);
+        while(fgets(buffer, sizeof(buffer), fp)) {
+            ret += std::string(buffer);
+        }
         pclose(fp);
-        ret = std::string(buffer);
     } else {
         ret = std::string("run_shell failed! ") + strcmd + std::string(" ") + std::to_string(errno) + ":" + strerror(errno);
     }

@@ -1039,8 +1039,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
     if (file.is_open()) {
         if (direction == GET_LOG_HEAD) {
             file.seekg(0, std::ios_base::beg);
-        }
-        else {
+        } else {
             file.seekg(-2, std::ios_base::end);
             for (int i = 0; i < linecount; i++) {
                 // seek to the previous line

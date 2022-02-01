@@ -2,8 +2,11 @@
 #include "check_kvm.h"
 #include "check_images.h"
 #include "util/SystemResourceManager.h"
+#include "../dbc/common/version.h"
 
 int main(int argc, char** argv) {
+    std::cout << "version: " << dbcversion() << std::endl;
+
     // "wss://infotest.dbcwallet.io"
     // "wss://galaxytest.congtu.cloud"
     // "wss://127.0.0.1:9898"
