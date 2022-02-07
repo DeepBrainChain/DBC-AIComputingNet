@@ -1005,7 +1005,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/start");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/start/<task_id>");
         return;
     }
 
@@ -1237,7 +1237,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/stop");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/stop/<task_id>");
         return;
     }
 
@@ -1470,7 +1470,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/restart");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/restart/<task_id>");
         return;
     }
 
@@ -1718,7 +1718,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/reset");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/reset/<task_id>");
         return;
     }
 
@@ -1951,7 +1951,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/delete");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/delete/<task_id>");
         return;
     }
 
@@ -2184,7 +2184,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
     util::split_path(path, path_list);
     if (path_list.size() != 2) {
         LOG_ERROR << "path_list's size != 2";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/<task_id>/modify");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/modify/<task_id>");
         return;
     }
 
