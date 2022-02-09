@@ -374,11 +374,11 @@ namespace check_kvm {
         graphics_node->LinkEndChild(listen_node);
         dev_node->LinkEndChild(graphics_node);
 
-        if (is_windows) {
-            tinyxml2::XMLElement *memballoon_node = doc.NewElement("memballoon");
-            memballoon_node->SetAttribute("model", "none");
-            dev_node->LinkEndChild(memballoon_node);
-        }
+        // 如果想要收集内存统计信息，需要开启memballon，安装virtio驱动程序。有时还需要设置时间间隔<stats period='10' />
+        tinyxml2::XMLElement *memballoon_node = doc.NewElement("memballoon");
+        memballoon_node->SetAttribute("model", "virtio");
+        dev_node->LinkEndChild(memballoon_node);
+
         root->LinkEndChild(dev_node);
 
         // cpu (qemu:commandline)
