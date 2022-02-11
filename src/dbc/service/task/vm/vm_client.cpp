@@ -8,6 +8,7 @@
 #include "service/message/message_id.h"
 #include "service/message/vm_task_result_types.h"
 #include "../db/snapshotinfo_types.h"
+#include "util/utils.h"
 
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
@@ -448,11 +449,10 @@ bool VmClient::Init() {
     return m_connPtr != nullptr;
 }
 
-int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string& image_name, const std::string& data_file_name,
-                               const std::shared_ptr<TaskResource>& task_resource, const std::vector<std::string>& multicast,
-                               bool is_windows, bool uefi) {
+int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
+                               const std::shared_ptr<TaskResource>& task_resource) {
     if (m_connPtr == nullptr) {
-        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+        TASK_LOG_ERROR(taskinfo->image_name, "connPtr is nullptr");
         return E_DEFAULT;
     }
 
@@ -479,60 +479,52 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
     char buf_uuid[1024] = {0};
     uuid_generate(uu);
     uuid_unparse(uu, buf_uuid);
-    LOG_INFO << "uuid: " << buf_uuid;
-    TASK_LOG_INFO(domain_name, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
+    TASK_LOG_INFO(taskinfo->task_id, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
         << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
 
-    // 复制一份镜像（系统盘）
-    std::string from_image_path = "/data/" + image_name;
-    auto pos = image_name.find('.');
-    std::string to_image_name = image_name;
-    std::string to_ext;
-    if (pos != std::string::npos) {
-        to_image_name = image_name.substr(0, pos);
-        to_ext = image_name.substr(pos + 1);
-    }
-    std::string to_image_path = "/data/" + to_image_name + "_" + domain_name + "." + to_ext;
-    LOG_INFO << "image_copy_file: " << to_image_path;
-    TASK_LOG_INFO(domain_name, "image_copy_file: " << to_image_path);
-    // boost::filesystem::copy_file(from_image_path, to_image_path);
-    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_path + " " + to_image_path;
+    // 系统盘: 创建增量镜像
+    std::string from_image_file = "/data/" + taskinfo->image_name;
+    std::string image_fname = util::GetFileNameWithoutExt(from_image_file);
+    std::string image_fext = util::GetFileExt(from_image_file);
+    std::string to_vm_file = "/data/";
+    to_vm_file += "vm_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) + "#_"
+                  + taskinfo->custom_image_name + ".qcow2";
+
+    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + to_vm_file;
     std::string create_system_image_ret = run_shell(cmd_back_system_image);
-    LOG_INFO << "create system image back cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret;
-    TASK_LOG_INFO(domain_name, "create system image back cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
+    TASK_LOG_INFO(taskinfo->task_id, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
 
-    // 创建虚拟磁盘（数据盘）
-    std::string data_file = "/data/data_1_" + domain_name + ".qcow2";
-    uint64_t disk_total_size = task_resource->disks.begin()->second / 1024L / 1024L; // GB
-    LOG_INFO << "data_file: " << data_file;
-    TASK_LOG_INFO(domain_name, "data_file: " << data_file);
-    if (data_file_name.empty()) {
-        std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(disk_total_size) + "G";
-        LOG_INFO << "create qcow2 image(data): " << cmd_create_img;
-        std::string create_ret = run_shell(cmd_create_img.c_str());
-        LOG_INFO << "create qcow2 image(data) result: " << create_ret;
-        TASK_LOG_INFO(domain_name, "create qcow2 image(data): " << cmd_create_img << ", result: " << create_ret);
+    // 数据盘：
+    std::string data_file = "/data/data_" + std::to_string(rand() % 100000) + "#" +
+            util::time2str(time(nullptr)) + "#_" + taskinfo->custom_image_name + ".qcow2";
+    uint64_t data_size = task_resource->disks.begin()->second / 1024L / 1024L; // GB
+    TASK_LOG_INFO(taskinfo->task_id, "data_file: " << data_file << ", data_size:" << data_size << "G");
+    if (taskinfo->data_file_name.empty()) {
+        std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(data_size) + "G";
+        std::string create_ret = run_shell(cmd_create_img);
+        TASK_LOG_INFO(taskinfo->task_id, "create data: " << cmd_create_img << ", result: " << create_ret);
     } else {
-        boost::filesystem::copy_file("/data/" + data_file_name, data_file);
+        boost::filesystem::copy_file("/data/" + taskinfo->data_file_name, data_file);
+        TASK_LOG_INFO(taskinfo->task_id, "copy data: " << "/data/" << taskinfo->data_file_name
+            << " to: " << data_file);
     }
 
-    if (!multicast.empty()) {
-        for (const auto & mcast : multicast) {
-            TASK_LOG_INFO(domain_name, "add multicast address: " << mcast);
+    if (!taskinfo->multicast.empty()) {
+        for (const auto & mcast : taskinfo->multicast) {
+            TASK_LOG_INFO(taskinfo->task_id, "add multicast address: " << mcast);
         }
     }
 
     // vnc
-    LOG_INFO << "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password;
-    TASK_LOG_INFO(domain_name, "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password);
+    TASK_LOG_INFO(taskinfo->task_id, "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password);
 
-    std::string xml_content = createXmlStr(buf_uuid, domain_name, memoryTotal,
+    std::string xml_content = createXmlStr(buf_uuid, taskinfo->task_id, memoryTotal,
                                            cpuNumTotal, task_resource->cpu_sockets,
                                            task_resource->cpu_cores, task_resource->cpu_threads,
-                                           vga_pci, to_image_path, data_file,
+                                           vga_pci, to_vm_file, data_file,
                                            task_resource->vnc_port, task_resource->vnc_password,
-                                           multicast,
-                                           is_windows, uefi);
+                                           taskinfo->multicast, taskinfo->operation_system.find("win") != std::string::npos,
+                                           taskinfo->bios_mode == "uefi");
 
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = E_SUCCESS;
@@ -542,7 +534,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
             errorNum = E_VIRT_DOMAIN_EXIST;
 
             virErrorPtr error = virGetLastError();
-            TASK_LOG_ERROR(domain_name, "virDomainDefineXML error: " << (error ? error->message : ""));
+            TASK_LOG_ERROR(taskinfo->task_id, "virDomainDefineXML error: " << (error ? error->message : ""));
             break;
         }
 
@@ -550,7 +542,7 @@ int32_t VmClient::CreateDomain(const std::string& domain_name, const std::string
             errorNum = E_VIRT_INTERNAL_ERROR;
 
             virErrorPtr error = virGetLastError();
-            TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
+            TASK_LOG_ERROR(taskinfo->task_id, "virDomainCreate error: " << (error ? error->message : ""));
         }
     } while (0);
 
@@ -965,7 +957,60 @@ void VmClient::ListAllDomains(std::vector<std::string> &domains) {
 }
 
 void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
+    if (m_connPtr == nullptr) {
+        LOG_INFO << "connPtr is nullptr";
+        return;
+    }
 
+    int ids[1024] = {0};
+    int num = virConnectListDomains(m_connPtr, ids, 1024);
+    if (num < 0) {
+        LOG_INFO << "list domains failed";
+        return;
+    }
+
+    for (int i = 0; i < num; i++) {
+        virDomainPtr domainPtr = nullptr;
+        do {
+            domainPtr = virDomainLookupByID(m_connPtr, ids[i]);
+            if (nullptr == domainPtr) {
+                LOG_INFO << "lookup domain_id:" << ids[i] << " is nullptr";
+                break;
+            }
+
+            virDomainInfo info;
+            if (virDomainGetInfo(domainPtr, &info) < 0) {
+                LOG_INFO << "get domain_info failed";
+                break;
+            }
+
+            virDomainState vm_status = (virDomainState) info.state;
+            if (vm_status == VIR_DOMAIN_RUNNING) {
+                char *szXmlContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+                if (!szXmlContent) {
+                    break;
+                }
+                tinyxml2::XMLDocument doc;
+                tinyxml2::XMLError err = doc.Parse(szXmlContent);
+                if (err != tinyxml2::XML_SUCCESS) {
+                    LOG_ERROR << "parse xml desc failed";
+                    break;
+                }
+                tinyxml2::XMLElement *root = doc.RootElement();
+                tinyxml2::XMLElement* node_name = root->FirstChildElement("name");
+                if (!node_name) {
+                    LOG_ERROR << "not find name node";
+                    break;
+                }
+                std::string domain_name = node_name->GetText();
+                domains.push_back(domain_name);
+            }
+        } while (0);
+
+        if (nullptr != domainPtr) {
+            virDomainFree(domainPtr);
+        }
+    }
 }
 
 virDomainState VmClient::GetDomainStatus(const std::string &domain_name) {

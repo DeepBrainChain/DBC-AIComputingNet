@@ -12,6 +12,18 @@ struct peer_seeds {
     uint16_t port;
 };
 
+struct ImageServer {
+    std::string ip;
+    std::string port;
+    std::string username;
+    std::string passwd;
+    std::string image_dir;
+    std::string id;
+
+    std::string to_string();
+    void from_string(const std::string& str);
+};
+
 class conf_manager : public Singleton<conf_manager>
 {
 public:
@@ -53,6 +65,7 @@ public:
 
     std::string get_priv_key() const { return m_priv_key; }
 
+    const std::vector<ImageServer>& get_image_servers() const { return m_image_servers; }
 
     int32_t get_timer_service_broadcast_in_second() {
         return 30;
@@ -138,6 +151,8 @@ private:
     std::string m_version = "0.3.7.3";
 
     dbc::network::matrix_capacity m_proto_capacity;
+
+    std::vector<ImageServer> m_image_servers;
 };
 
 #endif

@@ -27,4 +27,13 @@ namespace util {
         std::time_t time_stamp = tmp.count();
         return time_stamp;
     }
+
+    std::string time2str(time_t t) {
+        struct tm _tm{};
+        localtime_r(&t, &_tm);
+        char buf[256];
+        memset(buf, 0, 256);
+        strftime(buf, 256, "%Y%m%d%H%M%S", &_tm);
+        return buf;
+    }
 }

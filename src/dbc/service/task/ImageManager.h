@@ -2,15 +2,18 @@
 #define DBCPROJ_IMAGEMANAGER_H
 
 #include "util/utils.h"
+#include "config/conf_manager.h"
 
 struct DownloadImageEvent {
     std::string task_id;
-    std::vector<std::string> images;
+    ImageServer svr;
+    std::vector<std::string> images_name;
 };
 
 struct UploadImageEvent {
     std::string task_id;
-    std::string image;
+    ImageServer svr;
+    std::string image_name;
 };
 
 class ImageDownloader;
@@ -22,7 +25,13 @@ public:
 
     virtual ~ImageManager();
 
-    FResult ListAllImages(std::vector<std::string> &images);
+    void ListShareImages(const std::vector<std::string>& image_server, std::vector<std::string> &images);
+
+    void ListLocalBaseImages(std::vector<std::string>& images);
+
+    void ListLocalShareImages(const std::vector<std::string>& image_server, std::vector<std::string> &images);
+
+    void ListWalletLocalShareImages(const std::string& wallet, const std::vector<std::string>& image_server, std::vector<std::string> &images);
 
     void PushDownloadEvent(const DownloadImageEvent &ev, const std::function<void()>& after_callback = nullptr);
 

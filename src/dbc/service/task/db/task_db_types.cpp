@@ -240,6 +240,11 @@ namespace dbc {
         this->multicast = val;
         __isset.multicast = true;
     }
+
+    void TaskInfo::__set_custom_image_name(const std::string& val) {
+        this->custom_image_name = val;
+        __isset.custom_image_name = true;
+    }
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj)
     {
         obj.printTo(out);
@@ -437,6 +442,14 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
+                case 19:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->custom_image_name);
+                        this->__isset.custom_image_name = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -538,10 +551,10 @@ namespace dbc {
             xfer += oprot->writeFieldBegin("custom_port", ::apache::thrift::protocol::T_LIST, 17);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->custom_port.size()));
-                std::vector<std::string> ::const_iterator _iter7;
-                for (_iter7 = this->custom_port.begin(); _iter7 != this->custom_port.end(); ++_iter7)
+                std::vector<std::string> ::const_iterator _iter12;
+                for (_iter12 = this->custom_port.begin(); _iter12 != this->custom_port.end(); ++_iter12)
                 {
-                    xfer += oprot->writeString((*_iter7));
+                    xfer += oprot->writeString((*_iter12));
                 }
                 xfer += oprot->writeListEnd();
             }
@@ -558,6 +571,11 @@ namespace dbc {
                 }
                 xfer += oprot->writeListEnd();
             }
+            xfer += oprot->writeFieldEnd();
+        }
+        if (this->__isset.custom_image_name) {
+            xfer += oprot->writeFieldBegin("custom_image_name", ::apache::thrift::protocol::T_STRING, 19);
+            xfer += oprot->writeString(this->custom_image_name);
             xfer += oprot->writeFieldEnd();
         }
         xfer += oprot->writeFieldStop();
@@ -585,50 +603,53 @@ namespace dbc {
         swap(a.rdp_port, b.rdp_port);
         swap(a.custom_port, b.custom_port);
         swap(a.multicast, b.multicast);
+        swap(a.custom_image_name, b.custom_image_name);
         swap(a.__isset, b.__isset);
     }
 
-    TaskInfo::TaskInfo(const TaskInfo& other8) {
-        task_id = other8.task_id;
-        image_name = other8.image_name;
-        login_password = other8.login_password;
-        ssh_port = other8.ssh_port;
-        status = other8.status;
-        operation = other8.operation;
-        create_time = other8.create_time;
-        last_start_time = other8.last_start_time;
-        last_stop_time = other8.last_stop_time;
-        hardware_resource = other8.hardware_resource;
-        vm_xml = other8.vm_xml;
-        vm_xml_url = other8.vm_xml_url;
-        data_file_name = other8.data_file_name;
-        operation_system = other8.operation_system;
-        bios_mode = other8.bios_mode;
-        rdp_port = other8.rdp_port;
-        custom_port = other8.custom_port;
-        multicast = other8.multicast;
-        __isset = other8.__isset;
+    TaskInfo::TaskInfo(const TaskInfo& other14) {
+        task_id = other14.task_id;
+        image_name = other14.image_name;
+        login_password = other14.login_password;
+        ssh_port = other14.ssh_port;
+        status = other14.status;
+        operation = other14.operation;
+        create_time = other14.create_time;
+        last_start_time = other14.last_start_time;
+        last_stop_time = other14.last_stop_time;
+        hardware_resource = other14.hardware_resource;
+        vm_xml = other14.vm_xml;
+        vm_xml_url = other14.vm_xml_url;
+        data_file_name = other14.data_file_name;
+        operation_system = other14.operation_system;
+        bios_mode = other14.bios_mode;
+        rdp_port = other14.rdp_port;
+        custom_port = other14.custom_port;
+        multicast = other14.multicast;
+        custom_image_name = other14.custom_image_name;
+        __isset = other14.__isset;
     }
-    TaskInfo& TaskInfo::operator=(const TaskInfo& other9) {
-        task_id = other9.task_id;
-        image_name = other9.image_name;
-        login_password = other9.login_password;
-        ssh_port = other9.ssh_port;
-        status = other9.status;
-        operation = other9.operation;
-        create_time = other9.create_time;
-        last_start_time = other9.last_start_time;
-        last_stop_time = other9.last_stop_time;
-        hardware_resource = other9.hardware_resource;
-        vm_xml = other9.vm_xml;
-        vm_xml_url = other9.vm_xml_url;
-        data_file_name = other9.data_file_name;
-        operation_system = other9.operation_system;
-        bios_mode = other9.bios_mode;
-        rdp_port = other9.rdp_port;
-        custom_port = other9.custom_port;
-        multicast = other9.multicast;
-        __isset = other9.__isset;
+    TaskInfo& TaskInfo::operator=(const TaskInfo& other15) {
+        task_id = other15.task_id;
+        image_name = other15.image_name;
+        login_password = other15.login_password;
+        ssh_port = other15.ssh_port;
+        status = other15.status;
+        operation = other15.operation;
+        create_time = other15.create_time;
+        last_start_time = other15.last_start_time;
+        last_stop_time = other15.last_stop_time;
+        hardware_resource = other15.hardware_resource;
+        vm_xml = other15.vm_xml;
+        vm_xml_url = other15.vm_xml_url;
+        data_file_name = other15.data_file_name;
+        operation_system = other15.operation_system;
+        bios_mode = other15.bios_mode;
+        rdp_port = other15.rdp_port;
+        custom_port = other15.custom_port;
+        multicast = other15.multicast;
+        custom_image_name = other15.custom_image_name;
+        __isset = other15.__isset;
         return *this;
     }
     void TaskInfo::printTo(std::ostream& out) const {
@@ -652,6 +673,7 @@ namespace dbc {
         out << ", " << "rdp_port="; (__isset.rdp_port ? (out << to_string(rdp_port)) : (out << "<null>"));
         out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
         out << ", " << "multicast="; (__isset.multicast ? (out << to_string(multicast)) : (out << "<null>"));
+        out << ", " << "custom_image_name="; (__isset.custom_image_name ? (out << to_string(custom_image_name)) : (out << "<null>"));
         out << ")";
     }
 
@@ -714,14 +736,14 @@ namespace dbc {
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->task_ids.clear();
-                            uint32_t _size10;
-                            ::apache::thrift::protocol::TType _etype13;
-                            xfer += iprot->readListBegin(_etype13, _size10);
-                            this->task_ids.resize(_size10);
-                            uint32_t _i14;
-                            for (_i14 = 0; _i14 < _size10; ++_i14)
+                            uint32_t _size16;
+                            ::apache::thrift::protocol::TType _etype19;
+                            xfer += iprot->readListBegin(_etype19, _size16);
+                            this->task_ids.resize(_size16);
+                            uint32_t _i20;
+                            for (_i20 = 0; _i20 < _size16; ++_i20)
                             {
-                                xfer += iprot->readString(this->task_ids[_i14]);
+                                xfer += iprot->readString(this->task_ids[_i20]);
                             }
                             xfer += iprot->readListEnd();
                         }
@@ -768,10 +790,10 @@ namespace dbc {
         xfer += oprot->writeFieldBegin("task_ids", ::apache::thrift::protocol::T_LIST, 2);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->task_ids.size()));
-            std::vector<std::string> ::const_iterator _iter15;
-            for (_iter15 = this->task_ids.begin(); _iter15 != this->task_ids.end(); ++_iter15)
+            std::vector<std::string> ::const_iterator _iter21;
+            for (_iter21 = this->task_ids.begin(); _iter21 != this->task_ids.end(); ++_iter21)
             {
-                xfer += oprot->writeString((*_iter15));
+                xfer += oprot->writeString((*_iter21));
             }
             xfer += oprot->writeListEnd();
         }
@@ -793,15 +815,15 @@ namespace dbc {
         swap(a.rent_end, b.rent_end);
     }
 
-    rent_task::rent_task(const rent_task& other16) {
-        rent_wallet = other16.rent_wallet;
-        task_ids = other16.task_ids;
-        rent_end = other16.rent_end;
+    rent_task::rent_task(const rent_task& other22) {
+        rent_wallet = other22.rent_wallet;
+        task_ids = other22.task_ids;
+        rent_end = other22.rent_end;
     }
-    rent_task& rent_task::operator=(const rent_task& other17) {
-        rent_wallet = other17.rent_wallet;
-        task_ids = other17.task_ids;
-        rent_end = other17.rent_end;
+    rent_task& rent_task::operator=(const rent_task& other23) {
+        rent_wallet = other23.rent_wallet;
+        task_ids = other23.task_ids;
+        rent_end = other23.rent_end;
         return *this;
     }
     void rent_task::printTo(std::ostream& out) const {

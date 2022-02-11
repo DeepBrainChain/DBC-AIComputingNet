@@ -423,28 +423,86 @@ namespace dbc {
 
     std::ostream& operator<<(std::ostream& out, const multisig_sign_item& obj);
 
+    typedef struct _node_list_images_req_data__isset {
+        _node_list_images_req_data__isset() : image_server(false) {}
+        bool image_server :1;
+    } _node_list_images_req_data__isset;
 
     class node_list_images_req_data : public virtual ::apache::thrift::TBase {
     public:
 
         node_list_images_req_data(const node_list_images_req_data&);
         node_list_images_req_data& operator=(const node_list_images_req_data&);
-        node_list_images_req_data() : additional() {
+        node_list_images_req_data() : additional(), image(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
         }
 
         virtual ~node_list_images_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
+        std::string image;
+        std::string wallet;
+        std::string nonce;
+        std::string sign;
+        std::vector<std::string>  multisig_wallets;
+        int32_t multisig_threshold;
+        std::vector<multisig_sign_item>  multisig_signs;
+        std::string session_id;
+        std::string session_id_sign;
+        std::vector<std::string>  image_server;
+
+        _node_list_images_req_data__isset __isset;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
+
+        void __set_image(const std::string& val);
+
+        void __set_wallet(const std::string& val);
+
+        void __set_nonce(const std::string& val);
+
+        void __set_sign(const std::string& val);
+
+        void __set_multisig_wallets(const std::vector<std::string> & val);
+
+        void __set_multisig_threshold(const int32_t val);
+
+        void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+        void __set_session_id(const std::string& val);
+
+        void __set_session_id_sign(const std::string& val);
+
+        void __set_image_server(const std::vector<std::string> & val);
 
         bool operator == (const node_list_images_req_data & rhs) const
         {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
+                return false;
+            if (!(image == rhs.image))
+                return false;
+            if (!(wallet == rhs.wallet))
+                return false;
+            if (!(nonce == rhs.nonce))
+                return false;
+            if (!(sign == rhs.sign))
+                return false;
+            if (!(multisig_wallets == rhs.multisig_wallets))
+                return false;
+            if (!(multisig_threshold == rhs.multisig_threshold))
+                return false;
+            if (!(multisig_signs == rhs.multisig_signs))
+                return false;
+            if (!(session_id == rhs.session_id))
+                return false;
+            if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            if (__isset.image_server != rhs.__isset.image_server)
+                return false;
+            else if (__isset.image_server && !(image_server == rhs.image_server))
                 return false;
             return true;
         }
@@ -620,6 +678,10 @@ namespace dbc {
 
     std::ostream& operator<<(std::ostream& out, const node_list_images_rsp& obj);
 
+    typedef struct _node_download_image_req_data__isset {
+        _node_download_image_req_data__isset() : image_server(false) {}
+        bool image_server :1;
+    } _node_download_image_req_data__isset;
 
     class node_download_image_req_data : public virtual ::apache::thrift::TBase {
     public:
@@ -641,6 +703,9 @@ namespace dbc {
         std::vector<multisig_sign_item>  multisig_signs;
         std::string session_id;
         std::string session_id_sign;
+        std::vector<std::string>  image_server;
+
+        _node_download_image_req_data__isset __isset;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
@@ -663,6 +728,8 @@ namespace dbc {
         void __set_session_id(const std::string& val);
 
         void __set_session_id_sign(const std::string& val);
+
+        void __set_image_server(const std::vector<std::string> & val);
 
         bool operator == (const node_download_image_req_data & rhs) const
         {
@@ -687,6 +754,10 @@ namespace dbc {
             if (!(session_id == rhs.session_id))
                 return false;
             if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            if (__isset.image_server != rhs.__isset.image_server)
+                return false;
+            else if (__isset.image_server && !(image_server == rhs.image_server))
                 return false;
             return true;
         }
@@ -862,6 +933,10 @@ namespace dbc {
 
     std::ostream& operator<<(std::ostream& out, const node_download_image_rsp& obj);
 
+    typedef struct _node_upload_image_req_data__isset {
+        _node_upload_image_req_data__isset() : image_server(false) {}
+        bool image_server :1;
+    } _node_upload_image_req_data__isset;
 
     class node_upload_image_req_data : public virtual ::apache::thrift::TBase {
     public:
@@ -883,6 +958,9 @@ namespace dbc {
         std::vector<multisig_sign_item>  multisig_signs;
         std::string session_id;
         std::string session_id_sign;
+        std::vector<std::string>  image_server;
+
+        _node_upload_image_req_data__isset __isset;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
@@ -905,6 +983,8 @@ namespace dbc {
         void __set_session_id(const std::string& val);
 
         void __set_session_id_sign(const std::string& val);
+
+        void __set_image_server(const std::vector<std::string> & val);
 
         bool operator == (const node_upload_image_req_data & rhs) const
         {
@@ -929,6 +1009,10 @@ namespace dbc {
             if (!(session_id == rhs.session_id))
                 return false;
             if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            if (__isset.image_server != rhs.__isset.image_server)
+                return false;
+            else if (__isset.image_server && !(image_server == rhs.image_server))
                 return false;
             return true;
         }
@@ -1346,13 +1430,18 @@ namespace dbc {
 
     std::ostream& operator<<(std::ostream& out, const node_list_task_rsp& obj);
 
+    typedef struct _node_create_task_req_data__isset {
+        _node_create_task_req_data__isset() : image_server(false), custom_image_name(false) {}
+        bool image_server :1;
+        bool custom_image_name :1;
+    } _node_create_task_req_data__isset;
 
     class node_create_task_req_data : public virtual ::apache::thrift::TBase {
     public:
 
         node_create_task_req_data(const node_create_task_req_data&);
         node_create_task_req_data& operator=(const node_create_task_req_data&);
-        node_create_task_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+        node_create_task_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), custom_image_name() {
         }
 
         virtual ~node_create_task_req_data() throw();
@@ -1366,6 +1455,10 @@ namespace dbc {
         std::vector<multisig_sign_item>  multisig_signs;
         std::string session_id;
         std::string session_id_sign;
+        std::vector<std::string>  image_server;
+        std::string custom_image_name;
+
+        _node_create_task_req_data__isset __isset;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
@@ -1386,6 +1479,10 @@ namespace dbc {
         void __set_session_id(const std::string& val);
 
         void __set_session_id_sign(const std::string& val);
+
+        void __set_image_server(const std::vector<std::string> & val);
+
+        void __set_custom_image_name(const std::string& val);
 
         bool operator == (const node_create_task_req_data & rhs) const
         {
@@ -1408,6 +1505,14 @@ namespace dbc {
             if (!(session_id == rhs.session_id))
                 return false;
             if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            if (__isset.image_server != rhs.__isset.image_server)
+                return false;
+            else if (__isset.image_server && !(image_server == rhs.image_server))
+                return false;
+            if (__isset.custom_image_name != rhs.__isset.custom_image_name)
+                return false;
+            else if (__isset.custom_image_name && !(custom_image_name == rhs.custom_image_name))
                 return false;
             return true;
         }
@@ -3527,6 +3632,10 @@ namespace dbc {
 
     std::ostream& operator<<(std::ostream& out, const node_session_id_rsp& obj);
 
+    typedef struct _node_query_node_info_req_data__isset {
+        _node_query_node_info_req_data__isset() : image_server(false) {}
+        bool image_server :1;
+    } _node_query_node_info_req_data__isset;
 
     class node_query_node_info_req_data : public virtual ::apache::thrift::TBase {
     public:
@@ -3547,6 +3656,9 @@ namespace dbc {
         std::vector<multisig_sign_item>  multisig_signs;
         std::string session_id;
         std::string session_id_sign;
+        std::vector<std::string>  image_server;
+
+        _node_query_node_info_req_data__isset __isset;
 
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
@@ -3567,6 +3679,8 @@ namespace dbc {
         void __set_session_id(const std::string& val);
 
         void __set_session_id_sign(const std::string& val);
+
+        void __set_image_server(const std::vector<std::string> & val);
 
         bool operator == (const node_query_node_info_req_data & rhs) const
         {
@@ -3589,6 +3703,10 @@ namespace dbc {
             if (!(session_id == rhs.session_id))
                 return false;
             if (!(session_id_sign == rhs.session_id_sign))
+                return false;
+            if (__isset.image_server != rhs.__isset.image_server)
+                return false;
+            else if (__isset.image_server && !(image_server == rhs.image_server))
                 return false;
             return true;
         }

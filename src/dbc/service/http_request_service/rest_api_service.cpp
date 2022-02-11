@@ -378,7 +378,7 @@ static bool parse_req_params(const rapidjson::Document &doc, req_body& httpbody,
             return false;
         }
     }
-    // multisig_accounts
+    // multisig_accounts【可选】
     if (doc.HasMember("multisig_accounts")) {
         const rapidjson::Value& v_multisig_accounts = doc["multisig_accounts"];
         if (v_multisig_accounts.IsObject()) {
@@ -579,41 +579,50 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    auto mp = service_info_collection::instance().get_all();
-    if (!mp->empty()) {
-        for (auto& it : *mp) {
-            if (!it.first.empty()) {
-                body.peer_nodes_list.push_back(it.first);
-                break;
-            }
-        }
-    }
-
     if (!has_peer_nodeid(body)) {
-        LOG_ERROR << "peer_nodeid is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
-        return;
-    }
+        auto svrs = conf_manager::instance().get_image_servers();
+        if (svrs.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
+        } else {
+            std::string dbc_dir = util::get_exe_dir().string();
+            auto svr = svrs.begin();
+            std::string ret = run_shell(dbc_dir + "/shell/image/list_file.sh " + svr->ip + " " + svr->port + " " + svr->username + " " +
+                        svr->passwd + " " + svr->image_dir);
+            std::string rsp_json = "{";
+            rsp_json += "\"errcode\":0";
+            rsp_json += ",\"message\": [";
+            std::vector<std::string> v_images = util::split(ret, ",");
+            for (int i = 0; i < v_images.size(); i++) {
+                if (i > 0) rsp_json += ",";
+                rsp_json += "\"" + v_images[i] + "\"";
+            }
+            rsp_json += "]";
+            rsp_json += "}";
 
-    std::string head_session_id = util::create_session_id();
+            httpReq->reply_comm_rest_succ2(rsp_json);
+        }
+    } else {
+        std::string head_session_id = util::create_session_id();
 
-    auto node_req_msg = create_node_list_images_req_msg(head_session_id, body);
-    if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
-        return;
-    }
+        auto node_req_msg = create_node_list_images_req_msg(head_session_id, body);
+        if (nullptr == node_req_msg) {
+            LOG_ERROR << "create node request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
+            return;
+        }
 
-    if (E_SUCCESS != create_request_session(NODE_LIST_IMAGES_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
-        return;
-    }
+        if (E_SUCCESS != create_request_session(NODE_LIST_IMAGES_TIMER, httpReq, node_req_msg, head_session_id,
+                                                body.peer_nodes_list[0])) {
+            LOG_ERROR << "create request session failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            return;
+        }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
-        return;
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+            LOG_ERROR << "broadcast request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+            return;
+        }
     }
 }
 
@@ -636,6 +645,31 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
     dbc::node_list_images_req_data req_data;
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
+    req_data.__set_image(body.image_name);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    auto svrs = conf_manager::instance().get_image_servers();
+    for (auto& iter : svrs) {
+        std::string str_svr = iter.to_string();
+        std::vector<std::string> vec;
+        vec.push_back(str_svr);
+        req_data.__set_image_server(vec);
+    }
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -813,6 +847,12 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
 
     std::string head_session_id = util::create_session_id();
 
+    auto svrs = conf_manager::instance().get_image_servers();
+    if (svrs.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
+        return;
+    }
+
     auto node_req_msg = create_node_download_image_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
         LOG_ERROR << "creaate node request failed";
@@ -870,6 +910,14 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+
+    auto svrs = conf_manager::instance().get_image_servers();
+    for (auto& iter : svrs) {
+        std::string str_svr = iter.to_string();
+        std::vector<std::string> vec;
+        vec.push_back(str_svr);
+        req_data.__set_image_server(vec);
+    }
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -1048,6 +1096,12 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
 
     std::string head_session_id = util::create_session_id();
 
+    auto svrs = conf_manager::instance().get_image_servers();
+    if (svrs.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
+        return;
+    }
+
     auto node_req_msg = create_node_upload_image_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
         LOG_ERROR << "creaate node request failed";
@@ -1105,6 +1159,14 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+
+    auto svrs = conf_manager::instance().get_image_servers();
+    for (auto& iter : svrs) {
+        std::string str_svr = iter.to_string();
+        std::vector<std::string> vec;
+        vec.push_back(str_svr);
+        req_data.__set_image_server(vec);
+    }
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -1607,6 +1669,14 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+
+    auto svrs = conf_manager::instance().get_image_servers();
+    for (auto& iter : svrs) {
+        std::string str_svr = iter.to_string();
+        std::vector<std::string> vec;
+        vec.push_back(str_svr);
+        req_data.__set_image_server(vec);
+    }
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -3567,6 +3637,14 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+
+    auto svrs = conf_manager::instance().get_image_servers();
+    for (auto& iter : svrs) {
+        std::string str_svr = iter.to_string();
+        std::vector<std::string> vec;
+        vec.push_back(str_svr);
+        req_data.__set_image_server(vec);
+    }
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();

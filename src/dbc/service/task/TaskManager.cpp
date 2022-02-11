@@ -26,7 +26,7 @@ TaskManager::~TaskManager() {
 FResult TaskManager::init() {
     m_httpclient.connect_chain();
 
-    if (!m_vm_client.Init()) {
+    if (!VmClient::instance().Init()) {
         return {E_DEFAULT, "connect libvirt tcp service failed"};
     }
 
@@ -64,40 +64,63 @@ FResult TaskManager::init() {
     return {E_SUCCESS, ""};
 }
 
-FResult TaskManager::listImages(const std::string& wallet, std::vector<std::string> &images) {
-    return ImageManager::instance().ListAllImages(images);
+FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
+                                const AuthoriseResult& result, std::vector<std::string> &images) {
+    try {
+        if (!result.success) {
+            ImageMgr::instance().ListLocalShareImages(data->image_server, images);
+        } else {
+            ImageMgr::instance().ListWalletLocalShareImages(result.rent_wallet, data->image_server, images);
+        }
+
+        return { E_SUCCESS, "" };
+    } catch (std::exception& e) {
+        return { E_SUCCESS, "" };
+    }
 }
 
-FResult TaskManager::downloadImage(const std::string& wallet, const std::string &image_name) {
-    std::vector<std::string> images;
-    FResult ret = ImageManager::instance().ListAllImages(images);
-    if (std::get<0>(ret) != E_SUCCESS) {
-        return ret;
+FResult TaskManager::downloadImage(const std::shared_ptr<dbc::node_download_image_req_data>& data) {
+    if (data->image_server.empty()) {
+        return {E_DEFAULT, "no image_server"};
     }
-    auto iter = std::find(images.begin(), images.end(), image_name);
+
+    std::vector<std::string> images;
+    ImageManager::instance().ListShareImages(data->image_server, images);
+
+    auto iter = std::find(images.begin(), images.end(), data->image);
     if (iter == images.end()) {
         return {E_NOT_FOUND, "image not exist"};
     }
+
     DownloadImageEvent diEvent;
     diEvent.task_id = util::create_task_id();
-    diEvent.images.push_back(image_name);
-    ImageManager::instance().PushDownloadEvent(diEvent, nullptr);
+    ImageServer svr;
+    svr.from_string(data->image_server[0]);
+    diEvent.svr = svr;
+    diEvent.images_name.push_back(data->image);
+    ImageManager::instance().PushDownloadEvent(diEvent);
     return FResultOK;
 }
 
-FResult TaskManager::uploadImage(const std::string& wallet, const std::string &image_name) {
+FResult TaskManager::uploadImage(const std::shared_ptr<dbc::node_upload_image_req_data>& data) {
+    if (data->image_server.empty()) {
+        return {E_DEFAULT, "no image_server"};
+    }
+
     std::vector<std::string> images;
-    FResult ret = ImageManager::instance().ListAllImages(images);
-    if (std::get<0>(ret) != E_SUCCESS) {
-        return ret;
-    }
-    auto iter = std::find(images.begin(), images.end(), image_name);
+    ImageManager::instance().ListShareImages(data->image_server, images);
+
+    auto iter = std::find(images.begin(), images.end(), data->image);
     if (iter != images.end()) {
-        return {E_NOT_FOUND, "image already exist, please rename the image file that needs to be uploaded"};
+        return {E_NOT_FOUND, "image already exist"};
     }
+
     UploadImageEvent uiEvent;
     uiEvent.task_id = util::create_task_id();
-    uiEvent.image = image_name;
+    ImageServer svr;
+    svr.from_string(data->image_server[0]);
+    uiEvent.svr = svr;
+    uiEvent.image_name = data->image;
     ImageManager::instance().PushUploadEvent(uiEvent);
     return FResultOK;
 }
@@ -196,7 +219,7 @@ bool TaskManager::restore_tasks() {
 }
 
 void TaskManager::start_task(const std::string &task_id) {
-    if (m_vm_client.StartDomain(task_id)) {
+    if (VmClient::instance().StartDomain(task_id)) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
             taskinfo->status = ETaskStatus::TS_Running;
@@ -208,7 +231,7 @@ void TaskManager::start_task(const std::string &task_id) {
 }
 
 void TaskManager::close_task(const std::string &task_id) {
-    if (m_vm_client.DestroyDomain(task_id) == E_SUCCESS) {
+    if (VmClient::instance().DestroyDomain(task_id) == E_SUCCESS) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
             taskinfo->status = ETaskStatus::TS_ShutOff;
@@ -404,12 +427,17 @@ void TaskManager::shell_remove_reject_iptable_from_system() {
 void TaskManager::delete_task(const std::string &task_id) {
     unsigned int undefineFlags = 0;
     int32_t snapshotCount = SnapshotManager::instance().getTaskSnapshotCount(task_id);
-    int32_t hasNvram = m_vm_client.IsDomainHasNvram(task_id);
+    int32_t hasNvram = VmClient::instance().IsDomainHasNvram(task_id);
     if (snapshotCount > 0) undefineFlags |= VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA;
     if (hasNvram > 0) undefineFlags |= VIR_DOMAIN_UNDEFINE_NVRAM;
 
-    // domain
-    m_vm_client.DestroyAndUndefineDomain(task_id, undefineFlags);
+    // disk file
+    std::map<std::string, domainDiskInfo> mp;
+    VmClient::instance().ListDomainDiskInfo(task_id, mp);
+    delete_disk_file(task_id, mp);
+
+    // undefine task
+    VmClient::instance().DestroyAndUndefineDomain(task_id, undefineFlags);
 
     // data
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -445,61 +473,13 @@ void TaskManager::delete_task(const std::string &task_id) {
         }
     }
     SnapshotManager::instance().delTaskSnapshot(task_id);
-
-    // disk
-    if (taskinfo != nullptr)
-        delete_disk_system_file(task_id, taskinfo->image_name);
-
-    delete_disk_data_file(task_id);
 }
 
-void TaskManager::delete_disk_system_file(const std::string &task_id, const std::string& disk_system_file_name) {
-    std::string filename = util::GetFileNameFromPath(disk_system_file_name);
-    std::string name = util::GetFileNameWithoutExt(filename);
-    std::string ext = util::GetFileExt(filename);
-    std::string image_full_path = "/data/" + name + "_" + task_id + "." + ext;
-    if (fs::is_regular_file(image_full_path)) {
-        remove(image_full_path.c_str());
-        TASK_LOG_INFO(task_id, "remove disk(system) file: " << image_full_path);
-    }
-}
-
-void TaskManager::delete_disk_data_file(const std::string &task_id) {
-    DIR *dir = opendir("/data");
-    std::list<std::string> files;
-    struct dirent *pDir = nullptr;
-    if (nullptr != dir) {
-        while ((pDir = readdir(dir)) != nullptr) {
-            if (!strcmp(pDir->d_name, ".") || !strcmp(pDir->d_name, "..")) {
-                continue;
-            }
-
-            if (pDir->d_type == DT_DIR) {
-                continue;
-            } else {
-                struct stat file_stat{};
-                std::string filename = std::string("/data/") + pDir->d_name;
-                if (stat(filename.c_str(), &file_stat) >= 0) {
-                    if (S_ISDIR(file_stat.st_mode)) {
-                        continue;
-                    }
-                }
-            }
-
-            std::string full_path_name = std::string("/data/") + pDir->d_name;
-            if (full_path_name.find(task_id) != std::string::npos
-                && full_path_name.find("data_") != std::string::npos) {
-                files.push_back(full_path_name);
-            }
-        }
-
-        closedir(dir);
-    }
-
-    for (auto& it : files) {
-        if (fs::is_regular_file(it)) {
-            remove(it.c_str());
-            TASK_LOG_INFO(task_id, "remove disk(data) file: " << it);
+void TaskManager::delete_disk_file(const std::string& task_id, const std::map<std::string, domainDiskInfo> &diskfiles) {
+    for (auto& iter : diskfiles) {
+        if (fs::is_regular_file(iter.second.sourceFile)) {
+            remove(iter.second.sourceFile.c_str());
+            TASK_LOG_INFO(task_id, "remove disk file: " << iter.second.sourceFile);
         }
     }
 }
@@ -559,10 +539,10 @@ static std::string genpwd() {
     return strpwd;
 }
 
-FResult TaskManager::createTask(const std::string& wallet, const std::string &additional,
+FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr<dbc::node_create_task_req_data>& data,
                                 int64_t rent_end, USER_ROLE role, std::string& task_id) {
     TaskCreateParams createparams;
-    FResult fret = parse_create_params(additional, role, createparams);
+    FResult fret = parse_create_params(data->additional, role, createparams);
     if (std::get<0>(fret) != E_SUCCESS) {
         return fret;
     }
@@ -572,6 +552,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     std::shared_ptr<dbc::TaskInfo> taskinfo = std::make_shared<dbc::TaskInfo>();
     taskinfo->__set_task_id(createparams.task_id);
     taskinfo->__set_image_name(createparams.image_name);
+    taskinfo->__set_custom_image_name(createparams.custom_image_name);
     taskinfo->__set_data_file_name(createparams.data_file_name);
     taskinfo->__set_login_password(createparams.login_password);
     taskinfo->__set_ssh_port(std::to_string(createparams.ssh_port));
@@ -607,6 +588,9 @@ FResult TaskManager::createTask(const std::string& wallet, const std::string &ad
     ETaskEvent ev;
     ev.task_id = taskinfo->task_id;
     ev.op = T_OP_Create;
+    if (!data->image_server.empty()) {
+        ev.image_server = data->image_server[0];
+    }
     add_process_task(ev);
     return FResultOK;
 }
@@ -619,16 +603,24 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     rapidjson::Document doc;
     doc.Parse(additional.c_str());
     if (!doc.IsObject()) {
-        return {E_DEFAULT, "additional(json) parse failed"};
+        return {E_DEFAULT, "additional parse failed"};
     }
 
     std::string image_name, s_ssh_port, s_rdp_port, s_gpu_count, s_cpu_cores, s_mem_size,
-            s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name, operation_system, bios_mode;
+            s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name, operation_system, bios_mode,
+            custom_image_name;
     std::vector<std::string> custom_ports, multicast;
 
-    JSON_PARSE_STRING(doc, "image_name", image_name)
-    JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)
-    JSON_PARSE_STRING(doc, "rdp_port", s_rdp_port)
+    JSON_PARSE_STRING(doc, "image_name", image_name) //image name
+    JSON_PARSE_STRING(doc, "custom_image_name", custom_image_name) //custom image name
+    JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port)  //ssh port in linux
+    JSON_PARSE_STRING(doc, "rdp_port", s_rdp_port)  //rdp port in linux
+    //custom port: [
+    // "tcp/udp,123",
+    // "tcp/udp,111:222",
+    // "tcp/udp,333-444",
+    // "tcp/udp,555-666:777-888"
+    //]
     if (doc.HasMember("custom_port")) {
         const rapidjson::Value& v_custom_port = doc["custom_port"];
         if (v_custom_port.IsArray()) {
@@ -641,6 +633,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             }
         }
     }
+    //multicast: [
+    // "223.1.1.1",
+    // "224.1.1.1"
+    //]
     if (doc.HasMember("multicast")) {
         const rapidjson::Value& v_multicast = doc["multicast"];
         if (v_multicast.IsArray()) {
@@ -663,7 +659,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "data_file_name", data_file_name)
     JSON_PARSE_STRING(doc, "operation_system", operation_system)
     JSON_PARSE_STRING(doc, "bios_mode", bios_mode)
-
+    //operation_system: "win"/"ubuntu"/""
     if (operation_system.empty()) {
         operation_system = "generic";
     }
@@ -681,16 +677,16 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         }
     }
 
-    // vnc port
+    // vnc port range: [5900, 6000]
     if (s_vnc_port.empty()) {
         return {E_DEFAULT, "vnc port is not specified"};
     }
-
     int vnc_port = atoi(s_vnc_port.c_str());
     if (!util::is_digits(s_vnc_port) || vnc_port < 5900 || vnc_port > 6000) {
-        return {E_DEFAULT, "vnc port out of range, it should be between 5900 and 6000"};
+        return {E_DEFAULT, "vnc_port out of range : [5900, 6000]"};
     }
 
+    //bios_mode
     if (bios_mode.empty()) {
         bios_mode = "legacy";
     }
@@ -891,8 +887,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         bios_mode = xml_params.bios_mode;
         multicast = xml_params.multicast;
 
-        // check
-        // image
+        // check image
         fret = check_image(image_name);
         if (std::get<0>(fret) != E_SUCCESS) {
             return fret;
@@ -937,6 +932,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.task_id = task_id;
     params.login_password = login_password;
     params.image_name = image_name;
+    params.custom_image_name = custom_image_name;
     params.data_file_name = data_file_name;
     params.ssh_port = atoi(s_ssh_port.c_str());
     params.rdp_port = atoi(s_rdp_port.c_str());
@@ -1186,14 +1182,7 @@ FResult TaskManager::check_image(const std::string &image_name) {
     boost::system::error_code error_code;
     boost::filesystem::path image_path("/data/" + image_name);
     if (!boost::filesystem::exists(image_path, error_code) || error_code) {
-        std::vector<std::string> images;
-        ImageManager::instance().ListAllImages(images);
-        auto iter = std::find(images.begin(), images.end(), image_name);
-        if (iter != images.end()) {
-            image_path = "/nfs_dbc_images/" + image_name;
-        } else {
-            return {E_DEFAULT, "image not exist"};
-        }
+        return {E_DEFAULT, "image not exist"};
     }
 
     if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
@@ -1305,7 +1294,8 @@ FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) 
     return FResultOK;
 }
 
-FResult TaskManager::parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info) {
+FResult TaskManager::parse_create_snapshot_params(const std::string &additional, const std::string &task_id,
+                                                  std::shared_ptr<dbc::snapshotInfo> &info) {
     if (additional.empty()) {
         return {E_DEFAULT, "additional is empty"};
     }
@@ -1336,7 +1326,7 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
     info->__set_description(description);
 
     std::map<std::string, domainDiskInfo> ddInfos;
-    if (!m_vm_client.ListDomainDiskInfo(task_id, ddInfos) || ddInfos.empty()) {
+    if (!VmClient::instance().ListDomainDiskInfo(task_id, ddInfos) || ddInfos.empty()) {
         return {E_DEFAULT, "can not get vm disk info"};
     }
     for (const auto & disk : ddInfos) {
@@ -1359,6 +1349,7 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
             if (!v.HasMember("disk_name") || !v["disk_name"].IsString()) {
                 return {E_DEFAULT, "parse additional disk_name json failed"};
             }
+            std::string disk_name = v["disk_name"].GetString();
             disk.__set_name(v["disk_name"].GetString());
             if (ddInfos.find(disk.name) == ddInfos.end()) {
                 return {E_DEFAULT, "additional disk_name not exist in task:" + task_id};
@@ -1413,7 +1404,9 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
                 // }
                 disk.__set_source_file(snapshot_file_path);
             } else {
-                disk.__set_source_file("/data/" + task_id + "_" + snapshot_name + "_" + disk.name + ".qcow2");
+                std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) +
+                        "#_" + snapshot_name + "-" + disk_name + ".qcow2";
+                disk.__set_source_file("/data/" + snap_file);
             }
             disks.push_back(disk);
         }
@@ -1426,7 +1419,10 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
             sdInfo.__set_name(disk.second.targetDev);
             sdInfo.__set_driver_type(disk.second.driverType);
             sdInfo.__set_snapshot("external");
-            sdInfo.__set_source_file("/data/" + task_id + "_" + snapshot_name + "_" + sdInfo.name + ".qcow2");
+
+            std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) +
+                    "#_" + snapshot_name + "-" + sdInfo.name + ".qcow2";
+            sdInfo.__set_source_file("/data/" + snap_file);
             disks.push_back(sdInfo);
         }
     }
@@ -1439,7 +1435,9 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
         LOG_INFO << "parse additional disk name:" << disk.name << ", driver type:" << disk.driver_type
                  << ", snapshot type:" << disk.snapshot << ", source file:" << disk.source_file;
         if (disk.snapshot == "external" && disk.source_file.empty()) {
-            disk.source_file = "/data/" + task_id + "_" + snapshot_name + "_" + disk.name + ".qcow2";
+            std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) +
+                    "#_" + snapshot_name + "-" + disk.name + ".qcow2";
+            disk.source_file = "/data/" + snap_file;
         }
     }
 
@@ -1467,14 +1465,14 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    if (!m_vm_client.IsExistDomain(task_id)) {
+    if (!VmClient::instance().IsExistDomain(task_id)) {
         return {E_DEFAULT, "domain not exist"};
     }
 
     //TODO： check task resource
 
 
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_PMSUSPENDED) {
         taskinfo->__set_status(TS_Starting);
         taskinfo->__set_last_start_time(time(nullptr));
@@ -1496,11 +1494,11 @@ FResult TaskManager::stopTask(const std::string& wallet, const std::string &task
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    if (!m_vm_client.IsExistDomain(task_id)) {
+    if (!VmClient::instance().IsExistDomain(task_id)) {
         return {E_DEFAULT, "domain not exist"};
     }
 
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status != VIR_DOMAIN_SHUTOFF) {
         taskinfo->__set_status(TS_Stopping);
         taskinfo->__set_last_stop_time(time(nullptr));
@@ -1522,14 +1520,14 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    if (!m_vm_client.IsExistDomain(task_id)) {
+    if (!VmClient::instance().IsExistDomain(task_id)) {
         return {E_DEFAULT, "domain not exist"};
     }
 
     // TODO: check task resource
 
 
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_RUNNING) {
         taskinfo->__set_status(TS_Restarting);
         taskinfo->__set_last_start_time(time(nullptr));
@@ -1553,11 +1551,11 @@ FResult TaskManager::resetTask(const std::string& wallet, const std::string &tas
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    if (!m_vm_client.IsExistDomain(task_id)) {
+    if (!VmClient::instance().IsExistDomain(task_id)) {
         return {E_DEFAULT, "domain not exist"};
     }
 
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_RUNNING) {
         taskinfo->__set_status(TS_Resetting);
         taskinfo->__set_last_start_time(time(nullptr));
@@ -1579,7 +1577,7 @@ FResult TaskManager::deleteTask(const std::string& wallet, const std::string &ta
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     taskinfo->__set_status(TS_Deleting);
     taskinfo->__set_last_stop_time(time(nullptr));
     TaskInfoMgr::instance().update(taskinfo);
@@ -1598,7 +1596,7 @@ FResult TaskManager::getTaskLog(const std::string &task_id, ETaskLogDirection di
         log_content = "";
         return {E_DEFAULT, "task_id not exist"};
     } else {
-        return m_vm_client.GetDomainLog(task_id, direction, nlines, log_content);
+        return VmClient::instance().GetDomainLog(task_id, direction, nlines, log_content);
     }
 }
 
@@ -1647,7 +1645,7 @@ ETaskStatus TaskManager::getTaskStatus(const std::string &task_id) {
         return TS_ShutOff;
     } else {
         ETaskStatus ts = (ETaskStatus) taskinfo->status;
-        virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+        virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
         if (ts == TS_Running && vm_status == VIR_DOMAIN_SHUTOFF) {
             ETaskEvent ev;
             ev.task_id = task_id;
@@ -1667,9 +1665,9 @@ ETaskStatus TaskManager::getTaskStatus(const std::string &task_id) {
 }
 
 int32_t TaskManager::getTaskAgentInterfaceAddress(const std::string &task_id, std::vector<std::tuple<std::string, std::string>> &address) {
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status != VIR_DOMAIN_RUNNING) return -1;
-    return m_vm_client.GetDomainAgentInterfaceAddress(task_id, address);
+    return VmClient::instance().GetDomainAgentInterfaceAddress(task_id, address);
 }
 
 void TaskManager::deleteAllCheckTasks() {
@@ -1756,7 +1754,7 @@ std::string TaskManager::checkSessionId(const std::string &session_id, const std
 void TaskManager::listTaskDiskInfo(const std::string& task_id, std::map<std::string, domainDiskInfo>& disks) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo != nullptr) {
-        m_vm_client.ListDomainDiskInfo(task_id, disks);
+        VmClient::instance().ListDomainDiskInfo(task_id, disks);
     }
 }
 
@@ -1766,7 +1764,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
         return {E_DEFAULT, "task_id not exist"};
     }
 
-    if (!m_vm_client.IsExistDomain(task_id)) {
+    if (!VmClient::instance().IsExistDomain(task_id)) {
         return {E_DEFAULT, "domain not exist"};
     }
 
@@ -1785,7 +1783,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
     //TODO： check task resource
     SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
 
-    virDomainState vm_status = m_vm_client.GetDomainStatus(task_id);
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (/*vm_status == VIR_DOMAIN_RUNNING || */vm_status == VIR_DOMAIN_SHUTOFF) {
         taskinfo->__set_status(TS_CreatingSnapshot);
         taskinfo->__set_last_stop_time(time(nullptr));
@@ -1887,43 +1885,43 @@ void TaskManager::process_task_thread_func() {
 }
 
 void TaskManager::process_task(const ETaskEvent& ev) {
-    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
-    if (taskinfo == nullptr) return;
-
     int32_t res_code = E_DEFAULT;
     std::string res_msg;
     switch (ev.op) {
         case T_OP_Create:
-            process_create(taskinfo);
+            process_create(ev);
             break;
         case T_OP_Start:
-            process_start(taskinfo);
+            process_start(ev);
             break;
         case T_OP_Stop:
-            process_stop(taskinfo);
+            process_stop(ev);
             break;
         case T_OP_ReStart:
-            process_restart(taskinfo);
+            process_restart(ev);
             break;
         case T_OP_ForceReboot:
-            process_force_reboot(taskinfo);
+            process_force_reboot(ev);
             break;
         case T_OP_Reset:
-            process_reset(taskinfo);
+            process_reset(ev);
             break;
         case T_OP_Delete:
-            process_delete(taskinfo);
+            process_delete(ev);
             break;
         case T_OP_CreateSnapshot:
-            process_create_snapshot(taskinfo);
+            process_create_snapshot(ev);
             break;
         default:
-            TASK_LOG_ERROR(taskinfo->task_id, "unknown op:" << ev.op);
+            TASK_LOG_ERROR(ev.task_id, "unknown op:" << ev.op);
             break;
     }
 }
 
-void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo) {
+void TaskManager::process_create(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
     auto task_resource = TaskResourceMgr::instance().getTaskResource(taskinfo->task_id);
     if (task_resource == nullptr) {
         taskinfo->status = TS_CreateError;
@@ -1932,37 +1930,45 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
         return;
     }
 
-    // todo: 解析父快照，并发送给下载模块
     DownloadImageEvent diEvent;
-    getNeededBackingImage(taskinfo->image_name, diEvent.images);
-    if (!diEvent.images.empty()) {
-        diEvent.task_id = taskinfo->task_id;
-        std::string _taskid = taskinfo->task_id;
-        LOG_INFO << "need download image: " << diEvent.images[0];
-        ImageManager::instance().PushDownloadEvent(diEvent, [this, _taskid] () {
+    diEvent.task_id = taskinfo->task_id;
+    ImageServer imgsvr;
+    imgsvr.from_string(ev.image_server);
+    diEvent.svr = imgsvr;
+    getNeededBackingImage(taskinfo->image_name, diEvent.images_name);
+    if (!diEvent.images_name.empty()) {
+        if (ev.image_server.empty()) {
+            taskinfo->status = TS_CreateError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "image not exist and no image_server");
+            return;
+        }
+
+        std::string _taskid = ev.task_id;
+        std::string _svr = ev.image_server;
+        LOG_INFO << "need download image: " << diEvent.images_name[0];
+        ImageManager::instance().PushDownloadEvent(diEvent, [this, _taskid, _svr] () {
             ETaskEvent ev;
             ev.task_id = _taskid;
             ev.op = T_OP_Create;
+            ev.image_server = _svr;
             add_process_task(ev);
         });
         return;
     }
 
-    ERR_CODE err_code = m_vm_client.CreateDomain(taskinfo->task_id, taskinfo->image_name, taskinfo->data_file_name, task_resource,
-                                                 taskinfo->multicast,
-                                                 taskinfo->operation_system.find("win") != std::string::npos,
-                                                 taskinfo->bios_mode == "uefi");
+    ERR_CODE err_code = VmClient::instance().CreateDomain(taskinfo, task_resource);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_CreateError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "create domain failed");
     } else {
-        std::string local_ip = m_vm_client.GetDomainLocalIP(taskinfo->task_id);
+        std::string local_ip = VmClient::instance().GetDomainLocalIP(taskinfo->task_id);
         if (!local_ip.empty()) {
-            if (!m_vm_client.SetDomainUserPassword(taskinfo->task_id,
+            if (!VmClient::instance().SetDomainUserPassword(taskinfo->task_id,
                     taskinfo->operation_system.find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
                     taskinfo->login_password)) {
-                m_vm_client.DestroyDomain(taskinfo->task_id);
+                VmClient::instance().DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
                 TaskInfoMgr::instance().update(taskinfo);
@@ -1972,7 +1978,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
 
             if (!create_task_iptable(taskinfo->task_id, taskinfo->ssh_port, taskinfo->rdp_port,
                                      taskinfo->custom_port, local_ip)) {
-                m_vm_client.DestroyDomain(taskinfo->task_id);
+                VmClient::instance().DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
                 TaskInfoMgr::instance().update(taskinfo);
@@ -1984,7 +1990,7 @@ void TaskManager::process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo)
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_INFO(taskinfo->task_id, "create task successful");
         } else {
-            m_vm_client.DestroyDomain(taskinfo->task_id);
+            VmClient::instance().DestroyDomain(taskinfo->task_id);
 
             taskinfo->status = TS_CreateError;
             TaskInfoMgr::instance().update(taskinfo);
@@ -2035,8 +2041,11 @@ void TaskManager::getNeededBackingImage(const std::string &image_name, std::vect
     }
 }
 
-void TaskManager::process_start(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
+void TaskManager::process_start(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
+    ERR_CODE err_code = VmClient::instance().StartDomain(taskinfo->task_id);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_StartError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -2049,8 +2058,11 @@ void TaskManager::process_start(const std::shared_ptr<dbc::TaskInfo> &taskinfo) 
     }
 }
 
-void TaskManager::process_stop(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    ERR_CODE err_code = m_vm_client.DestroyDomain(taskinfo->task_id);
+void TaskManager::process_stop(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
+    ERR_CODE err_code = VmClient::instance().DestroyDomain(taskinfo->task_id);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_StopError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -2063,10 +2075,13 @@ void TaskManager::process_stop(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
     }
 }
 
-void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    virDomainState vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+void TaskManager::process_restart(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(taskinfo->task_id);
     if (vm_status == VIR_DOMAIN_SHUTOFF) {
-        ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
+        ERR_CODE err_code = VmClient::instance().StartDomain(taskinfo->task_id);
         if (err_code != E_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
@@ -2078,7 +2093,7 @@ void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo
             TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
         }
     } else if (vm_status == VIR_DOMAIN_RUNNING) {
-        ERR_CODE err_code = m_vm_client.RebootDomain(taskinfo->task_id);
+        ERR_CODE err_code = VmClient::instance().RebootDomain(taskinfo->task_id);
         if (err_code != E_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
@@ -2092,10 +2107,13 @@ void TaskManager::process_restart(const std::shared_ptr<dbc::TaskInfo> &taskinfo
     }
 }
 
-void TaskManager::process_force_reboot(const std::shared_ptr<dbc::TaskInfo>& taskinfo) {
-    virDomainState vm_status = m_vm_client.GetDomainStatus(taskinfo->task_id);
+void TaskManager::process_force_reboot(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(taskinfo->task_id);
     if (vm_status == VIR_DOMAIN_SHUTOFF) {
-        ERR_CODE err_code = m_vm_client.StartDomain(taskinfo->task_id);
+        ERR_CODE err_code = VmClient::instance().StartDomain(taskinfo->task_id);
         if (err_code != E_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
@@ -2107,14 +2125,14 @@ void TaskManager::process_force_reboot(const std::shared_ptr<dbc::TaskInfo>& tas
             TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
         }
     } else /*if (vm_status == VIR_DOMAIN_RUNNING)*/ {
-        ERR_CODE err_code = m_vm_client.DestroyDomain(taskinfo->task_id);
+        ERR_CODE err_code = VmClient::instance().DestroyDomain(taskinfo->task_id);
         if (err_code != E_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
         } else {
             sleep(3);
-            if ((err_code = m_vm_client.StartDomain(taskinfo->task_id)) == E_SUCCESS) {
+            if ((err_code = VmClient::instance().StartDomain(taskinfo->task_id)) == E_SUCCESS) {
                 taskinfo->status = TS_Running;
                 TaskInfoMgr::instance().update(taskinfo);
                 add_iptable_to_system(taskinfo->task_id);
@@ -2128,8 +2146,11 @@ void TaskManager::process_force_reboot(const std::shared_ptr<dbc::TaskInfo>& tas
     }
 }
 
-void TaskManager::process_reset(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
-    ERR_CODE err_code = m_vm_client.ResetDomain(taskinfo->task_id);
+void TaskManager::process_reset(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
+    ERR_CODE err_code = VmClient::instance().ResetDomain(taskinfo->task_id);
     if (err_code != E_SUCCESS) {
         taskinfo->status = TS_ResetError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -2141,17 +2162,23 @@ void TaskManager::process_reset(const std::shared_ptr<dbc::TaskInfo> &taskinfo) 
     }
 }
 
-void TaskManager::process_delete(const std::shared_ptr<dbc::TaskInfo> &taskinfo) {
+void TaskManager::process_delete(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
     delete_task(taskinfo->task_id);
 }
 
-void TaskManager::process_create_snapshot(const std::shared_ptr<dbc::TaskInfo>& taskinfo) {
+void TaskManager::process_create_snapshot(const ETaskEvent& ev) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
+    if (taskinfo == nullptr) return;
+
     std::shared_ptr<dbc::snapshotInfo> info = SnapshotManager::instance().getCreatingSnapshot(taskinfo->task_id);
     if (info == nullptr) {
         LOG_ERROR << "can not find snapshot:" << info->name << " info when creating a snapshot on vm:" << taskinfo->task_id;
         return;
     }
-    FResult result = m_vm_client.CreateSnapshot(taskinfo->task_id, info);
+    FResult result = VmClient::instance().CreateSnapshot(taskinfo->task_id, info);
     if (std::get<0>(result) != E_SUCCESS) {
         taskinfo->status = TS_CreateSnapshotError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -2164,7 +2191,7 @@ void TaskManager::process_create_snapshot(const std::shared_ptr<dbc::TaskInfo>& 
         remove_iptable_from_system(taskinfo->task_id);
         TASK_LOG_INFO(taskinfo->task_id, "create task snapshot:" << info->name << " successful, description:" << info->description);
         SnapshotManager::instance().delCreatingSnapshot(taskinfo->task_id);
-        std::shared_ptr<dbc::snapshotInfo> newInfo = m_vm_client.GetDomainSnapshot(taskinfo->task_id, info->name);
+        std::shared_ptr<dbc::snapshotInfo> newInfo = VmClient::instance().GetDomainSnapshot(taskinfo->task_id, info->name);
         if (newInfo) {
             SnapshotManager::instance().addTaskSnapshot(taskinfo->task_id, newInfo);
         } else {

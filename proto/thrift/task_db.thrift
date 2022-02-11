@@ -24,7 +24,8 @@ struct TaskInfo {
     15: optional string bios_mode,      //BIOS 模式(如：legacy, uefi)
     16: optional string rdp_port,
     17: optional list<string> custom_port,  //自定义端口: "xx", "xx:yy", "xx-yy", "xx-yy:ww-pp"
-    18: optional list<string> multicast //组播地址(如："230.0.0.1:5558")
+    18: optional list<string> multicast, //组播地址(如："230.0.0.1:5558")
+    19: optional string custom_image_name //自定义虚拟机名字
 }
 
 

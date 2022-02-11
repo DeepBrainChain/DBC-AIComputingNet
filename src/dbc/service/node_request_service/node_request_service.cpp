@@ -482,7 +482,6 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!result.success) {
-            result.success = false;
             result.errmsg = "not in verify time period";
         }
     }
@@ -622,19 +621,33 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
     bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
     if (hit_self) {
-        list_images(node_req_msg->header, data);
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        AuthoriseResult result;
+        check_authority(params, result);
+
+        list_images(node_req_msg->header, data, result);
     } else {
         node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
-void node_request_service::list_images(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data) {
+void node_request_service::list_images(const dbc::network::base_header& header,
+                                       const std::shared_ptr<dbc::node_list_images_req_data>& data,
+                                       const AuthoriseResult& result) {
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
     std::vector<std::string> images;
-    auto fresult = m_task_scheduler.listImages("", images);
+    auto fresult = m_task_scheduler.listImages(data, result, images);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -764,7 +777,7 @@ void node_request_service::download_image(const dbc::network::base_header& heade
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.downloadImage(result.rent_wallet, data->image);
+    auto fresult = m_task_scheduler.downloadImage(data);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -860,7 +873,7 @@ void node_request_service::upload_image(const dbc::network::base_header& header,
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.uploadImage(result.rent_wallet, data->image);
+    auto fresult = m_task_scheduler.uploadImage(data);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -986,21 +999,7 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << ",\"used_usage\":" << "\"" << f2s(tmp_diskinfo.disk_usage * 100) << "%" << "\"";
     ss << "}";
     std::vector<std::string> images;
-    {
-        boost::system::error_code error_code;
-        if (boost::filesystem::is_regular_file("/data/ubuntu.qcow2", error_code) && !error_code) {
-            images.push_back("ubuntu.qcow2");
-        }
-        if (boost::filesystem::is_regular_file("/data/ubuntu-2004.qcow2", error_code) && !error_code) {
-            images.push_back("ubuntu-2004.qcow2");
-        }
-        if (boost::filesystem::is_regular_file("/data/windows_1909.qcow2", error_code) && !error_code) {
-            images.push_back("windows_1909.qcow2");
-        }
-        if (boost::filesystem::is_regular_file("/data/windows_21h1.qcow2", error_code) && !error_code) {
-            images.push_back("windows_21h1.qcow2");
-        }
-    }
+    ImageMgr::instance().ListLocalShareImages(data->image_server, images);
     ss << ",\"images\":" << "[";
     for(int i = 0; i < images.size(); ++i) {
         ss << "\"" << images[i] << "\"";
@@ -1246,7 +1245,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
                     ss_tasks << "{";
                     ss_tasks << "\"name\":" << "\"" << disk.second.targetDev << "\"";
                     ss_tasks << ", \"type\":" << "\"" << disk.second.driverType << "\"";
-                    ss_tasks << ", \"source_file\":" << "\"" << disk.second.sourceFile << "\"";
+                    ss_tasks << ", \"source_file\":" << "\"" << boost::filesystem::path(disk.second.sourceFile).filename().string() << "\"";
                     ss_tasks << "}";
                     idx++;
                 }
@@ -1371,13 +1370,13 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
 }
 
 void node_request_service::task_create(const dbc::network::base_header& header,
-                                       const std::shared_ptr<dbc::node_create_task_req_data>& data, const AuthoriseResult& result) {
+                                       const std::shared_ptr<dbc::node_create_task_req_data>& data,
+                                       const AuthoriseResult& result) {
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-
     std::string task_id;
-    auto fresult = m_task_scheduler.createTask(result.rent_wallet, data->additional, result.rent_end,
+    auto fresult = m_task_scheduler.createTask(result.rent_wallet, data, result.rent_end,
                                                result.user_role, task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);

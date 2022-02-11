@@ -5,6 +5,7 @@
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 #include "../TaskResourceManager.h"
+#include "service/task/db/task_db_types.h"
 
 namespace dbc {
     class snapshotInfo;
@@ -18,7 +19,7 @@ struct domainDiskInfo {
     std::string targetBus;
 };
 
-class VmClient {
+class VmClient : public Singleton<VmClient> {
 public:
     VmClient();
 
@@ -26,9 +27,7 @@ public:
 
     bool Init();
 
-    int32_t CreateDomain(const std::string& domain_name, const std::string& image, const std::string& data_file,
-                         const std::shared_ptr<TaskResource>& task_resource, const std::vector<std::string>& multicast,
-                         bool is_windows = false, bool uefi = false);
+    int32_t CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo, const std::shared_ptr<TaskResource>& task_resource);
 
     int32_t StartDomain(const std::string& domain_name);
 

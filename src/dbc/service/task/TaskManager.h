@@ -31,13 +31,14 @@ public:
 
     void stop();
 
-    FResult listImages(const std::string& wallet, std::vector<std::string> &images);
+    FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
+                       const AuthoriseResult& result, std::vector<std::string> &images);
 
-    FResult downloadImage(const std::string& wallet, const std::string &image_name);
+    FResult downloadImage(const std::shared_ptr<dbc::node_download_image_req_data>& data);
 
-    FResult uploadImage(const std::string& wallet, const std::string &image_name);
+    FResult uploadImage(const std::shared_ptr<dbc::node_upload_image_req_data>& data);
 
-    FResult createTask(const std::string& wallet, const std::string &additional,
+    FResult createTask(const std::string& wallet, const std::shared_ptr<dbc::node_create_task_req_data>& data,
                        int64_t rent_end, USER_ROLE role, std::string& task_id);
 
     FResult startTask(const std::string& wallet, const std::string &task_id);
@@ -112,9 +113,7 @@ protected:
 
     void delete_task(const std::string& task_id);
 
-    void delete_disk_system_file(const std::string &task_id, const std::string& disk_system_file_name);
-
-    void delete_disk_data_file(const std::string &task_id);
+    void delete_disk_file(const std::string& task_id, const std::map<std::string, domainDiskInfo>& diskfiles);
 
     FResult parse_create_params(const std::string &additional, USER_ROLE role, TaskCreateParams& params);
 
@@ -152,7 +151,7 @@ protected:
 
     void process_task(const ETaskEvent& ev);
 
-    void process_create(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_create(const ETaskEvent& ev);
 
     bool create_task_iptable(const std::string &domain_name, const std::string &ssh_port,
                              const std::string& rdp_port, const std::vector<std::string>& custom_port,
@@ -160,19 +159,19 @@ protected:
 
     static void getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images);
 
-    void process_start(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_start(const ETaskEvent& ev);
 
-    void process_stop(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_stop(const ETaskEvent& ev);
 
-    void process_restart(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_restart(const ETaskEvent& ev);
 
-    void process_force_reboot(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_force_reboot(const ETaskEvent& ev);
 
-    void process_reset(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_reset(const ETaskEvent& ev);
 
-    void process_delete(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_delete(const ETaskEvent& ev);
 
-    void process_create_snapshot(const std::shared_ptr<dbc::TaskInfo>& taskinfo);
+    void process_create_snapshot(const ETaskEvent& ev);
 
     void prune_task_thread_func();
 
@@ -185,7 +184,6 @@ protected:
     std::thread* m_process_thread = nullptr;
     std::thread* m_prune_thread = nullptr;
 
-    VmClient m_vm_client;
     HttpChainClient m_httpclient;
 };
 

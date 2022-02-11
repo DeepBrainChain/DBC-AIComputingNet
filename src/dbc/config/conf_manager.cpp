@@ -67,6 +67,22 @@ static std::string g_internal_ip_seeds[] = {
         "115.231.234.37:5009"
 };
 
+std::string ImageServer::to_string() {
+    return ip + "," + port + "," + username + "," + passwd + "," + image_dir + "," + id;
+}
+
+void ImageServer::from_string(const std::string& str) {
+    std::vector<std::string> val = util::split(str, ",");
+    if (val.size() == 6) {
+        this->ip = val[0];
+        this->port = val[1];
+        this->username = val[2];
+        this->passwd = val[3];
+        this->image_dir = val[4];
+        this->id = val[5];
+    }
+}
+
 static std::string g_internal_dns_seeds[] = {
 
 };
@@ -118,7 +134,8 @@ int32_t conf_manager::parse_local_conf() {
         ("http_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
         ("http_port", bpo::value<int32_t>()->default_value(20001), "")
         ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
-        ("version", bpo::value<std::string>()->default_value("0.3.7.3"), "");
+        ("version", bpo::value<std::string>()->default_value("0.3.7.3"), "")
+        ("image_server", bpo::value<std::vector<std::string>>(), "");
 
     const boost::filesystem::path &conf_path = env_manager::instance().get_conf_path();
     try {
@@ -145,6 +162,23 @@ int32_t conf_manager::parse_local_conf() {
 
     if (core_args.count("dbc_chain_domain") > 0) {
         m_dbc_chain_domain = core_args["dbc_chain_domain"].as<std::vector<std::string>>();
+    }
+
+    if (core_args.count("image_server") > 0) {
+        std::vector<std::string> vec = core_args["image_server"].as<std::vector<std::string>>();
+        for (auto& str : vec) {
+            std::vector<std::string> val = util::split(str, ",");
+            if (val.size() == 6) {
+                ImageServer imgsvr;
+                imgsvr.ip = val[0];
+                imgsvr.port = val[1];
+                imgsvr.username = val[2];
+                imgsvr.passwd = val[3];
+                imgsvr.image_dir = val[4];
+                imgsvr.id = val[5];
+                m_image_servers.push_back(imgsvr);
+            }
+        }
     }
 
     m_version = core_args["version"].as<std::string>();

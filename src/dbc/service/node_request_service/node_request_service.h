@@ -31,17 +31,6 @@ struct AuthorityParams {
     std::string session_id_sign;
 };
 
-struct AuthoriseResult {
-    bool success = false;
-    std::string errmsg;
-
-    MACHINE_STATUS machine_status;
-    USER_ROLE user_role = USER_ROLE::UR_NONE;
-
-    std::string rent_wallet;
-    int64_t rent_end = 0;
-};
-
 class node_request_service : public service_module, public Singleton<node_request_service> {
 public:
     node_request_service() = default;
@@ -61,7 +50,7 @@ protected:
 
     void on_node_list_images_req(const std::shared_ptr<dbc::network::message> &msg);
 
-    void list_images(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data);
+    void list_images(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data, const AuthoriseResult& result);
 
     void on_node_download_image_req(const std::shared_ptr<dbc::network::message> &msg);
 

@@ -44,6 +44,7 @@ enum ETaskOp {
 struct ETaskEvent {
     std::string task_id;
     ETaskOp op;
+    std::string image_server;
 };
 
 enum ETaskStatus {
@@ -58,7 +59,7 @@ enum ETaskStatus {
     TS_CreatingSnapshot,  //正在创建快照
     TS_PMSuspended, //虚拟机已进入睡眠状态
 
-    TS_Error,   //出错
+    TS_Error = 100,   //出错
     TS_CreateError,
     TS_StartError,
     TS_StopError,
@@ -102,10 +103,22 @@ enum USER_ROLE {
     UR_RENTER_SESSION_ID
 };
 
+struct AuthoriseResult {
+    bool success = false;
+    std::string errmsg;
+
+    MACHINE_STATUS machine_status;
+    USER_ROLE user_role = USER_ROLE::UR_NONE;
+
+    std::string rent_wallet;
+    int64_t rent_end = 0;
+};
+
 struct TaskCreateParams {
     std::string task_id;
     std::string login_password;
     std::string image_name;     // system disk image name
+    std::string custom_image_name;
     std::string data_file_name; // data disk file name
     int16_t ssh_port;
     int16_t rdp_port;

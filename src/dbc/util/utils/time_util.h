@@ -12,6 +12,8 @@ namespace util {
     std::string time_2_utc(time_t t);
 
     std::time_t get_time_stamp_ms();
+
+    std::string time2str(time_t t);
 }
 
 #endif
