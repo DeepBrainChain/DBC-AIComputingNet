@@ -16,6 +16,7 @@
 #include "service/message/message_id.h"
 #include "service/service_info/service_info_collection.h"
 #include "service/peer_request_service/p2p_net_service.h"
+#include "service/task/TaskManager.h"
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
@@ -1039,45 +1040,76 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
         return;
     }
 
-    if (!has_peer_nodeid(body)) {
-        LOG_ERROR << "peer_nodeid is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
+    // image_filename
+    const rapidjson::Value& vAdditional = doc["additional"];
+    if (!vAdditional.HasMember("image_filename")) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "no param: additional.image_filename");
         return;
     }
 
-    if (body.session_id.empty() || body.session_id_sign.empty()) {
-        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
-            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
+    std::string image_filename;
+    JSON_PARSE_STRING(vAdditional, "image_filename", image_filename);
+    if (!boost::filesystem::exists("/data/" + image_filename)) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional.image_filename: /data/" + image_filename + ", file not exist");
+        return;
+    }
+
+    if (!has_peer_nodeid(body)) {
+        // 从client节点上传镜像到镜像中心
+        auto svrs = conf_manager::instance().get_image_servers();
+        if (svrs.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
+        } else {
+            UploadImageEvent uiEvent;
+            uiEvent.task_id = util::create_task_id();
+            uiEvent.svr = svrs[0];
+            uiEvent.image_name = image_filename;
+            ImageManager::instance().PushUploadEvent(uiEvent);
+
+            std::string rsp_json = "{";
+            rsp_json += "\"errcode\":0";
+            rsp_json += ",\"message\": \"ok\"";
+            rsp_json += "}";
+
+            httpReq->reply_comm_rest_succ2(rsp_json);
+        }
+    } else {
+        if (body.session_id.empty() || body.session_id_sign.empty()) {
+            if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+                LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                             "wallet_sign and multisig_wallets all invalid");
+                return;
+            }
+        }
+
+        std::string head_session_id = util::create_session_id();
+
+        auto svrs = conf_manager::instance().get_image_servers();
+        if (svrs.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
             return;
         }
-    }
 
-    std::string head_session_id = util::create_session_id();
+        auto node_req_msg = create_node_upload_image_req_msg(head_session_id, body);
+        if (nullptr == node_req_msg) {
+            LOG_ERROR << "creaate node request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+            return;
+        }
 
-    auto svrs = conf_manager::instance().get_image_servers();
-    if (svrs.empty()) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
-        return;
-    }
+        if (E_SUCCESS != create_request_session(NODE_UPLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id,
+                                                body.peer_nodes_list[0])) {
+            LOG_ERROR << "create request session failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            return;
+        }
 
-    auto node_req_msg = create_node_upload_image_req_msg(head_session_id, body);
-    if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
-        return;
-    }
-
-    if (E_SUCCESS != create_request_session(NODE_UPLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
-        return;
-    }
-
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
-        return;
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+            LOG_ERROR << "broadcast request failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+            return;
+        }
     }
 }
 
