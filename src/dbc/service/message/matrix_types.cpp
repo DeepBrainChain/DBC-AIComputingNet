@@ -529,10 +529,6 @@ namespace dbc {
         this->additional = val;
     }
 
-    void node_list_images_req_data::__set_image(const std::string& val) {
-        this->image = val;
-    }
-
     void node_list_images_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
@@ -590,7 +586,6 @@ namespace dbc {
 
         bool isset_peer_nodes_list = false;
         bool isset_additional = false;
-        bool isset_image = false;
         bool isset_wallet = false;
         bool isset_nonce = false;
         bool isset_sign = false;
@@ -638,21 +633,13 @@ namespace dbc {
                     break;
                 case 3:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->image);
-                        isset_image = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->wallet);
                         isset_wallet = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 5:
+                case 4:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->nonce);
                         isset_nonce = true;
@@ -660,7 +647,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 6:
+                case 5:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->sign);
                         isset_sign = true;
@@ -668,7 +655,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 7:
+                case 6:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
@@ -688,7 +675,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 8:
+                case 7:
                     if (ftype == ::apache::thrift::protocol::T_I32) {
                         xfer += iprot->readI32(this->multisig_threshold);
                         isset_multisig_threshold = true;
@@ -696,7 +683,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 9:
+                case 8:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
@@ -716,7 +703,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 10:
+                case 9:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->session_id);
                         isset_session_id = true;
@@ -724,7 +711,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 11:
+                case 10:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->session_id_sign);
                         isset_session_id_sign = true;
@@ -732,7 +719,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 12:
+                case 11:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->image_server.clear();
@@ -764,8 +751,6 @@ namespace dbc {
         if (!isset_peer_nodes_list)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_additional)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_image)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_wallet)
             throw TProtocolException(TProtocolException::INVALID_DATA);
@@ -807,23 +792,19 @@ namespace dbc {
         xfer += oprot->writeString(this->additional);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("image", ::apache::thrift::protocol::T_STRING, 3);
-        xfer += oprot->writeString(this->image);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
         xfer += oprot->writeString(this->wallet);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
         xfer += oprot->writeString(this->nonce);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 6);
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
         xfer += oprot->writeString(this->sign);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
             std::vector<std::string> ::const_iterator _iter31;
@@ -835,11 +816,11 @@ namespace dbc {
         }
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 8);
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
         xfer += oprot->writeI32(this->multisig_threshold);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
             std::vector<multisig_sign_item> ::const_iterator _iter32;
@@ -851,16 +832,16 @@ namespace dbc {
         }
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
         xfer += oprot->writeString(this->session_id);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 11);
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
         xfer += oprot->writeString(this->session_id_sign);
         xfer += oprot->writeFieldEnd();
 
         if (this->__isset.image_server) {
-            xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_LIST, 12);
+            xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_LIST, 11);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->image_server.size()));
                 std::vector<std::string> ::const_iterator _iter33;
@@ -881,7 +862,6 @@ namespace dbc {
         using ::std::swap;
         swap(a.peer_nodes_list, b.peer_nodes_list);
         swap(a.additional, b.additional);
-        swap(a.image, b.image);
         swap(a.wallet, b.wallet);
         swap(a.nonce, b.nonce);
         swap(a.sign, b.sign);
@@ -897,7 +877,6 @@ namespace dbc {
     node_list_images_req_data::node_list_images_req_data(const node_list_images_req_data& other34) {
         peer_nodes_list = other34.peer_nodes_list;
         additional = other34.additional;
-        image = other34.image;
         wallet = other34.wallet;
         nonce = other34.nonce;
         sign = other34.sign;
@@ -912,7 +891,6 @@ namespace dbc {
     node_list_images_req_data& node_list_images_req_data::operator=(const node_list_images_req_data& other35) {
         peer_nodes_list = other35.peer_nodes_list;
         additional = other35.additional;
-        image = other35.image;
         wallet = other35.wallet;
         nonce = other35.nonce;
         sign = other35.sign;
@@ -930,7 +908,6 @@ namespace dbc {
         out << "node_list_images_req_data(";
         out << "peer_nodes_list=" << to_string(peer_nodes_list);
         out << ", " << "additional=" << to_string(additional);
-        out << ", " << "image=" << to_string(image);
         out << ", " << "wallet=" << to_string(wallet);
         out << ", " << "nonce=" << to_string(nonce);
         out << ", " << "sign=" << to_string(sign);
@@ -1324,10 +1301,6 @@ namespace dbc {
         this->additional = val;
     }
 
-    void node_download_image_req_data::__set_image(const std::string& val) {
-        this->image = val;
-    }
-
     void node_download_image_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
@@ -1385,7 +1358,6 @@ namespace dbc {
 
         bool isset_peer_nodes_list = false;
         bool isset_additional = false;
-        bool isset_image = false;
         bool isset_wallet = false;
         bool isset_nonce = false;
         bool isset_sign = false;
@@ -1433,21 +1405,13 @@ namespace dbc {
                     break;
                 case 3:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->image);
-                        isset_image = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->wallet);
                         isset_wallet = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 5:
+                case 4:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->nonce);
                         isset_nonce = true;
@@ -1455,7 +1419,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 6:
+                case 5:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->sign);
                         isset_sign = true;
@@ -1463,7 +1427,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 7:
+                case 6:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
@@ -1483,7 +1447,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 8:
+                case 7:
                     if (ftype == ::apache::thrift::protocol::T_I32) {
                         xfer += iprot->readI32(this->multisig_threshold);
                         isset_multisig_threshold = true;
@@ -1491,7 +1455,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 9:
+                case 8:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
@@ -1511,7 +1475,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 10:
+                case 9:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->session_id);
                         isset_session_id = true;
@@ -1519,7 +1483,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 11:
+                case 10:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->session_id_sign);
                         isset_session_id_sign = true;
@@ -1527,7 +1491,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 12:
+                case 11:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->image_server.clear();
@@ -1559,8 +1523,6 @@ namespace dbc {
         if (!isset_peer_nodes_list)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_additional)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_image)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_wallet)
             throw TProtocolException(TProtocolException::INVALID_DATA);
@@ -1602,23 +1564,19 @@ namespace dbc {
         xfer += oprot->writeString(this->additional);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("image", ::apache::thrift::protocol::T_STRING, 3);
-        xfer += oprot->writeString(this->image);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
         xfer += oprot->writeString(this->wallet);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
         xfer += oprot->writeString(this->nonce);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 6);
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
         xfer += oprot->writeString(this->sign);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
             std::vector<std::string> ::const_iterator _iter65;
@@ -1630,11 +1588,11 @@ namespace dbc {
         }
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 8);
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
         xfer += oprot->writeI32(this->multisig_threshold);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
             std::vector<multisig_sign_item> ::const_iterator _iter66;
@@ -1646,16 +1604,16 @@ namespace dbc {
         }
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
         xfer += oprot->writeString(this->session_id);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 11);
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
         xfer += oprot->writeString(this->session_id_sign);
         xfer += oprot->writeFieldEnd();
 
         if (this->__isset.image_server) {
-            xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_LIST, 12);
+            xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_LIST, 11);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->image_server.size()));
                 std::vector<std::string> ::const_iterator _iter67;
@@ -1676,7 +1634,6 @@ namespace dbc {
         using ::std::swap;
         swap(a.peer_nodes_list, b.peer_nodes_list);
         swap(a.additional, b.additional);
-        swap(a.image, b.image);
         swap(a.wallet, b.wallet);
         swap(a.nonce, b.nonce);
         swap(a.sign, b.sign);
@@ -1692,7 +1649,6 @@ namespace dbc {
     node_download_image_req_data::node_download_image_req_data(const node_download_image_req_data& other68) {
         peer_nodes_list = other68.peer_nodes_list;
         additional = other68.additional;
-        image = other68.image;
         wallet = other68.wallet;
         nonce = other68.nonce;
         sign = other68.sign;
@@ -1707,7 +1663,6 @@ namespace dbc {
     node_download_image_req_data& node_download_image_req_data::operator=(const node_download_image_req_data& other69) {
         peer_nodes_list = other69.peer_nodes_list;
         additional = other69.additional;
-        image = other69.image;
         wallet = other69.wallet;
         nonce = other69.nonce;
         sign = other69.sign;
@@ -1725,7 +1680,6 @@ namespace dbc {
         out << "node_download_image_req_data(";
         out << "peer_nodes_list=" << to_string(peer_nodes_list);
         out << ", " << "additional=" << to_string(additional);
-        out << ", " << "image=" << to_string(image);
         out << ", " << "wallet=" << to_string(wallet);
         out << ", " << "nonce=" << to_string(nonce);
         out << ", " << "sign=" << to_string(sign);
@@ -2119,10 +2073,6 @@ namespace dbc {
         this->additional = val;
     }
 
-    void node_upload_image_req_data::__set_image(const std::string& val) {
-        this->image = val;
-    }
-
     void node_upload_image_req_data::__set_wallet(const std::string& val) {
         this->wallet = val;
     }
@@ -2180,7 +2130,6 @@ namespace dbc {
 
         bool isset_peer_nodes_list = false;
         bool isset_additional = false;
-        bool isset_image = false;
         bool isset_wallet = false;
         bool isset_nonce = false;
         bool isset_sign = false;
@@ -2228,21 +2177,13 @@ namespace dbc {
                     break;
                 case 3:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
-                        xfer += iprot->readString(this->image);
-                        isset_image = true;
-                    } else {
-                        xfer += iprot->skip(ftype);
-                    }
-                    break;
-                case 4:
-                    if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->wallet);
                         isset_wallet = true;
                     } else {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 5:
+                case 4:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->nonce);
                         isset_nonce = true;
@@ -2250,7 +2191,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 6:
+                case 5:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->sign);
                         isset_sign = true;
@@ -2258,7 +2199,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 7:
+                case 6:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_wallets.clear();
@@ -2278,7 +2219,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 8:
+                case 7:
                     if (ftype == ::apache::thrift::protocol::T_I32) {
                         xfer += iprot->readI32(this->multisig_threshold);
                         isset_multisig_threshold = true;
@@ -2286,7 +2227,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 9:
+                case 8:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->multisig_signs.clear();
@@ -2306,7 +2247,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 10:
+                case 9:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->session_id);
                         isset_session_id = true;
@@ -2314,7 +2255,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 11:
+                case 10:
                     if (ftype == ::apache::thrift::protocol::T_STRING) {
                         xfer += iprot->readString(this->session_id_sign);
                         isset_session_id_sign = true;
@@ -2322,7 +2263,7 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
-                case 12:
+                case 11:
                     if (ftype == ::apache::thrift::protocol::T_LIST) {
                         {
                             this->image_server.clear();
@@ -2354,8 +2295,6 @@ namespace dbc {
         if (!isset_peer_nodes_list)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_additional)
-            throw TProtocolException(TProtocolException::INVALID_DATA);
-        if (!isset_image)
             throw TProtocolException(TProtocolException::INVALID_DATA);
         if (!isset_wallet)
             throw TProtocolException(TProtocolException::INVALID_DATA);
@@ -2397,23 +2336,19 @@ namespace dbc {
         xfer += oprot->writeString(this->additional);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("image", ::apache::thrift::protocol::T_STRING, 3);
-        xfer += oprot->writeString(this->image);
-        xfer += oprot->writeFieldEnd();
-
-        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
         xfer += oprot->writeString(this->wallet);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
         xfer += oprot->writeString(this->nonce);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 6);
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
         xfer += oprot->writeString(this->sign);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
             std::vector<std::string> ::const_iterator _iter99;
@@ -2425,11 +2360,11 @@ namespace dbc {
         }
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 8);
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
         xfer += oprot->writeI32(this->multisig_threshold);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
         {
             xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
             std::vector<multisig_sign_item> ::const_iterator _iter100;
@@ -2441,16 +2376,16 @@ namespace dbc {
         }
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
         xfer += oprot->writeString(this->session_id);
         xfer += oprot->writeFieldEnd();
 
-        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 11);
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
         xfer += oprot->writeString(this->session_id_sign);
         xfer += oprot->writeFieldEnd();
 
         if (this->__isset.image_server) {
-            xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_LIST, 12);
+            xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_LIST, 11);
             {
                 xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->image_server.size()));
                 std::vector<std::string> ::const_iterator _iter101;
@@ -2471,7 +2406,6 @@ namespace dbc {
         using ::std::swap;
         swap(a.peer_nodes_list, b.peer_nodes_list);
         swap(a.additional, b.additional);
-        swap(a.image, b.image);
         swap(a.wallet, b.wallet);
         swap(a.nonce, b.nonce);
         swap(a.sign, b.sign);
@@ -2487,7 +2421,6 @@ namespace dbc {
     node_upload_image_req_data::node_upload_image_req_data(const node_upload_image_req_data& other102) {
         peer_nodes_list = other102.peer_nodes_list;
         additional = other102.additional;
-        image = other102.image;
         wallet = other102.wallet;
         nonce = other102.nonce;
         sign = other102.sign;
@@ -2502,7 +2435,6 @@ namespace dbc {
     node_upload_image_req_data& node_upload_image_req_data::operator=(const node_upload_image_req_data& other103) {
         peer_nodes_list = other103.peer_nodes_list;
         additional = other103.additional;
-        image = other103.image;
         wallet = other103.wallet;
         nonce = other103.nonce;
         sign = other103.sign;
@@ -2520,7 +2452,6 @@ namespace dbc {
         out << "node_upload_image_req_data(";
         out << "peer_nodes_list=" << to_string(peer_nodes_list);
         out << ", " << "additional=" << to_string(additional);
-        out << ", " << "image=" << to_string(image);
         out << ", " << "wallet=" << to_string(wallet);
         out << ", " << "nonce=" << to_string(nonce);
         out << ", " << "sign=" << to_string(sign);

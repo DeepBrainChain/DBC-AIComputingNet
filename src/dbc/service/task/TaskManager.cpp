@@ -84,12 +84,22 @@ FResult TaskManager::downloadImage(const std::shared_ptr<dbc::node_download_imag
         return {E_DEFAULT, "no image_server"};
     }
 
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return {E_DEFAULT, "additional parse failed"};
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+    if (image_filename.empty()) {
+        return {E_DEFAULT, "no image_filename"};
+    }
+
     std::vector<std::string> images;
     ImageManager::instance().ListShareImages(data->image_server, images);
-
-    auto iter = std::find(images.begin(), images.end(), data->image);
+    auto iter = std::find(images.begin(), images.end(), image_filename);
     if (iter == images.end()) {
-        return {E_NOT_FOUND, "image not exist"};
+        return {E_NOT_FOUND, "image:" + image_filename + " not exist"};
     }
 
     DownloadImageEvent diEvent;
@@ -97,7 +107,7 @@ FResult TaskManager::downloadImage(const std::shared_ptr<dbc::node_download_imag
     ImageServer svr;
     svr.from_string(data->image_server[0]);
     diEvent.svr = svr;
-    diEvent.images_name.push_back(data->image);
+    diEvent.images_name.push_back(image_filename);
     ImageManager::instance().PushDownloadEvent(diEvent);
     return FResultOK;
 }
@@ -107,12 +117,19 @@ FResult TaskManager::uploadImage(const std::shared_ptr<dbc::node_upload_image_re
         return {E_DEFAULT, "no image_server"};
     }
 
-    std::vector<std::string> images;
-    ImageManager::instance().ListShareImages(data->image_server, images);
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return {E_DEFAULT, "additional parse failed"};
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+    if (image_filename.empty()) {
+        return {E_DEFAULT, "no image_filename"};
+    }
 
-    auto iter = std::find(images.begin(), images.end(), data->image);
-    if (iter != images.end()) {
-        return {E_NOT_FOUND, "image already exist"};
+    if (!boost::filesystem::exists("/data/" + image_filename)) {
+        return {E_DEFAULT, "image:" + image_filename + " not exist"};
     }
 
     UploadImageEvent uiEvent;
@@ -120,7 +137,7 @@ FResult TaskManager::uploadImage(const std::shared_ptr<dbc::node_upload_image_re
     ImageServer svr;
     svr.from_string(data->image_server[0]);
     uiEvent.svr = svr;
-    uiEvent.image_name = data->image;
+    uiEvent.image_name = image_filename;
     ImageManager::instance().PushUploadEvent(uiEvent);
     return FResultOK;
 }
@@ -1404,8 +1421,8 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
                 // }
                 disk.__set_source_file(snapshot_file_path);
             } else {
-                std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) +
-                        "#_" + snapshot_name + "-" + disk_name + ".qcow2";
+                std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) +
+                        "_" + snapshot_name + "-" + disk_name + ".qcow2";
                 disk.__set_source_file("/data/" + snap_file);
             }
             disks.push_back(disk);
@@ -1420,8 +1437,8 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
             sdInfo.__set_driver_type(disk.second.driverType);
             sdInfo.__set_snapshot("external");
 
-            std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) +
-                    "#_" + snapshot_name + "-" + sdInfo.name + ".qcow2";
+            std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) +
+                    "_" + snapshot_name + "-" + sdInfo.name + ".qcow2";
             sdInfo.__set_source_file("/data/" + snap_file);
             disks.push_back(sdInfo);
         }
@@ -1435,8 +1452,8 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
         LOG_INFO << "parse additional disk name:" << disk.name << ", driver type:" << disk.driver_type
                  << ", snapshot type:" << disk.snapshot << ", source file:" << disk.source_file;
         if (disk.snapshot == "external" && disk.source_file.empty()) {
-            std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) +
-                    "#_" + snapshot_name + "-" + disk.name + ".qcow2";
+            std::string snap_file = "snap_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) +
+                    "_" + snapshot_name + "-" + disk.name + ".qcow2";
             disk.source_file = "/data/" + snap_file;
         }
     }

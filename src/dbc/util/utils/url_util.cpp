@@ -6,27 +6,19 @@ namespace util {
     void split_path(const std::string& path, std::vector<std::string>& path_list)
     {
         if(path.empty())
-        {
             return;
-        }
 
         std::string temp_path(path);
 
         size_t pos = path.find_first_of("?");
-        if(pos != std::string::npos)
-        {
+        if(pos != std::string::npos) {
             temp_path = path.substr(0, pos);
         }
 
-
-        if(temp_path[0] == '/')
-        {
+        if(temp_path[0] == '/') {
             temp_path = temp_path.substr(1);
-
             util::split(temp_path, "/", path_list);
-        }
-        else
-        {
+        } else {
             util::split(temp_path, "/", path_list);
         }
     }

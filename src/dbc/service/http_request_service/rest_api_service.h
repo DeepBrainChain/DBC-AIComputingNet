@@ -5,8 +5,7 @@
 #include "service_module/service_module.h"
 #include "network/http_server.h"
 #include "timer/timer.h"
-#include "../message/cmd_message.h"
-#include "common/common.h"
+#include "service/message/cmd_message.h"
 
 static const std::string REST_API_VERSION = "v1.1";
 static const std::string REST_API_URI = "/api/v1";
@@ -42,9 +41,6 @@ struct req_body {
 
     std::string task_id;
 
-    // images
-    std::string image_name;
-    
     // restart force
     int16_t force_reboot = 0;
 
@@ -60,7 +56,9 @@ struct req_body {
     std::string snapshot_name;
 };
 
-class rest_api_service : public service_module, public dbc::network::http_request_event, public Singleton<rest_api_service> {
+class rest_api_service : public service_module,
+        public dbc::network::http_request_event,
+        public Singleton<rest_api_service> {
 public:
     rest_api_service() = default;
 
@@ -70,7 +68,6 @@ public:
 
     void on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) override;
 
-    //////////////////////////////////////////////////////////////////////////
     // /
     void rest_client_version(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
 

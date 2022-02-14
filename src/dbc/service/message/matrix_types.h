@@ -433,13 +433,12 @@ namespace dbc {
 
         node_list_images_req_data(const node_list_images_req_data&);
         node_list_images_req_data& operator=(const node_list_images_req_data&);
-        node_list_images_req_data() : additional(), image(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+        node_list_images_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
         }
 
         virtual ~node_list_images_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
-        std::string image;
         std::string wallet;
         std::string nonce;
         std::string sign;
@@ -455,8 +454,6 @@ namespace dbc {
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
-
-        void __set_image(const std::string& val);
 
         void __set_wallet(const std::string& val);
 
@@ -481,8 +478,6 @@ namespace dbc {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
-                return false;
-            if (!(image == rhs.image))
                 return false;
             if (!(wallet == rhs.wallet))
                 return false;
@@ -688,13 +683,12 @@ namespace dbc {
 
         node_download_image_req_data(const node_download_image_req_data&);
         node_download_image_req_data& operator=(const node_download_image_req_data&);
-        node_download_image_req_data() : additional(), image(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+        node_download_image_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
         }
 
         virtual ~node_download_image_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
-        std::string image;
         std::string wallet;
         std::string nonce;
         std::string sign;
@@ -710,8 +704,6 @@ namespace dbc {
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
-
-        void __set_image(const std::string& val);
 
         void __set_wallet(const std::string& val);
 
@@ -736,8 +728,6 @@ namespace dbc {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
-                return false;
-            if (!(image == rhs.image))
                 return false;
             if (!(wallet == rhs.wallet))
                 return false;
@@ -943,13 +933,12 @@ namespace dbc {
 
         node_upload_image_req_data(const node_upload_image_req_data&);
         node_upload_image_req_data& operator=(const node_upload_image_req_data&);
-        node_upload_image_req_data() : additional(), image(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+        node_upload_image_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
         }
 
         virtual ~node_upload_image_req_data() throw();
         std::vector<std::string>  peer_nodes_list;
         std::string additional;
-        std::string image;
         std::string wallet;
         std::string nonce;
         std::string sign;
@@ -965,8 +954,6 @@ namespace dbc {
         void __set_peer_nodes_list(const std::vector<std::string> & val);
 
         void __set_additional(const std::string& val);
-
-        void __set_image(const std::string& val);
 
         void __set_wallet(const std::string& val);
 
@@ -991,8 +978,6 @@ namespace dbc {
             if (!(peer_nodes_list == rhs.peer_nodes_list))
                 return false;
             if (!(additional == rhs.additional))
-                return false;
-            if (!(image == rhs.image))
                 return false;
             if (!(wallet == rhs.wallet))
                 return false;

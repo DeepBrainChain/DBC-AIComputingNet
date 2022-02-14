@@ -486,7 +486,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
     std::string image_fname = util::GetFileNameWithoutExt(from_image_file);
     std::string image_fext = util::GetFileExt(from_image_file);
     std::string to_vm_file = "/data/";
-    to_vm_file += "vm_" + std::to_string(rand() % 100000) + "#" + util::time2str(time(nullptr)) + "#_"
+    to_vm_file += "vm_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) + "_"
                   + taskinfo->custom_image_name + ".qcow2";
 
     std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + to_vm_file;
@@ -494,8 +494,8 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
     TASK_LOG_INFO(taskinfo->task_id, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
 
     // 数据盘：
-    std::string data_file = "/data/data_" + std::to_string(rand() % 100000) + "#" +
-            util::time2str(time(nullptr)) + "#_" + taskinfo->custom_image_name + ".qcow2";
+    std::string data_file = "/data/data_" + std::to_string(rand() % 100000) + "_" +
+            util::time2str(time(nullptr)) + "_" + taskinfo->custom_image_name + ".qcow2";
     uint64_t data_size = task_resource->disks.begin()->second / 1024L / 1024L; // GB
     TASK_LOG_INFO(taskinfo->task_id, "data_file: " << data_file << ", data_size:" << data_size << "G");
     if (taskinfo->data_file_name.empty()) {
