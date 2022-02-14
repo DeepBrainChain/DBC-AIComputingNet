@@ -68,6 +68,18 @@ std::string get_public_ip() {
     return public_ip;
 }
 
+std::string get_default_route_ip() {
+    std::string default_route_ip;
+    // 获取默认路由制定的网卡设备
+    std::string nic_name = run_shell("ip route|awk 'NR==1{print $5}'");
+    nic_name = util::rtrim(nic_name, '\n');
+    if (nic_name.empty()) return default_route_ip;
+    // 获取制定网卡设备的ip地址
+    default_route_ip = run_shell(("ip address show dev " + nic_name + " |grep 'inet '|awk '/.*[0-9]/{print$2}'|awk -F/ '{print$1}'").c_str());
+    default_route_ip = util::rtrim(default_route_ip, '\n');
+    return default_route_ip;
+}
+
 std::string hide_ip_addr(std::string ip) {
     std::string value = "*";
     std::vector<std::string> nums;

@@ -75,6 +75,9 @@ std::string size_to_string(int64_t n, int64_t scale = 1);
 // 获取公网ip地址
 std::string get_public_ip();
 
+// 获取默认路由指定的网卡设备的IP地址
+std::string get_default_route_ip();
+
 // string to digit
 int32_t str_to_i32(const std::string& str);
 uint32_t str_to_u32(const std::string& str);

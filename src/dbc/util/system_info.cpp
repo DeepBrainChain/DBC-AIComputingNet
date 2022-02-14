@@ -64,6 +64,7 @@ void SystemInfo::init(bpo::variables_map &options, int32_t reserved_cpu_cores, i
         update_disk_info("/", m_diskinfo);
 
     m_public_ip = get_public_ip();
+    m_default_route_ip = get_default_route_ip();
 }
 
 void SystemInfo::start() {
@@ -388,6 +389,10 @@ void SystemInfo::update_func() {
         // public ip
         if (m_public_ip.empty())
             m_public_ip = get_public_ip();
+        
+        // default route ip
+        if (m_default_route_ip.empty())
+            m_default_route_ip = get_default_route_ip();
 
         // cpu usage
         get_occupy(ocpu, cpu_num);

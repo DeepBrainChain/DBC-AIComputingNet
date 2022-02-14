@@ -357,12 +357,12 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
     cmd = "sudo iptables -t nat -N " + chain_name;
     run_shell(cmd);
     if (!ssh_port.empty() && atoi(ssh_port) > 0) {
-        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --dport " + ssh_port +
+        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + public_ip + " --dport " + ssh_port +
               " --jump DNAT --to-destination " + vm_local_ip + ":22";
         run_shell(cmd);
     }
     if (!rdp_port.empty() && atoi(rdp_port) > 0) {
-        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --dport " + rdp_port +
+        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + public_ip + " --dport " + rdp_port +
               " --jump DNAT --to-destination " + vm_local_ip + ":3389";
         run_shell(cmd);
     }
@@ -379,7 +379,7 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
         util::trim(s_port);
 
         if (util::is_digits(s_port)) {
-            cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --dport " + s_port +
+            cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " + s_port +
                   " --jump DNAT --to-destination " + vm_local_ip + ":" + s_port;
             run_shell(cmd);
             continue;
@@ -388,7 +388,7 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
         if (s_port.find(':') != std::string::npos) {
             std::vector<std::string> vec = util::split(s_port, ":");
             if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
-                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --dport " + vec[0] +
+                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " + vec[0] +
                       " --jump DNAT --to-destination " + vm_local_ip + ":" + vec[1];
                 run_shell(cmd);
                 continue;
@@ -398,7 +398,7 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
         if (s_port.find('-') != std::string::npos) {
             std::vector<std::string> vec = util::split(s_port, "-");
             if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
-                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --dport " +
+                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " +
                         vec[0] + ":" + vec[1] + " -j DNAT --to-destination " + vm_local_ip + ":" +
                         vec[0] + "-" + vec[1];
                 run_shell(cmd);
@@ -412,7 +412,7 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
                 std::vector<std::string> vec1 = util::split(vec[0], "-");
                 std::vector<std::string> vec2 = util::split(vec[1], "-");
                 if (vec1.size() == 2 && vec2.size() == 2) {
-                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --dport " +
+                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " +
                             vec1[0] + ":" + vec1[1] + " -j DNAT --to-destination " + vm_local_ip + ":" +
                             vec2[0] + "-" + vec2[1];
                     run_shell(cmd);
@@ -2019,7 +2019,8 @@ void TaskManager::process_create(const ETaskEvent& ev) {
 bool TaskManager::create_task_iptable(const std::string &domain_name, const std::string &ssh_port,
                                       const std::string& rdp_port, const std::vector<std::string>& custom_port,
                                       const std::string &vm_local_ip) {
-    std::string public_ip = SystemInfo::instance().publicip();
+    // std::string public_ip = SystemInfo::instance().publicip();
+    std::string public_ip = SystemInfo::instance().defaultRouteIp();
     if (!public_ip.empty() && !vm_local_ip.empty()) {
         shell_add_iptable_to_system(domain_name, public_ip, ssh_port, rdp_port, custom_port, vm_local_ip);
 
@@ -2268,7 +2269,7 @@ void TaskManager::prune_task_thread_func() {
                     int64_t wallet_rent_end = it.second->rent_end;
                     int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
                     int64_t cur_block = m_httpclient.request_cur_block();
-                    if (reserve_end > cur_block) {
+                    if (cur_block > 0 && reserve_end > cur_block) {
                         ids = it.second->task_ids;
                         for (auto &task_id: ids) {
                             delete_task(task_id);

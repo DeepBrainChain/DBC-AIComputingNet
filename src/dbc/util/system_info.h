@@ -75,6 +75,10 @@ public:
         return m_public_ip;
     }
 
+    std::string defaultRouteIp() const {
+        return m_default_route_ip;
+    }
+
     OS_TYPE ostype() const {
         return m_os_type;
     }
@@ -131,6 +135,7 @@ private:
     std::atomic<bool> m_running{false};
 
     std::string m_public_ip = "N/A";
+    std::string m_default_route_ip = "N/A";
 
     int32_t m_reserved_cpu_cores = 0; // 每个物理cpu的物理核数
     int32_t m_reserved_memory = 0; // GB

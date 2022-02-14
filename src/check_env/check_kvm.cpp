@@ -502,7 +502,7 @@ namespace check_kvm {
         // add chain and rules
         cmd = "sudo iptables -t nat -N " + chain_name;
         run_shell(cmd.c_str());
-        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --dport " + transform_port +
+        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + public_ip + " --dport " + transform_port +
                 " -j DNAT --to-destination " + vm_local_ip + (is_windows ? ":3389" : ":22");
         run_shell(cmd.c_str());
 
@@ -596,7 +596,8 @@ namespace check_kvm {
         std::string cmd = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' | awk '{print $1}' |tr \"\n\" \"|\"";
         std::string vga_gpu = run_shell(cmd.c_str());
 
-        std::string public_ip = get_public_ip();
+        // std::string public_ip = get_public_ip();
+        std::string public_ip = get_default_route_ip();
         if (public_ip.empty()) {
             std::cout << "public_ip is empty" << std::endl;
             return;

@@ -137,6 +137,9 @@ inline std::string size2MB(uint64_t size) {
 // 获取公网ip地址
 std::string get_public_ip();
 
+// 获取默认路由指定的网卡设备的IP地址
+std::string get_default_route_ip();
+
 // 隐藏ip地址，输出类似:*.51.*.142
 std::string hide_ip_addr(std::string ip);
 
