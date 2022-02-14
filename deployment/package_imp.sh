@@ -41,6 +41,7 @@ dbc_package()
     fi
 
     cp -r $shell_dir/crontab $dbc_repo_dir/shell
+    cp -r $shell_dir/image $dbc_repo_dir/shell
 
     cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/shell/
     cp $tool_dir/change_gpu_id.sh   $dbc_repo_dir/shell/

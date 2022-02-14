@@ -1,0 +1,20 @@
+#!/usr/bin/expect
+set host [ lindex $argv 0 ]
+set port [ lindex $argv 1 ]
+set username [ lindex $argv 2 ]
+set passwd [ lindex $argv 3 ]
+set destdir [ lindex $argv 4 ]
+set timeout 300
+
+spawn /usr/bin/ssh -q -p $port $username@$host "ls $destdir;echo FILESTATUS:$? \r"
+
+expect {
+	-timeout 300
+	-re "password:" { exp_send "$passwd\r"; exp_continue }
+	-re "failed" { exit 10 }
+	-re "successful" { }
+	-re "(yes/no)" { exp_send "yes\r"; exp_continue }
+	-re "FILESTATUS:0" { exit 0 }
+	-re "No such file or directory" { exit 30 }
+	timeout {exit 20 } 
+}

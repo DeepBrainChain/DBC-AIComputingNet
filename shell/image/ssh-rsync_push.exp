@@ -1,0 +1,17 @@
+#!/usr/bin/expect
+
+set HOST [ lindex $argv 0 ]
+set PORT [ lindex $argv 1 ]
+set USERNAME [ lindex $argv 2 ]
+set PASSWD [ lindex $argv 3 ]
+set SOURCEDIR [ lindex $argv 4 ]
+set DESDIR [ lindex $argv 5 ]
+
+
+spawn  rsync -a --delete --timeout=600 --partial --progress "-e /usr/bin/ssh -p $PORT"  $SOURCEDIR  $USERNAME@$HOST:$DESDIR 
+expect {   
+	-timeout 1000   
+	-re "password:" { exp_send "$PASSWD\r"; exp_continue }   
+	-re "rsync error:" { exit 50 }
+	timeout { exit 60 }
+}
