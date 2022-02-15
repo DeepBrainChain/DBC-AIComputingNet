@@ -803,7 +803,7 @@ namespace check_kvm {
             }
             std::cout << "set vm password successful, user:" << vm_user << ", pwd:" << vm_pwd << std::endl;
 
-            std::cout << "vnc port:" << vnc_port << " , password" << vnc_pwd << std::endl;
+            std::cout << "vnc port:" << vnc_port << " , password:" << vnc_pwd << std::endl;
             print_green("check vm %s successful", domain_name.c_str());
         } catch (...) {
         }

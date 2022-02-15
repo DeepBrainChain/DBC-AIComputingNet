@@ -175,15 +175,23 @@ BOOST_AUTO_TEST_CASE(testMemoryStats) {
 BOOST_AUTO_TEST_CASE(testDiskInfo) {
     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
     BOOST_REQUIRE(domain);
-    virDomainBlockInfo info;
-    BOOST_REQUIRE(domain->getDomainBlockInfo("vda", &info, 0) > -1);
-    std::cout << " capacity:";
-    std::cout << std::setw(6) << std::setfill(' ') << std::left << info.capacity / 1024 / 1024 / (float)1024;
-    std::cout << " allocation:";
-    std::cout << std::setw(6) << std::setfill(' ') << std::left << info.allocation / 1024 / 1024 / (float)1024;
-    std::cout << " physical:";
-    std::cout << std::setw(6) << std::setfill(' ') << std::left << info.physical / 1024 / 1024 / (float)1024;
-    std::cout << std::endl;
+
+    std::map<std::string, std::string> disks;
+    BOOST_REQUIRE(domain->getDomainDisks(disks) > -1);
+
+    for (const auto& disk : disks) {
+        virDomainBlockInfo info;
+        BOOST_REQUIRE(domain->getDomainBlockInfo(disk.first.c_str(), &info, 0) > -1);
+        std::cout << " disk_name:";
+        std::cout << std::setw(6) << std::setfill(' ') << std::left << disk.first;
+        std::cout << " capacity:";
+        std::cout << std::setw(6) << std::setfill(' ') << std::left << info.capacity / 1024 / 1024 / (float)1024;
+        std::cout << " allocation:";
+        std::cout << std::setw(6) << std::setfill(' ') << std::left << info.allocation / 1024 / 1024 / (float)1024;
+        std::cout << " physical:";
+        std::cout << std::setw(6) << std::setfill(' ') << std::left << info.physical / 1024 / 1024 / (float)1024;
+        std::cout << std::endl;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(testDiskStats) {

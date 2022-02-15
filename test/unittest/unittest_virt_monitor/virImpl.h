@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 #include <thread>
 
 #include <libvirt/libvirt.h>
@@ -56,7 +57,7 @@ public:
      */
     int32_t isDomainActive();
 
-    int32_t getDomainDisks(std::vector<std::string> &disks);
+    int32_t getDomainDisks(std::map<std::string, std::string> &disks);
 
     int32_t getDomainInterfaceAddress(std::vector<test::virDomainInterface> &difaces);
 
@@ -80,7 +81,7 @@ protected:
 
 class virTool {
 public:
-    virTool();
+    virTool(bool enableEvent = false);
     ~virTool();
 
     bool openConnect(const char *name);
@@ -94,6 +95,7 @@ protected:
 
 protected:
     std::shared_ptr<virConnect> conn_;
+    bool enable_event_;
     int dom_event_lifecycle_callback_id_;
     int dom_event_agent_callback_id_;
     int thread_quit_;

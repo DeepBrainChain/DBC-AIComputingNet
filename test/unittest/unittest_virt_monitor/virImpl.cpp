@@ -2,7 +2,7 @@
 #include <boost/filesystem.hpp>
 #include "tinyxml2.h"
 
-#define __DEBUG__ 1
+// #define __DEBUG__ 1
 
 #ifdef __DEBUG__
 #define DebugPrintf(format, ...) printf(format, ##__VA_ARGS__)
@@ -128,7 +128,7 @@ int32_t virDomainImpl::deleteDomain() {
     virDomainInfo info;
     int ret = virDomainGetInfo(domain_.get(), &info);
     if (ret < 0) return ret;
-    std::vector<std::string> disks;
+    std::map<std::string, std::string> disks;
     getDomainDisks(disks);
     if (info.state == VIR_DOMAIN_RUNNING) {
         ret = destroyDomain();
@@ -136,11 +136,11 @@ int32_t virDomainImpl::deleteDomain() {
     }
     ret = undefineDomain();
     if (ret < 0) return ret;
-    for (const auto& disk_file : disks) {
+    for (const auto& disk : disks) {
         boost::system::error_code error_code;
-        if (boost::filesystem::exists(disk_file, error_code) && !error_code) {
-            remove(disk_file.c_str());
-            DebugPrintf("delete file: %s\n", disk_file.c_str());
+        if (boost::filesystem::exists(disk.second, error_code) && !error_code) {
+            remove(disk.second.c_str());
+            DebugPrintf("delete file: %s\n", disk.second.c_str());
         }
     }
     return 0;
@@ -151,7 +151,7 @@ int32_t virDomainImpl::isDomainActive() {
     return virDomainIsActive(domain_.get());
 }
 
-int32_t virDomainImpl::getDomainDisks(std::vector<std::string> &disks) {
+int32_t virDomainImpl::getDomainDisks(std::map<std::string, std::string> &disks) {
     if (!domain_) return -1;
     char* pContent = virDomainGetXMLDesc(domain_.get(), VIR_DOMAIN_XML_SECURE);
     if (!pContent) return -1;
@@ -164,9 +164,16 @@ int32_t virDomainImpl::getDomainDisks(std::vector<std::string> &disks) {
         if (!devices_node) break;
         tinyxml2::XMLElement* disk_node = devices_node->FirstChildElement("disk");
         while (disk_node) {
+            std::string disk_name, disk_file;
             tinyxml2::XMLElement* disk_source_node = disk_node->FirstChildElement("source");
-            std::string disk_file = disk_source_node->Attribute("file");
-            disks.push_back(disk_file);
+            if (disk_source_node) {
+                disk_file = disk_source_node->Attribute("file");
+            }
+            tinyxml2::XMLElement* disk_target_node = disk_node->FirstChildElement("target");
+            if (disk_target_node) {
+                disk_name = disk_target_node->Attribute("dev");
+            }
+            disks[disk_name] = disk_file;
             disk_node = disk_node->NextSiblingElement("disk");
         }
     } while(0);
@@ -252,15 +259,18 @@ int32_t virDomainImpl::getDomainNetworkStats(const char *device, virDomainInterf
 
 /////////////////////////////////////////////////////////////////////////////////
 
-virTool::virTool()
+virTool::virTool(bool enableEvent)
     : conn_(nullptr)
+    , enable_event_(enableEvent)
     , dom_event_lifecycle_callback_id_(-1)
     , dom_event_agent_callback_id_(-1)
     , thread_quit_(1)
     , thread_event_loop_(nullptr) {
-    int ret = virEventRegisterDefaultImpl();
-    if (ret < 0) {
-        DebugPrintf("virEventRegisterDefaultImpl failed\n");
+    if (enableEvent) {
+        int ret = virEventRegisterDefaultImpl();
+        if (ret < 0) {
+            DebugPrintf("virEventRegisterDefaultImpl failed\n");
+        }
     }
 }
 
@@ -271,7 +281,7 @@ virTool::~virTool() {
             thread_event_loop_->join();
         delete thread_event_loop_;
     }
-    if (conn_) {
+    if (conn_ && enable_event_) {
         virConnectDomainEventDeregisterAny(conn_.get(), dom_event_lifecycle_callback_id_);
         virConnectDomainEventDeregisterAny(conn_.get(), dom_event_agent_callback_id_);
     }
@@ -283,7 +293,7 @@ bool virTool::openConnect(const char *name) {
         return false;
     }
     conn_ = std::shared_ptr<virConnect>(connectPtr, virConnectDeleter);
-    if (connectPtr) {
+    if (connectPtr && enable_event_) {
         dom_event_lifecycle_callback_id_ = virConnectDomainEventRegisterAny(connectPtr, NULL,
             virDomainEventID::VIR_DOMAIN_EVENT_ID_LIFECYCLE, VIR_DOMAIN_EVENT_CALLBACK(domain_event_lifecycle_cb), NULL, NULL);
         dom_event_agent_callback_id_ = virConnectDomainEventRegisterAny(connectPtr, NULL,
