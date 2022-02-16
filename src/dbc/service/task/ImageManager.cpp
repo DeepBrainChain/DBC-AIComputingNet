@@ -164,7 +164,9 @@ void ImageManager::ListShareImages(const std::vector<std::string>& image_server,
     std::string ret_default = run_shell(
     dbc_dir + "/shell/image/list_file.sh " + svr.ip + " " + svr.port + " " + svr.username + " " +
             svr.passwd + " " + svr.image_dir);
-    std::vector<std::string> v_images = util::split(ret_default, ",");
+    auto pos = ret_default.find_last_of('\n');
+    std::string str = ret_default.substr(pos + 1);
+    std::vector<std::string> v_images = util::split(str, ",");
     for (int i = 0; i < v_images.size(); i++) {
         std::string fname = v_images[i];
         images.push_back(fname);

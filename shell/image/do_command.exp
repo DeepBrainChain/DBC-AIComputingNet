@@ -35,8 +35,15 @@ expect {
             }
         }
     }
+    "yes/no/*)?*" {
+        expect {
+            "*assword*" {
+                send "$passwd\n"
+                expect "*assword*" { send "isd@temp\n"; wait }
+            }
+        }
+    }
     timeout {
         exit 2
     }
 }
-
