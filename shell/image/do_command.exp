@@ -6,7 +6,7 @@ if { [llength $argv] < 5} {
   exit 1
 }
 
-set timeout 5000
+set timeout 10
 set passwd [lindex $argv 3]
 set SSH [exec sh -c {which ssh}]
 
@@ -36,6 +36,7 @@ expect {
         }
     }
     "yes/no/*)?*" {
+        send "yes\n"
         expect {
             "*assword*" {
                 send "$passwd\n"

@@ -4,12 +4,12 @@ set port [ lindex $argv 1 ]
 set username [ lindex $argv 2 ]
 set passwd [ lindex $argv 3 ]
 set destdir [ lindex $argv 4 ]
-set timeout 300
+
+set timeout 15
 
 spawn /usr/bin/ssh -q -p $port $username@$host "ls $destdir;echo FILESTATUS:$? \r"
 
 expect {
-	-timeout 300
 	-re "password:" { exp_send "$passwd\r"; exp_continue }
 	-re "failed" { exit 10 }
 	-re "successful" { }

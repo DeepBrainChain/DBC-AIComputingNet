@@ -580,10 +580,12 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
             auto svr = svrs.begin();
             std::string ret = run_shell(dbc_dir + "/shell/image/list_file.sh " + svr->ip + " " + svr->port + " " + svr->username + " " +
                         svr->passwd + " " + svr->image_dir);
+            auto pos = ret.find_last_of('\n');
+            std::string str = ret.substr(pos + 1);
             std::string rsp_json = "{";
             rsp_json += "\"errcode\":0";
             rsp_json += ",\"message\": [";
-            std::vector<std::string> v_images = util::split(ret, ",");
+            std::vector<std::string> v_images = util::split(str, ",");
             for (int i = 0; i < v_images.size(); i++) {
                 if (i > 0) rsp_json += ",";
                 rsp_json += "\"" + v_images[i] + "\"";

@@ -7,10 +7,10 @@ set PASSWD [ lindex $argv 3 ]
 set SOURCEDIR [ lindex $argv 4 ]
 set DESDIR [ lindex $argv 5 ]
 
+set timeout -1
 
 spawn  rsync -a --delete --timeout=600 --partial --progress "-e /usr/bin/ssh -p $PORT"  $SOURCEDIR  $USERNAME@$HOST:$DESDIR 
-expect {   
-	-timeout 1000   
+expect {
 	-re "password:" { exp_send "$PASSWD\r"; exp_continue }   
 	-re "rsync error:" { exit 50 }
 	timeout { exit 60 }
