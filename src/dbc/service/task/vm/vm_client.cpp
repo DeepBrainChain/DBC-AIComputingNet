@@ -336,6 +336,9 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
 
     tinyxml2::XMLElement* memballoon_node = doc.NewElement("memballoon");
     memballoon_node->SetAttribute("model", "virtio");
+    tinyxml2::XMLElement* memballoon_period_node = doc.NewElement("stats");
+    memballoon_period_node->SetAttribute("period", "10");
+    memballoon_node->LinkEndChild(memballoon_period_node);
     dev_node->LinkEndChild(memballoon_node);
 
     root->LinkEndChild(dev_node);
@@ -1183,7 +1186,7 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
     return vm_local_ip;
 }
 
-int32_t VmClient::GetDomainAgentInterfaceAddress(const std::string& domain_name, std::vector<std::tuple<std::string, std::string>> &address) {
+int32_t VmClient::GetDomainInterfaceAddress(const std::string& domain_name, std::vector<dbc::virDomainInterface> &difaces, unsigned int source) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
         return -1;
@@ -1200,22 +1203,23 @@ int32_t VmClient::GetDomainAgentInterfaceAddress(const std::string& domain_name,
             break;
         }
 
-        ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces,
-            VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT, 0);
+        if (!virDomainIsActive(domainPtr)) {
+            break;
+        }
+
+        ifaces_count = virDomainInterfaceAddresses(domainPtr, &ifaces, source, 0);
         for (int i = 0; i < ifaces_count; i++) {
-            /*
-            std::string if_name = ifaces[i]->name;
-            std::string if_hwaddr;
+            dbc::virDomainInterface diface;
+            diface.name = ifaces[i]->name;
             if (ifaces[i]->hwaddr)
-                if_hwaddr = ifaces[i]->hwaddr;
-            */
+                diface.hwaddr = ifaces[i]->hwaddr;
+
             for (int j = 0; j < ifaces[i]->naddrs; j++) {
                 virDomainIPAddressPtr ip_addr = ifaces[i]->addrs + j;
-                //printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
-                if (ip_addr->type == 0 && strncmp(ip_addr->addr, "127.", 4) != 0 && strncmp(ip_addr->addr, "192.168.", 8) != 0) {
-                    address.push_back(std::make_tuple(ifaces[i]->hwaddr, ip_addr->addr));
-                }
+                // printf("[addr: %s prefix: %d type: %d]", ip_addr->addr, ip_addr->prefix, ip_addr->type);
+                diface.addrs.push_back(dbc::virDomainIPAddress{ip_addr->type, ip_addr->addr, ip_addr->prefix});
             }
+            difaces.push_back(diface);
         }
     } while(0);
 
@@ -1553,6 +1557,133 @@ std::shared_ptr<dbc::snapshotInfo> VmClient::GetDomainSnapshot(const std::string
         virDomainFree(domain_ptr);
     }
     return ssInfo;
+}
+
+bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::domMonitorData& data) {
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        return false;
+    }
+    bool bRet = false;
+
+    std::map<std::string, domainDiskInfo> disks;
+    ListDomainDiskInfo(domain_name, disks);
+    std::vector<dbc::virDomainInterface> difaces;
+    GetDomainInterfaceAddress(domain_name, difaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE);
+
+    virDomainPtr domain_ptr = nullptr;
+    do {
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            break;
+        }
+
+        // domain basic info
+        virDomainInfo info;
+        if (virDomainGetInfo(domain_ptr, &info) < 0) {
+            virErrorPtr error = virGetLastError();
+            LOG_ERROR << domain_name << " virDomainGetInfo error: " << (error ? error->message : "");
+            // if (error) virFreeError(error);
+        } else {
+            clock_gettime(CLOCK_REALTIME, &data.domInfo.realTime);
+            data.domInfo.state = vm_status_string(static_cast<virDomainState>(info.state));
+            data.domInfo.maxMem = info.maxMem;
+            data.domInfo.memory = info.memory;
+            data.domInfo.nrVirtCpu = info.nrVirtCpu;
+            data.domInfo.cpuTime = info.cpuTime;
+            data.domInfo.cpuUsage = 0.0f;
+        }
+
+        bool isActive = virDomainIsActive(domain_ptr);
+
+        // memory info
+        clock_gettime(CLOCK_REALTIME, &data.memStats.realTime);
+        virDomainMemoryStatStruct stats[20] = {0};
+        if (!isActive || virDomainMemoryStats(domain_ptr, stats, 20, 0) < 0) {
+            virErrorPtr error = virGetLastError();
+            LOG_ERROR << domain_name << " virDomainMemoryStats error: " << (error ? error->message : "");
+            // if (error) virFreeError(error);
+            data.memStats.total = info.maxMem;
+            data.memStats.unused = info.maxMem;
+            data.memStats.available = info.memory;
+            data.memStats.usage = 0.0f;
+        } else {
+            std::map<int, unsigned long long> mapstats;
+            for (int i = 0; i < 20; ++i) {
+                if (mapstats.find(stats[i].tag) == mapstats.end())
+                    mapstats.insert(std::make_pair(stats[i].tag, stats[i].val));
+            }
+            data.memStats.total = mapstats[VIR_DOMAIN_MEMORY_STAT_ACTUAL_BALLOON];
+            data.memStats.unused = mapstats[VIR_DOMAIN_MEMORY_STAT_UNUSED];
+            data.memStats.available = mapstats[VIR_DOMAIN_MEMORY_STAT_AVAILABLE];
+            data.memStats.usage = 0.0f;
+        }
+
+        // disk info
+        for (const auto& disk : disks) {
+            struct dbcMonitor::diskInfo dsInfo;
+            dsInfo.name = disk.first;
+            virDomainBlockInfo info;
+            if (virDomainGetBlockInfo(domain_ptr, disk.first.c_str(), &info, 0) < 0) {
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << domain_name << " virDomainGetBlockInfo error: " << (error ? error->message : "");
+                // if (error) virFreeError(error);
+            } else {
+                dsInfo.capacity = info.capacity;
+                dsInfo.allocation = info.allocation;
+                dsInfo.physical = info.physical;
+            }
+            virDomainBlockStatsStruct stats;
+            if (!isActive || virDomainBlockStats(domain_ptr, disk.first.c_str(), &stats, sizeof(stats)) < 0) {
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << domain_name << " virDomainBlockStats error: " << (error ? error->message : "");
+                // if (error) virFreeError(error);
+                dsInfo.rd_req = dsInfo.rd_bytes = dsInfo.wr_req = dsInfo.wr_bytes = dsInfo.errs = 0;
+            } else {
+                dsInfo.rd_req = stats.rd_req;
+                dsInfo.rd_bytes = stats.rd_bytes;
+                dsInfo.wr_req = stats.wr_req;
+                dsInfo.wr_bytes = stats.wr_bytes;
+                dsInfo.errs = stats.errs;
+            }
+            clock_gettime(CLOCK_REALTIME, &dsInfo.realTime);
+            dsInfo.rd_speed = 0.0f;
+            dsInfo.wr_speed = 0.0f;
+            data.diskStats[dsInfo.name] = dsInfo;
+        }
+
+        // network info
+        for (const auto& diface: difaces) {
+            dbcMonitor::networkInfo netInfo;
+            netInfo.name = diface.name;
+            virDomainInterfaceStatsStruct stats;
+            if (virDomainInterfaceStats(domain_ptr, diface.name.c_str(), &stats, sizeof(stats)) < 0) {
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << domain_name << " virDomainInterfaceStats error: " << (error ? error->message : "");
+                // if (error) virFreeError(error);
+            } else {
+                clock_gettime(CLOCK_REALTIME, &netInfo.realTime);
+                netInfo.rx_bytes = stats.rx_bytes;
+                netInfo.rx_packets = stats.rx_packets;
+                netInfo.rx_errs = stats.rx_errs;
+                netInfo.rx_drop = stats.rx_drop;
+                netInfo.tx_bytes = stats.tx_bytes;
+                netInfo.tx_packets = stats.tx_packets;
+                netInfo.tx_errs = stats.tx_errs;
+                netInfo.tx_drop = stats.tx_drop;
+                netInfo.rx_speed = 0.0f;
+                netInfo.tx_speed = 0.0f;
+            }
+            data.netStats[netInfo.name] = netInfo;
+        }
+        bRet = true;
+    } while (0);
+
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+    return bRet;
 }
 
 /*

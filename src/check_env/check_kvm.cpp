@@ -377,6 +377,9 @@ namespace check_kvm {
         // 如果想要收集内存统计信息，需要开启memballon，安装virtio驱动程序。有时还需要设置时间间隔<stats period='10' />
         tinyxml2::XMLElement *memballoon_node = doc.NewElement("memballoon");
         memballoon_node->SetAttribute("model", "virtio");
+        tinyxml2::XMLElement *memballoon_period_node = doc.NewElement("stats");
+        memballoon_period_node->SetAttribute("period", "10");
+        memballoon_node->LinkEndChild(memballoon_period_node);
         dev_node->LinkEndChild(memballoon_node);
 
         root->LinkEndChild(dev_node);

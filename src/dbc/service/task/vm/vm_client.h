@@ -6,9 +6,22 @@
 #include <libvirt/virterror.h>
 #include "../TaskResourceManager.h"
 #include "service/task/db/task_db_types.h"
+#include "../TaskMonitorInfo.h"
 
 namespace dbc {
-    class snapshotInfo;
+class snapshotInfo;
+
+typedef struct virDomainInterfaceIPAddress virDomainIPAddress;
+struct virDomainInterfaceIPAddress {
+    int type;                /* virIPAddrType */
+    std::string addr;        /* IP address */
+    unsigned int prefix;     /* IP address prefix */
+};
+struct virDomainInterface {
+    std::string name;               /* interface name */
+    std::string hwaddr;             /* hardware address, may be NULL */
+    std::vector<virDomainIPAddress> addrs;    /* array of IP addresses */
+};
 }
 
 struct domainDiskInfo {
@@ -57,7 +70,7 @@ public:
 
     std::string GetDomainLocalIP(const std::string &domain_name);
 
-    int32_t GetDomainAgentInterfaceAddress(const std::string& domain_name, std::vector<std::tuple<std::string, std::string>> &address);
+    int32_t GetDomainInterfaceAddress(const std::string& domain_name, std::vector<dbc::virDomainInterface> &difaces, unsigned int source = 0);
 
     bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
 
@@ -71,6 +84,9 @@ public:
     FResult CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info);
 
     std::shared_ptr<dbc::snapshotInfo> GetDomainSnapshot(const std::string& domain_name, const std::string& snapshot_name);
+
+    // monitor data
+    bool GetDomainMonitorData(const std::string& domain_name, dbcMonitor::domMonitorData& data);
 
 private:
     virConnectPtr m_connPtr = nullptr;

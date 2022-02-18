@@ -9,6 +9,7 @@
 #include "service_module/service_name.h"
 #include "service/http_request_service/http_server_service.h"
 #include "service/http_request_service/rest_api_service.h"
+#include "service/node_monitor_service/node_monitor_service.h"
 #include "service/node_request_service/node_request_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
 #include "util/system_info.h"
@@ -122,6 +123,15 @@ int32_t server::init(int argc, char *argv[]) {
     }
     http_server_service::instance().start();
     LOG_INFO << "init http_server_service successful";
+
+    LOG_INFO << "begin to init node_monitor_service";
+    ret = node_monitor_service::instance().init(args);
+    if (E_SUCCESS != ret) {
+        LOG_ERROR << "init node_monitor_service failed";
+        return ret;
+    }
+    node_monitor_service::instance().start();
+    LOG_INFO << "init node_monitor_service successful";
 
     LOG_INFO << "server init successfully";
 

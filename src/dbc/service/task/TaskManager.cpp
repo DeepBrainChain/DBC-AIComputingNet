@@ -1690,7 +1690,18 @@ ETaskStatus TaskManager::getTaskStatus(const std::string &task_id) {
 int32_t TaskManager::getTaskAgentInterfaceAddress(const std::string &task_id, std::vector<std::tuple<std::string, std::string>> &address) {
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status != VIR_DOMAIN_RUNNING) return -1;
-    return VmClient::instance().GetDomainAgentInterfaceAddress(task_id, address);
+    std::vector<dbc::virDomainInterface> difaces;
+    if (VmClient::instance().GetDomainInterfaceAddress(task_id, difaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT) > 0) {
+        for (const auto& diface : difaces) {
+            for (const auto& addr : diface.addrs) {
+                if (addr.type == 0 && strncmp(addr.addr.c_str(), "127.", 4) != 0 && strncmp(addr.addr.c_str(), "192.168.", 8) != 0) {
+                    // LOG_INFO << diface.name << " " << diface.hwaddr << " " << addr.type << " " << addr.addr << " " << addr.prefix;
+                    address.push_back(std::make_tuple(diface.hwaddr, addr.addr));
+                }
+            }
+        }
+    }
+    return address.size();
 }
 
 void TaskManager::deleteAllCheckTasks() {
