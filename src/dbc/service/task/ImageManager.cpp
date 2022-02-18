@@ -5,153 +5,16 @@
 #include "WalletRentTaskManager.h"
 #include "vm/vm_client.h"
 
-class ImageDownloader {
-public:
-    ImageDownloader() {
-
-    }
-
-    ~ImageDownloader() {
-        delete m_threadpool;
-    }
-
-    void add(const DownloadImageEvent &ev, const std::function<void()>& after_callback) {
-        if (m_threadpool == nullptr) {
-            m_threadpool = new threadpool(5);
-        }
-
-        m_taskid_total[ev.task_id] = ev.images_name.size();
-        m_taskid_cur[ev.task_id] = 0;
-        m_taskid_after_callback[ev.task_id] = after_callback;
-
-        struct timeval tv{};
-        gettimeofday(&tv, 0);
-        int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-        m_taskid_begin[ev.task_id] = t;
-
-        for (auto& it : ev.images_name) {
-            std::string task_id = ev.task_id;
-            ImageServer svr = ev.svr;
-            std::string image = it;
-            m_threadpool->commit([this, task_id, svr, image]() {
-                struct timeval tv1{};
-                gettimeofday(&tv1, 0);
-                int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
-
-                std::string dbc_dir = util::get_exe_dir().string();
-                std::string cmd = dbc_dir + "/shell/image/rsync_download.sh " + svr.ip + " " + svr.port + " " + svr.username + " " +
-                          svr.passwd + " " + svr.image_dir + "/" + image + " /data/";
-                LOG_INFO << "begin download, cmd: " << cmd;
-                std::string ret = run_shell(cmd.c_str());
-
-                struct timeval tv2{};
-                gettimeofday(&tv2, 0);
-                int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-                LOG_INFO << "ret:" << ret << ", download " << image << " ok! use: " << (t2 - t1) << "ms";
-
-                m_taskid_cur[task_id]++;
-                if (m_taskid_cur[task_id] == m_taskid_total[task_id]) {
-                    struct timeval tv{};
-                    gettimeofday(&tv, 0);
-                    int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-                    int64_t msec = t - m_taskid_begin[task_id];
-                    LOG_INFO << "download all file ok! use: " << msec << "ms";
-
-                    m_taskid_total.erase(task_id);
-                    m_taskid_cur.erase(task_id);
-                    m_taskid_begin.erase(task_id);
-                    auto it = m_taskid_after_callback.find(task_id);
-                    if (it != m_taskid_after_callback.end()) {
-                        if (it->second != nullptr) {
-                            it->second();
-                        }
-                    }
-                    m_taskid_after_callback.erase(task_id);
-                }
-            });
-        }
-    }
-
-private:
-    threadpool *m_threadpool = nullptr;
-    std::map<std::string, std::atomic<int>> m_taskid_total;
-    std::map<std::string, std::atomic<int>> m_taskid_cur;
-    std::map<std::string, int64_t> m_taskid_begin;
-    std::map<std::string, std::function<void()>> m_taskid_after_callback;
-};
-
-class ImageUploader {
-public:
-    ImageUploader() {
-
-    }
-
-    ~ImageUploader() {
-        delete m_threadpool;
-    }
-
-    void add(const UploadImageEvent &ev) {
-        if (m_threadpool == nullptr) {
-            m_threadpool = new threadpool(5);
-        }
-
-        m_taskid_total[ev.task_id] = 1;
-        m_taskid_cur[ev.task_id] = 0;
-
-        struct timeval tv{};
-        gettimeofday(&tv, 0);
-        int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-        m_taskid_begin[ev.task_id] = t;
-
-        std::string task_id = ev.task_id;
-        ImageServer svr = ev.svr;
-        std::string image = ev.image_name;
-        m_threadpool->commit([this, task_id, svr, image] () {
-            struct timeval tv1{};
-            gettimeofday(&tv1, 0);
-            int64_t t1 = tv1.tv_sec * 1000 + tv1.tv_usec / 1000;
-
-            std::string dbc_dir = util::get_exe_dir().string();
-            std::string cmd = dbc_dir + "/shell/image/rsync_upload.sh " + svr.ip + " " + svr.port + " " + svr.username + " " +
-                      svr.passwd + " " + "/data/" + image + " " + svr.image_dir + "/";
-            LOG_INFO << "begin upload, cmd: " << cmd;
-            std::string ret = run_shell(cmd.c_str());
-
-            struct timeval tv2{};
-            gettimeofday(&tv2, 0);
-            int64_t t2 = tv2.tv_sec * 1000 + tv2.tv_usec / 1000;
-            LOG_INFO << "ret:" << ret << ", upload " << image << " ok! use: " << (t2 - t1) << "ms";
-
-            m_taskid_cur[task_id]++;
-            if (m_taskid_cur[task_id] == m_taskid_total[task_id]) {
-                struct timeval tv{};
-                gettimeofday(&tv, 0);
-                int64_t t = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-                int64_t msec = t - m_taskid_begin[task_id];
-                LOG_INFO << "upload all file ok! use: " << msec << "ms";
-
-                m_taskid_total.erase(task_id);
-                m_taskid_cur.erase(task_id);
-                m_taskid_begin.erase(task_id);
-            }
-        });
-    }
-
-private:
-    threadpool *m_threadpool = nullptr;
-    std::map<std::string, std::atomic<int>> m_taskid_total;
-    std::map<std::string, std::atomic<int>> m_taskid_cur;
-    std::map<std::string, int64_t> m_taskid_begin;
-};
-
 ImageManager::ImageManager() {
-    m_downloader = new ImageDownloader();
-    m_uploader = new ImageUploader();
+    m_pthread = new std::thread(&ImageManager::thread_check_handle, this);
 }
 
 ImageManager::~ImageManager() {
-    delete m_downloader;
-    delete m_uploader;
+    m_running = false;
+    if (m_pthread != nullptr && m_pthread->joinable()) {
+        m_pthread->join();
+    }
+    delete m_pthread;
 }
 
 void ImageManager::ListShareImages(const std::vector<std::string>& image_server, std::vector<std::string> &images) {
@@ -169,7 +32,8 @@ void ImageManager::ListShareImages(const std::vector<std::string>& image_server,
     std::vector<std::string> v_images = util::split(str, ",");
     for (int i = 0; i < v_images.size(); i++) {
         std::string fname = v_images[i];
-        images.push_back(fname);
+        if (boost::filesystem::path(fname).extension().string() == ".qcow2")
+            images.push_back(fname);
     }
 }
 
@@ -283,13 +147,112 @@ void ImageManager::ListWalletLocalShareImages(const std::string &wallet, const s
     }
 }
 
-void ImageManager::PushDownloadEvent(const DownloadImageEvent &ev, const std::function<void()>& after_callback) {
-    if (m_downloader != nullptr)
-        m_downloader->add(ev, after_callback);
+void ImageManager::Download(const std::string& image_name, const ImageServer& from_server,
+                            const std::function<void()>& finish_callback) {
+    std::string exe_dir = util::get_exe_dir().string();
+    std::string cmd = exe_dir + "/shell/image/rsync_download.sh " + from_server.ip + " " + from_server.port
+                      + " " + from_server.username + " " + from_server.passwd + " " + from_server.image_dir + "/"
+                      + image_name + " /data/";
+    std::shared_ptr<boost::process::child> pull_image =
+            std::make_shared<boost::process::child>(cmd, boost::process::std_out > boost::process::null,
+                                                    boost::process::std_err > boost::process::null);
+    pull_image->running();
+
+    RwMutex::WriteLock wlock(m_download_mtx);
+    m_download_images[image_name] = pull_image;
+    if (finish_callback != nullptr) {
+        m_download_finish_callback[image_name] = finish_callback;
+    }
 }
 
-void ImageManager::PushUploadEvent(const UploadImageEvent &ev) {
-    if (m_uploader != nullptr)
-        m_uploader->add(ev);
+void ImageManager::TerminateDownload(const std::string &image_name) {
+    RwMutex::WriteLock wlock(m_download_mtx);
+    auto pull_image = m_download_images.find(image_name);
+    if (pull_image->second != nullptr) {
+        if (pull_image->second->running()) {
+            pull_image->second->terminate();
+        }
+
+        m_download_images.erase(image_name);
+        m_download_finish_callback.erase(image_name);
+    }
 }
 
+bool ImageManager::IsDownloading(const std::string &image_name) {
+    RwMutex::ReadLock rlock(m_download_mtx);
+    auto iter = m_download_images.find(image_name);
+    return iter != m_download_images.end();
+}
+
+void ImageManager::Upload(const std::string& image_name, const ImageServer& to_server,
+                          const std::function<void()>& finish_callback) {
+    std::string exe_dir = util::get_exe_dir().string();
+    std::string cmd = exe_dir + "/shell/image/rsync_upload.sh " + to_server.ip + " " + to_server.port + " "
+            + to_server.username + " " + to_server.passwd + " " + "/data/" + image_name + " "
+            + to_server.image_dir + "/";
+    std::shared_ptr<boost::process::child> push_image =
+            std::make_shared<boost::process::child>(cmd, boost::process::std_out > boost::process::null,
+                                                    boost::process::std_err > boost::process::null);
+    push_image->running();
+
+    RwMutex::WriteLock wlock(m_upload_mtx);
+    m_upload_images[image_name] = push_image;
+    if (finish_callback != nullptr) {
+        m_upload_finish_callback[image_name] = finish_callback;
+    }
+}
+
+void ImageManager::TerminateUpload(const std::string &image_name) {
+    RwMutex::WriteLock wlock(m_upload_mtx);
+    auto push_image = m_upload_images.find(image_name);
+    if (push_image->second != nullptr) {
+        if (push_image->second->running()) {
+            push_image->second->terminate();
+        }
+
+        m_upload_images.erase(image_name);
+        m_upload_finish_callback.erase(image_name);
+    }
+}
+
+bool ImageManager::IsUploading(const std::string &image_name) {
+    RwMutex::ReadLock rlock(m_upload_mtx);
+    auto iter = m_upload_images.find(image_name);
+    return iter != m_upload_images.end();
+}
+
+void ImageManager::thread_check_handle() {
+    while (m_running) {
+        {
+            RwMutex::WriteLock wlock(m_download_mtx);
+            for (auto iter = m_download_images.begin(); iter != m_download_images.end(); iter++) {
+                if (0 == iter->second->exit_code()) {
+                    auto callback = m_download_finish_callback.find(iter->first);
+                    if (callback->second != nullptr) {
+                        callback->second();
+                    }
+
+                    m_download_finish_callback.erase(iter->first);
+                    iter = m_download_images.erase(iter);
+                }
+            }
+        }
+
+        {
+            RwMutex::WriteLock wlock(m_upload_mtx);
+            for (auto iter = m_upload_images.begin(); iter != m_upload_images.end(); iter++) {
+                if (0 == iter->second->exit_code()) {
+                    auto callback = m_upload_finish_callback.find(iter->first);
+                    if (callback->second != nullptr) {
+                        callback->second();
+                    }
+
+                    m_upload_finish_callback.erase(iter->first);
+                    iter = m_upload_images.erase(iter);
+                }
+            }
+        }
+
+        sleep(1);
+    }
+}

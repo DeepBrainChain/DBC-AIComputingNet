@@ -773,11 +773,13 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
     }
 }
 
-void node_request_service::download_image(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_download_image_req_data>& data, const AuthoriseResult& result) {
+void node_request_service::download_image(const dbc::network::base_header& header,
+                                          const std::shared_ptr<dbc::node_download_image_req_data>& data,
+                                          const AuthoriseResult& result) {
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.downloadImage(data);
+    auto fresult = m_task_scheduler.downloadImage(result.rent_wallet, data);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
@@ -869,11 +871,13 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
     }
 }
 
-void node_request_service::upload_image(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_upload_image_req_data>& data, const AuthoriseResult& result) {
+void node_request_service::upload_image(const dbc::network::base_header& header,
+                                        const std::shared_ptr<dbc::node_upload_image_req_data>& data,
+                                        const AuthoriseResult& result) {
     int ret_code = E_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.uploadImage(data);
+    auto fresult = m_task_scheduler.uploadImage(result.rent_wallet, data);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 

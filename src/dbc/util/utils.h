@@ -123,6 +123,8 @@ inline int32_t RaiseFileDescriptorLimit(int nMinFD)
 
 std::string run_shell(const std::string& cmd, const char* modes = "r");
 
+std::string run_shell2(const std::string& cmd);
+
 // size: KB
 std::string scale_size(uint64_t size, char* up = "BKMGTP\0");
 

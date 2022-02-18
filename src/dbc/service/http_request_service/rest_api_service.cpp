@@ -586,9 +586,13 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
             rsp_json += "\"errcode\":0";
             rsp_json += ",\"message\": [";
             std::vector<std::string> v_images = util::split(str, ",");
+            int count = 0;
             for (int i = 0; i < v_images.size(); i++) {
-                if (i > 0) rsp_json += ",";
-                rsp_json += "\"" + v_images[i] + "\"";
+                if (count > 0) rsp_json += ",";
+                if (boost::filesystem::path(v_images[i]).extension().string() == ".qcow2") {
+                    rsp_json += "\"" + v_images[i] + "\"";
+                    count += 1;
+                }
             }
             rsp_json += "]";
             rsp_json += "}";
@@ -1051,10 +1055,6 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
 
     std::string image_filename;
     JSON_PARSE_STRING(vAdditional, "image_filename", image_filename);
-    if (!boost::filesystem::exists("/data/" + image_filename)) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional.image_filename: /data/" + image_filename + ", file not exist");
-        return;
-    }
 
     if (!has_peer_nodeid(body)) {
         // 从client节点上传镜像到镜像中心
@@ -1062,11 +1062,13 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
         if (svrs.empty()) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
         } else {
-            UploadImageEvent uiEvent;
-            uiEvent.task_id = util::create_task_id();
-            uiEvent.svr = svrs[0];
-            uiEvent.image_name = image_filename;
-            ImageManager::instance().PushUploadEvent(uiEvent);
+            if (!boost::filesystem::exists("/data/" + image_filename)) {
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional.image_filename: /data/" + image_filename + ", file not exist");
+                return;
+            }
+
+            ImageServer svr = svrs[0];
+            ImageManager::instance().Upload(image_filename, svr);
 
             std::string rsp_json = "{";
             rsp_json += "\"errcode\":0";

@@ -37,6 +37,7 @@ dbc_package()
     fi
 
     if [ $type == 'mining' ]; then
+        sed -i '/image_server/d' $dbc_repo_dir/conf/core.conf
         cp $shell_dir/mining/*.sh $dbc_repo_dir/shell/
     fi
 

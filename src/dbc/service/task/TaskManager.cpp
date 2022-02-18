@@ -79,7 +79,8 @@ FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_
     }
 }
 
-FResult TaskManager::downloadImage(const std::shared_ptr<dbc::node_download_image_req_data>& data) {
+FResult TaskManager::downloadImage(const std::string& wallet,
+                                   const std::shared_ptr<dbc::node_download_image_req_data>& data) {
     if (data->image_server.empty()) {
         return {E_DEFAULT, "no image_server"};
     }
@@ -102,17 +103,17 @@ FResult TaskManager::downloadImage(const std::shared_ptr<dbc::node_download_imag
         return {E_NOT_FOUND, "image:" + image_filename + " not exist"};
     }
 
-    DownloadImageEvent diEvent;
-    diEvent.task_id = util::create_task_id();
+    if (ImageManager::instance().IsDownloading(image_filename)) {
+        return {E_DEFAULT, "image:" + image_filename + " in downloading"};
+    }
+
     ImageServer svr;
     svr.from_string(data->image_server[0]);
-    diEvent.svr = svr;
-    diEvent.images_name.push_back(image_filename);
-    ImageManager::instance().PushDownloadEvent(diEvent);
+    ImageManager::instance().Download(image_filename, svr);
     return FResultOK;
 }
 
-FResult TaskManager::uploadImage(const std::shared_ptr<dbc::node_upload_image_req_data>& data) {
+FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data) {
     if (data->image_server.empty()) {
         return {E_DEFAULT, "no image_server"};
     }
@@ -132,13 +133,13 @@ FResult TaskManager::uploadImage(const std::shared_ptr<dbc::node_upload_image_re
         return {E_DEFAULT, "image:" + image_filename + " not exist"};
     }
 
-    UploadImageEvent uiEvent;
-    uiEvent.task_id = util::create_task_id();
+    if (ImageManager::instance().IsUploading(image_filename)) {
+        return {E_DEFAULT, "image:" + image_filename + " in uploading"};
+    }
+
     ImageServer svr;
     svr.from_string(data->image_server[0]);
-    uiEvent.svr = svr;
-    uiEvent.image_name = image_filename;
-    ImageManager::instance().PushUploadEvent(uiEvent);
+    ImageManager::instance().Upload(image_filename, svr);
     return FResultOK;
 }
 
@@ -1206,6 +1207,11 @@ FResult TaskManager::check_image(const std::string &image_name) {
         return {E_DEFAULT, "image is not a regular file"};
     }
 
+    if (ImageManager::instance().IsDownloading(image_name) ||
+        ImageManager::instance().IsUploading(image_name)) {
+        return {E_DEFAULT, "image:" + image_name + " in downloading or uploading, please try again later"};
+    }
+
     return FResultOK;
 }
 
@@ -1947,13 +1953,11 @@ void TaskManager::process_create(const ETaskEvent& ev) {
         return;
     }
 
-    DownloadImageEvent diEvent;
-    diEvent.task_id = taskinfo->task_id;
     ImageServer imgsvr;
     imgsvr.from_string(ev.image_server);
-    diEvent.svr = imgsvr;
-    getNeededBackingImage(taskinfo->image_name, diEvent.images_name);
-    if (!diEvent.images_name.empty()) {
+    std::vector<std::string> images_name;
+    getNeededBackingImage(taskinfo->image_name, images_name);
+    if (!images_name.empty()) {
         if (ev.image_server.empty()) {
             taskinfo->status = TS_CreateError;
             TaskInfoMgr::instance().update(taskinfo);
@@ -1963,8 +1967,10 @@ void TaskManager::process_create(const ETaskEvent& ev) {
 
         std::string _taskid = ev.task_id;
         std::string _svr = ev.image_server;
-        LOG_INFO << "need download image: " << diEvent.images_name[0];
-        ImageManager::instance().PushDownloadEvent(diEvent, [this, _taskid, _svr] () {
+        ImageServer svr;
+        svr.from_string(_svr);
+        LOG_INFO << "need download image: " << images_name[0];
+        ImageManager::instance().Download(images_name[0], svr, [this, _taskid, _svr] () {
             ETaskEvent ev;
             ev.task_id = _taskid;
             ev.op = T_OP_Create;
@@ -1972,6 +1978,15 @@ void TaskManager::process_create(const ETaskEvent& ev) {
             add_process_task(ev);
         });
         return;
+    } else {
+        if (ImageManager::instance().IsDownloading(taskinfo->image_name) ||
+            ImageManager::instance().IsUploading(taskinfo->image_name)) {
+            taskinfo->status = TS_CreateError;
+            TaskInfoMgr::instance().update(taskinfo);
+            TASK_LOG_ERROR(taskinfo->task_id, "image:" << taskinfo->image_name
+                            << " in downloading or uploading, please try again later");
+            return;
+        }
     }
 
     ERR_CODE err_code = VmClient::instance().CreateDomain(taskinfo, task_resource);

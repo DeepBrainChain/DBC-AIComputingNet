@@ -34,9 +34,9 @@ public:
     FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
                        const AuthoriseResult& result, std::vector<std::string> &images);
 
-    FResult downloadImage(const std::shared_ptr<dbc::node_download_image_req_data>& data);
+    FResult downloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_req_data>& data);
 
-    FResult uploadImage(const std::shared_ptr<dbc::node_upload_image_req_data>& data);
+    FResult uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data);
 
     FResult createTask(const std::string& wallet, const std::shared_ptr<dbc::node_create_task_req_data>& data,
                        int64_t rent_end, USER_ROLE role, std::string& task_id);

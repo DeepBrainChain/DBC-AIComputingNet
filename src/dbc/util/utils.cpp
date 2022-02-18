@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <boost/process.hpp>
 
 std::string run_shell(const std::string& cmd, const char* modes) {
     if (cmd.empty()) return "";
@@ -18,6 +19,27 @@ std::string run_shell(const std::string& cmd, const char* modes) {
     }
 
     return util::rtrim(ret, '\n');
+}
+
+std::string run_shell2(const std::string& cmd) {
+    std::string result;
+    try {
+        boost::process::ipstream is; //reading pipe-stream
+        boost::process::child c(cmd, boost::process::std_out > is, boost::process::std_err > boost::process::null);
+
+        std::string line;
+        while (c.running() && std::getline(is, line)) {
+                result += line + "\n";
+        }
+
+        c.wait();
+    } catch (boost::exception& e) {
+
+    } catch (...) {
+
+    }
+
+    return util::rtrim(result, '\n');
 }
 
 static uint64_t power(unsigned int base, unsigned int expo)

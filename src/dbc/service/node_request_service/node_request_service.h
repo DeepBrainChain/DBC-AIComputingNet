@@ -6,7 +6,6 @@
 #include "service_module/service_module.h"
 #include "document.h"
 #include <boost/process.hpp>
-#include "service/task/vm/image_manager.h"
 #include "service/task/TaskManager.h"
 #include "util/LruCache.hpp"
 #include "../message/matrix_types.h"
