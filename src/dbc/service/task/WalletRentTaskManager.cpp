@@ -2,7 +2,7 @@
 #include "log/log.h"
 
 bool WalletRentTaskManager::init() {
-    bool ret = m_db.init_db(env_manager::instance().get_db_path(), "rent_task.db");
+    bool ret = m_db.init_db(EnvManager::instance().get_db_path(), "rent_task.db");
     if (!ret) {
         LOG_ERROR << "init wallet_task_db failed";
         return false;

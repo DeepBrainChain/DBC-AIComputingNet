@@ -5,41 +5,34 @@
 #include "config/conf_manager.h"
 #include "service_module/topic_manager.h"
 #include "network/connection_manager.h"
-#include "server_info.h"
-#include "util/utils/crypto_service.h"
 #include "timer/timer_matrix_manager.h"
 #include <boost/program_options.hpp>
 
-class server {
+namespace bpo = boost::program_options;
+
+class Server {
 public:
-    server() = default;
+    Server() = default;
 
-    virtual ~server() = default;
+    virtual ~Server() = default;
 
-    int32_t init(int argc, char *argv[]);
+    ERRCODE Init(int argc, char *argv[]);
 
-    void idle();
+    void Idle();
 
-    void exit();
-
-    const server_info & get_server_info() {
-        return m_server_info;
-    }
-
-    void add_service_list(const std::string& s) {
-        m_server_info.add_service_list(s);
-    }
+    void Exit();
 
 protected:
-    virtual int32_t parse_command_line(int argc, const char* const argv[], boost::program_options::variables_map &vm);
+    ERRCODE InitCrypto(bpo::variables_map &options);
 
-    virtual void on_daemon();
+    ERRCODE ExitCrypto();
+
+    ERRCODE ParseCommandLine(int argc, char* argv[], bpo::variables_map &options);
+
+    void Daemon();
 
 private:
-    bool m_stop = false;
-    server_info m_server_info;
-    bool m_daemon = false;
-    crypto_service m_crypto;
+    std::atomic<bool> m_running {true};
     std::shared_ptr<timer_matrix_manager> m_timer_matrix_manager = nullptr;
 };
 

@@ -11,7 +11,7 @@ matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(std::
 
 int32_t matrix_client_socket_channel_handler::start()
 {
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 
@@ -83,7 +83,7 @@ int32_t matrix_client_socket_channel_handler::on_after_msg_received(dbc::network
         {
             ch->on_error();
         }
-        return E_SUCCESS;*/
+        return ERR_SUCCESS;*/
         return E_DEFAULT;
     }
 
@@ -96,7 +96,7 @@ int32_t matrix_client_socket_channel_handler::on_after_msg_received(dbc::network
             start_shake_hand_timer();
 
             LOG_DEBUG << "matrix client socket channel handler start shake hand timer, " << m_sid.to_string();
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         else
         {
@@ -109,7 +109,7 @@ int32_t matrix_client_socket_channel_handler::on_after_msg_received(dbc::network
         }
     }
     m_lost_shake_hand_count = 0;
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t matrix_client_socket_channel_handler::on_after_msg_sent(dbc::network::message &msg)
@@ -118,16 +118,16 @@ int32_t matrix_client_socket_channel_handler::on_after_msg_sent(dbc::network::me
     {
         start_wait_ver_resp_timer();
         LOG_DEBUG << "matrix client socket channel handler start ver_resp timer, " << m_sid.to_string();
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     if (SHAKE_HAND_REQ == msg.get_name())
     {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     m_lost_shake_hand_count = 0;
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 std::shared_ptr<dbc::network::socket_channel_handler> matrix_client_socket_channel_handler::create(std::shared_ptr<dbc::network::channel> ch)
@@ -143,7 +143,7 @@ void matrix_client_socket_channel_handler::send_shake_hand_req()
     std::shared_ptr<dbc::shake_hand_req> req_content = std::make_shared<dbc::shake_hand_req>();
 
     //header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(SHAKE_HAND_REQ);
 
     req_msg->set_content(req_content);

@@ -4,56 +4,39 @@
 #include <csignal>
 #include "server/server.h"
 
-server g_server;
+Server g_server;
 
-void signal_usr1_handler(int)
+void signal_usr1_handler(int sig)
 {
-    g_server.exit();
-    close(STDIN_FILENO);
+    g_server.Exit();
 }
 
-void register_signal_function(int signal, void(*handler)(int))
+void register_signal_function()
 {
     struct sigaction sa;
-    sa.sa_handler = handler;
+    sa.sa_handler = signal_usr1_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
-    sigaction(signal, &sa, nullptr);
-}
 
-void init_signal()
-{
-    register_signal_function(SIGUSR1, signal_usr1_handler);
-}
-
-void init_locale() {
-    try {
-        std::locale("");
-    }
-    catch (const std::runtime_error&) {
-        setenv("LC_ALL", "C", 1);
-    }
-
-    std::locale loc = fs::path::imbue(std::locale::classic());
-    fs::path::imbue(loc);
+    sigaction(SIGUSR1, &sa, nullptr);
+    sigaction(SIGUSR2, &sa, nullptr);
 }
 
 int main(int argc, char* argv[])
 {
-    init_signal();
-    init_locale();
+    register_signal_function();
 
     srand((int)time(0));
 
-    int result = g_server.init(argc, argv);
-    if (E_SUCCESS != result) {
+    int result = g_server.Init(argc, argv);
+    if (ERR_SUCCESS != result) {
         std::cout << "server init failed: " << result;
-        g_server.exit();
+        g_server.Exit();
         return 0;
     }
 
-    g_server.idle();
-    g_server.exit();
+    g_server.Idle();
+    g_server.Exit();
 
     return 0;
 }

@@ -24,21 +24,21 @@ public:
         if (!is_prohibit_rest()) {
             start_http_server();
         }
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     int32_t stop() {
         if (!is_prohibit_rest()) {
             interrupt_http_server();
         }
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     int32_t exit() {
         if (!is_prohibit_rest()) {
             stop_http_server();
         }
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
 private:

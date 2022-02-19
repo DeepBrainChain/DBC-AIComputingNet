@@ -20,7 +20,7 @@ bool HttpChainClient::connect_chain() {
     m_httpclient = nullptr;
 
     std::map<int64_t, std::string> mp;
-    std::vector<std::string> vec = conf_manager::instance().get_dbc_chain_domain();
+    std::vector<std::string> vec = ConfManager::instance().GetDbcChainDomain();
     for (int i = 0; i < vec.size(); i++) {
         std::vector<std::string> addr = util::split(vec[i], ":");
         if (!addr.empty()) {
@@ -65,7 +65,7 @@ std::string HttpChainClient::request_machine_status() {
     if (!connect_chain()) return "";
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-                           + conf_manager::instance().get_node_id() + R"("]})";
+                           + ConfManager::instance().GetNodeId() + R"("]})";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
     if (resp != nullptr) {
         rapidjson::Document doc;
@@ -92,7 +92,7 @@ int64_t HttpChainClient::request_rent_end(const std::string &wallet) {
 
     int64_t cur_rent_end = 0;
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-                           + conf_manager::instance().get_node_id() + R"("]})";
+                           + ConfManager::instance().GetNodeId() + R"("]})";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
     if (resp != nullptr) {
         do {
@@ -173,7 +173,7 @@ bool HttpChainClient::in_verify_time(const std::string &wallet) {
     if (cur_block <= 0) return false;
 
     std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineCommittee_getCommitteeOps", "params": [")"
-                           + wallet + R"(",")" + conf_manager::instance().get_node_id() + R"("]})";
+                           + wallet + R"(",")" + ConfManager::instance().GetNodeId() + R"("]})";
     std::shared_ptr<httplib::Response> resp = m_httpclient->Post("/", str_send, "application/json");
     if (resp != nullptr) {
         rapidjson::Document doc;

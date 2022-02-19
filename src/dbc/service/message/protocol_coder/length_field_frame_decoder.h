@@ -62,14 +62,14 @@ public:
 
     //    //decode frame
     //    decode_status status = decode_frame(ctx, in, message);
-    //    if (status != DECODE_SUCCESS)
+    //    if (status != DECODERR_SUCCESS)
     //    {
     //        return status;
     //    }
 
     //    m_recv_messages.pop_front();
     //    //decode frame
-    //    return DECODE_SUCCESS;
+    //    return DECODERR_SUCCESS;
     //}
 
     virtual decode_status decode(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::message> &message)
@@ -114,12 +114,12 @@ public:
         decode_status status = decode_frame(ctx, net_msg.get_message_stream(), message);
 
         m_recv_messages.pop_front();
-        if (status != DECODE_SUCCESS)
+        if (status != DECODERR_SUCCESS)
         {
             return status;
         }
 
-        return DECODE_SUCCESS;
+        return DECODERR_SUCCESS;
     }
 
     virtual decode_status recv_message(byte_buf &in) = 0;

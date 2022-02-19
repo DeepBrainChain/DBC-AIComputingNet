@@ -84,16 +84,16 @@ int32_t node_request_service::init(bpo::variables_map &options) {
 
         auto fresult = m_task_scheduler.init();
         int32_t ret = std::get<0>(fresult);
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             LOG_ERROR << std::get<1>(fresult);
             return E_DEFAULT;
         } else {
             m_task_scheduler.start();
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void node_request_service::add_self_to_servicelist(bpo::variables_map &options) {
@@ -125,10 +125,10 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
     kvs["state"] = state;
     */
 
-    kvs["pub_key"] = conf_manager::instance().get_pub_key();
+    kvs["pub_key"] = ConfManager::instance().GetPubKey();
     info.__set_kvs(kvs);
 
-    service_info_collection::instance().add(conf_manager::instance().get_node_id(), info);
+    service_info_collection::instance().add(ConfManager::instance().GetNodeId(), info);
 }
 
 void node_request_service::init_timer() {
@@ -260,16 +260,16 @@ void send_response_json(const std::string& msg_name, const dbc::network::base_he
     if (rsp_msg_content == nullptr) return;
 
     // header
-    rsp_msg_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    rsp_msg_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     rsp_msg_content->header.__set_msg_name(msg_name);
     rsp_msg_content->header.__set_nonce(util::create_nonce());
     rsp_msg_content->header.__set_session_id(header.session_id);
     rsp_msg_content->header.__set_path(header.path);
     std::map<std::string, std::string> exten_info;
     std::string sign_message = rsp_msg_content->header.nonce + rsp_msg_content->header.session_id;
-    std::string sign = util::sign(sign_message, conf_manager::instance().get_node_private_key());
+    std::string sign = util::sign(sign_message, ConfManager::instance().GetNodePrivateKey());
     exten_info["sign"] = sign;
-    exten_info["pub_key"] = conf_manager::instance().get_pub_key();
+    exten_info["pub_key"] = ConfManager::instance().GetPubKey();
     rsp_msg_content->header.__set_exten_info(exten_info);
     // body
     rsp_msg_content->body.__set_data(rsp_data);
@@ -284,7 +284,7 @@ template <typename T>
 void send_response_ok(const std::string& msg_name, const dbc::network::base_header& header) {
     std::stringstream ss;
     ss << "{";
-    ss << "\"errcode\":" << E_SUCCESS;
+    ss << "\"errcode\":" << ERR_SUCCESS;
     ss << ", \"message\":" << "\"ok\"";
     ss << "}";
 
@@ -292,7 +292,7 @@ void send_response_ok(const std::string& msg_name, const dbc::network::base_head
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -318,7 +318,7 @@ void send_response_error(const std::string& msg_name, const dbc::network::base_h
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -359,7 +359,7 @@ FResult node_request_service::check_nonce(const std::string &wallet, const std::
         m_nonceCache.insert(nonce, 1);
     }
 
-    return {E_SUCCESS, "ok"};
+    return {ERR_SUCCESS, "ok"};
 }
 
 FResult node_request_service::check_nonce(const std::vector<std::string>& multisig_wallets, int32_t multisig_threshold,
@@ -402,7 +402,7 @@ FResult node_request_service::check_nonce(const std::vector<std::string>& multis
         }
     }
 
-    return {E_SUCCESS, "ok"};
+    return {ERR_SUCCESS, "ok"};
 }
 
 std::tuple<std::string, std::string> node_request_service::parse_wallet(const AuthorityParams& params) {
@@ -411,11 +411,11 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
     std::string strWallet, strMultisigWallet;
 
-    if (std::get<0>(ret1) == E_SUCCESS) {
+    if (std::get<0>(ret1) == ERR_SUCCESS) {
         strWallet = params.wallet;
     }
 
-    if (std::get<0>(ret2) == E_SUCCESS) {
+    if (std::get<0>(ret2) == ERR_SUCCESS) {
         std::string accounts;
         for (int i = 0; i < params.multisig_wallets.size(); i++) {
             if (i > 0) accounts += ",";
@@ -576,24 +576,24 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -603,7 +603,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -613,13 +613,13 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -635,7 +635,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
 
         list_images(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
@@ -643,7 +643,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
 void node_request_service::list_images(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_list_images_req_data>& data,
                                        const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     std::vector<std::string> images;
@@ -652,7 +652,7 @@ void node_request_service::list_images(const dbc::network::base_header& header,
     ret_msg = std::get<1>(fresult);
 
     std::stringstream ss;
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         ss << "{";
         ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "[";
@@ -677,7 +677,7 @@ void node_request_service::list_images(const dbc::network::base_header& header,
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -704,24 +704,24 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -731,7 +731,7 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -741,13 +741,13 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -768,7 +768,7 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
 
         download_image(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
@@ -776,14 +776,14 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
 void node_request_service::download_image(const dbc::network::base_header& header,
                                           const std::shared_ptr<dbc::node_download_image_req_data>& data,
                                           const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.downloadImage(result.rent_wallet, data);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_download_image_rsp>(NODE_DOWNLOAD_IMAGE_RSP, header);
     } else {
         send_response_error<dbc::node_download_image_rsp>(NODE_DOWNLOAD_IMAGE_RSP, header, ret_code, ret_msg);
@@ -802,24 +802,24 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -829,7 +829,7 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -839,13 +839,13 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -866,7 +866,7 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
 
         upload_image(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
@@ -874,14 +874,14 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
 void node_request_service::upload_image(const dbc::network::base_header& header,
                                         const std::shared_ptr<dbc::node_upload_image_req_data>& data,
                                         const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.uploadImage(result.rent_wallet, data);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_upload_image_rsp>(NODE_UPLOAD_IMAGE_RSP, header);
     } else {
         send_response_error<dbc::node_upload_image_rsp>(NODE_UPLOAD_IMAGE_RSP, header, ret_code, ret_msg);
@@ -900,24 +900,24 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -927,7 +927,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -937,17 +937,17 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         query_node_info(node_req_msg->header, data);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
@@ -1029,7 +1029,7 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -1054,24 +1054,24 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1081,7 +1081,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1091,13 +1091,13 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1118,14 +1118,14 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
 
         task_list(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_list(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_list_task_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     std::stringstream ss_tasks;
@@ -1264,8 +1264,8 @@ void node_request_service::task_list(const dbc::network::base_header& header,
 
     std::stringstream ss;
     ss << "{";
-    if (ret_code == E_SUCCESS) {
-        ss << "\"errcode\":" << E_SUCCESS;
+    if (ret_code == ERR_SUCCESS) {
+        ss << "\"errcode\":" << ERR_SUCCESS;
         ss << ", \"message\":" << ss_tasks.str();
     } else {
         ss << "\"errcode\":" << ret_code;
@@ -1277,7 +1277,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -1304,24 +1304,24 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1331,7 +1331,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1341,13 +1341,13 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1368,7 +1368,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
 
         task_create(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
@@ -1376,7 +1376,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
 void node_request_service::task_create(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_create_task_req_data>& data,
                                        const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     std::string task_id;
@@ -1386,7 +1386,7 @@ void node_request_service::task_create(const dbc::network::base_header& header,
     ret_msg = std::get<1>(fresult);
 
     std::stringstream ss;
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         ss << "{";
         ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "{";
@@ -1413,7 +1413,7 @@ void node_request_service::task_create(const dbc::network::base_header& header,
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -1440,24 +1440,24 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1467,7 +1467,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1477,13 +1477,13 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1504,21 +1504,21 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
 
         task_start(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_start(const dbc::network::base_header& header,
                                       const std::shared_ptr<dbc::node_start_task_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.startTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header);
     } else {
         send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, header, ret_code, ret_msg);
@@ -1537,24 +1537,24 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1564,7 +1564,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1574,13 +1574,13 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1601,21 +1601,21 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
 
         task_stop(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_stop(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_stop_task_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.stopTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header);
     } else {
         send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, ret_code, ret_msg);
@@ -1634,24 +1634,24 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1661,7 +1661,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1671,13 +1671,13 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1698,21 +1698,21 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
 
         task_restart(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_restart(const dbc::network::base_header& header,
                                         const std::shared_ptr<dbc::node_restart_task_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.restartTask(result.rent_wallet, data->task_id, data->force_reboot != 0);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header);
     } else {
         send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, header, ret_code, ret_msg);
@@ -1731,24 +1731,24 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1758,7 +1758,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1768,13 +1768,13 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1795,21 +1795,21 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
 
         task_reset(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_reset(const dbc::network::base_header& header,
                                       const std::shared_ptr<dbc::node_reset_task_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.resetTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header);
     } else {
         send_response_error<dbc::node_reset_task_rsp>(NODE_RESET_TASK_RSP, header, ret_code, ret_msg);
@@ -1828,24 +1828,24 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1855,7 +1855,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1865,13 +1865,13 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1892,21 +1892,21 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
 
         task_delete(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_delete(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_delete_task_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto fresult = m_task_scheduler.deleteTask(result.rent_wallet, data->task_id);
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header);
     } else {
         send_response_error<dbc::node_delete_task_rsp>(NODE_DELETE_TASK_RSP, header, ret_code, ret_msg);
@@ -1925,24 +1925,24 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -1952,7 +1952,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -1962,13 +1962,13 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -1989,14 +1989,14 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
 
         task_logs(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::task_logs(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_task_logs_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     int16_t head_or_tail = data->head_or_tail;
@@ -2020,10 +2020,10 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
     ret_code = std::get<0>(fresult);
     ret_msg = std::get<1>(fresult);
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         std::stringstream ss;
         ss << "{";
-        ss << "\"errcode\":" << E_SUCCESS;
+        ss << "\"errcode\":" << ERR_SUCCESS;
         ss << ", \"message\":";
         ss << "{";
         ss << "\"task_id\":" << "\"" << data->task_id << "\"";
@@ -2035,7 +2035,7 @@ void node_request_service::task_logs(const dbc::network::base_header& header,
         auto it = mp.find("pub_key");
         if (it != mp.end()) {
             std::string pub_key = it->second;
-            std::string priv_key = conf_manager::instance().get_priv_key();
+            std::string priv_key = ConfManager::instance().GetPrivKey();
 
             if (!pub_key.empty() && !priv_key.empty()) {
                 std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -2065,24 +2065,24 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -2092,7 +2092,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -2102,13 +2102,13 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
         dbc::network::binary_protocol proto(task_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -2127,7 +2127,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
 
         node_session_id(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
@@ -2141,7 +2141,7 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
         } else {
             std::stringstream ss;
             ss << "{";
-            ss << "\"errcode\":" << E_SUCCESS;
+            ss << "\"errcode\":" << ERR_SUCCESS;
             ss << ", \"message\":{";
             ss << "\"session_id\":\"" << session_id << "\"";
             ss << "}";
@@ -2151,7 +2151,7 @@ void node_request_service::node_session_id(const dbc::network::base_header &head
             auto it = mp.find("pub_key");
             if (it != mp.end()) {
                 std::string pub_key = it->second;
-                std::string priv_key = conf_manager::instance().get_priv_key();
+                std::string priv_key = ConfManager::instance().GetPrivKey();
 
                 if (!pub_key.empty() && !priv_key.empty()) {
                     std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -2197,13 +2197,13 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
             state = "busy(" + std::to_string(count) + ")";
         }
 
-        service_info_collection::instance().update(conf_manager::instance().get_node_id(), "state", state);
+        service_info_collection::instance().update(ConfManager::instance().GetNodeId(), "state", state);
         */
-        service_info_collection::instance().update(conf_manager::instance().get_node_id(), "version", dbcversion());
-        service_info_collection::instance().update_own_node_time_stamp(conf_manager::instance().get_node_id());
+        service_info_collection::instance().update(ConfManager::instance().GetNodeId(), "version", dbcversion());
+        service_info_collection::instance().update_own_node_time_stamp(ConfManager::instance().GetNodeId());
     }
 
-    service_info_collection::instance().remove_unlived_nodes(conf_manager::instance().get_timer_service_list_expired_in_second());
+    service_info_collection::instance().remove_unlived_nodes(ConfManager::instance().get_timer_service_list_expired_in_second());
 
     auto service_info_map = service_info_collection::instance().get_change_set();
     if(!service_info_map.empty()) {
@@ -2217,20 +2217,20 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
 std::shared_ptr<dbc::network::message> node_request_service::create_service_broadcast_req_msg(const service_info_map& mp) {
     auto req_content = std::make_shared<dbc::service_broadcast_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(SERVICE_BROADCAST_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(util::create_session_id());
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
     std::map<std::string, std::string> exten_info;
     std::string sign_message = req_content->header.nonce + req_content->header.session_id;
-    std::string signature = util::sign(sign_message, conf_manager::instance().get_node_private_key());
+    std::string signature = util::sign(sign_message, ConfManager::instance().GetNodePrivateKey());
     if (signature.empty())  return nullptr;
     exten_info["sign"] = signature;
-    exten_info["node_id"] = conf_manager::instance().get_node_id();
-    exten_info["pub_key"] = conf_manager::instance().get_pub_key();
+    exten_info["node_id"] = ConfManager::instance().GetNodeId();
+    exten_info["pub_key"] = ConfManager::instance().GetPubKey();
     req_content->header.__set_exten_info(exten_info);
     // body
     req_content->body.__set_node_service_info_map(mp);
@@ -2340,24 +2340,24 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<dbc::
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -2367,7 +2367,7 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<dbc::
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -2377,13 +2377,13 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<dbc::
         dbc::network::binary_protocol proto(snapshot_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -2404,17 +2404,17 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<dbc::
 
         snapshot_list(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::snapshot_list(const dbc::network::base_header& header,
                                      const std::shared_ptr<dbc::node_list_snapshot_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    // send_response_error<dbc::node_list_snapshot_rsp>(NODE_LIST_SNAPSHOT_RSP, header, E_SUCCESS, "list snapshot:" + data->snapshot_name + " on " + data->task_id);
+    // send_response_error<dbc::node_list_snapshot_rsp>(NODE_LIST_SNAPSHOT_RSP, header, ERR_SUCCESS, "list snapshot:" + data->snapshot_name + " on " + data->task_id);
     // return;
 
     std::stringstream ss_snapshots;
@@ -2504,8 +2504,8 @@ void node_request_service::snapshot_list(const dbc::network::base_header& header
 
     std::stringstream ss;
     ss << "{";
-    if (ret_code == E_SUCCESS) {
-        ss << "\"errcode\":" << E_SUCCESS;
+    if (ret_code == ERR_SUCCESS) {
+        ss << "\"errcode\":" << ERR_SUCCESS;
         ss << ", \"message\":" << ss_snapshots.str();
     } else {
         ss << "\"errcode\":" << ret_code;
@@ -2517,7 +2517,7 @@ void node_request_service::snapshot_list(const dbc::network::base_header& header
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -2544,24 +2544,24 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<dbc
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -2571,7 +2571,7 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -2581,13 +2581,13 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(snapshot_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -2608,18 +2608,18 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<dbc
 
         snapshot_create(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::snapshot_create(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_create_snapshot_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     // LOG_INFO << "additional param " << data->additional;
-    // send_response_error<dbc::node_create_snapshot_rsp>(NODE_CREATE_SNAPSHOT_RSP, header, E_SUCCESS, "create snapshot on " + data->task_id);
+    // send_response_error<dbc::node_create_snapshot_rsp>(NODE_CREATE_SNAPSHOT_RSP, header, ERR_SUCCESS, "create snapshot on " + data->task_id);
     // return;
 
     auto task = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
@@ -2633,7 +2633,7 @@ void node_request_service::snapshot_create(const dbc::network::base_header& head
     }
 
     std::stringstream ss;
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         ss << "{";
         ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "{";
@@ -2662,7 +2662,7 @@ void node_request_service::snapshot_create(const dbc::network::base_header& head
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
         std::string pub_key = it->second;
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
@@ -2689,24 +2689,24 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<dbc
     }
 
     if (!m_is_computing_node) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     if (!check_req_header(msg)) {
         LOG_ERROR << "request header check failed";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     // decrypt
     std::string pub_key = node_req_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
@@ -2716,7 +2716,7 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<dbc
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
         if (!succ || ori_message.empty()) {
-            node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
             dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
             return;
         }
@@ -2726,13 +2726,13 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<dbc
         dbc::network::binary_protocol proto(snapshot_buf.get());
         data->read(&proto);
     } catch (std::exception &e) {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
     }
 
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
-    bool hit_self = hit_node(req_peer_nodes, conf_manager::instance().get_node_id());
+    bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self) {
         AuthorityParams params;
         params.wallet = data->wallet;
@@ -2753,14 +2753,14 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<dbc
 
         snapshot_delete(node_req_msg->header, data, result);
     } else {
-        node_req_msg->header.path.push_back(conf_manager::instance().get_node_id());
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
 }
 
 void node_request_service::snapshot_delete(const dbc::network::base_header& header,
                                        const std::shared_ptr<dbc::node_delete_snapshot_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = E_SUCCESS;
+    int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
     auto task = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
@@ -2773,7 +2773,7 @@ void node_request_service::snapshot_delete(const dbc::network::base_header& head
         ret_msg = "task_id not exist";
     }
 
-    if (ret_code == E_SUCCESS) {
+    if (ret_code == ERR_SUCCESS) {
         send_response_ok<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header);
     } else {
         send_response_error<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header, ret_code, ret_msg);

@@ -529,7 +529,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
                                            taskinfo->bios_mode == "uefi");
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
     do {
         domainPtr = virDomainDefineXML(m_connPtr, xml_content.c_str());
         if (nullptr == domainPtr) {
@@ -562,7 +562,7 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -612,7 +612,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -655,7 +655,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -698,7 +698,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -741,7 +741,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -784,7 +784,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -827,7 +827,7 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -859,7 +859,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -918,7 +918,7 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
     }
 
     virDomainPtr domainPtr = nullptr;
-    int32_t errorNum = E_SUCCESS;
+    int32_t errorNum = ERR_SUCCESS;
 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
@@ -1113,7 +1113,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
             log_content.append("\"" + line + "\"");
         }
         file.close();
-        return {E_SUCCESS, ""};
+        return {ERR_SUCCESS, ""};
     }
     
     return {E_DEFAULT, "open log file error"};
@@ -1455,7 +1455,7 @@ FResult VmClient::CreateSnapshot(const std::string& domain_name, const std::shar
             }
             break;
         }
-        ret_code = E_SUCCESS;
+        ret_code = ERR_SUCCESS;
     } while (0);
 
     if (nullptr != snapshotPtr) {
@@ -1761,13 +1761,13 @@ int32_t vm_worker::load_vm_config() {
 
         int32_t ret = check_cpu_config(m_vm_args["cpus"].as<int16_t>());
 
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             return ret;
         }
 
         ret = check_memory_config(m_vm_args["memory"].as<int16_t>(), m_vm_args["memory_swap"].as<int16_t>(),
                                   m_vm_args["shm_size"].as<int64_t>());
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             return ret;
         }
         m_auto_pull_image = m_vm_args["auto_pull_image"].as<bool>();
@@ -1778,7 +1778,7 @@ int32_t vm_worker::load_vm_config() {
         return E_DEFAULT;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t vm_worker::check_cpu_config(const int16_t &cpu_info) {
@@ -1789,7 +1789,7 @@ int32_t vm_worker::check_cpu_config(const int16_t &cpu_info) {
     uint16_t cpu_num = std::thread::hardware_concurrency();
     m_nano_cpus = cpu_info * m_nano_cpu * cpu_num / 100;
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t vm_worker::check_memory_config(const int16_t &memory, const int16_t &memory_swap, const int64_t &shm_size) {
@@ -1809,7 +1809,7 @@ int32_t vm_worker::check_memory_config(const int16_t &memory, const int16_t &mem
     LOG_DEBUG << "system memory:" << sys_mem << " system swap memory" << sys_swap;
 
     if (0 == sys_mem || 0 == sys_swap) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     m_memory = memory * sys_mem / 100;
@@ -1835,7 +1835,7 @@ int32_t vm_worker::check_memory_config(const int16_t &memory, const int16_t &mem
 
     LOG_DEBUG << "If vm memory is 0, use default.vm memory:" << m_memory << " vm swap memory" << m_memory_swap;
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 std::string vm_worker::get_operation(std::shared_ptr<ai_training_task> task) {

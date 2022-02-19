@@ -14,9 +14,9 @@ matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc
     , m_login_success(false)
     , m_sid(ch->id())
 {
-    if (conf_manager::instance().get_max_recv_speed() > 0)
+    if (ConfManager::instance().get_max_recv_speed() > 0)
     {
-        int32_t recv_speed = conf_manager::instance().get_max_recv_speed();
+        int32_t recv_speed = ConfManager::instance().get_max_recv_speed();
         int32_t cycle = 1;
         int32_t slice = 2;
         m_f_ctl = std::make_shared<dbc::network::flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
@@ -37,12 +37,12 @@ int32_t matrix_socket_channel_handler::stop()
 {
     m_stopped = true;
     stop_shake_hand_timer();
-    if (conf_manager::instance().get_max_recv_speed() > 0 && m_f_ctl != nullptr)
+    if (ConfManager::instance().get_max_recv_speed() > 0 && m_f_ctl != nullptr)
     {
         m_f_ctl->stop();
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 bool matrix_socket_channel_handler::validate_resp_path(std::string msg_name, std::vector<std::string>& path)
@@ -108,7 +108,7 @@ bool matrix_socket_channel_handler::validate_req_path(std::string msg_name, std:
         return false;
     }
 
-    std::string my_id = conf_manager::instance().get_node_id();
+    std::string my_id = ConfManager::instance().GetNodeId();
     if (std::find(path.begin(), path.end(), my_id) != path.end())
     {
         LOG_DEBUG << "my id is already in the path";
@@ -134,13 +134,13 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
     {
         decode_status recv_status = m_decoder->recv_message(in);
 
-        if (recv_status != DECODE_SUCCESS)
+        if (recv_status != DECODERR_SUCCESS)
         {
             LOG_ERROR << "recv error msg." << m_sid.to_string();
             return recv_status;
         }
 
-        if (recv_status != DECODE_SUCCESS )
+        if (recv_status != DECODERR_SUCCESS )
         {
             return recv_status;
         }
@@ -153,7 +153,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
             decode_status status = m_decoder->decode(ctx, msg);
 
             //decode success
-            if (DECODE_SUCCESS == status)
+            if (DECODERR_SUCCESS == status)
             {
 
                 LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
@@ -163,7 +163,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
                 msg->header.src_sid = m_sid;
 
                 int32_t iprocRet = on_after_msg_received(*msg);
-                if (iprocRet != E_SUCCESS)
+                if (iprocRet != ERR_SUCCESS)
                 {
                     return iprocRet;
                 }
@@ -189,14 +189,14 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
                     if (!validate_req_path(msg->get_name(), msg->content->header.path))
                     {
                         LOG_DEBUG << "req path validate fail, drop it";
-                        return E_SUCCESS;
+                        return ERR_SUCCESS;
                     }
 
 
                     if(!validate_resp_path(msg->get_name(), msg->content->header.path))
                     {
                         LOG_DEBUG << "resp path validate fail, drop it";
-                        return E_SUCCESS;
+                        return ERR_SUCCESS;
                     }
 
 
@@ -207,7 +207,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
                         if (m_f_ctl != nullptr && m_f_ctl->over_speed(1))
                         {
                             LOG_INFO << "over_speed";
-                            return E_SUCCESS;
+                            return ERR_SUCCESS;
                         }
 
 
@@ -257,12 +257,12 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
         }
 
     }
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void matrix_socket_channel_handler::set_decode_context(dbc::network::channel_handler_context &ctx)
 {
-    std::string node_id = conf_manager::instance().get_node_id();
+    std::string node_id = ConfManager::instance().GetNodeId();
     variable_value v1;
     v1.value() = node_id;
     ctx.add("LOCAL_NODE_ID", v1);
@@ -276,7 +276,7 @@ void matrix_socket_channel_handler::set_encode_context(dbc::network::channel_han
         if (nullptr != ch)
         {
             auto a = ch->get_proto_capacity();
-            auto b = conf_manager::instance().get_proto_capacity();
+            auto b = ConfManager::instance().get_proto_capacity();
 
             bool compress_enabled = dbc::network::matrix_capacity_helper::get_compress_enabled(a , b);
             int  thrift_proto = dbc::network::matrix_capacity_helper::get_thrift_proto(a , b);
@@ -301,7 +301,7 @@ int32_t matrix_socket_channel_handler::on_write(dbc::network::channel_handler_co
 
     encode_status status = m_coder->encode(ctx, msg, buf);
 
-    if (ENCODE_SUCCESS == status)
+    if (ENCODERR_SUCCESS == status)
     {
         if (msg.get_name() != SHAKE_HAND_REQ
             && msg.get_name() != SHAKE_HAND_RESP)
@@ -316,7 +316,7 @@ int32_t matrix_socket_channel_handler::on_write(dbc::network::channel_handler_co
         //has message
         set_has_message(msg);
 
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
     else if (BUFFER_IS_NOT_ENOUGH_TO_ENCODE == status)
     {
@@ -337,7 +337,7 @@ int32_t matrix_socket_channel_handler::on_error()
     {
         ch->on_error();
     }
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void matrix_socket_channel_handler::start_shake_hand_timer()

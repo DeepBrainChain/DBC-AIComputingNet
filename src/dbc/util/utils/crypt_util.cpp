@@ -28,7 +28,7 @@ namespace util {
         info.node_private_key = priv_key;
 
         free_account(data);
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     std::string create_session_id() {

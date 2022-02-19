@@ -91,7 +91,7 @@ namespace dbc
                 LOG_ERROR << "tcp socket channel close error: " << error << m_sid.to_string();
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t tcp_socket_channel::stop()
@@ -142,13 +142,13 @@ namespace dbc
 
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t tcp_socket_channel::read()
         {
             async_read();
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         void tcp_socket_channel::init_option()
@@ -232,7 +232,7 @@ namespace dbc
             try
             {
                 //move byte_buf's write ptr location 
-                if (E_SUCCESS != m_recv_buf.move_write_ptr((uint32_t)bytes_transferred))
+                if (ERR_SUCCESS != m_recv_buf.move_write_ptr((uint32_t)bytes_transferred))
                 {
                     LOG_ERROR << "tcp socket channel move write ptr error, bytes transfered: " << bytes_transferred << m_sid.to_string();
                     on_error();
@@ -241,7 +241,7 @@ namespace dbc
 
                 //call back handler on_read
                 channel_handler_context handler_context;
-                if (E_SUCCESS == m_socket_handler->on_read(handler_context, m_recv_buf))
+                if (ERR_SUCCESS == m_socket_handler->on_read(handler_context, m_recv_buf))
                 {
                     //next read
                     async_read();
@@ -298,7 +298,7 @@ namespace dbc
                     if (0 != m_send_queue.size())
                     {
                         m_send_queue.push_back(msg);
-                        return E_SUCCESS;
+                        return ERR_SUCCESS;
                     }
 
                     //queue is empty, push into queue
@@ -315,7 +315,7 @@ namespace dbc
                 //encode
                 channel_handler_context handler_context;
                 assert(nullptr != m_socket_handler);
-                if (E_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
+                if (ERR_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                 {
                     LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                     on_error();
@@ -345,7 +345,7 @@ namespace dbc
                 on_error();
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         void tcp_socket_channel::async_write(std::shared_ptr<byte_buf> &msg_buf)
@@ -426,7 +426,7 @@ namespace dbc
                         msg = m_send_queue.front();
                         //encode
                         channel_handler_context handler_context;
-                        if (E_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
+                        if (ERR_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                         {
                             LOG_ERROR << "tcp socket channel handler on write error" << m_sid.to_string();
                             on_error();

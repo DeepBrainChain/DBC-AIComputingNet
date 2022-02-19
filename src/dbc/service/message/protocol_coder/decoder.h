@@ -6,7 +6,7 @@
 
 enum decode_status
 {
-    DECODE_SUCCESS = 0,
+    DECODERR_SUCCESS = 0,
     DECODE_NEED_MORE_DATA,
     DECODE_UNKNOWN_MSG,
     DECODE_ERROR

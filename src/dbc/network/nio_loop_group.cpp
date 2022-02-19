@@ -36,7 +36,7 @@ namespace dbc
                     m_io_services.push_back(ios);
                 }
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             int32_t nio_loop_group::start()
@@ -61,7 +61,7 @@ namespace dbc
                     return E_DEFAULT;
                 }
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             int32_t nio_loop_group::stop()
@@ -73,7 +73,7 @@ namespace dbc
                     m_io_services[i]->stop();
                 }
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             int32_t nio_loop_group::exit()
@@ -97,7 +97,7 @@ namespace dbc
                     }
                 }
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             std::shared_ptr<io_service> nio_loop_group::get_io_service()

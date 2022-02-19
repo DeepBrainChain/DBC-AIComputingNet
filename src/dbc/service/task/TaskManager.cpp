@@ -61,7 +61,7 @@ FResult TaskManager::init() {
     TaskResourceMgr::instance().init(taskids);
     SnapshotManager::instance().init(taskids);
 
-    return {E_SUCCESS, ""};
+    return {ERR_SUCCESS, ""};
 }
 
 FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
@@ -73,9 +73,9 @@ FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_
             ImageMgr::instance().ListWalletLocalShareImages(result.rent_wallet, data->image_server, images);
         }
 
-        return { E_SUCCESS, "" };
+        return { ERR_SUCCESS, "" };
     } catch (std::exception& e) {
-        return { E_SUCCESS, "" };
+        return { ERR_SUCCESS, "" };
     }
 }
 
@@ -249,7 +249,7 @@ void TaskManager::start_task(const std::string &task_id) {
 }
 
 void TaskManager::close_task(const std::string &task_id) {
-    if (VmClient::instance().DestroyDomain(task_id) == E_SUCCESS) {
+    if (VmClient::instance().DestroyDomain(task_id) == ERR_SUCCESS) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
             taskinfo->status = ETaskStatus::TS_ShutOff;
@@ -483,7 +483,7 @@ void TaskManager::delete_task(const std::string &task_id) {
         for (const auto& snap : snaps) {
             if (snap->disks.empty()) continue;
             for (const auto& disk : snap->disks) {
-                if (!disk.source_file.empty() && fs::is_regular_file(disk.source_file)) {
+                if (!disk.source_file.empty() && bfs::is_regular_file(disk.source_file)) {
                     remove(disk.source_file.c_str());
                     TASK_LOG_INFO(task_id, "remove snapshot file: " << disk.source_file);
                 }
@@ -495,7 +495,7 @@ void TaskManager::delete_task(const std::string &task_id) {
 
 void TaskManager::delete_disk_file(const std::string& task_id, const std::map<std::string, domainDiskInfo> &diskfiles) {
     for (auto& iter : diskfiles) {
-        if (fs::is_regular_file(iter.second.sourceFile)) {
+        if (bfs::is_regular_file(iter.second.sourceFile)) {
             remove(iter.second.sourceFile.c_str());
             TASK_LOG_INFO(task_id, "remove disk file: " << iter.second.sourceFile);
         }
@@ -561,7 +561,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr
                                 int64_t rent_end, USER_ROLE role, std::string& task_id) {
     TaskCreateParams createparams;
     FResult fret = parse_create_params(data->additional, role, createparams);
-    if (std::get<0>(fret) != E_SUCCESS) {
+    if (std::get<0>(fret) != ERR_SUCCESS) {
         return fret;
     }
 
@@ -721,7 +721,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     if (vm_xml.empty() && vm_xml_url.empty()) {
         // image
         FResult fret = check_image(image_name);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         
@@ -809,17 +809,17 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         // check operation system
         fret = check_operation_system(operation_system);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // check bios mode
         fret = check_bios_mode(bios_mode);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // check multicast
         fret = check_multicast(multicast);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
     }
@@ -884,7 +884,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         ParseVmXmlParams xml_params;
         FResult fret = parse_vm_xml(xml_file_path, xml_params);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
 
@@ -907,41 +907,41 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         // check image
         fret = check_image(image_name);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         fret = check_data_image(data_file_name);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // cpu
         fret = check_cpu(sockets, cores, threads);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // gpu
         fret = check_gpu(gpus);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // disk
         fret = check_disk(disks);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // check operation system
         fret = check_operation_system(operation_system);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // check bios mode
         fret = check_bios_mode(bios_mode);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
         // check multicast
         fret = check_multicast(multicast);
-        if (std::get<0>(fret) != E_SUCCESS) {
+        if (std::get<0>(fret) != ERR_SUCCESS) {
             return fret;
         }
     }
@@ -969,7 +969,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.bios_mode = bios_mode;
     params.multicast = multicast;
 
-    return {E_SUCCESS, "ok"};
+    return {ERR_SUCCESS, "ok"};
 }
 
 bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads) {
@@ -1189,7 +1189,7 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
         ele_graphics = ele_graphics->NextSiblingElement("graphics");
     }
 
-    return {E_SUCCESS, "ok"};
+    return {ERR_SUCCESS, "ok"};
 }
 
 FResult TaskManager::check_image(const std::string &image_name) {
@@ -1810,7 +1810,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
     }
     std::shared_ptr<dbc::snapshotInfo> sInfo = std::make_shared<dbc::snapshotInfo>();
     FResult fret = parse_create_snapshot_params(additional, task_id, sInfo);
-    if (std::get<0>(fret) != E_SUCCESS) {
+    if (std::get<0>(fret) != ERR_SUCCESS) {
         return fret;
     }
 
@@ -1853,7 +1853,7 @@ FResult TaskManager::listTaskSnapshot(const std::string& wallet, const std::stri
     //     return {E_DEFAULT, "task_id not exist"};
     // }
     SnapshotManager::instance().listTaskSnapshot(task_id, snaps);
-    return {E_SUCCESS, "ok"};
+    return {ERR_SUCCESS, "ok"};
 }
 
 std::shared_ptr<dbc::snapshotInfo> TaskManager::getTaskSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name) {
@@ -2000,8 +2000,8 @@ void TaskManager::process_create(const ETaskEvent& ev) {
         }
     }
 
-    ERR_CODE err_code = VmClient::instance().CreateDomain(taskinfo, task_resource);
-    if (err_code != E_SUCCESS) {
+    ERRCODE ERRCODE = VmClient::instance().CreateDomain(taskinfo, task_resource);
+    if (ERRCODE != ERR_SUCCESS) {
         taskinfo->status = TS_CreateError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "create domain failed");
@@ -2089,8 +2089,8 @@ void TaskManager::process_start(const ETaskEvent& ev) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
     if (taskinfo == nullptr) return;
 
-    ERR_CODE err_code = VmClient::instance().StartDomain(taskinfo->task_id);
-    if (err_code != E_SUCCESS) {
+    ERRCODE ERRCODE = VmClient::instance().StartDomain(taskinfo->task_id);
+    if (ERRCODE != ERR_SUCCESS) {
         taskinfo->status = TS_StartError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "start task failed");
@@ -2106,8 +2106,8 @@ void TaskManager::process_stop(const ETaskEvent& ev) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
     if (taskinfo == nullptr) return;
 
-    ERR_CODE err_code = VmClient::instance().DestroyDomain(taskinfo->task_id);
-    if (err_code != E_SUCCESS) {
+    ERRCODE ERRCODE = VmClient::instance().DestroyDomain(taskinfo->task_id);
+    if (ERRCODE != ERR_SUCCESS) {
         taskinfo->status = TS_StopError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "stop task failed");
@@ -2125,8 +2125,8 @@ void TaskManager::process_restart(const ETaskEvent& ev) {
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(taskinfo->task_id);
     if (vm_status == VIR_DOMAIN_SHUTOFF) {
-        ERR_CODE err_code = VmClient::instance().StartDomain(taskinfo->task_id);
-        if (err_code != E_SUCCESS) {
+        ERRCODE ERRCODE = VmClient::instance().StartDomain(taskinfo->task_id);
+        if (ERRCODE != ERR_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
@@ -2137,8 +2137,8 @@ void TaskManager::process_restart(const ETaskEvent& ev) {
             TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
         }
     } else if (vm_status == VIR_DOMAIN_RUNNING) {
-        ERR_CODE err_code = VmClient::instance().RebootDomain(taskinfo->task_id);
-        if (err_code != E_SUCCESS) {
+        ERRCODE ERRCODE = VmClient::instance().RebootDomain(taskinfo->task_id);
+        if (ERRCODE != ERR_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
@@ -2157,8 +2157,8 @@ void TaskManager::process_force_reboot(const ETaskEvent& ev) {
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(taskinfo->task_id);
     if (vm_status == VIR_DOMAIN_SHUTOFF) {
-        ERR_CODE err_code = VmClient::instance().StartDomain(taskinfo->task_id);
-        if (err_code != E_SUCCESS) {
+        ERRCODE ERRCODE = VmClient::instance().StartDomain(taskinfo->task_id);
+        if (ERRCODE != ERR_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
@@ -2169,14 +2169,14 @@ void TaskManager::process_force_reboot(const ETaskEvent& ev) {
             TASK_LOG_INFO(taskinfo->task_id, "restart task successful");
         }
     } else /*if (vm_status == VIR_DOMAIN_RUNNING)*/ {
-        ERR_CODE err_code = VmClient::instance().DestroyDomain(taskinfo->task_id);
-        if (err_code != E_SUCCESS) {
+        ERRCODE ERRCODE = VmClient::instance().DestroyDomain(taskinfo->task_id);
+        if (ERRCODE != ERR_SUCCESS) {
             taskinfo->status = TS_RestartError;
             TaskInfoMgr::instance().update(taskinfo);
             TASK_LOG_ERROR(taskinfo->task_id, "restart task failed");
         } else {
             sleep(3);
-            if ((err_code = VmClient::instance().StartDomain(taskinfo->task_id)) == E_SUCCESS) {
+            if ((ERRCODE = VmClient::instance().StartDomain(taskinfo->task_id)) == ERR_SUCCESS) {
                 taskinfo->status = TS_Running;
                 TaskInfoMgr::instance().update(taskinfo);
                 add_iptable_to_system(taskinfo->task_id);
@@ -2194,8 +2194,8 @@ void TaskManager::process_reset(const ETaskEvent& ev) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
     if (taskinfo == nullptr) return;
 
-    ERR_CODE err_code = VmClient::instance().ResetDomain(taskinfo->task_id);
-    if (err_code != E_SUCCESS) {
+    ERRCODE ERRCODE = VmClient::instance().ResetDomain(taskinfo->task_id);
+    if (ERRCODE != ERR_SUCCESS) {
         taskinfo->status = TS_ResetError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "reset task failed");
@@ -2223,7 +2223,7 @@ void TaskManager::process_create_snapshot(const ETaskEvent& ev) {
         return;
     }
     FResult result = VmClient::instance().CreateSnapshot(taskinfo->task_id, info);
-    if (std::get<0>(result) != E_SUCCESS) {
+    if (std::get<0>(result) != ERR_SUCCESS) {
         taskinfo->status = TS_CreateSnapshotError;
         TaskInfoMgr::instance().update(taskinfo);
         TASK_LOG_ERROR(taskinfo->task_id, "create task snapshot:" << info->name << " failed");
@@ -2314,23 +2314,23 @@ void TaskManager::prune_task_thread_func() {
 
 /*
 int32_t task_scheduling::init(bpo::variables_map& options) {
-    int32_t ret = E_SUCCESS;
+    int32_t ret = ERR_SUCCESS;
 
     m_container_worker = std::make_shared<container_worker>();
     ret = m_container_worker->init();
-    if (E_SUCCESS != ret) {
+    if (ERR_SUCCESS != ret) {
         LOG_ERROR << "ai power provider service init container worker error";
         return ret;
     }
 
     m_vm_worker = std::make_shared<vm_worker>();
     ret = m_vm_worker->init();
-    if (E_SUCCESS != ret) {
+    if (ERR_SUCCESS != ret) {
         LOG_ERROR << "ai power provider service init vm worker error";
         return ret;
     }
 
-    if (E_SUCCESS != init_db("prov_training_task.db")) {
+    if (ERR_SUCCESS != init_db("prov_training_task.db")) {
         LOG_ERROR << "init prov_training_task.db failed!";
         return E_DEFAULT;
     }
@@ -2347,18 +2347,18 @@ int32_t task_scheduling::init(bpo::variables_map& options) {
         return E_DEFAULT;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::init_db(const std::string& db_name) {
     int32_t ret = m_task_db.init_db(env_manager::get_db_path(), db_name);
-    if (E_SUCCESS != ret) {
+    if (ERR_SUCCESS != ret) {
         LOG_ERROR << "init_db failed!";
         return ret;
     }
 
     ret = m_task_db.load_user_task(m_training_tasks);
-    if (ret != E_SUCCESS) {
+    if (ret != ERR_SUCCESS) {
         LOG_ERROR << "load user task failed!";
         return ret;
     }
@@ -2387,7 +2387,7 @@ int32_t task_scheduling::init_db(const std::string& db_name) {
             return t1->received_time_stamp < t2->received_time_stamp;
         });
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 // env.NVIDIA_VISIBLE_DEVICES
@@ -2530,7 +2530,7 @@ int32_t task_scheduling::process_task() {
         check_training_task_status(it.second);
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task) {
@@ -2549,7 +2549,7 @@ int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task
     if (task->server_specification == "restart_docker" || task->server_specification == "restart_vm") {
         int32_t ret = restart_task(task, task->server_specification == "restart_docker");
         m_queueing_tasks.remove(task);
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             task->__set_status(task_status_stopped);
             m_task_db.write_task_to_db(task);
             LOG_ERROR << "restart user task failed, task id:" << task->task_id;
@@ -2560,7 +2560,7 @@ int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task
             m_gpu_pool.allocate(task->gpus);
             m_task_db.write_task_to_db(task);
             LOG_INFO << "restart user task success, task id:" << task->task_id;
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
     }
 
@@ -2605,7 +2605,7 @@ int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task
             LOG_INFO << "task_status_creating_image:" << task->task_id;
         }
 
-        if (ret == E_SUCCESS) {
+        if (ret == ERR_SUCCESS) {
             if (task->status == task_status_creating_image) {
                 LOG_INFO << "creating image:" << task->task_id;
                 task->__set_status(task_status_creating_image);
@@ -2626,7 +2626,7 @@ int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task
             m_training_tasks[task->task_id] = task;
             m_task_db.write_task_to_db(task);
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         else {
             LOG_ERROR << "user task task_status_update_error, start inspect_container container id: "
@@ -2667,7 +2667,7 @@ int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task
             m_queueing_tasks.remove(task);
         }
 
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             task->error_times++;
             switch (ret) {
             case E_NO_DISK_SPACE:
@@ -2702,7 +2702,7 @@ int32_t task_scheduling::exec_task(const std::shared_ptr<ai_training_task>& task
                     LOG_INFO << "gpu state " << m_gpu_pool.toString();
                 }
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             m_task_db.write_task_to_db(task);
@@ -2733,11 +2733,11 @@ int32_t task_scheduling::check_pull_image_state(const std::shared_ptr<ai_trainin
             else {
                 if (PULLING == m_pull_image_mng->check_pull_state()) {
                     LOG_DEBUG << "pulling: docker pull " << task->training_engine;
-                    return E_SUCCESS;
+                    return ERR_SUCCESS;
                 }
                 else {
                     //docker is not pulling image.
-                    if (CONTAINER_WORKER_IF->exist_docker_image(task->training_engine, 20) != E_SUCCESS) {
+                    if (CONTAINER_WORKER_IF->exist_docker_image(task->training_engine, 20) != ERR_SUCCESS) {
                         LOG_WARNING << "ai power provider service pull image failed";
                         stop_task(task, task_noimage_closed);
                         return E_PULLING_IMAGE;
@@ -2757,7 +2757,7 @@ int32_t task_scheduling::check_pull_image_state(const std::shared_ptr<ai_trainin
 
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::check_training_task_status(const std::shared_ptr<ai_training_task>& task) {
@@ -2787,7 +2787,7 @@ int32_t task_scheduling::check_training_task_status(const std::shared_ptr<ai_tra
         }
 
         if (resp->state.running) {
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         else if (0 != resp->state.exit_code && 137 != resp->state.exit_code &&
             task->status == task_status_running) {
@@ -2795,14 +2795,14 @@ int32_t task_scheduling::check_training_task_status(const std::shared_ptr<ai_tra
                 << task->container_id << " exit_code" << resp->state.exit_code;
 
             start_task(task, is_docker);
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
     }
     else {
         //todo: vm
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void task_scheduling::update_gpu_info_from_proc() {
@@ -2818,7 +2818,7 @@ int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, train
     if (task->status == task_status_running || task->status == task_status_update_error || task->status > task_status_stopped ||
         task->status == task_status_queueing) {
         int32_t ret = this->stop_task(task);
-        if (E_SUCCESS != ret) {
+        if (ERR_SUCCESS != ret) {
             LOG_ERROR << "stop container error, container id: " << task->container_id << " task is:"
                 << task->task_id;
         }
@@ -2840,12 +2840,12 @@ int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, train
         task->__set_end_time(time_util::get_time_stamp_ms());
 
         m_task_db.write_task_to_db(task);
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     // case 2: stop a task from waiting queue
     if (m_queueing_tasks.empty()) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
     auto top_task = m_queueing_tasks.front();
     m_queueing_tasks.remove(task);
@@ -2864,20 +2864,20 @@ int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task, train
         if (task->task_id != top_task->task_id) {
             LOG_DEBUG << "task is not the top task, do not need report status to oss. task is: "
                 << task->task_id;
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         LOG_INFO << "dbc close task, report the event to oss system." << " task:" << task->task_id << " status:"
             << to_training_task_status_string(end_status);
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::add_update_task(std::shared_ptr<ai_training_task> task) {
     m_queueing_tasks.remove(task);
     m_queueing_tasks.push_back(task);
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::add_task(const std::shared_ptr<ai_training_task>& task) {
@@ -2886,14 +2886,14 @@ int32_t task_scheduling::add_task(const std::shared_ptr<ai_training_task>& task)
         return E_DEFAULT;
     }
 
-    if (E_SUCCESS != m_task_db.write_task_to_db(task)) {
+    if (ERR_SUCCESS != m_task_db.write_task_to_db(task)) {
         return E_DEFAULT;
     }
 
     m_queueing_tasks.push_back(task);
     m_training_tasks[task->task_id] = task;
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 std::shared_ptr<ai_training_task> task_scheduling::find_task(std::string task_id) {
@@ -2907,7 +2907,7 @@ std::shared_ptr<ai_training_task> task_scheduling::find_task(std::string task_id
 
 int32_t task_scheduling::prune_task() {
     prune_task(m_prune_intervel);
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 //  This method will check all stopped user tasks and delete them from db and cache.
@@ -2949,14 +2949,14 @@ int32_t task_scheduling::prune_task(int16_t interval) {
     }
 
     if (0 == interval) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     if (m_training_tasks.size() > MAX_PRUNE_TASK_COUNT) {
         prune_task(interval / 2);
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::process_reboot_task(std::shared_ptr<ai_training_task> task) {
@@ -2967,10 +2967,10 @@ int32_t task_scheduling::process_reboot_task(std::shared_ptr<ai_training_task> t
         LOG_WARNING << "node reboot now";
         system("wall \"System will reboot by dbc in one minute!\"");
         system("sudo /sbin/shutdown -r +1");
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 std::string task_scheduling::get_gpu_state() {
@@ -3021,7 +3021,7 @@ int32_t task_scheduling::update_task(std::shared_ptr<ai_training_task> task) {
     int32_t ret = CONTAINER_WORKER_IF->update_container(task->container_id, config);
 
 
-    if (ret != E_SUCCESS) {
+    if (ret != ERR_SUCCESS) {
         LOG_ERROR << "update task error. Task id:" << task->task_id;
         return E_DEFAULT;
     }
@@ -3038,7 +3038,7 @@ int32_t task_scheduling::update_task(std::shared_ptr<ai_training_task> task) {
     m_task_db.write_task_to_db(task);
 
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_task> task) {
@@ -3100,7 +3100,7 @@ int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_ta
             autodbcimage_version;
         LOG_INFO << "training_engine_name 2 " << training_engine_name;
 
-        if (E_SUCCESS == CONTAINER_WORKER_IF->exist_docker_image(training_engine_name, 30)) {
+        if (ERR_SUCCESS == CONTAINER_WORKER_IF->exist_docker_image(training_engine_name, 30)) {
 
             LOG_INFO << "delete the same name image";
             CONTAINER_WORKER_IF->delete_image(training_engine_name);//删除之前的同名镜像
@@ -3115,12 +3115,12 @@ int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_ta
         if (status.compare("error") == 0) {
             return E_DEFAULT;
         }
-        return E_SUCCESS;
+        return ERR_SUCCESS;
 
     }
     else if (task->status == task_status_creating_image) { //正在创建中
 
-        if (E_SUCCESS == CONTAINER_WORKER_IF->exist_docker_image(training_engine_name, 60)) {
+        if (ERR_SUCCESS == CONTAINER_WORKER_IF->exist_docker_image(training_engine_name, 60)) {
             LOG_INFO << "is  exist_docker_image";
             //  sleep(100);
 
@@ -3143,7 +3143,7 @@ int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_ta
 
             }
             else {
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
         }
@@ -3162,7 +3162,7 @@ int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_ta
             task->container_id.substr(0, 6) + autodbcimage_version;
         int32_t status = start_task_from_new_image(task, autodbcimage_version, training_engine_name);
 
-        if (status != E_NO_START_CONTAINER && status != E_SUCCESS) {
+        if (status != E_NO_START_CONTAINER && status != ERR_SUCCESS) {
             task->__set_training_engine(training_engine_original);
             return E_DEFAULT;
         }
@@ -3180,7 +3180,7 @@ int32_t task_scheduling::update_task_commit_image(std::shared_ptr<ai_training_ta
     }
 
     task->__set_gpus(get_gpu_spec(task->server_specification));
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task) {
@@ -3262,7 +3262,7 @@ int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task) {
         task->__set_start_time(time_util::get_time_stamp_ms());
         LOG_INFO << "sleep_time waiting :" << sleep_time << "s";
         task->__set_status(task_status_creating_image);
-        return E_SUCCESS;
+        return ERR_SUCCESS;
 
     }
     else if (task->status == task_status_creating_image) { //正在创建中
@@ -3310,7 +3310,7 @@ int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task) {
 
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
     }
 
@@ -3318,7 +3318,7 @@ int32_t task_scheduling::change_gpu_id(std::shared_ptr<ai_training_task> task) {
 
     task->__set_status(task_status_running);
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::commit_change_gpu_id_bash(std::string change_gpu_id_file_name, std::string task_id,
@@ -3392,7 +3392,7 @@ int32_t task_scheduling::commit_change_gpu_id_bash(std::string change_gpu_id_fil
         return E_DEFAULT;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_task> task,
@@ -3426,7 +3426,7 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
     bool original_status_container = false;//默认容器是关闭的状态
     if (true == resp->state.running) {
         original_status_container = true;
-        if (E_SUCCESS == CONTAINER_WORKER_IF->stop_container(old_container_id)) {
+        if (ERR_SUCCESS == CONTAINER_WORKER_IF->stop_container(old_container_id)) {
             LOG_INFO << "stop container success , task id:" << old_container_id;
 
 
@@ -3442,7 +3442,7 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
     }
 
 
-    if (E_SUCCESS != create_task_from_image(task, autodbcimage_version)) {
+    if (ERR_SUCCESS != create_task_from_image(task, autodbcimage_version)) {
         LOG_ERROR << "create task error";
         CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
         if (original_status_container) {
@@ -3491,7 +3491,7 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
 
         if (resp != nullptr || is_exsit_old_container)//如果旧的镜像还存在，则删除
         {
-            if (E_SUCCESS != CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
+            if (ERR_SUCCESS != CONTAINER_WORKER_IF->remove_container(old_container_id))//delete old container
             {
                 CONTAINER_WORKER_IF->remove_container(task->container_id);//delete new docker
                 CONTAINER_WORKER_IF->delete_image(training_engine_new);//delete new image
@@ -3504,7 +3504,7 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
                 return E_DEFAULT;
             }//else// if(can_delete_image){//旧的镜像 因为有新生成的子镜像，故无法删除
 
-            //if(E_SUCCESS!=CONTAINER_WORKER_IF->remove_image(image_id)){//delete old image
+            //if(ERR_SUCCESS!=CONTAINER_WORKER_IF->remove_image(image_id)){//delete old image
             //     CONTAINER_WORKER_IF->remove_image(image_id);
             // }
             // }
@@ -3512,7 +3512,7 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
 
 
         LOG_INFO << "delete old container success , task id:" << old_container_id;
-        if (E_SUCCESS != CONTAINER_WORKER_IF->rename_container(task->task_id, autodbcimage_version)) {
+        if (ERR_SUCCESS != CONTAINER_WORKER_IF->rename_container(task->task_id, autodbcimage_version)) {
             LOG_INFO << "rename container failure";
 
             CONTAINER_WORKER_IF->rename_container(task->task_id, autodbcimage_version);
@@ -3525,7 +3525,7 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
 
     int32_t ret = CONTAINER_WORKER_IF->start_container(task->container_id);//start new container_id
 
-    if (ret != E_SUCCESS) {
+    if (ret != ERR_SUCCESS) {
         task->__set_status(task_status_update_error);
         LOG_ERROR << "Start task error. Task id:" << task->task_id;
         return E_NO_START_CONTAINER;
@@ -3538,8 +3538,8 @@ int32_t task_scheduling::start_task_from_new_image(std::shared_ptr<ai_training_t
     LOG_INFO << "update task status:" << "task_status_running";
     //  m_task_db.write_task_to_db(task);
     LOG_INFO << "update task status:" << "write_task_to_db";
-    LOG_INFO << "update E_SUCCESS:" << E_SUCCESS;
-    return E_SUCCESS;
+    LOG_INFO << "update ERR_SUCCESS:" << ERR_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task> task,
@@ -3570,7 +3570,7 @@ int32_t task_scheduling::create_task_from_image(std::shared_ptr<ai_training_task
         LOG_INFO << "create from_image task success. task id:" << task->task_id << " container id:"
             << task->container_id;
 
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
     else {
         // sleep(90);
@@ -3608,7 +3608,7 @@ int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task, boo
             LOG_INFO << "create task success. task id:" << task->task_id << " container id:"
                 << task->container_id;
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         else {
             sleep(60);
@@ -3622,7 +3622,7 @@ int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task, boo
                 LOG_INFO << "create task success. task id:" << task->task_id << " container id:"
                     << task->container_id;
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
             else {
                 LOG_INFO << "exist_container no";
@@ -3658,9 +3658,9 @@ int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task, boo
 
         int32_t ret = VM_WORKER_IF->createDomain(task->task_id, host_ip, transform_port,
             "/data/" + task->training_engine);
-        if (ret == E_SUCCESS) {
+        if (ret == ERR_SUCCESS) {
             LOG_INFO << "create vm task success. task id:" << task->task_id;
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         else {
             LOG_ERROR << "create vm task failed. task id:" << task->task_id << " ret:" << ret;
@@ -3672,7 +3672,7 @@ int32_t task_scheduling::create_task(std::shared_ptr<ai_training_task> task, boo
 
 int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool is_docker) {
     if (nullptr == task) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     auto state = get_task_state(task, is_docker);
@@ -3689,7 +3689,7 @@ int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool
         else
             ret = VM_WORKER_IF->rebootDomain(task->task_id);
 
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             LOG_ERROR << "restart task error. Task id:" << task->task_id;
             LOG_ERROR << "restart task error. container_id:" << task->container_id;
             return E_DEFAULT;
@@ -3701,8 +3701,8 @@ int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool
         LOG_INFO << "task status:" << "task_status_running";
         m_task_db.write_task_to_db(task);
         LOG_INFO << "task status:" << "write_task_to_db";
-        LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
-        return E_SUCCESS;
+        LOG_INFO << "ERR_SUCCESS:" << ERR_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     int32_t ret = E_EXIT_FAILURE;
@@ -3715,7 +3715,7 @@ int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool
         bool is_container_existed = (!task->container_id.empty());
         if (!is_container_existed) {
             //if container_id does not exist, means dbc need to create container
-            if (E_SUCCESS != create_task(task, is_docker)) {
+            if (ERR_SUCCESS != create_task(task, is_docker)) {
                 LOG_ERROR << "create task error";
                 return E_DEFAULT;
             }
@@ -3744,7 +3744,7 @@ int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool
             ret = VM_WORKER_IF->startDomain(task->task_id);
     }
 
-    if (ret != E_SUCCESS) {
+    if (ret != ERR_SUCCESS) {
         LOG_ERROR << "Start task error. Task id:" << task->task_id;
         return E_DEFAULT;
     }
@@ -3756,13 +3756,13 @@ int32_t task_scheduling::start_task(std::shared_ptr<ai_training_task> task, bool
     LOG_INFO << "task status:" << "task_status_running";
     m_task_db.write_task_to_db(task);
     LOG_INFO << "task status:" << "write_task_to_db";
-    LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
-    return E_SUCCESS;
+    LOG_INFO << "ERR_SUCCESS:" << ERR_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task, bool is_docker) {
     if (nullptr == task) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
     if (task->status == task_status_update_error)//如果任务是升级错误状态，则只修改任务状态为running
     {
@@ -3773,8 +3773,8 @@ int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task, bo
         LOG_INFO << "task status:" << "task_status_running";
         m_task_db.write_task_to_db(task);
         LOG_INFO << "task status:" << "write_task_to_db";
-        LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
-        return E_SUCCESS;
+        LOG_INFO << "ERR_SUCCESS:" << ERR_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     auto state = get_task_state(task, is_docker);
@@ -3790,14 +3790,14 @@ int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task, bo
         else
             ret = VM_WORKER_IF->rebootDomain(task->task_id);
 
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             LOG_ERROR << "restart task error. Task id:" << task->task_id;
             LOG_ERROR << "restart task error. container_id:" << task->container_id;
             return E_DEFAULT;
         }
         LOG_DEBUG << "task have been restarted, task id:" << task->task_id;
 
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
     else if (DBC_TASK_STOPPED == state) {
         int32_t ret = E_EXIT_FAILURE;
@@ -3807,7 +3807,7 @@ int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task, bo
         else
             ret = VM_WORKER_IF->startDomain(task->task_id);
 
-        if (ret != E_SUCCESS) {
+        if (ret != ERR_SUCCESS) {
             LOG_ERROR << "Start task error. Task id:" << task->task_id;
             return E_DEFAULT;
         }
@@ -3825,13 +3825,13 @@ int32_t task_scheduling::restart_task(std::shared_ptr<ai_training_task> task, bo
     LOG_INFO << "task status:" << "task_status_running";
     m_task_db.write_task_to_db(task);
     LOG_INFO << "task status:" << "write_task_to_db";
-    LOG_INFO << "E_SUCCESS:" << E_SUCCESS;
-    return E_SUCCESS;
+    LOG_INFO << "ERR_SUCCESS:" << ERR_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task) {
     if (nullptr == task) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     bool is_docker = false;
@@ -3856,7 +3856,7 @@ int32_t task_scheduling::stop_task(std::shared_ptr<ai_training_task> task) {
         if (status == vm_running) {
             VM_WORKER_IF->destoryDomain(task->task_id);
         }
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 }
 
@@ -3869,13 +3869,13 @@ int32_t task_scheduling::stop_task_only_id(std::string task_id, bool is_docker) 
         if (status == vm_running) {
             VM_WORKER_IF->destoryDomain(task_id);
         }
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 }
 
 int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task, bool is_docker) {
     if (nullptr == task) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     try {
@@ -3897,7 +3897,7 @@ int32_t task_scheduling::delete_task(std::shared_ptr<ai_training_task> task, boo
         return E_DEFAULT;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> task, bool is_docker) {
@@ -3947,12 +3947,12 @@ TASK_STATE task_scheduling::get_task_state(std::shared_ptr<ai_training_task> tas
 
 int32_t task_scheduling::start_pull_image(std::shared_ptr<ai_training_task> task) {
     if (nullptr == task || task->training_engine.empty()) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     //check local evn.
     auto ret = m_container_worker->can_pull_image();
-    if (E_SUCCESS != ret) {
+    if (ERR_SUCCESS != ret) {
         return ret;
     }
 
@@ -3969,10 +3969,10 @@ int32_t task_scheduling::start_pull_image(std::shared_ptr<ai_training_task> task
     }
 
     if (PULLING == m_pull_image_mng->check_pull_state()) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
-    if (E_SUCCESS != m_pull_image_mng->start_pull(task->training_engine)) {
+    if (ERR_SUCCESS != m_pull_image_mng->start_pull(task->training_engine)) {
         LOG_ERROR << "task engine pull fail. engine:" << task->training_engine;
         return E_PULLING_IMAGE;
     }
@@ -3986,23 +3986,23 @@ int32_t task_scheduling::start_pull_image(std::shared_ptr<ai_training_task> task
         m_task_db.write_task_to_db(task);
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t task_scheduling::stop_pull_image(std::shared_ptr<ai_training_task> task) {
     if (!m_pull_image_mng) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     if (task->training_engine != m_pull_image_mng->get_pull_image_name()) {
         LOG_ERROR << "pull image is not " << task->training_engine;
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     LOG_INFO << "terminate pull " << task->training_engine;
     m_pull_image_mng->terminate_pull();
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void task_scheduling::appendAllTaskStatus(std::vector<matrix::service_core::task_status>& vec) {

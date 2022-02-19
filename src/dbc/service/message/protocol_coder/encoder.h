@@ -6,7 +6,7 @@
 
 enum encode_status
 {
-    ENCODE_SUCCESS = 0,
+    ENCODERR_SUCCESS = 0,
     BUFFER_IS_NOT_ENOUGH_TO_ENCODE,
     ENCODE_ERROR
 };

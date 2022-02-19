@@ -195,7 +195,7 @@ namespace dbc
                 return E_DEFAULT;
             }
             
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t http_client::post_sleep(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp,int32_t sleep_time)
@@ -276,7 +276,7 @@ namespace dbc
                 return E_DEFAULT;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t http_client::get(const std::string &endpoint, const kvs &headers, http_response &resp)
@@ -348,7 +348,7 @@ namespace dbc
                 return E_DEFAULT;
             }
             
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t http_client::get_sleep(const std::string &endpoint, const kvs &headers, http_response &resp,int32_t sleep_time)
@@ -420,7 +420,7 @@ namespace dbc
                 return E_DEFAULT;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t http_client::del(const std::string &endpoint, const kvs &headers, http_response &resp)
@@ -491,7 +491,7 @@ namespace dbc
                 LOG_ERROR << "http error" << e.what();
                 return E_DEFAULT;
             }
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         
         static int cert_verify_callback(X509_STORE_CTX *x509_ctx, void *arg)
@@ -610,7 +610,7 @@ namespace dbc
                 LOG_DEBUG << "parse error";
                 return E_DEFAULT;
             }
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         std::string  http_client::get_remote_host()

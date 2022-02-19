@@ -119,7 +119,7 @@ byte_buf::byte_buf(int32_t len, bool auto_alloc)
         {
             m_write_ptr += move_len;
             m_read_bound = m_write_ptr;
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
         else
         {
@@ -144,7 +144,7 @@ byte_buf::byte_buf(int32_t len, bool auto_alloc)
             throw std::length_error("byte buf move read ptr  err and read ptr beyond valid read length");
         }
 
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     //move to header

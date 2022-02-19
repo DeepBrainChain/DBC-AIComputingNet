@@ -15,13 +15,13 @@ timer_matrix_manager::timer_matrix_manager()
 int32_t  timer_matrix_manager::init()
 {
     int ret = m_timer_group->init(DEFAULT_TIMER_MATRIX_THREAD_COUNT);
-    if (E_SUCCESS != ret)
+    if (ERR_SUCCESS != ret)
     {
         LOG_ERROR << "timer matrix manager init timer thread group error";
         return ret;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t timer_matrix_manager::start()
@@ -30,14 +30,14 @@ int32_t timer_matrix_manager::start()
 
     //start thread
     int32_t ret = m_timer_group->start();
-    if (E_SUCCESS != ret)
+    if (ERR_SUCCESS != ret)
     {
         return ret;
     }
 
     //start timer
     start_timer();
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t  timer_matrix_manager::stop()
@@ -46,7 +46,7 @@ int32_t  timer_matrix_manager::stop()
     m_timer_group->stop();
     //m_timer_handler = nullptr;
     LOG_DEBUG << "timer matrix manager has stopped";
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t  timer_matrix_manager::exit()

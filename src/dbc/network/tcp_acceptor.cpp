@@ -50,7 +50,7 @@ namespace dbc
                 LOG_ERROR << "tcp acceptor close error: " << error;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t tcp_acceptor::create_channel()
@@ -70,7 +70,7 @@ namespace dbc
             m_acceptor.async_accept(server_channel->get_socket(), boost::bind(&tcp_acceptor::on_accept, shared_from_this(), std::dynamic_pointer_cast<channel>(server_channel->shared_from_this()), boost::asio::placeholders::error));
             LOG_DEBUG << "channel async_accept end use count " << server_channel.use_count() << server_channel->id().to_string();
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t tcp_acceptor::on_accept(std::shared_ptr<channel> ch, const boost::system::error_code& error)
@@ -120,8 +120,8 @@ namespace dbc
 			
             //add to connection manager
             int32_t ret = connection_manager::instance().add_channel(socket_channel->id(), socket_channel->shared_from_this());
-            //assert(E_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
-            if (ret != E_SUCCESS)
+            //assert(ERR_SUCCESS == ret);               //if not success, we should check whether socket id is duplicated
+            if (ret != ERR_SUCCESS)
             {
                 LOG_DEBUG << "tcp acceptor abnormal." << ch->id().to_string();
                 ch->close();

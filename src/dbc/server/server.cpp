@@ -1,12 +1,15 @@
 ﻿#include "server.h"
 #include <fcntl.h>
-#include "util/crypto/byteswap.h"
+#include <openssl/conf.h>
+#include <openssl/rand.h>
+#include <openssl/crypto.h>
+#include "util/crypto/random.h"
+#include "util/crypto/sha256.h"
+#include "util/crypto/key.h"
 #include "network/connection_manager.h"
 #include "config/env_manager.h"
 #include "service_module/topic_manager.h"
-#include "util/utils/crypto_service.h"
 #include <boost/exception/all.hpp>
-#include "service_module/service_name.h"
 #include "service/http_request_service/http_server_service.h"
 #include "service/http_request_service/rest_api_service.h"
 #include "service/node_monitor_service/node_monitor_service.h"
@@ -14,204 +17,220 @@
 #include "service/peer_request_service/p2p_net_service.h"
 #include "util/system_info.h"
 
-int32_t server::init(int argc, char *argv[]) {
-    int32_t ret = E_SUCCESS;
-    variables_map args;
+static std::unique_ptr<ECCVerifyHandle> g_ecc_verify_handle;
+static std::unique_ptr<std::recursive_mutex[]> g_ssl_lock;
 
-    // parse command line
-    ret = parse_command_line(argc, argv, args);
-    if (E_SUCCESS != ret) {
-        return ret;
+void ssl_locking_callback(int mode, int type, const char *file, int line)
+{
+    if (mode & CRYPTO_LOCK)
+    {
+        g_ssl_lock[type].lock();
+    }
+    else
+    {
+        g_ssl_lock[type].unlock();
+    }
+}
+
+ERRCODE Server::Init(int argc, char *argv[]) {
+    ERRCODE err = ERR_SUCCESS;
+    variables_map options;
+
+    err = ParseCommandLine(argc, argv, options);
+    if (ERR_SUCCESS != err) {
+        return err;
     }
 
-    // init log
-    ret = dbclog::instance().init();
-    if (E_SUCCESS != ret) {
+    err = dbclog::instance().init();
+    if (ERR_SUCCESS != err) {
         return 0;
     }
 
     LOG_INFO << "begin server init ...";
 
-    // crypto service
-    LOG_INFO << "begin to init crypto service";
-    ret = m_crypto.init(args);
-    if (E_SUCCESS != ret) {
-        LOG_ERROR << "crypto service init failed";
-        return ret;
+    LOG_INFO << "begin to init crypto";
+    err = InitCrypto(options);
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init crypto failed";
+        return err;
     }
-    LOG_INFO << "init crypto service successful";
+    LOG_INFO << "init crypto success";
 
-    // env_manager
-    LOG_INFO << "begin to init env manager";
-    ret = env_manager::instance().init();
-    if (E_SUCCESS != ret) {
-        LOG_ERROR << "init env manager failed";
-        return ret;
+    LOG_INFO << "begin to init env_manager";
+    err = EnvManager::instance().Init();
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init env_manager failed";
+        return err;
     }
-    LOG_INFO << "init env manager successful";
+    LOG_INFO << "init env_manager success";
 
-    // conf_manager
-    LOG_INFO << "begin to init conf manager";
-    ret = conf_manager::instance().init();
-    if (E_SUCCESS != ret) {
-        LOG_ERROR << "init conf manager failed";
-        return ret;
+    LOG_INFO << "begin to init ConfManager";
+    err = ConfManager::instance().Init();
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init ConfManager failed";
+        return err;
     }
-    LOG_INFO << "init conf manager successful";
+    LOG_INFO << "init ConfManager success";
 
     // system_info
     LOG_INFO << "begin to init SystemInfo";
-    SystemInfo::instance().init(args, g_reserved_physical_cores_per_cpu, g_reserved_memory);
+    SystemInfo::instance().init(options, g_reserved_physical_cores_per_cpu, g_reserved_memory);
     SystemInfo::instance().start();
     LOG_INFO << "init SystemInfo successful";
 
     // timer_matrix_manager
     LOG_INFO << "begin to init timer matrix manager";
     m_timer_matrix_manager = std::make_shared<timer_matrix_manager>();
-    ret = m_timer_matrix_manager->init();
-    if (E_SUCCESS != ret) {
+    err = m_timer_matrix_manager->init();
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init timer matrix manager failed";
-        return ret;
+        return err;
     }
     m_timer_matrix_manager->start();
     LOG_INFO << "init timer matrix manager successful";
 
     // node_request_service
     LOG_INFO << "begin to init node_request_service";
-    ret = node_request_service::instance().init(args);
-    if (E_SUCCESS != ret) {
+    err = node_request_service::instance().init(options);
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init node_request_service failed";
-        return ret;
+        return err;
     }
     node_request_service::instance().start();
     LOG_INFO << "init node_request_service successful";
 
     // network
     LOG_INFO << "begin to init connection manager";
-    ret = dbc::network::connection_manager::instance().init();
-    if (E_SUCCESS != ret) {
+    err = dbc::network::connection_manager::instance().init();
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init connection_manager failed";
-        return ret;
+        return err;
     }
     dbc::network::connection_manager::instance().start();
     LOG_INFO << "init connection manager successful";
 
     // p2p_net_service
     LOG_INFO << "begin to init p2p_net_service";
-    ret = p2p_net_service::instance().init();
-    if (E_SUCCESS != ret) {
+    err = p2p_net_service::instance().init();
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init p2p_net_service failed";
-        return ret;
+        return err;
     }
     p2p_net_service::instance().start();
     LOG_INFO << "init p2p_net_service successful";
 
     LOG_INFO << "begin to init rest_api_service";
-    ret = rest_api_service::instance().init();
-    if (E_SUCCESS != ret) {
+    err = rest_api_service::instance().init();
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init rest_api_service failed";
-        return ret;
+        return err;
     }
     rest_api_service::instance().start();
     LOG_INFO << "init rest_api_service successful";
 
     LOG_INFO << "begin to init http_server_service";
-    ret = http_server_service::instance().init(args);
-    if (E_SUCCESS != ret) {
+    err = http_server_service::instance().init(options);
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init http_server_service failed";
-        return ret;
+        return err;
     }
     http_server_service::instance().start();
     LOG_INFO << "init http_server_service successful";
 
     LOG_INFO << "begin to init node_monitor_service";
-    ret = node_monitor_service::instance().init(args);
-    if (E_SUCCESS != ret) {
+    err = node_monitor_service::instance().init(options);
+    if (ERR_SUCCESS != err) {
         LOG_ERROR << "init node_monitor_service failed";
-        return ret;
+        return err;
     }
     node_monitor_service::instance().start();
     LOG_INFO << "init node_monitor_service successful";
 
     LOG_INFO << "server init successfully";
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
-void server::idle() {
-    while (!m_stop) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+ERRCODE Server::InitCrypto(bpo::variables_map &options) {
+    //openssl multithread lock
+    g_ssl_lock.reset(new std::recursive_mutex[CRYPTO_num_locks()]);
+    CRYPTO_set_locking_callback(ssl_locking_callback);
+    OPENSSL_no_config();
+
+    //rand seed
+    RandAddSeed();                          // Seed OpenSSL PRNG with performance counter
+
+    //elliptic curve code
+    std::string sha256_algo = SHA256AutoDetect();
+    RandomInit();
+    ECC_Start();
+    g_ecc_verify_handle.reset(new ECCVerifyHandle());
+
+    //ecc check
+    if (!ECC_InitSanityCheck())
+    {
+        // "Elliptic curve cryptography sanity check failure. Aborting.";
+        return E_DEFAULT;
     }
+
+    //random check
+    if (!Random_SanityCheck())
+    {
+        //LOG_ERROR << "OS cryptographic RNG sanity check failure. Aborting.";
+        return E_DEFAULT;
+    }
+
+    return ERR_SUCCESS;
 }
 
-void server::exit() {
-    m_stop = true;
+ERRCODE Server::ExitCrypto()
+{
+    //rand clean
+    RAND_cleanup();                         // Securely erase the memory used by the PRNG
 
-    if (m_timer_matrix_manager) m_timer_matrix_manager->stop();
-    node_request_service::instance().stop();
-    dbc::network::connection_manager::instance().stop();
-    p2p_net_service::instance().stop();
-    rest_api_service::instance().stop();
-    http_server_service::instance().stop();
+    //openssl multithread lock
+    CRYPTO_set_locking_callback(nullptr);               // Shutdown OpenSSL library multithreading support
+    g_ssl_lock.reset();                         // Clear the set of locks now to maintain symmetry with the constructor.
+
+    //ecc release
+    g_ecc_verify_handle.reset();
+    ECC_Stop();
+
+    return ERR_SUCCESS;
 }
 
-int32_t server::parse_command_line(int argc, const char *const argv[],
-                                                 boost::program_options::variables_map &vm) {
+ERRCODE Server::ParseCommandLine(int argc, char* argv[], bpo::variables_map &options) {
     options_description opts("dbc command options");
     opts.add_options()
-        ("daemon,d", "run as daemon process")
-        ("ai_training,a", "run as ai training service provider")
-        ("name,n", bpo::value<std::string>(), "node name")
-        ("version,v", "dbc version");
+            ("daemon,d", "run as daemon process")
+            ("ai_training,a", "run as ai training service provider")
+            ("name,n", bpo::value<std::string>(), "node name")
+            ("version,v", "dbc version");
 
     try {
-        bpo::store(bpo::parse_command_line(argc, argv, opts), vm);
-        bpo::notify(vm);
+        bpo::store(bpo::parse_command_line(argc, argv, opts), options);
+        bpo::notify(options);
     }
     catch (const std::exception &e) {
-        std::cout << "invalid command option " << e.what() << std::endl;
-        std::cout << opts;
-        return E_BAD_PARAM;
+        std::cout << "invalid command option: " << e.what() << std::endl;
+        std::cout << opts << std::endl;
+        return ERR_ERROR;
     }
 
-    if (vm.count("version")) {
+    if (options.count("version")) {
         std::cout << "version: " << dbcversion() << std::endl;
-        return E_DEFAULT;
-    } else if (vm.count("daemon")) {
-        on_daemon();
-        return E_SUCCESS;
+        return ERR_ERROR;
+    } else if (options.count("daemon")) {
+        Daemon();
+        return ERR_SUCCESS;
     } else {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 }
 
-/*
-int32_t server::on_daemon() {
-    if (daemon(1, 1)) {
-        LOG_ERROR << "dbc daemon error: " << strerror(errno);
-        return E_DEFAULT;
-    }
-
-    //redirect std io to /dev/null
-    int fd = open("/dev/null", O_RDWR);
-    if (fd < 0) {
-        LOG_ERROR << "dbc daemon open /dev/null error";
-        return E_DEFAULT;
-    }
-    dup2(fd, STDIN_FILENO);
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
-    close(fd);
-
-    m_daemon = true;
-    return E_SUCCESS;
-}
-*/
-
-void server::on_daemon()
+void Server::Daemon()
 {
     pid_t pid;
-
     if ((pid = fork()) != 0) {
         ::exit(0);
     }
@@ -243,6 +262,24 @@ void server::on_daemon()
 
     for (int i = 3; i < 64; i++)
         close(i);
-
-    m_daemon = true;
 }
+
+void Server::Idle() {
+    while (m_running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+}
+
+void Server::Exit() {
+    if (m_timer_matrix_manager)
+        m_timer_matrix_manager->stop();
+    dbc::network::connection_manager::instance().stop();
+    p2p_net_service::instance().stop();
+    http_server_service::instance().stop();
+    node_request_service::instance().stop();
+    rest_api_service::instance().stop();
+    ExitCrypto();
+
+    m_running = false;
+}
+

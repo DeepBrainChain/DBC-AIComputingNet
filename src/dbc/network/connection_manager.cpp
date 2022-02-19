@@ -46,7 +46,7 @@ namespace dbc
 
             //init io services
             int32_t ret = init_io_services();
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager init thread group failed";
                 return ret;
@@ -54,25 +54,25 @@ namespace dbc
 
             //start io services
             ret = start_io_services();
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager start all io services failed";
                 return ret;
             }
 
             ret = load_max_connect();
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager load max_connect failed";
                 return ret;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::load_max_connect()
         {
-            m_max_connect = conf_manager::instance().get_max_connect_count();
+            m_max_connect = ConfManager::instance().GetMaxConnectCount();
 
             if (m_max_connect < 0)
             {
@@ -93,7 +93,7 @@ namespace dbc
             m_max_connect = (std::min)(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, m_max_connect);
             m_max_connect = (std::max)(m_max_connect, MAX_OUTBOUND_CONNECTIONS);
             LOG_DEBUG << "max_connect: " <<m_max_connect;
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         void connection_manager::init_subscription()
@@ -119,11 +119,11 @@ namespace dbc
 
         int32_t connection_manager::init_io_services()
         {
-            int32_t ret = E_SUCCESS;
+            int32_t ret = ERR_SUCCESS;
 
             //acceptor group
             ret = m_acceptor_group->init(DEFAULT_ACCEPTOR_THREAD_COUNT);
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager init acceptor group failed";
                 return ret;
@@ -131,7 +131,7 @@ namespace dbc
 
             //worker group
             ret = m_worker_group->init(DEFAULT_WORKER_THREAD_COUNT);
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager init worker group failed";
                 m_acceptor_group->exit();
@@ -140,7 +140,7 @@ namespace dbc
 
             //connector group
             m_connector_group->init(DEFAULT_CONNECTOR_THREAD_COUNT);
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager init connector group failed";
                 m_acceptor_group->exit();
@@ -149,7 +149,7 @@ namespace dbc
                 return ret;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::exit_io_services()
@@ -158,17 +158,17 @@ namespace dbc
             m_worker_group->exit();
             m_connector_group->exit();
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::start_io_services()
         {
-            int32_t ret = E_SUCCESS;
+            int32_t ret = ERR_SUCCESS;
 
             //acceptor group
             LOG_INFO << "connection manager start acceptor group";
             ret = m_acceptor_group->start();
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager start acceptor io services failed and exit";
                 return ret;
@@ -177,7 +177,7 @@ namespace dbc
             //worker group
             LOG_INFO << "connection manager start worker group";
             ret = m_worker_group->start();
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager start woker io services failed and exit";
                 m_acceptor_group->stop();
@@ -187,7 +187,7 @@ namespace dbc
             //connector group
             LOG_INFO << "connection manager start connector group";
             ret = m_connector_group->start();
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "connection manager start connector io services failed and exit";
                 m_acceptor_group->stop();
@@ -195,7 +195,7 @@ namespace dbc
                 return ret;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::stop_io_services()
@@ -211,7 +211,7 @@ namespace dbc
                 LOG_ERROR << "connection_manager stop_io_services error:" << diagnostic_information(e);
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
          int32_t connection_manager::stop_all_listen()
@@ -223,7 +223,7 @@ namespace dbc
                 (*it)->stop();
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
          }
 
         int32_t connection_manager::stop_all_connect()
@@ -235,7 +235,7 @@ namespace dbc
                 (*it)->stop();
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::stop_all_channel()
@@ -256,7 +256,7 @@ namespace dbc
 
             m_channels.clear();
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
                 }
 
         int32_t connection_manager::stop_all_recycle_channel()
@@ -277,7 +277,7 @@ namespace dbc
 
             m_recycle_channels.clear();
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::start_listen(tcp::endpoint ep, handler_create_functor func)
@@ -291,7 +291,7 @@ namespace dbc
                 assert(acceptor != nullptr);
 
                 int32_t ret = acceptor->start();
-                if (E_SUCCESS != ret)
+                if (ERR_SUCCESS != ret)
                 {
                     LOG_ERROR << "connection manager start listen failed at port: " << ep.port();
                     return ret;
@@ -316,7 +316,7 @@ namespace dbc
                 return E_DEFAULT;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::stop_listen(tcp::endpoint ep)
@@ -335,10 +335,10 @@ namespace dbc
 
                 //erase
                 m_acceptors.erase(it);
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::start_connect(tcp::endpoint connect_addr, handler_create_functor func)
@@ -352,7 +352,7 @@ namespace dbc
 
                 //start
                 int32_t ret = connector->start();//retry twice
-                if (E_SUCCESS != ret)
+                if (ERR_SUCCESS != ret)
                 {
                     LOG_ERROR << "connection manager start connect failed at addr: " << connect_addr.address().to_string() << " " << connect_addr.port();
                     return ret;
@@ -364,7 +364,7 @@ namespace dbc
             catch (const std::exception &e)
             {
                 LOG_ERROR << "connection_manager start connect exception error: " << e.what();
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
             catch (const boost::exception & e)
             {
@@ -377,7 +377,7 @@ namespace dbc
                 return E_DEFAULT;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::stop_connect(tcp::endpoint connect_addr)
@@ -396,10 +396,10 @@ namespace dbc
 
                 //erase
                 m_connectors.erase(it);
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t connection_manager::release_connector(socket_id sid)
@@ -418,7 +418,7 @@ namespace dbc
 
                 //erase
                 m_connectors.erase(it);
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             return E_NOT_FOUND;
@@ -445,7 +445,7 @@ namespace dbc
             {
                 LOG_DEBUG << "connection manager add channel successfully " << sid.to_string();
 
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
         }
 
@@ -537,7 +537,7 @@ namespace dbc
                          << ", message name: " << msg->get_name();
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
 		}
 
         std::shared_ptr<channel> connection_manager::find_fast_path(std::vector<std::string>& path)
@@ -795,14 +795,14 @@ namespace dbc
                 if (it != m_recycle_channels.end())         //already in recycle channels
                 {
                     LOG_ERROR << "connection manager add channel to recycle channels but found exists" << sid.to_string();
-                    return E_SUCCESS;
+                    return ERR_SUCCESS;
                 }
 
                 m_recycle_channels[sid] = ch;
                 LOG_DEBUG << "connection manager on tcp channel error, add recycle tcp socket channel" << sid.to_string();
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         void connection_manager::remove_timers()

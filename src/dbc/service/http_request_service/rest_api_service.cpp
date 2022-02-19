@@ -63,7 +63,7 @@ int32_t rest_api_service::init() {
         m_rsp_handlers[name] = rsp_handler.handler;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void rest_api_service::init_timer() {
@@ -308,14 +308,14 @@ int32_t rest_api_service::create_request_session(const std::string& timer_id,
         session->get_context().add(HTTP_REQUEST_KEY, val);
 
         int32_t ret = this->add_session(session_id, session);
-        if (E_SUCCESS != ret) {
+        if (ERR_SUCCESS != ret) {
             remove_timer(id);
             LOG_ERROR << "add_session failed, uri:" << str_uri;
             return E_DEFAULT;
         }
     } while (0);
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 static bool parse_req_params(const rapidjson::Document &doc, req_body& httpbody, std::string& error) {
@@ -453,7 +453,7 @@ static bool parse_req_params(const rapidjson::Document &doc, req_body& httpbody,
         }
     }
     // pub_key
-    httpbody.pub_key = conf_manager::instance().get_pub_key();
+    httpbody.pub_key = ConfManager::instance().GetPubKey();
     if (httpbody.pub_key.empty()) {
         error = "pub_key is empty";
         return false;
@@ -572,7 +572,7 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
     }
 
     if (!has_peer_nodeid(body)) {
-        auto svrs = conf_manager::instance().get_image_servers();
+        auto svrs = ConfManager::instance().GetImageServers();
         if (svrs.empty()) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
         } else {
@@ -609,14 +609,14 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
             return;
         }
 
-        if (E_SUCCESS != create_request_session(NODE_LIST_IMAGES_TIMER, httpReq, node_req_msg, head_session_id,
+        if (ERR_SUCCESS != create_request_session(NODE_LIST_IMAGES_TIMER, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
             LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
@@ -628,7 +628,7 @@ std::shared_ptr<dbc::network::message>
 rest_api_service::create_node_list_images_req_msg(const std::string &head_session_id, const req_body &body) {
     auto req_content = std::make_shared<dbc::node_list_images_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_LIST_IMAGES_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -636,7 +636,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
     // body
     dbc::node_list_images_req_data req_data;
@@ -659,7 +659,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
-    auto svrs = conf_manager::instance().get_image_servers();
+    auto svrs = ConfManager::instance().GetImageServers();
     for (auto& iter : svrs) {
         std::string str_svr = iter.to_string();
         std::vector<std::string> vec;
@@ -676,7 +676,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -709,7 +709,7 @@ void rest_api_service::on_node_list_images_rsp(const std::shared_ptr<dbc::networ
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         LOG_ERROR << "pub_key or priv_key is empty";
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
@@ -829,7 +829,7 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
 
     std::string head_session_id = util::create_session_id();
 
-    auto svrs = conf_manager::instance().get_image_servers();
+    auto svrs = ConfManager::instance().GetImageServers();
     if (svrs.empty()) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
         return;
@@ -842,13 +842,13 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_DOWNLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_DOWNLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -860,7 +860,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_download_image_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_DOWNLOAD_IMAGE_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -868,7 +868,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
     // body
     dbc::node_download_image_req_data req_data;
@@ -891,7 +891,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
-    auto svrs = conf_manager::instance().get_image_servers();
+    auto svrs = ConfManager::instance().GetImageServers();
     for (auto& iter : svrs) {
         std::string str_svr = iter.to_string();
         std::vector<std::string> vec;
@@ -908,7 +908,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -942,7 +942,7 @@ rest_api_service::on_node_download_image_rsp(const std::shared_ptr<dbc::network:
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -1058,7 +1058,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
 
     if (!has_peer_nodeid(body)) {
         // 从client节点上传镜像到镜像中心
-        auto svrs = conf_manager::instance().get_image_servers();
+        auto svrs = ConfManager::instance().GetImageServers();
         if (svrs.empty()) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
         } else {
@@ -1089,7 +1089,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
 
         std::string head_session_id = util::create_session_id();
 
-        auto svrs = conf_manager::instance().get_image_servers();
+        auto svrs = ConfManager::instance().GetImageServers();
         if (svrs.empty()) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
             return;
@@ -1102,14 +1102,14 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
             return;
         }
 
-        if (E_SUCCESS != create_request_session(NODE_UPLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id,
+        if (ERR_SUCCESS != create_request_session(NODE_UPLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
             LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
@@ -1122,7 +1122,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_upload_image_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_UPLOAD_IMAGE_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -1130,7 +1130,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
     // body
     dbc::node_upload_image_req_data req_data;
@@ -1153,7 +1153,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
-    auto svrs = conf_manager::instance().get_image_servers();
+    auto svrs = ConfManager::instance().GetImageServers();
     for (auto& iter : svrs) {
         std::string str_svr = iter.to_string();
         std::vector<std::string> vec;
@@ -1170,7 +1170,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -1203,7 +1203,7 @@ void rest_api_service::on_node_upload_image_rsp(const std::shared_ptr<dbc::netwo
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -1391,13 +1391,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -1408,7 +1408,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
                                                                                        const req_body& body) {
     auto req_content = std::make_shared<dbc::node_list_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_LIST_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -1416,7 +1416,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -1450,7 +1450,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -1483,7 +1483,7 @@ void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network:
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -1616,13 +1616,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -1632,7 +1632,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task_req_msg(const std::string &head_session_id, const req_body& body) {
     auto req_content = std::make_shared<dbc::node_create_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_CREATE_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -1640,7 +1640,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -1664,7 +1664,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
-    auto svrs = conf_manager::instance().get_image_servers();
+    auto svrs = ConfManager::instance().GetImageServers();
     for (auto& iter : svrs) {
         std::string str_svr = iter.to_string();
         std::vector<std::string> vec;
@@ -1681,7 +1681,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -1714,7 +1714,7 @@ void rest_api_service::on_node_create_task_rsp(const std::shared_ptr<dbc::networ
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -1854,13 +1854,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -1871,7 +1871,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_start_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_START_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -1879,7 +1879,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -1913,7 +1913,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -1946,7 +1946,7 @@ void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<dbc::network
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -2086,13 +2086,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -2104,7 +2104,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_stop_task_req> req_content = std::make_shared<dbc::node_stop_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_STOP_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -2112,7 +2112,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -2146,7 +2146,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -2179,7 +2179,7 @@ void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<dbc::network:
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -2331,13 +2331,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -2349,7 +2349,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_restart_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_RESTART_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -2357,7 +2357,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -2394,7 +2394,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -2427,7 +2427,7 @@ void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<dbc::netwo
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -2567,13 +2567,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -2585,7 +2585,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_reset_task_req> req_content = std::make_shared<dbc::node_reset_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_RESET_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -2593,7 +2593,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -2627,7 +2627,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -2660,7 +2660,7 @@ void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<dbc::network
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -2800,13 +2800,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -2818,7 +2818,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_delete_task_req> req_content = std::make_shared<dbc::node_delete_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_DELETE_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -2826,7 +2826,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -2860,7 +2860,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -2893,7 +2893,7 @@ void rest_api_service::on_node_delete_task_rsp(const std::shared_ptr<dbc::networ
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -3033,13 +3033,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -3051,7 +3051,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_modify_task_req> req_content = std::make_shared<dbc::node_modify_task_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_MODIFY_TASK_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -3059,7 +3059,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -3093,7 +3093,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -3126,7 +3126,7 @@ void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<dbc::networ
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -3306,13 +3306,13 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -3323,7 +3323,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
                                                    const req_body& body) {
     auto req_content = std::make_shared<dbc::node_task_logs_req>();
     //header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_TASK_LOGS_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -3331,7 +3331,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     //body
@@ -3367,7 +3367,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -3400,7 +3400,7 @@ void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<dbc::network:
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -3582,13 +3582,13 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
             return;
         }
 
-        if (E_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        if (ERR_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
             LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
@@ -3600,7 +3600,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
                                                                                              const req_body& body) {
     auto req_content = std::make_shared<dbc::node_query_node_info_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_QUERY_NODE_INFO_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -3608,7 +3608,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -3632,7 +3632,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
 
-    auto svrs = conf_manager::instance().get_image_servers();
+    auto svrs = ConfManager::instance().GetImageServers();
     for (auto& iter : svrs) {
         std::string str_svr = iter.to_string();
         std::vector<std::string> vec;
@@ -3649,7 +3649,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -3682,7 +3682,7 @@ void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::ne
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -3815,13 +3815,13 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -3833,7 +3833,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_session_id_req> req_content = std::make_shared<dbc::node_session_id_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_SESSION_ID_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -3841,7 +3841,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -3872,7 +3872,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -3905,7 +3905,7 @@ void rest_api_service::on_node_session_id_rsp(const std::shared_ptr<dbc::network
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -4032,7 +4032,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
 
         std::list<cmd_peer_node_info> peer_nodes_list;
         for (auto itn = vPeers.begin(); itn != vPeers.end(); ++itn) {
-            if (conf_manager::instance().get_node_id() == (*itn)->m_id ||
+            if (ConfManager::instance().GetNodeId() == (*itn)->m_id ||
                 SystemInfo::instance().publicip() == (*itn)->m_peer_addr.get_ip())
                 continue;
 
@@ -4065,7 +4065,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
 
         std::list<cmd_peer_node_info> peer_nodes_list;
         for (auto it = vPeers.begin(); it != vPeers.end(); ++it) {
-            if (conf_manager::instance().get_node_id() == (*it)->node_id ||
+            if (ConfManager::instance().GetNodeId() == (*it)->node_id ||
                 SystemInfo::instance().publicip() == (*it)->tcp_ep.address().to_string())
                 continue;
 
@@ -4098,7 +4098,7 @@ void rest_api_service::rest_stat(const std::shared_ptr<dbc::network::http_reques
     rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
 
     rapidjson::Value data(rapidjson::kObjectType);
-    std::string node_id = conf_manager::instance().get_node_id();
+    std::string node_id = ConfManager::instance().GetNodeId();
 
     data.AddMember("node_id", STRING_REF(node_id), allocator);
     data.AddMember("session_count", rest_api_service::instance().get_session_count(), allocator);
@@ -4195,7 +4195,7 @@ void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::mes
 
     if (msg_name.substr(msg_name.size() - 4) == std::string("_req")) {
         // add path
-        msg->content->header.path.push_back(conf_manager::instance().get_node_id());
+        msg->content->header.path.push_back(ConfManager::instance().GetNodeId());
 
         LOG_INFO << "broadcast_message binary forward msg";
         dbc::network::connection_manager::instance().broadcast_message(msg);
@@ -4203,7 +4203,7 @@ void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::mes
         dbc::network::connection_manager::instance().send_resp_message(msg);
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
     */
 }
 
@@ -4302,13 +4302,13 @@ void rest_api_service::rest_list_snapshot(const std::shared_ptr<dbc::network::ht
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_LIST_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_LIST_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -4319,7 +4319,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_snapsh
                                                                                        const req_body& body) {
     auto req_content = std::make_shared<dbc::node_list_snapshot_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_LIST_SNAPSHOT_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -4327,7 +4327,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_snapsh
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -4362,7 +4362,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_snapsh
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -4395,7 +4395,7 @@ void rest_api_service::on_node_list_snapshot_rsp(const std::shared_ptr<dbc::netw
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -4535,13 +4535,13 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<dbc::network::
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_CREATE_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_CREATE_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -4551,7 +4551,7 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<dbc::network::
 std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_snapshot_req_msg(const std::string &head_session_id, const req_body& body) {
     auto req_content = std::make_shared<dbc::node_create_snapshot_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_CREATE_SNAPSHOT_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -4559,7 +4559,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_snap
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -4593,7 +4593,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_snap
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -4626,7 +4626,7 @@ void rest_api_service::on_node_create_snapshot_rsp(const std::shared_ptr<dbc::ne
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";
@@ -4773,13 +4773,13 @@ void rest_api_service::rest_delete_snapshot(const std::shared_ptr<dbc::network::
         return;
     }
 
-    if (E_SUCCESS != create_request_session(NODE_DELETE_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+    if (ERR_SUCCESS != create_request_session(NODE_DELETE_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != E_SUCCESS) {
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
@@ -4791,7 +4791,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_snap
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_delete_snapshot_req> req_content = std::make_shared<dbc::node_delete_snapshot_req>();
     // header
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(NODE_DELETE_SNAPSHOT_REQ);
     req_content->header.__set_nonce(util::create_nonce());
     req_content->header.__set_session_id(head_session_id);
@@ -4799,7 +4799,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_snap
     exten_info["pub_key"] = body.pub_key;
     req_content->header.__set_exten_info(exten_info);
     std::vector<std::string> path;
-    path.push_back(conf_manager::instance().get_node_id());
+    path.push_back(ConfManager::instance().GetNodeId());
     req_content->header.__set_path(path);
 
     // body
@@ -4834,7 +4834,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_snap
     bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
     if (bfound) {
         std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
-        std::string priv_key = conf_manager::instance().get_priv_key();
+        std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
@@ -4867,7 +4867,7 @@ void rest_api_service::on_node_delete_snapshot_rsp(const std::shared_ptr<dbc::ne
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
-    std::string priv_key = conf_manager::instance().get_priv_key();
+    std::string priv_key = ConfManager::instance().GetPrivKey();
     if (pub_key.empty() || priv_key.empty()) {
         httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
         LOG_ERROR << "pub_key or priv_key is empty";

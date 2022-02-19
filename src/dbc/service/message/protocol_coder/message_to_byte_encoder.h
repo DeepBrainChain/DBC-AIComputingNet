@@ -28,7 +28,7 @@ public:
             return ENCODE_ERROR;
         }
 
-        return ENCODE_SUCCESS;
+        return ENCODERR_SUCCESS;
     }
 };
 

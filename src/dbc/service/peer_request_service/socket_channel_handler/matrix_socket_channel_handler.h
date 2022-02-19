@@ -34,7 +34,7 @@ public:
 
 public:
 
-    virtual int32_t start() { return E_SUCCESS; }
+    virtual int32_t start() { return ERR_SUCCESS; }
 
     virtual int32_t stop();
 
@@ -44,13 +44,13 @@ public:
 
     virtual int32_t on_error();
 
-    virtual int32_t on_before_msg_send(dbc::network::message &msg) { return E_SUCCESS; }
+    virtual int32_t on_before_msg_send(dbc::network::message &msg) { return ERR_SUCCESS; }
 
-    virtual int32_t on_after_msg_sent(dbc::network::message &msg) { return E_SUCCESS; }
+    virtual int32_t on_after_msg_sent(dbc::network::message &msg) { return ERR_SUCCESS; }
 
-    virtual int32_t on_after_msg_received(dbc::network::message &msg) { return E_SUCCESS; }
+    virtual int32_t on_after_msg_received(dbc::network::message &msg) { return ERR_SUCCESS; }
 
-    virtual int32_t on_before_msg_receive() { return E_SUCCESS; }
+    virtual int32_t on_before_msg_receive() { return ERR_SUCCESS; }
 
     virtual bool is_logined() { return m_login_success; }
 

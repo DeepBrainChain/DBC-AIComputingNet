@@ -72,11 +72,11 @@ namespace dbc
         //htonll
         inline uint64_t htonll(uint64_t val)
         {
-            if (env_manager::instance().get_endian_type() == little_endian)
+            if (EnvManager::instance().get_endian_type() == little_endian)
             {
                 return (((unsigned long long)htonl((int)((val << 32) >> 32))) << 32) | (unsigned int)htonl((int)(val >> 32));
             }
-            else if (env_manager::instance().get_endian_type() == big_endian)
+            else if (EnvManager::instance().get_endian_type() == big_endian)
             {
                 return val;
             }
@@ -89,11 +89,11 @@ namespace dbc
         //ntohll
         inline uint64_t ntohll(uint64_t val)
         {
-            if (env_manager::instance().get_endian_type() == little_endian)
+            if (EnvManager::instance().get_endian_type() == little_endian)
             {
                 return (((unsigned long long)ntohl((int)((val << 32) >> 32))) << 32) | (unsigned int)ntohl((int)(val >> 32));
             }
-            else if (env_manager::instance().get_endian_type() == big_endian)
+            else if (EnvManager::instance().get_endian_type() == big_endian)
             {
                 return val;
             }
@@ -538,9 +538,9 @@ namespace dbc
             base() = default;
             virtual ~base() = default;
 
-            virtual uint32_t validate() const { return E_SUCCESS; }
-            virtual uint32_t read(protocol * iprot) { return E_SUCCESS; }
-            virtual uint32_t write(protocol * oprot) const { return E_SUCCESS; }
+            virtual uint32_t validate() const { return ERR_SUCCESS; }
+            virtual uint32_t read(protocol * iprot) { return ERR_SUCCESS; }
+            virtual uint32_t write(protocol * oprot) const { return ERR_SUCCESS; }
         };
 
         class msg_base: public virtual base

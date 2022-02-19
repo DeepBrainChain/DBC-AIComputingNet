@@ -12,7 +12,7 @@ matrix_server_socket_channel_handler::matrix_server_socket_channel_handler(std::
 
 int32_t matrix_server_socket_channel_handler::start()
 {
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 
 }
 
@@ -72,7 +72,7 @@ int32_t matrix_server_socket_channel_handler::stop()
 
     m_stopped = true;
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network::message &msg)
@@ -84,7 +84,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
     }
 
     //check magic
-    if (conf_manager::instance().get_net_flag() != msg.content->header.magic)
+    if (ConfManager::instance().GetNetFlag() != msg.content->header.magic)
     {
         LOG_ERROR << "matrix server socket channel received error magic: " << msg.content->header.magic;
         return E_DEFAULT;
@@ -102,7 +102,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
     if (VER_REQ == msg.get_name())
     {
         auto req_content = std::dynamic_pointer_cast<dbc::ver_req>(msg.content);
-        if (req_content->body.node_id == conf_manager::instance().get_node_id())
+        if (req_content->body.node_id == ConfManager::instance().GetNodeId())
         {
             LOG_ERROR << "matrix server socket channel received itself node id: " << req_content->body.node_id << msg.header.src_sid.to_string();
             return E_DEFAULT;
@@ -116,7 +116,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
 
         m_recv_ver_req = true;
         stop_wait_ver_req_timer();
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     //send shake hand resp in handler
@@ -126,7 +126,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
     }
 
     m_lost_shake_hand_count = 0;
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t matrix_server_socket_channel_handler::on_after_msg_sent(dbc::network::message &msg)
@@ -137,18 +137,18 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_sent(dbc::network::me
         start_shake_hand_timer();
 
         LOG_DEBUG << "matrix server socket channel handler start shake hand timer, " << m_sid.to_string();
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     //reset
     m_lost_shake_hand_count = 0;
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t matrix_server_socket_channel_handler::on_before_msg_receive()
 {
     start_wait_ver_req_timer();
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 std::shared_ptr<dbc::network::socket_channel_handler> matrix_server_socket_channel_handler::create(std::shared_ptr<dbc::network::channel> ch)
@@ -165,7 +165,7 @@ void matrix_server_socket_channel_handler::send_shake_hand_resp()
 
     //header
     //req_content->header.length = 0;
-    req_content->header.__set_magic(conf_manager::instance().get_net_flag());
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
     req_content->header.__set_msg_name(SHAKE_HAND_RESP);
 
     resp_msg->set_content(req_content);

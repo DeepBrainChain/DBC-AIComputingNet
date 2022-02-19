@@ -4,7 +4,6 @@
 #include "util/utils.h"
 #include "network/compress/matrix_capacity.h"
 
-//using namespace boost::program_options;
 namespace bpo = boost::program_options;
 
 struct peer_seeds {
@@ -24,48 +23,50 @@ struct ImageServer {
     void from_string(const std::string& str);
 };
 
-class conf_manager : public Singleton<conf_manager>
+class ConfManager : public Singleton<ConfManager>
 {
 public:
-    conf_manager();
+    ConfManager();
 
-    virtual ~conf_manager() = default;
+    virtual ~ConfManager() = default;
 
-    ERR_CODE init();
+    ERRCODE Init();
 
-    int32_t get_log_level() const { return m_log_level; }
+    std::string GetVersion() const { return m_version; }
 
-    std::string get_net_type() const { return m_net_type; }
+    int32_t GetLogLevel() const { return m_log_level; }
 
-    int32_t get_net_flag() const { return m_net_flag; }
+    std::string GetNetType() const { return m_net_type; }
 
-    std::string get_net_listen_ip() const { return m_net_listen_ip; }
+    int32_t GetNetFlag() const { return m_net_flag; }
 
-    int32_t get_net_listen_port() const { return m_net_listen_port; }
+    std::string GetNetListenIp() const { return m_net_listen_ip; }
 
-    int32_t get_max_connect_count() const { return m_max_connect_count; }
+    int32_t GetNetListenPort() const { return m_net_listen_port; }
 
-    std::string get_http_ip() const { return m_http_ip; }
+    int32_t GetMaxConnectCount() const { return m_max_connect_count; }
 
-    int32_t get_http_port() const { return m_http_port; }
+    std::string GetHttpListenIp() const { return m_http_listen_ip; }
 
-    std::vector<std::string> get_dbc_chain_domain() const { return m_dbc_chain_domain; }
+    int32_t GetHttpListenPort() const { return m_http_listen_port; }
 
-    const std::vector<std::string> &get_ip_seeds() { return m_internal_ip_seeds; }
+    std::vector<std::string> GetDbcChainDomain() const { return m_dbc_chain_domain; }
 
-    const std::vector<std::string> &get_dns_seeds() { return m_internal_dns_seeds; }
+    const std::vector<ImageServer>& GetImageServers() const { return m_image_server; }
 
-    const std::vector<std::string> & get_peers() { return m_peers; }
+    const std::vector<std::string> & GetPeers() { return m_peers; }
 
-    std::string get_node_id() const { return m_node_id; }
+    const std::vector<std::string> &GetInternalIpSeeds() { return m_internal_ip_seeds; }
 
-    std::string get_node_private_key() const { return m_node_private_key; }
+    const std::vector<std::string> &GetInternalDnsSeeds() { return m_internal_dns_seeds; }
 
-    std::string get_pub_key() const { return m_pub_key; }
+    std::string GetNodeId() const { return m_node_id; }
 
-    std::string get_priv_key() const { return m_priv_key; }
+    std::string GetNodePrivateKey() const { return m_node_private_key; }
 
-    const std::vector<ImageServer>& get_image_servers() const { return m_image_servers; }
+    std::string GetPubKey() const { return m_pub_key; }
+
+    std::string GetPrivKey() const { return m_priv_key; }
 
     int32_t get_timer_service_broadcast_in_second() {
         return 30;
@@ -112,47 +113,41 @@ public:
     }
 
 protected:
-    int32_t parse_local_conf();
+    ERRCODE ParseConf();
 
-    int32_t parse_node_dat();
+    ERRCODE ParseDat();
 
-    ERR_CODE create_new_nodeid();
+    ERRCODE CreateNewNodeId();
 
-    int32_t serialize_node_info(const util::machine_node_info &info);
+    ERRCODE SerializeNodeInfo(const util::machine_node_info &info);
 
-    bool check_node_id();
+    bool CheckNodeId();
 
-    void create_crypto_keypair();
+    void CreateCryptoKeypair();
 
 private:
+    std::string m_version = "0.3.7.3";
     int32_t m_log_level = 2;
-
-    std::string m_net_type;
-    int32_t m_net_flag;
-    std::string m_net_listen_ip;
-    int32_t m_net_listen_port = 10001;
-    int32_t m_max_connect_count = 0;
-
-    std::string m_http_ip;
-    int32_t m_http_port = 20001;
-
+    std::string m_net_type = "mainnet";
+    int32_t m_net_flag = 0xF1E1B0F9;
+    std::string m_net_listen_ip = "0.0.0.0";
+    int32_t m_net_listen_port = 5001;
+    int32_t m_max_connect_count = 1024;
+    std::string m_http_listen_ip = "127.0.0.1";
+    int32_t m_http_listen_port = 5050;
     std::vector<std::string> m_dbc_chain_domain;
+    std::vector<ImageServer> m_image_server;
 
+    std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;
     std::vector<std::string> m_internal_dns_seeds;
-    std::vector<std::string> m_peers;
 
     std::string m_node_id;
     std::string m_node_private_key;
-
     std::string m_pub_key;
     std::string m_priv_key;
 
-    std::string m_version = "0.3.7.3";
-
     dbc::network::matrix_capacity m_proto_capacity;
-
-    std::vector<ImageServer> m_image_servers;
 };
 
 #endif

@@ -20,7 +20,7 @@ int32_t service_module::init()
 
     init_time_tick_subscription();
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void service_module::init_time_tick_subscription() {
@@ -135,7 +135,7 @@ int32_t service_module::add_session(const std::string& session_id, const std::sh
     auto it = m_sessions.find(session_id);
     if (it == m_sessions.end()) {
         m_sessions.insert({ session_id, session });
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     } else {
         return E_DEFAULT;
     }

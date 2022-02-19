@@ -12,7 +12,7 @@
 
 int32_t http_server_service::init(bpo::variables_map &options) {
     int32_t ret = load_rest_config(options);
-    if (ret != E_SUCCESS) {
+    if (ret != ERR_SUCCESS) {
         LOG_ERROR << "http server service load config error";
         return ret;
     }
@@ -20,18 +20,18 @@ int32_t http_server_service::init(bpo::variables_map &options) {
     rest_api_service::instance();
 
     if (m_listen_port == 0) {
-        return E_SUCCESS;
+        return ERR_SUCCESS;
     }
 
     if (!init_http_server()) {
         return E_EXIT_FAILURE;
     }
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
-    std::string conf_rest_ip = conf_manager::instance().get_http_ip();
+    std::string conf_rest_ip = ConfManager::instance().GetHttpListenIp();
     ip_validator ip_vdr;
     variable_value val;
     val.value() = conf_rest_ip;
@@ -42,7 +42,7 @@ int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
     m_listen_ip = conf_rest_ip;
 
     // rest port
-    int32_t conf_rest_port = conf_manager::instance().get_http_port();
+    int32_t conf_rest_port = ConfManager::instance().GetHttpListenPort();
     if (conf_rest_port <= 0) {
         LOG_ERROR << "http server init invalid port: " << conf_rest_port;
         return E_DEFAULT;
@@ -51,7 +51,7 @@ int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
     }
 
     LOG_INFO << "rest config: " << "rest ip:" << m_listen_ip << ", rest port:" << m_listen_port;
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 bool http_server_service::init_http_server() {

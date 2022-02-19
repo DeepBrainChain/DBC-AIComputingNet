@@ -182,7 +182,7 @@ namespace dbc
             rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
             rapidjson::Value root(rapidjson::kObjectType);
-            root.AddMember("errcode", RPC_RESPONSE_SUCCESS, allocator);
+            root.AddMember("errcode", RPC_RESPONSERR_SUCCESS, allocator);
             root.AddMember("message", data, allocator);
 
             std::shared_ptr<rapidjson::StringBuffer> buffer = std::make_shared<rapidjson::StringBuffer>();

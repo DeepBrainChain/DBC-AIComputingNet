@@ -2,7 +2,7 @@
 #include "log/log.h"
 
 bool WalletSessionIDManager::init() {
-    bool ret = m_db.init_db(env_manager::instance().get_db_path(), "sessionid.db");
+    bool ret = m_db.init_db(EnvManager::instance().get_db_path(), "sessionid.db");
     if (!ret) {
         LOG_ERROR << "init sessionid_db failed";
         return false;

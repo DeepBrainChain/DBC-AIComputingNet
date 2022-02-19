@@ -20,7 +20,7 @@ int32_t node_monitor_service::init(bpo::variables_map &options) {
     service_module::init();
 
     m_monitor_servers.push_back({DBC_ZABBIX_SERVER_IP, DBC_ZABBIX_SERVER_PORT});
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void node_monitor_service::init_timer() {

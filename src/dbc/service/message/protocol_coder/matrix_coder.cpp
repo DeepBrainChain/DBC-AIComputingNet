@@ -162,14 +162,14 @@ std::shared_ptr<dbc::network::protocol> matrix_coder::get_protocol(int32_t type)
  * @param msg
  * @param header
  * @param proto
- * @return DECODE_SUCCESS if no error happened
+ * @return DECODERR_SUCCESS if no error happened
  */
 decode_status matrix_coder::decode_fast_forward(dbc::network::channel_handler_context &ctx,
                                                 byte_buf &in, std::shared_ptr<dbc::network::message> &msg,
                                                 dbc::network::base_header &header, std::shared_ptr<dbc::network::protocol> proto) {
     std::string local_node_id = get_local_node_id(ctx);
     if (local_node_id.empty()) {
-        return DECODE_SUCCESS;
+        return DECODERR_SUCCESS;
     }
 
     static std::vector<std::string> legacy_none_forwarding_messages{
@@ -186,7 +186,7 @@ decode_status matrix_coder::decode_fast_forward(dbc::network::channel_handler_co
              header.msg_name)
         != legacy_none_forwarding_messages.end()) {
         // do not forward the legacy none forwarding message.
-        return DECODE_SUCCESS;
+        return DECODERR_SUCCESS;
     }
 
 
@@ -212,7 +212,7 @@ decode_status matrix_coder::decode_fast_forward(dbc::network::channel_handler_co
         msg->set_name(BINARY_FORWARD_MSG);
     }
 
-    return DECODE_SUCCESS;
+    return DECODERR_SUCCESS;
 }
 
 
@@ -247,7 +247,7 @@ matrix_coder::decode_frame(dbc::network::channel_handler_context &ctx, byte_buf 
         }
 
         decode_status decodeRet = decode_service_frame(ctx, decode_in, msg, proto);
-        if (E_SUCCESS == decodeRet) {
+        if (ERR_SUCCESS == decodeRet) {
             int32_t framelen = before_decode_len - decode_in.get_valid_read_len();
             if (packet_header.packet_len != framelen) {
                 LOG_ERROR << "matrix msg_len error. msg_len in code frame is: " << packet_header.packet_len
@@ -279,7 +279,7 @@ matrix_coder::decode_service_frame(dbc::network::channel_handler_context &ctx, b
     // jimmy: fast_forward processing
     decode_status rtn = decode_fast_forward(ctx, in, msg, header, proto);
 
-    if (rtn != DECODE_SUCCESS) {
+    if (rtn != DECODERR_SUCCESS) {
         return rtn;
     }
 
@@ -300,7 +300,7 @@ matrix_coder::decode_service_frame(dbc::network::channel_handler_context &ctx, b
     auto invoker = it->second;
     invoker(msg, header, proto);
 
-    return DECODE_SUCCESS;
+    return DECODERR_SUCCESS;
 }
 
 template<typename msg_type>
@@ -382,7 +382,7 @@ encode_status matrix_coder::encode(dbc::network::channel_handler_context &ctx, d
         return ENCODE_ERROR;
     }
 
-    return ENCODE_SUCCESS;
+    return ENCODERR_SUCCESS;
 }
 
 template<typename msg_type>
@@ -419,7 +419,7 @@ decode_status matrix_coder::recv_message(byte_buf &in) {
             return DECODE_ERROR;
         }
     }
-    return DECODE_SUCCESS;
+    return DECODERR_SUCCESS;
 }
 
 

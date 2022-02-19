@@ -2,11 +2,22 @@
 #define DBC_ERROR_H
 
 #include <iostream>
-#include <tuple>
 #include <string>
-#include <functional>
 
-#define E_SUCCESS                                            0                   //success
+typedef int32_t ERRCODE;
+enum {
+    ERR_SUCCESS,
+    ERR_ERROR,
+
+};
+
+typedef std::tuple<int32_t, std::string> FResult;
+#define FResultOK { ERR_SUCCESS, "ok" }
+
+
+
+
+//#define E_SUCCESS                                            0                   //success
 #define E_EXIT_FAILURE                                      (-1)                  //exit because of failure
 #define E_EXIT_PARSE_COMMAND_LINE                           (-2)                  //exit because of failure
 #define E_DEFAULT                                           (-3)                  //default error, common use
@@ -35,7 +46,7 @@
 
 enum rpc_error_code
 {
-    RPC_RESPONSE_SUCCESS = 0,
+    RPC_RESPONSERR_SUCCESS = 0,
 
     //Error code before a request is processed
     RPC_INVALID_REQUEST = -32600,//The inspection request is illegal.
@@ -61,8 +72,6 @@ enum rpc_error_code
     RPC_INVALID_PARAMS = -25, //!<
 };
 
-typedef int32_t ERR_CODE;
-typedef std::tuple<int32_t, std::string> FResult;
-#define FResultOK {E_SUCCESS, "ok"}
+
 
 #endif // DBC_ERROR_H

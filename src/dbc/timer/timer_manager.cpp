@@ -94,7 +94,7 @@ int32_t timer_manager::process(uint64_t time_tick)
 
     remove_timers_list.clear();
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void timer_manager::remove_all_timers()

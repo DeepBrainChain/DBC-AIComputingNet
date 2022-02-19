@@ -107,7 +107,7 @@ int32_t dbclog::init()
     );
     //BOOST_LOG_TRIVIAL(info) << "init core log success.";
 
-    return E_SUCCESS;
+    return ERR_SUCCESS;
 }
 
 void dbclog::set_filter_level(boost::log::trivial::severity_level level)

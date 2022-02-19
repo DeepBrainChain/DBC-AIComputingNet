@@ -50,7 +50,7 @@ namespace dbc
             m_client_channel = std::make_shared<tcp_socket_channel>(m_worker_group->get_io_service(), m_sid, m_handler_create_func, DEFAULT_BUF_LEN);
 
             async_connect();
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         int32_t tcp_connector::stop()
@@ -58,7 +58,7 @@ namespace dbc
             if (true == m_connected)
             {
                 LOG_DEBUG << "tcp connector stop: has connected to remote server; sid: " << m_sid.to_string() << "; no need to stop more.";
-                return E_SUCCESS;
+                return ERR_SUCCESS;
             }
 
             //not connected, means is reconnecting......
@@ -84,7 +84,7 @@ namespace dbc
                 LOG_ERROR << "tcp connector close error: " << error;
             }
 
-            return E_SUCCESS;
+            return ERR_SUCCESS;
         }
 
         void tcp_connector::async_connect()
@@ -148,7 +148,7 @@ namespace dbc
                 auto channel = std::dynamic_pointer_cast<tcp_socket_channel>(m_client_channel);
                 
                 //start to work
-                if (E_SUCCESS != m_client_channel->start())
+                if (ERR_SUCCESS != m_client_channel->start())
                 {
                     LOG_ERROR << "tcp connector channel start work error. remote addr:" << m_connect_addr << " host addr:" << channel->get_local_addr() << m_sid.to_string();
                 }
@@ -167,7 +167,7 @@ namespace dbc
             ////modify by regulus:add_channel after channer start
             //add to connection manager
             int32_t ret = connection_manager::instance().add_channel(m_sid, m_client_channel);
-            if (E_SUCCESS != ret)
+            if (ERR_SUCCESS != ret)
             {
                 LOG_ERROR << "tcp connector on connect error, add channel failed";
                 return;
