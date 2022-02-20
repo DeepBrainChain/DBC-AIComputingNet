@@ -1,6 +1,5 @@
 #include "conf_manager.h"
 #include "env_manager.h"
-#include <vector>
 #include <boost/exception/all.hpp>
 #include <boost/format.hpp>
 #include "util/crypto/utilstrencodings.h"

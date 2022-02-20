@@ -14,9 +14,9 @@ matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc
     , m_login_success(false)
     , m_sid(ch->id())
 {
-    if (ConfManager::instance().get_max_recv_speed() > 0)
+    if (ConfManager::MAX_RECV_SPEED > 0)
     {
-        int32_t recv_speed = ConfManager::instance().get_max_recv_speed();
+        int32_t recv_speed = ConfManager::MAX_RECV_SPEED;
         int32_t cycle = 1;
         int32_t slice = 2;
         m_f_ctl = std::make_shared<dbc::network::flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
@@ -37,7 +37,7 @@ int32_t matrix_socket_channel_handler::stop()
 {
     m_stopped = true;
     stop_shake_hand_timer();
-    if (ConfManager::instance().get_max_recv_speed() > 0 && m_f_ctl != nullptr)
+    if (ConfManager::MAX_RECV_SPEED > 0 && m_f_ctl != nullptr)
     {
         m_f_ctl->stop();
     }
@@ -200,7 +200,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
                     }
 
 
-                    const std::string & nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : DEFAULT_STRING;
+                    std::string nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : "";
                     //check msg duplicated
                     if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
                     {
@@ -306,7 +306,7 @@ int32_t matrix_socket_channel_handler::on_write(dbc::network::channel_handler_co
         if (msg.get_name() != SHAKE_HAND_REQ
             && msg.get_name() != SHAKE_HAND_RESP)
         {
-            const std::string & nonce = (msg.content)->header.__isset.nonce ? (msg.content)->header.nonce : DEFAULT_STRING;
+            std::string nonce = (msg.content)->header.__isset.nonce ? (msg.content)->header.nonce : "";
             //insert nonce to avoid receive msg sent by itself
             service_proto_filter::get_mutable_instance().insert_nonce(nonce);
 

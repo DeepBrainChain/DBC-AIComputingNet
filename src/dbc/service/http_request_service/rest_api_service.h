@@ -26,6 +26,7 @@ struct multisig {
     std::vector<sign_item> signs;
 };
 
+
 struct req_body {
     std::vector<std::string> peer_nodes_list;
     std::string additional;

@@ -1,13 +1,14 @@
-#ifndef DBCPROJ_SYSTEM_INFO_H
-#define DBCPROJ_SYSTEM_INFO_H
+#ifndef DBC_SYSTEM_INFO_H
+#define DBC_SYSTEM_INFO_H
 
 #include "utils.h"
+#include <boost/program_options.hpp>
 
 namespace bpo = boost::program_options;
 
 enum OS_TYPE {
-    OS_1804,
-    OS_2004
+    OS_Ubuntu_1804,
+    OS_Ubuntu_2004
 };
 
 // KB
@@ -123,7 +124,7 @@ protected:
 private:
     bool m_is_compute_node = false;
 
-    OS_TYPE m_os_type = OS_1804;
+    OS_TYPE m_os_type = OS_Ubuntu_1804;
     std::string m_os_name = "N/A";
     mem_info m_meminfo;
     cpu_info m_cpuinfo;
@@ -141,4 +142,4 @@ private:
     int32_t m_reserved_memory = 0; // GB
 };
 
-#endif //DBCPROJ_SYSTEM_INFO_H
+#endif

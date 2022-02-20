@@ -113,7 +113,7 @@ namespace dbc
         void connection_manager::init_timer()
         {
             m_timer_invokers[TIMER_NAME_CHANNEL_RECYCLE] = std::bind(&connection_manager::on_recycle_timer, this, std::placeholders::_1);
-            m_channel_recycle_timer = add_timer(TIMER_NAME_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, ULLONG_MAX, DEFAULT_STRING);
+            m_channel_recycle_timer = add_timer(TIMER_NAME_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, ULLONG_MAX, "");
             assert(INVALID_TIMER_ID != m_channel_recycle_timer);
         }
 

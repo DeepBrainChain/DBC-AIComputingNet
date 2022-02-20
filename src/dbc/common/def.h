@@ -1,27 +1,31 @@
-#ifndef DBC_TASK_DEF_H
-#define DBC_TASK_DEF_H
+#ifndef DBC_DEF_H
+#define DBC_DEF_H
 
 #include <iostream>
 #include <string>
 #include <map>
 #include <list>
 #include <vector>
+#include <cassert>
+#include <memory>
+#include <cstdlib>
+#include <cerrno>
+#include <unistd.h>
+#include <string.h>
+#include <cstring>
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 
 #define MAX_LIST_TASK_COUNT                                     10000
 #define MAX_TASK_COUNT_PER_REQ                                  10
-
 #define MAX_TASK_COUNT_ON_PROVIDER                              10000
 #define MAX_TASK_COUNT_IN_TRAINING_QUEUE                        1000
 #define MAX_TASK_SHOWN_ON_LIST                                  100
 
 #define GET_LOG_HEAD                                            0
 #define GET_LOG_TAIL                                            1
-
 #define MAX_NUMBER_OF_LINES                                     100
 #define DEFAULT_NUMBER_OF_LINES                                 100
-
 #define MAX_LOG_CONTENT_SIZE                                    (8 * 1024)
 
 #define MAX_ENTRY_FILE_NAME_LEN                                 128
@@ -29,16 +33,29 @@
 
 #define AI_TRAINING_MAX_TASK_COUNT                                  64
 
+
+enum DBC_NODE_TYPE {
+    DBC_COMPUTE_NODE,
+    DBC_CLIENT_NODE,
+    DBC_SEED_NODE
+};
+
+enum get_peers_flag
+{
+    flag_active,
+    flag_global
+};
+
 enum ETaskOp {
     T_OP_None,
-    T_OP_Create,    //åˆ›å»º
-    T_OP_Start,     //å¯åŠ¨
-    T_OP_Stop,      //åœæ­¢
-    T_OP_ReStart,   //é‡å¯(reboot domain)
-    T_OP_ForceReboot,  //å¼ºåˆ¶é‡å¯(destroy domain && start domain)
+    T_OP_Create,    //´´½¨
+    T_OP_Start,     //Æô¶¯
+    T_OP_Stop,      //Í£Ö¹
+    T_OP_ReStart,   //ÖØÆô(reboot domain)
+    T_OP_ForceReboot,  //Ç¿ÖÆÖØÆô(destroy domain && start domain)
     T_OP_Reset,     //reset
-    T_OP_Delete,    //åˆ é™¤
-    T_OP_CreateSnapshot  //åˆ›å»ºå¿«ç…§
+    T_OP_Delete,    //É¾³ı
+    T_OP_CreateSnapshot  //´´½¨¿ìÕÕ
 };
 
 struct ETaskEvent {
@@ -48,18 +65,18 @@ struct ETaskEvent {
 };
 
 enum ETaskStatus {
-    TS_ShutOff,     //å…³é—­çŠ¶æ€
-    TS_Creating,    //æ­£åœ¨åˆ›å»º
-    TS_Running,     //æ­£åœ¨è¿è¡Œä¸­
-    TS_Starting,    //æ­£åœ¨å¯åŠ¨
-    TS_Stopping,    //æ­£åœ¨åœæ­¢
-    TS_Restarting,  //æ­£åœ¨é‡å¯
-    TS_Resetting,   //æ­£åœ¨reset
-    TS_Deleting,    //æ­£åœ¨åˆ é™¤
-    TS_CreatingSnapshot,  //æ­£åœ¨åˆ›å»ºå¿«ç…§
-    TS_PMSuspended, //è™šæ‹Ÿæœºå·²è¿›å…¥ç¡çœ çŠ¶æ€
+    TS_ShutOff,     //¹Ø±Õ×´Ì¬
+    TS_Creating,    //ÕıÔÚ´´½¨
+    TS_Running,     //ÕıÔÚÔËĞĞÖĞ
+    TS_Starting,    //ÕıÔÚÆô¶¯
+    TS_Stopping,    //ÕıÔÚÍ£Ö¹
+    TS_Restarting,  //ÕıÔÚÖØÆô
+    TS_Resetting,   //ÕıÔÚreset
+    TS_Deleting,    //ÕıÔÚÉ¾³ı
+    TS_CreatingSnapshot,  //ÕıÔÚ´´½¨¿ìÕÕ
+    TS_PMSuspended, //ĞéÄâ»úÒÑ½øÈëË¯Ãß×´Ì¬
 
-    TS_Error = 100,   //å‡ºé”™
+    TS_Error = 100,   //³ö´í
     TS_CreateError,
     TS_StartError,
     TS_StopError,
@@ -78,22 +95,22 @@ std::string task_status_string(int32_t status);
 std::string task_operation_string(int32_t op);
 std::string vm_status_string(virDomainState status);
 
-// ç³»ç»Ÿç›˜å¤§å°ï¼ˆGBï¼‰
+// ÏµÍ³ÅÌ´óĞ¡£¨GB£©
 static const int32_t g_disk_system_size = 350;
-// å†…å­˜é¢„ç•™å¤§å°ï¼ˆGBï¼‰
+// ÄÚ´æÔ¤Áô´óĞ¡£¨GB£©
 static const int32_t g_reserved_memory = 32;
-// cpué¢„ç•™æ ¸æ•°ï¼ˆæ¯ä¸ªç‰©ç†cpuçš„ç‰©ç†æ ¸æ•°ï¼‰
+// cpuÔ¤ÁôºËÊı£¨Ã¿¸öÎïÀícpuµÄÎïÀíºËÊı£©
 static const int32_t g_reserved_physical_cores_per_cpu = 1;
-// è™šæ‹Ÿæœºç™»å½•ç”¨æˆ·å
+// ĞéÄâ»úµÇÂ¼ÓÃ»§Ãû
 static const char* g_vm_ubuntu_login_username = "dbc";
 static const char* g_vm_windows_login_username = "Administrator";
 
 
 enum MACHINE_STATUS {
     MS_NONE,
-    MS_VERIFY, //éªŒè¯é˜¶æ®µ
-    MS_ONLINE, //éªŒè¯å®Œä¸Šçº¿é˜¶æ®µ
-    MS_RENNTED //ç§Ÿç”¨ä¸­
+    MS_VERIFY, //ÑéÖ¤½×¶Î
+    MS_ONLINE, //ÑéÖ¤ÍêÉÏÏß½×¶Î
+    MS_RENNTED //×âÓÃÖĞ
 };
 
 enum USER_ROLE {
@@ -131,18 +148,18 @@ struct TaskCreateParams {
 
     uint64_t mem_size; // KB
 
-    std::map<int32_t, uint64_t> disks; //æ•°æ®ç›˜(å•ä½ï¼šKB)ï¼Œindexä»1å¼€å§‹
+    std::map<int32_t, uint64_t> disks; //Êı¾İÅÌ(µ¥Î»£ºKB)£¬index´Ó1¿ªÊ¼
 
     std::string vm_xml;
     std::string vm_xml_url;
 
     int16_t vnc_port;
     std::string vnc_password;
-    
-    std::string operation_system; //æ“ä½œç³»ç»Ÿ(å¦‚generic, ubuntu 18.04, windows 10)ï¼Œé»˜è®¤ubuntuï¼Œå¸¦æœ‰winåˆ™è®¤ä¸ºæ˜¯windowsç³»ç»Ÿï¼Œå¿…é¡»å…¨å°å†™ã€‚
-    std::string bios_mode; //BIOSæ¨¡å¼(å¦‚legacy,uefi)ï¼Œé»˜è®¤ä¼ ç»ŸBIOSï¼Œå¿…é¡»å…¨å°å†™ã€‚
 
-    std::vector<std::string> multicast; //ç»„æ’­åœ°å€(å¦‚ï¼š"230.0.0.1:5558")
+    std::string operation_system; //²Ù×÷ÏµÍ³(Èçgeneric, ubuntu 18.04, windows 10)£¬Ä¬ÈÏubuntu£¬´øÓĞwinÔòÈÏÎªÊÇwindowsÏµÍ³£¬±ØĞëÈ«Ğ¡Ğ´¡£
+    std::string bios_mode; //BIOSÄ£Ê½(Èçlegacy,uefi)£¬Ä¬ÈÏ´«Í³BIOS£¬±ØĞëÈ«Ğ¡Ğ´¡£
+
+    std::vector<std::string> multicast; //×é²¥µØÖ·(Èç£º"230.0.0.1:5558")
 };
 
 struct ParseVmXmlParams {
@@ -158,47 +175,16 @@ struct ParseVmXmlParams {
 
     uint64_t mem_size; // KB
 
-    std::map<int32_t, uint64_t> disks; //æ•°æ®ç›˜(å•ä½ï¼šKB)ï¼Œindexä»1å¼€å§‹
+    std::map<int32_t, uint64_t> disks; //Êı¾İÅÌ(µ¥Î»£ºKB)£¬index´Ó1¿ªÊ¼
 
     int16_t vnc_port;
     std::string vnc_password;
 
-    std::string operation_system; //æ“ä½œç³»ç»Ÿ(å¦‚generic, ubuntu 18.04, windows 10)ï¼Œé»˜è®¤ubuntuï¼Œå¸¦æœ‰winåˆ™è®¤ä¸ºæ˜¯windowsç³»ç»Ÿï¼Œå¿…é¡»å…¨å°å†™ã€‚
-    std::string bios_mode; //BIOSæ¨¡å¼(å¦‚legacy,uefi)ï¼Œé»˜è®¤ä¼ ç»ŸBIOSï¼Œå¿…é¡»å…¨å°å†™ã€‚
+    std::string operation_system; //²Ù×÷ÏµÍ³(Èçgeneric, ubuntu 18.04, windows 10)£¬Ä¬ÈÏubuntu£¬´øÓĞwinÔòÈÏÎªÊÇwindowsÏµÍ³£¬±ØĞëÈ«Ğ¡Ğ´¡£
+    std::string bios_mode; //BIOSÄ£Ê½(Èçlegacy,uefi)£¬Ä¬ÈÏ´«Í³BIOS£¬±ØĞëÈ«Ğ¡Ğ´¡£
 
-    std::vector<std::string> multicast; //ç»„æ’­åœ°å€(å¦‚ï¼š"230.0.0.1:5558")
+    std::vector<std::string> multicast; //×é²¥µØÖ·(Èç£º"230.0.0.1:5558")
 };
 
-/*
-enum TASK_STATE {
-    DBC_TASK_RUNNING,
-    DBC_TASK_NULL,
-    DBC_TASK_NOEXIST,
-    DBC_TASK_STOPPED
-};
 
-enum training_task_status
-{
-    task_status_unknown = 1,
-    task_status_queueing = 2,
-    task_status_pulling_image = 3,
-    task_status_running = 4,
-    task_status_update_error = 5,  //ä»£è¡¨ä»runningçš„å®¹å™¨å‡çº§
-    task_status_creating_image = 6,  //æ­£åœ¨åˆ›å»ºé•œåƒ
-    //stop_update_task_error  =7,   //ä»£è¡¨ä»stopçš„å®¹å™¨å‡çº§
-    //termianl state
-    task_status_stopped = 8,
-    task_successfully_closed = 16,
-    task_abnormally_closed = 32,
-    task_overdue_closed = 64,
-    task_noimage_closed = 65,
-    task_nospace_closed = 66,
-    task_status_out_of_gpu_resource = 67
-};
-
-std::string to_training_task_status_string(int8_t status);
-bool check_task_engine(const std::string& engine);
-void set_task_engine(std::string engine);
-*/
-
-#endif //DBC_TASK_DEF_H
+#endif

@@ -68,49 +68,14 @@ public:
 
     std::string GetPrivKey() const { return m_priv_key; }
 
-    int32_t get_timer_service_broadcast_in_second() {
-        return 30;
-    }
-
-    int32_t get_timer_service_list_expired_in_second() {
-        return 300;
-    }
-
-    int32_t  get_timer_dbc_request_in_millisecond() {
-        return 20 * 1000;
-    }
-
-    int32_t get_timer_ai_training_task_schedule_in_second() {
-        return 15;
-    }
-
-    int32_t get_timer_log_refresh_in_second() {
-        return 10;
-    }
-
-    int32_t get_max_recv_speed() {
-        return 0;
-    }
-
-    int32_t get_update_idle_task_cycle() {
-        return  24 * 60;
-    }
-
-    const dbc::network::matrix_capacity & get_proto_capacity() {
+    const dbc::network::matrix_capacity& get_proto_capacity() {
         return m_proto_capacity;
     }
 
-    int16_t get_prune_container_stop_interval() {
-        return 240;
-    }
+    // const
+    static const int32_t TIME_SERVICE_INFO_LIST_EXPIRED = 300; // second
 
-    int16_t get_prune_docker_root_use_ratio() {
-        return 5;
-    }
-
-    int16_t get_prune_task_stop_interval() {
-        return 2400;
-    }
+    static const int32_t MAX_RECV_SPEED = 0; 
 
 protected:
     ERRCODE ParseConf();

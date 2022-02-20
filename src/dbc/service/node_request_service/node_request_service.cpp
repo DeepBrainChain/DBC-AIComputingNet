@@ -2203,7 +2203,7 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
         service_info_collection::instance().update_own_node_time_stamp(ConfManager::instance().GetNodeId());
     }
 
-    service_info_collection::instance().remove_unlived_nodes(ConfManager::instance().get_timer_service_list_expired_in_second());
+    service_info_collection::instance().remove_unlived_nodes(ConfManager::TIME_SERVICE_INFO_LIST_EXPIRED);
 
     auto service_info_map = service_info_collection::instance().get_change_set();
     if(!service_info_map.empty()) {

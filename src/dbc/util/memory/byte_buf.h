@@ -1,7 +1,6 @@
 #ifndef DBC_BYTE_BUF_H
 #define DBC_BYTE_BUF_H
 
-#include <memory>
 #include "common/common.h"
 
 /*

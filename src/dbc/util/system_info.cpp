@@ -91,9 +91,9 @@ void SystemInfo::init_os_type() {
 
     m_os_name = os_ID + " " + os_VERSION + " " + os_RELEASE;
     if (os_VERSION.find("18.04") != std::string::npos)
-        m_os_type = OS_1804;
+        m_os_type = OS_Ubuntu_1804;
     else if (os_VERSION.find("20.04") != std::string::npos) {
-        m_os_type = OS_2004;
+        m_os_type = OS_Ubuntu_2004;
     }
 }
 

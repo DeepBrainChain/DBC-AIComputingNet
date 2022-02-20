@@ -83,7 +83,7 @@ void p2p_net_service::init_timer() {
 
     // 10min
     m_timer_invokers[DUMP_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_peer_candidate_dump, this, std::placeholders::_1);
-    m_timer_dump_peer_candidates = add_timer(DUMP_PEER_CANDIDATES_TIMER, 10 * 60 * 1000, ULLONG_MAX, DEFAULT_STRING);
+    m_timer_dump_peer_candidates = add_timer(DUMP_PEER_CANDIDATES_TIMER, 10 * 60 * 1000, ULLONG_MAX, "");
 }
 
 void p2p_net_service::init_invoker() {
