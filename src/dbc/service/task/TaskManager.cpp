@@ -67,10 +67,13 @@ FResult TaskManager::init() {
 FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
                                 const AuthoriseResult& result, std::vector<std::string> &images) {
     try {
+        ImageServer imgsvr;
+        imgsvr.from_string(data->image_server);
+
         if (!result.success) {
-            ImageMgr::instance().ListLocalShareImages(data->image_server, images);
+            ImageMgr::instance().ListLocalShareImages(imgsvr, images);
         } else {
-            ImageMgr::instance().ListWalletLocalShareImages(result.rent_wallet, data->image_server, images);
+            ImageMgr::instance().ListWalletLocalShareImages(result.rent_wallet, imgsvr, images);
         }
 
         return { ERR_SUCCESS, "" };
@@ -97,7 +100,9 @@ FResult TaskManager::downloadImage(const std::string& wallet,
     }
 
     std::vector<std::string> images;
-    ImageManager::instance().ListShareImages(data->image_server, images);
+    ImageServer imgsvr;
+    imgsvr.from_string(data->image_server);
+    ImageManager::instance().ListShareImages(imgsvr, images);
     auto iter = std::find(images.begin(), images.end(), image_filename);
     if (iter == images.end()) {
         return {E_NOT_FOUND, "image:" + image_filename + " not exist"};
@@ -107,9 +112,7 @@ FResult TaskManager::downloadImage(const std::string& wallet,
         return {E_DEFAULT, "image:" + image_filename + " in downloading"};
     }
 
-    ImageServer svr;
-    svr.from_string(data->image_server[0]);
-    ImageManager::instance().Download(image_filename, svr);
+    ImageManager::instance().Download(image_filename, imgsvr);
     return FResultOK;
 }
 
@@ -137,9 +140,9 @@ FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_pt
         return {E_DEFAULT, "image:" + image_filename + " in uploading"};
     }
 
-    ImageServer svr;
-    svr.from_string(data->image_server[0]);
-    ImageManager::instance().Upload(image_filename, svr);
+    ImageServer imgsvr;
+    imgsvr.from_string(data->image_server);
+    ImageManager::instance().Upload(image_filename, imgsvr);
     return FResultOK;
 }
 
@@ -606,9 +609,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr
     ETaskEvent ev;
     ev.task_id = taskinfo->task_id;
     ev.op = T_OP_Create;
-    if (!data->image_server.empty()) {
-        ev.image_server = data->image_server[0];
-    }
+    ev.image_server = data->image_server;
     add_process_task(ev);
     return FResultOK;
 }
@@ -1978,10 +1979,10 @@ void TaskManager::process_create(const ETaskEvent& ev) {
 
         std::string _taskid = ev.task_id;
         std::string _svr = ev.image_server;
-        ImageServer svr;
-        svr.from_string(_svr);
+        ImageServer imgsvr;
+        imgsvr.from_string(_svr);
         LOG_INFO << "need download image: " << images_name[0];
-        ImageManager::instance().Download(images_name[0], svr, [this, _taskid, _svr] () {
+        ImageManager::instance().Download(images_name[0], imgsvr, [this, _taskid, _svr] () {
             ETaskEvent ev;
             ev.task_id = _taskid;
             ev.op = T_OP_Create;

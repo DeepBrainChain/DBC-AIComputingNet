@@ -11,13 +11,13 @@ public:
 
     virtual ~ImageManager();
 
-    void ListShareImages(const std::vector<std::string>& image_server, std::vector<std::string> &images);
+    void ListShareImages(const ImageServer& image_server, std::vector<std::string> &images);
 
     void ListLocalBaseImages(std::vector<std::string>& images);
 
-    void ListLocalShareImages(const std::vector<std::string>& image_server, std::vector<std::string> &images);
+    void ListLocalShareImages(const ImageServer& image_server, std::vector<std::string> &images);
 
-    void ListWalletLocalShareImages(const std::string& wallet, const std::vector<std::string>& image_server, std::vector<std::string> &images);
+    void ListWalletLocalShareImages(const std::string& wallet, const ImageServer& image_server, std::vector<std::string> &images);
 
     void Download(const std::string& image_name, const ImageServer& from_server, const std::function<void()>& finish_callback = nullptr);
 

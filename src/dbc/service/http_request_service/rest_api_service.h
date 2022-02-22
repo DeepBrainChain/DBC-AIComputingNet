@@ -41,6 +41,7 @@ struct req_body {
     std::string pub_key;
 
     std::string task_id;
+    std::string image_server;
 
     // restart force
     int16_t force_reboot = 0;
@@ -74,6 +75,12 @@ public:
 
     // /images
     void rest_images(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);
+
+	// list image servers
+	void rest_list_image_servers(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<dbc::network::message> create_node_list_image_servers_req_msg(const std::string& head_session_id,
+		const req_body& body);
 
     // list image
     void rest_list_images(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path);

@@ -517,7 +517,11 @@ rest_api_service::rest_images(const std::shared_ptr<dbc::network::http_request> 
 
     if (path_list.size() == 1) {
         const std::string &second_param = path_list[0];
-        if (second_param == "download") {
+        if (second_param == "servers") {
+            rest_list_image_servers(httpReq, path);
+            return;
+        }
+        else if (second_param == "download") {
             rest_download_image(httpReq, path);
             return;
         }
@@ -530,20 +534,70 @@ rest_api_service::rest_images(const std::shared_ptr<dbc::network::http_request> 
     httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid requests uri");
 }
 
+// list image servers
+void rest_api_service::rest_list_image_servers(const std::shared_ptr<dbc::network::http_request>& httpReq, 
+                                               const std::string& path) {
+	if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+		return;
+	}
+
+	req_body body;
+
+    // parse body
+	std::string s_body = httpReq->read_body();
+	if (s_body.empty()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+		return;
+	}
+
+	rapidjson::Document doc;
+	rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+	if (!ok) {
+		std::stringstream ss;
+		ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code());
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+		return;
+	}
+
+	if (!doc.IsObject()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+		return;
+	}
+
+    // image_servers
+	std::stringstream ss;
+	ss << "{";
+	ss << "\"errcode\":0";
+	ss << ", \"message\":{";
+	ss << "\"image_server\":[";
+    auto& servers = ConfManager::instance().GetImageServers();
+    int count = 0;
+    for (auto& it : servers) {
+        if (count > 0) ss << ",";
+        ss << "\"" << it.second->id << "\"";
+        ++count;
+    }
+    ss << "]}";
+    ss << "}";
+
+    httpReq->reply_comm_rest_succ2(ss.str());
+}
+
+
 // list images
 void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http_request> &httpReq,
                                         const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        LOG_ERROR << "http request (list images) type is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
 
     req_body body;
 
+    // parse body
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
-        LOG_ERROR << "http request body is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
@@ -571,15 +625,24 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
         return;
     }
 
+    const rapidjson::Value& v_additional = doc["additional"];
+    if (!v_additional.IsObject()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
+		return;
+    }
+    // image_server
+    std::string image_server;
+    JSON_PARSE_STRING(v_additional, "image_server", image_server)
+    
+    // list images from image_server
     if (!has_peer_nodeid(body)) {
-        auto svrs = ConfManager::instance().GetImageServers();
-        if (svrs.empty()) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
+        auto it_svr = ConfManager::instance().FindImageServer(image_server);
+        if (image_server.empty() || it_svr == nullptr) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
         } else {
             std::string dbc_dir = util::get_exe_dir().string();
-            auto svr = svrs.begin();
-            std::string ret = run_shell(dbc_dir + "/shell/image/list_file.sh " + svr->ip + " " + svr->port + " " + svr->username + " " +
-                        svr->passwd + " " + svr->image_dir);
+            std::string ret = run_shell(dbc_dir + "/shell/image/list_file.sh " + it_svr->ip + " " + it_svr->port 
+                                        + " " + it_svr->username + " " + it_svr->passwd + " " + it_svr->image_dir);
             auto pos = ret.find_last_of('\n');
             std::string str = ret.substr(pos + 1);
             std::string rsp_json = "{";
@@ -599,25 +662,35 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
 
             httpReq->reply_comm_rest_succ2(rsp_json);
         }
-    } else {
+    } 
+    // list images from compute_node
+    else {
+		auto it_svr = ConfManager::instance().FindImageServer(image_server);
+		if (!image_server.empty() && it_svr == nullptr) {
+			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
+            return;
+        }
+        if (it_svr != nullptr)
+            body.image_server = it_svr->to_string();
+
+        // create node request
         std::string head_session_id = util::create_session_id();
 
         auto node_req_msg = create_node_list_images_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            LOG_ERROR << "create node request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
+        // create session
         if (ERR_SUCCESS != create_request_session(NODE_LIST_IMAGES_TIMER, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
-            LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
+        // broadcast message
         if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-            LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
@@ -658,14 +731,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
-
-    auto svrs = ConfManager::instance().GetImageServers();
-    for (auto& iter : svrs) {
-        std::string str_svr = iter.to_string();
-        std::vector<std::string> vec;
-        vec.push_back(str_svr);
-        req_data.__set_image_server(vec);
-    }
+    req_data.__set_image_server(body.image_server);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -773,19 +839,19 @@ void rest_api_service::on_node_list_images_timer(const std::shared_ptr<core_time
 }
 
 // download image
+// compute_node <-- image_server
 void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::http_request> &httpReq,
                                            const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        LOG_ERROR << "http request type (download image) is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
 
     req_body body;
 
+    // parse body
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
-        LOG_ERROR << "http request body is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
@@ -795,45 +861,52 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
     if (!ok) {
         std::stringstream ss;
         ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code());
-        LOG_ERROR << ss.str();
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
         return;
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "invalid json";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
     std::string strerror;
     if (!parse_req_params(doc, body, strerror)) {
-        LOG_ERROR << "parse request params failed: " << strerror;
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
         return;
     }
 
     if (!has_peer_nodeid(body)) {
-        LOG_ERROR << "peer_nodeid is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
 
+    // image_server
+	const rapidjson::Value& v_additional = doc["additional"];
+	if (!v_additional.IsObject()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
+		return;
+	}
+	std::string image_server;
+	JSON_PARSE_STRING(v_additional, "image_server", image_server)
+    
+	auto it_svr = ConfManager::instance().FindImageServer(image_server);
+    if (image_server.empty() || it_svr == nullptr) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
+		return;
+    }
+    body.image_server = it_svr->to_string();
+
+    // session_id wallet
     if (body.session_id.empty() || body.session_id_sign.empty()) {
         if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
-            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id and wallet all invalid");
             return;
         }
     }
 
+    // create node request
     std::string head_session_id = util::create_session_id();
-
-    auto svrs = ConfManager::instance().GetImageServers();
-    if (svrs.empty()) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
-        return;
-    }
 
     auto node_req_msg = create_node_download_image_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
@@ -842,12 +915,14 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
         return;
     }
 
+    // create session
     if (ERR_SUCCESS != create_request_session(NODE_DOWNLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
@@ -890,14 +965,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
-
-    auto svrs = ConfManager::instance().GetImageServers();
-    for (auto& iter : svrs) {
-        std::string str_svr = iter.to_string();
-        std::vector<std::string> vec;
-        vec.push_back(str_svr);
-        req_data.__set_image_server(vec);
-    }
+    req_data.__set_image_server(body.image_server);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -1006,19 +1074,20 @@ void rest_api_service::on_node_download_image_timer(const std::shared_ptr<core_t
 }
 
 // upload image
+//  client_node --> image_server
+// compute_node --> image_server
 void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::http_request> &httpReq,
                                          const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
 
     req_body body;
 
+    // parse body
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
-        LOG_ERROR << "http request body is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
@@ -1028,72 +1097,73 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
     if (!ok) {
         std::stringstream ss;
         ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code());
-        LOG_ERROR << ss.str();
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
         return;
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "invalid json";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
     std::string strerror;
     if (!parse_req_params(doc, body, strerror)) {
-        LOG_ERROR << "parse request params failed: " << strerror;
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
         return;
     }
+
+	const rapidjson::Value& v_additional = doc["additional"];
+	if (!v_additional.IsObject()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
+		return;
+	}
 
     // image_filename
-    const rapidjson::Value& vAdditional = doc["additional"];
-    if (!vAdditional.HasMember("image_filename")) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "no param: additional.image_filename");
-        return;
-    }
-
     std::string image_filename;
-    JSON_PARSE_STRING(vAdditional, "image_filename", image_filename);
+    JSON_PARSE_STRING(v_additional, "image_filename", image_filename);
 
+    // image_server
+	std::string image_server;
+	JSON_PARSE_STRING(v_additional, "image_server", image_server)
+    
+	auto it_svr = ConfManager::instance().FindImageServer(image_server);
+	if (image_server.empty() || it_svr == nullptr) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
+		return;
+	}
+
+    // 从client节点上传镜像到镜像中心
     if (!has_peer_nodeid(body)) {
-        // 从client节点上传镜像到镜像中心
-        auto svrs = ConfManager::instance().GetImageServers();
-        if (svrs.empty()) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
-        } else {
-            if (!boost::filesystem::exists("/data/" + image_filename)) {
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "additional.image_filename: /data/" + image_filename + ", file not exist");
-                return;
-            }
+		if (image_filename.empty() || !boost::filesystem::exists("/data/" + image_filename)) {
+			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_filename: /data/" + image_filename + " not exist");
+			return;
+		}
 
-            ImageServer svr = svrs[0];
-            ImageManager::instance().Upload(image_filename, svr);
+        ImageServer imgsvr;
+        imgsvr.from_string(image_server);
+		ImageManager::instance().Upload(image_filename, imgsvr);
 
-            std::string rsp_json = "{";
-            rsp_json += "\"errcode\":0";
-            rsp_json += ",\"message\": \"ok\"";
-            rsp_json += "}";
+		std::string rsp_json = "{";
+		rsp_json += "\"errcode\":0";
+		rsp_json += ",\"message\": \"ok\"";
+		rsp_json += "}";
 
-            httpReq->reply_comm_rest_succ2(rsp_json);
-        }
-    } else {
+		httpReq->reply_comm_rest_succ2(rsp_json);
+    } 
+    // 从node_id指定的算力节点上传镜像到镜像中心
+    else {
+        body.image_server = it_svr->to_string();
+
+        // session_id wallet
         if (body.session_id.empty() || body.session_id_sign.empty()) {
             if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
-                LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
-                                             "wallet_sign and multisig_wallets all invalid");
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id and wallet all invalid");
                 return;
             }
         }
 
+        // create node request
         std::string head_session_id = util::create_session_id();
-
-        auto svrs = ConfManager::instance().GetImageServers();
-        if (svrs.empty()) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "client_node not config image_server");
-            return;
-        }
 
         auto node_req_msg = create_node_upload_image_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
@@ -1102,6 +1172,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
             return;
         }
 
+        // create session
         if (ERR_SUCCESS != create_request_session(NODE_UPLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
             LOG_ERROR << "create request session failed";
@@ -1109,6 +1180,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
             return;
         }
 
+        // broadcast message
         if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
@@ -1152,14 +1224,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
-
-    auto svrs = ConfManager::instance().GetImageServers();
-    for (auto& iter : svrs) {
-        std::string str_svr = iter.to_string();
-        std::vector<std::string> vec;
-        vec.push_back(str_svr);
-        req_data.__set_image_server(vec);
-    }
+    req_data.__set_image_server(body.image_server);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -1548,22 +1613,22 @@ void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer>
 // create task
 void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
 
+    req_body body;
+
+    // parse body
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
     if (path_list.size() != 1) {
-        LOG_ERROR << "path_list's size != 1";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use: /tasks/start");
         return;
     }
 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
-        LOG_ERROR << "http request body is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
         return;
     }
@@ -1573,18 +1638,14 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     if (!ok) {
         std::stringstream ss;
         ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
         return;
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "invalid json";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
-
-    req_body body;
 
     std::string strerror;
     if (!parse_req_params(doc, body, strerror)) {
@@ -1593,20 +1654,38 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
+    // peer_nodeid
     if (!has_peer_nodeid(body)) {
-        LOG_ERROR << "peer_nodeid is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
 
+	// image_server
+	const rapidjson::Value& v_additional = doc["additional"];
+	if (!v_additional.IsObject()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
+		return;
+	}
+	std::string image_server;
+	JSON_PARSE_STRING(v_additional, "image_server", image_server)
+
+	auto it_svr = ConfManager::instance().FindImageServer(image_server);
+	if (!image_server.empty() && it_svr == nullptr) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
+		return;
+	}
+    if (it_svr != nullptr)
+    	body.image_server = it_svr->to_string();
+
+    // session_id wallet
     if (body.session_id.empty() || body.session_id_sign.empty()) {
         if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
-            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "session_id and wallet all invalid");
             return;
         }
     }
 
+    // create node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_create_task_req_msg(head_session_id, body);
@@ -1616,12 +1695,14 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         return;
     }
 
+    // create session
     if (ERR_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         LOG_ERROR << "create request session failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
@@ -1663,14 +1744,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
-
-    auto svrs = ConfManager::instance().GetImageServers();
-    for (auto& iter : svrs) {
-        std::string str_svr = iter.to_string();
-        std::vector<std::string> vec;
-        vec.push_back(str_svr);
-        req_data.__set_image_server(vec);
-    }
+    req_data.__set_image_server(body.image_server);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -3520,7 +3594,6 @@ void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_servi
 
 void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != dbc::network::http_request::POST) {
-        LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -3528,13 +3601,13 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
     if (!path_list.empty()) {
-        LOG_ERROR << "path_list's size != 0";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /mining_nodes");
         return;
     }
 
     req_body body;
 
+    // parse body
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
@@ -3547,25 +3620,22 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
     if (!ok) {
         std::stringstream ss;
         ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
-        LOG_ERROR << ss.str();
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
         return;
     }
 
     if (!doc.IsObject()) {
-        LOG_ERROR << "invalid json";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
         return;
     }
 
     std::string strerror;
     if (!parse_req_params(doc, body, strerror)) {
-        LOG_ERROR << "parse req params failed: " << strerror;
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse req params failed: " + strerror);
         return;
     }
 
-    // peer_nodes_list
+    // all peer_nodes
     if (body.peer_nodes_list.empty()) {
         std::shared_ptr<std::map<std::string, dbc::node_service_info>> id_2_services =
                 service_info_collection::instance().get_all();
@@ -3573,6 +3643,24 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
         reply_node_list(id_2_services, data_json);
         httpReq->reply_comm_rest_succ2(data_json);
     } else {
+		// image_server
+		const rapidjson::Value& v_additional = doc["additional"];
+		if (!v_additional.IsObject()) {
+			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
+			return;
+		}
+		std::string image_server;
+		JSON_PARSE_STRING(v_additional, "image_server", image_server)
+
+		auto it_svr = ConfManager::instance().FindImageServer(image_server);
+		if (!image_server.empty() && it_svr == nullptr) {
+			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
+			return;
+		}
+        if (it_svr != nullptr)
+    		body.image_server = it_svr->to_string();
+
+        // create node request
         std::string head_session_id = util::create_session_id();
 
         auto node_req_msg = create_node_query_node_info_req_msg(head_session_id, body);
@@ -3582,12 +3670,14 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
             return;
         }
 
+        // create session
         if (ERR_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
             LOG_ERROR << "create request session failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
+        // broadcast message
         if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
@@ -3631,14 +3721,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
-
-    auto svrs = ConfManager::instance().GetImageServers();
-    for (auto& iter : svrs) {
-        std::string str_svr = iter.to_string();
-        std::vector<std::string> vec;
-        vec.push_back(str_svr);
-        req_data.__set_image_server(vec);
-    }
+    req_data.__set_image_server(body.image_server);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();

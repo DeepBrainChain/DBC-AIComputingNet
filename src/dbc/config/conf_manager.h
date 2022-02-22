@@ -28,7 +28,7 @@ class ConfManager : public Singleton<ConfManager>
 public:
     ConfManager();
 
-    virtual ~ConfManager() = default;
+    virtual ~ConfManager();
 
     ERRCODE Init();
 
@@ -52,7 +52,17 @@ public:
 
     std::vector<std::string> GetDbcChainDomain() const { return m_dbc_chain_domain; }
 
-    const std::vector<ImageServer>& GetImageServers() const { return m_image_server; }
+    const std::map<std::string, ImageServer*>& GetImageServers() const { return m_image_server; }
+
+    ImageServer* FindImageServer(const std::string& id) const {
+        auto it = m_image_server.find(id);
+        if (it != m_image_server.end()) {
+            return (*it).second;
+        }
+        else {
+            return nullptr;
+        }
+    }
 
     const std::vector<std::string> & GetPeers() { return m_peers; }
 
@@ -101,7 +111,7 @@ private:
     std::string m_http_listen_ip = "127.0.0.1";
     int32_t m_http_listen_port = 5050;
     std::vector<std::string> m_dbc_chain_domain;
-    std::vector<ImageServer> m_image_server;
+    std::map<std::string, ImageServer*> m_image_server;
 
     std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;

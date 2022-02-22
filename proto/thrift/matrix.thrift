@@ -52,7 +52,7 @@ struct node_list_images_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional list<string> image_server
+  11: optional string image_server
 }
 
 struct node_list_images_req_body {
@@ -84,7 +84,7 @@ struct node_download_image_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional list<string> image_server
+  11: optional string image_server
 }
 
 struct node_download_image_req_body {
@@ -116,7 +116,7 @@ struct node_upload_image_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional list<string> image_server
+  11: optional string image_server
 }
 
 struct node_upload_image_req_body {
@@ -180,7 +180,7 @@ struct node_create_task_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional list<string> image_server,
+  11: optional string image_server,
   12: optional string custom_image_name
 }
 
@@ -469,7 +469,7 @@ struct node_query_node_info_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional list<string> image_server
+  11: optional string image_server
 }
 
 struct node_query_node_info_req_body {

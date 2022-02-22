@@ -1003,7 +1003,10 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << ",\"used_usage\":" << "\"" << f2s(tmp_diskinfo.disk_usage * 100) << "%" << "\"";
     ss << "}";
     std::vector<std::string> images;
-    ImageMgr::instance().ListLocalShareImages(data->image_server, images);
+    ImageServer imgsvr;
+    imgsvr.from_string(data->image_server);
+
+    ImageMgr::instance().ListLocalShareImages(imgsvr, images);
     ss << ",\"images\":" << "[";
     for(int i = 0; i < images.size(); ++i) {
         ss << "\"" << images[i] << "\"";

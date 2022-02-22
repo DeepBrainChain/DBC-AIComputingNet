@@ -43,6 +43,12 @@ ConfManager::ConfManager() {
     m_proto_capacity.add(dbc::network::matrix_capacity::SNAPPY_RAW_C_NAME);
 }
 
+ConfManager::~ConfManager() {
+    for (auto& it : m_image_server) {
+        delete it.second;
+    }
+}
+
 ERRCODE ConfManager::Init() {
     ERRCODE err;
     err = ParseConf();
@@ -113,14 +119,16 @@ ERRCODE ConfManager::ParseConf() {
         for (auto& str : vec) {
             std::vector<std::string> val = util::split(str, ",");
             if (val.size() == 6) {
-                ImageServer imgsvr;
-                imgsvr.ip = val[0];
-                imgsvr.port = val[1];
-                imgsvr.username = val[2];
-                imgsvr.passwd = val[3];
-                imgsvr.image_dir = val[4];
-                imgsvr.id = val[5];
-                m_image_server.push_back(imgsvr);
+                ImageServer* imgsvr = new ImageServer();
+                imgsvr->ip = val[0];
+                imgsvr->port = val[1];
+                imgsvr->username = val[2];
+                imgsvr->passwd = val[3];
+                imgsvr->image_dir = val[4];
+                imgsvr->id = val[5];
+                if (imgsvr->id.empty()) 
+                    continue;
+                m_image_server[imgsvr->id] = imgsvr;
             }
         }
     }

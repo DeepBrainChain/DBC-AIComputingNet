@@ -17,16 +17,14 @@ ImageManager::~ImageManager() {
     delete m_pthread;
 }
 
-void ImageManager::ListShareImages(const std::vector<std::string>& image_server, std::vector<std::string> &images) {
-    if (image_server.empty()) return;
-
-    ImageServer svr;
-    svr.from_string(image_server[0]);
+void ImageManager::ListShareImages(const ImageServer& image_server, std::vector<std::string> &images) {
+    if (image_server.ip.empty() || image_server.port.empty() || image_server.username.empty()
+        || image_server.passwd.empty() || image_server.image_dir.empty()) return;
 
     std::string dbc_dir = util::get_exe_dir().string();
     std::string ret_default = run_shell(
-    dbc_dir + "/shell/image/list_file.sh " + svr.ip + " " + svr.port + " " + svr.username + " " +
-            svr.passwd + " " + svr.image_dir);
+    dbc_dir + "/shell/image/list_file.sh " + image_server.ip + " " + image_server.port + " " +
+        image_server.username + " " + image_server.passwd + " " + image_server.image_dir);
     auto pos = ret_default.find_last_of('\n');
     std::string str = ret_default.substr(pos + 1);
     std::vector<std::string> v_images = util::split(str, ",");
@@ -68,7 +66,7 @@ void ImageManager::ListLocalBaseImages(std::vector<std::string> &images) {
     }
 }
 
-void ImageManager::ListLocalShareImages(const std::vector<std::string> &image_server, std::vector<std::string> &images) {
+void ImageManager::ListLocalShareImages(const ImageServer &image_server, std::vector<std::string> &images) {
     // local base images
     std::vector<std::string> vecRunningDomains;
     VmClient::instance().ListAllRunningDomains(vecRunningDomains);
@@ -112,7 +110,7 @@ void ImageManager::ListLocalShareImages(const std::vector<std::string> &image_se
     }
 }
 
-void ImageManager::ListWalletLocalShareImages(const std::string &wallet, const std::vector<std::string> &image_server,
+void ImageManager::ListWalletLocalShareImages(const std::string &wallet, const ImageServer &image_server,
                                               std::vector<std::string> &images) {
     std::vector<std::string> vec_images;
     ImageMgr::instance().ListLocalShareImages(image_server, vec_images);
@@ -149,6 +147,9 @@ void ImageManager::ListWalletLocalShareImages(const std::string &wallet, const s
 
 void ImageManager::Download(const std::string& image_name, const ImageServer& from_server,
                             const std::function<void()>& finish_callback) {
+	if (from_server.ip.empty() || from_server.port.empty() || from_server.username.empty()
+		|| from_server.passwd.empty() || from_server.image_dir.empty()) return;
+
     std::string exe_dir = util::get_exe_dir().string();
     std::string cmd = exe_dir + "/shell/image/rsync_download.sh " + from_server.ip + " " + from_server.port
                       + " " + from_server.username + " " + from_server.passwd + " " + from_server.image_dir + "/"
@@ -186,6 +187,9 @@ bool ImageManager::IsDownloading(const std::string &image_name) {
 
 void ImageManager::Upload(const std::string& image_name, const ImageServer& to_server,
                           const std::function<void()>& finish_callback) {
+	if (to_server.ip.empty() || to_server.port.empty() || to_server.username.empty()
+		|| to_server.passwd.empty() || to_server.image_dir.empty()) return;
+
     std::string exe_dir = util::get_exe_dir().string();
     std::string cmd = exe_dir + "/shell/image/rsync_upload.sh " + to_server.ip + " " + to_server.port + " "
             + to_server.username + " " + to_server.passwd + " " + "/data/" + image_name + " "
