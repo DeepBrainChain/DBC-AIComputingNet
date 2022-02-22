@@ -30,3 +30,12 @@ then
     echo "fail: see build_make.log for more details"
     exit 1
 fi
+
+echo "make sign_tool"
+make -j 4 sign_tool $1  2>&1 |tee ../build_make.log | grep -v "ld: warning: direct access"
+if [ ${PIPESTATUS[0]} -ne 0 ]
+then
+    echo "fail: see build_make.log for more details"
+    exit 1
+fi
+
