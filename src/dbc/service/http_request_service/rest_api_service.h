@@ -291,6 +291,31 @@ public:
 
     void on_node_delete_snapshot_timer(const std::shared_ptr<core_timer> &timer);
 
+    // monitor
+    void rest_monitor(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path);
+
+    // list monitor server
+    void rest_list_monitor_server(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_list_monitor_server_req_msg(const std::string &head_session_id,
+                                                                             const req_body &body);
+
+    void on_node_list_monitor_server_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                   const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_list_monitor_server_timer(const std::shared_ptr<core_timer> &timer);
+
+    // set monitor server
+    void rest_set_monitor_server(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_set_monitor_server_req_msg(const std::string &head_session_id,
+                                                                               const req_body &body);
+
+    void on_node_set_monitor_server_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                     const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_set_monitor_server_timer(const std::shared_ptr<core_timer> &timer);
+
 protected:
     void init_timer() override;
 

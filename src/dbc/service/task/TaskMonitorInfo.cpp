@@ -280,9 +280,10 @@ std::string domMonitorData::toZabbixString(const std::string &hostname) const {
     for (const auto& netStat : netStats) {
         netStat.second.write2ZabbixJson(write, hostname, std::to_string(index++));
     }
-    write.EndArray();
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
+    writeZabbixJsonItem<std::string>(write, hostname, "dbc.version", version, ts);
+    write.EndArray();
     write.Key("clock");
     write.Int64(ts.tv_sec);
     write.Key("ns");

@@ -123,6 +123,14 @@ protected:
 
     void snapshot_delete(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_snapshot_req_data>& data, const AuthoriseResult& result);
 
+    void on_node_list_monitor_server_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void monitor_server_list(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_monitor_server_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_set_monitor_server_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void monitor_server_set(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_set_monitor_server_req_data>& data, const AuthoriseResult& result);
+
 private:
     bool check_req_header(const std::shared_ptr<dbc::network::message> &msg);
 
