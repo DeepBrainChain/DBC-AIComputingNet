@@ -61,6 +61,9 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
     if (doc.HasMember("servers")) {
         const rapidjson::Value& v_servers = doc["servers"];
         if (v_servers.IsArray()) {
+            if (v_servers.Size() > 2) {
+                return {E_DEFAULT, "can not enter more than two servers"};
+            }
             for (rapidjson::SizeType i = 0; i < v_servers.Size(); i++) {
                 const rapidjson::Value& v_item = v_servers[i];
                 if (v_item.IsString()) {
@@ -222,39 +225,6 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
         }
     }
     const std::map<std::string, std::shared_ptr<dbc::TaskInfo>> task_list = TaskInfoMgr::instance().getTasks();
-    for (auto iter = m_monitor_datas.begin(); iter != m_monitor_datas.end();) {
-        if (task_list.find(iter->first) == task_list.end()) {
-            TASK_LOG_INFO(iter->first, "task not existed, so monitor data will be deleted later");
-            // task被删除了
-            iter = m_monitor_datas.erase(iter);
-        } else {
-            iter++;
-        }
-    }
-}
-
-void node_monitor_service::update_monitor_data() {
-    const std::map<std::string, std::shared_ptr<dbc::TaskInfo>> task_list = TaskInfoMgr::instance().getTasks();
-    for (const auto& iter : task_list) {
-        if (iter.first.find("vm_check_") != std::string::npos) continue;
-        if (iter.second->status == ETaskStatus::TS_Creating) continue;
-        dbcMonitor::domMonitorData dmData;
-        dmData.domain_name = iter.first;
-        dmData.delay = 10;
-        dmData.version = dbcversion();
-        if (!VmClient::instance().GetDomainMonitorData(iter.first, dmData)) {
-            TASK_LOG_ERROR(iter.first, "get domain monitor data error");
-            continue;
-        }
-        const auto lastData = m_monitor_datas.find(iter.first);
-        if (lastData == m_monitor_datas.end()) {
-            m_monitor_datas[iter.first] = dmData;
-        } else {
-            // 计算CPU使用率、磁盘读写速度和网络收发速度
-            dmData.calculatorUsageAndSpeed(lastData->second);
-            m_monitor_datas[iter.first] = dmData;
-        }
-    }
     for (auto iter = m_monitor_datas.begin(); iter != m_monitor_datas.end();) {
         if (task_list.find(iter->first) == task_list.end()) {
             TASK_LOG_INFO(iter->first, "task not existed, so monitor data will be deleted later");
