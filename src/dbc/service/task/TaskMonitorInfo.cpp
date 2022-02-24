@@ -237,8 +237,8 @@ std::string domMonitorData::toJsonString() const {
     rapidjson::Writer<rapidjson::StringBuffer> write(strBuf);
     write.SetMaxDecimalPlaces(2);
     write.StartObject();
-    write.Key("domain_name");
-    write.String(domain_name.c_str());
+    write.Key("domainName");
+    write.String(domainName.c_str());
     write.Key("delay");
     write.Uint(delay);
     domInfo.write2Json(write);
@@ -261,7 +261,7 @@ std::string domMonitorData::toJsonString() const {
     return strBuf.GetString();
 }
 
-std::string domMonitorData::toZabbixString(const std::string &hostname) const {
+std::string domMonitorData::toZabbixString() const {
     rapidjson::StringBuffer strBuf;
     rapidjson::Writer<rapidjson::StringBuffer> write(strBuf);
     write.SetMaxDecimalPlaces(2);
@@ -270,19 +270,19 @@ std::string domMonitorData::toZabbixString(const std::string &hostname) const {
     write.String("agent data");
     write.Key("data");
     write.StartArray();
-    domInfo.write2ZabbixJson(write, hostname);
-    memStats.write2ZabbixJson(write, hostname);
+    domInfo.write2ZabbixJson(write, domainName);
+    memStats.write2ZabbixJson(write, domainName);
     int index = 0;
     for (const auto& diskStat : diskStats) {
-        diskStat.second.write2ZabbixJson(write, hostname, std::to_string(index++));
+        diskStat.second.write2ZabbixJson(write, domainName, std::to_string(index++));
     }
     index = 0;
     for (const auto& netStat : netStats) {
-        netStat.second.write2ZabbixJson(write, hostname, std::to_string(index++));
+        netStat.second.write2ZabbixJson(write, domainName, std::to_string(index++));
     }
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    writeZabbixJsonItem<std::string>(write, hostname, "dbc.version", version, ts);
+    writeZabbixJsonItem<std::string>(write, domainName, "dbc.version", version, ts);
     write.EndArray();
     write.Key("clock");
     write.Int64(ts.tv_sec);

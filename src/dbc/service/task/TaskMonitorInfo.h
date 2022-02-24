@@ -93,7 +93,7 @@ struct networkInfo {
 };
 
 struct domMonitorData{
-    std::string domain_name;                        // 虚拟机的名称
+    std::string domainName;                         // 虚拟机的名称
     unsigned int delay;                             // 间隔时间，例如每10秒收集一次
     domainInfo domInfo;                             // 虚拟机的基本信息
     // cpuStats cpuStats;                           // CPU数据
@@ -104,7 +104,7 @@ struct domMonitorData{
 
     void calculatorUsageAndSpeed(const domMonitorData &last);
     std::string toJsonString() const;
-    std::string toZabbixString(const std::string &hostname) const;
+    std::string toZabbixString() const;
 };
 }
 

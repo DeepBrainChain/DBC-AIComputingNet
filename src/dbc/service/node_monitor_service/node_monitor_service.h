@@ -38,7 +38,7 @@ protected:
 
     void on_monitor_data_sender_task_timer(const std::shared_ptr<core_timer>& timer);
 
-    void send_monitor_data(const std::string& task_id, const dbcMonitor::domMonitorData& dmData, const monitor_server& server);
+    void send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server);
 
 private:
     bool m_is_computing_node = false;

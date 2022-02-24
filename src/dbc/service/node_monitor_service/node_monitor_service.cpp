@@ -199,7 +199,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
 
             // get monitor data of vm
             dbcMonitor::domMonitorData dmData;
-            dmData.domain_name = task_id;
+            dmData.domainName = task_id;
             dmData.delay = 10;
             dmData.version = dbcversion();
             if (!VmClient::instance().GetDomainMonitorData(task_id, dmData)) {
@@ -218,10 +218,10 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             // send monitor data
             if (monitor_servers != m_wallet_monitors.end()) {
                 for (const auto& server : monitor_servers->second) {
-                    send_monitor_data(task_id, dmData, server);
+                    send_monitor_data(dmData, server);
                 }
             }
-            send_monitor_data(task_id, dmData, m_dbc_monitor_server);
+            send_monitor_data(dmData, m_dbc_monitor_server);
         }
     }
     const std::map<std::string, std::shared_ptr<dbc::TaskInfo>> task_list = TaskInfoMgr::instance().getTasks();
@@ -236,18 +236,18 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     }
 }
 
-void node_monitor_service::send_monitor_data(const std::string& task_id, const dbcMonitor::domMonitorData& dmData, const monitor_server& server) {
-    // TASK_LOG_INFO(task_id, dmData.toJsonString());
+void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) {
+    // TASK_LOG_INFO(dmData.domainName, dmData.toJsonString());
     zabbixSender zs(server.host, server.port);
-    if (zs.is_server_want_monitor_data(task_id)) {
-        if (!zs.sendJsonData(dmData.toZabbixString(task_id))) {
-            LOG_ERROR << "send monitor data of task(" << task_id << ") to server(" << server.host << ") error";
-            // TASK_LOG_ERROR(task_id, "send monitor data error");
+    if (zs.is_server_want_monitor_data(dmData.domainName)) {
+        if (!zs.sendJsonData(dmData.toZabbixString())) {
+            LOG_ERROR << "send monitor data of task(" << dmData.domainName << ") to server(" << server.host << ") error";
+            // TASK_LOG_ERROR(dmData.domainName, "send monitor data error");
         } else {
-            LOG_INFO << "send monitor data of task(" << task_id << ") to server(" << server.host << ") success";
-            // TASK_LOG_INFO(task_id, "send monitor data success");
+            LOG_INFO << "send monitor data of task(" << dmData.domainName << ") to server(" << server.host << ") success";
+            // TASK_LOG_INFO(dmData.domainName, "send monitor data success");
         }
     } else {
-        LOG_ERROR << "server: " << server.host << " does not need monitor data of vm: " << task_id;
+        LOG_ERROR << "server: " << server.host << " does not need monitor data of vm: " << dmData.domainName;
     }
 }
