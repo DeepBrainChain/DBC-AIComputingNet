@@ -694,11 +694,17 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (s_rdp_port.empty() || !util::is_digits(s_rdp_port) || atoi(s_rdp_port.c_str()) <= 0) {
             return {E_DEFAULT, "rdp_port is invalid"};
         }
+        if (check_iptables_port_occupied(s_rdp_port)) {
+            return {E_DEFAULT, "rdp_port is occupied"};
+        }
     }
     // ssh_port
     else {
         if (s_ssh_port.empty() || !util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
             return {E_DEFAULT, "ssh_port is invalid"};
+        }
+        if (check_iptables_port_occupied(s_ssh_port)) {
+            return {E_DEFAULT, "ssh_port is occupied"};
         }
     }
 
@@ -1197,6 +1203,18 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
     }
 
     return {ERR_SUCCESS, "ok"};
+}
+
+bool TaskManager::check_iptables_port_occupied(const std::string& port) {
+    bool bFind = false;
+    auto task_list = TaskInfoMgr::instance().getTasks();
+    for (const auto &iter : task_list) {
+        if (iter.second->ssh_port == port || iter.second->rdp_port == port) {
+            bFind = true;
+            break;
+        }
+    }
+    return bFind;
 }
 
 FResult TaskManager::check_image(const std::string &image_name) {

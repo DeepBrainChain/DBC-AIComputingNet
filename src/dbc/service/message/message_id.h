@@ -91,6 +91,16 @@
 #define NODE_DELETE_SNAPSHOT_RSP      "node_delete_snapshot_rsp"
 #define NODE_DELETE_SNAPSHOT_TIMER    "node_delete_snapshot_timer"
 
+// list monitor server
+#define NODE_LIST_MONITOR_SERVER_REQ      "node_list_monitor_server_req"
+#define NODE_LIST_MONITOR_SERVER_RSP      "node_list_monitor_server_rsp"
+#define NODE_LIST_MONITOR_SERVER_TIMER    "node_list_monitor_server_timer"
+
+// set monitor server
+#define NODE_SET_MONITOR_SERVER_REQ      "node_set_monitor_server_req"
+#define NODE_SET_MONITOR_SERVER_RSP      "node_set_monitor_server_rsp"
+#define NODE_SET_MONITOR_SERVER_TIMER    "node_set_monitor_server_timer"
+
 // service broadcast
 #define SERVICE_BROADCAST_REQ          "service_broadcast_req"
 

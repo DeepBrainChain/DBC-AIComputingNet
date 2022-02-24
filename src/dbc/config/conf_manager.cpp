@@ -21,6 +21,8 @@ static std::string g_internal_ip_seeds[] = {
         "116.169.53.130:5021"
 };
 
+static const char* g_internal_zabbix_server = "116.169.53.132:10051";
+
 std::string ImageServer::to_string() {
     return id + "," + ip + "," + port + "," + modulename;
 }
@@ -93,7 +95,8 @@ ERRCODE ConfManager::ParseConf() {
         ("http_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
         ("http_port", bpo::value<int32_t>()->default_value(5050), "")
         ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
-        ("image_server", bpo::value<std::vector<std::string>>(), "");
+        ("image_server", bpo::value<std::vector<std::string>>(), "")
+        ("dbc_monitor_server", bpo::value<std::string>()->default_value(g_internal_zabbix_server), "");
 
     const boost::filesystem::path &conf_path = EnvManager::instance().get_conf_file_path();
     try {
@@ -132,6 +135,10 @@ ERRCODE ConfManager::ParseConf() {
             }
 			m_image_server[imgsvr->id] = imgsvr;
         }
+    }
+
+    if (core_args.count("dbc_monitor_server") > 0) {
+        m_dbc_monitor_server = core_args["dbc_monitor_server"].as<std::string>();
     }
 
     variables_map peer_args;

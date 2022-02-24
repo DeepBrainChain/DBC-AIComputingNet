@@ -127,6 +127,8 @@ protected:
 
     FResult parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params);
 
+    bool check_iptables_port_occupied(const std::string& port);
+
     FResult check_image(const std::string& image_name);
 
     FResult check_data_image(const std::string& data_image_name);

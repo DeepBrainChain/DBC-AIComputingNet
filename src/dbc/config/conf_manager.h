@@ -62,6 +62,8 @@ public:
         }
     }
 
+    std::string GetDbcMonitorServer() const { return m_dbc_monitor_server; }
+
     const std::vector<std::string> & GetPeers() { return m_peers; }
 
     const std::vector<std::string> &GetInternalIpSeeds() { return m_internal_ip_seeds; }
@@ -110,6 +112,7 @@ private:
     int32_t m_http_listen_port = 5050;
     std::vector<std::string> m_dbc_chain_domain;
     std::map<std::string, ImageServer*> m_image_server;
+    std::string m_dbc_monitor_server;
 
     std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;

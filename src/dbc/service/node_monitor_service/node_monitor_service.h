@@ -8,11 +8,8 @@
 
 #define MONITOR_DATA_SENDER_TASK_TIMER                                   "monitor_data_sender_task"
 
-#define DBC_ZABBIX_SERVER_IP      "116.169.53.132"
-#define DBC_ZABBIX_SERVER_PORT    "10051"
-
 struct monitor_server {
-    std::string ip;
+    std::string host;
     std::string port;
 };
 
@@ -24,6 +21,10 @@ public:
 
     int32_t init(bpo::variables_map &options);
 
+    void listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers);
+
+    FResult setMonitorServer(const std::string& wallet, const std::string& additional);
+
 protected:
     void init_timer() override;
 
@@ -31,18 +32,24 @@ protected:
 
     void init_subscription() override;
 
+    int32_t init_db();
+
+    int32_t load_wallet_monitor_from_db();
+
     void on_monitor_data_sender_task_timer(const std::shared_ptr<core_timer>& timer);
 
-    void update_monitor_data();
-
-    void send_monitor_data();
+    void send_monitor_data(const std::string& task_id, const dbcMonitor::domMonitorData& dmData, const monitor_server& server);
 
 private:
     uint32_t m_monitor_data_sender_task_timer_id = INVALID_TIMER_ID;
 
-    std::vector<monitor_server> m_monitor_servers;
+    monitor_server m_dbc_monitor_server;
 
     std::map<std::string, dbcMonitor::domMonitorData> m_monitor_datas;
+
+    std::shared_ptr<leveldb::DB> m_wallet_monitors_db;
+
+    std::map<std::string, std::vector<monitor_server>> m_wallet_monitors;
 
 };
 

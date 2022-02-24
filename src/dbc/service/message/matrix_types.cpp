@@ -15334,4 +15334,1458 @@ namespace dbc {
 		out << ")";
 	}
 
+
+    node_list_monitor_server_req_data::~node_list_monitor_server_req_data() throw() {
+    }
+
+
+    void node_list_monitor_server_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+        this->peer_nodes_list = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_additional(const std::string& val) {
+        this->additional = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_wallet(const std::string& val) {
+        this->wallet = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_nonce(const std::string& val) {
+        this->nonce = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_sign(const std::string& val) {
+        this->sign = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+        this->multisig_wallets = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_multisig_threshold(const int32_t val) {
+        this->multisig_threshold = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+        this->multisig_signs = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_session_id(const std::string& val) {
+        this->session_id = val;
+    }
+
+    void node_list_monitor_server_req_data::__set_session_id_sign(const std::string& val) {
+        this->session_id_sign = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_monitor_server_req_data& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_monitor_server_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_peer_nodes_list = false;
+        bool isset_additional = false;
+        bool isset_wallet = false;
+        bool isset_nonce = false;
+        bool isset_sign = false;
+        bool isset_multisig_wallets = false;
+        bool isset_multisig_threshold = false;
+        bool isset_multisig_signs = false;
+        bool isset_session_id = false;
+        bool isset_session_id_sign = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                    {
+                        this->peer_nodes_list.clear();
+                        uint32_t _size2;
+                        ::apache::thrift::protocol::TType _etype5;
+                        xfer += iprot->readListBegin(_etype5, _size2);
+                        this->peer_nodes_list.resize(_size2);
+                        uint32_t _i6;
+                        for (_i6 = 0; _i6 < _size2; ++_i6)
+                        {
+                        xfer += iprot->readString(this->peer_nodes_list[_i6]);
+                        }
+                        xfer += iprot->readListEnd();
+                    }
+                    isset_peer_nodes_list = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 2:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->additional);
+                    isset_additional = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 3:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->wallet);
+                    isset_wallet = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 4:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->nonce);
+                    isset_nonce = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 5:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->sign);
+                    isset_sign = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 6:
+                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                    {
+                        this->multisig_wallets.clear();
+                        uint32_t _size7;
+                        ::apache::thrift::protocol::TType _etype10;
+                        xfer += iprot->readListBegin(_etype10, _size7);
+                        this->multisig_wallets.resize(_size7);
+                        uint32_t _i11;
+                        for (_i11 = 0; _i11 < _size7; ++_i11)
+                        {
+                            xfer += iprot->readString(this->multisig_wallets[_i11]);
+                        }
+                        xfer += iprot->readListEnd();
+                    }
+                    isset_multisig_wallets = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 7:
+                if (ftype == ::apache::thrift::protocol::T_I32) {
+                    xfer += iprot->readI32(this->multisig_threshold);
+                    isset_multisig_threshold = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 8:
+                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                    {
+                        this->multisig_signs.clear();
+                        uint32_t _size12;
+                        ::apache::thrift::protocol::TType _etype15;
+                        xfer += iprot->readListBegin(_etype15, _size12);
+                        this->multisig_signs.resize(_size12);
+                        uint32_t _i16;
+                        for (_i16 = 0; _i16 < _size12; ++_i16)
+                        {
+                            xfer += this->multisig_signs[_i16].read(iprot);
+                        }
+                        xfer += iprot->readListEnd();
+                    }
+                    isset_multisig_signs = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 9:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->session_id);
+                    isset_session_id = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 10:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->session_id_sign);
+                    isset_session_id_sign = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_peer_nodes_list)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_additional)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_wallet)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_nonce)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_wallets)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_threshold)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_signs)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_list_monitor_server_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_monitor_server_req_data");
+
+        xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+            std::vector<std::string> ::const_iterator _iter17;
+            for (_iter17 = this->peer_nodes_list.begin(); _iter17 != this->peer_nodes_list.end(); ++_iter17)
+            {
+                xfer += oprot->writeString((*_iter17));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->additional);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->wallet);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->nonce);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeString(this->sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+            std::vector<std::string> ::const_iterator _iter18;
+            for (_iter18 = this->multisig_wallets.begin(); _iter18 != this->multisig_wallets.end(); ++_iter18)
+            {
+                xfer += oprot->writeString((*_iter18));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
+        xfer += oprot->writeI32(this->multisig_threshold);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+            std::vector<multisig_sign_item> ::const_iterator _iter19;
+            for (_iter19 = this->multisig_signs.begin(); _iter19 != this->multisig_signs.end(); ++_iter19)
+            {
+                xfer += (*_iter19).write(oprot);
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
+        xfer += oprot->writeString(this->session_id);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeString(this->session_id_sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_monitor_server_req_data &a, node_list_monitor_server_req_data &b) {
+        using ::std::swap;
+        swap(a.peer_nodes_list, b.peer_nodes_list);
+        swap(a.additional, b.additional);
+        swap(a.wallet, b.wallet);
+        swap(a.nonce, b.nonce);
+        swap(a.sign, b.sign);
+        swap(a.multisig_wallets, b.multisig_wallets);
+        swap(a.multisig_threshold, b.multisig_threshold);
+        swap(a.multisig_signs, b.multisig_signs);
+        swap(a.session_id, b.session_id);
+        swap(a.session_id_sign, b.session_id_sign);
+    }
+
+    node_list_monitor_server_req_data::node_list_monitor_server_req_data(const node_list_monitor_server_req_data& other20) {
+        peer_nodes_list = other20.peer_nodes_list;
+        additional = other20.additional;
+        wallet = other20.wallet;
+        nonce = other20.nonce;
+        sign = other20.sign;
+        multisig_wallets = other20.multisig_wallets;
+        multisig_threshold = other20.multisig_threshold;
+        multisig_signs = other20.multisig_signs;
+        session_id = other20.session_id;
+        session_id_sign = other20.session_id_sign;
+    }
+    node_list_monitor_server_req_data& node_list_monitor_server_req_data::operator=(const node_list_monitor_server_req_data& other21) {
+        peer_nodes_list = other21.peer_nodes_list;
+        additional = other21.additional;
+        wallet = other21.wallet;
+        nonce = other21.nonce;
+        sign = other21.sign;
+        multisig_wallets = other21.multisig_wallets;
+        multisig_threshold = other21.multisig_threshold;
+        multisig_signs = other21.multisig_signs;
+        session_id = other21.session_id;
+        session_id_sign = other21.session_id_sign;
+        return *this;
+    }
+    void node_list_monitor_server_req_data::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_monitor_server_req_data(";
+        out << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
+        out << ")";
+    }
+
+
+    node_list_monitor_server_req_body::~node_list_monitor_server_req_body() throw() {
+    }
+
+
+    void node_list_monitor_server_req_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_monitor_server_req_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_monitor_server_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->data);
+                    isset_data = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_list_monitor_server_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_monitor_server_req_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_monitor_server_req_body &a, node_list_monitor_server_req_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_list_monitor_server_req_body::node_list_monitor_server_req_body(const node_list_monitor_server_req_body& other22) {
+        data = other22.data;
+    }
+    node_list_monitor_server_req_body& node_list_monitor_server_req_body::operator=(const node_list_monitor_server_req_body& other23) {
+        data = other23.data;
+        return *this;
+    }
+    void node_list_monitor_server_req_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_monitor_server_req_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_list_monitor_server_req::~node_list_monitor_server_req() throw() {
+    }
+
+
+    void node_list_monitor_server_req::__set_body(const node_list_monitor_server_req_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_monitor_server_req& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_monitor_server_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                    xfer += this->body.read(iprot);
+                    this->__isset.body = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_list_monitor_server_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_monitor_server_req");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_monitor_server_req &a, node_list_monitor_server_req &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_list_monitor_server_req::node_list_monitor_server_req(const node_list_monitor_server_req& other24) {
+        body = other24.body;
+        __isset = other24.__isset;
+    }
+    node_list_monitor_server_req& node_list_monitor_server_req::operator=(const node_list_monitor_server_req& other25) {
+        body = other25.body;
+        __isset = other25.__isset;
+        return *this;
+    }
+    void node_list_monitor_server_req::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_monitor_server_req(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_list_monitor_server_rsp_body::~node_list_monitor_server_rsp_body() throw() {
+    }
+
+
+    void node_list_monitor_server_rsp_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_monitor_server_rsp_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_monitor_server_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+            break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->data);
+                    isset_data = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_list_monitor_server_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_monitor_server_rsp_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_monitor_server_rsp_body &a, node_list_monitor_server_rsp_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_list_monitor_server_rsp_body::node_list_monitor_server_rsp_body(const node_list_monitor_server_rsp_body& other26) {
+        data = other26.data;
+    }
+    node_list_monitor_server_rsp_body& node_list_monitor_server_rsp_body::operator=(const node_list_monitor_server_rsp_body& other27) {
+        data = other27.data;
+        return *this;
+    }
+    void node_list_monitor_server_rsp_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_monitor_server_rsp_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_list_monitor_server_rsp::~node_list_monitor_server_rsp() throw() {
+    }
+
+
+    void node_list_monitor_server_rsp::__set_body(const node_list_monitor_server_rsp_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_list_monitor_server_rsp& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_list_monitor_server_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                    xfer += this->body.read(iprot);
+                    this->__isset.body = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_list_monitor_server_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_list_monitor_server_rsp");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_list_monitor_server_rsp &a, node_list_monitor_server_rsp &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_list_monitor_server_rsp::node_list_monitor_server_rsp(const node_list_monitor_server_rsp& other28) {
+        body = other28.body;
+        __isset = other28.__isset;
+    }
+    node_list_monitor_server_rsp& node_list_monitor_server_rsp::operator=(const node_list_monitor_server_rsp& other29) {
+        body = other29.body;
+        __isset = other29.__isset;
+        return *this;
+    }
+    void node_list_monitor_server_rsp::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_list_monitor_server_rsp(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+    node_set_monitor_server_req_data::~node_set_monitor_server_req_data() throw() {
+    }
+
+
+    void node_set_monitor_server_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+        this->peer_nodes_list = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_additional(const std::string& val) {
+        this->additional = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_wallet(const std::string& val) {
+        this->wallet = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_nonce(const std::string& val) {
+        this->nonce = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_sign(const std::string& val) {
+        this->sign = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+        this->multisig_wallets = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_multisig_threshold(const int32_t val) {
+        this->multisig_threshold = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+        this->multisig_signs = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_session_id(const std::string& val) {
+        this->session_id = val;
+    }
+
+    void node_set_monitor_server_req_data::__set_session_id_sign(const std::string& val) {
+        this->session_id_sign = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_set_monitor_server_req_data& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_set_monitor_server_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_peer_nodes_list = false;
+        bool isset_additional = false;
+        bool isset_wallet = false;
+        bool isset_nonce = false;
+        bool isset_sign = false;
+        bool isset_multisig_wallets = false;
+        bool isset_multisig_threshold = false;
+        bool isset_multisig_signs = false;
+        bool isset_session_id = false;
+        bool isset_session_id_sign = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                    {
+                        this->peer_nodes_list.clear();
+                        uint32_t _size30;
+                        ::apache::thrift::protocol::TType _etype33;
+                        xfer += iprot->readListBegin(_etype33, _size30);
+                        this->peer_nodes_list.resize(_size30);
+                        uint32_t _i34;
+                        for (_i34 = 0; _i34 < _size30; ++_i34)
+                        {
+                            xfer += iprot->readString(this->peer_nodes_list[_i34]);
+                        }
+                        xfer += iprot->readListEnd();
+                    }
+                    isset_peer_nodes_list = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 2:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->additional);
+                    isset_additional = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 3:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->wallet);
+                    isset_wallet = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 4:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->nonce);
+                    isset_nonce = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 5:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->sign);
+                    isset_sign = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 6:
+                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                    {
+                        this->multisig_wallets.clear();
+                        uint32_t _size35;
+                        ::apache::thrift::protocol::TType _etype38;
+                        xfer += iprot->readListBegin(_etype38, _size35);
+                        this->multisig_wallets.resize(_size35);
+                        uint32_t _i39;
+                        for (_i39 = 0; _i39 < _size35; ++_i39)
+                        {
+                            xfer += iprot->readString(this->multisig_wallets[_i39]);
+                        }
+                        xfer += iprot->readListEnd();
+                    }
+                    isset_multisig_wallets = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 7:
+                if (ftype == ::apache::thrift::protocol::T_I32) {
+                    xfer += iprot->readI32(this->multisig_threshold);
+                    isset_multisig_threshold = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 8:
+                if (ftype == ::apache::thrift::protocol::T_LIST) {
+                    {
+                        this->multisig_signs.clear();
+                        uint32_t _size40;
+                        ::apache::thrift::protocol::TType _etype43;
+                        xfer += iprot->readListBegin(_etype43, _size40);
+                        this->multisig_signs.resize(_size40);
+                        uint32_t _i44;
+                        for (_i44 = 0; _i44 < _size40; ++_i44)
+                        {
+                            xfer += this->multisig_signs[_i44].read(iprot);
+                        }
+                        xfer += iprot->readListEnd();
+                    }
+                    isset_multisig_signs = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 9:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->session_id);
+                    isset_session_id = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            case 10:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->session_id_sign);
+                    isset_session_id_sign = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_peer_nodes_list)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_additional)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_wallet)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_nonce)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_wallets)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_threshold)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_multisig_signs)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        if (!isset_session_id_sign)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_set_monitor_server_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_set_monitor_server_req_data");
+
+        xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+            std::vector<std::string> ::const_iterator _iter45;
+            for (_iter45 = this->peer_nodes_list.begin(); _iter45 != this->peer_nodes_list.end(); ++_iter45)
+            {
+                xfer += oprot->writeString((*_iter45));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+        xfer += oprot->writeString(this->additional);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
+        xfer += oprot->writeString(this->wallet);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
+        xfer += oprot->writeString(this->nonce);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
+        xfer += oprot->writeString(this->sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+            std::vector<std::string> ::const_iterator _iter46;
+            for (_iter46 = this->multisig_wallets.begin(); _iter46 != this->multisig_wallets.end(); ++_iter46)
+            {
+                xfer += oprot->writeString((*_iter46));
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
+        xfer += oprot->writeI32(this->multisig_threshold);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
+        {
+            xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+            std::vector<multisig_sign_item> ::const_iterator _iter47;
+            for (_iter47 = this->multisig_signs.begin(); _iter47 != this->multisig_signs.end(); ++_iter47)
+            {
+                xfer += (*_iter47).write(oprot);
+            }
+            xfer += oprot->writeListEnd();
+        }
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
+        xfer += oprot->writeString(this->session_id);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
+        xfer += oprot->writeString(this->session_id_sign);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_set_monitor_server_req_data &a, node_set_monitor_server_req_data &b) {
+        using ::std::swap;
+        swap(a.peer_nodes_list, b.peer_nodes_list);
+        swap(a.additional, b.additional);
+        swap(a.wallet, b.wallet);
+        swap(a.nonce, b.nonce);
+        swap(a.sign, b.sign);
+        swap(a.multisig_wallets, b.multisig_wallets);
+        swap(a.multisig_threshold, b.multisig_threshold);
+        swap(a.multisig_signs, b.multisig_signs);
+        swap(a.session_id, b.session_id);
+        swap(a.session_id_sign, b.session_id_sign);
+    }
+
+    node_set_monitor_server_req_data::node_set_monitor_server_req_data(const node_set_monitor_server_req_data& other48) {
+        peer_nodes_list = other48.peer_nodes_list;
+        additional = other48.additional;
+        wallet = other48.wallet;
+        nonce = other48.nonce;
+        sign = other48.sign;
+        multisig_wallets = other48.multisig_wallets;
+        multisig_threshold = other48.multisig_threshold;
+        multisig_signs = other48.multisig_signs;
+        session_id = other48.session_id;
+        session_id_sign = other48.session_id_sign;
+    }
+    node_set_monitor_server_req_data& node_set_monitor_server_req_data::operator=(const node_set_monitor_server_req_data& other49) {
+        peer_nodes_list = other49.peer_nodes_list;
+        additional = other49.additional;
+        wallet = other49.wallet;
+        nonce = other49.nonce;
+        sign = other49.sign;
+        multisig_wallets = other49.multisig_wallets;
+        multisig_threshold = other49.multisig_threshold;
+        multisig_signs = other49.multisig_signs;
+        session_id = other49.session_id;
+        session_id_sign = other49.session_id_sign;
+        return *this;
+    }
+    void node_set_monitor_server_req_data::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_set_monitor_server_req_data(";
+        out << "peer_nodes_list=" << to_string(peer_nodes_list);
+        out << ", " << "additional=" << to_string(additional);
+        out << ", " << "wallet=" << to_string(wallet);
+        out << ", " << "nonce=" << to_string(nonce);
+        out << ", " << "sign=" << to_string(sign);
+        out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+        out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+        out << ", " << "multisig_signs=" << to_string(multisig_signs);
+        out << ", " << "session_id=" << to_string(session_id);
+        out << ", " << "session_id_sign=" << to_string(session_id_sign);
+        out << ")";
+    }
+
+
+    node_set_monitor_server_req_body::~node_set_monitor_server_req_body() throw() {
+    }
+
+
+    void node_set_monitor_server_req_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_set_monitor_server_req_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_set_monitor_server_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->data);
+                    isset_data = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_set_monitor_server_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_set_monitor_server_req_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_set_monitor_server_req_body &a, node_set_monitor_server_req_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_set_monitor_server_req_body::node_set_monitor_server_req_body(const node_set_monitor_server_req_body& other50) {
+        data = other50.data;
+    }
+    node_set_monitor_server_req_body& node_set_monitor_server_req_body::operator=(const node_set_monitor_server_req_body& other51) {
+        data = other51.data;
+        return *this;
+    }
+    void node_set_monitor_server_req_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_set_monitor_server_req_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_set_monitor_server_req::~node_set_monitor_server_req() throw() {
+    }
+
+
+    void node_set_monitor_server_req::__set_body(const node_set_monitor_server_req_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_set_monitor_server_req& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_set_monitor_server_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                    xfer += this->body.read(iprot);
+                    this->__isset.body = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_set_monitor_server_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_set_monitor_server_req");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_set_monitor_server_req &a, node_set_monitor_server_req &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_set_monitor_server_req::node_set_monitor_server_req(const node_set_monitor_server_req& other52) {
+        body = other52.body;
+        __isset = other52.__isset;
+    }
+    node_set_monitor_server_req& node_set_monitor_server_req::operator=(const node_set_monitor_server_req& other53) {
+        body = other53.body;
+        __isset = other53.__isset;
+        return *this;
+    }
+    void node_set_monitor_server_req::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_set_monitor_server_req(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
+
+node_set_monitor_server_rsp_body::~node_set_monitor_server_rsp_body() throw() {
+}
+
+
+    void node_set_monitor_server_rsp_body::__set_data(const std::string& val) {
+        this->data = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_set_monitor_server_rsp_body& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_set_monitor_server_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+        bool isset_data = false;
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRING) {
+                    xfer += iprot->readString(this->data);
+                    isset_data = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        if (!isset_data)
+            throw TProtocolException(TProtocolException::INVALID_DATA);
+        return xfer;
+    }
+
+    uint32_t node_set_monitor_server_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_set_monitor_server_rsp_body");
+
+        xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+        xfer += oprot->writeString(this->data);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_set_monitor_server_rsp_body &a, node_set_monitor_server_rsp_body &b) {
+        using ::std::swap;
+        swap(a.data, b.data);
+    }
+
+    node_set_monitor_server_rsp_body::node_set_monitor_server_rsp_body(const node_set_monitor_server_rsp_body& other54) {
+        data = other54.data;
+    }
+    node_set_monitor_server_rsp_body& node_set_monitor_server_rsp_body::operator=(const node_set_monitor_server_rsp_body& other55) {
+        data = other55.data;
+        return *this;
+    }
+    void node_set_monitor_server_rsp_body::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_set_monitor_server_rsp_body(";
+        out << "data=" << to_string(data);
+        out << ")";
+    }
+
+
+    node_set_monitor_server_rsp::~node_set_monitor_server_rsp() throw() {
+    }
+
+
+    void node_set_monitor_server_rsp::__set_body(const node_set_monitor_server_rsp_body& val) {
+        this->body = val;
+    }
+    std::ostream& operator<<(std::ostream& out, const node_set_monitor_server_rsp& obj)
+    {
+        obj.printTo(out);
+        return out;
+    }
+
+
+    uint32_t node_set_monitor_server_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+        ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+        uint32_t xfer = 0;
+        std::string fname;
+        ::apache::thrift::protocol::TType ftype;
+        int16_t fid;
+
+        xfer += iprot->readStructBegin(fname);
+
+        using ::apache::thrift::protocol::TProtocolException;
+
+
+        while (true)
+        {
+            xfer += iprot->readFieldBegin(fname, ftype, fid);
+            if (ftype == ::apache::thrift::protocol::T_STOP) {
+                break;
+            }
+            switch (fid)
+            {
+            case 1:
+                if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+                    xfer += this->body.read(iprot);
+                    this->__isset.body = true;
+                } else {
+                    xfer += iprot->skip(ftype);
+                }
+                break;
+            default:
+                xfer += iprot->skip(ftype);
+                break;
+            }
+            xfer += iprot->readFieldEnd();
+        }
+
+        xfer += iprot->readStructEnd();
+
+        return xfer;
+    }
+
+    uint32_t node_set_monitor_server_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+        uint32_t xfer = 0;
+        ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+        xfer += oprot->writeStructBegin("node_set_monitor_server_rsp");
+
+        xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+        xfer += this->body.write(oprot);
+        xfer += oprot->writeFieldEnd();
+
+        xfer += oprot->writeFieldStop();
+        xfer += oprot->writeStructEnd();
+        return xfer;
+    }
+
+    void swap(node_set_monitor_server_rsp &a, node_set_monitor_server_rsp &b) {
+        using ::std::swap;
+        swap(a.body, b.body);
+        swap(a.__isset, b.__isset);
+    }
+
+    node_set_monitor_server_rsp::node_set_monitor_server_rsp(const node_set_monitor_server_rsp& other56) {
+        body = other56.body;
+        __isset = other56.__isset;
+    }
+    node_set_monitor_server_rsp& node_set_monitor_server_rsp::operator=(const node_set_monitor_server_rsp& other57) {
+        body = other57.body;
+        __isset = other57.__isset;
+        return *this;
+    }
+    void node_set_monitor_server_rsp::printTo(std::ostream& out) const {
+        using ::apache::thrift::to_string;
+        out << "node_set_monitor_server_rsp(";
+        out << "body=" << to_string(body);
+        out << ")";
+    }
+
 } // namespace
