@@ -1,14 +1,5 @@
 #include "system_info.h"
-#include "service_module/service_name.h"
-
-typedef struct mem_table_struct {
-    const char *name;     /* memory type name */
-    unsigned long *slot; /* slot in return struct */
-} mem_table_struct;
-
-static int compare_mem_table_structs(const void *a, const void *b) {
-    return strcmp(((const mem_table_struct *) a)->name, ((const mem_table_struct *) b)->name);
-}
+#include "server/server.h"
 
 std::string gpu_info::parse_bus(const std::string &id) {
     auto pos = id.find(':');
@@ -43,62 +34,71 @@ SystemInfo::SystemInfo() {
 }
 
 SystemInfo::~SystemInfo() {
-    stop();
+    Stop();
 }
 
-void SystemInfo::init(bpo::variables_map &options, int32_t reserved_cpu_cores, int32_t reserved_memory) {
-    if (options.count(SERVICE_NAME_AI_TRAINING)) {
-        m_is_compute_node = true;
-    }
-
+ERRCODE SystemInfo::Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_t reserved_memory) {
     m_reserved_cpu_cores = reserved_cpu_cores;
     m_reserved_memory = reserved_memory;
+    m_node_type = node_type;
 
     init_os_type();
+
     update_mem_info(m_meminfo);
+
     init_cpu_info(m_cpuinfo);
-    init_gpu();
-    if (m_is_compute_node)
+
+    init_gpu_info();
+
+    if (m_node_type == DBC_NODE_TYPE::DBC_COMPUTE_NODE)
         update_disk_info("/data", m_diskinfo);
     else
         update_disk_info("/", m_diskinfo);
 
     m_public_ip = get_public_ip();
     m_default_route_ip = get_default_route_ip();
+
+    return ERR_SUCCESS;
 }
 
-void SystemInfo::start() {
+void SystemInfo::Start() {
     m_running = true;
-
-    if (m_thread == nullptr) {
-        m_thread = new std::thread(&SystemInfo::update_func, this);
+    if (m_thread_update == nullptr) {
+        m_thread_update = new std::thread(&SystemInfo::update_thread_func, this);
     }
 }
 
-void SystemInfo::stop() {
+void SystemInfo::Stop() {
     m_running = false;
-    if (m_thread != nullptr && m_thread->joinable()) {
-        m_thread->join();
+    if (m_thread_update != nullptr && m_thread_update->joinable()) {
+        m_thread_update->join();
     }
-    delete m_thread;
+    delete m_thread_update;
 }
 
-// os_type
 void SystemInfo::init_os_type() {
-    std::string os_ID = run_shell("cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}'| tr -d '\"'");
-    std::string os_VERSION = run_shell("cat /etc/os-release | grep -w VERSION | awk -F '=' '{print $2}'| tr -d '\"'");
-    std::string os_RELEASE = run_shell("uname -o -r");
+    std::string os_name = run_shell("cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}'| tr -d '\"'");
+    std::string os_version = run_shell("cat /etc/os-release | grep -w VERSION | awk -F '=' '{print $2}'| tr -d '\"'");
+    std::string os_kernel = run_shell("uname -o -r");
 
-    m_os_name = os_ID + " " + os_VERSION + " " + os_RELEASE;
-    if (os_VERSION.find("18.04") != std::string::npos)
+    m_os_name = os_name + " " + os_version + " " + os_kernel;
+
+    if (os_version.find("18.04") != std::string::npos)
         m_os_type = OS_Ubuntu_1804;
-    else if (os_VERSION.find("20.04") != std::string::npos) {
+    else if (os_version.find("20.04") != std::string::npos) {
         m_os_type = OS_Ubuntu_2004;
     }
 }
 
-// mem info
-// 预留了一定的系统内存： g_reserved_memory
+typedef struct mem_table_struct {
+	const char* name;     /* memory type name */
+	unsigned long* slot; /* slot in return struct */
+} mem_table_struct;
+
+static int compare_mem_table_structs(const void* a, const void* b) {
+	return strcmp(((const mem_table_struct*)a)->name, ((const mem_table_struct*)b)->name);
+}
+
 void SystemInfo::update_mem_info(mem_info &info) {
     unsigned long kb_main_total;
     unsigned long kb_main_free;
@@ -170,41 +170,36 @@ void SystemInfo::update_mem_info(mem_info &info) {
         head = tail + 1;
     }
 
-    info.mem_total = kb_main_total;
-    info.mem_free = kb_main_free;
+    info.total = kb_main_total;
+    info.free = kb_main_free;
 
     if (kb_main_free < m_reserved_memory * 1024L * 1024L)
-        info.mem_free = 0LU;
+        info.free = 0UL;
     else
-        info.mem_free = kb_main_free - m_reserved_memory * 1024L * 1024L;
+        info.free = kb_main_free - m_reserved_memory * 1024L * 1024L;
 
     if (kb_main_total < m_reserved_memory * 1024L * 1024L) {
-        info.mem_total = 0LU;
-        info.mem_usage = 0;
+        info.total = 0LU;
+        info.usage = 1.0f;
     } else {
-        info.mem_total = kb_main_total - m_reserved_memory * 1024L * 1024L;
-        info.mem_usage = (info.mem_total - info.mem_free) * 1.0 / info.mem_total;
+        info.total = kb_main_total - m_reserved_memory * 1024L * 1024L;
+        info.usage = (info.total - info.free) * 1.0 / info.total;
     }
 
+	info.shared = kb_main_shared;
+	info.buffers = kb_main_buffers;
+	info.cached = kb_page_cache + kb_slab_reclaimable;
+
+	unsigned long mem_available = kb_main_available;
+	info.available = mem_available - m_reserved_memory * 1024L * 1024L;
+
+	info.swap_total = kb_swap_total;
+	info.swap_free = kb_swap_free;
+
     unsigned long mem_used = kb_main_total - kb_main_free - (kb_page_cache + kb_slab_reclaimable) - kb_main_buffers;
-    if (mem_used < 0)
-        mem_used = kb_main_total - kb_main_free;
-    info.mem_used = mem_used;
-
-    info.mem_shared = kb_main_shared;
-    info.mem_buffers = kb_main_buffers;
-    info.mem_cached = kb_page_cache + kb_slab_reclaimable;
-
-    unsigned long mem_available = kb_main_available;
-    if (mem_available > kb_main_total)
-        mem_available = kb_main_free;
-    info.mem_available = mem_available - m_reserved_memory * 1024L * 1024L;
-
-    info.mem_swap_total = kb_swap_total;
-    info.mem_swap_free = kb_swap_free;
+    info.used = mem_used;
 }
 
-// cpu info
 void SystemInfo::init_cpu_info(cpu_info &info) {
     std::set<int32_t> cpus;
     FILE *fp = fopen("/proc/cpuinfo", "r");
@@ -258,15 +253,15 @@ void SystemInfo::init_cpu_info(cpu_info &info) {
     }
     fclose(fp);
 
-    info.physical_cores = cpus.size();
+    info.physical_cpus = cpus.size();
     info.threads_per_cpu = info.logical_cores_per_cpu / info.physical_cores_per_cpu;
     info.physical_cores_per_cpu -= m_reserved_cpu_cores;
     info.logical_cores_per_cpu = info.physical_cores_per_cpu * info.threads_per_cpu;
-    info.total_cores = info.physical_cores * info.physical_cores_per_cpu * info.threads_per_cpu;
+    info.cores = info.physical_cpus * info.physical_cores_per_cpu * info.threads_per_cpu;
 }
 
-// gpu info
-void SystemInfo::init_gpu() {
+// NVIDIA
+void SystemInfo::init_gpu_info() {
     std::string cmd = "lspci -nnv |grep NVIDIA |awk '{print $2\",\"$1}' |tr \"\n\" \"|\"";
     std::string str = run_shell(cmd.c_str());
     if (!str.empty()) {
@@ -294,7 +289,6 @@ void SystemInfo::init_gpu() {
     }
 }
 
-// disk info
 void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
     char dpath[256] = "/"; //设置默认位置
 
@@ -308,10 +302,10 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
     }
 
     uint64_t block_size = diskInfo.f_bsize; //每块包含字节大小
-    info.disk_total = (diskInfo.f_blocks * block_size) >> 10; //磁盘总空间
-    info.disk_available = (diskInfo.f_bavail * block_size) >> 10; //非超级用户可用空间
-    info.disk_free = (diskInfo.f_bfree * block_size) >> 10; //磁盘所有剩余空间
-    info.disk_usage = (info.disk_total - info.disk_available) * 1.0 / info.disk_total;
+    info.total = (diskInfo.f_blocks * block_size) >> 10; //磁盘总空间
+    info.available = (diskInfo.f_bavail * block_size) >> 10; //非超级用户可用空间
+    info.free = (diskInfo.f_bfree * block_size) >> 10; //磁盘所有剩余空间
+    info.usage = (info.total - info.available) * 1.0 / info.total;
 
     std::string cmd = "df -l " + std::string(dpath) + " | tail -1";
     std::string tmp = run_shell(cmd.c_str());
@@ -341,7 +335,6 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
         info.disk_type = DISK_SSD;
 }
 
-// cpu usage
 struct occupy {
     char name[20];
     unsigned int user;
@@ -350,7 +343,6 @@ struct occupy {
     unsigned int idle;
 };
 
-// read cpu info from /proc/stat这里读取文件得到一些数值，这些数值可用来计算cpu使用率
 void get_occupy(struct occupy *p, int cpu_count) {
     FILE *fp;
     char buff[1024];
@@ -371,7 +363,6 @@ void get_occupy(struct occupy *p, int cpu_count) {
     fclose(fp);
 }
 
-// calculate cpu occupation计算cpu使用率
 float cal_occupy(struct occupy *p1, struct occupy *p2) {
     double od, nd;
     od = (double) (p1->user + p1->nice + p1->system + p1->idle);
@@ -380,7 +371,7 @@ float cal_occupy(struct occupy *p1, struct occupy *p2) {
     return cpu_used;
 }
 
-void SystemInfo::update_func() {
+void SystemInfo::update_thread_func() {
     int cpu_num = sysconf(_SC_NPROCESSORS_CONF);
     struct occupy *ocpu = new occupy[cpu_num + 1];
     struct occupy *ncpu = new occupy[cpu_num + 1];
@@ -395,23 +386,32 @@ void SystemInfo::update_func() {
             m_default_route_ip = get_default_route_ip();
 
         // cpu usage
-        get_occupy(ocpu, cpu_num);
-        sleep(3);
-        get_occupy(ncpu, cpu_num);
-        m_cpu_usage = cal_occupy(&ocpu[0], &ncpu[0]);
+        do {
+            get_occupy(ocpu, cpu_num);
+            sleep(3);
+            get_occupy(ncpu, cpu_num);
+            RwMutex::WriteLock wlock(m_cpu_mtx);
+            m_cpu_usage = cal_occupy(&ocpu[0], &ncpu[0]);
+        } while (0);
 
         // mem
-        mem_info _mem_info;
-        update_mem_info(_mem_info);
-        m_meminfo = _mem_info;
+        do {
+            mem_info _mem_info;
+            update_mem_info(_mem_info);
+            RwMutex::WriteLock wlock(m_mem_mtx);
+            m_meminfo = _mem_info;
+        } while (0);
 
         // disk
-        disk_info _disk_info;
-        if (m_is_compute_node)
-            update_disk_info("/data", _disk_info);
-        else
-            update_disk_info("/", _disk_info);
-        m_diskinfo = _disk_info;
+        do {
+            disk_info _disk_info;
+            if (m_node_type == DBC_NODE_TYPE::DBC_COMPUTE_NODE)
+                update_disk_info("/data", _disk_info);
+            else
+                update_disk_info("/", _disk_info);
+            RwMutex::WriteLock wlock(m_disk_mtx);
+            m_diskinfo = _disk_info;
+        } while (0);
     }
 
     delete[] ocpu;

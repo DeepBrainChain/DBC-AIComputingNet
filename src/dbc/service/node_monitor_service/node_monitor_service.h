@@ -38,8 +38,6 @@ protected:
     void send_monitor_data();
 
 private:
-    bool m_is_computing_node = false;
-    
     uint32_t m_monitor_data_sender_task_timer_id = INVALID_TIMER_ID;
 
     std::vector<monitor_server> m_monitor_servers;

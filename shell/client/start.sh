@@ -13,7 +13,8 @@ then
     echo "${dbc_file} is already running!"
     exit 1
 else
-    ${dbc_file} -d
+    host=$(hostname)
+    ${dbc_file} --client -d -n $host
 fi
 
 process_num=`ps -ef | grep -v grep | grep  "${dbc_file}\b" | wc -l`

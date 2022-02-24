@@ -32,8 +32,13 @@ dbc_package()
     mkdir -p $dbc_repo_dir/shell
     if [ $type == 'client' ];then
         sed -i '/dbc_chain_domain/d' $dbc_repo_dir/conf/core.conf
-        rm -rf $dbc_repo_dir/conf/container.conf
         cp $shell_dir/client/*.sh $dbc_repo_dir/shell/
+    fi
+
+    if [ $type == 'seed' ];then
+        sed -i '/dbc_chain_domain/d' $dbc_repo_dir/conf/core.conf
+        sed -i '/image_server/d' $dbc_repo_dir/conf/core.conf
+        cp $shell_dir/seed/*.sh $dbc_repo_dir/shell/
     fi
 
     if [ $type == 'mining' ]; then
@@ -42,7 +47,6 @@ dbc_package()
     fi
 
     cp -r $shell_dir/crontab $dbc_repo_dir/shell
-    cp -r $shell_dir/image $dbc_repo_dir/shell
 
     cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/shell/
     cp $tool_dir/change_gpu_id.sh   $dbc_repo_dir/shell/

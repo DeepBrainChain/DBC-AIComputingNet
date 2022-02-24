@@ -1,22 +1,18 @@
 #include "node_monitor_service.h"
 #include "zabbixSender.h"
-#include "service_module/service_name.h"
 #include "service/task/TaskInfoManager.h"
 #include "service/task/vm/vm_client.h"
 #include "common/version.h"
 #include "log/log.h"
+#include "server/server.h"
 
 node_monitor_service::~node_monitor_service() {
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         remove_timer(m_monitor_data_sender_task_timer_id);
     }
 }
 
 int32_t node_monitor_service::init(bpo::variables_map &options) {
-    if (options.count(SERVICE_NAME_AI_TRAINING)) {
-        m_is_computing_node = true;
-    }
-
     service_module::init();
 
     m_monitor_servers.push_back({DBC_ZABBIX_SERVER_IP, DBC_ZABBIX_SERVER_PORT});
@@ -24,7 +20,7 @@ int32_t node_monitor_service::init(bpo::variables_map &options) {
 }
 
 void node_monitor_service::init_timer() {
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 1min
         // 10s
         m_timer_invokers[MONITOR_DATA_SENDER_TASK_TIMER] = std::bind(&node_monitor_service::on_monitor_data_sender_task_timer, this, std::placeholders::_1);

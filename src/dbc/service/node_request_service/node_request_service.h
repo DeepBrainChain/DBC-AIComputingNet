@@ -140,8 +140,6 @@ private:
     void check_authority(const AuthorityParams& params, AuthoriseResult& result);
 
 protected:
-    bool m_is_computing_node = false;
-
     TaskMgr m_task_scheduler;
 
     uint32_t m_training_task_timer_id = INVALID_TIMER_ID;

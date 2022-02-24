@@ -32,6 +32,9 @@ void ssl_locking_callback(int mode, int type, const char *file, int line)
     }
 }
 
+DBC_NODE_TYPE Server::NodeType = DBC_NODE_TYPE::DBC_COMPUTE_NODE;
+std::string Server::NodeName = "";
+
 ERRCODE Server::Init(int argc, char *argv[]) {
     ERRCODE err = ERR_SUCCESS;
     variables_map options;
@@ -48,6 +51,7 @@ ERRCODE Server::Init(int argc, char *argv[]) {
 
     LOG_INFO << "begin server init ...";
 
+    // Crypto
     LOG_INFO << "begin to init crypto";
     err = InitCrypto(options);
     if (ERR_SUCCESS != err) {
@@ -56,14 +60,16 @@ ERRCODE Server::Init(int argc, char *argv[]) {
     }
     LOG_INFO << "init crypto success";
 
-    LOG_INFO << "begin to init env_manager";
+    // EnvManager
+    LOG_INFO << "begin to init EvnManager";
     err = EnvManager::instance().Init();
     if (ERR_SUCCESS != err) {
-        LOG_ERROR << "init env_manager failed";
+        LOG_ERROR << "init EnvManager failed";
         return err;
     }
-    LOG_INFO << "init env_manager success";
+    LOG_INFO << "init EnvManager success";
 
+    // ConfManager
     LOG_INFO << "begin to init ConfManager";
     err = ConfManager::instance().Init();
     if (ERR_SUCCESS != err) {
@@ -72,11 +78,11 @@ ERRCODE Server::Init(int argc, char *argv[]) {
     }
     LOG_INFO << "init ConfManager success";
 
-    // system_info
+    // SystemInfo
     LOG_INFO << "begin to init SystemInfo";
-    SystemInfo::instance().init(options, g_reserved_physical_cores_per_cpu, g_reserved_memory);
-    SystemInfo::instance().start();
-    LOG_INFO << "init SystemInfo successful";
+    SystemInfo::instance().Init(Server::NodeType, g_reserved_physical_cores_per_cpu, g_reserved_memory);
+    SystemInfo::instance().Start();
+    LOG_INFO << "init SystemInfo success";
 
     // timer_matrix_manager
     LOG_INFO << "begin to init timer matrix manager";
@@ -200,19 +206,21 @@ ERRCODE Server::ExitCrypto()
 }
 
 ERRCODE Server::ParseCommandLine(int argc, char* argv[], bpo::variables_map &options) {
-    options_description opts("dbc command options");
+    options_description opts("command options");
     opts.add_options()
-            ("daemon,d", "run as daemon process")
-            ("ai_training,a", "run as ai training service provider")
+            ("version,v", "dbc version")
+            ("compute", "run as compute node")
+		    ("client", "run as client node")
+		    ("seed", "run as seed node")
             ("name,n", bpo::value<std::string>(), "node name")
-            ("version,v", "dbc version");
+            ("daemon,d", "run as daemon process");
 
     try {
         bpo::store(bpo::parse_command_line(argc, argv, opts), options);
         bpo::notify(options);
     }
     catch (const std::exception &e) {
-        std::cout << "invalid command option: " << e.what() << std::endl;
+        std::cout << "parse command option error: " << e.what() << std::endl;
         std::cout << opts << std::endl;
         return ERR_ERROR;
     }
@@ -220,12 +228,33 @@ ERRCODE Server::ParseCommandLine(int argc, char* argv[], bpo::variables_map &opt
     if (options.count("version")) {
         std::cout << "version: " << dbcversion() << std::endl;
         return ERR_ERROR;
-    } else if (options.count("daemon")) {
-        Daemon();
-        return ERR_SUCCESS;
-    } else {
-        return ERR_SUCCESS;
     }
+    
+    if (options.count("compute")) {
+        NodeType = DBC_NODE_TYPE::DBC_COMPUTE_NODE;
+    }
+    else if (options.count("client")) {
+        NodeType = DBC_NODE_TYPE::DBC_CLIENT_NODE;
+    }
+    else if (options.count("seed")) {
+        NodeType = DBC_NODE_TYPE::DBC_SEED_NODE;
+    }
+
+    if (options.count("name")) {
+        NodeName = options["name"].as<std::string>();
+    }
+
+    if (NodeName.empty()) {
+        char buf[256] = { 0 };
+        gethostname(buf, 256);
+        NodeName = buf;
+    }
+    
+    if (options.count("daemon")) {
+        Daemon();
+    }
+
+    return ERR_SUCCESS;
 }
 
 void Server::Daemon()

@@ -58,6 +58,9 @@
 #include "validator/port_validator.h"
 #include "validator/url_validator.h"
 
+namespace bpo = boost::program_options;
+namespace bfs = boost::filesystem;
+
 static const char* color_black = "\033[1;30m";
 static const char* color_blue = "\033[1;34m";
 static const char* color_red = "\033[1;31m";

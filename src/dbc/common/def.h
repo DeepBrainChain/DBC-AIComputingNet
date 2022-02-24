@@ -33,6 +33,8 @@
 
 #define AI_TRAINING_MAX_TASK_COUNT                                  64
 
+#define SERVICE_NAME_AI_TRAINING "ai_training"
+
 
 enum DBC_NODE_TYPE {
     DBC_COMPUTE_NODE,

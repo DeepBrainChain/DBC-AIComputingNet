@@ -22,19 +22,26 @@ static std::string g_internal_ip_seeds[] = {
 };
 
 std::string ImageServer::to_string() {
-    return ip + "," + port + "," + username + "," + passwd + "," + image_dir + "," + id;
+    return id + "," + ip + "," + port + "," + modulename;
 }
 
 void ImageServer::from_string(const std::string& str) {
     std::vector<std::string> val = util::split(str, ",");
-    if (val.size() == 6) {
-        this->ip = val[0];
-        this->port = val[1];
-        this->username = val[2];
-        this->passwd = val[3];
-        this->image_dir = val[4];
-        this->id = val[5];
+    if (val.size() >= 1) {
+        this->id = val[0];
     }
+
+	if (val.size() >= 2) {
+		this->ip = val[1];
+	}
+
+	if (val.size() >= 3) {
+		this->port = val[2];
+	}
+
+	if (val.size() >= 4) {
+		this->modulename = val[3];
+	}
 }
 
 ConfManager::ConfManager() {
@@ -117,19 +124,13 @@ ERRCODE ConfManager::ParseConf() {
     if (core_args.count("image_server") > 0) {
         std::vector<std::string> vec = core_args["image_server"].as<std::vector<std::string>>();
         for (auto& str : vec) {
-            std::vector<std::string> val = util::split(str, ",");
-            if (val.size() == 6) {
-                ImageServer* imgsvr = new ImageServer();
-                imgsvr->ip = val[0];
-                imgsvr->port = val[1];
-                imgsvr->username = val[2];
-                imgsvr->passwd = val[3];
-                imgsvr->image_dir = val[4];
-                imgsvr->id = val[5];
-                if (imgsvr->id.empty()) 
-                    continue;
-                m_image_server[imgsvr->id] = imgsvr;
+            ImageServer* imgsvr = new ImageServer();
+            imgsvr->from_string(str);
+            if (imgsvr->id.empty()) {
+                delete imgsvr;
+                continue;
             }
+			m_image_server[imgsvr->id] = imgsvr;
         }
     }
 

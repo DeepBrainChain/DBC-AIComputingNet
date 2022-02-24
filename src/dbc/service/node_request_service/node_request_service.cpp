@@ -11,7 +11,6 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include "../message/message_id.h"
-#include "service_module/service_name.h"
 #include "util/base64.h"
 #include "tweetnacl/tools.h"
 #include "tweetnacl/randombytes.h"
@@ -63,7 +62,7 @@ std::string get_is_update(const std::string& s) {
 }
 
 node_request_service::~node_request_service() {
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         remove_timer(m_training_task_timer_id);
         remove_timer(m_prune_task_timer_id);
     }
@@ -72,14 +71,13 @@ node_request_service::~node_request_service() {
 }
 
 int32_t node_request_service::init(bpo::variables_map &options) {
-    if (options.count(SERVICE_NAME_AI_TRAINING)) {
-        m_is_computing_node = true;
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         add_self_to_servicelist(options);
     }
 
     service_module::init();
 
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         m_httpclient.connect_chain();
 
         auto fresult = m_task_scheduler.init();
@@ -132,7 +130,7 @@ void node_request_service::add_self_to_servicelist(bpo::variables_map &options) 
 }
 
 void node_request_service::init_timer() {
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 10s
         m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1);
         m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, ULLONG_MAX, "");
@@ -575,7 +573,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<dbc::ne
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -703,7 +701,7 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<dbc:
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -801,7 +799,7 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<dbc::n
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -899,7 +897,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<dbc
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -959,18 +957,18 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << "\"errcode\":" << 0;
     ss << ",\"message\":" << "{";
     ss << "\"version\":" << "\"" << dbcversion() << "\"";
-    ss << ",\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().publicip()) << "\"";
-    ss << ",\"os\":" << "\"" << SystemInfo::instance().osname() << "\"";
-    cpu_info tmp_cpuinfo = SystemInfo::instance().cpuinfo();
+    ss << ",\"ip\":" << "\"" << hide_ip_addr(SystemInfo::instance().GetPublicip()) << "\"";
+    ss << ",\"os\":" << "\"" << SystemInfo::instance().GetOsName() << "\"";
+    cpu_info tmp_cpuinfo = SystemInfo::instance().GetCpuInfo();
     ss << ",\"cpu\":" << "{";
     ss << "\"type\":" << "\"" << tmp_cpuinfo.cpu_name << "\"";
     ss << ",\"hz\":" << "\"" << tmp_cpuinfo.mhz << "\"";
-    ss << ",\"cores\":" << "\"" << tmp_cpuinfo.total_cores << "\"";
-    ss << ",\"used_usage\":" << "\"" << f2s(SystemInfo::instance().cpu_usage() * 100) << "%" << "\"";
+    ss << ",\"cores\":" << "\"" << tmp_cpuinfo.cores << "\"";
+    ss << ",\"used_usage\":" << "\"" << f2s(SystemInfo::instance().GetCpuUsage() * 100) << "%" << "\"";
     ss << "}";
 
     ss << ",\"gpu\":" << "{";
-    const std::map<std::string, gpu_info> gpu_infos = SystemInfo::instance().gpuinfo();
+    const std::map<std::string, gpu_info> gpu_infos = SystemInfo::instance().GetGpuInfo();
     int gpu_count = gpu_infos.size();
     ss << "\"gpu_count\":" << "\"" << gpu_count << "\"";
     int gpu_used = 0;
@@ -985,27 +983,27 @@ void node_request_service::query_node_info(const dbc::network::base_header& head
     ss << ",\"gpu_used\":" << "\"" << gpu_used << "\"";
     ss << "}";
 
-    mem_info tmp_meminfo = SystemInfo::instance().meminfo();
+    mem_info tmp_meminfo = SystemInfo::instance().GetMemInfo();
     ss << ",\"mem\":" <<  "{";
-    ss << "\"size\":" << "\"" << size2GB(tmp_meminfo.mem_total) << "\"";
-    ss << ",\"free\":" << "\"" << size2GB(tmp_meminfo.mem_free) << "\"";
-    ss << ",\"used_usage\":" << "\"" << f2s(tmp_meminfo.mem_usage * 100) << "%" << "\"";
+    ss << "\"size\":" << "\"" << size2GB(tmp_meminfo.total) << "\"";
+    ss << ",\"free\":" << "\"" << size2GB(tmp_meminfo.free) << "\"";
+    ss << ",\"used_usage\":" << "\"" << f2s(tmp_meminfo.usage * 100) << "%" << "\"";
     ss << "}";
-    disk_info tmp_diskinfo = SystemInfo::instance().diskinfo();
+    disk_info tmp_diskinfo = SystemInfo::instance().GetDiskInfo();
     ss << ",\"disk_system\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
     ss << ",\"size\":" << "\"" << g_disk_system_size << "G\"";
     ss << "}";
     ss << ",\"disk_data\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
-    ss << ",\"size\":" << "\"" << size2GB(tmp_diskinfo.disk_total) << "\"";
-    ss << ",\"free\":" << "\"" << size2GB(tmp_diskinfo.disk_available) << "\"";
-    ss << ",\"used_usage\":" << "\"" << f2s(tmp_diskinfo.disk_usage * 100) << "%" << "\"";
+    ss << ",\"size\":" << "\"" << size2GB(tmp_diskinfo.total) << "\"";
+    ss << ",\"free\":" << "\"" << size2GB(tmp_diskinfo.available) << "\"";
+    ss << ",\"used_usage\":" << "\"" << f2s(tmp_diskinfo.usage * 100) << "%" << "\"";
     ss << "}";
+
     std::vector<std::string> images;
     ImageServer imgsvr;
     imgsvr.from_string(data->image_server);
-
     ImageMgr::instance().ListLocalShareImages(imgsvr, images);
     ss << ",\"images\":" << "[";
     for(int i = 0; i < images.size(); ++i) {
@@ -1056,7 +1054,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<dbc::netw
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1191,7 +1189,7 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << "{";
             ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
             ss_tasks << ", \"os\":" << "\"" << task->operation_system << "\"";
-            ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().publicip() << "\"";
+            ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().GetPublicip() << "\"";
             ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
             ss_tasks << ", \"rdp_port\":" << "\"" << task->rdp_port << "\"";
             ss_tasks << ", \"user_name\":" << "\""
@@ -1306,7 +1304,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<dbc::ne
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1442,7 +1440,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<dbc::net
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1539,7 +1537,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<dbc::netw
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1636,7 +1634,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<dbc::n
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1733,7 +1731,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<dbc::net
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1830,7 +1828,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<dbc::ne
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1927,7 +1925,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<dbc::netw
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2067,7 +2065,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<dbc::net
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2190,7 +2188,7 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
         return;
     }
 
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         /*
         int32_t count = m_task_scheduler.GetRunningTaskSize();
         std::string state;
@@ -2342,7 +2340,7 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<dbc::
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2546,7 +2544,7 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<dbc
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2691,7 +2689,7 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<dbc
         return;
     }
 
-    if (!m_is_computing_node) {
+    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         dbc::network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;

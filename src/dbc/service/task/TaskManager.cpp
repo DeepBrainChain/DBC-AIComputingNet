@@ -96,8 +96,14 @@ FResult TaskManager::downloadImage(const std::string& wallet,
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return {E_DEFAULT, "no image_filename"};
+        return {E_DEFAULT, "additional no image_filename"};
     }
+
+	std::string local_dir;
+	JSON_PARSE_STRING(doc, "local_dir", local_dir)
+	if (local_dir.empty()) {
+		return { E_DEFAULT, "additional no local_dir" };
+	}
 
     std::vector<std::string> images;
     ImageServer imgsvr;
@@ -112,7 +118,7 @@ FResult TaskManager::downloadImage(const std::string& wallet,
         return {E_DEFAULT, "image:" + image_filename + " in downloading"};
     }
 
-    ImageManager::instance().Download(image_filename, imgsvr);
+    ImageManager::instance().Download(image_filename, local_dir, imgsvr);
     return FResultOK;
 }
 
@@ -753,7 +759,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         cpu_cores = atoi(s_cpu_cores.c_str());
 
         if (role == USER_ROLE::UR_VERIFIER)
-            cpu_cores = SystemInfo::instance().cpuinfo().total_cores;
+            cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
 
         // gpu
         if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) < 0) {
@@ -763,7 +769,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         gpu_count = atoi(s_gpu_count.c_str());
 
         if (role == USER_ROLE::UR_VERIFIER)
-            gpu_count = SystemInfo::instance().gpuinfo().size();
+            gpu_count = SystemInfo::instance().GetGpuInfo().size();
 
         // mem
         if (!util::is_digits(s_mem_size) || atoi(s_mem_size.c_str()) <= 0) {
@@ -773,7 +779,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         mem_size = atoi(s_mem_size.c_str()) * 1024L * 1024L;
 
         if (role == USER_ROLE::UR_VERIFIER)
-            mem_size = SystemInfo::instance().meminfo().mem_free;
+            mem_size = SystemInfo::instance().GetMemInfo().free;
 
         // disk
         if (!util::is_digits(s_disk_size) || atoi(s_disk_size.c_str()) <= 0) {
@@ -783,7 +789,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         uint64_t disk_size = atoi(s_disk_size.c_str()) * 1024L * 1024L;
 
         if (role == USER_ROLE::UR_VERIFIER)
-            disk_size = (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size * 1024L * 1024L) * 0.75;
+            disk_size = (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L) * 0.75;
 
         disks[1] = disk_size;
 
@@ -974,12 +980,12 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 }
 
 bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads) {
-    int32_t nTotalCores = SystemInfo::instance().cpuinfo().total_cores;
+    int32_t nTotalCores = SystemInfo::instance().GetCpuInfo().cores;
     if (total_cores > nTotalCores) return false;
 
-    int32_t nSockets = SystemInfo::instance().cpuinfo().physical_cores;
-    int32_t nCores = SystemInfo::instance().cpuinfo().physical_cores_per_cpu;
-    int32_t nThreads = SystemInfo::instance().cpuinfo().threads_per_cpu;
+    int32_t nSockets = SystemInfo::instance().GetCpuInfo().physical_cpus;
+    int32_t nCores = SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu;
+    int32_t nThreads = SystemInfo::instance().GetCpuInfo().threads_per_cpu;
     int32_t ret_total_cores = total_cores;
     threads = nThreads;
 
@@ -1007,7 +1013,7 @@ bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& 
 bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus) {
     if (gpu_count <= 0) return true;
 
-    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
+    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
     auto tasks = TaskInfoMgr::instance().getTasks();
     for (auto& it : tasks) {
         if (it.second->status != TS_ShutOff && it.second->status < TS_Error) {
@@ -1032,11 +1038,11 @@ bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::lis
 }
 
 bool TaskManager::allocate_mem(uint64_t mem_size) {
-    return mem_size > 0 && mem_size <= SystemInfo::instance().meminfo().mem_free;
+    return mem_size > 0 && mem_size <= SystemInfo::instance().GetMemInfo().free;
 }
 
 bool TaskManager::allocate_disk(uint64_t disk_size) {
-    return disk_size > 0 && disk_size <= (SystemInfo::instance().diskinfo().disk_available - g_disk_system_size * 1024L * 1024L) * 0.75;
+    return disk_size > 0 && disk_size <= (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L) * 0.75;
 }
 
 FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params) {
@@ -1232,10 +1238,10 @@ FResult TaskManager::check_data_image(const std::string& data_image_name) {
 
 FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
     int32_t cpu_cores = sockets * cores * threads;
-    if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().cpuinfo().total_cores ||
-        sockets > SystemInfo::instance().cpuinfo().physical_cores ||
-        cores > SystemInfo::instance().cpuinfo().physical_cores_per_cpu ||
-        threads > SystemInfo::instance().cpuinfo().threads_per_cpu) {
+    if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().GetCpuInfo().cores ||
+        sockets > SystemInfo::instance().GetCpuInfo().physical_cpus ||
+        cores > SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu ||
+        threads > SystemInfo::instance().GetCpuInfo().threads_per_cpu) {
         return {E_DEFAULT, "cpu config is invalid"};
     }
 
@@ -1243,7 +1249,7 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) 
 }
 
 FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string>> &gpus) {
-    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().gpuinfo();
+    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
     auto tasks = TaskInfoMgr::instance().getTasks();
     for (auto& it : tasks) {
         if (it.second->status != TS_ShutOff && it.second->status < TS_Error) {
@@ -1276,7 +1282,7 @@ FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string
 }
 
 FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
-    uint64_t disk_available = SystemInfo::instance().diskinfo().disk_available - g_disk_system_size * 1024L * 1024L;
+    uint64_t disk_available = SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L;
     uint64_t need_size = 0;
     for (auto& it : disks) {
         need_size += it.second;
@@ -1982,7 +1988,7 @@ void TaskManager::process_create(const ETaskEvent& ev) {
         ImageServer imgsvr;
         imgsvr.from_string(_svr);
         LOG_INFO << "need download image: " << images_name[0];
-        ImageManager::instance().Download(images_name[0], imgsvr, [this, _taskid, _svr] () {
+        ImageManager::instance().Download(images_name[0], "/data/", imgsvr, [this, _taskid, _svr]() {
             ETaskEvent ev;
             ev.task_id = _taskid;
             ev.op = T_OP_Create;
@@ -2047,7 +2053,7 @@ bool TaskManager::create_task_iptable(const std::string &domain_name, const std:
                                       const std::string& rdp_port, const std::vector<std::string>& custom_port,
                                       const std::string &vm_local_ip) {
     // std::string public_ip = SystemInfo::instance().publicip();
-    std::string public_ip = SystemInfo::instance().defaultRouteIp();
+    std::string public_ip = SystemInfo::instance().GetDefaultRouteIp();
     if (!public_ip.empty() && !vm_local_ip.empty()) {
         shell_add_iptable_to_system(domain_name, public_ip, ssh_port, rdp_port, custom_port, vm_local_ip);
 

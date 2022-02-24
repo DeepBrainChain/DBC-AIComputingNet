@@ -17,16 +17,47 @@ ImageManager::~ImageManager() {
     delete m_pthread;
 }
 
-void ImageManager::ListShareImages(const ImageServer& image_server, std::vector<std::string> &images) {
-    if (image_server.ip.empty() || image_server.port.empty() || image_server.username.empty()
-        || image_server.passwd.empty() || image_server.image_dir.empty()) return;
+std::string ImageManager::CommandListImage(const std::string& host, const std::string& port /* = "873" */, 
+    const std::string& modulename /* = "images" */) {
+    std::string _modulename = modulename;
+    if (!_modulename.empty() && (*_modulename.end()) != '/')
+        _modulename += "/";
 
-    std::string dbc_dir = util::get_exe_dir().string();
-    std::string ret_default = run_shell(
-    dbc_dir + "/shell/image/list_file.sh " + image_server.ip + " " + image_server.port + " " +
-        image_server.username + " " + image_server.passwd + " " + image_server.image_dir);
-    auto pos = ret_default.find_last_of('\n');
-    std::string str = ret_default.substr(pos + 1);
+    return "rsync -az --timeout=600  --list-only --port " + port + " " + host + "::" + _modulename +
+        " | grep ^- | awk -F' ' '{print $5}' |paste -s -d, |tr -d '[[:space:]]'";
+}
+
+std::string ImageManager::CommandDownloadImage(const std::string& filename, const std::string& local_dir, const std::string& host,
+    const std::string& port /* = "873" */, const std::string& modulename /* = "images" */) {
+	std::string _modulename = modulename;
+	if (!_modulename.empty() && (*_modulename.end()) != '/')
+		_modulename += "/";
+
+    std::string _local_dir = local_dir;
+	if (!_local_dir.empty() && (*_local_dir.end()) != '/')
+        _local_dir += "/";
+
+    return "rsync -az --delete --timeout=600 --partial --progress --port " + port + " " + host +
+        "::" + _modulename + filename + " " + local_dir;
+}
+
+std::string ImageManager::CommandUploadImage(const std::string& local_file, const std::string& host, 
+    const std::string& port /* = "873" */, const std::string& modulename /* = "images" */) {
+	std::string _modulename = modulename;
+	if (!_modulename.empty() && (*_modulename.end()) != '/')
+		_modulename += "/";
+    
+    return "rsync -az --delete --timeout=600 --partial --progress --port " + port + " " + local_file
+        + " " + host + "::" + _modulename;
+}
+
+void ImageManager::ListShareImages(const ImageServer& image_server, std::vector<std::string> &images) {
+    if (image_server.ip.empty() || image_server.port.empty() || image_server.modulename.empty()) 
+        return;
+    
+    std::string cmd = CommandListImage(image_server.ip, image_server.port, image_server.modulename);
+    std::string ret_default = run_shell(cmd);
+    std::string str = util::rtrim(ret_default, '\n');
     std::vector<std::string> v_images = util::split(str, ",");
     for (int i = 0; i < v_images.size(); i++) {
         std::string fname = v_images[i];
@@ -145,15 +176,12 @@ void ImageManager::ListWalletLocalShareImages(const std::string &wallet, const I
     }
 }
 
-void ImageManager::Download(const std::string& image_name, const ImageServer& from_server,
+void ImageManager::Download(const std::string& image_name, const std::string& local_dir, const ImageServer& from_server,
                             const std::function<void()>& finish_callback) {
-	if (from_server.ip.empty() || from_server.port.empty() || from_server.username.empty()
-		|| from_server.passwd.empty() || from_server.image_dir.empty()) return;
-
-    std::string exe_dir = util::get_exe_dir().string();
-    std::string cmd = exe_dir + "/shell/image/rsync_download.sh " + from_server.ip + " " + from_server.port
-                      + " " + from_server.username + " " + from_server.passwd + " " + from_server.image_dir + "/"
-                      + image_name + " /data/";
+	if (from_server.ip.empty() || from_server.port.empty() || from_server.modulename.empty()) 
+        return;
+ 
+    std::string cmd = CommandDownloadImage(image_name, local_dir, from_server.ip, from_server.port, from_server.modulename);
     std::shared_ptr<boost::process::child> pull_image =
             std::make_shared<boost::process::child>(cmd, boost::process::std_out > boost::process::null,
                                                     boost::process::std_err > boost::process::null);
@@ -185,24 +213,21 @@ bool ImageManager::IsDownloading(const std::string &image_name) {
     return iter != m_download_images.end();
 }
 
-void ImageManager::Upload(const std::string& image_name, const ImageServer& to_server,
+void ImageManager::Upload(const std::string& imagefile_name, const ImageServer& to_server,
                           const std::function<void()>& finish_callback) {
-	if (to_server.ip.empty() || to_server.port.empty() || to_server.username.empty()
-		|| to_server.passwd.empty() || to_server.image_dir.empty()) return;
+	if (to_server.ip.empty() || to_server.port.empty() || to_server.modulename.empty()) 
+        return;
 
-    std::string exe_dir = util::get_exe_dir().string();
-    std::string cmd = exe_dir + "/shell/image/rsync_upload.sh " + to_server.ip + " " + to_server.port + " "
-            + to_server.username + " " + to_server.passwd + " " + "/data/" + image_name + " "
-            + to_server.image_dir + "/";
+    std::string cmd = CommandUploadImage(imagefile_name, to_server.ip, to_server.port, to_server.modulename);
     std::shared_ptr<boost::process::child> push_image =
             std::make_shared<boost::process::child>(cmd, boost::process::std_out > boost::process::null,
                                                     boost::process::std_err > boost::process::null);
     push_image->running();
 
     RwMutex::WriteLock wlock(m_upload_mtx);
-    m_upload_images[image_name] = push_image;
+    m_upload_images[imagefile_name] = push_image;
     if (finish_callback != nullptr) {
-        m_upload_finish_callback[image_name] = finish_callback;
+        m_upload_finish_callback[imagefile_name] = finish_callback;
     }
 }
 
