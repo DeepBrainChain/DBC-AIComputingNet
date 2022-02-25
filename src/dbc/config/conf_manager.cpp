@@ -96,7 +96,8 @@ ERRCODE ConfManager::ParseConf() {
         ("http_port", bpo::value<int32_t>()->default_value(5050), "")
         ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
         ("image_server", bpo::value<std::vector<std::string>>(), "")
-        ("dbc_monitor_server", bpo::value<std::string>()->default_value(g_internal_zabbix_server), "");
+        ("dbc_monitor_server", bpo::value<std::string>()->default_value(g_internal_zabbix_server), "")
+        ("miner_monitor_server", bpo::value<std::string>(), "");
 
     const boost::filesystem::path &conf_path = EnvManager::instance().get_conf_file_path();
     try {
@@ -139,6 +140,10 @@ ERRCODE ConfManager::ParseConf() {
 
     if (core_args.count("dbc_monitor_server") > 0) {
         m_dbc_monitor_server = core_args["dbc_monitor_server"].as<std::string>();
+    }
+
+    if (core_args.count("miner_monitor_server") > 0) {
+        m_miner_monitor_server = core_args["miner_monitor_server"].as<std::string>();
     }
 
     variables_map peer_args;

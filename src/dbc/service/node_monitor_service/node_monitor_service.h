@@ -54,14 +54,21 @@ private:
     uint32_t m_monitor_data_sender_task_timer_id = INVALID_TIMER_ID;
     uint32_t m_update_cur_renter_wallet_timer_id = INVALID_TIMER_ID;
 
+    // deepbranchain的监控
     monitor_server m_dbc_monitor_server;
 
+    // 矿工的监控
+    monitor_server m_miner_monitor_server;
+
+    // 各个虚拟机的监控数据
     std::map<std::string, dbcMonitor::domMonitorData> m_monitor_datas;
 
     std::shared_ptr<leveldb::DB> m_wallet_monitors_db;
 
+    // 租用人的监控
     std::map<std::string, std::vector<monitor_server>> m_wallet_monitors;
 
+    // 当前租用人的钱包地址
     std::string m_cur_renter_wallet;
 
     HttpChainClient m_httpclient;
