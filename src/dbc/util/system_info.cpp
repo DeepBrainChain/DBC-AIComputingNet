@@ -62,6 +62,7 @@ void SystemInfo::init(bpo::variables_map &options, int32_t reserved_cpu_cores, i
         update_disk_info("/data", m_diskinfo);
     else
         update_disk_info("/", m_diskinfo);
+    update_load_average(m_loadaverage);
 
     m_public_ip = get_public_ip();
     m_default_route_ip = get_default_route_ip();
@@ -341,6 +342,15 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
         info.disk_type = DISK_SSD;
 }
 
+void SystemInfo::update_load_average(std::vector<float> &average) {
+    std::string tmp = run_shell("uptime | awk '{print $10,$11,$12}'");
+    std::vector<std::string> vecSplit;
+    util::split(tmp, ", ", vecSplit);
+    for (const auto& str : vecSplit) {
+        average.push_back(atof(str.c_str()));
+    }
+}
+
 // cpu usage
 struct occupy {
     char name[20];
@@ -412,6 +422,10 @@ void SystemInfo::update_func() {
         else
             update_disk_info("/", _disk_info);
         m_diskinfo = _disk_info;
+
+        std::vector<float> vecAverage;
+        update_load_average(vecAverage);
+        m_loadaverage.swap(vecAverage);
     }
 
     delete[] ocpu;

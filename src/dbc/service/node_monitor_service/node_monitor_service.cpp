@@ -9,6 +9,7 @@
 #include "config/conf_manager.h"
 #include "log/log.h"
 #include "network/protocol/thrift_binary.h"
+#include "util/system_info.h"
 
 node_monitor_service::~node_monitor_service() {
     if (m_is_computing_node) {
@@ -42,7 +43,7 @@ int32_t node_monitor_service::init(bpo::variables_map &options) {
     return ERR_SUCCESS;
 }
 
-void node_monitor_service::listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers) {
+void node_monitor_service::listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers) const {
     auto monitor_servers = m_wallet_monitors.find(wallet);
     if (monitor_servers != m_wallet_monitors.end()) {
         for (const auto& server : monitor_servers->second) {
@@ -90,6 +91,10 @@ void node_monitor_service::init_timer() {
         // 10s
         m_timer_invokers[MONITOR_DATA_SENDER_TASK_TIMER] = std::bind(&node_monitor_service::on_monitor_data_sender_task_timer, this, std::placeholders::_1);
         m_monitor_data_sender_task_timer_id = this->add_timer(MONITOR_DATA_SENDER_TASK_TIMER, 10 * 1000, ULLONG_MAX, "");
+
+        // 3min
+        m_timer_invokers[UPDATE_CUR_RENTER_WALLET_TIMER] = std::bind(&node_monitor_service::on_update_cur_renter_wallet_timer, this, std::placeholders::_1);
+        m_update_cur_renter_wallet_timer_id = this->add_timer(UPDATE_CUR_RENTER_WALLET_TIMER, 180 * 1000, ULLONG_MAX, "");
     }
 }
 
@@ -189,12 +194,27 @@ int32_t node_monitor_service::load_wallet_monitor_from_db() {
 }
 
 void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_ptr<core_timer>& timer) {
+    // 宿主机的监控信息
+    dbcMonitor::hostMonitorData hmData;
+    hmData.gpuCount = hmData.gpuUsed = hmData.vmCount = hmData.vmRunning = 0;
+    hmData.rxFlow = hmData.txFlow = 0;
+
     auto renttasks = WalletRentTaskMgr::instance().getRentTasks();
     for (const auto& rentlist : renttasks) {
         auto monitor_servers = m_wallet_monitors.find(rentlist.first);
+        if (rentlist.first == m_cur_renter_wallet) {
+            hmData.vmCount = rentlist.second->task_ids.size();
+        }
         for (const auto& task_id : rentlist.second->task_ids) {
             if (task_id.find("vm_check_") != std::string::npos) continue;
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+            if (rentlist.first == m_cur_renter_wallet) {
+                if (taskinfo && taskinfo->status == ETaskStatus::TS_Running) {
+                    std::shared_ptr<TaskResource> task_resource = TaskResourceMgr::instance().getTaskResource(task_id);
+                    hmData.gpuUsed += task_resource->gpus.size();
+                    hmData.vmRunning++;
+                }
+            }
             if (!taskinfo || taskinfo->status == ETaskStatus::TS_Creating) continue;
 
             // get monitor data of vm
@@ -213,6 +233,11 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
                 // 计算CPU使用率、磁盘读写速度和网络收发速度
                 dmData.calculatorUsageAndSpeed(lastData->second);
                 m_monitor_datas[task_id] = dmData;
+            }
+
+            for (const auto & netStat : dmData.netStats) {
+                hmData.rxFlow += netStat.second.rx_bytes;
+                hmData.txFlow += netStat.second.tx_bytes;
             }
 
             // send monitor data
@@ -234,9 +259,47 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             iter++;
         }
     }
+
+    hmData.nodeId = ConfManager::instance().GetNodeId();
+    hmData.delay = 10;
+    hmData.gpuCount = SystemInfo::instance().gpuinfo().size();
+    hmData.cpuUsage = SystemInfo::instance().cpu_usage();
+    hmData.memTotal = SystemInfo::instance().meminfo().mem_total;
+    hmData.memFree = SystemInfo::instance().meminfo().mem_free;
+    hmData.memUsage = SystemInfo::instance().meminfo().mem_usage;
+    // hmData.flow 各虚拟机的流量之和
+    hmData.diskTotal = SystemInfo::instance().diskinfo().disk_total;
+    hmData.diskFree = SystemInfo::instance().diskinfo().disk_available;
+    hmData.diskUsage = SystemInfo::instance().diskinfo().disk_usage;
+    hmData.loadAverage = SystemInfo::instance().loadaverage();
+    // hmData.packetLossRate
+    hmData.version = dbcversion();
+
+    if (!m_cur_renter_wallet.empty()) {
+        auto monitor_servers = m_wallet_monitors.find(m_cur_renter_wallet);
+        if (monitor_servers != m_wallet_monitors.end()) {
+            for (const auto& server : monitor_servers->second) {
+                send_monitor_data(hmData, server);
+            }
+        }
+    }
+    send_monitor_data(hmData, m_dbc_monitor_server);
 }
 
-void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) {
+void node_monitor_service::on_update_cur_renter_wallet_timer(const std::shared_ptr<core_timer>& timer) {
+    std::string cur_renter_wallet;
+    std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
+    for (auto& it : wallets) {
+        int64_t rent_end = m_httpclient.request_rent_end(it);
+        if (rent_end > 0) {
+            cur_renter_wallet = it;
+            break;
+        }
+    }
+    m_cur_renter_wallet = cur_renter_wallet;
+}
+
+void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) const {
     // TASK_LOG_INFO(dmData.domainName, dmData.toJsonString());
     zabbixSender zs(server.host, server.port);
     if (zs.is_server_want_monitor_data(dmData.domainName)) {
@@ -249,5 +312,19 @@ void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& d
         }
     } else {
         LOG_ERROR << "server: " << server.host << " does not need monitor data of vm: " << dmData.domainName;
+    }
+}
+
+void node_monitor_service::send_monitor_data(const dbcMonitor::hostMonitorData& hmData, const monitor_server& server) const {
+    LOG_INFO << "machine monitor data:" << hmData.toJsonString();
+    zabbixSender zs(server.host, server.port);
+    if (zs.is_server_want_monitor_data(hmData.nodeId)) {
+        if (!zs.sendJsonData(hmData.toZabbixString())) {
+            LOG_ERROR << "send host monitor data to server(" << server.host << ") error";
+        } else {
+            LOG_INFO << "send host monitor data to server(" << server.host << ") success";
+        }
+    } else {
+        LOG_ERROR << "server: " << server.host << " does not need host monitor data";
     }
 }

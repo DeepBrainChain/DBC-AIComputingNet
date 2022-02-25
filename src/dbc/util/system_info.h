@@ -108,6 +108,10 @@ public:
         return m_diskinfo;
     }
 
+    const std::vector<float> &loadaverage() const {
+        return m_loadaverage;
+    }
+
 protected:
     void init_os_type();
 
@@ -118,6 +122,8 @@ protected:
     void init_gpu();
 
     void update_disk_info(const std::string &path, disk_info &info);
+
+    void update_load_average(std::vector<float> &average);
 
     void update_func();
 
@@ -130,6 +136,7 @@ private:
     cpu_info m_cpuinfo;
     std::map<std::string, gpu_info> m_gpuinfo; // <id, gpu>
     disk_info m_diskinfo;
+    std::vector<float> m_loadaverage; // load average
 
     float m_cpu_usage = 0.0f;
     std::thread *m_thread = nullptr;
