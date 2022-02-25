@@ -14,7 +14,7 @@ then
     exit 1
 else
     host=$(hostname)
-    ${dbc_file} --compute -d -n $host
+    ${dbc_file} --seed -d -n $host
 fi
 
 process_num=`ps -ef | grep -v grep | grep  "${dbc_file}\b" | wc -l`

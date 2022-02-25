@@ -51,8 +51,6 @@ protected:
     void send_monitor_data(const dbcMonitor::hostMonitorData& hmData, const monitor_server& server) const;
 
 private:
-    bool m_is_computing_node = false;
-    
     uint32_t m_monitor_data_sender_task_timer_id = INVALID_TIMER_ID;
     uint32_t m_update_cur_renter_wallet_timer_id = INVALID_TIMER_ID;
 

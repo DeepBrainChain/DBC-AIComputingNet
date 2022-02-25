@@ -1,7 +1,6 @@
 #include "node_monitor_service.h"
 #include "monitors_db_types.h"
 #include "zabbixSender.h"
-#include "service_module/service_name.h"
 #include "service/task/TaskInfoManager.h"
 #include "service/task/WalletRentTaskManager.h"
 #include "service/task/vm/vm_client.h"
@@ -10,17 +9,17 @@
 #include "log/log.h"
 #include "network/protocol/thrift_binary.h"
 #include "util/system_info.h"
+#include "server/server.h"
 
 node_monitor_service::~node_monitor_service() {
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         remove_timer(m_monitor_data_sender_task_timer_id);
+        remove_timer(m_update_cur_renter_wallet_timer_id);
     }
 }
 
 int32_t node_monitor_service::init(bpo::variables_map &options) {
-    if (options.count(SERVICE_NAME_AI_TRAINING)) {
-        m_is_computing_node = true;
-
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         std::string default_monitor = ConfManager::instance().GetDbcMonitorServer();
         std::vector<std::string> vecSplit = util::split(default_monitor, ":");
         if (vecSplit.size() != 2) {
@@ -86,7 +85,7 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
 }
 
 void node_monitor_service::init_timer() {
-    if (m_is_computing_node) {
+    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 1min
         // 10s
         m_timer_invokers[MONITOR_DATA_SENDER_TASK_TIMER] = std::bind(&node_monitor_service::on_monitor_data_sender_task_timer, this, std::placeholders::_1);
@@ -262,15 +261,15 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
 
     hmData.nodeId = ConfManager::instance().GetNodeId();
     hmData.delay = 10;
-    hmData.gpuCount = SystemInfo::instance().gpuinfo().size();
-    hmData.cpuUsage = SystemInfo::instance().cpu_usage();
-    hmData.memTotal = SystemInfo::instance().meminfo().mem_total;
-    hmData.memFree = SystemInfo::instance().meminfo().mem_free;
-    hmData.memUsage = SystemInfo::instance().meminfo().mem_usage;
+    hmData.gpuCount = SystemInfo::instance().GetGpuInfo().size();
+    hmData.cpuUsage = SystemInfo::instance().GetCpuUsage();
+    hmData.memTotal = SystemInfo::instance().GetMemInfo().total;
+    hmData.memFree = SystemInfo::instance().GetMemInfo().free;
+    hmData.memUsage = SystemInfo::instance().GetMemInfo().usage;
     // hmData.flow 各虚拟机的流量之和
-    hmData.diskTotal = SystemInfo::instance().diskinfo().disk_total;
-    hmData.diskFree = SystemInfo::instance().diskinfo().disk_available;
-    hmData.diskUsage = SystemInfo::instance().diskinfo().disk_usage;
+    hmData.diskTotal = SystemInfo::instance().GetDiskInfo().total;
+    hmData.diskFree = SystemInfo::instance().GetDiskInfo().available;
+    hmData.diskUsage = SystemInfo::instance().GetDiskInfo().usage;
     hmData.loadAverage = SystemInfo::instance().loadaverage();
     // hmData.packetLossRate
     hmData.version = dbcversion();

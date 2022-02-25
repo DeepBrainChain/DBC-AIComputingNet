@@ -648,22 +648,17 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
         if (image_server.empty() || it_svr == nullptr) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
         } else {
-            std::string dbc_dir = util::get_exe_dir().string();
-            std::string ret = run_shell(dbc_dir + "/shell/image/list_file.sh " + it_svr->ip + " " + it_svr->port 
-                                        + " " + it_svr->username + " " + it_svr->passwd + " " + it_svr->image_dir);
-            auto pos = ret.find_last_of('\n');
-            std::string str = ret.substr(pos + 1);
+            std::vector<std::string> v_images;
+            ImageManager::instance().ListShareImages(*it_svr, v_images);
+            
             std::string rsp_json = "{";
             rsp_json += "\"errcode\":0";
             rsp_json += ",\"message\": [";
-            std::vector<std::string> v_images = util::split(str, ",");
             int count = 0;
             for (int i = 0; i < v_images.size(); i++) {
-                if (count > 0) rsp_json += ",";
-                if (boost::filesystem::path(v_images[i]).extension().string() == ".qcow2") {
-                    rsp_json += "\"" + v_images[i] + "\"";
-                    count += 1;
-                }
+                if (count > 0) rsp_json += ","; 
+				rsp_json += "\"" + v_images[i] + "\"";
+				count += 1;
             }
             rsp_json += "]";
             rsp_json += "}";
@@ -1142,7 +1137,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
 
     // 从client节点上传镜像到镜像中心
     if (!has_peer_nodeid(body)) {
-		if (image_filename.empty() || !boost::filesystem::exists("/data/" + image_filename)) {
+		if (image_filename.empty() || !boost::filesystem::exists(image_filename)) {
 			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_filename: /data/" + image_filename + " not exist");
 			return;
 		}
@@ -4124,7 +4119,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
         std::list<cmd_peer_node_info> peer_nodes_list;
         for (auto itn = vPeers.begin(); itn != vPeers.end(); ++itn) {
             if (ConfManager::instance().GetNodeId() == (*itn)->m_id ||
-                SystemInfo::instance().publicip() == (*itn)->m_peer_addr.get_ip())
+                SystemInfo::instance().GetPublicip() == (*itn)->m_peer_addr.get_ip())
                 continue;
 
             cmd_peer_node_info node_info;
@@ -4157,7 +4152,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
         std::list<cmd_peer_node_info> peer_nodes_list;
         for (auto it = vPeers.begin(); it != vPeers.end(); ++it) {
             if (ConfManager::instance().GetNodeId() == (*it)->node_id ||
-                SystemInfo::instance().publicip() == (*it)->tcp_ep.address().to_string())
+                SystemInfo::instance().GetPublicip() == (*it)->tcp_ep.address().to_string())
                 continue;
 
             cmd_peer_node_info node_info;

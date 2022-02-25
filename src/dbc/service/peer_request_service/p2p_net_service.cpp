@@ -663,7 +663,7 @@ void p2p_net_service::on_client_tcp_connect_notification(const std::shared_ptr<d
         ver_req_content->body.__set_protocol_version(PROTOCO_VERSION);
         ver_req_content->body.__set_time_stamp(std::time(nullptr));
         dbc::network_address addr_me;
-        addr_me.__set_ip(SystemInfo::instance().publicip());
+        addr_me.__set_ip(SystemInfo::instance().GetPublicip());
         addr_me.__set_port(m_listen_port);
         ver_req_content->body.__set_addr_me(addr_me);
         tcp::endpoint ep = std::dynamic_pointer_cast<dbc::network::client_tcp_connect_notification>(msg)->ep;

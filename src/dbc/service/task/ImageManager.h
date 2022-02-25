@@ -11,6 +11,12 @@ public:
 
     virtual ~ImageManager();
 
+    std::string CommandListImage(const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+    
+    std::string CommandDownloadImage(const std::string& filename, const std::string& local_dir, const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+	
+    std::string CommandUploadImage(const std::string& local_file, const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+
     void ListShareImages(const ImageServer& image_server, std::vector<std::string> &images);
 
     void ListLocalBaseImages(std::vector<std::string>& images);
@@ -19,13 +25,14 @@ public:
 
     void ListWalletLocalShareImages(const std::string& wallet, const ImageServer& image_server, std::vector<std::string> &images);
 
-    void Download(const std::string& image_name, const ImageServer& from_server, const std::function<void()>& finish_callback = nullptr);
+    void Download(const std::string& image_name, const std::string& local_dir, 
+        const ImageServer& from_server, const std::function<void()>& finish_callback = nullptr);
 
     void TerminateDownload(const std::string& image_name);
 
     bool IsDownloading(const std::string& image_name);
 
-    void Upload(const std::string& image_name, const ImageServer& to_server, const std::function<void()>& finish_callback = nullptr);
+    void Upload(const std::string& imagefile_name, const ImageServer& to_server, const std::function<void()>& finish_callback = nullptr);
 
     void TerminateUpload(const std::string& image_name);
 

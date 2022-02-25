@@ -6,9 +6,6 @@
 #include "service_module/topic_manager.h"
 #include "network/connection_manager.h"
 #include "timer/timer_matrix_manager.h"
-#include <boost/program_options.hpp>
-
-namespace bpo = boost::program_options;
 
 class Server {
 public:
@@ -22,6 +19,11 @@ public:
 
     void Exit();
 
+public:
+	static DBC_NODE_TYPE NodeType;
+
+    static std::string NodeName;
+
 protected:
     ERRCODE InitCrypto(bpo::variables_map &options);
 
@@ -34,8 +36,6 @@ protected:
 private:
     std::atomic<bool> m_running {true};
     std::shared_ptr<timer_matrix_manager> m_timer_matrix_manager = nullptr;
-    
-
 };
 
 #endif

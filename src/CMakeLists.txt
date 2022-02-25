@@ -34,7 +34,6 @@ include_directories(
 set(service_src_dir
         dbc
         dbc/common
-        dbc/common/def
         dbc/util
         dbc/util/utils
         dbc/util/validator
@@ -106,7 +105,6 @@ target_link_libraries(check_env ${Boost_LIBRARIES} -lsr25519crust -lcrypt -leven
 
 ## sign_tool ##
 aux_source_directory(dbc/common sign_tool_src_files)
-aux_source_directory(dbc/common/def sign_tool_src_files)
 aux_source_directory(dbc/util sign_tool_src_files)
 aux_source_directory(dbc/util/utils sign_tool_src_files)
 aux_source_directory(dbc/util/validator sign_tool_src_files)

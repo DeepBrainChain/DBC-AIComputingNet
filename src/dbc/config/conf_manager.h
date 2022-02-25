@@ -13,10 +13,8 @@ struct peer_seeds {
 
 struct ImageServer {
     std::string ip;
-    std::string port;
-    std::string username;
-    std::string passwd;
-    std::string image_dir;
+    std::string port = "873";
+    std::string modulename = "images";
     std::string id;
 
     std::string to_string();
