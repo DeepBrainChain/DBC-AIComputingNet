@@ -5,47 +5,41 @@
 #include "../timer/time_tick_notification.h"
 #include <boost/format.hpp>
 
-service_module::service_module()
+ERRCODE service_module::init()
 {
     m_timer_manager = std::make_shared<timer_manager>(this);
-}
 
-int32_t service_module::init()
-{
     init_timer();
 
     init_invoker();
 
     init_subscription();
 
-    init_time_tick_subscription();
+    subscribe_time_tick();
 
-    return ERR_SUCCESS;
+	m_running = true;
+	if (m_thread == nullptr) {
+		m_thread = new std::thread(&service_module::thread_func, this);
+	}
+
+	return ERR_SUCCESS;
 }
 
-void service_module::init_time_tick_subscription() {
+void service_module::subscribe_time_tick() {
     topic_manager::instance().subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<dbc::network::message> &msg) {
         send(msg);
     });
 }
 
-void service_module::start()
-{
-    m_running = true;
-    if (m_thread == nullptr) {
-        m_thread = new std::thread(&service_module::thread_func, this);
-    }
-}
-
-void service_module::stop()
+void service_module::exit()
 {
     m_running = false;
-
+    m_cond.notify_all();
     if (m_thread != nullptr && m_thread->joinable()) {
         m_thread->join();
     }
-
     delete m_thread;
+    m_thread = nullptr;
 }
 
 void service_module::thread_func()
@@ -56,10 +50,9 @@ void service_module::thread_func()
     {
         {
             std::unique_lock<std::mutex> lock(m_msg_queue_mutex);
-            std::chrono::milliseconds ms(500);
-            m_cond.wait_for(lock, ms, [this]()->bool { return !m_msg_queue.empty(); });
-            if (m_msg_queue.empty())
-                continue;
+            m_cond.wait_for(lock, std::chrono::milliseconds(500), [this] { 
+                return !m_running || !m_msg_queue.empty(); 
+            });
             m_msg_queue.swap(tmp_msg_queue);
         }
 

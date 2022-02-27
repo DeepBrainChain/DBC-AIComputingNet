@@ -6,15 +6,52 @@
 #include "vm/vm_client.h"
 
 ImageManager::ImageManager() {
-    m_pthread = new std::thread(&ImageManager::thread_check_handle, this);
+
 }
 
 ImageManager::~ImageManager() {
-    m_running = false;
-    if (m_pthread != nullptr && m_pthread->joinable()) {
-        m_pthread->join();
-    }
-    delete m_pthread;
+
+}
+
+ERRCODE ImageManager::Init() {
+	m_running = true;
+	if (m_thread_check == nullptr) {
+		m_thread_check = new std::thread(&ImageManager::thread_check_handle, this);
+	}
+
+    return ERR_SUCCESS;
+}
+
+void ImageManager::Exit() {
+	m_running = false;
+	if (m_thread_check != nullptr && m_thread_check->joinable()) {
+		m_thread_check->join();
+	}
+	delete m_thread_check;
+	m_thread_check = nullptr;
+
+	do {
+		RwMutex::WriteLock wlock(m_download_mtx);
+		for (auto iter = m_download_images.begin(); iter != m_download_images.end(); ) {
+            if (iter->second->running()) {
+                iter->second->terminate();
+            }
+
+			m_download_finish_callback.erase(iter->first);
+			iter = m_download_images.erase(iter);
+		}
+	} while (0);
+
+	do {
+		RwMutex::WriteLock wlock(m_upload_mtx);
+		for (auto iter = m_upload_images.begin(); iter != m_upload_images.end(); ) {
+			if (iter->second->running())
+				iter->second->terminate();
+
+			m_upload_finish_callback.erase(iter->first);
+			iter = m_upload_images.erase(iter);
+		}
+	} while (0);
 }
 
 std::string ImageManager::CommandListImage(const std::string& host, const std::string& port /* = "873" */, 
@@ -38,7 +75,7 @@ std::string ImageManager::CommandDownloadImage(const std::string& filename, cons
         _local_dir += "/";
 
     return "rsync -az --delete --timeout=600 --partial --progress --port " + port + " " + host +
-        "::" + _modulename + filename + " " + local_dir;
+        "::" + _modulename + filename + " " + _local_dir;
 }
 
 std::string ImageManager::CommandUploadImage(const std::string& local_file, const std::string& host, 
@@ -201,10 +238,10 @@ void ImageManager::TerminateDownload(const std::string &image_name) {
         if (pull_image->second->running()) {
             pull_image->second->terminate();
         }
-
-        m_download_images.erase(image_name);
-        m_download_finish_callback.erase(image_name);
     }
+
+	m_download_images.erase(image_name);
+	m_download_finish_callback.erase(image_name);
 }
 
 bool ImageManager::IsDownloading(const std::string &image_name) {
@@ -238,10 +275,10 @@ void ImageManager::TerminateUpload(const std::string &image_name) {
         if (push_image->second->running()) {
             push_image->second->terminate();
         }
-
-        m_upload_images.erase(image_name);
-        m_upload_finish_callback.erase(image_name);
     }
+
+	m_upload_images.erase(image_name);
+	m_upload_finish_callback.erase(image_name);
 }
 
 bool ImageManager::IsUploading(const std::string &image_name) {

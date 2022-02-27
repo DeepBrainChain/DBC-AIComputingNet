@@ -21,15 +21,13 @@ namespace bp = boost::process;
 
 class TaskManager {
 public:
-    TaskManager();
+    TaskManager() = default;
 
-    virtual ~TaskManager();
+    virtual ~TaskManager() = default;
 
     FResult init();
-
-    void start();
-
-    void stop();
+    
+    void exit();
 
     FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
                        const AuthoriseResult& result, std::vector<std::string> &images);
@@ -177,14 +175,16 @@ protected:
 
     void prune_task_thread_func();
 
-protected:
-    std::mutex m_process_mtx;
-    std::condition_variable m_process_cond;
-    std::queue<ETaskEvent> m_process_tasks; // <task_id>
-
+protected:    
     std::atomic<bool> m_running {false};
     std::thread* m_process_thread = nullptr;
+	std::mutex m_process_mtx;
+	std::condition_variable m_process_cond;
+	std::queue<ETaskEvent> m_process_tasks; // <task_id>
+
     std::thread* m_prune_thread = nullptr;
+    std::mutex m_prune_mtx;
+    std::condition_variable m_prune_cond;
 
     HttpChainClient m_httpclient;
 };

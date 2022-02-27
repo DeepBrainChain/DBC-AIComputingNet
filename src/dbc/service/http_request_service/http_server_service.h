@@ -12,41 +12,16 @@ constexpr unsigned int MAX_BODY_SIZE = 0x02000000;  // max http body size
 
 class http_server_service : public Singleton<http_server_service> {
 public:
-    explicit http_server_service() {
-
-    }
+    http_server_service() = default;
 
     virtual ~http_server_service() = default;
 
-    int32_t init(bpo::variables_map &options);
+    ERRCODE init();
 
-    int32_t start() {
-        if (!is_prohibit_rest()) {
-            start_http_server();
-        }
-        return ERR_SUCCESS;
-    }
-
-    int32_t stop() {
-        if (!is_prohibit_rest()) {
-            interrupt_http_server();
-        }
-        return ERR_SUCCESS;
-    }
-
-    int32_t exit() {
-        if (!is_prohibit_rest()) {
-            stop_http_server();
-        }
-        return ERR_SUCCESS;
-    }
+    void exit();
 
 private:
-    int32_t load_rest_config(bpo::variables_map &options);
-
-    inline bool is_prohibit_rest() const {
-        return m_listen_port == 0;
-    }
+    ERRCODE load_rest_config();
 
     bool init_http_server();
 
@@ -67,15 +42,6 @@ private:
     void interrupt_http_server();
 
     static void http_reject_request_cb(struct evhttp_request *req, void *);
-
-
-
-
-
-
-
-
-
 
 private:
     std::string m_listen_ip = "127.0.0.1";

@@ -22,9 +22,11 @@ class p2p_net_service : public service_module, public Singleton<p2p_net_service>
 public:
     p2p_net_service() = default;
 
-    ~p2p_net_service() override;
+    ~p2p_net_service() override = default;
 
-    int32_t init() override;
+    ERRCODE init() override;
+    
+    void exit() override;
 
     std::string get_host_ip() const { return m_listen_ip; }
 
@@ -51,9 +53,9 @@ protected:
 
     int32_t load_peer_candidates_from_db();
 
-    int32_t init_acceptor();
+    int32_t start_acceptor();
 
-    int32_t init_connector();
+    int32_t start_connector();
 
     // peer candidate
     bool is_peer_candidate_exist(tcp::endpoint &ep);

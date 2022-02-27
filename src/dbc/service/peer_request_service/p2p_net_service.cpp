@@ -29,14 +29,7 @@ const uint32_t max_connect_per_check = 16;
 
 namespace fs = boost::filesystem;
 
-p2p_net_service::~p2p_net_service() {
-    remove_timer(m_timer_check_peer_candidates);
-    remove_timer(m_timer_dyanmic_adjust_network);
-    remove_timer(m_timer_peer_info_exchange);
-    remove_timer(m_timer_dump_peer_candidates);
-}
-
-int32_t p2p_net_service::init() {
+ERRCODE p2p_net_service::init() {
     service_module::init();
 
     m_rand_seed = uint256();
@@ -54,17 +47,26 @@ int32_t p2p_net_service::init() {
 
     load_peer_candidates_from_db();
 
-    if (ERR_SUCCESS != init_acceptor()) {
-        LOG_ERROR << "init_acceptor error";
-        return E_DEFAULT;
-    }
+	if (ERR_SUCCESS != start_acceptor()) {
+		LOG_ERROR << "start_acceptor error";
+		return E_DEFAULT;
+	}
 
-    if (ERR_SUCCESS != init_connector()) {
-        LOG_ERROR << "init_connector error";
-        return E_DEFAULT;
-    }
+	if (ERR_SUCCESS != start_connector()) {
+		LOG_ERROR << "start_connector error";
+		return E_DEFAULT;
+	}
 
     return ERR_SUCCESS;
+}
+
+void p2p_net_service::exit() {
+	service_module::exit();
+
+	remove_timer(m_timer_check_peer_candidates);
+	remove_timer(m_timer_dyanmic_adjust_network);
+	remove_timer(m_timer_peer_info_exchange);
+	remove_timer(m_timer_dump_peer_candidates);
 }
 
 void p2p_net_service::init_timer() {
@@ -212,8 +214,7 @@ int32_t p2p_net_service::load_peer_candidates_from_db() {
     return ERR_SUCCESS;
 }
 
-// listen
-int32_t p2p_net_service::init_acceptor() {
+int32_t p2p_net_service::start_acceptor() {
     tcp::endpoint ep(ip::address::from_string(m_listen_ip), m_listen_port);
     int32_t ret = dbc::network::connection_manager::instance().start_listen(ep, &matrix_server_socket_channel_handler::create);
     if (ERR_SUCCESS != ret) {
@@ -224,8 +225,7 @@ int32_t p2p_net_service::init_acceptor() {
     return ERR_SUCCESS;
 }
 
-// connect peers
-int32_t p2p_net_service::init_connector() {
+int32_t p2p_net_service::start_connector() {
     std::vector<std::string> peers;
     const std::vector<std::string> &conf_peers = ConfManager::instance().GetPeers();
     peers.insert(peers.begin(), conf_peers.begin(), conf_peers.end());

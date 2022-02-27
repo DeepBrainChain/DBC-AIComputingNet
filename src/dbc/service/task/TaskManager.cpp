@@ -15,14 +15,6 @@
 #include "tinyxml2.h"
 #include "ImageManager.h"
 
-TaskManager::TaskManager() {
-
-}
-
-TaskManager::~TaskManager() {
-    this->stop();
-}
-
 FResult TaskManager::init() {
     m_httpclient.connect_chain();
 
@@ -61,7 +53,33 @@ FResult TaskManager::init() {
     TaskResourceMgr::instance().init(taskids);
     SnapshotManager::instance().init(taskids);
 
+	m_running = true;
+	if (m_process_thread == nullptr) {
+		m_process_thread = new std::thread(&TaskManager::process_task_thread_func, this);
+	}
+
+	if (m_prune_thread == nullptr) {
+		m_prune_thread = new std::thread(&TaskManager::prune_task_thread_func, this);
+	}
+
     return {ERR_SUCCESS, ""};
+}
+
+void TaskManager::exit() {
+	m_running = false;
+	m_process_cond.notify_all();
+	if (m_process_thread != nullptr && m_process_thread->joinable()) {
+		m_process_thread->join();
+	}
+	delete m_process_thread;
+	m_process_thread = nullptr;
+
+	m_prune_cond.notify_all();
+	if (m_prune_thread != nullptr && m_prune_thread->joinable()) {
+		m_prune_thread->join();
+	}
+	delete m_prune_thread;
+	m_prune_thread = nullptr;
 }
 
 FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
@@ -135,20 +153,24 @@ FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_pt
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return {E_DEFAULT, "no image_filename"};
+        return {E_DEFAULT, "image_filename is empty"};
     }
 
-    if (!boost::filesystem::exists("/data/" + image_filename)) {
+    std::string image_fullpath = image_filename;
+	if (!boost::filesystem::path(image_fullpath).is_absolute())
+        image_fullpath = "/data/" + image_fullpath;
+
+    if (!boost::filesystem::exists(image_fullpath)) {
         return {E_DEFAULT, "image:" + image_filename + " not exist"};
     }
 
-    if (ImageManager::instance().IsUploading(image_filename)) {
+    if (ImageManager::instance().IsUploading(image_fullpath)) {
         return {E_DEFAULT, "image:" + image_filename + " in uploading"};
     }
 
     ImageServer imgsvr;
     imgsvr.from_string(data->image_server);
-    ImageManager::instance().Upload(image_filename, imgsvr);
+    ImageManager::instance().Upload(image_fullpath, imgsvr);
     return FResultOK;
 }
 
@@ -509,30 +531,6 @@ void TaskManager::delete_disk_file(const std::string& task_id, const std::map<st
             TASK_LOG_INFO(task_id, "remove disk file: " << iter.second.sourceFile);
         }
     }
-}
-
-void TaskManager::start() {
-    m_running = true;
-    if (m_process_thread == nullptr) {
-        m_process_thread = new std::thread(&TaskManager::process_task_thread_func, this);
-    }
-
-    if (m_prune_thread == nullptr) {
-        m_prune_thread = new std::thread(&TaskManager::prune_task_thread_func, this);
-    }
-}
-
-void TaskManager::stop() {
-    m_running = false;
-    if (m_process_thread != nullptr && m_process_thread->joinable()) {
-        m_process_thread->join();
-    }
-    delete m_process_thread;
-
-    if (m_prune_thread != nullptr && m_prune_thread->joinable()) {
-        m_prune_thread->join();
-    }
-    delete m_prune_thread;
 }
 
 static std::string genpwd() {
@@ -2271,8 +2269,13 @@ void TaskManager::process_create_snapshot(const ETaskEvent& ev) {
 
 void TaskManager::prune_task_thread_func() {
     while (m_running) {
-        sleep(60);
-        if (!m_running) break;
+		std::unique_lock<std::mutex> lock(m_prune_mtx);
+		m_prune_cond.wait_for(lock, std::chrono::seconds(60), [this] {
+			return !m_running || !m_process_tasks.empty();
+		});
+
+		if (!m_running)
+			break;
 
         shell_remove_reject_iptable_from_system();
 

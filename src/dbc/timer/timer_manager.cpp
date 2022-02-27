@@ -6,14 +6,13 @@
 
 timer_manager::timer_manager(service_module *mdl)
     : m_module(mdl)
-    , m_timer_alloc_id(0)
 {
-    assert(nullptr != m_module);
+    
 }
 
 timer_manager::~timer_manager()
 {
-    remove_all_timers();
+
 }
 
 uint32_t timer_manager::add_timer(const std::string &name, uint32_t period, uint64_t repeat_times, const std::string & session_id)
@@ -49,13 +48,6 @@ void timer_manager::remove_timer(uint32_t timer_id)
             break;
         }
     }
-}
-
-void timer_manager::on_time_point_notification(std::shared_ptr<dbc::network::message> msg)
-{
-    std::shared_ptr<time_tick_notification> notification = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
-    if (nullptr != notification)
-        this->process(notification->time_tick);
 }
 
 int32_t timer_manager::process(uint64_t time_tick)

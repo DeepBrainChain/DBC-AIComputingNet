@@ -42,13 +42,15 @@ namespace dbc
         public:
             using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
 
-            connection_manager();
+            connection_manager() = default;
 
-            ~connection_manager() override;
+            ~connection_manager() override = default;
 
             void set_proto_capacity(socket_id sid, std::string c);
 
-            int32_t init() override;
+            ERRCODE init() override;
+
+            void exit() override;
 
             int32_t start_listen(tcp::endpoint ep, handler_create_functor func);
 

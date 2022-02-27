@@ -46,6 +46,9 @@ struct log_exception_handler
         std::cout << "std::logic_error: " << e.what() << std::endl;
         throw;
     }
+	void operator() (boost::exception const& e) const {
+		std::cout << "boost.log::exception: " << diagnostic_information_what(e) << std::endl;
+	}
 };
 
 int32_t dbclog::init()

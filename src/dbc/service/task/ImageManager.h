@@ -11,11 +11,15 @@ public:
 
     virtual ~ImageManager();
 
-    std::string CommandListImage(const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+    static std::string CommandListImage(const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
     
-    std::string CommandDownloadImage(const std::string& filename, const std::string& local_dir, const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+    static std::string CommandDownloadImage(const std::string& filename, const std::string& local_dir, const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
 	
-    std::string CommandUploadImage(const std::string& local_file, const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+    static std::string CommandUploadImage(const std::string& local_file, const std::string& host, const std::string& port = "873", const std::string& modulename = "images");
+
+	ERRCODE Init();
+
+	void Exit();
 
     void ListShareImages(const ImageServer& image_server, std::vector<std::string> &images);
 
@@ -48,8 +52,8 @@ private:
     std::map<std::string, std::shared_ptr<boost::process::child> > m_upload_images;
     std::map<std::string, std::function<void()> > m_upload_finish_callback;
     RwMutex m_upload_mtx;
-    std::thread *m_pthread = nullptr;
-    std::atomic<bool> m_running {true};
+	std::thread* m_thread_check = nullptr;
+	std::atomic<bool> m_running{ false };
 };
 
 typedef ImageManager ImageMgr;

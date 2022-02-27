@@ -62,46 +62,43 @@ std::string get_is_update(const std::string& s) {
     return operation;
 }
 
-node_request_service::~node_request_service() {
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-        remove_timer(m_training_task_timer_id);
-        remove_timer(m_prune_task_timer_id);
-    }
+ERRCODE node_request_service::init() {
+	service_module::init();
 
-    m_task_scheduler.stop();
+	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+		add_self_to_servicelist();
+	}
+
+	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+		m_httpclient.connect_chain();
+
+		auto fresult = m_task_scheduler.init();
+		int32_t ret = std::get<0>(fresult);
+		if (ret != ERR_SUCCESS) {
+			LOG_ERROR << std::get<1>(fresult);
+			return E_DEFAULT;
+		}
+	}
+
+	return ERR_SUCCESS;
 }
 
-int32_t node_request_service::init(bpo::variables_map &options) {
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-        add_self_to_servicelist(options);
-    }
+void node_request_service::exit() {
+	service_module::exit();
 
-    service_module::init();
-
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-        m_httpclient.connect_chain();
-
-        auto fresult = m_task_scheduler.init();
-        int32_t ret = std::get<0>(fresult);
-        if (ret != ERR_SUCCESS) {
-            LOG_ERROR << std::get<1>(fresult);
-            return E_DEFAULT;
-        } else {
-            m_task_scheduler.start();
-            return ERR_SUCCESS;
-        }
-    }
-
-    return ERR_SUCCESS;
+	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+		remove_timer(m_training_task_timer_id);
+		remove_timer(m_prune_task_timer_id);
+		m_task_scheduler.exit();
+	}
 }
 
-void node_request_service::add_self_to_servicelist(bpo::variables_map &options) {
+void node_request_service::add_self_to_servicelist() {
     dbc::node_service_info info;
     info.service_list.emplace_back(SERVICE_NAME_AI_TRAINING);
 
-    if (options.count("name")) {
-        auto name_str = options["name"].as<std::string>();
-        info.__set_name(name_str);
+    if (!Server::NodeName.empty()) {
+        info.__set_name(Server::NodeName);
     } else {
         info.__set_name("null");
     }

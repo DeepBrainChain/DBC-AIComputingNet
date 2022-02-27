@@ -6,52 +6,36 @@
 
 std::atomic<std::uint64_t> timer_matrix_manager::m_cur_tick = {0};
 
-timer_matrix_manager::timer_matrix_manager()
-    : m_timer_group(new dbc::network::nio_loop_group())
+ERRCODE timer_matrix_manager::init()
 {
+    m_timer_group = std::make_shared<dbc::network::nio_loop_group>();
 
-}
-
-int32_t  timer_matrix_manager::init()
-{
-    int ret = m_timer_group->init(DEFAULT_TIMER_MATRIX_THREAD_COUNT);
+    int32_t ret = m_timer_group->init(DEFAULT_TIMER_MATRIX_THREAD_COUNT);
     if (ERR_SUCCESS != ret)
     {
         LOG_ERROR << "timer matrix manager init timer thread group error";
         return ret;
     }
 
+	m_timer = std::make_shared<steady_timer>(*(m_timer_group->get_io_service()));
+
+    ret = m_timer_group->start();
+	if (ERR_SUCCESS != ret)
+	{
+		return ret;
+	}
+
+	start_timer();
+
     return ERR_SUCCESS;
 }
 
-int32_t timer_matrix_manager::start()
-{
-    m_timer = std::make_shared<steady_timer>(*(m_timer_group->get_io_service()));
-
-    //start thread
-    int32_t ret = m_timer_group->start();
-    if (ERR_SUCCESS != ret)
-    {
-        return ret;
-    }
-
-    //start timer
-    start_timer();
-    return ERR_SUCCESS;
-}
-
-int32_t  timer_matrix_manager::stop()
+void timer_matrix_manager::exit()
 {
     stop_timer();
     m_timer_group->stop();
     //m_timer_handler = nullptr;
-    LOG_DEBUG << "timer matrix manager has stopped";
-    return ERR_SUCCESS;
-}
-
-int32_t  timer_matrix_manager::exit()
-{
-    return m_timer_group->exit();
+    m_timer_group->exit();
 }
 
 void timer_matrix_manager::start_timer()

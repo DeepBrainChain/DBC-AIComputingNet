@@ -69,9 +69,9 @@ public:
 
     ERRCODE Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores = 0, int32_t reserved_memory = 0);
 
-    void Start();
+    ERRCODE init();
 
-    void Stop();
+    void exit();
 
     std::string GetPublicip() const {
         return m_public_ip;

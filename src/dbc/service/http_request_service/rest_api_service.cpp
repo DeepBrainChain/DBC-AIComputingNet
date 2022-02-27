@@ -20,7 +20,7 @@
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
-int32_t rest_api_service::init() {
+ERRCODE rest_api_service::init() {
     service_module::init();
 
     const dbc::network::http_path_handler uri_prefixes[] = {
@@ -67,6 +67,10 @@ int32_t rest_api_service::init() {
     }
 
     return ERR_SUCCESS;
+}
+
+void rest_api_service::exit() {
+    service_module::exit();
 }
 
 void rest_api_service::init_timer() {
@@ -1135,8 +1139,11 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
 		return;
 	}
 
-    // 从client节点上传镜像到镜像中心
+    // 从client节点上传镜像到镜像中心(默认路径: /data/)
     if (!has_peer_nodeid(body)) {
+        if (!boost::filesystem::path(image_filename).is_absolute())
+            image_filename = "/data/" + image_filename;
+
 		if (image_filename.empty() || !boost::filesystem::exists(image_filename)) {
 			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_filename: /data/" + image_filename + " not exist");
 			return;

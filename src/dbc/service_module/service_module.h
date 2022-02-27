@@ -25,15 +25,13 @@ public:
 
     friend class timer_manager;
 
-    service_module();
+    service_module() = default;
 
     virtual ~service_module() = default;
 
-    virtual int32_t init();
+    virtual ERRCODE init();
 
-    void start();
-
-    void stop();
+    virtual void exit();
 
 protected:
     virtual void init_timer() = 0;
@@ -42,7 +40,7 @@ protected:
 
     virtual void init_subscription() = 0;
 
-    void init_time_tick_subscription();
+    void subscribe_time_tick();
 
     void send(const std::shared_ptr<dbc::network::message>& msg);
 

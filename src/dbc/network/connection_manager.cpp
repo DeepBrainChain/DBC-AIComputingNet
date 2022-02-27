@@ -12,36 +12,12 @@ namespace dbc
 {
     namespace network
     {
-        connection_manager::connection_manager()
+        ERRCODE connection_manager::init()
         {
-            m_worker_group = std::make_shared<nio_loop_group>();
-            m_acceptor_group = std::make_shared<nio_loop_group>();
-            m_connector_group = std::make_shared<nio_loop_group>();
-        }
+			m_worker_group = std::make_shared<nio_loop_group>();
+			m_acceptor_group = std::make_shared<nio_loop_group>();
+			m_connector_group = std::make_shared<nio_loop_group>();
 
-        connection_manager::~connection_manager() {
-            stop_all_listen();
-            stop_all_connect();
-            stop_all_channel();
-            stop_all_recycle_channel();
-            stop_io_services();
-            exit_io_services();
-
-            {
-                write_lock_guard<rw_lock> lock(m_lock_accp);
-                m_acceptors.clear();
-            }
-
-            {
-                write_lock_guard<rw_lock> lock(m_lock_conn);
-                m_connectors.clear();
-            }
-
-            remove_timers();
-        }
-
-        int32_t connection_manager::init()
-        {
             service_module::init();
 
             //init io services
@@ -69,6 +45,29 @@ namespace dbc
 
             return ERR_SUCCESS;
         }
+
+		void connection_manager::exit() {
+            service_module::exit();
+
+			stop_all_listen();
+			stop_all_connect();
+			stop_all_channel();
+			stop_all_recycle_channel();
+			stop_io_services();
+			exit_io_services();
+
+			{
+				write_lock_guard<rw_lock> lock(m_lock_accp);
+				m_acceptors.clear();
+			}
+
+			{
+				write_lock_guard<rw_lock> lock(m_lock_conn);
+				m_connectors.clear();
+			}
+
+			remove_timers();
+		}
 
         int32_t connection_manager::load_max_connect()
         {

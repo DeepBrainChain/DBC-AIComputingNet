@@ -22,7 +22,9 @@ public:
 
     ~node_monitor_service() override;
 
-    int32_t init(bpo::variables_map &options);
+    ERRCODE init() override;
+
+	void exit() override;
 
     void listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers) const;
 

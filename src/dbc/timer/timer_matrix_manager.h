@@ -14,17 +14,13 @@ class timer_matrix_manager : public std::enable_shared_from_this<timer_matrix_ma
     typedef void (timer_handler_type)(const boost::system::error_code &);
 
 public:
-    timer_matrix_manager();
+    timer_matrix_manager() = default;
 
     virtual ~timer_matrix_manager() = default;
 
-    int32_t init();
+    ERRCODE init();
 
-    int32_t start();
-
-    int32_t stop();
-
-    int32_t exit();
+    void exit();
 
     static uint64_t get_cur_tick() { return m_cur_tick; }
 

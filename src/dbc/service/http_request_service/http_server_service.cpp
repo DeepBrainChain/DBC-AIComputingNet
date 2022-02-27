@@ -10,27 +10,26 @@
 #include "network/http_client.h"
 #include "rest_api_service.h"
 
-int32_t http_server_service::init(bpo::variables_map &options) {
-    int32_t ret = load_rest_config(options);
+ERRCODE http_server_service::init() {
+    ERRCODE ret = load_rest_config();
     if (ret != ERR_SUCCESS) {
-        LOG_ERROR << "http server service load config error";
         return ret;
     }
 
-    rest_api_service::instance();
-
     if (m_listen_port == 0) {
-        return ERR_SUCCESS;
+        return ERR_ERROR;
     }
 
     if (!init_http_server()) {
         return E_EXIT_FAILURE;
     }
 
+	start_http_server();
+ 
     return ERR_SUCCESS;
 }
 
-int32_t http_server_service::load_rest_config(bpo::variables_map &options) {
+ERRCODE http_server_service::load_rest_config() {
     std::string conf_rest_ip = ConfManager::instance().GetHttpListenIp();
     ip_validator ip_vdr;
     variable_value val;
@@ -125,11 +124,14 @@ void http_server_service::start_http_server() {
 
 bool http_server_service::thread_http_fun(struct event_base *base, struct evhttp *http) {
     rename_thread("dbc-http");
-    LOG_DEBUG << "Entering http event loop";
     event_base_dispatch(base);
     // Event loop will be interrupted by InterruptHTTPServer()
-    LOG_DEBUG << "Exited http event loop";
     return event_base_got_break(base) == 0;
+}
+
+void http_server_service::exit() {
+	interrupt_http_server();
+	stop_http_server();
 }
 
 void http_server_service::interrupt_http_server() {

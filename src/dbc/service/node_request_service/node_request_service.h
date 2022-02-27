@@ -34,12 +34,14 @@ class node_request_service : public service_module, public Singleton<node_reques
 public:
     node_request_service() = default;
 
-    ~node_request_service() override;
+    ~node_request_service() override = default;
 
-    int32_t init(bpo::variables_map &options);
+    ERRCODE init() override;
+
+    void exit() override;
 
 protected:
-    void add_self_to_servicelist(bpo::variables_map &options);
+    void add_self_to_servicelist();
 
     void init_timer() override;
 

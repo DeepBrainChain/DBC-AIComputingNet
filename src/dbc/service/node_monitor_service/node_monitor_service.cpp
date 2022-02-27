@@ -12,13 +12,12 @@
 #include "server/server.h"
 
 node_monitor_service::~node_monitor_service() {
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-        remove_timer(m_monitor_data_sender_task_timer_id);
-        remove_timer(m_update_cur_renter_wallet_timer_id);
-    }
+
 }
 
-int32_t node_monitor_service::init(bpo::variables_map &options) {
+ERRCODE node_monitor_service::init() {
+    service_module::init();
+
     if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         std::string default_monitor = ConfManager::instance().GetDbcMonitorServer();
         std::vector<std::string> vecSplit = util::split(default_monitor, ":");
@@ -46,9 +45,16 @@ int32_t node_monitor_service::init(bpo::variables_map &options) {
         load_wallet_monitor_from_db();
     }
 
-    service_module::init();
-
     return ERR_SUCCESS;
+}
+
+void node_monitor_service::exit() {
+	service_module::exit();
+
+	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+		remove_timer(m_monitor_data_sender_task_timer_id);
+		remove_timer(m_update_cur_renter_wallet_timer_id);
+	}
 }
 
 void node_monitor_service::listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers) const {

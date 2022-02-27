@@ -25,13 +25,13 @@ public:
     static std::string NodeName;
 
 protected:
-    ERRCODE InitCrypto(bpo::variables_map &options);
+    ERRCODE InitCrypto();
 
     ERRCODE ExitCrypto();
 
-    ERRCODE ParseCommandLine(int argc, char* argv[], bpo::variables_map &options);
+    ERRCODE ParseCommandLine(int argc, char* argv[]);
 
-    void Daemon();
+    ERRCODE Daemon();
 
 private:
     std::atomic<bool> m_running {true};

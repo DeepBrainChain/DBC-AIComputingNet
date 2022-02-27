@@ -22,19 +22,17 @@ public:
 
     void remove_timer(uint32_t timer_id);
 
-    void on_time_point_notification(std::shared_ptr<dbc::network::message> msg);
-
     int32_t process(uint64_t time_tick);
 
 protected:
     void remove_all_timers();
 
 protected:
-    service_module *m_module;
+    service_module *m_module = nullptr;
 
     std::list<std::shared_ptr<core_timer>> m_timer_queue;
 
-    uint32_t m_timer_alloc_id;
+    uint32_t m_timer_alloc_id = 0;
 };
 
 #endif

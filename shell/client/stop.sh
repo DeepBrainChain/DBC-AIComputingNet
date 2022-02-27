@@ -13,7 +13,7 @@ then
     pids=`ps -ef |grep -v grep |grep "${dbc_file}\b" |awk '{print $2}'`
     for pid in $pids
     do
-        kill -9 $pid
+        kill -10 $pid
     done
 fi
 

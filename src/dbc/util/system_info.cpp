@@ -34,7 +34,7 @@ SystemInfo::SystemInfo() {
 }
 
 SystemInfo::~SystemInfo() {
-    Stop();
+
 }
 
 ERRCODE SystemInfo::Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_t reserved_memory) {
@@ -59,22 +59,21 @@ ERRCODE SystemInfo::Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores, in
     m_public_ip = get_public_ip();
     m_default_route_ip = get_default_route_ip();
 
+	m_running = true;
+	if (m_thread_update == nullptr) {
+		m_thread_update = new std::thread(&SystemInfo::update_thread_func, this);
+	}
+
     return ERR_SUCCESS;
 }
 
-void SystemInfo::Start() {
-    m_running = true;
-    if (m_thread_update == nullptr) {
-        m_thread_update = new std::thread(&SystemInfo::update_thread_func, this);
-    }
-}
-
-void SystemInfo::Stop() {
+void SystemInfo::exit() {
     m_running = false;
     if (m_thread_update != nullptr && m_thread_update->joinable()) {
         m_thread_update->join();
     }
     delete m_thread_update;
+    m_thread_update = nullptr;
 }
 
 void SystemInfo::init_os_type() {
