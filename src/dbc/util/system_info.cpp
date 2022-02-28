@@ -337,8 +337,7 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
 
 void SystemInfo::update_load_average(std::vector<float> &average) {
     std::string tmp = run_shell("uptime | awk '{print $10,$11,$12}'");
-    std::vector<std::string> vecSplit;
-    util::split(tmp, ", ", vecSplit);
+    std::vector<std::string> vecSplit = util::split(tmp, ", ");
     for (const auto& str : vecSplit) {
         average.push_back(atof(str.c_str()));
     }

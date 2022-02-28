@@ -53,7 +53,38 @@ std::string hostMonitorData::toJsonString() const {
     write.String(nodeId.c_str());
     write.Key("delay");
     write.Uint(delay);
-    // 暂时不处理
+    write.Key("gpuCount");
+    write.Uint(gpuCount);
+    write.Key("gpuUsed");
+    write.Uint(gpuUsed);
+    write.Key("vmCount");
+    write.Uint(vmCount);
+    write.Key("vmRunning");
+    write.Uint(vmRunning);
+    write.Key("cpuUsage");
+    write.Double(cpuUsage);
+    write.Key("memTotal");
+    write.Uint64(memTotal);
+    write.Key("memFree");
+    write.Uint64(memFree);
+    write.Key("memUsage");
+    write.Double(memUsage);
+    write.Key("rxFlow");
+    write.Int64(rxFlow);
+    write.Key("txFlow");
+    write.Int64(txFlow);
+    write.Key("diskTotal");
+    write.Uint64(diskTotal);
+    write.Key("diskFree");
+    write.Uint64(diskFree);
+    write.Key("diskUsage");
+    write.Double(diskUsage);
+    write.Key("loadAverage");
+    write.StartArray();
+    for (const auto &num : loadAverage) {
+        write.Double(num);
+    }
+    write.EndArray();
     write.Key("version");
     write.String(version.c_str());
     write.EndObject();
@@ -79,8 +110,8 @@ std::string hostMonitorData::toZabbixString() const {
     writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.memTotal", memTotal, ts);
     writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.memFree", memFree, ts);
     writeZabbixJsonItem<float>(write, nodeId, "host.memUsage", memUsage, ts);
-    writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.rxFlow", rxFlow, ts);
-    writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.txFlow", txFlow, ts);
+    writeZabbixJsonItem<long long>(write, nodeId, "host.rxFlow", rxFlow, ts);
+    writeZabbixJsonItem<long long>(write, nodeId, "host.txFlow", txFlow, ts);
     writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.diskTotal", diskTotal, ts);
     writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.diskFree", diskFree, ts);
     writeZabbixJsonItem<float>(write, nodeId, "host.diskUsage", diskUsage, ts);
@@ -89,7 +120,7 @@ std::string hostMonitorData::toZabbixString() const {
         writeZabbixJsonItem<float>(write, nodeId, "host.loadAverage.5", loadAverage[1], ts);
         writeZabbixJsonItem<float>(write, nodeId, "host.loadAverage.15", loadAverage[2], ts);
     }
-    writeZabbixJsonItem<std::string>(write, nodeId, "dbc.version", version, ts);
+    writeZabbixJsonItem<std::string>(write, nodeId, "host.dbcVersion", version, ts);
     write.EndArray();
     write.Key("clock");
     write.Int64(ts.tv_sec);

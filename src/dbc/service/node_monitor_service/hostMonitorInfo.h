@@ -18,17 +18,17 @@ struct hostMonitorData{
     unsigned int gpuUsed;                           // GPU已使用
     unsigned int vmCount;                           // VM数量
     unsigned int vmRunning;                         // 运行中的VM数量
-    float cpuUsage;                                 // CPU使用率
+    float cpuUsage;                                 // CPU使用率，已经乘以100
     // memoryStats memStats;                           // 内存数据
     unsigned long long memTotal;                    // 内存total，单位KB
     unsigned long long memFree;                     // 内存unused，单位KB
     // unsigned long long memAvailable;                // 内存available，单位KB
     float memUsage;                                 // 内存使用率，已经乘以100
-    unsigned long long rxFlow;                      // 流入流量
-    unsigned long long txFlow;                      // 流出流量
+    long long rxFlow;                               // 流入流量
+    long long txFlow;                               // 流出流量
     unsigned long long diskTotal;                   // 数据盘大小
     unsigned long long diskFree;                    // 数据盘free大小
-    float diskUsage;                                // 数据盘使用率
+    float diskUsage;                                // 数据盘使用率，已经乘以100
     std::vector<float> loadAverage;                 // 负载平均值
     std::vector<float> packetLossRate;              // 丢包率(CU|CT|CM)
     std::string version;                            // 版本号

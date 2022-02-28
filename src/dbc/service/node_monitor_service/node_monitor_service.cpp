@@ -276,14 +276,14 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     hmData.nodeId = ConfManager::instance().GetNodeId();
     hmData.delay = 10;
     hmData.gpuCount = SystemInfo::instance().GetGpuInfo().size();
-    hmData.cpuUsage = SystemInfo::instance().GetCpuUsage();
+    hmData.cpuUsage = SystemInfo::instance().GetCpuUsage() * 100;
     hmData.memTotal = SystemInfo::instance().GetMemInfo().total;
     hmData.memFree = SystemInfo::instance().GetMemInfo().free;
-    hmData.memUsage = SystemInfo::instance().GetMemInfo().usage;
+    hmData.memUsage = SystemInfo::instance().GetMemInfo().usage * 100;
     // hmData.flow 各虚拟机的流量之和
     hmData.diskTotal = SystemInfo::instance().GetDiskInfo().total;
     hmData.diskFree = SystemInfo::instance().GetDiskInfo().available;
-    hmData.diskUsage = SystemInfo::instance().GetDiskInfo().usage;
+    hmData.diskUsage = SystemInfo::instance().GetDiskInfo().usage * 100;
     hmData.loadAverage = SystemInfo::instance().loadaverage();
     // hmData.packetLossRate
     hmData.version = dbcversion();
@@ -331,7 +331,8 @@ void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& d
 }
 
 void node_monitor_service::send_monitor_data(const dbcMonitor::hostMonitorData& hmData, const monitor_server& server) const {
-    LOG_INFO << "machine monitor data:" << hmData.toJsonString();
+    if (server.host.empty() || server.port.empty()) return;
+    // LOG_INFO << "machine monitor data:" << hmData.toJsonString();
     zabbixSender zs(server.host, server.port);
     if (zs.is_server_want_monitor_data(hmData.nodeId)) {
         if (!zs.sendJsonData(hmData.toZabbixString())) {
