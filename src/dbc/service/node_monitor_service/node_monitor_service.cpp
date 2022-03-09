@@ -248,6 +248,12 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
                 m_monitor_datas[task_id] = dmData;
             }
 
+            if (rentlist.first == m_cur_renter_wallet && taskinfo && taskinfo->status == ETaskStatus::TS_Running) {
+                for (const auto& gpuStat : dmData.gpuStats) {
+                    hmData.gpuStats[gpuStat.first] = gpuStat.second;
+                }
+            }
+
             for (const auto & netStat : dmData.netStats) {
                 hmData.rxFlow += netStat.second.rx_bytes;
                 hmData.txFlow += netStat.second.tx_bytes;

@@ -9,6 +9,7 @@
 
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
+#include <libvirt/libvirt-qemu.h>
 
 std::shared_ptr<virError> getLastError();
 
@@ -74,6 +75,8 @@ public:
     int32_t getDomainBlockStats(const char *disk, virDomainBlockStatsPtr stats, size_t size);
 
     int32_t getDomainNetworkStats(const char *device, virDomainInterfaceStatsPtr stats, size_t size);
+
+    std::string QemuAgentCommand(const char *cmd, int timeout, unsigned int flags);
 
 protected:
     std::shared_ptr<virDomain> domain_;

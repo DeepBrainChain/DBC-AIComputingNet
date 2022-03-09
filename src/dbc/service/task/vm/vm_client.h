@@ -85,6 +85,9 @@ public:
 
     std::shared_ptr<dbc::snapshotInfo> GetDomainSnapshot(const std::string& domain_name, const std::string& snapshot_name);
 
+    // Qemu guest agent
+    std::string QemuAgentCommand(const std::string& domain_name, const std::string& cmd, int timeout, unsigned int flags);
+
     // monitor data
     bool GetDomainMonitorData(const std::string& domain_name, dbcMonitor::domMonitorData& data);
 

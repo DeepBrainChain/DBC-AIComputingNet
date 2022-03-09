@@ -2,6 +2,7 @@
 #include <cmath>
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/document.h"
+#include "service/task/TaskMonitorInfo.h"
 
 namespace dbcMonitor {
 // 保留两位小数
@@ -42,6 +43,33 @@ void writeZabbixJsonItem(rapidjson::Writer<rapidjson::StringBuffer> &write, cons
     write.Key("ns");
     write.Int(time.tv_nsec);
     write.EndObject();
+}
+
+hostGpuInfo& hostGpuInfo::operator=(const gpuInfo& gpu) {
+    name = gpu.name;
+    busId = gpu.busId;
+    memTotal = gpu.memTotal;
+    memFree = gpu.memFree;
+    memUsed = gpu.memUsed;
+    gpuUtilization = gpu.gpuUtilization;
+    memUtilization = gpu.memUtilization;
+    powerUsage = gpu.powerUsage;
+    powerCap = gpu.powerCap;
+    temperature = gpu.temperature;
+    realTime = gpu.realTime;
+}
+
+void hostGpuInfo::write2ZabbixJson(rapidjson::Writer<rapidjson::StringBuffer> &write, const std::string &host, std::string index) const {
+    writeZabbixJsonItem<std::string>(write, host, "host.gpu." + index + ".name", name, realTime);
+    writeZabbixJsonItem<std::string>(write, host, "host.gpu." + index + ".busId", busId, realTime);
+    writeZabbixJsonItem<unsigned long long>(write, host, "host.gpu." + index + ".memTotal", memTotal, realTime);
+    writeZabbixJsonItem<unsigned long long>(write, host, "host.gpu." + index + ".memFree", memFree, realTime);
+    writeZabbixJsonItem<unsigned long long>(write, host, "host.gpu." + index + ".memUsed", memUsed, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "host.gpu." + index + ".gpuUtilization", gpuUtilization, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "host.gpu." + index + ".memUtilization", memUtilization, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "host.gpu." + index + ".powerUsage", powerUsage, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "host.gpu." + index + ".powerCap", powerCap, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "host.gpu." + index + ".temperature", temperature, realTime);
 }
 
 std::string hostMonitorData::toJsonString() const {
@@ -104,6 +132,10 @@ std::string hostMonitorData::toZabbixString() const {
     clock_gettime(CLOCK_REALTIME, &ts);
     writeZabbixJsonItem<unsigned int>(write, nodeId, "host.gpuCount", gpuCount, ts);
     writeZabbixJsonItem<unsigned int>(write, nodeId, "host.gpuUsed", gpuUsed, ts);
+    int index = 0;
+    for (const auto& gpuStat : gpuStats) {
+        gpuStat.second.write2ZabbixJson(write, nodeId, std::to_string(index++));
+    }
     writeZabbixJsonItem<unsigned int>(write, nodeId, "host.vmCount", vmCount, ts);
     writeZabbixJsonItem<unsigned int>(write, nodeId, "host.vmRunning", vmRunning, ts);
     writeZabbixJsonItem<float>(write, nodeId, "host.cpuUsage", cpuUsage, ts);

@@ -260,6 +260,16 @@ int32_t virDomainImpl::getDomainNetworkStats(const char *device, virDomainInterf
     return virDomainInterfaceStats(domain_.get(), device, stats, size);
 }
 
+std::string virDomainImpl::QemuAgentCommand(const char *cmd, int timeout, unsigned int flags) {
+    std::string ret;
+    char *result = virDomainQemuAgentCommand(domain_.get(), cmd, timeout, flags);
+    if (result) {
+        ret = result;
+        free(result);
+    }
+    return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////////
 
 virTool::virTool(bool enableEvent)

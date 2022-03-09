@@ -9,6 +9,7 @@
 #include "service/message/vm_task_result_types.h"
 #include "../db/snapshotinfo_types.h"
 #include "util/utils.h"
+#include <libvirt/libvirt-qemu.h>
 
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
@@ -1559,6 +1560,33 @@ std::shared_ptr<dbc::snapshotInfo> VmClient::GetDomainSnapshot(const std::string
     return ssInfo;
 }
 
+std::string VmClient::QemuAgentCommand(const std::string& domain_name, const std::string& cmd, int timeout, unsigned int flags) {
+    std::string ret;
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        return ret;
+    }
+
+    virDomainPtr domain_ptr = nullptr;
+    do {
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            break;
+        }
+        char *result = virDomainQemuAgentCommand(domain_ptr, cmd.c_str(), timeout, flags);
+        if (result) {
+            ret = result;
+            free(result);
+        }
+    } while (0);
+
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+    return ret;
+}
+
 bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::domMonitorData& data) {
     if (m_connPtr == nullptr) {
         LOG_ERROR << domain_name << " connPtr is nullptr";
@@ -1676,6 +1704,70 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
                 netInfo.tx_speed = 0.0f;
             }
             data.netStats[netInfo.name] = netInfo;
+        }
+
+        // gpu info
+        if (isActive) {
+            char *result = virDomainQemuAgentCommand(domain_ptr, "{\"execute\":\"guest-get-gpus\"}", VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
+            if (result) {
+                rapidjson::Document doc;
+                doc.Parse(result);
+                if (!doc.IsObject()) {
+                    LOG_ERROR << domain_name << " parse guest agent result data error";
+                } else {
+                    if (doc.HasMember("return") && doc["return"].IsObject()) {
+                        const rapidjson::Value& obj_ret = doc["return"];
+                        if (obj_ret.HasMember("driver-version") && obj_ret["driver-version"].IsString()) {
+                            data.graphicsDriverVersion = obj_ret["driver-version"].GetString();
+                        }
+                        if (obj_ret.HasMember("cuda-version") && obj_ret["cuda-version"].IsString()) {
+                            data.cudaVersion = obj_ret["cuda-version"].GetString();
+                        }
+                        if (obj_ret.HasMember("nvml-version") && obj_ret["nvml-version"].IsString()) {
+                            data.nvmlVersion = obj_ret["nvml-version"].GetString();
+                        }
+                        if (obj_ret.HasMember("gpus") && obj_ret["gpus"].IsArray()) {
+                            const rapidjson::Value& obj_gpus = obj_ret["gpus"];
+                            for (size_t i = 0; i < obj_gpus.Size(); i++) {
+                                const rapidjson::Value& obj_gpu = obj_gpus[i];
+                                if (!obj_gpu.IsObject()) continue;
+                                dbcMonitor::gpuInfo gpuInfo;
+                                clock_gettime(CLOCK_REALTIME, &gpuInfo.realTime);
+                                gpuInfo.memTotal = gpuInfo.memFree = gpuInfo.memUsed = 0;
+                                gpuInfo.gpuUtilization = gpuInfo.memUtilization = 0;
+                                gpuInfo.powerUsage = gpuInfo.powerCap = gpuInfo.temperature = 0;
+                                if (obj_gpu.HasMember("name") && obj_gpu["name"].IsString())
+                                    gpuInfo.name = obj_gpu["name"].GetString();
+                                if (obj_gpu.HasMember("bus-id") && obj_gpu["bus-id"].IsString())
+                                    gpuInfo.busId = obj_gpu["bus-id"].GetString();
+                                if (obj_gpu.HasMember("mem-total") && obj_gpu["mem-total"].IsUint64())
+                                    gpuInfo.memTotal = obj_gpu["mem-total"].GetUint64();
+                                if (obj_gpu.HasMember("mem-free") && obj_gpu["mem-free"].IsUint64())
+                                    gpuInfo.memFree = obj_gpu["mem-free"].GetUint64();
+                                if (obj_gpu.HasMember("mem-used") && obj_gpu["mem-used"].IsUint64())
+                                    gpuInfo.memUsed = obj_gpu["mem-used"].GetUint64();
+                                if (obj_gpu.HasMember("gpu-utilization") && obj_gpu["gpu-utilization"].IsUint())
+                                    gpuInfo.gpuUtilization = obj_gpu["gpu-utilization"].GetUint();
+                                if (obj_gpu.HasMember("mem-utilization") && obj_gpu["mem-utilization"].IsUint())
+                                    gpuInfo.memUtilization = obj_gpu["mem-utilization"].GetUint();
+                                if (obj_gpu.HasMember("pwr-usage") && obj_gpu["pwr-usage"].IsUint())
+                                    gpuInfo.powerUsage = obj_gpu["pwr-usage"].GetUint();
+                                if (obj_gpu.HasMember("pwr-cap") && obj_gpu["pwr-cap"].IsUint())
+                                    gpuInfo.powerCap = obj_gpu["pwr-cap"].GetUint();
+                                if (obj_gpu.HasMember("temperature") && obj_gpu["temperature"].IsUint())
+                                    gpuInfo.temperature = obj_gpu["temperature"].GetUint();
+                                data.gpuStats[gpuInfo.busId] = gpuInfo;
+                            }
+                        }
+                    } else {
+                        LOG_ERROR << domain_name << " guest agent result has no return node";
+                    }
+                }
+                free(result);
+            } else {
+                virErrorPtr error = virGetLastError();
+                LOG_ERROR << domain_name << " virDomainQemuAgentCommand error: " << (error ? error->message : "");
+            }
         }
         bRet = true;
     } while (0);

@@ -282,4 +282,22 @@ BOOST_AUTO_TEST_CASE(testNetworkStats) {
     }
 }
 
+BOOST_AUTO_TEST_CASE(testQemuAgentCommand) {
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    BOOST_REQUIRE(domain);
+    std::string cmd = "{\"execute\":\"guest-info\"}";
+    std::string ret = domain->QemuAgentCommand(cmd.c_str(), VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
+    BOOST_REQUIRE(!ret.empty());
+    std::cout << ret << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(testGpuStats) {
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    BOOST_REQUIRE(domain);
+    std::string cmd = "{\"execute\":\"guest-get-gpus\"}";
+    std::string ret = domain->QemuAgentCommand(cmd.c_str(), VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
+    BOOST_REQUIRE(!ret.empty());
+    std::cout << ret << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

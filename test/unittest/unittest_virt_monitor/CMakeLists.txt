@@ -16,4 +16,4 @@ add_executable(${PROJECT_NAME} main.cpp virImpl.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 ${Boost_LIBRARIES}
-        -pthread -ldl -lz -ltinyxml2 -lvirt)
+        -pthread -ldl -lz -ltinyxml2 -lvirt -lvirt-qemu)

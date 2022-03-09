@@ -83,7 +83,7 @@ add_executable(dbc ./main.cpp ${dbc_src_files})
 
 if (LINUX)
     TARGET_LINK_LIBRARIES(dbc ${Boost_LIBRARIES} -lcpp_substrate -lsr25519crust -ltweetnacl -lcrypt -levent
-            -lleveldb -lvirt -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl
+            -lleveldb -lvirt -lvirt-qemu -ltinyxml2 -luuid -levent_core -levent_openssl -levent_pthreads -lcrypto -lssl
             -lsecp256k1 -lreadline -lhistory libncurses.a -lsnappy -pie -pthread -ldl -lz)
 endif ()
 
