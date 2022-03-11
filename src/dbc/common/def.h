@@ -188,5 +188,4 @@ struct ParseVmXmlParams {
     std::vector<std::string> multicast; //×é²¥µØÖ·(Èç£º"230.0.0.1:5558")
 };
 
-
 #endif

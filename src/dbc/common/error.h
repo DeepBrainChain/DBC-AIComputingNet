@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 
+// 错误码
 typedef int32_t ERRCODE;
 enum {
     ERR_SUCCESS,
@@ -11,10 +12,19 @@ enum {
 
 };
 
-typedef std::tuple<int32_t, std::string> FResult;
-#define FResultOK { ERR_SUCCESS, "ok" }
+struct FResult {
+    FResult(int32_t _errcode, std::string _errmsg) {
+        errcode = _errcode;
+        errmsg = std::move(_errmsg);
+    }
 
+    int32_t errcode = ERR_SUCCESS;
+    std::string errmsg = "success";
+};
 
+//typedef std::tuple<int32_t, std::string> FResult;
+#define FResultSuccess FResult(ERR_SUCCESS, "success")
+#define FResultError FResult(ERR_ERROR, "error");
 
 
 //#define E_SUCCESS                                            0                   //success

@@ -97,6 +97,10 @@ protected:
 
     void task_logs(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_task_logs_req_data>& data, const AuthoriseResult& result);
 
+    void on_node_modify_task_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void task_modify(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_modify_task_req_data>& data, const AuthoriseResult& result);
+
     void on_node_session_id_req(const std::shared_ptr<dbc::network::message>& msg);
 
     void node_session_id(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data, const AuthoriseResult& result);

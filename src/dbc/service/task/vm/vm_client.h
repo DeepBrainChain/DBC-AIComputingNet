@@ -58,6 +58,9 @@ public:
 
     int32_t UndefineDomain(const std::string& domain_name);
 
+    FResult RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
+        const std::shared_ptr<TaskResource>& task_resource, bool increase_disk = false);
+
     int32_t DestroyAndUndefineDomain(const std::string& domain_name, unsigned int undefineFlags = 0);
 
     virDomainState GetDomainStatus(const std::string& domain_name);

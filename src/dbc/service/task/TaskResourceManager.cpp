@@ -122,43 +122,36 @@ bool TaskResourceManager::init(const std::vector<std::string> &taskids) {
                 // disk
                 if (ele_devices != nullptr) {
                     tinyxml2::XMLElement* ele_disk = ele_devices->FirstChildElement("disk");
+                    int disk_count = 0;
                     while (ele_disk != nullptr) {
                         tinyxml2::XMLElement* ele_source = ele_disk->FirstChildElement("source");
                         std::string disk_file = ele_source->Attribute("file");
-                        auto pos = disk_file.rfind('/');
-                        if (pos != std::string::npos) {
-                            disk_file = disk_file.substr(pos + 1);
-                            auto pos1 = disk_file.find('.');
-                            std::string ext = disk_file.substr(pos1 + 1);
-                            std::string fname = disk_file.substr(0, pos1);
-                            if (ext == "qcow2") {
-                                std::vector<std::string> vec;
-                                util::split(fname, "_", vec);
-                                if (vec.size() >= 3) {
-                                    int nindex = atoi(vec[1].c_str());
-                                    tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
-                                    if (ele_target != nullptr) {
-                                        std::string vdevice = ele_target->Attribute("dev");
-                                        virDomainBlockInfo blockinfo;
-                                        if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
-                                            int64_t disk_size = blockinfo.capacity;
-                                            task_resource->disks[nindex] = disk_size / 1024L;
-                                        }
-                                    }
-                                } else if (fname.find("ubuntu") != std::string::npos) {
-                                    tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
-                                    if (ele_target != nullptr) {
-                                        std::string vdevice = ele_target->Attribute("dev");
-                                        virDomainBlockInfo blockinfo;
-                                        if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
-                                            int64_t disk_size = blockinfo.capacity;
-                                            task_resource->disk_system_size = disk_size / 1024L;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
+                     
+						if (disk_count == 0) {
+							tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
+							if (ele_target != nullptr) {
+								std::string vdevice = ele_target->Attribute("dev");
+								virDomainBlockInfo blockinfo;
+								if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
+									int64_t disk_size = blockinfo.capacity;
+									task_resource->disk_system_size = disk_size / 1024L;
+								}
+							}
+						}
+						else {
+							int nindex = disk_count;
+							tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
+							if (ele_target != nullptr) {
+								std::string vdevice = ele_target->Attribute("dev");
+								virDomainBlockInfo blockinfo;
+								if (virDomainGetBlockInfo(domainPtr, vdevice.c_str(), &blockinfo, 0) >= 0) {
+									int64_t disk_size = blockinfo.capacity;
+									task_resource->disks[nindex] = disk_size / 1024L;
+								}
+							}
+						}
+                        
+                        ++disk_count;
                         ele_disk = ele_disk->NextSiblingElement("disk");
                     }
                 }

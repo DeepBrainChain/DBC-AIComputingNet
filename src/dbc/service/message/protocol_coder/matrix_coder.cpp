@@ -63,6 +63,9 @@ void matrix_coder::init_decode_invoker() {
     BIND_DECODE_INVOKER(node_task_logs_req);
     BIND_DECODE_INVOKER(node_task_logs_rsp);
 
+    BIND_DECODE_INVOKER(node_modify_task_req)
+    BIND_DECODE_INVOKER(node_modify_task_rsp)
+
     BIND_DECODE_INVOKER(node_query_node_info_req);
     BIND_DECODE_INVOKER(node_query_node_info_rsp);
 
@@ -133,6 +136,9 @@ void matrix_coder::init_encode_invoker() {
 
     BIND_ENCODE_INVOKER(node_task_logs_req);
     BIND_ENCODE_INVOKER(node_task_logs_rsp);
+
+	BIND_ENCODE_INVOKER(node_modify_task_req)
+	BIND_ENCODE_INVOKER(node_modify_task_rsp)
 
     BIND_ENCODE_INVOKER(node_query_node_info_req);
     BIND_ENCODE_INVOKER(node_query_node_info_rsp);

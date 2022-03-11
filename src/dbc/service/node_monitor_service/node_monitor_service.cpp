@@ -70,14 +70,14 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
     rapidjson::Document doc;
     doc.Parse(additional.c_str());
     if (!doc.IsObject()) {
-        return {E_DEFAULT, "additional parse failed"};
+        return FResult(ERR_ERROR, "additional parse failed");
     }
     std::vector<monitor_server> servers;
     if (doc.HasMember("servers")) {
         const rapidjson::Value& v_servers = doc["servers"];
         if (v_servers.IsArray()) {
             if (v_servers.Size() > 2) {
-                return {E_DEFAULT, "can not enter more than two servers"};
+                return FResult(ERR_ERROR, "can not enter more than two servers");
             }
             for (rapidjson::SizeType i = 0; i < v_servers.Size(); i++) {
                 const rapidjson::Value& v_item = v_servers[i];
@@ -85,7 +85,7 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
                     std::string str = v_item.GetString();
                     std::vector<std::string> vecSplit = util::split(str, ":");
                     if (vecSplit.size() != 2) {
-                        return {E_DEFAULT, "server not match format ip:port"};
+                        return FResult(ERR_ERROR, "server not match format ip:port");
                     }
                     servers.push_back({vecSplit[0], vecSplit[1]});
                     LOG_INFO << "set monitor server host:" << vecSplit[0] << ", port:" << vecSplit[1];
@@ -93,10 +93,10 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
             }
             m_wallet_monitors[wallet] = servers;
         } else {
-            return {E_DEFAULT, "servers must be an array"};
+            return FResult(ERR_ERROR, "servers must be an array");
         }
     }
-    return FResultOK;
+    return FResultSuccess;
 }
 
 void node_monitor_service::init_timer() {

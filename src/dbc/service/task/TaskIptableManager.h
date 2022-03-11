@@ -34,6 +34,12 @@ public:
         m_db.write_iptable(iptable);
     }
 
+	void update(const std::shared_ptr<dbc::task_iptable>& iptable) {
+		RwMutex::WriteLock wlock(m_mtx);
+		m_task_iptables[iptable->task_id] = iptable;
+		m_db.write_iptable(iptable);
+	}
+
 private:
     mutable RwMutex m_mtx;
     IpTableDB m_db;

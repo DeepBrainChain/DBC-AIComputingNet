@@ -13,8 +13,8 @@
 
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
-                         const std::string& vedio_pci, const std::string & image_file,
-                         const std::string& disk_file, int32_t vnc_port, const std::string& vnc_pwd,
+                         const std::string& vedio_pci, const std::string & disk_system,
+                         const std::vector<std::string>& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
                          const std::vector<std::string>& multicast,
                          bool is_windows = false, bool uefi = false)
 {
@@ -236,7 +236,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         }
     }
 
-    // disk (image)
+    // disk system
     tinyxml2::XMLElement* image_node = doc.NewElement("disk");
     image_node->SetAttribute("type", "file");
     image_node->SetAttribute("device", "disk");
@@ -247,7 +247,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     image_node->LinkEndChild(driver_node);
 
     tinyxml2::XMLElement* source_node = doc.NewElement("source");
-    source_node->SetAttribute("file", image_file.c_str());
+    source_node->SetAttribute("file", disk_system.c_str());
     image_node->LinkEndChild(source_node);
 
     tinyxml2::XMLElement* target_node = doc.NewElement("target");
@@ -263,25 +263,29 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     }
     dev_node->LinkEndChild(image_node);
 
-    // disk (data)
-    tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
-    disk_data_node->SetAttribute("type", "file");
+    // disk data
+    for (int i = 0; i < disk_data.size(); i++) {
+        tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
+        disk_data_node->SetAttribute("type", "file");
 
-    tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
-    disk_driver_node->SetAttribute("name", "qemu");
-    disk_driver_node->SetAttribute("type", "qcow2");
-    disk_data_node->LinkEndChild(disk_driver_node);
+        tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
+        disk_driver_node->SetAttribute("name", "qemu");
+        disk_driver_node->SetAttribute("type", "qcow2");
+        disk_data_node->LinkEndChild(disk_driver_node);
 
-    tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
-    disk_source_node->SetAttribute("file", disk_file.c_str());
-    disk_data_node->LinkEndChild(disk_source_node);
+        tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
+        disk_source_node->SetAttribute("file", disk_data[i].c_str());
+        disk_data_node->LinkEndChild(disk_source_node);
 
-    tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
-    disk_target_node->SetAttribute("dev", "vdb");
-    disk_target_node->SetAttribute("bus", "virtio");
-    disk_data_node->LinkEndChild(disk_target_node);
+        tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
+		char buf[10] = { 0 };
+		snprintf(buf, 10, "%c", 'b' + i);
+        disk_target_node->SetAttribute("dev", std::string("vd").append(buf).c_str());
+        disk_target_node->SetAttribute("bus", "virtio");
+        disk_data_node->LinkEndChild(disk_target_node);
 
-    dev_node->LinkEndChild(disk_data_node);
+        dev_node->LinkEndChild(disk_data_node);
+    }
 
     // qemu_guest_agent
     tinyxml2::XMLElement* agent_node = doc.NewElement("channel");
@@ -456,7 +460,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
                                const std::shared_ptr<TaskResource>& task_resource) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(taskinfo->image_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     // gpu
@@ -489,11 +493,11 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
     std::string from_image_file = "/data/" + taskinfo->image_name;
     std::string image_fname = util::GetFileNameWithoutExt(from_image_file);
     std::string image_fext = util::GetFileExt(from_image_file);
-    std::string to_vm_file = "/data/";
-    to_vm_file += "vm_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) + "_"
+    std::string disk_system = "/data/";
+    disk_system += "vm_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) + "_"
                   + taskinfo->custom_image_name + ".qcow2";
 
-    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + to_vm_file;
+    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + disk_system;
     std::string create_system_image_ret = run_shell(cmd_back_system_image);
     TASK_LOG_INFO(taskinfo->task_id, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
 
@@ -511,6 +515,8 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
         TASK_LOG_INFO(taskinfo->task_id, "copy data: " << "/data/" << taskinfo->data_file_name
             << " to: " << data_file);
     }
+    std::vector<std::string> disk_data;
+    disk_data.push_back(data_file);
 
     if (!taskinfo->multicast.empty()) {
         for (const auto & mcast : taskinfo->multicast) {
@@ -524,7 +530,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
     std::string xml_content = createXmlStr(buf_uuid, taskinfo->task_id, memoryTotal,
                                            cpuNumTotal, task_resource->cpu_sockets,
                                            task_resource->cpu_cores, task_resource->cpu_threads,
-                                           vga_pci, to_vm_file, data_file,
+                                           vga_pci, disk_system, disk_data,
                                            task_resource->vnc_port, task_resource->vnc_password,
                                            taskinfo->multicast, taskinfo->operation_system.find("win") != std::string::npos,
                                            taskinfo->bios_mode == "uefi");
@@ -559,7 +565,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
 int32_t VmClient::StartDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -575,7 +581,7 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -584,14 +590,14 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_NOSTATE || info.state == VIR_DOMAIN_SHUTOFF) {
             if (virDomainCreate(domainPtr) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
             }
         } else if (info.state == VIR_DOMAIN_PMSUSPENDED) {
             if (virDomainPMWakeup(domainPtr, 0) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainPMWakeup error: " << (error ? error->message : ""));
@@ -609,7 +615,7 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
 int32_t VmClient::SuspendDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -625,7 +631,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -634,7 +640,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainSuspend(domainPtr) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainSuspend error: " << (error ? error->message : ""));
@@ -652,7 +658,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
 int32_t VmClient::ResumeDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -668,7 +674,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -677,7 +683,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_PMSUSPENDED) {
             if (virDomainResume(domainPtr) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainResume error: " << (error ? error->message : ""));
@@ -695,7 +701,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
 int32_t VmClient::RebootDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -711,7 +717,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -720,7 +726,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainReboot(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainReboot error: " << (error ? error->message : ""));
@@ -738,7 +744,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
 int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -754,7 +760,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -763,7 +769,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainShutdown(domainPtr) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainShutdown error: " << (error ? error->message : ""));
@@ -781,7 +787,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
 int32_t VmClient::DestroyDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -797,7 +803,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -806,7 +812,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
 
         if (info.state != VIR_DOMAIN_SHUTOFF) {
             if (virDomainDestroy(domainPtr) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainDestroy error: " << (error ? error->message : ""));
@@ -824,7 +830,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
 int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -839,7 +845,7 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
         }
 
         if (virDomainUndefine(domainPtr) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
@@ -853,10 +859,120 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     return errorNum;
 }
 
+FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo, 
+                                 const std::shared_ptr<TaskResource>& task_resource, bool increase_disk) {
+	if (m_connPtr == nullptr) {
+		return FResult(ERR_ERROR, "libvirt disconnect");
+	}
+
+	virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, taskinfo->task_id.c_str());
+	if (nullptr == domainPtr) {
+        return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " not exist");
+	}
+
+	// new uuid
+	uuid_t uu;
+	char buf_uuid[1024] = { 0 };
+	uuid_generate(uu);
+	uuid_unparse(uu, buf_uuid);
+
+	// new gpu
+	std::map<std::string, std::list<std::string>> mpGpu = task_resource->gpus;
+	std::string vga_pci;
+	for (auto& it : mpGpu) {
+		for (auto& it2 : it.second) {
+			vga_pci += it2 + "|";
+		}
+	}
+ 
+	// new cpu
+	long cpuNumTotal = task_resource->total_cores();
+ 
+	// new mem
+	uint64_t memoryTotal = task_resource->mem_size; // KB
+ 
+	// new disk
+	std::string data_file = "/data/data_" + std::to_string(rand() % 100000) + "_" +
+		util::time2str(time(nullptr)) + "_" + taskinfo->custom_image_name + ".qcow2";
+    uint64_t data_size = task_resource->disks[task_resource->disks.size() - 1] / 1024L / 1024L; // GB
+    if (increase_disk) {
+        std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(data_size) + "G";
+        run_shell(cmd_create_img);
+    }
+
+    std::vector<std::string> disk_data;
+    std::string disk_system;
+
+	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+	if (pContent != nullptr) {
+		tinyxml2::XMLDocument doc;
+		tinyxml2::XMLError err = doc.Parse(pContent);
+		if (err != tinyxml2::XML_SUCCESS) {
+			virDomainFree(domainPtr);
+			return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " parse domain xml failed");
+		}
+
+		tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
+        if (ele_devices != nullptr) {
+            // disk
+            tinyxml2::XMLElement* ele_disk = ele_devices->FirstChildElement("disk");
+            int disk_count = 0;
+            while (ele_disk != nullptr) {
+				tinyxml2::XMLElement* ele_source = ele_disk->FirstChildElement("source");
+				std::string disk_file = ele_source->Attribute("file");
+                if (disk_count == 0) {
+                    disk_system = disk_file;
+                }
+                else {
+                    disk_data.push_back(disk_file);
+                }
+
+                ++disk_count;
+                ele_disk = ele_disk->NextSiblingElement("disk");
+            }
+            if (increase_disk) {
+                disk_data.push_back(data_file);
+            }
+        }
+	}
+
+	std::string xml_content = createXmlStr(buf_uuid, taskinfo->task_id, memoryTotal, cpuNumTotal, 
+        task_resource->cpu_sockets, task_resource->cpu_cores, task_resource->cpu_threads,
+		vga_pci, disk_system, disk_data,
+		task_resource->vnc_port, task_resource->vnc_password,
+		taskinfo->multicast, taskinfo->operation_system.find("win") != std::string::npos,
+		taskinfo->bios_mode == "uefi");
+
+	int32_t errcode = ERR_SUCCESS;
+    std::string errmsg;
+	do {
+		domainPtr = virDomainLookupByName(m_connPtr, taskinfo->task_id.c_str());
+		if (domainPtr != nullptr) {
+            virDomainUndefine(domainPtr);
+            sleep(1);
+		}
+
+        domainPtr = virDomainDefineXML(m_connPtr, xml_content.c_str());
+        if (domainPtr == nullptr) {
+            virErrorPtr error = virGetLastError();
+            errcode = ERR_ERROR;
+            errmsg = std::string("defineXML failed: ") + error->message;
+            break;
+        }
+	} while (0);
+
+	if (nullptr != domainPtr) {
+		virDomainFree(domainPtr);
+	}
+
+    return FResult(errcode, errmsg);
+}
+
 int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsigned int undefineFlags) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -872,7 +988,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -881,7 +997,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 
         if (info.state != VIR_DOMAIN_SHUTOFF) {
             if (virDomainDestroy(domainPtr) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainDestroy error: " << (error ? error->message : ""));
@@ -895,7 +1011,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
             virRet = virDomainUndefineFlags(domainPtr, undefineFlags);
         }
         if (virRet < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
@@ -915,7 +1031,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 int32_t VmClient::ResetDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -931,7 +1047,7 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = E_DEFAULT;
+            errorNum = ERR_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -940,7 +1056,7 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainReset(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
-                errorNum = E_DEFAULT;
+                errorNum = ERR_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainReset error: " << (error ? error->message : ""));
@@ -1069,17 +1185,17 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
         }
     }
     catch (const std::exception & e) {
-        return {E_DEFAULT, std::string("log file error: ").append(e.what())};
+        return FResult(ERR_ERROR, std::string("log file error: ").append(e.what()));
     }
     catch (const boost::exception & e) {
-        return {E_DEFAULT, "log file error: " + diagnostic_information(e)};
+        return FResult(ERR_ERROR, "log file error: " + diagnostic_information(e));
     }
     catch (...) {
-        return {E_DEFAULT, "unknowned log file error"};
+        return FResult(ERR_ERROR, "unknowned log file error");
     }
     
     if (latest_log.empty() || max_num < 0) {
-        return {E_DEFAULT, "task log not exist"};
+        return FResult(ERR_ERROR, "task log not exist");
     }
 
     log_content.clear();
@@ -1117,7 +1233,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
         return {ERR_SUCCESS, ""};
     }
     
-    return {E_DEFAULT, "open log file error"};
+    return FResult(ERR_ERROR, "open log file error");
 }
 
 std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
@@ -1411,7 +1527,7 @@ int32_t VmClient::IsDomainHasNvram(const std::string& domain_name) {
 }
 
 FResult VmClient::CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info) {
-    int32_t ret_code = E_DEFAULT;
+    int32_t ret_code = ERR_ERROR;
     std::string ret_msg;
     if (m_connPtr == nullptr) {
         LOG_ERROR << domain_name << " connPtr is nullptr";

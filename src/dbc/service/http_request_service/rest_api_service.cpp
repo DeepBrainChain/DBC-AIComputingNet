@@ -3057,7 +3057,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");

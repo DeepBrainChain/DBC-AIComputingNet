@@ -130,7 +130,7 @@ int32_t service_module::add_session(const std::string& session_id, const std::sh
         m_sessions.insert({ session_id, session });
         return ERR_SUCCESS;
     } else {
-        return E_DEFAULT;
+        return ERR_ERROR;
     }
 }
 
