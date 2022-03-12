@@ -267,6 +267,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     for (int i = 0; i < disk_data.size(); i++) {
         tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
         disk_data_node->SetAttribute("type", "file");
+        disk_data_node->SetAttribute("device", "disk");
 
         tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
         disk_driver_node->SetAttribute("name", "qemu");
@@ -870,12 +871,6 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
         return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " not exist");
 	}
 
-	// new uuid
-	uuid_t uu;
-	char buf_uuid[1024] = { 0 };
-	uuid_generate(uu);
-	uuid_unparse(uu, buf_uuid);
-
 	// new gpu
 	std::map<std::string, std::list<std::string>> mpGpu = task_resource->gpus;
 	std::string vga_pci;
@@ -884,9 +879,12 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
 			vga_pci += it2 + "|";
 		}
 	}
- 
+
 	// new cpu
-	long cpuNumTotal = task_resource->total_cores();
+	int32_t cpuNumTotal = task_resource->total_cores();
+    int32_t cpuSockets = task_resource->cpu_sockets;
+    int32_t cpuCores = task_resource->cpu_cores;
+    int32_t cpuThreads = task_resource->cpu_threads;
  
 	// new mem
 	uint64_t memoryTotal = task_resource->mem_size; // KB
@@ -900,73 +898,122 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
         run_shell(cmd_create_img);
     }
 
-    std::vector<std::string> disk_data;
-    std::string disk_system;
-
 	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
-	if (pContent != nullptr) {
-		tinyxml2::XMLDocument doc;
-		tinyxml2::XMLError err = doc.Parse(pContent);
-		if (err != tinyxml2::XML_SUCCESS) {
-			virDomainFree(domainPtr);
-			return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " parse domain xml failed");
+    if (pContent != nullptr) {
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            virDomainFree(domainPtr);
+            return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " parse domain xml failed");
+        }
+        tinyxml2::XMLElement* root = doc.RootElement();
+        // memory
+        tinyxml2::XMLElement* ele_memory = root->FirstChildElement("memory");
+        if (ele_memory != nullptr) {
+            ele_memory->SetText(memoryTotal);
+        }
+		tinyxml2::XMLElement* ele_current_memory = root->FirstChildElement("currentMemory");
+		if (ele_current_memory != nullptr) {
+            ele_current_memory->SetText(memoryTotal);
 		}
-
-		tinyxml2::XMLElement* root = doc.RootElement();
+        // cpu
+		tinyxml2::XMLElement* ele_vcpu = root->FirstChildElement("vcpu");
+		if (ele_vcpu != nullptr) {
+            ele_vcpu->SetText(cpuNumTotal);
+		}
+		tinyxml2::XMLElement* ele_cpu = root->FirstChildElement("cpu");
+		if (ele_cpu != nullptr) {
+            tinyxml2::XMLElement* ele_topology = ele_cpu->FirstChildElement("topology");
+            ele_topology->SetAttribute("sockets", cpuSockets);
+            ele_topology->SetAttribute("cores", cpuCores);
+            ele_topology->SetAttribute("threads", cpuThreads);
+		}
         tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
+        // disk
+        if (increase_disk) {
+            if (ele_devices != nullptr) {
+                tinyxml2::XMLElement* ele_disk = ele_devices->LastChildElement("disk");
+                tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
+                std::string strDev = ele_target->Attribute("dev");
+                char idx = strDev.back() + 1;
+
+                tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
+                disk_data_node->SetAttribute("type", "file");
+                disk_data_node->SetAttribute("device", "disk");
+                tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
+                disk_driver_node->SetAttribute("name", "qemu");
+                disk_driver_node->SetAttribute("type", "qcow2");
+                disk_data_node->LinkEndChild(disk_driver_node);
+                tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
+                disk_source_node->SetAttribute("file", data_file.c_str());
+                disk_data_node->LinkEndChild(disk_source_node);
+                tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
+                char buf[10] = { 0 };
+                snprintf(buf, 10, "%c", idx);
+                disk_target_node->SetAttribute("dev", std::string("vd").append(buf).c_str());
+                disk_target_node->SetAttribute("bus", "virtio");
+                disk_data_node->LinkEndChild(disk_target_node);
+
+                ele_devices->InsertAfterChild(ele_disk, disk_data_node);
+            }
+        }
+        // gpu
         if (ele_devices != nullptr) {
-            // disk
-            tinyxml2::XMLElement* ele_disk = ele_devices->FirstChildElement("disk");
-            int disk_count = 0;
-            while (ele_disk != nullptr) {
-				tinyxml2::XMLElement* ele_source = ele_disk->FirstChildElement("source");
-				std::string disk_file = ele_source->Attribute("file");
-                if (disk_count == 0) {
-                    disk_system = disk_file;
-                }
-                else {
-                    disk_data.push_back(disk_file);
-                }
+            tinyxml2::XMLElement* ele_hostdev = ele_devices->FirstChildElement("hostdev");
+            while (ele_hostdev != nullptr) {
+                ele_devices->DeleteChild(ele_hostdev);
+                ele_hostdev = ele_devices->FirstChildElement("hostdev");
+            }
 
-                ++disk_count;
-                ele_disk = ele_disk->NextSiblingElement("disk");
-            }
-            if (increase_disk) {
-                disk_data.push_back(data_file);
-            }
+			if (!vga_pci.empty()) {
+				std::vector<std::string> vedios = util::split(vga_pci, "|");
+				for (int i = 0; i < vedios.size(); ++i) {
+					std::vector<std::string> infos = util::split(vedios[i], ":");
+					if (infos.size() != 2) {
+						std::cout << vedios[i] << "  error" << std::endl;
+						continue;
+					}
+
+					std::vector<std::string> infos2 = util::split(infos[1], ".");
+					if (infos2.size() != 2) {
+						std::cout << vedios[i] << "  error" << std::endl;
+						continue;
+					}
+
+					tinyxml2::XMLElement* hostdev_node = doc.NewElement("hostdev");
+					hostdev_node->SetAttribute("mode", "subsystem");
+					hostdev_node->SetAttribute("type", "pci");
+					hostdev_node->SetAttribute("managed", "yes");
+					tinyxml2::XMLElement* source_node = doc.NewElement("source");
+					tinyxml2::XMLElement* address_node = doc.NewElement("address");
+					address_node->SetAttribute("type", "pci");
+					address_node->SetAttribute("domain", "0x0000");
+					address_node->SetAttribute("bus", ("0x" + infos[0]).c_str());
+					address_node->SetAttribute("slot", ("0x" + infos2[0]).c_str());
+					address_node->SetAttribute("function", ("0x" + infos2[1]).c_str());
+					source_node->LinkEndChild(address_node);
+					hostdev_node->LinkEndChild(source_node);
+
+                    ele_devices->LinkEndChild(hostdev_node);
+				}
+			}
         }
-	}
 
-	std::string xml_content = createXmlStr(buf_uuid, taskinfo->task_id, memoryTotal, cpuNumTotal, 
-        task_resource->cpu_sockets, task_resource->cpu_cores, task_resource->cpu_threads,
-		vga_pci, disk_system, disk_data,
-		task_resource->vnc_port, task_resource->vnc_password,
-		taskinfo->multicast, taskinfo->operation_system.find("win") != std::string::npos,
-		taskinfo->bios_mode == "uefi");
-
-	int32_t errcode = ERR_SUCCESS;
-    std::string errmsg;
-	do {
-		domainPtr = virDomainLookupByName(m_connPtr, taskinfo->task_id.c_str());
-		if (domainPtr != nullptr) {
-            virDomainUndefine(domainPtr);
-            sleep(1);
+		tinyxml2::XMLPrinter printer;
+		doc.Print(&printer);
+		const char* xml_content = printer.CStr();
+         
+		domainPtr = virDomainDefineXML(m_connPtr, xml_content);
+		if (domainPtr == nullptr) {
+			virErrorPtr error = virGetLastError();
+			std::string errmsg = std::string("defineXML failed: ") + error->message;
+			virDomainFree(domainPtr);
+			return FResult(ERR_ERROR, errmsg);
 		}
+    }
 
-        domainPtr = virDomainDefineXML(m_connPtr, xml_content.c_str());
-        if (domainPtr == nullptr) {
-            virErrorPtr error = virGetLastError();
-            errcode = ERR_ERROR;
-            errmsg = std::string("defineXML failed: ") + error->message;
-            break;
-        }
-	} while (0);
-
-	if (nullptr != domainPtr) {
-		virDomainFree(domainPtr);
-	}
-
-    return FResult(errcode, errmsg);
+	virDomainFree(domainPtr);
+	return FResultSuccess;
 }
 
 int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsigned int undefineFlags) {

@@ -1204,7 +1204,6 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << ", \"login_password\":" << "\"" << task->login_password << "\"";
 
             std::shared_ptr<TaskResource> task_resource = TaskResourceMgr::instance().getTaskResource(data->task_id);
-            uint64_t disk_data_size = task_resource == nullptr ? 0 : task_resource->disks.begin()->second;
             int32_t cpu_cores = task_resource == nullptr ? 0 : task_resource->total_cores();
             uint32_t gpu_count = task_resource == nullptr ? 0 : task_resource->gpus.size();
             int64_t mem_size = task_resource == nullptr ? 0 : task_resource->mem_size;
@@ -1215,7 +1214,6 @@ void node_request_service::task_list(const dbc::network::base_header& header,
             ss_tasks << ", \"gpu_count\":" << gpu_count;
             ss_tasks << ", \"mem_size\":" << "\"" << size2GB(mem_size) << "\"";
             ss_tasks << ", \"disk_system\":" << "\"" << g_disk_system_size << "G\"";
-            ss_tasks << ", \"disk_data\":" << "\"" << size2GB(disk_data_size) << "\"";
             ss_tasks << ", \"vnc_port\":" << "\"" << vnc_port << "\"";
             ss_tasks << ", \"vnc_password\":" << "\"" << vnc_password << "\"";
 
@@ -1256,6 +1254,15 @@ void node_request_service::task_list(const dbc::network::base_header& header,
                     ss_tasks << "{";
                     ss_tasks << "\"name\":" << "\"" << disk.second.targetDev << "\"";
                     ss_tasks << ", \"type\":" << "\"" << disk.second.driverType << "\"";
+                    auto iter_disk = task_resource->disks.find(disk.second.targetDev.back() - 'b' + 1);
+                    if (iter_disk != task_resource->disks.end()) {
+                        ss_tasks << ", \"size\":" << "\"" << size2GB(iter_disk->second) << "\"";
+                    }
+                    else {
+                        if (disk.second.targetDev == "vda") {
+                            ss_tasks << ", \"size\":" << "\"" << g_disk_system_size << "G\"";
+                        }
+                    }
                     ss_tasks << ", \"source_file\":" << "\"" << boost::filesystem::path(disk.second.sourceFile).filename().string() << "\"";
                     ss_tasks << "}";
                     idx++;
