@@ -1,10 +1,13 @@
+/.idea/
 .vs/
 /out/
 /build/
+/CMakeSettings.json
+
 /cmake-build-debug/
 /cmake-build-release/
-/CMakeSettings.json
-/deployment/package
 /make/build/
 /output/
+
+/deployment/package/
 /proto/thrift/cpp/
