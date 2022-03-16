@@ -1720,6 +1720,11 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
         }
     }
 
+    if (!new_ssh_port.empty() && !new_rdp_port.empty()
+        && new_ssh_port == new_rdp_port) {
+        return FResult(ERR_ERROR, "new_ssh_port and new_rdp_port are the same!");
+    }
+
     std::vector<std::string> new_custom_port;
     if (doc.HasMember("new_custom_port")) {
         const rapidjson::Value& v_custom_port = doc["new_custom_port"];
