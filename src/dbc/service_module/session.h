@@ -2,7 +2,6 @@
 #define DBC_SESSION_H
 
 #include "common/common.h"
-#include "../timer/timer_manager.h"
 #include "service_context.h"
 
 using namespace boost::program_options;

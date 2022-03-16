@@ -5,7 +5,7 @@
 #include "config/conf_manager.h"
 #include "service_module/topic_manager.h"
 #include "network/connection_manager.h"
-#include "timer/timer_matrix_manager.h"
+#include "timer/timer_tick_manager.h"
 
 class Server {
 public:
@@ -35,7 +35,7 @@ protected:
 
 private:
     std::atomic<bool> m_running {true};
-    std::shared_ptr<timer_matrix_manager> m_timer_matrix_manager = nullptr;
+    std::shared_ptr<timer_tick_manager> m_timer_matrix_manager = nullptr;
 };
 
 #endif

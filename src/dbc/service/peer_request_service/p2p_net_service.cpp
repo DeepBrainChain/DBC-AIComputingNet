@@ -61,52 +61,36 @@ ERRCODE p2p_net_service::init() {
 }
 
 void p2p_net_service::exit() {
-	service_module::exit();
-
-	remove_timer(m_timer_check_peer_candidates);
-	remove_timer(m_timer_dyanmic_adjust_network);
-	remove_timer(m_timer_peer_info_exchange);
-	remove_timer(m_timer_dump_peer_candidates);
+    service_module::exit();
 }
 
 void p2p_net_service::init_timer() {
     // 30s
-    m_timer_invokers[CHECK_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_check_peer_candidates, this, std::placeholders::_1);
-    add_timer(CHECK_PEER_CANDIDATES_TIMER, 5 * 1000, 1, "");
-    m_timer_check_peer_candidates = add_timer(CHECK_PEER_CANDIDATES_TIMER, 30 * 1000, ULLONG_MAX, "");
+    add_timer(CHECK_PEER_CANDIDATES_TIMER, 5 * 1000, 1, "", 
+        CALLBACK_1(p2p_net_service::on_timer_check_peer_candidates, this));
+    add_timer(CHECK_PEER_CANDIDATES_TIMER, 30 * 1000, ULLONG_MAX, "",
+        CALLBACK_1(p2p_net_service::on_timer_check_peer_candidates, this));
 
     // 1min
-    m_timer_invokers[DYANMIC_ADJUST_NETWORK_TIMER] = std::bind(&p2p_net_service::on_timer_dyanmic_adjust_network, this, std::placeholders::_1);
-    m_timer_dyanmic_adjust_network = add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, ULLONG_MAX, "");
+    add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, ULLONG_MAX, "",
+        CALLBACK_1(p2p_net_service::on_timer_dyanmic_adjust_network, this));
 
     // 1min
-    m_timer_invokers[PEER_INFO_EXCHANGE_TIMER] = std::bind(&p2p_net_service::on_timer_peer_info_exchange, this, std::placeholders::_1);
-    m_timer_peer_info_exchange = add_timer(PEER_INFO_EXCHANGE_TIMER, 1 * 60 * 1000, ULLONG_MAX, "");
+    add_timer(PEER_INFO_EXCHANGE_TIMER, 1 * 60 * 1000, ULLONG_MAX, "",
+        CALLBACK_1(p2p_net_service::on_timer_peer_info_exchange, this));
 
     // 10min
-    m_timer_invokers[DUMP_PEER_CANDIDATES_TIMER] = std::bind(&p2p_net_service::on_timer_peer_candidate_dump, this, std::placeholders::_1);
-    m_timer_dump_peer_candidates = add_timer(DUMP_PEER_CANDIDATES_TIMER, 10 * 60 * 1000, ULLONG_MAX, "");
+    add_timer(DUMP_PEER_CANDIDATES_TIMER, 10 * 60 * 1000, ULLONG_MAX, "",
+        CALLBACK_1(p2p_net_service::on_timer_peer_candidate_dump, this));
 }
 
 void p2p_net_service::init_invoker() {
-    invoker_type invoker;
-    BIND_MESSAGE_INVOKER(TCP_CHANNEL_ERROR, &p2p_net_service::on_tcp_channel_error)
-    BIND_MESSAGE_INVOKER(CLIENT_CONNECT_NOTIFICATION, &p2p_net_service::on_client_tcp_connect_notification)
-
-    BIND_MESSAGE_INVOKER(VER_REQ, &p2p_net_service::on_ver_req)
-    BIND_MESSAGE_INVOKER(VER_RESP, &p2p_net_service::on_ver_resp)
-
-    BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_REQ, &p2p_net_service::on_get_peer_nodes_req)
-    BIND_MESSAGE_INVOKER(P2P_GET_PEER_NODES_RESP, &p2p_net_service::on_get_peer_nodes_resp)
-}
-
-void p2p_net_service::init_subscription() {
-    SUBSCRIBE_BUS_MESSAGE(TCP_CHANNEL_ERROR);
-    SUBSCRIBE_BUS_MESSAGE(CLIENT_CONNECT_NOTIFICATION);
-    SUBSCRIBE_BUS_MESSAGE(VER_REQ);
-    SUBSCRIBE_BUS_MESSAGE(VER_RESP);
-    SUBSCRIBE_BUS_MESSAGE(P2P_GET_PEER_NODES_REQ);
-    SUBSCRIBE_BUS_MESSAGE(P2P_GET_PEER_NODES_RESP);
+    reg_msg_handle(TCP_CHANNEL_ERROR, CALLBACK_1(p2p_net_service::on_tcp_channel_error, this));
+    reg_msg_handle(CLIENT_CONNECT_NOTIFICATION, CALLBACK_1(p2p_net_service::on_client_tcp_connect_notification, this));
+    reg_msg_handle(VER_REQ, CALLBACK_1(p2p_net_service::on_ver_req, this));
+    reg_msg_handle(VER_RESP, CALLBACK_1(p2p_net_service::on_ver_resp, this));
+    reg_msg_handle(P2P_GET_PEER_NODES_REQ, CALLBACK_1(p2p_net_service::on_get_peer_nodes_req, this));
+    reg_msg_handle(P2P_GET_PEER_NODES_RESP, CALLBACK_1(p2p_net_service::on_get_peer_nodes_resp, this));
 }
 
 int32_t p2p_net_service::init_conf() {

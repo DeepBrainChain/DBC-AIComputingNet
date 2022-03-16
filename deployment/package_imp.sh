@@ -37,12 +37,10 @@ dbc_package()
 
     if [ $type == 'seed' ];then
         sed -i '/dbc_chain_domain/d' $dbc_repo_dir/conf/core.conf
-        sed -i '/image_server/d' $dbc_repo_dir/conf/core.conf
         cp $shell_dir/seed/*.sh $dbc_repo_dir/shell/
     fi
 
     if [ $type == 'mining' ]; then
-        sed -i '/image_server/d' $dbc_repo_dir/conf/core.conf
         cp $shell_dir/mining/*.sh $dbc_repo_dir/shell/
     fi
 

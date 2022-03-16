@@ -87,8 +87,6 @@ namespace dbc
 
             void init_timer() override;
 
-            void init_subscription() override;
-
             virtual int32_t init_io_services();
 
             virtual int32_t exit_io_services();
@@ -117,13 +115,9 @@ namespace dbc
 
             void on_recycle_timer(const std::shared_ptr<core_timer>& timer);
 
-            virtual void remove_timers();
-
             int32_t load_max_connect();
 
         protected:
-            uint32_t m_channel_recycle_timer = INVALID_TIMER_ID;
-
             rw_lock m_lock_conn;//connector
 			rw_lock m_lock_accp;//acceptor
 			rw_lock m_lock_chnl;//channels

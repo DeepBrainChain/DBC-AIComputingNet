@@ -38,8 +38,6 @@ protected:
 
     void init_invoker() override;
 
-    void init_subscription() override;
-
     int32_t init_db();
 
     int32_t load_wallet_monitor_from_db();

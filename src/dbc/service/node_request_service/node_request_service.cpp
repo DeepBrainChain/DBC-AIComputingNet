@@ -86,8 +86,6 @@ void node_request_service::exit() {
 	service_module::exit();
 
 	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-		remove_timer(m_training_task_timer_id);
-		remove_timer(m_prune_task_timer_id);
 		m_task_scheduler.exit();
 	}
 }
@@ -129,64 +127,40 @@ void node_request_service::add_self_to_servicelist() {
 void node_request_service::init_timer() {
     if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 10s
-        m_timer_invokers[AI_TRAINING_TASK_TIMER] = std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1);
-        m_training_task_timer_id = this->add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, ULLONG_MAX, "");
+        add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, ULLONG_MAX, "", 
+            std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1));
 
         // 1min
-        m_timer_invokers[AI_PRUNE_TASK_TIMER] = std::bind(&node_request_service::on_prune_task_timer, this, std::placeholders::_1);
-        m_prune_task_timer_id = this->add_timer(AI_PRUNE_TASK_TIMER, 60 * 1000, ULLONG_MAX, "");
+        add_timer(AI_PRUNE_TASK_TIMER, 60 * 1000, ULLONG_MAX, "",
+            std::bind(&node_request_service::on_prune_task_timer, this, std::placeholders::_1));
     }
 
     // 10s
-    m_timer_invokers[SERVICE_BROADCAST_TIMER] = std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1);
-    add_timer(SERVICE_BROADCAST_TIMER, 10 * 1000, ULLONG_MAX, "");
+    add_timer(SERVICE_BROADCAST_TIMER, 10 * 1000, ULLONG_MAX, "",
+        std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1));
 }
 
 void node_request_service::init_invoker() {
-    invoker_type invoker;
-    BIND_MESSAGE_INVOKER(NODE_LIST_IMAGES_REQ, &node_request_service::on_node_list_images_req);
-    BIND_MESSAGE_INVOKER(NODE_DOWNLOAD_IMAGE_REQ, &node_request_service::on_node_download_image_req);
-    BIND_MESSAGE_INVOKER(NODE_UPLOAD_IMAGE_REQ, &node_request_service::on_node_upload_image_req);
-    BIND_MESSAGE_INVOKER(NODE_CREATE_TASK_REQ, &node_request_service::on_node_create_task_req)
-    BIND_MESSAGE_INVOKER(NODE_START_TASK_REQ, &node_request_service::on_node_start_task_req)
-    BIND_MESSAGE_INVOKER(NODE_RESTART_TASK_REQ, &node_request_service::on_node_restart_task_req)
-    BIND_MESSAGE_INVOKER(NODE_STOP_TASK_REQ, &node_request_service::on_node_stop_task_req)
-    BIND_MESSAGE_INVOKER(NODE_RESET_TASK_REQ, &node_request_service::on_node_reset_task_req)
-    BIND_MESSAGE_INVOKER(NODE_DELETE_TASK_REQ, &node_request_service::on_node_delete_task_req)
-    BIND_MESSAGE_INVOKER(NODE_TASK_LOGS_REQ, &node_request_service::on_node_task_logs_req)
-    BIND_MESSAGE_INVOKER(NODE_MODIFY_TASK_REQ, &node_request_service::on_node_modify_task_req)
-    BIND_MESSAGE_INVOKER(NODE_LIST_TASK_REQ, &node_request_service::on_node_list_task_req)
-    BIND_MESSAGE_INVOKER(NODE_QUERY_NODE_INFO_REQ, &node_request_service::on_node_query_node_info_req)
-    BIND_MESSAGE_INVOKER(SERVICE_BROADCAST_REQ, &node_request_service::on_net_service_broadcast_req)
-    BIND_MESSAGE_INVOKER(NODE_SESSION_ID_REQ, &node_request_service::on_node_session_id_req)
-    BIND_MESSAGE_INVOKER(NODE_LIST_SNAPSHOT_REQ, &node_request_service::on_node_list_snapshot_req)
-    BIND_MESSAGE_INVOKER(NODE_CREATE_SNAPSHOT_REQ, &node_request_service::on_node_create_snapshot_req)
-    BIND_MESSAGE_INVOKER(NODE_DELETE_SNAPSHOT_REQ, &node_request_service::on_node_delete_snapshot_req)
-    BIND_MESSAGE_INVOKER(NODE_LIST_MONITOR_SERVER_REQ, &node_request_service::on_node_list_monitor_server_req)
-    BIND_MESSAGE_INVOKER(NODE_SET_MONITOR_SERVER_REQ, &node_request_service::on_node_set_monitor_server_req)
-}
-
-void node_request_service::init_subscription() {
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_IMAGES_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_DOWNLOAD_IMAGE_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_UPLOAD_IMAGE_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_MODIFY_TASK_REQ)
-    SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_REQ)
-    SUBSCRIBE_BUS_MESSAGE(SERVICE_BROADCAST_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_SESSION_ID_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_SNAPSHOT_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_SNAPSHOT_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_SNAPSHOT_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_MONITOR_SERVER_REQ);
-    SUBSCRIBE_BUS_MESSAGE(NODE_SET_MONITOR_SERVER_REQ);
+    reg_msg_handle(NODE_LIST_IMAGES_REQ, CALLBACK_1(node_request_service::on_node_list_images_req, this));
+	reg_msg_handle(NODE_DOWNLOAD_IMAGE_REQ, CALLBACK_1(node_request_service::on_node_download_image_req, this));
+	reg_msg_handle(NODE_UPLOAD_IMAGE_REQ, CALLBACK_1(node_request_service::on_node_upload_image_req, this));
+	reg_msg_handle(NODE_CREATE_TASK_REQ, CALLBACK_1(node_request_service::on_node_create_task_req, this));
+	reg_msg_handle(NODE_START_TASK_REQ, CALLBACK_1(node_request_service::on_node_start_task_req, this));
+	reg_msg_handle(NODE_RESTART_TASK_REQ, CALLBACK_1(node_request_service::on_node_restart_task_req, this));
+	reg_msg_handle(NODE_STOP_TASK_REQ, CALLBACK_1(node_request_service::on_node_stop_task_req, this));
+	reg_msg_handle(NODE_RESET_TASK_REQ, CALLBACK_1(node_request_service::on_node_reset_task_req, this));
+	reg_msg_handle(NODE_DELETE_TASK_REQ, CALLBACK_1(node_request_service::on_node_delete_task_req, this));
+	reg_msg_handle(NODE_TASK_LOGS_REQ, CALLBACK_1(node_request_service::on_node_task_logs_req, this));
+    reg_msg_handle(NODE_MODIFY_TASK_REQ, CALLBACK_1(node_request_service::on_node_modify_task_req, this));
+	reg_msg_handle(NODE_LIST_TASK_REQ, CALLBACK_1(node_request_service::on_node_list_task_req, this));
+	reg_msg_handle(NODE_QUERY_NODE_INFO_REQ, CALLBACK_1(node_request_service::on_node_query_node_info_req, this));
+	reg_msg_handle(SERVICE_BROADCAST_REQ, CALLBACK_1(node_request_service::on_net_service_broadcast_req, this));
+	reg_msg_handle(NODE_SESSION_ID_REQ, CALLBACK_1(node_request_service::on_node_session_id_req, this));
+	reg_msg_handle(NODE_LIST_SNAPSHOT_REQ, CALLBACK_1(node_request_service::on_node_list_snapshot_req, this));
+	reg_msg_handle(NODE_CREATE_SNAPSHOT_REQ, CALLBACK_1(node_request_service::on_node_create_snapshot_req, this));
+	reg_msg_handle(NODE_DELETE_SNAPSHOT_REQ, CALLBACK_1(node_request_service::on_node_delete_snapshot_req, this));
+	reg_msg_handle(NODE_LIST_MONITOR_SERVER_REQ, CALLBACK_1(node_request_service::on_node_list_monitor_server_req, this));
+	reg_msg_handle(NODE_SET_MONITOR_SERVER_REQ, CALLBACK_1(node_request_service::on_node_set_monitor_server_req, this));
 }
 
 bool node_request_service::hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id) {

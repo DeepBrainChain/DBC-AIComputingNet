@@ -89,7 +89,7 @@ ERRCODE Server::Init(int argc, char *argv[]) {
 
     // timer_matrix_manager
     LOG_INFO << "begin to init timer matrix manager";
-    m_timer_matrix_manager = std::make_shared<timer_matrix_manager>();
+    m_timer_matrix_manager = std::make_shared<timer_tick_manager>();
     err = m_timer_matrix_manager->init();
     if (ERR_SUCCESS != err) {
         LOG_ERROR << "init timer matrix manager failed";
@@ -271,16 +271,20 @@ void Server::Idle() {
 }
 
 void Server::Exit() {
+    ImageManager::instance().Exit();
+    sleep(3);
+    exit(0);
+
+	if (m_timer_matrix_manager) {
+		m_timer_matrix_manager->exit();
+	}
 	dbc::network::connection_manager::instance().exit();
 	p2p_net_service::instance().exit();
 	http_server_service::instance().exit();
 	node_request_service::instance().exit();
 	rest_api_service::instance().exit();
     node_monitor_service::instance().exit();
-	if (m_timer_matrix_manager) {
-		m_timer_matrix_manager->exit();
-	}
-	ImageManager::instance().Exit();
+    VmClient::instance().Exit();
 	SystemInfo::instance().exit();
 	ExitCrypto();
 	m_running = false;

@@ -51,10 +51,6 @@ ERRCODE node_monitor_service::init() {
 void node_monitor_service::exit() {
 	service_module::exit();
 
-	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-		remove_timer(m_monitor_data_sender_task_timer_id);
-		remove_timer(m_update_cur_renter_wallet_timer_id);
-	}
 }
 
 void node_monitor_service::listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers) const {
@@ -102,20 +98,16 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
 void node_monitor_service::init_timer() {
     if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 30s
-        m_timer_invokers[MONITOR_DATA_SENDER_TASK_TIMER] = std::bind(&node_monitor_service::on_monitor_data_sender_task_timer, this, std::placeholders::_1);
-        m_monitor_data_sender_task_timer_id = this->add_timer(MONITOR_DATA_SENDER_TASK_TIMER, 30 * 1000, ULLONG_MAX, "");
+        add_timer(MONITOR_DATA_SENDER_TASK_TIMER, 30 * 1000, ULLONG_MAX, "", 
+            CALLBACK_1(node_monitor_service::on_monitor_data_sender_task_timer, this));
 
         // 3min
-        m_timer_invokers[UPDATE_CUR_RENTER_WALLET_TIMER] = std::bind(&node_monitor_service::on_update_cur_renter_wallet_timer, this, std::placeholders::_1);
-        m_update_cur_renter_wallet_timer_id = this->add_timer(UPDATE_CUR_RENTER_WALLET_TIMER, 180 * 1000, ULLONG_MAX, "");
+        add_timer(UPDATE_CUR_RENTER_WALLET_TIMER, 180 * 1000, ULLONG_MAX, "", 
+            CALLBACK_1(node_monitor_service::on_update_cur_renter_wallet_timer, this));
     }
 }
 
 void node_monitor_service::init_invoker() {
-
-}
-
-void node_monitor_service::init_subscription() {
 
 }
 

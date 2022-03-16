@@ -65,8 +65,6 @@ namespace dbc
 				write_lock_guard<rw_lock> lock(m_lock_conn);
 				m_connectors.clear();
 			}
-
-			remove_timers();
 		}
 
         int32_t connection_manager::load_max_connect()
@@ -95,25 +93,15 @@ namespace dbc
             return ERR_SUCCESS;
         }
 
-        void connection_manager::init_subscription()
-        {
-            topic_manager::instance().subscribe(TCP_CHANNEL_ERROR, [this](std::shared_ptr<message> &msg) { send(msg);});
-        }
-
         void connection_manager::init_invoker()
         {
-            invoker_type invoker;
-
-            //tcp channel error
-            invoker = std::bind(&connection_manager::on_tcp_channel_error, this, std::placeholders::_1);
-            m_invokers.insert({ TCP_CHANNEL_ERROR, { invoker } });
+            reg_msg_handle(TCP_CHANNEL_ERROR, CALLBACK_1(connection_manager::on_tcp_channel_error, this));
         }
 
         void connection_manager::init_timer()
         {
-            m_timer_invokers[TIMER_NAME_CHANNEL_RECYCLE] = std::bind(&connection_manager::on_recycle_timer, this, std::placeholders::_1);
-            m_channel_recycle_timer = add_timer(TIMER_NAME_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, ULLONG_MAX, "");
-            assert(INVALID_TIMER_ID != m_channel_recycle_timer);
+            add_timer(TIMER_NAME_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, ULLONG_MAX, "", 
+                CALLBACK_1(connection_manager::on_recycle_timer, this));
         }
 
         int32_t connection_manager::init_io_services()
@@ -802,15 +790,6 @@ namespace dbc
             }
 
             return ERR_SUCCESS;
-        }
-
-        void connection_manager::remove_timers()
-        {
-            if (INVALID_TIMER_ID != m_channel_recycle_timer)
-            {
-                remove_timer(m_channel_recycle_timer);
-                m_channel_recycle_timer = INVALID_TIMER_ID;
-            }
         }
 
         void connection_manager::set_proto_capacity(socket_id sid, std::string c)

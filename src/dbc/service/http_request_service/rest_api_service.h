@@ -323,9 +323,7 @@ protected:
 
     void init_invoker() override;
 
-    void init_subscription() override;
-
-    int32_t create_request_session(const std::string &timer_id, const std::shared_ptr<dbc::network::http_request> &hreq,
+    int32_t create_request_session(uint32_t timer_id, const std::shared_ptr<dbc::network::http_request> &hreq,
                                    const std::shared_ptr<dbc::network::message> &req_msg, const std::string &session_id,
                                    const std::string &peer_node_id);
 

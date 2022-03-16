@@ -47,8 +47,6 @@ protected:
 
     void init_invoker() override;
 
-    void init_subscription() override;
-
     void on_node_list_images_req(const std::shared_ptr<dbc::network::message> &msg);
 
     void list_images(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data, const AuthoriseResult& result);
@@ -155,10 +153,6 @@ private:
 
 protected:
     TaskMgr m_task_scheduler;
-
-    uint32_t m_training_task_timer_id = INVALID_TIMER_ID;
-    uint32_t m_prune_task_timer_id = INVALID_TIMER_ID;
-
     lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
     HttpChainClient m_httpclient;
 };

@@ -74,70 +74,30 @@ void rest_api_service::exit() {
 }
 
 void rest_api_service::init_timer() {
-    m_timer_invokers[NODE_LIST_IMAGES_TIMER] = std::bind(&rest_api_service::on_node_list_images_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_DOWNLOAD_IMAGE_TIMER] = std::bind(&rest_api_service::on_node_download_image_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_UPLOAD_IMAGE_TIMER] = std::bind(&rest_api_service::on_node_upload_image_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_CREATE_TASK_TIMER] = std::bind(&rest_api_service::on_node_create_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_START_TASK_TIMER] = std::bind(&rest_api_service::on_node_start_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_STOP_TASK_TIMER] = std::bind(&rest_api_service::on_node_stop_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_RESTART_TASK_TIMER] = std::bind(&rest_api_service::on_node_restart_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_RESET_TASK_TIMER] = std::bind(&rest_api_service::on_node_reset_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_DELETE_TASK_TIMER] = std::bind(&rest_api_service::on_node_delete_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_TASK_LOGS_TIMER] = std::bind(&rest_api_service::on_node_task_logs_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_LIST_TASK_TIMER] = std::bind(&rest_api_service::on_node_list_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_MODIFY_TASK_TIMER] = std::bind(&rest_api_service::on_node_modify_task_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_QUERY_NODE_INFO_TIMER] = std::bind(&rest_api_service::on_node_query_node_info_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_SESSION_ID_TIMER] = std::bind(&rest_api_service::on_node_session_id_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_LIST_SNAPSHOT_TIMER] = std::bind(&rest_api_service::on_node_list_snapshot_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_CREATE_SNAPSHOT_TIMER] = std::bind(&rest_api_service::on_node_create_snapshot_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_LIST_MONITOR_SERVER_TIMER] = std::bind(&rest_api_service::on_node_list_monitor_server_timer, this, std::placeholders::_1);
-    m_timer_invokers[NODE_SET_MONITOR_SERVER_TIMER] = std::bind(&rest_api_service::on_node_set_monitor_server_timer, this, std::placeholders::_1);
+
 }
 
 void rest_api_service::init_invoker() {
-    m_invokers[NODE_LIST_IMAGES_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_DOWNLOAD_IMAGE_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_UPLOAD_IMAGE_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_CREATE_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_START_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_STOP_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_RESTART_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_RESET_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_DELETE_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_TASK_LOGS_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_LIST_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_MODIFY_TASK_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_QUERY_NODE_INFO_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_SESSION_ID_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
+    reg_msg_handle(NODE_LIST_IMAGES_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_DOWNLOAD_IMAGE_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_UPLOAD_IMAGE_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_CREATE_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_START_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_STOP_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_RESTART_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_RESET_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_DELETE_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_TASK_LOGS_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_LIST_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_MODIFY_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_QUERY_NODE_INFO_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_SESSION_ID_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_LIST_SNAPSHOT_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_CREATE_SNAPSHOT_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_DELETE_SNAPSHOT_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_LIST_MONITOR_SERVER_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_SET_MONITOR_SERVER_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     //m_invokers[BINARY_FORWARD_MSG] = std::bind(&rest_api_service::on_binary_forward, this, std::placeholders::_1);
-    m_invokers[NODE_LIST_SNAPSHOT_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_CREATE_SNAPSHOT_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_DELETE_SNAPSHOT_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_LIST_MONITOR_SERVER_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-    m_invokers[NODE_SET_MONITOR_SERVER_RSP] = std::bind(&rest_api_service::on_call_rsp_handler, this, std::placeholders::_1);
-}
-
-void rest_api_service::init_subscription() {
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_IMAGES_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_DOWNLOAD_IMAGE_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_UPLOAD_IMAGE_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_START_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_STOP_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_RESTART_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_RESET_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_TASK_LOGS_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_MODIFY_TASK_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_QUERY_NODE_INFO_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_SESSION_ID_RSP)
-    //SUBSCRIBE_BUS_MESSAGE(BINARY_FORWARD_MSG)
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_SNAPSHOT_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_CREATE_SNAPSHOT_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_DELETE_SNAPSHOT_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_LIST_MONITOR_SERVER_RSP)
-    SUBSCRIBE_BUS_MESSAGE(NODE_SET_MONITOR_SERVER_RSP)
 }
 
 void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) {
@@ -291,41 +251,32 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::m
     }
 }
 
-int32_t rest_api_service::create_request_session(const std::string& timer_id,
+int32_t rest_api_service::create_request_session(uint32_t timer_id,
                                               const std::shared_ptr<dbc::network::http_request>& hreq,
                                               const std::shared_ptr<dbc::network::message>& req_msg,
                                               const std::string& session_id, const std::string& peer_node_id) {
+    std::string str_uri = hreq->get_uri();
+
+    if (get_session_count() >= MAX_SESSION_COUNT) {
+        LOG_ERROR << "session pool is full, uri:" << str_uri;
+        return E_DEFAULT;
+    }
+
     auto hreq_context = std::make_shared<dbc::network::http_request_context>();
     hreq_context->m_hreq = hreq;
     hreq_context->m_req_msg = req_msg;
     hreq_context->peer_node_id = peer_node_id;
 
-    do {
-        std::string str_uri = hreq->get_uri();
+    std::shared_ptr<service_session> session = std::make_shared<service_session>(timer_id, session_id);
+    variable_value val;
+    val.value() = hreq_context;
+    session->get_context().add(HTTP_REQUEST_KEY, val);
 
-        if (get_session_count() >= MAX_SESSION_COUNT) {
-            LOG_ERROR << "session pool is full, uri:" << str_uri;
-            return E_DEFAULT;
-        }
-
-        uint32_t id = add_timer(timer_id, MAX_WAIT_HTTP_RESPONSE_TIME, ONLY_ONE_TIME, session_id);
-        if (INVALID_TIMER_ID == id) {
-            LOG_ERROR << "add_timer failed, uri:" << str_uri;
-            return E_DEFAULT;
-        }
-
-        std::shared_ptr<service_session> session = std::make_shared<service_session>(id, session_id);
-        variable_value val;
-        val.value() = hreq_context;
-        session->get_context().add(HTTP_REQUEST_KEY, val);
-
-        int32_t ret = this->add_session(session_id, session);
-        if (ERR_SUCCESS != ret) {
-            remove_timer(id);
-            LOG_ERROR << "add_session failed, uri:" << str_uri;
-            return E_DEFAULT;
-        }
-    } while (0);
+    int32_t ret = this->add_session(session_id, session);
+    if (ERR_SUCCESS != ret) {
+        LOG_ERROR << "add_session failed, uri:" << str_uri;
+        return E_DEFAULT;
+    }
 
     return ERR_SUCCESS;
 }
@@ -680,7 +631,7 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
         if (it_svr != nullptr)
             body.image_server = it_svr->to_string();
 
-        // create node request
+        // node request
         std::string head_session_id = util::create_session_id();
 
         auto node_req_msg = create_node_list_images_req_msg(head_session_id, body);
@@ -689,9 +640,18 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
             return;
         }
 
-        // create session
-        if (ERR_SUCCESS != create_request_session(NODE_LIST_IMAGES_TIMER, httpReq, node_req_msg, head_session_id,
+        // timer
+        uint32_t timer_id = add_timer(NODE_LIST_IMAGES_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+            CALLBACK_1(rest_api_service::on_node_list_images_timer, this));
+        if (INVALID_TIMER_ID == timer_id) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+            return;
+        }
+
+        // session
+        if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
+            remove_timer(timer_id);
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
@@ -912,26 +872,32 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
         }
     }
 
-    // create node request
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_download_image_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    // create session
-    if (ERR_SUCCESS != create_request_session(NODE_DOWNLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_DOWNLOAD_IMAGE_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_download_image_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -1172,27 +1138,33 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
             }
         }
 
-        // create node request
+        // node request
         std::string head_session_id = util::create_session_id();
 
         auto node_req_msg = create_node_upload_image_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            LOG_ERROR << "creaate node request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
             return;
         }
 
-        // create session
-        if (ERR_SUCCESS != create_request_session(NODE_UPLOAD_IMAGE_TIMER, httpReq, node_req_msg, head_session_id,
+        // timer
+        uint32_t timer_id = add_timer(NODE_UPLOAD_IMAGE_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+            CALLBACK_1(rest_api_service::on_node_upload_image_timer, this));
+        if (INVALID_TIMER_ID == timer_id) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+            return;
+        }
+
+        // session
+        if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
-            LOG_ERROR << "create request session failed";
+            remove_timer(timer_id);
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
         // broadcast message
         if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-            LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
@@ -1457,23 +1429,32 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_list_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_LIST_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_LIST_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_list_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -1695,26 +1676,32 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         }
     }
 
-    // create node request
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_create_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
-    // create session
-    if (ERR_SUCCESS != create_request_session(NODE_CREATE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_CREATE_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_create_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
     // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -1929,23 +1916,32 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_start_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_START_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_START_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_start_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -2161,23 +2157,32 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_stop_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_STOP_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_STOP_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_stop_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -2406,23 +2411,32 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_restart_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_RESTART_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_RESTART_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_restart_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -2642,23 +2656,32 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_reset_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_RESET_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_RESET_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_reset_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -2875,23 +2898,32 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_delete_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_DELETE_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_DELETE_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_delete_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -3108,23 +3140,32 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_modify_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_MODIFY_TASK_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_MODIFY_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_modify_task_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -3381,23 +3422,32 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_task_logs_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_TASK_LOGS_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_TASK_LOGS_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_task_logs_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -3670,26 +3720,32 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
         if (it_svr != nullptr)
     		body.image_server = it_svr->to_string();
 
-        // create node request
+        // node request
         std::string head_session_id = util::create_session_id();
 
         auto node_req_msg = create_node_query_node_info_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            LOG_ERROR << "create node request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
-        // create session
-        if (ERR_SUCCESS != create_request_session(NODE_QUERY_NODE_INFO_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-            LOG_ERROR << "create request session failed";
+        // timer
+        uint32_t timer_id = add_timer(NODE_QUERY_NODE_INFO_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+            CALLBACK_1(rest_api_service::on_node_query_node_info_timer, this));
+        if (INVALID_TIMER_ID == timer_id) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+            return;
+        }
+
+        // session
+        if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+            remove_timer(timer_id);
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
             return;
         }
 
         // broadcast message
         if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-            LOG_ERROR << "broadcast request failed";
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
@@ -3899,23 +3955,32 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
         return;
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_session_id_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_SESSION_ID_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_SESSION_ID_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_session_id_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -4386,23 +4451,32 @@ void rest_api_service::rest_list_snapshot(const std::shared_ptr<dbc::network::ht
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_list_snapshot_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_LIST_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_LIST_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_list_snapshot_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -4619,23 +4693,32 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<dbc::network::
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_create_snapshot_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_CREATE_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_CREATE_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_create_snapshot_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -4857,23 +4940,32 @@ void rest_api_service::rest_delete_snapshot(const std::shared_ptr<dbc::network::
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_delete_snapshot_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_DELETE_SNAPSHOT_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_DELETE_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_delete_snapshot_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -5108,23 +5200,32 @@ void rest_api_service::rest_list_monitor_server(const std::shared_ptr<dbc::netwo
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_list_monitor_server_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "create node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_LIST_MONITOR_SERVER_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_LIST_MONITOR_SERVER_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_list_monitor_server_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
@@ -5339,23 +5440,32 @@ void rest_api_service::rest_set_monitor_server(const std::shared_ptr<dbc::networ
         }
     }
 
+    // node request
     std::string head_session_id = util::create_session_id();
 
     auto node_req_msg = create_node_set_monitor_server_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        LOG_ERROR << "creaate node request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
         return;
     }
 
-    if (ERR_SUCCESS != create_request_session(NODE_SET_MONITOR_SERVER_TIMER, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
-        LOG_ERROR << "create request session failed";
+    // timer
+    uint32_t timer_id = add_timer(NODE_SET_MONITOR_SERVER_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_set_monitor_server_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
         return;
     }
 
+    // broadcast message
     if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
-        LOG_ERROR << "broadcast request failed";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }

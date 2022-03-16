@@ -45,8 +45,6 @@ protected:
 
     void init_invoker() override;
 
-    void init_subscription() override;
-
     int32_t init_conf();
 
     int32_t init_db();
@@ -149,9 +147,4 @@ protected:
     std::shared_ptr<leveldb::DB> m_peers_candidates_db;
     std::list<std::shared_ptr<peer_candidate>> m_peer_candidates;
     std::unordered_map<std::string, std::shared_ptr<peer_node>> m_peer_nodes_map;  // <node_id, ...>
-
-    uint32_t m_timer_check_peer_candidates = INVALID_TIMER_ID;
-    uint32_t m_timer_dyanmic_adjust_network = INVALID_TIMER_ID;
-    uint32_t m_timer_peer_info_exchange = INVALID_TIMER_ID;
-    uint32_t m_timer_dump_peer_candidates = INVALID_TIMER_ID;
 };
