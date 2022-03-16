@@ -9,6 +9,7 @@
 #include "service/task/TaskManager.h"
 #include "util/LruCache.hpp"
 #include "../message/matrix_types.h"
+#include "../message/lan_types.h"
 #include "service/service_info/service_info_collection.h"
 #include "util/system_info.h"
 #include "network/protocol/protocol.h"
@@ -136,6 +137,18 @@ protected:
     void on_node_set_monitor_server_req(const std::shared_ptr<dbc::network::message>& msg);
 
     void monitor_server_set(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_set_monitor_server_req_data>& data, const AuthoriseResult& result);
+    
+    void on_node_list_lan_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void list_lan(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_list_lan_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_create_lan_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void create_lan(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_create_lan_req_data>& data, const AuthoriseResult& result);
+    
+    void on_node_delete_lan_req(const std::shared_ptr<dbc::network::message>& msg);
+
+    void delete_lan(const dbc::network::base_header& header, const std::shared_ptr<dbc::node_delete_lan_req_data>& data, const AuthoriseResult& result);
 
 private:
     bool check_req_header(const std::shared_ptr<dbc::network::message> &msg);

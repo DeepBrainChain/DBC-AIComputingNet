@@ -15,6 +15,7 @@
 #include "service/node_monitor_service/node_monitor_service.h"
 #include "service/node_request_service/node_request_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
+#include "service/task/VxlanManager.h"
 #include "util/system_info.h"
 
 static std::unique_ptr<ECCVerifyHandle> g_ecc_verify_handle;
@@ -96,6 +97,15 @@ ERRCODE Server::Init(int argc, char *argv[]) {
         return err;
     }
     LOG_INFO << "init timer matrix manager successful";
+
+    // vxlan network manager
+    LOG_INFO << "begin to init vxlan netowrk manager";
+    err = VxlanManager::instance().Init();
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init vxlan network manager failed";
+        return err;
+    }
+    LOG_INFO << "init vxlan network manager successful";
 
     // node_request_service
     LOG_INFO << "begin to init node_request_service";

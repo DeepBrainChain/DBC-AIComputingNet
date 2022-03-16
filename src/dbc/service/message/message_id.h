@@ -101,6 +101,21 @@
 #define NODE_SET_MONITOR_SERVER_RSP      "node_set_monitor_server_rsp"
 #define NODE_SET_MONITOR_SERVER_TIMER    "node_set_monitor_server_timer"
 
+// list local area network
+#define NODE_LIST_LAN_REQ      "node_list_lan_req"
+#define NODE_LIST_LAN_RSP      "node_list_lan_rsp"
+#define NODE_LIST_LAN_TIMER    "node_list_lan_timer"
+
+// create local area network
+#define NODE_CREATE_LAN_REQ      "node_create_lan_req"
+#define NODE_CREATE_LAN_RSP      "node_create_lan_rsp"
+#define NODE_CREATE_LAN_TIMER    "node_create_lan_timer"
+
+// delete local area network
+#define NODE_DELETE_LAN_REQ      "node_delete_lan_req"
+#define NODE_DELETE_LAN_RSP      "node_delete_lan_rsp"
+#define NODE_DELETE_LAN_TIMER    "node_delete_lan_timer"
+
 // service broadcast
 #define SERVICE_BROADCAST_REQ          "service_broadcast_req"
 
