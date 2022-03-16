@@ -81,7 +81,7 @@ namespace dbc {
     std::ostream& operator<<(std::ostream& out, const HardwareResource& obj);
 
     typedef struct _TaskInfo__isset {
-        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false), data_file_name(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), custom_image_name(false) {}
+        _TaskInfo__isset() : image_name(false), login_password(false), ssh_port(false), status(false), operation(false), create_time(false), last_start_time(false), last_stop_time(false), hardware_resource(false), vm_xml(false), vm_xml_url(false), data_file_name(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), custom_image_name(false), network_name(false) {}
         bool image_name :1;
         bool login_password :1;
         bool ssh_port :1;
@@ -100,6 +100,7 @@ namespace dbc {
         bool custom_port :1;
         bool multicast :1;
         bool custom_image_name :1;
+        bool network_name :1;
     } _TaskInfo__isset;
 
     class TaskInfo : public virtual ::apache::thrift::TBase {
@@ -107,7 +108,7 @@ namespace dbc {
 
         TaskInfo(const TaskInfo&);
         TaskInfo& operator=(const TaskInfo&);
-        TaskInfo() : task_id(), image_name(), login_password(), ssh_port(), status(0), operation(0), create_time(0), last_start_time(0), last_stop_time(0), vm_xml(), vm_xml_url(), data_file_name(), operation_system(), bios_mode(), rdp_port(), custom_image_name() {
+        TaskInfo() : task_id(), image_name(), login_password(), ssh_port(), status(0), operation(0), create_time(0), last_start_time(0), last_stop_time(0), vm_xml(), vm_xml_url(), data_file_name(), operation_system(), bios_mode(), rdp_port(), custom_image_name(), network_name() {
         }
 
         virtual ~TaskInfo() throw();
@@ -130,6 +131,7 @@ namespace dbc {
         std::vector<std::string>  custom_port;
         std::vector<std::string>  multicast;
         std::string custom_image_name;
+        std::string network_name;
 
         _TaskInfo__isset __isset;
 
@@ -170,6 +172,8 @@ namespace dbc {
         void __set_multicast(const std::vector<std::string> & val);
 
         void __set_custom_image_name(const std::string& val);
+
+        void __set_network_name(const std::string& val);
 
         bool operator == (const TaskInfo & rhs) const
         {
@@ -244,6 +248,10 @@ namespace dbc {
             if (__isset.custom_image_name != rhs.__isset.custom_image_name)
                 return false;
             else if (__isset.custom_image_name && !(custom_image_name == rhs.custom_image_name))
+                return false;
+            if (__isset.network_name != rhs.__isset.network_name)
+                return false;
+            else if (__isset.network_name && !(network_name == rhs.network_name))
                 return false;
             return true;
         }

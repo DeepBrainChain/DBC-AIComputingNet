@@ -17,6 +17,7 @@
 #include "service/service_info/service_info_collection.h"
 #include "service/peer_request_service/p2p_net_service.h"
 #include "service/task/TaskManager.h"
+#include "service/task/VxlanManager.h"
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
@@ -32,7 +33,8 @@ ERRCODE rest_api_service::init() {
             {"/stat",         false, std::bind(&rest_api_service::rest_stat, this, std::placeholders::_1, std::placeholders::_2)},
             {"/config",       false, std::bind(&rest_api_service::rest_config, this, std::placeholders::_1, std::placeholders::_2)},
             {"/snapshot",     false, std::bind(&rest_api_service::rest_snapshot, this, std::placeholders::_1, std::placeholders::_2)},
-            {"/monitor",      false, std::bind(&rest_api_service::rest_monitor, this, std::placeholders::_1, std::placeholders::_2)}
+            {"/monitor",      false, std::bind(&rest_api_service::rest_monitor, this, std::placeholders::_1, std::placeholders::_2)},
+            {"/lan",          false, std::bind(&rest_api_service::rest_lan, this, std::placeholders::_1, std::placeholders::_2)}
     };
 
     for (const auto &uri_prefixe : uri_prefixes) {
@@ -58,7 +60,10 @@ ERRCODE rest_api_service::init() {
             { NODE_CREATE_SNAPSHOT_RSP, std::bind(&rest_api_service::on_node_create_snapshot_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             { NODE_DELETE_SNAPSHOT_RSP, std::bind(&rest_api_service::on_node_delete_snapshot_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             { NODE_LIST_MONITOR_SERVER_RSP, std::bind(&rest_api_service::on_node_list_monitor_server_rsp, this, std::placeholders::_1, std::placeholders::_2) },
-            { NODE_SET_MONITOR_SERVER_RSP, std::bind(&rest_api_service::on_node_set_monitor_server_rsp, this, std::placeholders::_1, std::placeholders::_2), }
+            { NODE_SET_MONITOR_SERVER_RSP, std::bind(&rest_api_service::on_node_set_monitor_server_rsp, this, std::placeholders::_1, std::placeholders::_2), },
+            {        NODE_LIST_LAN_RSP, std::bind(&rest_api_service::on_node_list_lan_rsp, this, std::placeholders::_1, std::placeholders::_2) },
+            {      NODE_CREATE_LAN_RSP, std::bind(&rest_api_service::on_node_create_lan_rsp, this, std::placeholders::_1, std::placeholders::_2) },
+            {      NODE_DELETE_LAN_RSP, std::bind(&rest_api_service::on_node_delete_lan_rsp, this, std::placeholders::_1, std::placeholders::_2) }
     };
 
     for (const auto &rsp_handler : rsp_handlers) {
@@ -97,8 +102,12 @@ void rest_api_service::init_invoker() {
     reg_msg_handle(NODE_DELETE_SNAPSHOT_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     reg_msg_handle(NODE_LIST_MONITOR_SERVER_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     reg_msg_handle(NODE_SET_MONITOR_SERVER_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_LIST_LAN_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_CREATE_LAN_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+    reg_msg_handle(NODE_DELETE_LAN_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     //m_invokers[BINARY_FORWARD_MSG] = std::bind(&rest_api_service::on_binary_forward, this, std::placeholders::_1);
 }
+
 
 void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) {
     std::string str_uri = hreq->get_uri();
@@ -1667,6 +1676,35 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
 	}
     if (it_svr != nullptr)
     	body.image_server = it_svr->to_string();
+    
+    // local area network
+    std::string network_name;
+    JSON_PARSE_STRING(v_additional, "network_name", network_name);
+    if (!network_name.empty()) {
+        std::shared_ptr<dbc::networkInfo> info = VxlanManager::instance().GetNetwork(network_name);
+        if (!info) {
+            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"network name not existed\"}");
+            return;
+        }
+        rapidjson::Document docAdditional;
+        rapidjson::ParseResult ok = docAdditional.Parse(body.additional.c_str());
+        if (!ok) {
+            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"parse additional network failed\"}");
+            return;
+        }
+        rapidjson::Document::AllocatorType &allocator = docAdditional.GetAllocator();
+        // add network info node
+        rapidjson::Value netInfoObj(rapidjson::kObjectType);//创建一个Object类型的元素
+        netInfoObj.AddMember("bridge_name", STRING_REF(info->bridgeName), allocator);
+        netInfoObj.AddMember("vxlan_name", STRING_REF(info->vxlanName), allocator);
+        netInfoObj.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
+        docAdditional.AddMember("network_info", netInfoObj, allocator);  //添加object到Document中
+        //生成字符串
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        docAdditional.Accept(writer);
+        body.additional = buffer.GetString();
+    }
 
     // session_id wallet
     if (body.session_id.empty() || body.session_id_sign.empty()) {
@@ -5412,13 +5450,6 @@ void rest_api_service::rest_set_monitor_server(const std::shared_ptr<dbc::networ
 
     req_body body;
 
-    body.task_id = path_list[0];
-    if (body.task_id.empty()) {
-        LOG_ERROR << "task_id is empty";
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
-        return;
-    }
-
     std::string strerror;
     if (!parse_req_params(doc, body, strerror)) {
         LOG_ERROR << "parse req params failed: " << strerror;
@@ -5604,6 +5635,827 @@ void rest_api_service::on_node_set_monitor_server_timer(const std::shared_ptr<co
     auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "set monitor server timeout");
+    }
+
+    session->clear();
+    this->remove_session(session_id);
+}
+
+// local area netwrok
+void rest_api_service::rest_lan(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
+    std::vector<std::string> path_list;
+    util::split_path(path, path_list);
+
+    if (path_list.empty()) {
+        rest_list_lan(httpReq, path);
+        return;
+    }
+
+    if (path_list.size() == 1) {
+        const std::string &first_param = path_list[0];
+        // create
+        if (first_param == "create") {
+            rest_create_lan(httpReq, path);
+        } else {
+            rest_list_lan(httpReq, path);
+        }
+        return;
+    }
+
+    if (path_list.size() == 2) {
+        const std::string &first_param = path_list[0];
+        if (first_param == "delete") {
+            rest_delete_lan(httpReq, path);
+        }
+        return;
+    }
+
+    httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid requests uri");
+}
+
+void vxlan_network_list(std::shared_ptr<dbc::networkInfo> network, std::string &data_json) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
+    ss << "\"network_id\":" << "\"" << network->networkId << "\"";
+    ss << ",\"bridge_name\":" << "\"" << network->bridgeName << "\"";
+    ss << ",\"vxlan_name\":" << "\"" << network->vxlanName << "\"";
+    ss << ",\"vxlan_vni\":" << "\"" << network->vxlanVni << "\"";
+    ss << ",\"ip_cidr\":" << "\"" << network->ipCidr << "\"";
+    ss << ",\"ip_start\":" << "\"" << network->ipStart << "\"";
+    ss << ",\"ip_end\":" << "\"" << network->ipEnd << "\"";
+    ss << "}}";
+    data_json = ss.str();
+}
+
+void vxlan_network_list(const std::map<std::string, std::shared_ptr<dbc::networkInfo>> &networks, std::string &data_json) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
+    ss << "\"network\":[";
+    int count = 0;
+    for (auto &it : networks) {
+        if (count > 0) ss << ",";
+        ss << "{";
+        ss << "\"network_id\":" << "\"" << it.second->networkId << "\"";
+        ss << ",\"bridge_name\":" << "\"" << it.second->bridgeName << "\"";
+        ss << ",\"vxlan_name\":" << "\"" << it.second->vxlanName << "\"";
+        ss << ",\"vxlan_vni\":" << "\"" << it.second->vxlanVni << "\"";
+        ss << ",\"ip_cidr\":" << "\"" << it.second->ipCidr << "\"";
+        ss << ",\"ip_start\":" << "\"" << it.second->ipStart << "\"";
+        ss << ",\"ip_end\":" << "\"" << it.second->ipEnd << "\"";
+        ss << "}";
+
+        count++;
+    }
+    ss << "]}";
+    ss << "}";
+
+    data_json = ss.str();
+}
+
+// list local area network
+void rest_api_service::rest_list_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+        return;
+    }
+
+    req_body body;
+
+    std::vector<std::string> path_list;
+    util::split_path(path, path_list);
+    if (path_list.empty()) {
+        body.network_id = "";
+    } else if (path_list.size() == 1) {
+        body.network_id = path_list[0];
+    } else {
+        LOG_ERROR << "path_list's size > 1";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /lan");
+        return;
+    }
+
+    // parse body
+    std::string s_body = httpReq->read_body();
+    if (s_body.empty()) {
+        LOG_ERROR << "http request body is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+        return;
+    }
+
+    if (!doc.IsObject()) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+        return;
+    }
+
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse req params failed: " + strerror);
+        return;
+    }
+
+    // all peer_nodes
+    if (body.peer_nodes_list.empty()) {
+        std::string data_json;
+        if (body.network_id.empty()) {
+            const std::map<std::string, std::shared_ptr<dbc::networkInfo>> networks = VxlanManager::instance().GetNetworks();
+            vxlan_network_list(networks, data_json);
+        } else {
+            std::shared_ptr<dbc::networkInfo> network = VxlanManager::instance().GetNetwork(body.network_id);
+            if (network) {
+                vxlan_network_list(network, data_json);
+            } else {
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "network id not exist");
+                return;
+            }
+        }
+        httpReq->reply_comm_rest_succ2(data_json);
+    } else {
+		// node request
+        std::string head_session_id = util::create_session_id();
+
+        auto node_req_msg = create_node_list_lan_req_msg(head_session_id, body);
+        if (nullptr == node_req_msg) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
+            return;
+        }
+
+        // timer
+        uint32_t timer_id = add_timer(NODE_LIST_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+            CALLBACK_1(rest_api_service::on_node_list_lan_timer, this));
+        if (INVALID_TIMER_ID == timer_id) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+            return;
+        }
+
+        // session
+        if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+            remove_timer(timer_id);
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            return;
+        }
+
+        // broadcast message
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+            return;
+        }
+    }
+}
+
+std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_lan_req_msg(const std::string &head_session_id,
+                                                                            const req_body &body) {
+    auto req_content = std::make_shared<dbc::node_list_lan_req>();
+    // header
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
+    req_content->header.__set_msg_name(NODE_LIST_LAN_REQ);
+    req_content->header.__set_nonce(util::create_nonce());
+    req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    req_content->header.__set_exten_info(exten_info);
+    std::vector<std::string> path;
+    path.push_back(ConfManager::instance().GetNodeId());
+    req_content->header.__set_path(path);
+
+    // body
+    dbc::node_list_lan_req_data req_data;
+    req_data.__set_network_id(body.network_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
+
+    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    req_msg->set_name(NODE_LIST_LAN_REQ);
+    req_msg->set_content(req_content);
+
+    return req_msg;
+}
+
+void rest_api_service::on_node_list_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                const std::shared_ptr<dbc::network::message> &rsp_msg) {
+    auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_lan_rsp>(rsp_msg->content);
+    if (!node_rsp_msg) {
+        LOG_ERROR << "node_rsp_msg is nullptr";
+        return;
+    }
+
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
+}
+
+void rest_api_service::on_node_list_lan_timer(const std::shared_ptr<core_timer> &timer) {
+    if (nullptr == timer) {
+        LOG_ERROR << "timer is nullptr";
+        return;
+    }
+
+    const std::string &session_id = timer->get_session_id();
+    std::shared_ptr<service_session> session = get_session(session_id);
+    if (nullptr == session) {
+        LOG_ERROR << "session is nullptr";
+        return;
+    }
+
+    variables_map &vm = session->get_context().get_args();
+    if (0 == vm.count(HTTP_REQUEST_KEY)) {
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
+        session->clear();
+        this->remove_session(session_id);
+        return;
+    }
+
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list local area network timeout");
+    }
+
+    session->clear();
+    this->remove_session(session_id);
+}
+
+// create local area network
+void rest_api_service::rest_create_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+        LOG_ERROR << "http request is not post";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+        return;
+    }
+
+    std::vector<std::string> path_list;
+    util::split_path(path, path_list);
+    if (path_list.size() != 1) {
+        LOG_ERROR << "path_list's size != 1";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use: /lan/create");
+        return;
+    }
+
+    std::string s_body = httpReq->read_body();
+    if (s_body.empty()) {
+        LOG_ERROR << "http request body is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+        return;
+    }
+
+    if (!doc.IsObject()) {
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+        return;
+    }
+
+    std::string networkName, vxlanVni, ipCidr;
+    FResult fret = {ERR_ERROR, "invalid additional param"};
+    if (doc.HasMember("additional") && doc["additional"].IsObject()) {
+        const rapidjson::Value& obj_add = doc["additional"];
+        if (obj_add.HasMember("network_name") && obj_add["network_name"].IsString())
+            networkName = obj_add["network_name"].GetString();
+        if (obj_add.HasMember("vxlan_vni") && obj_add["vxlan_vni"].IsString())
+            vxlanVni = obj_add["vxlan_vni"].GetString();
+        if (obj_add.HasMember("ip_cidr") && obj_add["ip_cidr"].IsString())
+            ipCidr = obj_add["ip_cidr"].GetString();
+        fret = VxlanManager::instance().CreateClientNetwork(networkName, vxlanVni, ipCidr);
+    }
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
+    ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
+    ss << "\"}";
+    httpReq->reply_comm_rest_succ2(ss.str());
+    return;
+
+    req_body body;
+
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
+
+    if (!has_peer_nodeid(body)) {
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
+        return;
+    }
+
+    if (body.session_id.empty() || body.session_id_sign.empty()) {
+        if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+            LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
+            return;
+        }
+    }
+
+    // node request
+    std::string head_session_id = util::create_session_id();
+
+    auto node_req_msg = create_node_create_lan_req_msg(head_session_id, body);
+    if (nullptr == node_req_msg) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        return;
+    }
+
+    // timer
+    uint32_t timer_id = add_timer(NODE_CREATE_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        CALLBACK_1(rest_api_service::on_node_create_lan_timer, this));
+    if (INVALID_TIMER_ID == timer_id) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+        return;
+    }
+
+    // session
+    if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+        remove_timer(timer_id);
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        return;
+    }
+
+    // broadcast message
+    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+        return;
+    }
+}
+
+std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_lan_req_msg(const std::string &head_session_id,
+                                                                            const req_body &body) {
+    auto req_content = std::make_shared<dbc::node_create_lan_req>();
+    // header
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
+    req_content->header.__set_msg_name(NODE_CREATE_LAN_REQ);
+    req_content->header.__set_nonce(util::create_nonce());
+    req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    req_content->header.__set_exten_info(exten_info);
+    std::vector<std::string> path;
+    path.push_back(ConfManager::instance().GetNodeId());
+    req_content->header.__set_path(path);
+
+    // body
+    dbc::node_create_lan_req_data req_data;
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
+
+    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    req_msg->set_name(NODE_CREATE_LAN_REQ);
+    req_msg->set_content(req_content);
+
+    return req_msg;
+}
+
+void rest_api_service::on_node_create_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                    const std::shared_ptr<dbc::network::message> &rsp_msg) {
+    auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_create_lan_rsp>(rsp_msg->content);
+    if (!node_rsp_msg) {
+        LOG_ERROR << "node_rsp_msg is nullptr";
+        return;
+    }
+
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    if (doc.HasMember("errcode") && doc["errcode"].IsInt() && doc["errcode"].GetInt() == 0) {
+        std::string networkName, vxlanVni, ipCidr;
+        FResult fret = FResultError;
+        if (doc.HasMember("message") && doc["message"].IsObject()) {
+            const rapidjson::Value& obj_msg = doc["message"];
+            if (obj_msg.HasMember("network_name") && obj_msg["network_name"].IsString())
+                networkName = obj_msg["network_name"].GetString();
+            if (obj_msg.HasMember("vxlan_vni") && obj_msg["vxlan_vni"].IsString())
+                vxlanVni = obj_msg["vxlan_vni"].GetString();
+            if (obj_msg.HasMember("ip_cidr") && obj_msg["ip_cidr"].IsString())
+                ipCidr = obj_msg["ip_cidr"].GetString();
+            fret = VxlanManager::instance().CreateClientNetwork(networkName, vxlanVni, ipCidr);
+        }
+        std::stringstream ss;
+        ss << "{";
+        ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
+        ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
+        ss << "\"}";
+        ori_message = ss.str();
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
+}
+
+void rest_api_service::on_node_create_lan_timer(const std::shared_ptr<core_timer> &timer) {
+    if (nullptr == timer) {
+        LOG_ERROR << "timer is nullptr";
+        return;
+    }
+
+    const std::string &session_id = timer->get_session_id();
+    std::shared_ptr<service_session> session = get_session(session_id);
+    if (nullptr == session) {
+        LOG_ERROR << "session is nullptr";
+        return;
+    }
+
+    variables_map &vm = session->get_context().get_args();
+    if (0 == vm.count(HTTP_REQUEST_KEY)) {
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
+        session->clear();
+        this->remove_session(session_id);
+        return;
+    }
+
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "create local area network timeout");
+    }
+
+    session->clear();
+    this->remove_session(session_id);
+}
+
+// delete local area network
+void rest_api_service::rest_delete_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+        LOG_ERROR << "http request is not post";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+        return;
+    }
+
+    std::vector<std::string> path_list;
+    util::split_path(path, path_list);
+    if (path_list.size() != 2) {
+        LOG_ERROR << "path_list's size != 2";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use: /lan/delete/<network_name>");
+        return;
+    }
+
+    std::string s_body = httpReq->read_body();
+    if (s_body.empty()) {
+        LOG_ERROR << "http request body is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+    if (!ok) {
+        std::stringstream ss;
+        ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        LOG_ERROR << ss.str();
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+        return;
+    }
+
+    if (!doc.IsObject()) {
+        LOG_ERROR << "invalid json";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+        return;
+    }
+
+    req_body body;
+    body.network_id = path_list[1];
+
+    std::string strerror;
+    if (!parse_req_params(doc, body, strerror)) {
+        LOG_ERROR << "parse req params failed: " << strerror;
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+        return;
+    }
+
+    // all peer_nodes
+    if (body.peer_nodes_list.empty()) {
+        if (!VxlanManager::instance().GetNetwork(body.network_id)) {
+            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"network name not existed\"}");
+            return;
+        }
+
+        VxlanManager::instance().DeleteNetwork(body.network_id);
+        httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"ok\"}");
+        return;
+    } else {
+		// node request
+        std::string head_session_id = util::create_session_id();
+
+        auto node_req_msg = create_node_delete_lan_req_msg(head_session_id, body);
+        if (nullptr == node_req_msg) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+            return;
+        }
+
+        // timer
+        uint32_t timer_id = add_timer(NODE_DELETE_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+            CALLBACK_1(rest_api_service::on_node_delete_lan_timer, this));
+        if (INVALID_TIMER_ID == timer_id) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+            return;
+        }
+
+        // session
+        if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+            remove_timer(timer_id);
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            return;
+        }
+
+        // broadcast message
+        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+            return;
+        }
+    }
+}
+
+std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_lan_req_msg(const std::string &head_session_id,
+                                                                            const req_body &body) {
+    auto req_content = std::make_shared<dbc::node_delete_lan_req>();
+    // header
+    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
+    req_content->header.__set_msg_name(NODE_DELETE_LAN_REQ);
+    req_content->header.__set_nonce(util::create_nonce());
+    req_content->header.__set_session_id(head_session_id);
+    std::map<std::string, std::string> exten_info;
+    exten_info["pub_key"] = body.pub_key;
+    req_content->header.__set_exten_info(exten_info);
+    std::vector<std::string> path;
+    path.push_back(ConfManager::instance().GetNodeId());
+    req_content->header.__set_path(path);
+
+    // body
+    dbc::node_delete_lan_req_data req_data;
+    req_data.__set_network_id(body.network_id);
+    req_data.__set_peer_nodes_list(body.peer_nodes_list);
+    req_data.__set_additional(body.additional);
+    req_data.__set_wallet(body.wallet);
+    req_data.__set_nonce(body.nonce);
+    req_data.__set_sign(body.sign);
+    req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+    req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+    std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+    for (auto& it : body.multisig_accounts.signs) {
+        dbc::multisig_sign_item item;
+        item.wallet = it.wallet;
+        item.nonce = it.nonce;
+        item.sign = it.sign;
+        vecMultisigSignItem.push_back(item);
+    }
+    req_data.__set_multisig_signs(vecMultisigSignItem);
+    req_data.__set_session_id(body.session_id);
+    req_data.__set_session_id_sign(body.session_id_sign);
+
+    // encrypt
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    dbc::network::binary_protocol proto(out_buf.get());
+    req_data.write(&proto);
+
+    dbc::node_service_info service_info;
+    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
+    if (bfound) {
+        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+            req_content->body.__set_data(s_data);
+        } else {
+            LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+            return nullptr;
+        }
+    } else {
+        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        return nullptr;
+    }
+
+    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    req_msg->set_name(NODE_DELETE_LAN_REQ);
+    req_msg->set_content(req_content);
+
+    return req_msg;
+}
+
+void rest_api_service::on_node_delete_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                    const std::shared_ptr<dbc::network::message> &rsp_msg) {
+    auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_delete_lan_rsp>(rsp_msg->content);
+    if (!node_rsp_msg) {
+        LOG_ERROR << "node_rsp_msg is nullptr";
+        return;
+    }
+
+    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+
+    // decrypt
+    std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+        LOG_ERROR << "pub_key or priv_key is empty";
+        return;
+    }
+
+    std::string ori_message;
+    try {
+        bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+            LOG_ERROR << "rsq decrypt error1";
+            return;
+        }
+    } catch (std::exception &e) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+        LOG_ERROR << "req decrypt error2";
+        return;
+    }
+
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+    if (!ok) {
+        httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+        LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+        return;
+    }
+
+    httpReq->reply_comm_rest_succ2(ori_message);
+}
+
+void rest_api_service::on_node_delete_lan_timer(const std::shared_ptr<core_timer> &timer) {
+    if (nullptr == timer) {
+        LOG_ERROR << "timer is nullptr";
+        return;
+    }
+
+    const std::string &session_id = timer->get_session_id();
+    std::shared_ptr<service_session> session = get_session(session_id);
+    if (nullptr == session) {
+        LOG_ERROR << "session is nullptr";
+        return;
+    }
+
+    variables_map &vm = session->get_context().get_args();
+    if (0 == vm.count(HTTP_REQUEST_KEY)) {
+        LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
+        session->clear();
+        this->remove_session(session_id);
+        return;
+    }
+
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    if (nullptr != hreq_context) {
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "delete local area network timeout");
     }
 
     session->clear();

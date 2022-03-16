@@ -162,6 +162,11 @@ struct TaskCreateParams {
     std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 
     std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
+
+    std::string network_name;
+    std::string bridge_name;
+    std::string vxlan_name;
+    std::string vxlan_vni;
 };
 
 struct ParseVmXmlParams {

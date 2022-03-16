@@ -245,6 +245,11 @@ namespace dbc {
         this->custom_image_name = val;
         __isset.custom_image_name = true;
     }
+
+    void TaskInfo::__set_network_name(const std::string& val) {
+        this->network_name = val;
+        __isset.network_name = true;
+    }
     std::ostream& operator<<(std::ostream& out, const TaskInfo& obj)
     {
         obj.printTo(out);
@@ -450,6 +455,14 @@ namespace dbc {
                         xfer += iprot->skip(ftype);
                     }
                     break;
+                case 24:
+                    if (ftype == ::apache::thrift::protocol::T_STRING) {
+                        xfer += iprot->readString(this->network_name);
+                        this->__isset.network_name = true;
+                    } else {
+                        xfer += iprot->skip(ftype);
+                    }
+                    break;
                 default:
                     xfer += iprot->skip(ftype);
                     break;
@@ -578,6 +591,11 @@ namespace dbc {
             xfer += oprot->writeString(this->custom_image_name);
             xfer += oprot->writeFieldEnd();
         }
+        if (this->__isset.network_name) {
+            xfer += oprot->writeFieldBegin("network_name", ::apache::thrift::protocol::T_STRING, 24);
+            xfer += oprot->writeString(this->network_name);
+            xfer += oprot->writeFieldEnd();
+        }
         xfer += oprot->writeFieldStop();
         xfer += oprot->writeStructEnd();
         return xfer;
@@ -604,6 +622,7 @@ namespace dbc {
         swap(a.custom_port, b.custom_port);
         swap(a.multicast, b.multicast);
         swap(a.custom_image_name, b.custom_image_name);
+        swap(a.network_name, b.network_name);
         swap(a.__isset, b.__isset);
     }
 
@@ -627,6 +646,7 @@ namespace dbc {
         custom_port = other14.custom_port;
         multicast = other14.multicast;
         custom_image_name = other14.custom_image_name;
+        network_name = other14.network_name;
         __isset = other14.__isset;
     }
     TaskInfo& TaskInfo::operator=(const TaskInfo& other15) {
@@ -649,6 +669,7 @@ namespace dbc {
         custom_port = other15.custom_port;
         multicast = other15.multicast;
         custom_image_name = other15.custom_image_name;
+        network_name = other15.network_name;
         __isset = other15.__isset;
         return *this;
     }
@@ -674,6 +695,7 @@ namespace dbc {
         out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
         out << ", " << "multicast="; (__isset.multicast ? (out << to_string(multicast)) : (out << "<null>"));
         out << ", " << "custom_image_name="; (__isset.custom_image_name ? (out << to_string(custom_image_name)) : (out << "<null>"));
+        out << ", " << "network_name="; (__isset.network_name ? (out << to_string(network_name)) : (out << "<null>"));
         out << ")";
     }
 

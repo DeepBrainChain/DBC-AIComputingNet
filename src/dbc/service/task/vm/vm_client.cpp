@@ -10,12 +10,13 @@
 #include "../db/snapshotinfo_types.h"
 #include "util/utils.h"
 #include <libvirt/libvirt-qemu.h>
+#include "service/task/VxlanManager.h"
 
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                          const std::string& vedio_pci, const std::string & disk_system,
                          const std::vector<std::string>& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
-                         const std::vector<std::string>& multicast,
+                         const std::vector<std::string>& multicast, const std::string& bridge_name,
                          bool is_windows = false, bool uefi = false)
 {
     tinyxml2::XMLDocument doc;
@@ -326,6 +327,22 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         }
     }
 
+    // bridge
+    if (!bridge_name.empty()) {
+        tinyxml2::XMLElement* bridge_node = doc.NewElement("interface");
+        bridge_node->SetAttribute("type", "bridge");
+        tinyxml2::XMLElement* bridge_source_node = doc.NewElement("source");
+        bridge_source_node->SetAttribute("bridge", bridge_name.c_str());
+        bridge_node->LinkEndChild(bridge_source_node);
+        tinyxml2::XMLElement* bridge_model_node = doc.NewElement("model");
+        bridge_model_node->SetAttribute("type", "virtio");
+        bridge_node->LinkEndChild(bridge_model_node);
+        tinyxml2::XMLElement* bridge_mtu_node = doc.NewElement("mtu");
+        bridge_mtu_node->SetAttribute("size", "1450");
+        bridge_node->LinkEndChild(bridge_mtu_node);
+        dev_node->LinkEndChild(bridge_node);
+    }
+
     // vnc
     tinyxml2::XMLElement* graphics_node = doc.NewElement("graphics");
     graphics_node->SetAttribute("type", "vnc");
@@ -531,6 +548,12 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
         }
     }
 
+    std::string bridge_name;
+    if (!taskinfo->network_name.empty()) {
+        std::shared_ptr<dbc::networkInfo> networkInfo = VxlanManager::instance().GetNetwork(taskinfo->network_name);
+        if (networkInfo) bridge_name = networkInfo->bridgeName;
+    }
+
     // vnc
     TASK_LOG_INFO(taskinfo->task_id, "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password);
 
@@ -539,7 +562,8 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
                                            task_resource->cpu_cores, task_resource->cpu_threads,
                                            vga_pci, disk_system, disk_data,
                                            task_resource->vnc_port, task_resource->vnc_password,
-                                           taskinfo->multicast, taskinfo->operation_system.find("win") != std::string::npos,
+                                           taskinfo->multicast, bridge_name,
+                                           taskinfo->operation_system.find("win") != std::string::npos,
                                            taskinfo->bios_mode == "uefi");
 
     virDomainPtr domainPtr = nullptr;

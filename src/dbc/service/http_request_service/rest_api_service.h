@@ -56,6 +56,9 @@ struct req_body {
 
     // snapshot
     std::string snapshot_name;
+
+    // vxlan network id
+    std::string network_id;
 };
 
 class rest_api_service : public service_module,
@@ -317,6 +320,42 @@ public:
                                      const std::shared_ptr<dbc::network::message> &rsp_msg);
 
     void on_node_set_monitor_server_timer(const std::shared_ptr<core_timer> &timer);
+
+    // local area netwrok
+    void rest_lan(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path);
+
+    // list local area network
+    void rest_list_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_list_lan_req_msg(const std::string &head_session_id,
+                                                                             const req_body &body);
+
+    void on_node_list_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                   const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_list_lan_timer(const std::shared_ptr<core_timer> &timer);
+
+    // create local area network
+    void rest_create_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_create_lan_req_msg(const std::string &head_session_id,
+                                                                               const req_body &body);
+
+    void on_node_create_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                     const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_create_lan_timer(const std::shared_ptr<core_timer> &timer);
+
+    // delete local area network
+    void rest_delete_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<dbc::network::message> create_node_delete_lan_req_msg(const std::string &head_session_id,
+                                                                               const req_body &body);
+
+    void on_node_delete_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
+                                     const std::shared_ptr<dbc::network::message> &rsp_msg);
+
+    void on_node_delete_lan_timer(const std::shared_ptr<core_timer> &timer);
 
 protected:
     void init_timer() override;

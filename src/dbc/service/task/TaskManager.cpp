@@ -14,6 +14,7 @@
 #include "config/conf_manager.h"
 #include "tinyxml2.h"
 #include "ImageManager.h"
+#include "VxlanManager.h"
 
 FResult TaskManager::init() {
     m_httpclient.connect_chain();
@@ -592,6 +593,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr
     taskinfo->__set_operation_system(createparams.operation_system);
     taskinfo->__set_bios_mode(createparams.bios_mode);
     taskinfo->__set_multicast(createparams.multicast);
+    taskinfo->__set_network_name(createparams.network_name);
     TaskInfoMgr::instance().addTaskInfo(taskinfo);
 
     std::shared_ptr<TaskResource> task_resource = std::make_shared<TaskResource>();
@@ -631,7 +633,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     std::string image_name, s_ssh_port, s_rdp_port, s_gpu_count, s_cpu_cores, s_mem_size,
             s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name, operation_system, bios_mode,
-            custom_image_name;
+            custom_image_name, network_name;
     std::vector<std::string> custom_ports, multicast;
 
     JSON_PARSE_STRING(doc, "image_name", image_name) //image name
@@ -682,6 +684,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "data_file_name", data_file_name)
     JSON_PARSE_STRING(doc, "operation_system", operation_system)
     JSON_PARSE_STRING(doc, "bios_mode", bios_mode)
+    JSON_PARSE_STRING(doc, "network_name", network_name)
     //operation_system: "win"/"ubuntu"/""
     if (operation_system.empty()) {
         operation_system = "generic";
@@ -718,6 +721,22 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     //bios_mode
     if (bios_mode.empty()) {
         bios_mode = "legacy";
+    }
+
+    if (!network_name.empty()) {
+        if (doc.HasMember("network_info") && doc["network_info"].IsObject()) {
+            const rapidjson::Value& obj_network_info = doc["network_info"];
+            params.network_name = network_name;
+            JSON_PARSE_STRING(obj_network_info, "bridge_name", params.bridge_name)
+            JSON_PARSE_STRING(obj_network_info, "vxlan_name", params.vxlan_name)
+            JSON_PARSE_STRING(obj_network_info, "vxlan_vni", params.vxlan_vni)
+            if (!VxlanManager::instance().GetNetwork(network_name)) {
+                FResult fret = VxlanManager::instance().CreateMiningNetwork(network_name, params.bridge_name, params.vxlan_name, params.vxlan_vni);
+                if (fret.errcode != ERR_SUCCESS) return fret;
+            }
+        } else {
+            return FResult(ERR_ERROR, "can not find network info");
+        }
     }
 
     std::string login_password = genpwd();
@@ -979,6 +998,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.operation_system = operation_system;
     params.bios_mode = bios_mode;
     params.multicast = multicast;
+    params.network_name = network_name;
 
     return FResultSuccess;
 }
@@ -1720,6 +1740,11 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
         }
     }
 
+    if (!new_ssh_port.empty() && !new_rdp_port.empty()
+        && new_ssh_port == new_rdp_port) {
+        return FResult(ERR_ERROR, "new_ssh_port and new_rdp_port are the same!");
+    }
+
     std::vector<std::string> new_custom_port;
     if (doc.HasMember("new_custom_port")) {
         const rapidjson::Value& v_custom_port = doc["new_custom_port"];
@@ -1923,7 +1948,7 @@ int32_t TaskManager::getTaskAgentInterfaceAddress(const std::string &task_id, st
     if (VmClient::instance().GetDomainInterfaceAddress(task_id, difaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT) > 0) {
         for (const auto& diface : difaces) {
             for (const auto& addr : diface.addrs) {
-                if (addr.type == 0 && strncmp(addr.addr.c_str(), "127.", 4) != 0 && strncmp(addr.addr.c_str(), "192.168.", 8) != 0) {
+                if (addr.type == 0 && strncmp(addr.addr.c_str(), "127.", 4) != 0 && strncmp(addr.addr.c_str(), "192.168.122.", 12) != 0) {
                     // LOG_INFO << diface.name << " " << diface.hwaddr << " " << addr.type << " " << addr.addr << " " << addr.prefix;
                     address.push_back(std::make_tuple(diface.hwaddr, addr.addr));
                 }

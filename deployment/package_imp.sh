@@ -45,6 +45,7 @@ dbc_package()
     fi
 
     cp -r $shell_dir/crontab $dbc_repo_dir/shell
+    cp -r $shell_dir/network $dbc_repo_dir/shell
 
     cp $tool_dir/add_dbc_user.sh    $dbc_repo_dir/shell/
     cp $tool_dir/change_gpu_id.sh   $dbc_repo_dir/shell/
@@ -54,6 +55,7 @@ dbc_package()
     chmod +x $dbc_repo_dir/dbc
     chmod +x $dbc_repo_dir/shell/*.sh
     chmod +x $dbc_repo_dir/shell/crontab/*.sh
+    chmod +x $dbc_repo_dir/shell/network/*.sh
 }
 
 tar_ball=./package/dbc_${type}_node_${version}.tar.gz
