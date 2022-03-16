@@ -22,9 +22,10 @@ struct FResult {
     std::string errmsg = "success";
 };
 
-//typedef std::tuple<int32_t, std::string> FResult;
 #define FResultSuccess FResult(ERR_SUCCESS, "success")
 #define FResultError FResult(ERR_ERROR, "error");
+
+
 
 
 //#define E_SUCCESS                                            0                   //success

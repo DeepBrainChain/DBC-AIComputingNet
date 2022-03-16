@@ -1681,6 +1681,24 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
     std::string old_ssh_port, new_ssh_port;
     JSON_PARSE_STRING(doc, "new_ssh_port", new_ssh_port);
     if (!new_ssh_port.empty()) {
+        int32_t nport = atoi(new_ssh_port.c_str());
+        if (nport <= 0) {
+            return FResult(ERR_ERROR, "new_ssh_port " + new_ssh_port + " is invalid! (usage: > 0)");
+        }
+        bool bFound = false;
+        auto task_list = TaskInfoMgr::instance().getTasks();
+        for (const auto &iter : task_list) {
+            if (iter.first != task_id) {
+                if (iter.second->ssh_port == new_ssh_port || iter.second->rdp_port == new_ssh_port) {
+                    bFound = true;
+                    break;
+                }
+            }
+        }
+        if (bFound) {
+            return FResult(ERR_ERROR, "new_ssh_port " + new_ssh_port + " has been used!");
+        }
+
         old_ssh_port = taskinfoPtr->ssh_port;
         taskinfoPtr->ssh_port = new_ssh_port;
         TaskInfoManager::instance().update(taskinfoPtr);
@@ -1695,6 +1713,23 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
     std::string new_rdp_port;
     JSON_PARSE_STRING(doc, "new_rdp_port", new_rdp_port);
     if (!new_rdp_port.empty()) {
+        if (atoi(new_rdp_port.c_str()) <= 0) {
+            return FResult(ERR_ERROR, "new_rdp_port " + new_rdp_port + " is invalid! (usage: > 0)");
+        }
+        bool bFound = false;
+        auto task_list = TaskInfoMgr::instance().getTasks();
+        for (const auto &iter : task_list) {
+            if (iter.first != task_id) {
+                if (iter.second->ssh_port == new_rdp_port || iter.second->rdp_port == new_rdp_port) {
+                    bFound = true;
+                    break;
+                }
+            }
+        }
+        if (bFound) {
+            return FResult(ERR_ERROR, "new_rdp_port " + new_rdp_port + " has been used!");
+        }
+
         taskinfoPtr->rdp_port = new_rdp_port;
         TaskInfoManager::instance().update(taskinfoPtr);
 
@@ -1703,6 +1738,11 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
             taskIptablePtr->rdp_port = new_rdp_port;
             TaskIptableManager::instance().update(taskIptablePtr);
         }
+    }
+
+    if (!new_ssh_port.empty() && !new_rdp_port.empty()
+        && new_ssh_port == new_rdp_port) {
+        return FResult(ERR_ERROR, "new_ssh_port and new_rdp_port are the same!");
     }
 
     std::vector<std::string> new_custom_port;
@@ -1735,6 +1775,11 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
 	std::string new_vnc_port;
 	JSON_PARSE_STRING(doc, "new_vnc_port", new_vnc_port);
 	if (!new_vnc_port.empty()) {
+        int32_t nport = atoi(new_vnc_port.c_str());
+        if (nport < 5900 || nport > 6000) {
+            return FResult(ERR_ERROR, "new_vnc_port " + new_vnc_port + " is invalid! (usage: 5900 =< port <= 6000)");
+        }
+
 		auto taskResourcePtr = TaskResourceManager::instance().getTaskResource(task_id);
 		if (taskResourcePtr != nullptr) {
 			taskResourcePtr->vnc_port = atoi(new_vnc_port);

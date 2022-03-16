@@ -1,4 +1,5 @@
-# deepbrainchain
+# ComputingNetwork
+Computing Network
 Artificial Intelligence Computing Platform Driven By BlockChain
 
 If you want to add a machine to the DBC network to obtain DBC revenue, go straight to the “ https://deepbrainchain.github.io/DBC-Wiki/install_and_update_dbc/install_dbc_compute_node.html ”
