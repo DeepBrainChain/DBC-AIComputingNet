@@ -17,6 +17,14 @@ inline std::string random_string(size_t length) {
   return str;
 }
 
+inline bool check_network_name(const std::string& name) {
+    if (name.length() < 6) return false;
+    for (const auto & ch : name) {
+        if (!isalnum(ch)) return false;
+    }
+    return true;
+}
+
 struct in_addr_helper {
 union {
     struct { u_char s_b1,s_b2,s_b3,s_b4;} S_un_b;
@@ -48,6 +56,18 @@ public:
         return inet_ntop(AF_INET, &ip, str, sizeof(str));
     }
 
+    // 判断两个网络是否有交集
+    // 有A、B两地址，掩码分别为x,y，分两步判断
+    // 1、算A和B是否在同一网段时，分别都用A的掩码算，如果得到的两个网络地址一样，则说明A和B在同一网段（可以理解为A到B方向）
+    // 2、算B和A是否在同一网段时，分别都用B的掩码算，如果的到的两个网络地址一致，说明B和A在同一网段（可以理解为B到A方向）
+    bool hasIntersection(const ipRangeHelper &other) const {
+        in_addr_t mask1 = ~(0xFFFFFF << bits_);
+        if ((ip_.s_addr & mask1) == (other.ip_.s_addr & mask1)) return true;
+        in_addr_t mask2 = ~(0xFFFFFF << other.bits_);
+        if ((ip_.s_addr & mask2) == (other.ip_.s_addr & mask2)) return true;
+        return false;
+    }
+
 private:
     struct in_addr ip_;
     unsigned int bits_;
@@ -69,8 +89,10 @@ ERRCODE VxlanManager::Init() {
 
 FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::string &bridgeName, const std::string &vxlanName, const std::string &vni, const std::string &ipCidr) {
     if (networkId.empty()) return FResult(ERR_ERROR, "network name can not be empty");
+    if (!check_network_name(networkId)) return FResult(ERR_ERROR, "network name requires a combination of more than 6 letters or numbers");
     if (GetNetwork(networkId)) return FResult(ERR_ERROR, "network name already existed");
     if (vni.empty()) return FResult(ERR_ERROR, "vni can not be empty");
+    if (CheckVni(vni)) return FResult(ERR_ERROR, "vni already exist");
     
     std::shared_ptr<dbc::networkInfo> info = std::make_shared<dbc::networkInfo>();
     info->__set_networkId(networkId);
@@ -81,10 +103,13 @@ FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::str
     bfs::path shell_path = EnvManager::instance().get_shell_path();
     if (Server::NodeType == DBC_NODE_TYPE::DBC_CLIENT_NODE) {
         if (ipCidr.empty()) return FResult(ERR_ERROR, "ip cidr can not be empty");
+        if (ipCidr.find("192.168.122.") != std::string::npos) return FResult(ERR_ERROR, "ip cidr already exist");
         std::vector<std::string> vecSplit = util::split(ipCidr, "/");
         if (vecSplit.size() != 2) return FResult(ERR_ERROR, "invalid ip cidr");
         boost::asio::ip::address addr = boost::asio::ip::address::from_string(vecSplit[0]);
         if (!addr.is_v4()) return FResult(ERR_ERROR, "invalid ip cidr");
+        if (CheckIpCidr(ipCidr)) return FResult(ERR_ERROR, "ip cidr already exist");
+
         ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
 
         info->__set_ipCidr(ipCidr);
@@ -168,6 +193,27 @@ std::shared_ptr<dbc::networkInfo> VxlanManager::GetNetwork(const std::string &ne
     auto it = m_networks.find(networkId);
     if (it != m_networks.end()) return it->second;
     return nullptr;
+}
+
+bool VxlanManager::CheckVni(const std::string &vni) const {
+    RwMutex::ReadLock rlock(m_mtx);
+    for (const auto &iter : m_networks) {
+        if (vni == iter.second->vxlanVni) return true;
+    }
+    return false;
+}
+
+bool VxlanManager::CheckIpCidr(const std::string &ipCidr) const {
+    std::vector<std::string> vecSplit = util::split(ipCidr, "/");
+    ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
+
+    RwMutex::ReadLock rlock(m_mtx);
+    for (const auto &iter : m_networks) {
+        std::vector<std::string> vecSplit2 = util::split(iter.second->ipCidr, "/");
+        ipRangeHelper ipHelper2(vecSplit2[0], atoi(vecSplit2[1].c_str()));
+        if (ipHelper.hasIntersection(ipHelper2)) return true;
+    }
+    return false;
 }
 
 int32_t VxlanManager::InitDb() {

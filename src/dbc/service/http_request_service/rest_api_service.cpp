@@ -5776,7 +5776,7 @@ void rest_api_service::rest_list_lan(const std::shared_ptr<dbc::network::http_re
             if (network) {
                 vxlan_network_list(network, data_json);
             } else {
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "network id not exist");
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "network name not exist");
                 return;
             }
         }

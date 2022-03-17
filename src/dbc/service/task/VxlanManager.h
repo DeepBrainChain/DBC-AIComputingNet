@@ -24,6 +24,10 @@ public:
 
     std::shared_ptr<dbc::networkInfo> GetNetwork(const std::string &networkId) const;
 
+    bool CheckVni(const std::string &vni) const;
+
+    bool CheckIpCidr(const std::string &ipCidr) const;
+
 protected:
     int32_t InitDb();
 
