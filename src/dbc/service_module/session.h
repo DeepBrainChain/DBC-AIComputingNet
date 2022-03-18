@@ -2,9 +2,19 @@
 #define DBC_SESSION_H
 
 #include "common/common.h"
-#include "service_context.h"
 
 using namespace boost::program_options;
+
+class session_context
+{
+public:
+    variables_map& get_args() { return m_args; }
+
+    void add(std::string arg_name, variable_value val) { m_args.insert({ arg_name, val }); }
+
+protected:
+    variables_map m_args;           //put variable args into context
+};
 
 class service_session
 {
@@ -23,7 +33,7 @@ public:
 
     void set_session_id(std::string session_id) { m_session_id = session_id; }
 
-    service_context & get_context() { return m_context; }
+    session_context& get_context() { return m_context; }
 
     void clear() { m_context.get_args().clear(); }
 
@@ -32,7 +42,7 @@ protected:
 
     std::string m_session_id;
 
-    service_context m_context;
+    session_context m_context;
 };
 
 #endif
