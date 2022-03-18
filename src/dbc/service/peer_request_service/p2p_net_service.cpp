@@ -66,21 +66,19 @@ void p2p_net_service::exit() {
 
 void p2p_net_service::init_timer() {
     // 30s
-    add_timer(CHECK_PEER_CANDIDATES_TIMER, 5 * 1000, 1, "", 
-        CALLBACK_1(p2p_net_service::on_timer_check_peer_candidates, this));
-    add_timer(CHECK_PEER_CANDIDATES_TIMER, 30 * 1000, ULLONG_MAX, "",
+    add_timer(CHECK_PEER_CANDIDATES_TIMER, 5 * 1000, 30 * 1000, ULLONG_MAX, "",
         CALLBACK_1(p2p_net_service::on_timer_check_peer_candidates, this));
 
     // 1min
-    add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, ULLONG_MAX, "",
+    add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
         CALLBACK_1(p2p_net_service::on_timer_dyanmic_adjust_network, this));
 
     // 1min
-    add_timer(PEER_INFO_EXCHANGE_TIMER, 1 * 60 * 1000, ULLONG_MAX, "",
+    add_timer(PEER_INFO_EXCHANGE_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
         CALLBACK_1(p2p_net_service::on_timer_peer_info_exchange, this));
 
     // 10min
-    add_timer(DUMP_PEER_CANDIDATES_TIMER, 10 * 60 * 1000, ULLONG_MAX, "",
+    add_timer(DUMP_PEER_CANDIDATES_TIMER, 60 * 1000, 10 * 60 * 1000, ULLONG_MAX, "",
         CALLBACK_1(p2p_net_service::on_timer_peer_candidate_dump, this));
 }
 

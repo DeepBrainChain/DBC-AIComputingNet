@@ -29,7 +29,7 @@ public:
      *  period: ms
      *  return: timer_id
     */
-	uint32_t add_timer(const std::string &name, uint32_t period, uint64_t repeat_times,
+	uint32_t add_timer(const std::string &name, uint32_t delay, uint32_t period, uint64_t repeat_times,
 		const std::string &session_id, const std::function<void(const std::shared_ptr<core_timer>&)>& handle = nullptr);
 
 	void remove_timer(uint32_t timer_id);

@@ -98,11 +98,11 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
 void node_monitor_service::init_timer() {
     if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 30s
-        add_timer(MONITOR_DATA_SENDER_TASK_TIMER, 30 * 1000, ULLONG_MAX, "", 
+        add_timer(MONITOR_DATA_SENDER_TASK_TIMER, 30 * 1000, 30 * 1000, ULLONG_MAX, "",
             CALLBACK_1(node_monitor_service::on_monitor_data_sender_task_timer, this));
 
         // 3min
-        add_timer(UPDATE_CUR_RENTER_WALLET_TIMER, 180 * 1000, ULLONG_MAX, "", 
+        add_timer(UPDATE_CUR_RENTER_WALLET_TIMER, 180 * 1000, 180 * 1000, ULLONG_MAX, "",
             CALLBACK_1(node_monitor_service::on_update_cur_renter_wallet_timer, this));
     }
 }

@@ -650,7 +650,7 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
         }
 
         // timer
-        uint32_t timer_id = add_timer(NODE_LIST_IMAGES_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        uint32_t timer_id = add_timer(NODE_LIST_IMAGES_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
             CALLBACK_1(rest_api_service::on_node_list_images_timer, this));
         if (INVALID_TIMER_ID == timer_id) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -891,7 +891,7 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_DOWNLOAD_IMAGE_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_DOWNLOAD_IMAGE_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_download_image_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -1157,7 +1157,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
         }
 
         // timer
-        uint32_t timer_id = add_timer(NODE_UPLOAD_IMAGE_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        uint32_t timer_id = add_timer(NODE_UPLOAD_IMAGE_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
             CALLBACK_1(rest_api_service::on_node_upload_image_timer, this));
         if (INVALID_TIMER_ID == timer_id) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -1448,7 +1448,7 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_LIST_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_LIST_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_list_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -1724,7 +1724,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_CREATE_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_CREATE_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_create_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -1964,7 +1964,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_START_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_START_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_start_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -2205,7 +2205,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_STOP_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_STOP_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_stop_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -2459,7 +2459,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_RESTART_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_RESTART_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_restart_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -2704,7 +2704,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_RESET_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_RESET_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_reset_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -2946,7 +2946,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_DELETE_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_DELETE_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_delete_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -3188,7 +3188,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_MODIFY_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_MODIFY_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_modify_task_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -3470,7 +3470,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_TASK_LOGS_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_TASK_LOGS_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_task_logs_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -3768,7 +3768,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
         }
 
         // timer
-        uint32_t timer_id = add_timer(NODE_QUERY_NODE_INFO_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        uint32_t timer_id = add_timer(NODE_QUERY_NODE_INFO_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
             CALLBACK_1(rest_api_service::on_node_query_node_info_timer, this));
         if (INVALID_TIMER_ID == timer_id) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -4003,7 +4003,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_SESSION_ID_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_SESSION_ID_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_session_id_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -4499,7 +4499,7 @@ void rest_api_service::rest_list_snapshot(const std::shared_ptr<dbc::network::ht
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_LIST_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_LIST_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_list_snapshot_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -4741,7 +4741,7 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<dbc::network::
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_CREATE_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_CREATE_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_create_snapshot_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -4988,7 +4988,7 @@ void rest_api_service::rest_delete_snapshot(const std::shared_ptr<dbc::network::
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_DELETE_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_DELETE_SNAPSHOT_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_delete_snapshot_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -5248,7 +5248,7 @@ void rest_api_service::rest_list_monitor_server(const std::shared_ptr<dbc::netwo
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_LIST_MONITOR_SERVER_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_LIST_MONITOR_SERVER_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_list_monitor_server_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -5481,7 +5481,7 @@ void rest_api_service::rest_set_monitor_server(const std::shared_ptr<dbc::networ
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_SET_MONITOR_SERVER_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_SET_MONITOR_SERVER_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_set_monitor_server_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -5792,7 +5792,7 @@ void rest_api_service::rest_list_lan(const std::shared_ptr<dbc::network::http_re
         }
 
         // timer
-        uint32_t timer_id = add_timer(NODE_LIST_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        uint32_t timer_id = add_timer(NODE_LIST_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
             CALLBACK_1(rest_api_service::on_node_list_lan_timer, this));
         if (INVALID_TIMER_ID == timer_id) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -6047,7 +6047,7 @@ void rest_api_service::rest_create_lan(const std::shared_ptr<dbc::network::http_
     }
 
     // timer
-    uint32_t timer_id = add_timer(NODE_CREATE_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+    uint32_t timer_id = add_timer(NODE_CREATE_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
         CALLBACK_1(rest_api_service::on_node_create_lan_timer, this));
     if (INVALID_TIMER_ID == timer_id) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
@@ -6299,7 +6299,7 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<dbc::network::http_
         }
 
         // timer
-        uint32_t timer_id = add_timer(NODE_DELETE_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+        uint32_t timer_id = add_timer(NODE_DELETE_LAN_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
             CALLBACK_1(rest_api_service::on_node_delete_lan_timer, this));
         if (INVALID_TIMER_ID == timer_id) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
