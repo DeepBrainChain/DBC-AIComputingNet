@@ -1694,11 +1694,12 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
         }
         rapidjson::Document::AllocatorType &allocator = docAdditional.GetAllocator();
         // add network info node
-        rapidjson::Value netInfoObj(rapidjson::kObjectType);//创建一个Object类型的元素
-        netInfoObj.AddMember("bridge_name", STRING_REF(info->bridgeName), allocator);
-        netInfoObj.AddMember("vxlan_name", STRING_REF(info->vxlanName), allocator);
-        netInfoObj.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
-        docAdditional.AddMember("network_info", netInfoObj, allocator);  //添加object到Document中
+        // rapidjson::Value netInfoObj(rapidjson::kObjectType);//创建一个Object类型的元素
+        // netInfoObj.AddMember("bridge_name", STRING_REF(info->bridgeName), allocator);
+        // netInfoObj.AddMember("vxlan_name", STRING_REF(info->vxlanName), allocator);
+        // netInfoObj.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
+        // docAdditional.AddMember("network_info", netInfoObj, allocator);  //添加object到Document中
+        docAdditional.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
         //生成字符串
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
