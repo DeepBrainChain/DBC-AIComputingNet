@@ -139,7 +139,7 @@ void service_module::on_timer_tick(uint64_t time_tick)
 	}
 }
 
-uint32_t service_module::add_timer(const std::string &name, uint32_t period, uint64_t repeat_times, 
+uint32_t service_module::add_timer(const std::string &name, uint32_t delay, uint32_t period, uint64_t repeat_times,
     const std::string &session_id, const std::function<void(const std::shared_ptr<core_timer>&)>& handle)
 {
 	if (repeat_times < 1 || period < DEFAULT_TIMER_INTERVAL) {
@@ -147,7 +147,7 @@ uint32_t service_module::add_timer(const std::string &name, uint32_t period, uin
 		return INVALID_TIMER_ID;
 	}
 
-	std::shared_ptr<core_timer> timer(new core_timer(name, period, repeat_times, session_id));
+	std::shared_ptr<core_timer> timer(new core_timer(name, delay, period, repeat_times, session_id));
 	if (MAX_TIMER_ID == m_timer_alloc_id) {
 		LOG_ERROR << "can not allocate new timer id";
 		return INVALID_TIMER_ID;

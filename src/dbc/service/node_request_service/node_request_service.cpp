@@ -128,16 +128,16 @@ void node_request_service::add_self_to_servicelist() {
 void node_request_service::init_timer() {
     if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
         // 10s
-        add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, ULLONG_MAX, "", 
+        add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, 10 * 1000, ULLONG_MAX, "",
             std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1));
 
         // 1min
-        add_timer(AI_PRUNE_TASK_TIMER, 60 * 1000, ULLONG_MAX, "",
+        add_timer(AI_PRUNE_TASK_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
             std::bind(&node_request_service::on_prune_task_timer, this, std::placeholders::_1));
     }
 
     // 10s
-    add_timer(SERVICE_BROADCAST_TIMER, 10 * 1000, ULLONG_MAX, "",
+    add_timer(SERVICE_BROADCAST_TIMER, 10 * 1000, 10 * 1000, ULLONG_MAX, "",
         std::bind(&node_request_service::on_timer_service_broadcast, this, std::placeholders::_1));
 }
 

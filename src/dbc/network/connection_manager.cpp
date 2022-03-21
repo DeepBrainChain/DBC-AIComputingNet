@@ -100,7 +100,7 @@ namespace dbc
 
         void connection_manager::init_timer()
         {
-            add_timer(TIMER_NAME_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, ULLONG_MAX, "", 
+            add_timer(TIMER_NAME_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, TIMER_INTERVAL_CHANNEL_RECYCLE, ULLONG_MAX, "",
                 CALLBACK_1(connection_manager::on_recycle_timer, this));
         }
 
