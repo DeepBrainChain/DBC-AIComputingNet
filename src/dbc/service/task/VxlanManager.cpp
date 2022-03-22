@@ -18,7 +18,7 @@ inline std::string random_string(size_t length) {
 }
 
 inline bool check_network_name(const std::string& name) {
-    if (name.length() < 6) return false;
+    if (name.length() < 4 || name.length() > 10) return false;
     for (const auto & ch : name) {
         if (!isalnum(ch)) return false;
     }
@@ -89,7 +89,7 @@ ERRCODE VxlanManager::Init() {
 
 FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::string &bridgeName, const std::string &vxlanName, const std::string &vni, const std::string &ipCidr) {
     if (networkId.empty()) return FResult(ERR_ERROR, "network name can not be empty");
-    if (!check_network_name(networkId)) return FResult(ERR_ERROR, "network name requires a combination of more than 6 letters or numbers");
+    if (!check_network_name(networkId)) return FResult(ERR_ERROR, "network name requires a combination of 4 to 12 letters or numbers");
     if (GetNetwork(networkId)) return FResult(ERR_ERROR, "network name already existed");
     if (vni.empty()) return FResult(ERR_ERROR, "vni can not be empty");
     if (CheckVni(vni)) return FResult(ERR_ERROR, "vni already exist");
@@ -108,7 +108,7 @@ FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::str
         if (vecSplit.size() != 2) return FResult(ERR_ERROR, "invalid ip cidr");
         boost::asio::ip::address addr = boost::asio::ip::address::from_string(vecSplit[0]);
         if (!addr.is_v4()) return FResult(ERR_ERROR, "invalid ip cidr");
-        if (CheckIpCidr(ipCidr)) return FResult(ERR_ERROR, "ip cidr already exist");
+        // if (CheckIpCidr(ipCidr)) return FResult(ERR_ERROR, "ip cidr already exist");
 
         ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
 
@@ -158,12 +158,12 @@ FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::str
 }
 
 FResult VxlanManager::CreateClientNetwork(const std::string &networkId, const std::string &vni, const std::string &ipCidr) {
-    std::string random = random_string(8);
-    return CreateNetwork(networkId, "br" + random, "vx" + random, vni, ipCidr);
+    // std::string random = random_string(8);
+    return CreateNetwork(networkId, "br" + networkId, "vx" + networkId, vni, ipCidr);
 }
 
-FResult VxlanManager::CreateMiningNetwork(const std::string &networkId, const std::string &bridgeName, const std::string &vxlanName, const std::string &vni) {
-    return CreateNetwork(networkId, bridgeName, vxlanName, vni, "");
+FResult VxlanManager::CreateMiningNetwork(const std::string &networkId, const std::string &vni) {
+    return CreateNetwork(networkId, "mbr" + networkId, "mvx" + networkId, vni, "");
 }
 
 void VxlanManager::DeleteNetwork(const std::string &networkId) {

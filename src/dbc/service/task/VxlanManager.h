@@ -16,7 +16,7 @@ public:
 
     FResult CreateClientNetwork(const std::string &networkId, const std::string &vni, const std::string &ipCidr);
 
-    FResult CreateMiningNetwork(const std::string &networkId, const std::string &bridgeName, const std::string &vxlanName, const std::string &vni);
+    FResult CreateMiningNetwork(const std::string &networkId, const std::string &vni);
 
     void DeleteNetwork(const std::string &networkId);
 

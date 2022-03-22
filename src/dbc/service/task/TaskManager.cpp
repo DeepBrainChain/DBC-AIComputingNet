@@ -724,14 +724,11 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
 
     if (!network_name.empty()) {
-        if (doc.HasMember("network_info") && doc["network_info"].IsObject()) {
-            const rapidjson::Value& obj_network_info = doc["network_info"];
-            params.network_name = network_name;
-            JSON_PARSE_STRING(obj_network_info, "bridge_name", params.bridge_name)
-            JSON_PARSE_STRING(obj_network_info, "vxlan_name", params.vxlan_name)
-            JSON_PARSE_STRING(obj_network_info, "vxlan_vni", params.vxlan_vni)
+        params.network_name = network_name;
+        JSON_PARSE_STRING(doc, "vxlan_vni", params.vxlan_vni)
+        if (!params.vxlan_vni.empty()) {
             if (!VxlanManager::instance().GetNetwork(network_name)) {
-                FResult fret = VxlanManager::instance().CreateMiningNetwork(network_name, params.bridge_name, params.vxlan_name, params.vxlan_vni);
+                FResult fret = VxlanManager::instance().CreateMiningNetwork(network_name, params.vxlan_vni);
                 if (fret.errcode != ERR_SUCCESS) return fret;
             }
         } else {
@@ -998,7 +995,6 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.operation_system = operation_system;
     params.bios_mode = bios_mode;
     params.multicast = multicast;
-    params.network_name = network_name;
 
     return FResultSuccess;
 }
