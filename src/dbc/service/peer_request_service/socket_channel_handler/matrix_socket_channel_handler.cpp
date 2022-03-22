@@ -155,9 +155,6 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
             //decode success
             if (DECODERR_SUCCESS == status)
             {
-
-                LOG_DEBUG << "socket channel handler recv msg: " << msg->get_name() << m_sid.to_string();
-
                 //modify by regulus: fix ver_req duplication error.
                 //callback
                 msg->header.src_sid = m_sid;

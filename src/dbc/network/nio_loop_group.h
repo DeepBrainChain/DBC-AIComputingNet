@@ -8,7 +8,7 @@
 #include <boost/bind.hpp>
 #include "io_service_wrapper.h"
 
-#define MAX_LOOP_GROUP_THREAD_SIZE                         64
+#define MAX_LOOP_GROUP_THREAD_SIZE  64
 
 namespace dbc
 {
@@ -17,8 +17,7 @@ namespace dbc
         class nio_loop_group
         {
         public:
-
-            nio_loop_group() : m_cur_io_service(0) {}
+            nio_loop_group() {}
 
             virtual ~nio_loop_group();
 
@@ -33,15 +32,10 @@ namespace dbc
             virtual std::shared_ptr<io_service> get_io_service();
 
         protected:
-
-            size_t m_thread_size;
-
+            size_t m_thread_size = 1;
             std::mutex m_mutex;
-
-            std::size_t m_cur_io_service;
-
+            std::size_t m_cur_io_service = 0;
             std::vector<std::shared_ptr<std::thread>> m_threads;
-
             std::vector<std::shared_ptr<io_service_wrapper>> m_io_services;
         };
     }
