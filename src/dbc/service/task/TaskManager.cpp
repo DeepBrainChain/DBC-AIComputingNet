@@ -269,7 +269,9 @@ bool TaskManager::restore_tasks() {
 }
 
 void TaskManager::start_task(const std::string &task_id) {
-    if (VmClient::instance().StartDomain(task_id)) {
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_RUNNING) return;
+    if (VmClient::instance().StartDomain(task_id) == ERR_SUCCESS) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
             taskinfo->status = ETaskStatus::TS_Running;
@@ -277,10 +279,13 @@ void TaskManager::start_task(const std::string &task_id) {
 
             add_iptable_to_system(task_id);
         }
+        TASK_LOG_INFO(task_id, "start task successful");
     }
 }
 
 void TaskManager::close_task(const std::string &task_id) {
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
+    if (vm_status == VIR_DOMAIN_SHUTOFF) return;
     if (VmClient::instance().DestroyDomain(task_id) == ERR_SUCCESS) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
@@ -288,6 +293,7 @@ void TaskManager::close_task(const std::string &task_id) {
             TaskInfoMgr::instance().update(taskinfo);
             remove_iptable_from_system(task_id);
         }
+        TASK_LOG_INFO(taskinfo->task_id, "stop task successful");
     }
 }
 
@@ -523,6 +529,7 @@ void TaskManager::delete_task(const std::string &task_id) {
         }
     }
     SnapshotManager::instance().delTaskSnapshot(task_id);
+    TASK_LOG_INFO(task_id, "delete task successful");
 }
 
 void TaskManager::delete_disk_file(const std::string& task_id, const std::map<std::string, domainDiskInfo> &diskfiles) {
@@ -1964,6 +1971,7 @@ void TaskManager::deleteAllCheckTasks() {
     }
 
     for (auto& task_id : check_ids) {
+        TASK_LOG_INFO(task_id, "delete check task");
         delete_task(task_id);
     }
 }
@@ -1985,6 +1993,7 @@ void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
     }
 
     for (auto& task_id : check_ids) {
+        TASK_LOG_INFO(task_id, "delete other check task");
         delete_task(task_id);
     }
 }
@@ -2517,6 +2526,7 @@ void TaskManager::prune_task_thread_func() {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
+                        TASK_LOG_INFO(task_id, "stop task and machine status is " << machine_status);
                         close_task(task_id);
                     }
                 }
@@ -2524,8 +2534,10 @@ void TaskManager::prune_task_thread_func() {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
+                        TASK_LOG_INFO(task_id, "stop task and machine status is " << machine_status);
                         close_task(task_id);
                     } else {
+                        TASK_LOG_INFO(task_id, "delete check task and machine status is " << machine_status);
                         delete_task(task_id);
                     }
                 }
@@ -2533,6 +2545,7 @@ void TaskManager::prune_task_thread_func() {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") != std::string::npos) {
+                        TASK_LOG_INFO(task_id, "delete check task and machine status is " << machine_status);
                         delete_task(task_id);
                     }
                 }
@@ -2544,6 +2557,8 @@ void TaskManager::prune_task_thread_func() {
                 if (rent_end <= 0) {
                     std::vector<std::string> ids = it.second->task_ids;
                     for (auto &task_id: ids) {
+                        TASK_LOG_INFO(task_id, "stop task and machine status: " << machine_status <<
+                                               " ,request rent end: " << rent_end);
                         close_task(task_id);
                     }
 
@@ -2554,6 +2569,9 @@ void TaskManager::prune_task_thread_func() {
                     if (cur_block > 0 && reserve_end > cur_block) {
                         ids = it.second->task_ids;
                         for (auto &task_id: ids) {
+                            TASK_LOG_INFO(task_id, "delete task and machine status: " << machine_status << 
+                                                   " ,task rent end: " << it.second->rent_end << 
+                                                   " ,current block:" << cur_block);
                             delete_task(task_id);
                         }
                     }
@@ -2561,6 +2579,7 @@ void TaskManager::prune_task_thread_func() {
                     if (rent_end > it.second->rent_end) {
                         it.second->rent_end = rent_end;
                         WalletRentTaskMgr::instance().updateRentEnd(it.first, rent_end);
+                        LOG_INFO << "wallet " << it.first << " update rent end " << rent_end;
                     }
                 }
             }
