@@ -2,7 +2,7 @@
 #define DBC_VERSION_H
 
 //major version . minor version . revision version . build version
-#define CORE_VERSION                        0x00030903
+#define CORE_VERSION                        0x00030904
 #define PROTOCO_VERSION                     0x00000001
 
 #define STR_CONV(v)  #v
