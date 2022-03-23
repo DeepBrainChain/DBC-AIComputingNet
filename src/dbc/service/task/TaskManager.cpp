@@ -1647,6 +1647,8 @@ FResult TaskManager::deleteTask(const std::string& wallet, const std::string &ta
         return FResult(ERR_ERROR, "task_id not exist");
     }
 
+    LOG_INFO << "deleteTask: wallet=" << wallet << ", task_id=" << task_id;
+
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     taskinfo->__set_status(TS_Deleting);
     taskinfo->__set_last_stop_time(time(nullptr));
@@ -2470,6 +2472,8 @@ void TaskManager::process_delete(const ETaskEvent& ev) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev.task_id);
     if (taskinfo == nullptr) return;
 
+    LOG_INFO << "process_delete: task_id=" << ev.task_id;
+
     delete_task(taskinfo->task_id);
 }
 
@@ -2507,7 +2511,7 @@ void TaskManager::process_create_snapshot(const ETaskEvent& ev) {
 void TaskManager::prune_task_thread_func() {
     while (m_running) {
 		std::unique_lock<std::mutex> lock(m_prune_mtx);
-		m_prune_cond.wait_for(lock, std::chrono::seconds(60), [this] {
+		m_prune_cond.wait_for(lock, std::chrono::seconds(900), [this] {
 			return !m_running || !m_process_tasks.empty();
 		});
 
@@ -2554,7 +2558,7 @@ void TaskManager::prune_task_thread_func() {
             if (machine_status == "waitingFulfill" || machine_status == "online" ||
                 machine_status == "creating" || machine_status == "rented") {
                 int64_t rent_end = m_httpclient.request_rent_end(it.first);
-                if (rent_end <= 0) {
+                if (rent_end < 0) {
                     std::vector<std::string> ids = it.second->task_ids;
                     for (auto &task_id: ids) {
                         TASK_LOG_INFO(task_id, "stop task and machine status: " << machine_status <<
@@ -2566,7 +2570,7 @@ void TaskManager::prune_task_thread_func() {
                     int64_t wallet_rent_end = it.second->rent_end;
                     int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
                     int64_t cur_block = m_httpclient.request_cur_block();
-                    if (cur_block > 0 && reserve_end > cur_block) {
+                    if (cur_block > 0 && reserve_end < cur_block) {
                         ids = it.second->task_ids;
                         for (auto &task_id: ids) {
                             TASK_LOG_INFO(task_id, "delete task and machine status: " << machine_status << 
@@ -2575,12 +2579,16 @@ void TaskManager::prune_task_thread_func() {
                             delete_task(task_id);
                         }
                     }
-                } else {
+                } else if (rent_end > 0) {
                     if (rent_end > it.second->rent_end) {
+                        int64_t old_rent_end = it.second->rent_end;
                         it.second->rent_end = rent_end;
                         WalletRentTaskMgr::instance().updateRentEnd(it.first, rent_end);
-                        LOG_INFO << "wallet " << it.first << " update rent end " << rent_end;
+                        LOG_INFO << "update rent_end, wallet=" << it.first
+                            << ", update rent_end=old:" << old_rent_end << ",new:" << rent_end;
                     }
+                } else {
+                    LOG_INFO << "request_rent_end return 0: wallet=" << it.first;
                 }
             }
         }
