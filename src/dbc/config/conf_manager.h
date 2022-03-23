@@ -80,7 +80,7 @@ public:
 
     std::string GetPrivKey() const { return m_priv_key; }
 
-    const dbc::network::matrix_capacity& get_proto_capacity() {
+    const network::matrix_capacity& get_proto_capacity() {
         return m_proto_capacity;
     }
 
@@ -126,7 +126,7 @@ private:
     std::string m_pub_key;
     std::string m_priv_key;
 
-    dbc::network::matrix_capacity m_proto_capacity;
+    network::matrix_capacity m_proto_capacity;
 };
 
 #endif

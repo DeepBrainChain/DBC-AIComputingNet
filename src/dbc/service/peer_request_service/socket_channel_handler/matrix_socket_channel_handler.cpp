@@ -1,10 +1,10 @@
 #include "matrix_socket_channel_handler.h"
-#include "network/tcp_socket_channel.h"
 #include "service_proto_filter.h"
 #include "network/compress/matrix_compress.h"
 #include "service/message/message_id.h"
+#include "network/topic_manager.h"
 
-matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc::network::channel> ch)
+matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<network::channel> ch)
     : m_stopped(false)
     , m_coder(std::make_shared<matrix_coder>())
     , m_decoder(std::make_shared<matrix_coder>())
@@ -19,7 +19,7 @@ matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc
         int32_t recv_speed = ConfManager::MAX_RECV_SPEED;
         int32_t cycle = 1;
         int32_t slice = 2;
-        m_f_ctl = std::make_shared<dbc::network::flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
+        m_f_ctl = std::make_shared<network::flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
         if (m_f_ctl != nullptr)
         {
             m_f_ctl->start();
@@ -30,7 +30,7 @@ matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<dbc
 
 matrix_socket_channel_handler::~matrix_socket_channel_handler()
 {
-    LOG_DEBUG << "socket channel handler destroyed, " << m_sid.to_string();
+    
 }
 
 int32_t matrix_socket_channel_handler::stop()
@@ -95,7 +95,8 @@ bool matrix_socket_channel_handler::validate_req_path(std::string msg_name, std:
         return false;
     }
 
-    std::shared_ptr<dbc::network::tcp_socket_channel> ch = std::dynamic_pointer_cast<dbc::network::tcp_socket_channel>(ch_);
+    std::shared_ptr<network::tcp_socket_channel> ch = 
+        std::dynamic_pointer_cast<network::tcp_socket_channel>(ch_);
     if (nullptr == ch)
     {
         return false;
@@ -128,7 +129,7 @@ bool matrix_socket_channel_handler::validate_req_path(std::string msg_name, std:
     return true;
 }
 
-int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_context &ctx, byte_buf &in)
+int32_t matrix_socket_channel_handler::on_read(network::channel_handler_context &ctx, byte_buf &in)
 {
     if (in.get_valid_read_len() > 0)
     {
@@ -149,7 +150,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
         {
             set_decode_context(ctx);
 
-            std::shared_ptr<dbc::network::message> msg = std::make_shared<dbc::network::message>();
+            std::shared_ptr<network::message> msg = std::make_shared<network::message>();
             decode_status status = m_decoder->decode(ctx, msg);
 
             //decode success
@@ -257,7 +258,7 @@ int32_t matrix_socket_channel_handler::on_read(dbc::network::channel_handler_con
     return ERR_SUCCESS;
 }
 
-void matrix_socket_channel_handler::set_decode_context(dbc::network::channel_handler_context &ctx)
+void matrix_socket_channel_handler::set_decode_context(network::channel_handler_context &ctx)
 {
     std::string node_id = ConfManager::instance().GetNodeId();
     variable_value v1;
@@ -265,18 +266,18 @@ void matrix_socket_channel_handler::set_decode_context(dbc::network::channel_han
     ctx.add("LOCAL_NODE_ID", v1);
 }
 
-void matrix_socket_channel_handler::set_encode_context(dbc::network::channel_handler_context &ctx)
+void matrix_socket_channel_handler::set_encode_context(network::channel_handler_context &ctx)
 {
     if (auto ch_ = m_channel.lock())
     {
-        std::shared_ptr<dbc::network::tcp_socket_channel> ch = std::dynamic_pointer_cast<dbc::network::tcp_socket_channel>(ch_);
+        std::shared_ptr<network::tcp_socket_channel> ch = std::dynamic_pointer_cast<network::tcp_socket_channel>(ch_);
         if (nullptr != ch)
         {
             auto a = ch->get_proto_capacity();
             auto b = ConfManager::instance().get_proto_capacity();
 
-            bool compress_enabled = dbc::network::matrix_capacity_helper::get_compress_enabled(a , b);
-            int  thrift_proto = dbc::network::matrix_capacity_helper::get_thrift_proto(a , b);
+            bool compress_enabled = network::matrix_capacity_helper::get_compress_enabled(a , b);
+            int  thrift_proto = network::matrix_capacity_helper::get_thrift_proto(a , b);
 
             variable_value v1;
             v1.value() = compress_enabled;
@@ -290,7 +291,8 @@ void matrix_socket_channel_handler::set_encode_context(dbc::network::channel_han
 
 }
 
-int32_t matrix_socket_channel_handler::on_write(dbc::network::channel_handler_context &ctx, dbc::network::message &msg, byte_buf &buf)
+int32_t matrix_socket_channel_handler::on_write(network::channel_handler_context &ctx, 
+    network::message &msg, byte_buf &buf)
 {
     LOG_DEBUG << "socket channel handler send msg: " << msg.get_name() << m_sid.to_string();
 
@@ -360,7 +362,7 @@ void matrix_socket_channel_handler::stop_shake_hand_timer()
 
 }
 
-void matrix_socket_channel_handler::set_has_message(dbc::network::message &msg)
+void matrix_socket_channel_handler::set_has_message(network::message &msg)
 {
     if (SHAKE_HAND_REQ == msg.get_name()
         || SHAKE_HAND_RESP == msg.get_name()

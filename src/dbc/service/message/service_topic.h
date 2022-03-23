@@ -1,14 +1,14 @@
 #ifndef DBC_SERVICE_TOPIC_H
 #define DBC_SERVICE_TOPIC_H
 
-#include "network/protocol/service_message.h"
+#include "network/protocol/net_message.h"
 
-class get_task_queue_size_req_msg : public dbc::network::message {
+class get_task_queue_size_req_msg : public network::message {
 public:
     get_task_queue_size_req_msg() { set_name(typeid(get_task_queue_size_req_msg).name()); }
 };
 
-class get_task_queue_size_resp_msg : public dbc::network::message {
+class get_task_queue_size_resp_msg : public network::message {
 public:
     get_task_queue_size_resp_msg() : m_qsize(0) { set_name(typeid(get_task_queue_size_resp_msg).name()); }
 

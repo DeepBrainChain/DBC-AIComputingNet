@@ -9,9 +9,9 @@
 class message_to_byte_encoder : public encoder
 {
 public:
-    virtual encode_status encode(dbc::network::channel_handler_context &ctx, dbc::network::message & msg, byte_buf &out)
+    virtual encode_status encode(network::channel_handler_context &ctx, network::message & msg, byte_buf &out)
     {
-        std::shared_ptr<dbc::network::binary_protocol> proto = std::make_shared<dbc::network::binary_protocol>(&out);
+        std::shared_ptr<network::binary_protocol> proto = std::make_shared<network::binary_protocol>(&out);
 
         try
         {

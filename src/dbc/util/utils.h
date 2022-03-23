@@ -99,34 +99,6 @@ static const char* color_reset = "\033[0m";
 #define CALLBACK_1(__selector__,__target__, ...) std::bind(&__selector__,__target__, std::placeholders::_1, ##__VA_ARGS__)
 #define CALLBACK_2(__selector__,__target__, ...) std::bind(&__selector__,__target__, std::placeholders::_1, std::placeholders::_2, ##__VA_ARGS__)
 
-/**
-* this function tries to raise the file descriptor limit to the requested number.
-* It returns the actual file descriptor limit (which may be more or less than nMinFD)
-*/
-inline int32_t RaiseFileDescriptorLimit(int nMinFD)
-{
-#if defined(WIN32)
-    return 2048;
-#else
-    struct rlimit limitFD;
-    if(getrlimit(RLIMIT_NOFILE, &limitFD) != -1)
-    {
-        if(limitFD.rlim_cur < (rlim_t) nMinFD)
-        {
-            limitFD.rlim_cur = nMinFD;
-            if(limitFD.rlim_cur > limitFD.rlim_max)
-            {
-                limitFD.rlim_cur = limitFD.rlim_max;
-            }
-            setrlimit(RLIMIT_NOFILE, &limitFD);
-            getrlimit(RLIMIT_NOFILE, &limitFD);
-        }
-        return limitFD.rlim_cur;
-    }
-    return nMinFD; // getrlimit failed, assume it's fine
-#endif
-}
-
 std::string run_shell(const std::string& cmd, const char* modes = "r");
 
 std::string run_shell2(const std::string& cmd);

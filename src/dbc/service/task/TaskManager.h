@@ -4,7 +4,6 @@
 #include "util/utils.h"
 #include "service_module/service_module.h"
 #include <boost/process.hpp>
-#include "network/nio_loop_group.h"
 #include "service/message/matrix_types.h"
 #include "service/message/vm_task_result_types.h"
 #include "vm/vm_client.h"

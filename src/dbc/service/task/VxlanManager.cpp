@@ -140,7 +140,7 @@ FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::str
     }
 
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     info->write(&proto);
 
     leveldb::WriteOptions write_options;
@@ -264,7 +264,7 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
 
             std::shared_ptr<byte_buf> item_buf = std::make_shared<byte_buf>();
             item_buf->write_to_byte_buf(it->value().data(), (uint32_t) it->value().size());
-            dbc::network::binary_protocol proto(item_buf.get());
+            network::binary_protocol proto(item_buf.get());
             db_item->read(&proto);             //may exception
 
             if (db_item->networkId.empty()) {

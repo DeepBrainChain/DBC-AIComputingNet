@@ -4,6 +4,7 @@
 #include "util/utils.h"
 #include "service/message/matrix_types.h"
 #include "util/filter/simple_expression.h"
+#include <boost/serialization/singleton.hpp>
 
 using namespace boost::serialization;
 

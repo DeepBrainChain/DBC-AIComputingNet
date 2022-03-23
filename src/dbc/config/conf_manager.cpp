@@ -47,9 +47,9 @@ void ImageServer::from_string(const std::string& str) {
 }
 
 ConfManager::ConfManager() {
-    m_proto_capacity.add(dbc::network::matrix_capacity::THRIFT_BINARY_C_NAME);
-    m_proto_capacity.add(dbc::network::matrix_capacity::THRIFT_COMPACT_C_NAME);
-    m_proto_capacity.add(dbc::network::matrix_capacity::SNAPPY_RAW_C_NAME);
+    m_proto_capacity.add(network::matrix_capacity::THRIFT_BINARY_C_NAME);
+    m_proto_capacity.add(network::matrix_capacity::THRIFT_COMPACT_C_NAME);
+    m_proto_capacity.add(network::matrix_capacity::SNAPPY_RAW_C_NAME);
 }
 
 ConfManager::~ConfManager() {

@@ -25,6 +25,7 @@ bool HttpChainClient::connect_chain() {
         std::vector<std::string> addr = util::split(vec[i], ":");
         if (!addr.empty()) {
             httplib::SSLClient cli(addr[0], addr.size() > 1 ? atoi(addr[1].c_str()) : 443);
+            cli.set_timeout_sec(10);
             if (cli.is_valid()) {
                 struct timeval tv1{};
                 gettimeofday(&tv1, 0);

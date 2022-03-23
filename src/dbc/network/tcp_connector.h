@@ -3,79 +3,64 @@
 
 #include <memory>
 #include <boost/asio.hpp>
-#include "nio_loop_group.h"
+#include "utils/io_service_pool.h"
 #include "common/common.h"
-#include "channel.h"
-#include "socket_id.h"
-#include "handler_create_functor.h"
-#include "protocol/service_message_def.h"
+#include "channel/channel.h"
+#include "utils/socket_id.h"
+#include "channel/handler_create_functor.h"
+#include "protocol/net_message_def.h"
 
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-#define RECONNECT_INTERVAL                     2                    //2->4->8->16->32->64...
-#define MAX_RECONNECT_TIMES                  2
+#define RECONNECT_INTERVAL         2    //2->4->8->16->32->64...
+#define MAX_RECONNECT_TIMES        2
 
-namespace dbc
+namespace network
 {
-    namespace network
+    class tcp_connector : public std::enable_shared_from_this<tcp_connector>, boost::noncopyable
     {
-        class tcp_connector : public std::enable_shared_from_this<tcp_connector>, boost::noncopyable
-        {
-            using ios_ptr = typename std::shared_ptr<io_service>;
-            using nio_loop_ptr = typename std::shared_ptr<nio_loop_group>;
+    public:
+        tcp_connector(std::shared_ptr<io_service_pool> connector_group, std::shared_ptr<io_service_pool> worker_group,
+            const tcp::endpoint &connect_addr, handler_create_functor func);
 
-            typedef void (timer_handler_type)(const boost::system::error_code &);
+        virtual ~tcp_connector();
 
-        public:
+        virtual int32_t start(uint32_t retry = MAX_RECONNECT_TIMES);
 
-            tcp_connector(nio_loop_ptr connector_group, nio_loop_ptr worker_group, const tcp::endpoint &connect_addr, handler_create_functor func);
+        virtual int32_t stop();
 
-            virtual ~tcp_connector();
+        const tcp::endpoint &get_connect_addr() const { return m_connect_addr; }
 
-            virtual int32_t start(uint32_t retry = MAX_RECONNECT_TIMES);
+        const socket_id &get_socket_id() const { return m_sid; }
 
-            virtual int32_t stop();
+        bool is_connected() { return m_connected; }
 
-            const tcp::endpoint &get_connect_addr() const { return m_connect_addr; }
+    protected:
+        void async_connect();   //reconnect is decided by service layer
 
-            const socket_id &get_socket_id() const { return m_sid; }
+        virtual void on_connect(const boost::system::error_code& error);
 
-            bool is_connected() { return m_connected; }
+        virtual void connect_notify(CLIENT_CONNECT_STATUS status);
 
-        protected:
+        //modify by regulus: fix connect crash
+        void reconnect(const std::string errorinfo);
 
-            void async_connect();                           //reconnect is decided by service layer
+        void on_reconnect_timer_expired(const boost::system::error_code& error);
 
-            virtual void on_connect(const boost::system::error_code& error);
+    protected:
+        socket_id m_sid;
+        tcp::endpoint m_connect_addr;
+        handler_create_functor m_handler_create_func;
+        std::shared_ptr<io_service_pool> m_worker_group;
+        steady_timer m_reconnect_timer;
+        uint32_t m_max_reconnect_times = MAX_RECONNECT_TIMES;
 
-            virtual void connect_notification(CLIENT_CONNECT_STATUS status);
-            //modify by regulus: fix connect crash
-            void reconnect(const std::string errorinfo);
-
-            void on_reconnect_timer_expired(const boost::system::error_code& error);
-
-        protected:
-
-            socket_id m_sid;
-
-            bool m_connected;
-
-            uint32_t m_reconnect_times;
-
-            uint32_t m_req_reconnect_times;
-
-            nio_loop_ptr m_worker_group;
-
-            const tcp::endpoint m_connect_addr;
-
-            std::shared_ptr<channel> m_client_channel;
-
-            handler_create_functor m_handler_create_func;
-
-            steady_timer m_reconnect_timer;
-        };
-    }
+        bool m_connected = false;
+        uint32_t m_reconnect_times = 0;
+        
+        std::shared_ptr<channel> m_client_channel;
+    };
 }
 
 #endif

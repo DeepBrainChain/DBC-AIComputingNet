@@ -3,7 +3,7 @@
 
 #include "common/common.h"
 #include "conf_validator.h"
-#include "network/http_client.h"
+#include "network/http/http_client.h"
 
 class url_validator : public conf_validator
 {

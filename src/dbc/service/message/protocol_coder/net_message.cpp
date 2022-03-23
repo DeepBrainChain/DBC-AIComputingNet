@@ -15,7 +15,7 @@ int32_t net_message::read_packet_len(byte_buf &in) {
         return nCopy;
     }
 
-    m_packet_len = dbc::network::byte_order::ntoh32(theBytes.all);
+    m_packet_len = network::byte_order::ntoh32(theBytes.all);
     m_in_data = true;
     return nCopy;
 }

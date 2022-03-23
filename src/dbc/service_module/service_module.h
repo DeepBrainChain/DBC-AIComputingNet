@@ -3,7 +3,7 @@
 
 #include "util/utils.h"
 #include "../timer/timer.h"
-#include "network/protocol/service_message.h"
+#include "network/protocol/net_message.h"
 #include "session.h"
 #include "util/crypto/pubkey.h"
 #include <mutex>
@@ -11,7 +11,8 @@
 #define MAX_MSG_QUEUE_SIZE  102400
 #define USE_SIGN_TIME       1548777600
 
-using invoker_type = std::function<void(const std::shared_ptr<dbc::network::message> &msg)>;
+using invoker_type = std::function<void(const std::shared_ptr<network::message> &msg)>;
+
 using timer_invoker_type = std::function<void(const std::shared_ptr<core_timer>& timer)>;
 
 class service_module
@@ -37,7 +38,7 @@ public:
     void remove_all_timer();
 
     /** register msg & handle */
-    void reg_msg_handle(const std::string &msgname, const std::function<void(const std::shared_ptr<dbc::network::message>&)>& handle = nullptr);
+    void reg_msg_handle(const std::string &msgname, const std::function<void(const std::shared_ptr<network::message>&)>& handle = nullptr);
 
     void unreg_msg_handle(const std::string &msgname);
 
@@ -58,18 +59,18 @@ protected:
     virtual void init_invoker() = 0;
 
 private:
-	void send(const std::shared_ptr<dbc::network::message>& msg);
+	void send(const std::shared_ptr<network::message>& msg);
 
     void thread_func();
 
-	void on_msg_handle(std::shared_ptr<dbc::network::message>& msg);
+	void on_msg_handle(std::shared_ptr<network::message>& msg);
 
 	void on_timer_tick(uint64_t time_tick);
 
 protected:
     bool m_running = false;
 
-    std::queue<std::shared_ptr<dbc::network::message>> m_msg_queue;
+    std::queue<std::shared_ptr<network::message>> m_msg_queue;
     std::mutex m_msg_queue_mutex;
     std::condition_variable m_cond;
     std::thread* m_thread = nullptr;

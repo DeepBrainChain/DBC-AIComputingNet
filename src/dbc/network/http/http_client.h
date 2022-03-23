@@ -108,68 +108,65 @@ inline bufferevent * obtain_evhttp_bev(struct event_base* base, SSL *ssl)
     return bev;
 }
 
-namespace dbc
+namespace network
 {
-    namespace network
+    struct http_response
     {
-        struct http_response
-        {
-            http_response() : status(0), error(-1) {}
+        http_response() : status(0), error(-1) {}
 
-            int status;
-            int error;          //evhttp_request_error
-            std::string body;
-        };
+        int status;
+        int error;          //evhttp_request_error
+        std::string body;
+    };
 
-        struct http_response_wrapper
-        {
-            http_response* http_resp;
-            event_base* ev_base;
-        };
+    struct http_response_wrapper
+    {
+        http_response* http_resp;
+        event_base* ev_base;
+    };
 
-        class http_client
-        {
-        public:
+    class http_client
+    {
+    public:
 
-            http_client(std::string remote_ip, uint16_t remote_port);
+        http_client(std::string remote_ip, uint16_t remote_port);
 
-            virtual ~http_client();
-            http_client(const std::string &url, const std::string & crt);
+        virtual ~http_client();
+        http_client(const std::string &url, const std::string & crt);
 
-            void set_remote(std::string remote_ip, uint16_t remote_port);
+        void set_remote(std::string remote_ip, uint16_t remote_port);
 
-            int32_t post(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp);
-            int32_t post_sleep(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp,int32_t sleep_time);
+        int32_t post(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp);
+        int32_t post_sleep(const std::string &endpoint, const kvs &headers, const std::string & req_content, http_response &resp,int32_t sleep_time);
 
-            int32_t get(const std::string &endpoint, const kvs &headers, http_response &resp);
-            int32_t get_sleep(const std::string &endpoint, const kvs &headers, http_response &resp,int32_t sleep_time);
-            int32_t del(const std::string &endpoint, const kvs &headers, http_response &resp);
+        int32_t get(const std::string &endpoint, const kvs &headers, http_response &resp);
+        int32_t get_sleep(const std::string &endpoint, const kvs &headers, http_response &resp,int32_t sleep_time);
+        int32_t del(const std::string &endpoint, const kvs &headers, http_response &resp);
 
-            int32_t parse_url(const std::string & url);
+        int32_t parse_url(const std::string & url);
 
-            std::string get_uri() { return m_uri; }
-            std::string  get_remote_host();
+        std::string get_uri() { return m_uri; }
+        std::string  get_remote_host();
 
-            void set_address(std::string remote_ip, uint16_t remote_port);
+        void set_address(std::string remote_ip, uint16_t remote_port);
 
-        protected:
-            bool init_ssl_ctx();
-            bool clear_ssl_ctx();
-            bool start_ssl_engine();
-            bool stop_ssl_engine();
+    protected:
+        bool init_ssl_ctx();
+        bool clear_ssl_ctx();
+        bool start_ssl_engine();
+        bool stop_ssl_engine();
 
-        protected:
-            std::string m_remote_ip;
+    protected:
+        std::string m_remote_ip;
 
-            uint16_t m_remote_port;
+        uint16_t m_remote_port;
 
-            std::string m_uri="";
-            std::string m_scheme="";
-            SSL_CTX* m_ssl_ctx = nullptr;
-            SSL* m_ssl = nullptr;
-            std::string m_crt;
-        };
-    }
+        std::string m_uri="";
+        std::string m_scheme="";
+        SSL_CTX* m_ssl_ctx = nullptr;
+        SSL* m_ssl = nullptr;
+        std::string m_crt;
+    };
 }
 
 #endif

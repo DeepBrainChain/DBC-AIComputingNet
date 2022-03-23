@@ -3,7 +3,7 @@
 
 #include "network/protocol/protocol.h"
 
-class time_tick_notification : public dbc::network::msg_base
+class time_tick_notification : public network::msg_base
 {
 public:
     uint64_t time_tick;

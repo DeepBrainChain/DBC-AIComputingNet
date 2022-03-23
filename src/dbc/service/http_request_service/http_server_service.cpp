@@ -7,7 +7,7 @@
 #include <event2/http.h>
 #include "server/server.h"
 #include "log/log.h"
-#include "network/http_client.h"
+#include "network/http/http_client.h"
 #include "rest_api_service.h"
 
 ERRCODE http_server_service::init() {
@@ -108,7 +108,7 @@ void http_server_service::http_request_cb(struct evhttp_request *req, void *arg)
 }
 
 void http_server_service::on_http_request_event(struct evhttp_request *req) {
-    std::shared_ptr<dbc::network::http_request> hreq(new dbc::network::http_request(req, m_event_base));
+    std::shared_ptr<network::http_request> hreq(new network::http_request(req, m_event_base));
 
     LOG_DEBUG << "Received a " << hreq->request_method_string(hreq->get_request_method()) << ", request for "
               << hreq->get_uri() << " from " << hreq->get_peer().get_ip() << std::endl;

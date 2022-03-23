@@ -3,14 +3,12 @@
 #include "../protocol/protocol.h"
 #include "log/log.h"
 
-namespace dbc{
-    namespace network {
-
+namespace network {
     /**
-     * compress data stored in byte buf; replace input data with compressed data.
-     * @param inout, buffer of input data at invoking;  reset the buffer content with the compressed data
-     * @param proto_type
-     */
+    * compress data stored in byte buf; replace input data with compressed data.
+    * @param inout, buffer of input data at invoking;  reset the buffer content with the compressed data
+    * @param proto_type
+    */
     bool matrix_compress::compress(byte_buf& inout)
     {
         //compress: message header and body
@@ -58,10 +56,10 @@ namespace dbc{
     }
 
     /**
-     *
-     * @param in
-     * @return
-     */
+    *
+    * @param in
+    * @return
+    */
     bool matrix_compress::has_compress_flag(byte_buf& in)
     {
         char *p = in.get_read_ptr();
@@ -74,11 +72,11 @@ namespace dbc{
     }
 
     /**
-     *
-     * @param in,   input compressed data, preceed a packet header
-     * @param out,  uncompressed data
-     * @return true if uncompress complete, otherwise return false
-     */
+    *
+    * @param in,   input compressed data, preceed a packet header
+    * @param out,  uncompressed data
+    * @return true if uncompress complete, otherwise return false
+    */
     bool matrix_compress::uncompress(byte_buf& in, byte_buf& out)
     {
         if(!has_compress_flag(in))
@@ -131,7 +129,5 @@ namespace dbc{
         }
 
         return true;
-    }
-
     }
 }

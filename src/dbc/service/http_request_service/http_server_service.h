@@ -2,7 +2,7 @@
 #define HTTP_SERVER_SERVICE_H
 
 #include "util/utils.h"
-#include "network/http_server.h"
+#include "network/http/http_server.h"
 
 #define HTTP_SERVER_SERVICE_MODULE                             "http_server_service_module"
 

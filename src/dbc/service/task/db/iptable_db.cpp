@@ -46,7 +46,7 @@ void IpTableDB::load_iptables(std::map<std::string, std::shared_ptr<dbc::task_ip
         std::shared_ptr<dbc::task_iptable> task = std::make_shared<dbc::task_iptable>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         task->read(&proto);
 
         task_iptables.insert({ task->task_id, task });
@@ -79,7 +79,7 @@ std::shared_ptr<dbc::task_iptable> IpTableDB::read_iptable(const std::string& ta
         std::shared_ptr<dbc::task_iptable> task = std::make_shared<dbc::task_iptable>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(val.c_str(), val.size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         task->read(&proto);
         return task;
     }
@@ -91,7 +91,7 @@ std::shared_ptr<dbc::task_iptable> IpTableDB::read_iptable(const std::string& ta
 bool IpTableDB::write_iptable(const std::shared_ptr<dbc::task_iptable>& task_iptable)
 {
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     task_iptable->write(&proto);
 
     leveldb::WriteOptions write_options;

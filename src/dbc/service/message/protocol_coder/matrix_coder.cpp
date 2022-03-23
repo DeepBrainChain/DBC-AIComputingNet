@@ -12,8 +12,8 @@ matrix_coder::matrix_coder()
 }
 
 void matrix_coder::init_decode_proto() {
-    m_decode_protos[THRIFT_BINARY_PROTO] = std::make_shared<dbc::network::binary_protocol>();
-    m_decode_protos[THRIFT_COMPACT_PROTO] = std::make_shared<dbc::network::compact_protocol>();
+    m_decode_protos[THRIFT_BINARY_PROTO] = std::make_shared<network::binary_protocol>();
+    m_decode_protos[THRIFT_COMPACT_PROTO] = std::make_shared<network::compact_protocol>();
 }
 
 void matrix_coder::init_decode_invoker() {
@@ -182,7 +182,7 @@ void matrix_coder::init_encode_invoker() {
     BIND_ENCODE_INVOKER(node_delete_lan_rsp);
 }
 
-std::shared_ptr<dbc::network::protocol> matrix_coder::get_protocol(int32_t type) {
+std::shared_ptr<network::protocol> matrix_coder::get_protocol(int32_t type) {
     auto it = m_decode_protos.find(type);
     if (it == m_decode_protos.end()) {
         return nullptr;
@@ -200,9 +200,9 @@ std::shared_ptr<dbc::network::protocol> matrix_coder::get_protocol(int32_t type)
  * @param proto
  * @return DECODERR_SUCCESS if no error happened
  */
-decode_status matrix_coder::decode_fast_forward(dbc::network::channel_handler_context &ctx,
-                                                byte_buf &in, std::shared_ptr<dbc::network::message> &msg,
-                                                dbc::network::base_header &header, std::shared_ptr<dbc::network::protocol> proto) {
+decode_status matrix_coder::decode_fast_forward(network::channel_handler_context &ctx,
+    byte_buf &in, std::shared_ptr<network::message> &msg,
+    network::base_header &header, std::shared_ptr<network::protocol> proto) {
     std::string local_node_id = get_local_node_id(ctx);
     if (local_node_id.empty()) {
         return DECODERR_SUCCESS;
@@ -230,7 +230,7 @@ decode_status matrix_coder::decode_fast_forward(dbc::network::channel_handler_co
         && header.exten_info["dest_id"].find(local_node_id) == std::string::npos) {
         LOG_DEBUG << "forward " << header.msg_name;
 
-        std::shared_ptr<dbc::network::msg_forward> content = std::make_shared<dbc::network::msg_forward>();
+        std::shared_ptr<network::msg_forward> content = std::make_shared<network::msg_forward>();
 
         content->header = header;
 
@@ -253,14 +253,15 @@ decode_status matrix_coder::decode_fast_forward(dbc::network::channel_handler_co
 
 
 decode_status
-matrix_coder::decode_frame(dbc::network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<dbc::network::message> &msg) {
+matrix_coder::decode_frame(network::channel_handler_context &ctx, byte_buf &in, 
+    std::shared_ptr<network::message> &msg) {
     byte_buf uncompress_out;
     byte_buf &decode_in = in;
 
     try {
         // step 1: optional, uncompress packet
-        if (dbc::network::matrix_compress::has_compress_flag(in)) {
-            if (!dbc::network::matrix_compress::uncompress(in, uncompress_out)) {
+        if (network::matrix_compress::has_compress_flag(in)) {
+            if (!network::matrix_compress::uncompress(in, uncompress_out)) {
                 return DECODE_ERROR;
             }
 
@@ -275,7 +276,7 @@ matrix_coder::decode_frame(dbc::network::channel_handler_context &ctx, byte_buf 
         matrix_packet_header packet_header;
         packet_header.read(decode_in);
         //get decode protocol
-        std::shared_ptr<dbc::network::protocol> proto = get_protocol(packet_header.packet_type & 0xff);
+        std::shared_ptr<network::protocol> proto = get_protocol(packet_header.packet_type & 0xff);
         if (nullptr == proto) {
             return DECODE_ERROR;
         } else {
@@ -306,10 +307,10 @@ matrix_coder::decode_frame(dbc::network::channel_handler_context &ctx, byte_buf 
 }
 
 decode_status
-matrix_coder::decode_service_frame(dbc::network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<dbc::network::message> &msg,
-                                   std::shared_ptr<dbc::network::protocol> proto) {
+matrix_coder::decode_service_frame(network::channel_handler_context &ctx, byte_buf &in, 
+    std::shared_ptr<network::message> &msg, std::shared_ptr<network::protocol> proto) {
     //service header
-    dbc::network::base_header header;
+    network::base_header header;
     header.read(proto.get());
 
     // jimmy: fast_forward processing
@@ -340,8 +341,8 @@ matrix_coder::decode_service_frame(dbc::network::channel_handler_context &ctx, b
 }
 
 template<typename msg_type>
-void matrix_coder::decode_invoke(std::shared_ptr<dbc::network::message> &msg, dbc::network::base_header &header,
-                                 std::shared_ptr<dbc::network::protocol> &proto) {
+void matrix_coder::decode_invoke(std::shared_ptr<network::message> &msg, network::base_header &header,
+                                 std::shared_ptr<network::protocol> &proto) {
     std::shared_ptr<msg_type> content = std::make_shared<msg_type>();
 
     content->header = header;
@@ -353,7 +354,7 @@ void matrix_coder::decode_invoke(std::shared_ptr<dbc::network::message> &msg, db
     //LOG_DEBUG << "matrix coder decode message: " << content->header.msg_name << ", message length: ";
 }
 
-encode_status matrix_coder::encode(dbc::network::channel_handler_context &ctx, dbc::network::message &msg, byte_buf &out) {
+encode_status matrix_coder::encode(network::channel_handler_context &ctx, network::message &msg, byte_buf &out) {
 
     try {
         matrix_packet_header packet_header;
@@ -363,7 +364,7 @@ encode_status matrix_coder::encode(dbc::network::channel_handler_context &ctx, d
         bool enable_compress = get_compress_enabled(ctx);
         uint32_t thrift_proto = get_thrift_proto(ctx);
 
-        std::shared_ptr<dbc::network::protocol> proto = get_protocol(thrift_proto);
+        std::shared_ptr<network::protocol> proto = get_protocol(thrift_proto);
 
         if (proto == nullptr) {
             LOG_ERROR << "matrix encoder unknown protocol value: " << thrift_proto;
@@ -373,7 +374,7 @@ encode_status matrix_coder::encode(dbc::network::channel_handler_context &ctx, d
         proto->init_buf(&out);
 
         // encode
-        std::shared_ptr<dbc::network::msg_forward> bin_fwd_content = std::dynamic_pointer_cast<dbc::network::msg_forward>(
+        std::shared_ptr<network::msg_forward> bin_fwd_content = std::dynamic_pointer_cast<network::msg_forward>(
                 msg.content);
         if (bin_fwd_content) {
             LOG_DEBUG << "matrix encoder forward binary of " << msg.get_name();
@@ -402,8 +403,8 @@ encode_status matrix_coder::encode(dbc::network::channel_handler_context &ctx, d
         }
 
         // compress
-        if (enable_compress && packet_header.packet_len >= dbc::network::matrix_compress::MIN_MSG_LEN_TO_COMPRESS) {
-            if (!dbc::network::matrix_compress::compress(out)) {
+        if (enable_compress && packet_header.packet_len >= network::matrix_compress::MIN_MSG_LEN_TO_COMPRESS) {
+            if (!network::matrix_compress::compress(out)) {
                 return ENCODE_ERROR;
             }
         }
@@ -422,8 +423,8 @@ encode_status matrix_coder::encode(dbc::network::channel_handler_context &ctx, d
 }
 
 template<typename msg_type>
-void matrix_coder::encode_invoke(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::protocol> &proto, dbc::network::message &msg,
-                                 byte_buf &out) {
+void matrix_coder::encode_invoke(network::channel_handler_context &ctx, 
+    std::shared_ptr<network::protocol> &proto, network::message &msg, byte_buf &out) {
     std::shared_ptr<msg_type> content = std::dynamic_pointer_cast<msg_type>(msg.content);
 
     content->header.write(proto.get());
@@ -459,7 +460,7 @@ decode_status matrix_coder::recv_message(byte_buf &in) {
 }
 
 
-bool matrix_coder::get_compress_enabled(dbc::network::channel_handler_context &ctx) {
+bool matrix_coder::get_compress_enabled(network::channel_handler_context &ctx) {
     bool rtn = false;
 
     variables_map &vm = ctx.get_args();
@@ -478,7 +479,7 @@ bool matrix_coder::get_compress_enabled(dbc::network::channel_handler_context &c
     return rtn;
 }
 
-int matrix_coder::get_thrift_proto(dbc::network::channel_handler_context &ctx) {
+int matrix_coder::get_thrift_proto(network::channel_handler_context &ctx) {
     int rtn = THRIFT_BINARY_PROTO;
 
     variables_map &vm = ctx.get_args();
@@ -494,7 +495,7 @@ int matrix_coder::get_thrift_proto(dbc::network::channel_handler_context &ctx) {
     return rtn;
 }
 
-std::string matrix_coder::get_local_node_id(dbc::network::channel_handler_context &ctx) {
+std::string matrix_coder::get_local_node_id(network::channel_handler_context &ctx) {
     std::string rtn;
 
     variables_map &vm = ctx.get_args();
@@ -517,10 +518,10 @@ matrix_packet_header::matrix_packet_header()
 }
 
 void matrix_packet_header::write(byte_buf &out) {
-    int32_t len = dbc::network::byte_order::hton32(packet_len);
+    int32_t len = network::byte_order::hton32(packet_len);
     out.write_to_byte_buf((char *) &len, sizeof(len));
 
-    int32_t type = dbc::network::byte_order::hton32(packet_type);
+    int32_t type = network::byte_order::hton32(packet_type);
     out.write_to_byte_buf((char *) &type, sizeof(type));
 }
 
@@ -530,10 +531,10 @@ bool matrix_packet_header::update(byte_buf &out) {
         return false;
     }
 
-    int32_t len = dbc::network::byte_order::hton32(packet_len);
+    int32_t len = network::byte_order::hton32(packet_len);
     memcpy(out.get_read_ptr(), &len, sizeof(len));
 
-    int32_t type = dbc::network::byte_order::hton32(packet_type);
+    int32_t type = network::byte_order::hton32(packet_type);
     memcpy(out.get_read_ptr() + sizeof(type), &type, sizeof(type));
 
     return true;
@@ -545,8 +546,8 @@ void matrix_packet_header::read(byte_buf &in) {
 
     //packet len + packet type
     const int32_t *ptr = (int32_t *) in.get_read_ptr();
-    packet_len = dbc::network::byte_order::ntoh32(*ptr);
-    packet_type = dbc::network::byte_order::ntoh32(*(ptr + 1));
+    packet_len = network::byte_order::ntoh32(*ptr);
+    packet_type = network::byte_order::ntoh32(*(ptr + 1));
 
     in.move_read_ptr(size);                    //be careful of size
 }

@@ -19,7 +19,6 @@ public:
 
     bool insert_nonce(const std::string & nonce)
     {
-        //return directly
         if (nonce.empty())
         {
             return false;
@@ -32,7 +31,6 @@ public:
 
     bool check_dup(const std::string & nonce)
     {
-        //return directly
         if (nonce.empty())
         {
             return false;

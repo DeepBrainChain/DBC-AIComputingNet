@@ -46,7 +46,7 @@ void SessionIdDB::load(std::map<std::string, std::shared_ptr<dbc::rent_sessionid
         std::shared_ptr<dbc::rent_sessionid> sessionid = std::make_shared<dbc::rent_sessionid>();
         std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
         buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-        dbc::network::binary_protocol proto(buf.get());
+        network::binary_protocol proto(buf.get());
         sessionid->read(&proto);
 
         session_ids.insert({ sessionid->rent_wallet, sessionid });
@@ -79,7 +79,7 @@ std::shared_ptr<dbc::rent_sessionid> SessionIdDB::read(const std::string& wallet
         std::shared_ptr<dbc::rent_sessionid> sessionid = std::make_shared<dbc::rent_sessionid>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(val.c_str(), val.size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         sessionid->read(&proto);
         return sessionid;
     }
@@ -91,7 +91,7 @@ std::shared_ptr<dbc::rent_sessionid> SessionIdDB::read(const std::string& wallet
 bool SessionIdDB::write(const std::shared_ptr<dbc::rent_sessionid>& session_id)
 {
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     session_id->write(&proto);
 
     leveldb::WriteOptions write_options;

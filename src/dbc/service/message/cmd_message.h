@@ -3,7 +3,7 @@
 
 #include "util/utils.h"
 #include "matrix_types.h"
-#include "network/protocol/service_message.h"
+#include "network/protocol/net_message.h"
 #include "server/server.h"
 #include "service/peer_request_service/peer_candidate.h"
 
@@ -41,12 +41,12 @@ public:
     }
 };
 
-class cmd_get_peer_nodes_req : public dbc::network::msg_base {
+class cmd_get_peer_nodes_req : public network::msg_base {
 public:
     get_peers_flag flag;
 };
 
-class cmd_get_peer_nodes_rsp : public dbc::network::msg_base {
+class cmd_get_peer_nodes_rsp : public network::msg_base {
 public:
     int32_t result;
     std::string result_info;

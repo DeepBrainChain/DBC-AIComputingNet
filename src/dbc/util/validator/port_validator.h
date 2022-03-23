@@ -3,6 +3,7 @@
 
 #include "conf_validator.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>  
+
 using namespace boost::xpressive;
 
 class port_validator : public conf_validator

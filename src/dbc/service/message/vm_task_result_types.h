@@ -18,7 +18,7 @@
 // #include <functional>
 // #include <memory>
 #include "network/protocol/protocol.h"
-#include "network/protocol/service_message.h"
+#include "network/protocol/net_message.h"
 #include "util/TToString.h"
 
 

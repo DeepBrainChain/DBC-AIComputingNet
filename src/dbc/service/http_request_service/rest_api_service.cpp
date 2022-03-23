@@ -8,7 +8,6 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
-
 #include "util/system_info.h"
 #include "log/log.h"
 #include "timer/time_tick_notification.h"
@@ -24,7 +23,7 @@
 ERRCODE rest_api_service::init() {
     service_module::init();
 
-    const dbc::network::http_path_handler uri_prefixes[] = {
+    const network::http_path_handler uri_prefixes[] = {
             {"/",             true,  std::bind(&rest_api_service::rest_client_version, this, std::placeholders::_1, std::placeholders::_2)},
             {"/images",       false, std::bind(&rest_api_service::rest_images, this, std::placeholders::_1, std::placeholders::_2)},
             {"/tasks",        false, std::bind(&rest_api_service::rest_task, this, std::placeholders::_1, std::placeholders::_2)},
@@ -41,7 +40,7 @@ ERRCODE rest_api_service::init() {
         m_path_handlers.emplace_back(REST_API_URI + uri_prefixe.m_prefix, uri_prefixe.m_exact_match, uri_prefixe.m_handler);
     }
 
-    const dbc::network::response_msg_handler rsp_handlers[] = {
+    const network::response_msg_handler rsp_handlers[] = {
             {     NODE_LIST_IMAGES_RSP, std::bind(&rest_api_service::on_node_list_images_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {     NODE_DOWNLOAD_IMAGE_RSP, std::bind(&rest_api_service::on_node_download_image_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {     NODE_UPLOAD_IMAGE_RSP, std::bind(&rest_api_service::on_node_upload_image_rsp, this, std::placeholders::_1, std::placeholders::_2) },
@@ -109,7 +108,7 @@ void rest_api_service::init_invoker() {
 }
 
 
-void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_request> &hreq) {
+void rest_api_service::on_http_request_event(std::shared_ptr<network::http_request> &hreq) {
     std::string str_uri = hreq->get_uri();
     if (str_uri.substr(0, REST_API_URI.size()) != REST_API_URI) {
         LOG_ERROR << "request uri is invalid, uri:" << str_uri;
@@ -118,8 +117,8 @@ void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_
     }
 
     std::string path;
-    std::vector<dbc::network::http_path_handler>::const_iterator i = m_path_handlers.begin();
-    std::vector<dbc::network::http_path_handler>::const_iterator iend = m_path_handlers.end();
+    std::vector<network::http_path_handler>::const_iterator i = m_path_handlers.begin();
+    std::vector<network::http_path_handler>::const_iterator iend = m_path_handlers.end();
     for (; i != iend; ++i) {
         bool match = false;
         if (i->m_exact_match) {
@@ -142,13 +141,13 @@ void rest_api_service::on_http_request_event(std::shared_ptr<dbc::network::http_
     }
 }
 
-bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::message> &rsp_msg) {
+bool rest_api_service::check_rsp_header(const std::shared_ptr<network::message> &rsp_msg) {
     if (!rsp_msg) {
         LOG_ERROR << "msg is nullptr";
         return false;
     }
 
-    std::shared_ptr<dbc::network::msg_base> base = rsp_msg->content;
+    std::shared_ptr<network::msg_base> base = rsp_msg->content;
     if (!base) {
         LOG_ERROR << "msg.containt is nullptr";
         return false;
@@ -195,7 +194,7 @@ bool rest_api_service::check_rsp_header(const std::shared_ptr<dbc::network::mess
     return true;
 }
 
-void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_call_rsp_handler(const std::shared_ptr<network::message> &rsp_msg) {
     if (rsp_msg == nullptr) {
         LOG_ERROR << "rsp_msg is nullptr";
         return;
@@ -213,7 +212,7 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::m
     std::shared_ptr<service_session> session = get_session(session_id);
     if (nullptr == session) {
         LOG_DEBUG << "rsp name: " << name << ",but cannot find  session_id:" << session_id;
-        dbc::network::connection_manager::instance().send_resp_message(rsp_msg);
+        network::connection_manager::instance().send_resp_message(rsp_msg);
         return;
     }
 
@@ -224,7 +223,7 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::m
             return;
         }
 
-        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+        auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
         if (nullptr == hreq_context) {
             LOG_ERROR << "rsp name: " << name << ",session_id:" << session_id << ",but get null hreq_context";
             return;
@@ -261,8 +260,8 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<dbc::network::m
 }
 
 int32_t rest_api_service::create_request_session(uint32_t timer_id,
-                                              const std::shared_ptr<dbc::network::http_request>& hreq,
-                                              const std::shared_ptr<dbc::network::message>& req_msg,
+                                              const std::shared_ptr<network::http_request>& hreq,
+                                              const std::shared_ptr<network::message>& req_msg,
                                               const std::string& session_id, const std::string& peer_node_id) {
     std::string str_uri = hreq->get_uri();
 
@@ -271,7 +270,7 @@ int32_t rest_api_service::create_request_session(uint32_t timer_id,
         return E_DEFAULT;
     }
 
-    auto hreq_context = std::make_shared<dbc::network::http_request_context>();
+    auto hreq_context = std::make_shared<network::http_request_context>();
     hreq_context->m_hreq = hreq;
     hreq_context->m_req_msg = req_msg;
     hreq_context->peer_node_id = peer_node_id;
@@ -467,7 +466,7 @@ static bool has_peer_nodeid(const req_body& httpbody) {
 }
 
 // /
-void rest_api_service::rest_client_version(const std::shared_ptr<dbc::network::http_request>& httpReq,
+void rest_api_service::rest_client_version(const std::shared_ptr<network::http_request>& httpReq,
                                            const std::string &path) {
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType &allocator = doc.GetAllocator();
@@ -478,7 +477,7 @@ void rest_api_service::rest_client_version(const std::shared_ptr<dbc::network::h
 
 // images
 void
-rest_api_service::rest_images(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
+rest_api_service::rest_images(const std::shared_ptr<network::http_request> &httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -507,9 +506,9 @@ rest_api_service::rest_images(const std::shared_ptr<dbc::network::http_request> 
 }
 
 // list image servers
-void rest_api_service::rest_list_image_servers(const std::shared_ptr<dbc::network::http_request>& httpReq, 
+void rest_api_service::rest_list_image_servers(const std::shared_ptr<network::http_request>& httpReq, 
                                                const std::string& path) {
-	if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+	if (httpReq->get_request_method() != network::http_request::POST) {
 		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
 		return;
 	}
@@ -558,9 +557,9 @@ void rest_api_service::rest_list_image_servers(const std::shared_ptr<dbc::networ
 
 
 // list images
-void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http_request> &httpReq,
+void rest_api_service::rest_list_images(const std::shared_ptr<network::http_request> &httpReq,
                                         const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -666,14 +665,14 @@ void rest_api_service::rest_list_images(const std::shared_ptr<dbc::network::http
         }
 
         // broadcast message
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+        if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
     }
 }
 
-std::shared_ptr<dbc::network::message>
+std::shared_ptr<network::message>
 rest_api_service::create_node_list_images_req_msg(const std::string &head_session_id, const req_body &body) {
     auto req_content = std::make_shared<dbc::node_list_images_req>();
     // header
@@ -711,7 +710,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -732,22 +731,22 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_LIST_IMAGES_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_list_images_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                               const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_node_list_images_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                               const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_images_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node rsp msg (list images) is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -804,7 +803,7 @@ void rest_api_service::on_node_list_images_timer(const std::shared_ptr<core_time
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         LOG_ERROR << "list images timout";
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list images timeout");
@@ -816,9 +815,9 @@ void rest_api_service::on_node_list_images_timer(const std::shared_ptr<core_time
 
 // download image
 // compute_node <-- image_server
-void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::http_request> &httpReq,
+void rest_api_service::rest_download_image(const std::shared_ptr<network::http_request> &httpReq,
                                            const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -906,13 +905,13 @@ void rest_api_service::rest_download_image(const std::shared_ptr<dbc::network::h
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message>
+std::shared_ptr<network::message>
 rest_api_service::create_node_download_image_req_msg(const std::string &head_session_id, const req_body &body) {
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_download_image_req>();
@@ -951,7 +950,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -972,7 +971,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_DOWNLOAD_IMAGE_REQ);
     req_msg->set_content(req_content);
 
@@ -980,15 +979,15 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
 }
 
 void
-rest_api_service::on_node_download_image_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                             const std::shared_ptr<dbc::network::message> &rsp_msg) {
+rest_api_service::on_node_download_image_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                             const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_download_image_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -1045,7 +1044,7 @@ void rest_api_service::on_node_download_image_timer(const std::shared_ptr<core_t
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         LOG_ERROR << "download image timeout";
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "download image timeout");
@@ -1058,9 +1057,9 @@ void rest_api_service::on_node_download_image_timer(const std::shared_ptr<core_t
 // upload image
 //  client_node --> image_server
 // compute_node --> image_server
-void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::http_request> &httpReq,
+void rest_api_service::rest_upload_image(const std::shared_ptr<network::http_request> &httpReq,
                                          const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -1173,14 +1172,14 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<dbc::network::htt
         }
 
         // broadcast message
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+        if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
     }
 }
 
-std::shared_ptr<dbc::network::message>
+std::shared_ptr<network::message>
 rest_api_service::create_node_upload_image_req_msg(const std::string &head_session_id, const req_body &body) {
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_upload_image_req>();
@@ -1219,7 +1218,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -1240,22 +1239,22 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_UPLOAD_IMAGE_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_upload_image_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                                const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_node_upload_image_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                                const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_upload_image_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -1312,7 +1311,7 @@ void rest_api_service::on_node_upload_image_timer(const std::shared_ptr<core_tim
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         LOG_ERROR << "upload image timeout";
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "upload image timeout");
@@ -1323,7 +1322,7 @@ void rest_api_service::on_node_upload_image_timer(const std::shared_ptr<core_tim
 }
 
 // /tasks
-void rest_api_service::rest_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+void rest_api_service::rest_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -1373,8 +1372,8 @@ void rest_api_service::rest_task(const std::shared_ptr<dbc::network::http_reques
 }
 
 // list task
-void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_list_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -1463,13 +1462,13 @@ void rest_api_service::rest_list_task(const std::shared_ptr<dbc::network::http_r
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_list_task_req_msg(const std::string &head_session_id,
                                                                                        const req_body& body) {
     auto req_content = std::make_shared<dbc::node_list_task_req>();
     // header
@@ -1508,7 +1507,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -1529,22 +1528,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_task_r
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_LIST_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                             const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_list_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                             const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -1601,7 +1600,7 @@ void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer>
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list task timeout");
     }
@@ -1611,8 +1610,8 @@ void rest_api_service::on_node_list_task_timer(const std::shared_ptr<core_timer>
 }
 
 // create task
-void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_create_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -1740,13 +1739,13 @@ void rest_api_service::rest_create_task(const std::shared_ptr<dbc::network::http
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task_req_msg(const std::string &head_session_id, const req_body& body) {
+std::shared_ptr<network::message> rest_api_service::create_node_create_task_req_msg(const std::string &head_session_id, const req_body& body) {
     auto req_content = std::make_shared<dbc::node_create_task_req>();
     // header
     req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
@@ -1784,7 +1783,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -1805,22 +1804,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_task
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_CREATE_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_create_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_create_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                  const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_create_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -1877,7 +1876,7 @@ void rest_api_service::on_node_create_task_timer(const std::shared_ptr<core_time
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "create task timeout");
     }
@@ -1887,8 +1886,8 @@ void rest_api_service::on_node_create_task_timer(const std::shared_ptr<core_time
 }
 
 // start task
-void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_start_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -1980,13 +1979,13 @@ void rest_api_service::rest_start_task(const std::shared_ptr<dbc::network::http_
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_req_msg(const std::string &head_session_id, const req_body& body) {
+std::shared_ptr<network::message> rest_api_service::create_node_start_task_req_msg(const std::string &head_session_id, const req_body& body) {
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_start_task_req>();
     // header
@@ -2025,7 +2024,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -2046,22 +2045,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_start_task_
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_START_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                              const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_start_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                              const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_start_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -2118,7 +2117,7 @@ void rest_api_service::on_node_start_task_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "start task timeout");
     }
@@ -2128,8 +2127,8 @@ void rest_api_service::on_node_start_task_timer(const std::shared_ptr<core_timer
 }
 
 // stop task
-void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_stop_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -2221,13 +2220,13 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<dbc::network::http_r
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_stop_task_req_msg(const std::string &head_session_id,
                                                                                        const req_body& body) {
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_stop_task_req> req_content = std::make_shared<dbc::node_stop_task_req>();
@@ -2267,7 +2266,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -2288,22 +2287,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_stop_task_r
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_STOP_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                             const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                             const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_stop_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -2360,7 +2359,7 @@ void rest_api_service::on_node_stop_task_timer(const std::shared_ptr<core_timer>
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "stop task timeout");
     }
@@ -2370,8 +2369,8 @@ void rest_api_service::on_node_stop_task_timer(const std::shared_ptr<core_timer>
 }
 
 // restart task
-void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_restart_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -2475,13 +2474,13 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<dbc::network::htt
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_task_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_restart_task_req_msg(const std::string &head_session_id,
                     const req_body& body) {
     // 创建 node_ 请求
     auto req_content = std::make_shared<dbc::node_restart_task_req>();
@@ -2524,7 +2523,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -2545,22 +2544,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_restart_tas
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_RESTART_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                   const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_restart_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                   const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_restart_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -2617,7 +2616,7 @@ void rest_api_service::on_node_restart_task_timer(const std::shared_ptr<core_tim
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "restart task timeout");
     }
@@ -2627,8 +2626,8 @@ void rest_api_service::on_node_restart_task_timer(const std::shared_ptr<core_tim
 }
 
 // reset task
-void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_reset_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -2720,13 +2719,13 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<dbc::network::http_
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_reset_task_req_msg(const std::string &head_session_id,
                                                                                         const req_body& body) {
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_reset_task_req> req_content = std::make_shared<dbc::node_reset_task_req>();
@@ -2766,7 +2765,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -2787,22 +2786,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_reset_task_
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_RESET_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                 const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_reset_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                 const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_reset_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -2859,7 +2858,7 @@ void rest_api_service::on_node_reset_task_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "reset task timeout");
     }
@@ -2869,8 +2868,8 @@ void rest_api_service::on_node_reset_task_timer(const std::shared_ptr<core_timer
 }
 
 // delete task
-void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_delete_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -2962,13 +2961,13 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<dbc::network::http
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_delete_task_req_msg(const std::string &head_session_id,
                                                                                          const req_body& body) {
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_delete_task_req> req_content = std::make_shared<dbc::node_delete_task_req>();
@@ -3008,7 +3007,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -3029,22 +3028,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_task
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_DELETE_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_delete_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_delete_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                  const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_delete_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "rsp is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -3101,7 +3100,7 @@ void rest_api_service::on_node_delete_task_timer(const std::shared_ptr<core_time
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "delete task timeout");
     }
@@ -3111,8 +3110,8 @@ void rest_api_service::on_node_delete_task_timer(const std::shared_ptr<core_time
 }
 
 // modify task
-void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_modify_task(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -3204,13 +3203,13 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<dbc::network::http
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_modify_task_req_msg(const std::string &head_session_id,
                                                                                          const req_body& body) {
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_modify_task_req> req_content = std::make_shared<dbc::node_modify_task_req>();
@@ -3250,7 +3249,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -3271,22 +3270,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_modify_task
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_MODIFY_TASK_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_modify_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                  const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_modify_task_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -3343,7 +3342,7 @@ void rest_api_service::on_node_modify_task_timer(const std::shared_ptr<core_time
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "modify task timeout");
     }
@@ -3353,8 +3352,8 @@ void rest_api_service::on_node_modify_task_timer(const std::shared_ptr<core_time
 }
 
 // task logs
-void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_task_logs(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -3486,13 +3485,13 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<dbc::network::http_r
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_task_logs_req_msg(const std::string &head_session_id,
                                                    const req_body& body) {
     auto req_content = std::make_shared<dbc::node_task_logs_req>();
     //header
@@ -3533,7 +3532,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -3554,22 +3553,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_task_logs_r
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_TASK_LOGS_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_task_logs_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_task_logs_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -3626,7 +3625,7 @@ void rest_api_service::on_node_task_logs_timer(const std::shared_ptr<core_timer>
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "task logs timeout");
     }
@@ -3636,7 +3635,7 @@ void rest_api_service::on_node_task_logs_timer(const std::shared_ptr<core_timer>
 }
 
 // /mining_nodes
-void rest_api_service::rest_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+void rest_api_service::rest_mining_nodes(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -3691,8 +3690,8 @@ void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_servi
     data_json = ss.str();
 }
 
-void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -3784,14 +3783,14 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<dbc::network
         }
 
         // broadcast message
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+        if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_info_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_query_node_info_req_msg(const std::string &head_session_id,
                                                                                              const req_body& body) {
     auto req_content = std::make_shared<dbc::node_query_node_info_req>();
     // header
@@ -3830,7 +3829,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -3851,22 +3850,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_query_node_
         return nullptr;
     }
 
-    auto req_msg = std::make_shared<dbc::network::message>();
+    auto req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_QUERY_NODE_INFO_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                      const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_query_node_info_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                      const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_query_node_info_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -3924,7 +3923,7 @@ void rest_api_service::on_node_query_node_info_timer(const std::shared_ptr<core_
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "query node info timeout");
     }
@@ -3934,9 +3933,9 @@ void rest_api_service::on_node_query_node_info_timer(const std::shared_ptr<core_
 }
 
 // node session_id
-void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::http_request> &httpReq,
+void rest_api_service::rest_node_session_id(const std::shared_ptr<network::http_request> &httpReq,
                                             const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -4019,13 +4018,13 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<dbc::network::
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_session_id_req_msg(const std::string &head_session_id,
                                                                                         const req_body &body) {
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_session_id_req> req_content = std::make_shared<dbc::node_session_id_req>();
@@ -4062,7 +4061,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -4083,22 +4082,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_session_id_
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_SESSION_ID_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_session_id_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                              const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_node_session_id_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                              const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_session_id_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "rsp is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -4155,7 +4154,7 @@ void rest_api_service::on_node_session_id_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "get session_id timeout");
     }
@@ -4165,7 +4164,7 @@ void rest_api_service::on_node_session_id_timer(const std::shared_ptr<core_timer
 }
 
 // /peers/
-void rest_api_service::rest_peers(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+void rest_api_service::rest_peers(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -4199,8 +4198,8 @@ void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list,
     data_json = ss.str();
 }
 
-void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -4289,7 +4288,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<dbc::network::h
 }
 
 // /stat/
-void rest_api_service::rest_stat(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+void rest_api_service::rest_stat(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     /*
     rapidjson::Document document;
     rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
@@ -4306,7 +4305,7 @@ void rest_api_service::rest_stat(const std::shared_ptr<dbc::network::http_reques
 }
 
 // /config/
-void rest_api_service::rest_config(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+void rest_api_service::rest_config(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     /*
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
@@ -4371,7 +4370,7 @@ void rest_api_service::rest_config(const std::shared_ptr<dbc::network::http_requ
     */
 }
 
-void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::message> &msg) {
+void rest_api_service::on_binary_forward(const std::shared_ptr<network::message> &msg) {
     /*
     if (!msg) {
         LOG_ERROR << "recv logs_resp but msg is nullptr";
@@ -4379,7 +4378,7 @@ void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::mes
     }
 
 
-    std::shared_ptr<dbc::network::msg_forward> content = std::dynamic_pointer_cast<dbc::network::msg_forward>(
+    std::shared_ptr<network::msg_forward> content = std::dynamic_pointer_cast<network::msg_forward>(
             msg->content);
 
     if (!content) {
@@ -4395,16 +4394,16 @@ void rest_api_service::on_binary_forward(const std::shared_ptr<dbc::network::mes
         msg->content->header.path.push_back(ConfManager::instance().GetNodeId());
 
         LOG_INFO << "broadcast_message binary forward msg";
-        dbc::network::connection_manager::instance().broadcast_message(msg);
+        network::connection_manager::instance().broadcast_message(msg);
     } else {
-        dbc::network::connection_manager::instance().send_resp_message(msg);
+        network::connection_manager::instance().send_resp_message(msg);
     }
 
     return ERR_SUCCESS;
     */
 }
 
-void rest_api_service::rest_snapshot(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
+void rest_api_service::rest_snapshot(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -4423,8 +4422,8 @@ void rest_api_service::rest_snapshot(const std::shared_ptr<dbc::network::http_re
     httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid uri, please use /snapshot/<task_id>/<snapshot_name> create ...");
 }
 
-void rest_api_service::rest_list_snapshot(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_list_snapshot(const std::shared_ptr<network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -4515,13 +4514,13 @@ void rest_api_service::rest_list_snapshot(const std::shared_ptr<dbc::network::ht
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_snapshot_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_list_snapshot_req_msg(const std::string &head_session_id,
                                                                                        const req_body& body) {
     auto req_content = std::make_shared<dbc::node_list_snapshot_req>();
     // header
@@ -4561,7 +4560,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_snapsh
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -4582,22 +4581,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_snapsh
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_LIST_SNAPSHOT_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_list_snapshot_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                             const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_list_snapshot_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                             const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_snapshot_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -4654,7 +4653,7 @@ void rest_api_service::on_node_list_snapshot_timer(const std::shared_ptr<core_ti
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list snapshot timeout");
     }
@@ -4664,8 +4663,8 @@ void rest_api_service::on_node_list_snapshot_timer(const std::shared_ptr<core_ti
 }
 
 // create snapshot
-void rest_api_service::rest_create_snapshot(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_create_snapshot(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -4757,13 +4756,13 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<dbc::network::
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_snapshot_req_msg(const std::string &head_session_id, const req_body& body) {
+std::shared_ptr<network::message> rest_api_service::create_node_create_snapshot_req_msg(const std::string &head_session_id, const req_body& body) {
     auto req_content = std::make_shared<dbc::node_create_snapshot_req>();
     // header
     req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
@@ -4801,7 +4800,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_snap
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -4822,22 +4821,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_snap
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_CREATE_SNAPSHOT_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_create_snapshot_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_create_snapshot_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                  const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_create_snapshot_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -4894,7 +4893,7 @@ void rest_api_service::on_node_create_snapshot_timer(const std::shared_ptr<core_
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "create snapshot timeout");
     }
@@ -4904,8 +4903,8 @@ void rest_api_service::on_node_create_snapshot_timer(const std::shared_ptr<core_
 }
 
 // delete snapshot
-void rest_api_service::rest_delete_snapshot(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_delete_snapshot(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -5004,13 +5003,13 @@ void rest_api_service::rest_delete_snapshot(const std::shared_ptr<dbc::network::
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_snapshot_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_delete_snapshot_req_msg(const std::string &head_session_id,
                                                                                          const req_body& body) {
     // 创建 node_ 请求
     std::shared_ptr<dbc::node_delete_snapshot_req> req_content = std::make_shared<dbc::node_delete_snapshot_req>();
@@ -5051,7 +5050,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_snap
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -5072,22 +5071,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_snap
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_DELETE_SNAPSHOT_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_delete_snapshot_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_delete_snapshot_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                  const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_delete_snapshot_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "rsp is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -5144,7 +5143,7 @@ void rest_api_service::on_node_delete_snapshot_timer(const std::shared_ptr<core_
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "delete snapshot timeout");
     }
@@ -5154,7 +5153,7 @@ void rest_api_service::on_node_delete_snapshot_timer(const std::shared_ptr<core_
 }
 
 // monitor
-void rest_api_service::rest_monitor(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
+void rest_api_service::rest_monitor(const network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -5177,8 +5176,8 @@ void rest_api_service::rest_monitor(const dbc::network::HTTP_REQUEST_PTR &httpRe
     httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid requests uri");
 }
 
-void rest_api_service::rest_list_monitor_server(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_list_monitor_server(const std::shared_ptr<network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -5264,13 +5263,13 @@ void rest_api_service::rest_list_monitor_server(const std::shared_ptr<dbc::netwo
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_monitor_server_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_list_monitor_server_req_msg(const std::string &head_session_id,
                                                                                        const req_body& body) {
     auto req_content = std::make_shared<dbc::node_list_monitor_server_req>();
     // header
@@ -5308,7 +5307,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_monito
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -5329,22 +5328,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_monito
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_LIST_MONITOR_SERVER_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_list_monitor_server_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                             const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_list_monitor_server_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                             const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_monitor_server_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -5401,7 +5400,7 @@ void rest_api_service::on_node_list_monitor_server_timer(const std::shared_ptr<c
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list monitor server timeout");
     }
@@ -5411,8 +5410,8 @@ void rest_api_service::on_node_list_monitor_server_timer(const std::shared_ptr<c
 }
 
 // set monitor server
-void rest_api_service::rest_set_monitor_server(const std::shared_ptr<dbc::network::http_request>& httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_set_monitor_server(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -5497,13 +5496,13 @@ void rest_api_service::rest_set_monitor_server(const std::shared_ptr<dbc::networ
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_set_monitor_server_req_msg(const std::string &head_session_id, const req_body& body) {
+std::shared_ptr<network::message> rest_api_service::create_node_set_monitor_server_req_msg(const std::string &head_session_id, const req_body& body) {
     auto req_content = std::make_shared<dbc::node_set_monitor_server_req>();
     // header
     req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
@@ -5540,7 +5539,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_set_monitor
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -5561,22 +5560,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_set_monitor
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_SET_MONITOR_SERVER_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_set_monitor_server_rsp(const std::shared_ptr<dbc::network::http_request_context>& hreq_context,
-                                                  const std::shared_ptr<dbc::network::message>& rsp_msg) {
+void rest_api_service::on_node_set_monitor_server_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+                                                  const std::shared_ptr<network::message>& rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_set_monitor_server_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -5633,7 +5632,7 @@ void rest_api_service::on_node_set_monitor_server_timer(const std::shared_ptr<co
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "set monitor server timeout");
     }
@@ -5643,7 +5642,7 @@ void rest_api_service::on_node_set_monitor_server_timer(const std::shared_ptr<co
 }
 
 // local area netwrok
-void rest_api_service::rest_lan(const dbc::network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
+void rest_api_service::rest_lan(const network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -5718,8 +5717,8 @@ void vxlan_network_list(const std::map<std::string, std::shared_ptr<dbc::network
 }
 
 // list local area network
-void rest_api_service::rest_list_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_list_lan(const std::shared_ptr<network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
     }
@@ -5808,14 +5807,14 @@ void rest_api_service::rest_list_lan(const std::shared_ptr<dbc::network::http_re
         }
 
         // broadcast message
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+        if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_lan_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_list_lan_req_msg(const std::string &head_session_id,
                                                                             const req_body &body) {
     auto req_content = std::make_shared<dbc::node_list_lan_req>();
     // header
@@ -5854,7 +5853,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_lan_re
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -5875,22 +5874,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_list_lan_re
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_LIST_LAN_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_list_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_node_list_lan_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_list_lan_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -5947,7 +5946,7 @@ void rest_api_service::on_node_list_lan_timer(const std::shared_ptr<core_timer> 
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "list local area network timeout");
     }
@@ -5957,8 +5956,8 @@ void rest_api_service::on_node_list_lan_timer(const std::shared_ptr<core_timer> 
 }
 
 // create local area network
-void rest_api_service::rest_create_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_create_lan(const std::shared_ptr<network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -6063,13 +6062,13 @@ void rest_api_service::rest_create_lan(const std::shared_ptr<dbc::network::http_
     }
 
     // broadcast message
-    if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+    if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
         return;
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_lan_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_create_lan_req_msg(const std::string &head_session_id,
                                                                             const req_body &body) {
     auto req_content = std::make_shared<dbc::node_create_lan_req>();
     // header
@@ -6107,7 +6106,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_lan_
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -6128,22 +6127,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_create_lan_
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_CREATE_LAN_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_create_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                    const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_node_create_lan_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                    const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_create_lan_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -6221,7 +6220,7 @@ void rest_api_service::on_node_create_lan_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "create local area network timeout");
     }
@@ -6231,8 +6230,8 @@ void rest_api_service::on_node_create_lan_timer(const std::shared_ptr<core_timer
 }
 
 // delete local area network
-void rest_api_service::rest_delete_lan(const std::shared_ptr<dbc::network::http_request> &httpReq, const std::string &path) {
-    if (httpReq->get_request_method() != dbc::network::http_request::POST) {
+void rest_api_service::rest_delete_lan(const std::shared_ptr<network::http_request> &httpReq, const std::string &path) {
+    if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
         return;
@@ -6315,14 +6314,14 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<dbc::network::http_
         }
 
         // broadcast message
-        if (dbc::network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+        if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
             return;
         }
     }
 }
 
-std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_lan_req_msg(const std::string &head_session_id,
+std::shared_ptr<network::message> rest_api_service::create_node_delete_lan_req_msg(const std::string &head_session_id,
                                                                             const req_body &body) {
     auto req_content = std::make_shared<dbc::node_delete_lan_req>();
     // header
@@ -6361,7 +6360,7 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_lan_
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
     dbc::node_service_info service_info;
@@ -6382,22 +6381,22 @@ std::shared_ptr<dbc::network::message> rest_api_service::create_node_delete_lan_
         return nullptr;
     }
 
-    std::shared_ptr<dbc::network::message> req_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
     req_msg->set_name(NODE_DELETE_LAN_REQ);
     req_msg->set_content(req_content);
 
     return req_msg;
 }
 
-void rest_api_service::on_node_delete_lan_rsp(const std::shared_ptr<dbc::network::http_request_context> &hreq_context,
-                                    const std::shared_ptr<dbc::network::message> &rsp_msg) {
+void rest_api_service::on_node_delete_lan_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                    const std::shared_ptr<network::message> &rsp_msg) {
     auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_delete_lan_rsp>(rsp_msg->content);
     if (!node_rsp_msg) {
         LOG_ERROR << "node_rsp_msg is nullptr";
         return;
     }
 
-    const std::shared_ptr<dbc::network::http_request> &httpReq = hreq_context->m_hreq;
+    const std::shared_ptr<network::http_request> &httpReq = hreq_context->m_hreq;
 
     // decrypt
     std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
@@ -6454,7 +6453,7 @@ void rest_api_service::on_node_delete_lan_timer(const std::shared_ptr<core_timer
         return;
     }
 
-    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<dbc::network::http_request_context>>();
+    auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "delete local area network timeout");
     }

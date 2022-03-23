@@ -4,6 +4,7 @@
 #include "../server/server.h"
 #include "../timer/time_tick_notification.h"
 #include <boost/format.hpp>
+#include "network/topic_manager.h"
 
 service_module::~service_module() {
 	this->exit();
@@ -15,7 +16,7 @@ ERRCODE service_module::init()
 
     init_invoker();
 
-	topic_manager::instance().subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<dbc::network::message>& msg) {
+	topic_manager::instance().subscribe(TIMER_TICK_NOTIFICATION, [this](std::shared_ptr<network::message>& msg) {
 		send(msg);
 	});
 
@@ -27,7 +28,7 @@ ERRCODE service_module::init()
 	return ERR_SUCCESS;
 }
 
-void service_module::send(const std::shared_ptr<dbc::network::message>& msg)
+void service_module::send(const std::shared_ptr<network::message>& msg)
 {
 	std::unique_lock<std::mutex> lock(m_msg_queue_mutex);
 	if (m_msg_queue.size() < MAX_MSG_QUEUE_SIZE)
@@ -64,7 +65,7 @@ void service_module::exit()
 
 void service_module::thread_func()
 {
-	std::queue<std::shared_ptr<dbc::network::message>> tmp_msg_queue;
+	std::queue<std::shared_ptr<network::message>> tmp_msg_queue;
 
     while (m_running)
     {
@@ -76,7 +77,7 @@ void service_module::thread_func()
             m_msg_queue.swap(tmp_msg_queue);
         }
 
-        std::shared_ptr<dbc::network::message> msg;
+        std::shared_ptr<network::message> msg;
         while (!tmp_msg_queue.empty())
         {
             msg = tmp_msg_queue.front();
@@ -86,12 +87,13 @@ void service_module::thread_func()
     }
 }
 
-void service_module::on_msg_handle(std::shared_ptr<dbc::network::message> &msg)
+void service_module::on_msg_handle(std::shared_ptr<network::message> &msg)
 {
     std::string msg_name = msg->get_name();
     if (msg_name == TIMER_TICK_NOTIFICATION)
     {
-        std::shared_ptr<time_tick_notification> content = std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
+        std::shared_ptr<time_tick_notification> content = 
+			std::dynamic_pointer_cast<time_tick_notification>(msg->get_content());
         this->on_timer_tick(content->time_tick);
     }
     else
@@ -184,10 +186,10 @@ void service_module::remove_all_timer() {
 }
 
 void service_module::reg_msg_handle(const std::string& msgname, 
-	const std::function<void(const std::shared_ptr<dbc::network::message>&)>& handle /* = nullptr */) {
+	const std::function<void(const std::shared_ptr<network::message>&)>& handle /* = nullptr */) {
 	if (handle != nullptr) {
 		m_msg_invokers[msgname] = handle;
-		topic_manager::instance().subscribe(msgname, [this](std::shared_ptr<dbc::network::message>& msg) {
+		topic_manager::instance().subscribe(msgname, [this](std::shared_ptr<network::message>& msg) {
 			send(msg);
 		});
 	}

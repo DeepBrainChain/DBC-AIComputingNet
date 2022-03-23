@@ -4,6 +4,7 @@
 #include "channel.h"
 #include "socket_channel_handler.h"
 
-typedef  std::function<std::shared_ptr<dbc::network::socket_channel_handler> (std::shared_ptr<dbc::network::channel> ch)> handler_create_functor;
+typedef  std::function<std::shared_ptr<network::socket_channel_handler> 
+	(std::shared_ptr<network::channel> ch)> handler_create_functor;
 
 #endif

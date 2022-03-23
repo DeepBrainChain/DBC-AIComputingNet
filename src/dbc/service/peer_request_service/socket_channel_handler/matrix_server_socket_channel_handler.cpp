@@ -1,6 +1,7 @@
 #include "matrix_server_socket_channel_handler.h"
 
-matrix_server_socket_channel_handler::matrix_server_socket_channel_handler(std::shared_ptr<dbc::network::channel> ch)
+matrix_server_socket_channel_handler::matrix_server_socket_channel_handler(
+    std::shared_ptr<network::channel> ch)
     : matrix_socket_channel_handler(ch)
     , m_lost_shake_hand_count(0)
     , m_lost_shake_hand_count_max(LOST_SHAKE_HAND_COUNT_MAX)
@@ -75,7 +76,7 @@ int32_t matrix_server_socket_channel_handler::stop()
     return ERR_SUCCESS;
 }
 
-int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network::message &msg)
+int32_t matrix_server_socket_channel_handler::on_after_msg_received(network::message &msg)
 {
     if (nullptr == msg.content)
     {
@@ -129,7 +130,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(dbc::network
     return ERR_SUCCESS;
 }
 
-int32_t matrix_server_socket_channel_handler::on_after_msg_sent(dbc::network::message &msg)
+int32_t matrix_server_socket_channel_handler::on_after_msg_sent(network::message &msg)
 {
     if (VER_RESP == msg.get_name())
     {
@@ -151,7 +152,7 @@ int32_t matrix_server_socket_channel_handler::on_before_msg_receive()
     return ERR_SUCCESS;
 }
 
-std::shared_ptr<dbc::network::socket_channel_handler> matrix_server_socket_channel_handler::create(std::shared_ptr<dbc::network::channel> ch)
+std::shared_ptr<network::socket_channel_handler> matrix_server_socket_channel_handler::create(std::shared_ptr<network::channel> ch)
 {
     std::shared_ptr<socket_channel_handler> handler = std::make_shared<matrix_server_socket_channel_handler>(ch);
     return handler->shared_from_this();
@@ -160,7 +161,7 @@ std::shared_ptr<dbc::network::socket_channel_handler> matrix_server_socket_chann
 void matrix_server_socket_channel_handler::send_shake_hand_resp()
 {
     //shake_hand_req
-    std::shared_ptr<dbc::network::message> resp_msg = std::make_shared<dbc::network::message>();
+    std::shared_ptr<network::message> resp_msg = std::make_shared<network::message>();
     std::shared_ptr<dbc::shake_hand_resp> req_content = std::make_shared<dbc::shake_hand_resp>();
 
     //header

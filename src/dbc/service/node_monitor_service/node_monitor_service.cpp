@@ -162,7 +162,7 @@ int32_t node_monitor_service::load_wallet_monitor_from_db() {
 
             std::shared_ptr<byte_buf> wallet_monitors_buf = std::make_shared<byte_buf>();
             wallet_monitors_buf->write_to_byte_buf(it->value().data(), (uint32_t) it->value().size());
-            dbc::network::binary_protocol proto(wallet_monitors_buf.get());
+            network::binary_protocol proto(wallet_monitors_buf.get());
             db_wallet_monitor->read(&proto);             //may exception
 
             if (db_wallet_monitor->wallet.empty()) {

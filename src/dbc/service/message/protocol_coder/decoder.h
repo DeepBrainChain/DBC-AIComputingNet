@@ -1,8 +1,8 @@
 #ifndef DBC_DECODER_H
 #define DBC_DECODER_H
 
-#include "network/protocol/service_message.h"
-#include "network/channel_handler_context.h"
+#include "network/protocol/net_message.h"
+#include "network/channel/channel_handler_context.h"
 
 enum decode_status
 {
@@ -15,7 +15,8 @@ enum decode_status
 class decoder
 {
 public:
-    virtual decode_status decode(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::message> &message) = 0;
+    virtual decode_status decode(network::channel_handler_context &ctx, 
+        std::shared_ptr<network::message> &message) = 0;
 };
 
 #endif

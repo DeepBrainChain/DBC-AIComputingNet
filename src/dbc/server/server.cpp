@@ -8,7 +8,6 @@
 #include "util/crypto/key.h"
 #include "network/connection_manager.h"
 #include "config/env_manager.h"
-#include "service_module/topic_manager.h"
 #include <boost/exception/all.hpp>
 #include "service/http_request_service/http_server_service.h"
 #include "service/http_request_service/rest_api_service.h"
@@ -118,7 +117,7 @@ ERRCODE Server::Init(int argc, char *argv[]) {
 
     // network
     LOG_INFO << "begin to init connection manager";
-    err = dbc::network::connection_manager::instance().init();
+    err = network::connection_manager::instance().init();
     if (ERR_SUCCESS != err) {
         LOG_ERROR << "init connection_manager failed";
         return err;
@@ -288,7 +287,7 @@ void Server::Exit() {
 	if (m_timer_matrix_manager) {
 		m_timer_matrix_manager->exit();
 	}
-	dbc::network::connection_manager::instance().exit();
+	network::connection_manager::instance().exit();
 	p2p_net_service::instance().exit();
 	http_server_service::instance().exit();
 	node_request_service::instance().exit();

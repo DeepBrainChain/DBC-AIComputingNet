@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 #include "util/memory/byte_buf.h"
-#include "network/protocol/service_message.h"
+#include "network/protocol/net_message.h"
 #include "decoder.h"
 #include "net_message.h"
 #include "log/log.h"
@@ -72,7 +72,8 @@ public:
     //    return DECODERR_SUCCESS;
     //}
 
-    virtual decode_status decode(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::message> &message)
+    virtual decode_status decode(network::channel_handler_context &ctx, 
+        std::shared_ptr<network::message> &message)
     {
         net_message &net_msg = m_recv_messages.front();
         LOG_DEBUG << "decode buf: " << net_msg.get_message_stream().to_string();
@@ -125,7 +126,8 @@ public:
     virtual decode_status recv_message(byte_buf &in) = 0;
 protected:
 
-    virtual decode_status decode_frame(dbc::network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<dbc::network::message> &message) = 0;
+    virtual decode_status decode_frame(network::channel_handler_context &ctx, byte_buf &in, 
+        std::shared_ptr<network::message> &message) = 0;
 
     uint64_t get_unadjusted_frame_length(byte_buf &in, uint32_t offset, uint32_t size)
     {
@@ -151,7 +153,7 @@ protected:
                 int16_t all;
             } theBytes;
             memcpy(theBytes.b, in.get_read_ptr() + offset, 2);
-            frame_len = (uint16_t) dbc::network::byte_order::ntoh16(theBytes.all);
+            frame_len = (uint16_t) network::byte_order::ntoh16(theBytes.all);
 
             return frame_len;
         }
@@ -165,7 +167,7 @@ protected:
                 int32_t all;
             } theBytes;
             memcpy(theBytes.b, in.get_read_ptr() + offset, 4);
-            frame_len = (uint32_t) dbc::network::byte_order::ntoh32(theBytes.all);
+            frame_len = (uint32_t) network::byte_order::ntoh32(theBytes.all);
 
             return frame_len;
         }
@@ -179,7 +181,7 @@ protected:
                 int64_t all;
             } theBytes;
             memcpy(theBytes.b, in.get_read_ptr() + offset, 8);
-            frame_len = (uint64_t) dbc::network::byte_order::ntoh64(theBytes.all);
+            frame_len = (uint64_t) network::byte_order::ntoh64(theBytes.all);
 
             return frame_len;
         }

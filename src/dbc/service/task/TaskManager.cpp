@@ -832,8 +832,12 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         }
 
         if (!allocate_mem(mem_size)) {
-            LOG_ERROR << "allocate mem failed";
-            return FResult(ERR_ERROR, "allocate mem failed");
+            run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+            if (!allocate_mem(mem_size)) {
+                LOG_ERROR << "allocate mem failed";
+                return FResult(ERR_ERROR, "allocate mem failed");
+            }
         }
 
         if (!allocate_disk(disk_size)) {
@@ -1835,7 +1839,13 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
                 taskResourcePtr->mem_size = ksize;
             }
             else {
-                return FResult(ERR_ERROR, "allocate memory failed");
+                run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+                if (allocate_mem(ksize)) {
+                    taskResourcePtr->mem_size = ksize;
+                } else {
+                    return FResult(ERR_ERROR, "allocate memory failed");
+                }
             }
         }
     }

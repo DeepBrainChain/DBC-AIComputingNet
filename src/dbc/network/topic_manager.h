@@ -2,7 +2,7 @@
 #define DBC_TOPIC_MANAGER_H
 
 #include "util/utils.h"
-#include "network/protocol/service_message.h"
+#include "protocol/net_message.h"
 #include "log/log.h"
 
 class topic_manager : public Singleton<topic_manager>
@@ -53,7 +53,7 @@ public:
     template<typename function_type>
     void publish(const std::string &topic)
     {
-//                using std_function_type = std::function<function_type()>;
+        // using std_function_type = std::function<function_type()>;
         std::string msg_type = topic + typeid(function_type).name();
 
         read_lock_guard<rw_lock> lock_guard(m_lock);

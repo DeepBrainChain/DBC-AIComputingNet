@@ -1,8 +1,8 @@
 #pragma once
 
 #include "util/utils.h"
-#include "network/endpoint_address.h"
-#include "network/socket_id.h"
+#include "network/utils/endpoint_address.h"
+#include "network/utils/socket_id.h"
 #include "../message/matrix_types.h"
 
 enum peer_node_type
@@ -36,7 +36,7 @@ public:
     peer_node_type m_node_type = NORMAL_NODE;
 
     std::string m_id;
-    dbc::network::socket_id m_sid;
+    network::socket_id m_sid;
 
     int32_t m_core_version = 0;
     int32_t m_protocol_version = 0;
@@ -46,8 +46,8 @@ public:
 
     connection_status m_connection_status = DISCONNECTED;
 
-    dbc::network::endpoint_address m_peer_addr;
-    dbc::network::endpoint_address m_local_addr;
+    network::endpoint_address m_peer_addr;
+    network::endpoint_address m_local_addr;
 };
 
 extern void assign_peer_info(dbc::peer_node_info& info, const std::shared_ptr<peer_node>& node);

@@ -46,7 +46,7 @@ void TaskDB::load_tasks(std::map<std::string, std::shared_ptr<dbc::TaskInfo>>& t
         std::shared_ptr<dbc::TaskInfo> task = std::make_shared<dbc::TaskInfo>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         task->read(&proto);
 
         tasks.insert({ task->task_id, task });
@@ -79,7 +79,7 @@ std::shared_ptr<dbc::TaskInfo> TaskDB::read_task(const std::string& task_id) {
         std::shared_ptr<dbc::TaskInfo> task = std::make_shared<dbc::TaskInfo>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(val.c_str(), val.size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         task->read(&proto);
         return task;
     }
@@ -91,7 +91,7 @@ std::shared_ptr<dbc::TaskInfo> TaskDB::read_task(const std::string& task_id) {
 bool TaskDB::write_task(const std::shared_ptr<dbc::TaskInfo>& task)
 {
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     task->write(&proto);
 
     leveldb::WriteOptions write_options;
@@ -148,7 +148,7 @@ void WalletTaskDB::load_data(std::map<std::string, std::shared_ptr<dbc::rent_tas
         std::shared_ptr<dbc::rent_task> task = std::make_shared<dbc::rent_task>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         task->read(&proto);
 
         datas.insert({task->rent_wallet, task});
@@ -181,7 +181,7 @@ std::shared_ptr<dbc::rent_task> WalletTaskDB::read_data(const std::string& walle
         std::shared_ptr<dbc::rent_task> task = std::make_shared<dbc::rent_task>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(val.c_str(), val.size());
-        dbc::network::binary_protocol proto(task_buf.get());
+        network::binary_protocol proto(task_buf.get());
         task->read(&proto);
         return task;
     }
@@ -193,7 +193,7 @@ std::shared_ptr<dbc::rent_task> WalletTaskDB::read_data(const std::string& walle
 bool WalletTaskDB::write_data(const std::shared_ptr<dbc::rent_task>& data)
 {
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
-    dbc::network::binary_protocol proto(out_buf.get());
+    network::binary_protocol proto(out_buf.get());
     data->write(&proto);
 
     leveldb::WriteOptions write_options;

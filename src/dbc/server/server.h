@@ -3,7 +3,7 @@
 
 #include "util/utils.h"
 #include "config/conf_manager.h"
-#include "service_module/topic_manager.h"
+#include "network/topic_manager.h"
 #include "network/connection_manager.h"
 #include "timer/timer_tick_manager.h"
 

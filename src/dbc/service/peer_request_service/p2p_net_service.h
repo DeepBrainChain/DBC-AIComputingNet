@@ -3,7 +3,7 @@
 #include <boost/asio.hpp>
 #include "util/utils.h"
 #include "service_module/service_module.h"
-#include "network/handler_create_functor.h"
+#include "network/channel/handler_create_functor.h"
 #include "peer_node.h"
 #include "peer_candidate.h"
 #include "util/crypto/random.h"
@@ -82,7 +82,7 @@ protected:
 
     std::shared_ptr<peer_node> get_peer_node(const std::string &id);
 
-    bool add_peer_node(const std::shared_ptr<dbc::network::message> &msg);
+    bool add_peer_node(const std::shared_ptr<network::message> &msg);
 
     void remove_peer_node(const std::string &id);
 
@@ -90,12 +90,12 @@ protected:
 
     bool exist_peer_node(std::string &nid);
 
-    uint32_t get_peer_nodes_count_by_socket_type(dbc::network::socket_type type);
+    uint32_t get_peer_nodes_count_by_socket_type(network::socket_type type);
 
 
-    void on_client_tcp_connect_notification(const std::shared_ptr<dbc::network::message> &msg);
+    void on_client_tcp_connect_notification(const std::shared_ptr<network::message> &msg);
 
-    void on_tcp_channel_error(const std::shared_ptr<dbc::network::message> &msg);
+    void on_tcp_channel_error(const std::shared_ptr<network::message> &msg);
 
 
     void on_timer_check_peer_candidates(const std::shared_ptr<core_timer>& timer);
@@ -107,14 +107,14 @@ protected:
     void on_timer_peer_candidate_dump(const std::shared_ptr<core_timer>& timer);
 
 
-    void on_ver_req(const std::shared_ptr<dbc::network::message> &msg);
+    void on_ver_req(const std::shared_ptr<network::message> &msg);
 
-    void on_ver_resp(const std::shared_ptr<dbc::network::message> &msg);
+    void on_ver_resp(const std::shared_ptr<network::message> &msg);
 
 
-    void on_get_peer_nodes_req(const std::shared_ptr<dbc::network::message> &msg);
+    void on_get_peer_nodes_req(const std::shared_ptr<network::message> &msg);
 
-    void on_get_peer_nodes_resp(const std::shared_ptr<dbc::network::message> &msg);
+    void on_get_peer_nodes_resp(const std::shared_ptr<network::message> &msg);
 
     int32_t send_get_peer_nodes();
 
@@ -132,7 +132,7 @@ protected:
 
     void add_ip_seeds();
 
-    void advertise_local(tcp::endpoint tcp_ep, dbc::network::socket_id sid);
+    void advertise_local(tcp::endpoint tcp_ep, network::socket_id sid);
 
 protected:
     uint256 m_rand_seed;

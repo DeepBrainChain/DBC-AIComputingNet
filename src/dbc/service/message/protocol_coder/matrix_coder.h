@@ -38,22 +38,22 @@ public:
 };
 
 class matrix_coder : public message_to_byte_encoder, public length_field_frame_decoder {
-    using decode_invoker_type = typename std::function<void(std::shared_ptr<dbc::network::message> &,
-            dbc::network::base_header &, std::shared_ptr<dbc::network::protocol> &)>;
-    using encode_invoker_type = typename std::function<void(dbc::network::channel_handler_context &,
-                                                            std::shared_ptr<dbc::network::protocol> &,
-                                                                    dbc::network::message &,
+    using decode_invoker_type = typename std::function<void(std::shared_ptr<network::message> &,
+            network::base_header &, std::shared_ptr<network::protocol> &)>;
+    using encode_invoker_type = typename std::function<void(network::channel_handler_context &,
+                                                            std::shared_ptr<network::protocol> &,
+                                                            network::message &,
                                                             byte_buf &)>;
 public:
     matrix_coder();
 
     virtual ~matrix_coder() = default;
 
-    encode_status encode(dbc::network::channel_handler_context &ctx, dbc::network::message &msg, byte_buf &out) override;
+    encode_status encode(network::channel_handler_context &ctx, network::message &msg, byte_buf &out) override;
 
     decode_status recv_message(byte_buf &in) override;
 
-    decode_status decode_frame(dbc::network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<dbc::network::message> &msg) override;
+    decode_status decode_frame(network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<network::message> &msg) override;
 
 protected:
     void init_decode_proto();
@@ -62,35 +62,38 @@ protected:
 
     void init_encode_invoker();
 
-    std::shared_ptr<dbc::network::protocol> get_protocol(int32_t type);
+    std::shared_ptr<network::protocol> get_protocol(int32_t type);
 
     decode_status
-    decode_service_frame(dbc::network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<dbc::network::message> &msg,
-                         std::shared_ptr<dbc::network::protocol> proto);
+    decode_service_frame(network::channel_handler_context &ctx, byte_buf &in, 
+        std::shared_ptr<network::message> &msg, std::shared_ptr<network::protocol> proto);
 
-    decode_status decode_fast_forward(dbc::network::channel_handler_context &ctx, byte_buf &in, std::shared_ptr<dbc::network::message> &msg,
-                                      dbc::network::base_header &header, std::shared_ptr<dbc::network::protocol> proto);
-
-    template<typename msg_type>
-    void
-    decode_invoke(std::shared_ptr<dbc::network::message> &msg, dbc::network::base_header &msg_header, std::shared_ptr<dbc::network::protocol> &proto);
+    decode_status decode_fast_forward(network::channel_handler_context &ctx, byte_buf &in, 
+        std::shared_ptr<network::message> &msg, network::base_header &header, 
+        std::shared_ptr<network::protocol> proto);
 
     template<typename msg_type>
     void
-    encode_invoke(dbc::network::channel_handler_context &ctx, std::shared_ptr<dbc::network::protocol> &proto, dbc::network::message &msg, byte_buf &out);
+    decode_invoke(std::shared_ptr<network::message> &msg, network::base_header &msg_header, 
+        std::shared_ptr<network::protocol> &proto);
 
-    bool get_compress_enabled(dbc::network::channel_handler_context &ctx);
+    template<typename msg_type>
+    void
+    encode_invoke(network::channel_handler_context &ctx, std::shared_ptr<network::protocol> &proto, 
+        network::message &msg, byte_buf &out);
 
-    int get_thrift_proto(dbc::network::channel_handler_context &ctx);
+    bool get_compress_enabled(network::channel_handler_context &ctx);
 
-    std::string get_local_node_id(dbc::network::channel_handler_context &ctx);
+    int get_thrift_proto(network::channel_handler_context &ctx);
+
+    std::string get_local_node_id(network::channel_handler_context &ctx);
 
 protected:
     std::unordered_map<std::string, decode_invoker_type> m_binary_decode_invokers;
 
     std::unordered_map<std::string, encode_invoker_type> m_binary_encode_invokers;
 
-    std::unordered_map<int32_t, std::shared_ptr<dbc::network::protocol>> m_decode_protos;
+    std::unordered_map<int32_t, std::shared_ptr<network::protocol>> m_decode_protos;
 };
 
 #endif

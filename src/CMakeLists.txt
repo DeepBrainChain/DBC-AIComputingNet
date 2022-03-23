@@ -43,9 +43,12 @@ set(service_src_dir
         dbc/util/crypto
         dbc/util/crypto/ctaes
         dbc/config
-        dbc/network
+        dbc/network/utils
         dbc/network/compress
         dbc/network/protocol
+        dbc/network/channel
+        dbc/network/http
+        dbc/network
         dbc/log
         dbc/timer
         dbc/service_module
