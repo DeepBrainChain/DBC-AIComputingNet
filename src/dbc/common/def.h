@@ -50,14 +50,14 @@ enum get_peers_flag
 
 enum ETaskOp {
     T_OP_None,
-    T_OP_Create,    //´´½¨
-    T_OP_Start,     //Æô¶¯
+    T_OP_Create,    //ï¿½ï¿½ï¿½ï¿½
+    T_OP_Start,     //ï¿½ï¿½ï¿½ï¿½
     T_OP_Stop,      //Í£Ö¹
-    T_OP_ReStart,   //ÖØÆô(reboot domain)
-    T_OP_ForceReboot,  //Ç¿ÖÆÖØÆô(destroy domain && start domain)
+    T_OP_ReStart,   //ï¿½ï¿½ï¿½ï¿½(reboot domain)
+    T_OP_ForceReboot,  //Ç¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(destroy domain && start domain)
     T_OP_Reset,     //reset
-    T_OP_Delete,    //É¾³ý
-    T_OP_CreateSnapshot  //´´½¨¿ìÕÕ
+    T_OP_Delete,    //É¾ï¿½ï¿½
+    T_OP_CreateSnapshot  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 };
 
 struct ETaskEvent {
@@ -67,18 +67,18 @@ struct ETaskEvent {
 };
 
 enum ETaskStatus {
-    TS_ShutOff,     //¹Ø±Õ×´Ì¬
-    TS_Creating,    //ÕýÔÚ´´½¨
-    TS_Running,     //ÕýÔÚÔËÐÐÖÐ
-    TS_Starting,    //ÕýÔÚÆô¶¯
-    TS_Stopping,    //ÕýÔÚÍ£Ö¹
-    TS_Restarting,  //ÕýÔÚÖØÆô
-    TS_Resetting,   //ÕýÔÚreset
-    TS_Deleting,    //ÕýÔÚÉ¾³ý
-    TS_CreatingSnapshot,  //ÕýÔÚ´´½¨¿ìÕÕ
-    TS_PMSuspended, //ÐéÄâ»úÒÑ½øÈëË¯Ãß×´Ì¬
+    TS_ShutOff,     //ï¿½Ø±ï¿½×´Ì¬
+    TS_Creating,    //ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½
+    TS_Running,     //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    TS_Starting,    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    TS_Stopping,    //ï¿½ï¿½ï¿½ï¿½Í£Ö¹
+    TS_Restarting,  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    TS_Resetting,   //ï¿½ï¿½ï¿½ï¿½reset
+    TS_Deleting,    //ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    TS_CreatingSnapshot,  //ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    TS_PMSuspended, //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ½ï¿½ï¿½ï¿½Ë¯ï¿½ï¿½×´Ì¬
 
-    TS_Error = 100,   //³ö´í
+    TS_Error = 100,   //ï¿½ï¿½ï¿½ï¿½
     TS_CreateError,
     TS_StartError,
     TS_StopError,
@@ -97,22 +97,22 @@ std::string task_status_string(int32_t status);
 std::string task_operation_string(int32_t op);
 std::string vm_status_string(virDomainState status);
 
-// ÏµÍ³ÅÌ´óÐ¡£¨GB£©
+// ÏµÍ³ï¿½Ì´ï¿½Ð¡ï¿½ï¿½GBï¿½ï¿½
 static const int32_t g_disk_system_size = 350;
-// ÄÚ´æÔ¤Áô´óÐ¡£¨GB£©
+// ï¿½Ú´ï¿½Ô¤ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½GBï¿½ï¿½
 static const int32_t g_reserved_memory = 32;
-// cpuÔ¤ÁôºËÊý£¨Ã¿¸öÎïÀícpuµÄÎïÀíºËÊý£©
+// cpuÔ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½cpuï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 static const int32_t g_reserved_physical_cores_per_cpu = 1;
-// ÐéÄâ»úµÇÂ¼ÓÃ»§Ãû
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½Ã»ï¿½ï¿½ï¿½
 static const char* g_vm_ubuntu_login_username = "dbc";
 static const char* g_vm_windows_login_username = "Administrator";
 
 
 enum MACHINE_STATUS {
     MS_NONE,
-    MS_VERIFY, //ÑéÖ¤½×¶Î
-    MS_ONLINE, //ÑéÖ¤ÍêÉÏÏß½×¶Î
-    MS_RENNTED //×âÓÃÖÐ
+    MS_VERIFY, //ï¿½ï¿½Ö¤ï¿½×¶ï¿½
+    MS_ONLINE, //ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ß½×¶ï¿½
+    MS_RENNTED //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 };
 
 enum USER_ROLE {
@@ -150,7 +150,7 @@ struct TaskCreateParams {
 
     uint64_t mem_size; // KB
 
-    std::map<int32_t, uint64_t> disks; //Êý¾ÝÅÌ(µ¥Î»£ºKB)£¬index´Ó1¿ªÊ¼
+    std::map<int32_t, uint64_t> disks; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½Î»ï¿½ï¿½KB)ï¿½ï¿½indexï¿½ï¿½1ï¿½ï¿½Ê¼
 
     std::string vm_xml;
     std::string vm_xml_url;
@@ -158,14 +158,12 @@ struct TaskCreateParams {
     int16_t vnc_port;
     std::string vnc_password;
 
-    std::string operation_system; //²Ù×÷ÏµÍ³(Èçgeneric, ubuntu 18.04, windows 10)£¬Ä¬ÈÏubuntu£¬´øÓÐwinÔòÈÏÎªÊÇwindowsÏµÍ³£¬±ØÐëÈ«Ð¡Ð´¡£
-    std::string bios_mode; //BIOSÄ£Ê½(Èçlegacy,uefi)£¬Ä¬ÈÏ´«Í³BIOS£¬±ØÐëÈ«Ð¡Ð´¡£
+    std::string operation_system; //ï¿½ï¿½ï¿½ï¿½ÏµÍ³(ï¿½ï¿½generic, ubuntu 18.04, windows 10)ï¿½ï¿½Ä¬ï¿½ï¿½ubuntuï¿½ï¿½ï¿½ï¿½ï¿½ï¿½winï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½windowsÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«Ð¡Ð´ï¿½ï¿½
+    std::string bios_mode; //BIOSÄ£Ê½(ï¿½ï¿½legacy,uefi)ï¿½ï¿½Ä¬ï¿½Ï´ï¿½Í³BIOSï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«Ð¡Ð´ï¿½ï¿½
 
-    std::vector<std::string> multicast; //×é²¥µØÖ·(Èç£º"230.0.0.1:5558")
+    std::vector<std::string> multicast; //ï¿½é²¥ï¿½ï¿½Ö·(ï¿½ç£º"230.0.0.1:5558")
 
     std::string network_name;
-    std::string bridge_name;
-    std::string vxlan_name;
     std::string vxlan_vni;
 };
 
@@ -182,15 +180,15 @@ struct ParseVmXmlParams {
 
     uint64_t mem_size; // KB
 
-    std::map<int32_t, uint64_t> disks; //Êý¾ÝÅÌ(µ¥Î»£ºKB)£¬index´Ó1¿ªÊ¼
+    std::map<int32_t, uint64_t> disks; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½Î»ï¿½ï¿½KB)ï¿½ï¿½indexï¿½ï¿½1ï¿½ï¿½Ê¼
 
     int16_t vnc_port;
     std::string vnc_password;
 
-    std::string operation_system; //²Ù×÷ÏµÍ³(Èçgeneric, ubuntu 18.04, windows 10)£¬Ä¬ÈÏubuntu£¬´øÓÐwinÔòÈÏÎªÊÇwindowsÏµÍ³£¬±ØÐëÈ«Ð¡Ð´¡£
-    std::string bios_mode; //BIOSÄ£Ê½(Èçlegacy,uefi)£¬Ä¬ÈÏ´«Í³BIOS£¬±ØÐëÈ«Ð¡Ð´¡£
+    std::string operation_system; //ï¿½ï¿½ï¿½ï¿½ÏµÍ³(ï¿½ï¿½generic, ubuntu 18.04, windows 10)ï¿½ï¿½Ä¬ï¿½ï¿½ubuntuï¿½ï¿½ï¿½ï¿½ï¿½ï¿½winï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½windowsÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«Ð¡Ð´ï¿½ï¿½
+    std::string bios_mode; //BIOSÄ£Ê½(ï¿½ï¿½legacy,uefi)ï¿½ï¿½Ä¬ï¿½Ï´ï¿½Í³BIOSï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«Ð¡Ð´ï¿½ï¿½
 
-    std::vector<std::string> multicast; //×é²¥µØÖ·(Èç£º"230.0.0.1:5558")
+    std::vector<std::string> multicast; //ï¿½é²¥ï¿½ï¿½Ö·(ï¿½ç£º"230.0.0.1:5558")
 };
 
 #endif
