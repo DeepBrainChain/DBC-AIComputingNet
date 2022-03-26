@@ -1,4 +1,4 @@
-#include "matrix_socket_channel_handler.h"
+#include "tcp_socket_channel_handler.h"
 #include "service_proto_filter.h"
 #include "network/compress/matrix_compress.h"
 #include "message/message_id.h"
@@ -134,15 +134,7 @@ int32_t matrix_socket_channel_handler::on_read(network::channel_handler_context 
     if (in.get_valid_read_len() > 0)
     {
         decode_status recv_status = m_decoder->recv_message(in);
-
-        if (recv_status != DECODERR_SUCCESS)
-        {
-            LOG_ERROR << "recv error msg." << m_sid.to_string();
-            return recv_status;
-        }
-
-        if (recv_status != DECODERR_SUCCESS )
-        {
+        if (recv_status != DECODERR_SUCCESS ) {
             return recv_status;
         }
 
@@ -177,7 +169,6 @@ int32_t matrix_socket_channel_handler::on_read(network::channel_handler_context 
                 }
                 else
                 {
-
                     if (nullptr == msg || nullptr == msg->content)
                     {
                         LOG_ERROR << "decode error, msg is null" << m_sid.to_string();
@@ -294,8 +285,6 @@ void matrix_socket_channel_handler::set_encode_context(network::channel_handler_
 int32_t matrix_socket_channel_handler::on_write(network::channel_handler_context &ctx, 
     network::message &msg, byte_buf &buf)
 {
-    LOG_DEBUG << "socket channel handler send msg: " << msg.get_name() << m_sid.to_string();
-
     set_encode_context(ctx);
 
     encode_status status = m_coder->encode(ctx, msg, buf);

@@ -74,15 +74,15 @@ void p2p_net_service::init_timer() {
         CALLBACK_1(p2p_net_service::on_timer_check_peer_candidates, this));
 
     // 1min
-    add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
-        CALLBACK_1(p2p_net_service::on_timer_dyanmic_adjust_network, this));
-
-    // 1min
     add_timer(PEER_INFO_EXCHANGE_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
         CALLBACK_1(p2p_net_service::on_timer_peer_info_exchange, this));
 
-    // 10min
-    add_timer(DUMP_PEER_CANDIDATES_TIMER, 60 * 1000, 10 * 60 * 1000, ULLONG_MAX, "",
+    // 1min
+    add_timer(DYANMIC_ADJUST_NETWORK_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
+        CALLBACK_1(p2p_net_service::on_timer_dyanmic_adjust_network, this));
+
+    // 2min
+    add_timer(DUMP_PEER_CANDIDATES_TIMER, 60 * 1000, 2 * 60 * 1000, ULLONG_MAX, "",
         CALLBACK_1(p2p_net_service::on_timer_peer_candidate_dump, this));
 }
 
@@ -474,17 +474,16 @@ void p2p_net_service::on_timer_peer_info_exchange(const std::shared_ptr<core_tim
 void p2p_net_service::on_timer_dyanmic_adjust_network(const std::shared_ptr<core_timer>& timer) {
     uint32_t client_peer_nodes_count = get_peer_nodes_count_by_socket_type(network::CLIENT_SOCKET);
     if (client_peer_nodes_count < max_connected_peer_nodes_count) {
-        uint32_t get_count = (uint32_t) (max_connected_peer_nodes_count - client_peer_nodes_count);
+        uint32_t can_connect_count = (uint32_t) (max_connected_peer_nodes_count - client_peer_nodes_count);
         std::vector<std::shared_ptr<peer_candidate>> available_candidates;
-        if (ERR_SUCCESS != get_available_peer_candidates(get_count, available_candidates)) {
+        if (ERR_SUCCESS != get_available_peer_candidates(can_connect_count, available_candidates)) {
             LOG_ERROR << "get available peer candidates error";
             return;
         }
 
         for (auto it : available_candidates) {
             if (ERR_SUCCESS != start_connect(it->tcp_ep)) {
-                LOG_ERROR << "start connect peer_candidate error, addr:"
-                          << it->tcp_ep.address().to_string() << ":" << it->tcp_ep.port();
+                LOG_ERROR << "start connect peer_candidate error, addr:" << it->tcp_ep;
                 it->net_st = ns_failed;
             } else {
                 it->net_st = ns_in_use;
@@ -989,27 +988,6 @@ void p2p_net_service::on_broadcast_peer_nodes(const std::shared_ptr<network::mes
 }
 
 
-
-void p2p_net_service::get_all_peer_nodes(std::list<std::shared_ptr<peer_node>>&nodes) {
-    for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); it++) {
-        nodes.push_back(it->second);
-    }
-}
-
-int32_t p2p_net_service::send_get_peer_nodes() {
-    std::shared_ptr<dbc::get_peer_nodes_req> req_content = std::make_shared<dbc::get_peer_nodes_req>();
-    req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
-    req_content->header.__set_msg_name(P2P_GET_PEER_NODES_REQ);
-    req_content->header.__set_nonce(util::create_nonce());
-
-    std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
-    req_msg->set_name(P2P_GET_PEER_NODES_REQ);
-    req_msg->set_content(req_content);
-    network::connection_manager::instance().broadcast_message(req_msg);
-
-    return ERR_SUCCESS;
-}
-
 uint32_t p2p_net_service::get_peer_nodes_count_by_socket_type(network::socket_type type) {
     uint32_t count = 0;
 
@@ -1029,43 +1007,13 @@ int32_t p2p_net_service::get_available_peer_candidates(uint32_t count,
     }
 
     available_candidates.clear();
-    uint32_t i = 0;
 
+    uint32_t i = 0; 
     for (auto it = m_peer_candidates.begin(); it != m_peer_candidates.end(); ++it) {
         if (ns_available == (*it)->net_st && i < count) {
             available_candidates.push_back(*it);
             i++;
         }
-    }
-
-    return ERR_SUCCESS;
-}
-
-int32_t p2p_net_service::save_peer_candidates() {
-    if (m_peer_candidates.empty()) {
-        return ERR_SUCCESS;
-    }
-
-    m_peers_candidates_db.clear();
-
-    std::list<std::shared_ptr<dbc::db_peer_candidate> > list_peer_candidates;
-
-    for (auto it : m_peer_candidates) {
-        std::shared_ptr<dbc::db_peer_candidate> db_candidate = std::make_shared<dbc::db_peer_candidate>();
-        db_candidate->__set_ip(it->tcp_ep.address().to_string());
-        db_candidate->__set_port(it->tcp_ep.port());
-        db_candidate->__set_net_state(it->net_st);
-        db_candidate->__set_reconn_cnt(it->reconn_cnt);
-        db_candidate->__set_last_conn_tm(it->last_conn_tm);
-        db_candidate->__set_score(it->score);
-        db_candidate->__set_node_id(it->node_id);
-        db_candidate->__set_node_type(it->node_type);
-        list_peer_candidates.push_back(db_candidate);
-    }
-
-    if (!m_peers_candidates_db.write(list_peer_candidates)) {
-        LOG_ERROR << "save db_peer_candidates failed";
-        return ERR_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -1159,3 +1107,33 @@ std::shared_ptr<peer_candidate> p2p_net_service::get_dynamic_connect_peer_candid
     return nullptr;
 }
 
+
+int32_t p2p_net_service::save_peer_candidates() {
+    if (m_peer_candidates.empty()) {
+        return ERR_SUCCESS;
+    }
+
+    m_peers_candidates_db.clear();
+
+    std::list<std::shared_ptr<dbc::db_peer_candidate> > list_peer_candidates;
+
+    for (auto it : m_peer_candidates) {
+        std::shared_ptr<dbc::db_peer_candidate> db_candidate = std::make_shared<dbc::db_peer_candidate>();
+        db_candidate->__set_ip(it->tcp_ep.address().to_string());
+        db_candidate->__set_port(it->tcp_ep.port());
+        db_candidate->__set_net_state(it->net_st);
+        db_candidate->__set_reconn_cnt(it->reconn_cnt);
+        db_candidate->__set_last_conn_tm(it->last_conn_tm);
+        db_candidate->__set_score(it->score);
+        db_candidate->__set_node_id(it->node_id);
+        db_candidate->__set_node_type(it->node_type);
+        list_peer_candidates.push_back(db_candidate);
+    }
+
+    if (!m_peers_candidates_db.write(list_peer_candidates)) {
+        LOG_ERROR << "save db_peer_candidates failed";
+        return ERR_ERROR;
+    }
+
+    return ERR_SUCCESS;
+}

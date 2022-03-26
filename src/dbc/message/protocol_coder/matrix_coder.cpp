@@ -219,8 +219,7 @@ decode_status matrix_coder::decode_fast_forward(network::channel_handler_context
     };
 
     if (find(legacy_none_forwarding_messages.begin(), legacy_none_forwarding_messages.end(),
-             header.msg_name)
-        != legacy_none_forwarding_messages.end()) {
+             header.msg_name) != legacy_none_forwarding_messages.end()) {
         // do not forward the legacy none forwarding message.
         return DECODERR_SUCCESS;
     }
@@ -231,11 +230,9 @@ decode_status matrix_coder::decode_fast_forward(network::channel_handler_context
         LOG_DEBUG << "forward " << header.msg_name;
 
         std::shared_ptr<network::msg_forward> content = std::make_shared<network::msg_forward>();
-
         content->header = header;
 
         byte_buf *buf = proto->get_buf();
-
         if (buf == nullptr) {
             return DECODE_ERROR;
         }
@@ -244,7 +241,7 @@ decode_status matrix_coder::decode_fast_forward(network::channel_handler_context
         buf->move_read_ptr(buf->get_valid_read_len());
 
         msg->set_content(content);
-//                        msg->set_name(content->header.msg_name);
+        // msg->set_name(content->header.msg_name);
         msg->set_name(BINARY_FORWARD_MSG);
     }
 
@@ -315,15 +312,13 @@ matrix_coder::decode_service_frame(network::channel_handler_context &ctx, byte_b
 
     // jimmy: fast_forward processing
     decode_status rtn = decode_fast_forward(ctx, in, msg, header, proto);
-
     if (rtn != DECODERR_SUCCESS) {
         return rtn;
     }
 
     if (msg->get_name() == std::string(BINARY_FORWARD_MSG)) {
-        return rtn;
+        return DECODERR_SUCCESS;
     }
-
 
     //find decoder
     auto it = m_binary_decode_invokers.find(header.msg_name);

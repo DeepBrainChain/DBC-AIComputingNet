@@ -73,8 +73,6 @@ protected:
 
     void remove_peer_node(const std::string& node_id);
 
-    void get_all_peer_nodes(std::list<std::shared_ptr<peer_node>>& nodes);
-
     uint32_t get_peer_nodes_count_by_socket_type(network::socket_type type);
 
 
@@ -117,22 +115,19 @@ protected:
     void on_broadcast_peer_nodes(const std::shared_ptr<network::message>& msg);
 
 
-    
     int32_t get_available_peer_candidates(uint32_t count,
                                           std::vector<std::shared_ptr<peer_candidate>> &available_candidates);
 
     uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
 
-    int32_t save_peer_candidates();
-
-    
-    int32_t send_get_peer_nodes();
-
-    uint32_t get_rand32() { return m_rand_ctx.rand32(); }
-
     std::shared_ptr<peer_node> get_dynamic_disconnect_peer_node();
 
     std::shared_ptr<peer_candidate> get_dynamic_connect_peer_candidate();
+
+    uint32_t get_rand32() { return m_rand_ctx.rand32(); }
+
+
+    int32_t save_peer_candidates();
 
 protected:
     uint256 m_rand_seed;
