@@ -74,16 +74,17 @@ namespace network
 
             return E_DEFAULT;
         }
-			
+		
+        LOG_INFO << "accept new connection from "
+            << std::dynamic_pointer_cast<tcp_socket_channel>(socket_channel)->get_remote_addr();
+
         try
         {
             socket_channel->start();
-            LOG_INFO << "accept new connection from " 
-                << std::dynamic_pointer_cast<tcp_socket_channel>(socket_channel)->get_remote_addr();
         }
         catch (const boost::exception & e)
         {
-            LOG_ERROR << "tcp_acceptor on_accept exception: " << diagnostic_information(e);
+            LOG_ERROR << "start socket channel exception: " << diagnostic_information(e);
 
             socket_channel->on_error();
             start_accept();
@@ -92,7 +93,7 @@ namespace network
 	    
         int32_t ret = connection_manager::instance().add_channel(socket_channel->id(), socket_channel->shared_from_this());
         if (ret != ERR_SUCCESS) {
-            LOG_ERROR << "tcp_acceptor add server_channel failed remote_addr="
+            LOG_ERROR << "add server_channel failed remote_addr="
                 << std::dynamic_pointer_cast<tcp_socket_channel>(socket_channel)->get_remote_addr();
             ch->close();
             ch->on_error();

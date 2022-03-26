@@ -5,7 +5,7 @@
 #include "service_module/service_module.h"
 #include "network/http/http_server.h"
 #include "timer/timer.h"
-#include "service/message/cmd_message.h"
+#include "message/cmd_message.h"
 
 static const std::string REST_API_VERSION = "v1.1";
 static const std::string REST_API_URI = "/api/v1";

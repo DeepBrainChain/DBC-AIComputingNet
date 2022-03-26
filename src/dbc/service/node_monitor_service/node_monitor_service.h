@@ -4,8 +4,10 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include "service_module/service_module.h"
-#include "service/task/TaskMonitorInfo.h"
-#include "service/task/HttpChainClient.h"
+#include "task/detail/TaskInfoManager.h"
+#include "task/detail/WalletRentTaskManager.h"
+#include "task/detail/TaskMonitorInfo.h"
+#include "task/HttpChainClient.h"
 #include "hostMonitorInfo.h"
 
 #define MONITOR_DATA_SENDER_TASK_TIMER                                   "monitor_data_sender_task"

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PEER_CANDIDATE_H
+#define PEER_CANDIDATE_H
 
 #include "util/utils.h"
 #include "peer_node.h"
@@ -6,12 +7,10 @@
 #include "rapidjson/prettywriter.h"
 #include "util/crypto/utilstrencodings.h"
 
-namespace bf = boost::filesystem;
-namespace rj = rapidjson;
+namespace bfs = boost::filesystem;
 
 #define DEFAULT_CONNECT_PEER_NODE      102400       //default connect peer nodes
 #define DAT_PEERS_FILE_NAME            "peers.dat"
-#define MAX_PEER_CANDIDATES_CNT        1024
 
 enum net_state
 {
@@ -20,13 +19,6 @@ enum net_state
     ns_failed,     //not use within a long time
     ns_zombie,
     ns_available
-};
-
-enum node_net_type
-{
-    nnt_normal_node = 0,    //nat1-4
-    nnt_public_node,        //nat0
-    nnt_super_node,
 };
 
 static std::string net_state_2_string(int8_t st)
@@ -48,45 +40,33 @@ static std::string net_state_2_string(int8_t st)
     }
 }
 
-static std::string node_type_2_string(int8_t nt)
-{
-    switch((node_net_type) nt)
-    {
-        case nnt_normal_node:
-            return "nnt_normal_node";
-        case nnt_public_node:
-            return "nnt_public_node";
-        case nnt_super_node:
-            return "nnt_super_node";
-        default:
-            return "";
-    }
-}
-
 struct peer_candidate
 {
     tcp::endpoint   tcp_ep;
+    peer_node_type  node_type = NORMAL_NODE;
+    std::string     node_id;
     net_state       net_st = ns_idle;
-    peer_node_type node_type = NORMAL_NODE;
     uint32_t        reconn_cnt = 0;
     time_t          last_conn_tm;
     uint32_t        score = 0;  //indicate level of Qos, update when disconnect
-    std::string     node_id;
-
+    
     peer_candidate() {
         last_conn_tm = time(nullptr);
     }
 
-    peer_candidate(tcp::endpoint ep, net_state ns = ns_idle, peer_node_type ntype = NORMAL_NODE, uint32_t rc_cnt = 0
-        , time_t t = time(nullptr), uint32_t sc = 0, std::string nid = "")
+    peer_candidate(tcp::endpoint ep, net_state _net_state = ns_idle, 
+        peer_node_type _peer_node_type = NORMAL_NODE, uint32_t _reconn_cnt = 0, 
+        time_t _last_conn_tm = time(nullptr), uint32_t _score = 0, std::string _node_id = "")
         : tcp_ep(ep)
-        , net_st(ns)
-        , reconn_cnt(rc_cnt)
-        , last_conn_tm(t)
-        , score(sc)
-        , node_id(nid)
-        , node_type(ntype)
+        , net_st(_net_state)
+        , reconn_cnt(_reconn_cnt)
+        , last_conn_tm(_last_conn_tm)
+        , score(_score)
+        , node_id(_node_id)
+        , node_type(_peer_node_type)
     {
 
     }
 };
+
+#endif

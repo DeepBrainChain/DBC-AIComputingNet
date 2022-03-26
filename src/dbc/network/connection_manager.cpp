@@ -40,19 +40,19 @@ namespace network
         
         ERRCODE ret = init_io_services();
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager init thread group failed";
+            LOG_ERROR << "init thread group failed";
             return ret;
         }
         
         ret = start_io_services();
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager start io_services failed";
+            LOG_ERROR << "start io_services failed";
             return ret;
         }
 
         ret = load_max_connect();
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager load_max_connect failed";
+            LOG_ERROR << "load_max_connect failed";
             return ret;
         }
 
@@ -97,13 +97,13 @@ namespace network
         
         ret = m_acceptor_group->init(DEFAULT_ACCEPTOR_THREAD_COUNT);
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager init acceptor_group failed";
+            LOG_ERROR << "init acceptor_group failed";
             return ret;
         }
          
         ret = m_worker_group->init(DEFAULT_WORKER_THREAD_COUNT);
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager init worker_group failed";
+            LOG_ERROR << "init worker_group failed";
             
             m_acceptor_group->exit();
             return ret;
@@ -111,7 +111,7 @@ namespace network
         
         m_connector_group->init(DEFAULT_CONNECTOR_THREAD_COUNT);
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager init connector_group failed";
+            LOG_ERROR << "init connector_group failed";
 
             m_acceptor_group->exit();
             m_worker_group->exit(); 
@@ -127,20 +127,20 @@ namespace network
 
         ret = m_acceptor_group->start();
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager start acceptor_group failed";
+            LOG_ERROR << "start acceptor_group failed";
             return ret;
         }
         
         ret = m_worker_group->start();
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager start woker_group failed";
+            LOG_ERROR << "start woker_group failed";
             m_acceptor_group->stop();
             return ret;
         }
         
         ret = m_connector_group->start();
         if (ERR_SUCCESS != ret) {
-            LOG_ERROR << "connection_manager start connector_group failed";
+            LOG_ERROR << "start connector_group failed";
             m_acceptor_group->stop();
             m_worker_group->stop();
             return ret;
@@ -258,7 +258,7 @@ namespace network
             std::shared_ptr<tcp_acceptor> acceptor = std::make_shared<tcp_acceptor>(ios, m_worker_group, ep, func);
             ERRCODE ret = acceptor->start();
             if (ERR_SUCCESS != ret) {
-                LOG_ERROR << "connection_manager start listen failed at port: " << ep.port();
+                LOG_ERROR << "start listen failed at port: " << ep.port();
                 return ret;
             }
 
@@ -267,17 +267,17 @@ namespace network
         }
         catch (const std::exception &e)
         {
-            LOG_ERROR << "connection_manager start listen exception: " << e.what();
+            LOG_ERROR << "start listen exception: " << e.what();
             return ERR_ERROR;
         }
         catch (const boost::exception & e)
         {
-            LOG_ERROR << "connection_manager start listen exception: " << diagnostic_information(e);
+            LOG_ERROR << "start listen exception: " << diagnostic_information(e);
             return ERR_ERROR;
         }
         catch (...)
         {
-            LOG_ERROR << "connection_manager start listen exception!";
+            LOG_ERROR << "start listen exception!";
             return ERR_ERROR;
         }
         
@@ -308,7 +308,7 @@ namespace network
             
             int32_t ret = connector->start();
             if (ERR_SUCCESS != ret) {
-                LOG_ERROR << "connection_manager start connect failed at addr: " << connect_addr;
+                LOG_ERROR << "start connect failed at addr: " << connect_addr;
                 return ret;
             }
 
@@ -317,17 +317,17 @@ namespace network
         }
         catch (const std::exception &e)
         {
-            LOG_ERROR << "connection_manager start connect exception: " << e.what() << ", conn_addr=" << connect_addr;
-            return ERR_SUCCESS;
+            LOG_ERROR << "start connect exception: " << e.what() << ", conn_addr=" << connect_addr;
+            return E_DEFAULT;
         }
         catch (const boost::exception & e)
         {
-            LOG_ERROR << "connection_manager start connect exception: " << diagnostic_information(e) << ", conn_addr=" << connect_addr;
+            LOG_ERROR << "start connect exception: " << diagnostic_information(e) << ", conn_addr=" << connect_addr;
             return E_DEFAULT;
         }
         catch (...)
         {
-            LOG_ERROR << "connection_manager start connect exception" << ", conn_addr=" << connect_addr;
+            LOG_ERROR << "start connect exception" << ", conn_addr=" << connect_addr;
             return E_DEFAULT;
         }
 
@@ -380,7 +380,7 @@ namespace network
 
         auto ret = m_channels.insert(make_pair(sid, channel));
         if (!ret.second) {
-            LOG_ERROR << "connection_manager add channel error, channel already exist"
+            LOG_ERROR << "add channel error, channel already exist"
                 << ", socket_type: " << sid.get_type()
                 << ", remote_addr: " << ch->get_remote_addr();
             return ERR_ERROR;
@@ -579,7 +579,7 @@ namespace network
             return;
 
         socket_id  sid = msg->header.src_sid;
-        LOG_DEBUG << "connection manager received tcp channel error:" << sid.to_string();
+        LOG_DEBUG << "received tcp channel error:" << sid.to_string();
 
         stop_channel(sid);
     }
@@ -639,7 +639,7 @@ namespace network
         }
 
         if (!goodbye_channels.empty()) {
-            LOG_INFO << "connection manager delay realse recycle channels count: " << goodbye_channels.size();
+            LOG_INFO << "delay realse recycle channels count: " << goodbye_channels.size();
         }
 
         while (!goodbye_channels.empty())
@@ -661,7 +661,7 @@ namespace network
             auto it = m_channels.find(sid);
             if (it == m_channels.end())
             {
-                LOG_ERROR << "connection manager on tcp channel error but not found" << sid.to_string();
+                LOG_ERROR << "on tcp channel error but not found" << sid.to_string();
                 return E_DEFAULT;
             }
 
@@ -673,12 +673,12 @@ namespace network
 
             //remove channel
             m_channels.erase(sid);
-            LOG_DEBUG << "connection manager on tcp channel error, erase tcp socket channel" << sid.to_string();
+            LOG_DEBUG << "on tcp channel error, erase tcp socket channel" << sid.to_string();
 
             //stop it directly
             if (!ch->is_stopped())
             {
-                LOG_DEBUG << "connection manager stop tcp socket channel" << ch->id().to_string();
+                LOG_DEBUG << "stop tcp socket channel" << ch->id().to_string();
                 ch->stop();
             }
         }
@@ -690,12 +690,12 @@ namespace network
             auto it = m_recycle_channels.find(sid);
             if (it != m_recycle_channels.end())         //already in recycle channels
             {
-                LOG_ERROR << "connection manager add channel to recycle channels but found exists" << sid.to_string();
+                LOG_ERROR << "add channel to recycle channels but found exists" << sid.to_string();
                 return ERR_SUCCESS;
             }
 
             m_recycle_channels[sid] = ch;
-            LOG_DEBUG << "connection manager on tcp channel error, add recycle tcp socket channel" << sid.to_string();
+            LOG_DEBUG << "on tcp channel error, add recycle tcp socket channel" << sid.to_string();
         }
 
         return ERR_SUCCESS;
@@ -709,7 +709,7 @@ namespace network
         auto it = m_channels.find(sid);
         if (it == m_channels.end())
         {
-            LOG_ERROR << "connection manager on tcp channel error but not found" << sid.to_string();
+            LOG_ERROR << "on tcp channel error but not found" << sid.to_string();
             return;
         }
 

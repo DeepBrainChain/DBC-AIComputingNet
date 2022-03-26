@@ -1,7 +1,7 @@
 #include "matrix_socket_channel_handler.h"
 #include "service_proto_filter.h"
 #include "network/compress/matrix_compress.h"
-#include "service/message/message_id.h"
+#include "message/message_id.h"
 #include "network/topic_manager.h"
 
 matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<network::channel> ch)

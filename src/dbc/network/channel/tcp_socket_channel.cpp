@@ -127,7 +127,7 @@ namespace network
             }
 
             //other error
-            LOG_INFO << "tcp_socket_channel on_read error: " << error.value() << ":" << error.message() 
+            LOG_INFO << "on_read error: " << error.value() << ":" << error.message() 
                 << ", sid=" << m_sid.to_string() 
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
 
@@ -158,7 +158,7 @@ namespace network
             }
             else
             {
-                LOG_INFO << "tcp_socket_channel_handler on_read error: "
+                LOG_INFO << "socket_channel_handler on_read error: "
                     << "sid=" << m_sid.to_string()
                     << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
                 on_error();
@@ -166,21 +166,21 @@ namespace network
         }
         catch (const std::exception & e)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_read exception: " << e.what()
+            LOG_ERROR << "socket_channel_handler on_read exception: " << e.what()
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
         }
         catch (const boost::exception & e)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_read exception: " << diagnostic_information(e) 
+            LOG_ERROR << "socket_channel_handler on_read exception: " << diagnostic_information(e) 
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
         }
         catch (...)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_read exception: "
+            LOG_ERROR << "socket_channel_handler on_read exception: "
                 << " sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
@@ -196,7 +196,7 @@ namespace network
             std::unique_lock<std::mutex> lock(m_queue_mutex);
             if (m_send_queue.size() > MAX_SEND_QUEUE_MSG_COUNT)
             {
-                LOG_INFO << "tcp_socket_channel send queue is full"
+                LOG_INFO << "send queue is full"
                     << ", sid=" << m_sid.to_string()
                     << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
                 return ERR_ERROR;
@@ -225,7 +225,7 @@ namespace network
             channel_handler_context handler_context;
             if (ERR_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
             {
-                LOG_ERROR << "tcp_socket_channel_handler on_write error: " 
+                LOG_ERROR << "socket_channel_handler on_write error: " 
                     << " sid=" << m_sid.to_string()
                     << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
                 on_error();
@@ -236,7 +236,7 @@ namespace network
         }
         catch (const std::exception & e)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_write exception: " << e.what() 
+            LOG_ERROR << "socket_channel_handler on_write exception: " << e.what() 
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
@@ -244,7 +244,7 @@ namespace network
         }
         catch (const boost::exception & e)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_write exception: " << diagnostic_information(e) 
+            LOG_ERROR << "socket_channel_handler on_write exception: " << diagnostic_information(e) 
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
@@ -252,7 +252,7 @@ namespace network
         }
         catch (...)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_write exception: " 
+            LOG_ERROR << "socket_channel_handler on_write exception: " 
                 << " sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
@@ -285,7 +285,7 @@ namespace network
             }
 
             //other error
-            LOG_INFO << "tcp_socket_channel on_write error: " << error.value() << ":" << error.message()
+            LOG_INFO << "on_write error: " << error.value() << ":" << error.message()
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
 
@@ -326,7 +326,7 @@ namespace network
                     channel_handler_context handler_context;
                     if (ERR_SUCCESS != m_socket_handler->on_write(handler_context, *msg, *m_send_buf))
                     {
-                        LOG_ERROR << "tcp_socket_channel_handler on_write error: "
+                        LOG_ERROR << "socket_channel_handler on_write error: "
                             << " sid=" << m_sid.to_string()
                             << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
                         on_error();
@@ -339,7 +339,7 @@ namespace network
             //larger than valid read bytes
             else
             {
-                LOG_ERROR << "tcp_socket_channel on_write error, bytes transferred: " << bytes_transferred 
+                LOG_ERROR << "on_write error, bytes transferred: " << bytes_transferred 
                     << " larger than valid read_len: " << m_send_buf->get_valid_read_len()
                     << ", sid=" << m_sid.to_string()
                     << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
@@ -348,21 +348,21 @@ namespace network
         }
         catch (const std::exception & e)
         {
-            LOG_ERROR << "tcp_socket_channel on_write exception: " << e.what()
+            LOG_ERROR << "on_write exception: " << e.what()
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port(); 
             on_error();
         }
         catch (const boost::exception & e)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_write exception: " << diagnostic_information(e)
+            LOG_ERROR << "socket_channel_handler on_write exception: " << diagnostic_information(e)
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port(); 
             on_error();
         }
         catch (...)
         {
-            LOG_ERROR << "tcp_socket_channel_handler on_write exception: "
+            LOG_ERROR << "socket_channel_handler on_write exception: "
                 << " sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();

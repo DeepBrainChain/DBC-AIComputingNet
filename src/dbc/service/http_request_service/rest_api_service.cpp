@@ -11,12 +11,12 @@
 #include "util/system_info.h"
 #include "log/log.h"
 #include "timer/time_tick_notification.h"
-#include "service/message/protocol_coder/matrix_coder.h"
-#include "service/message/message_id.h"
+#include "message/protocol_coder/matrix_coder.h"
+#include "message/message_id.h"
 #include "service/service_info/service_info_collection.h"
 #include "service/peer_request_service/p2p_net_service.h"
-#include "service/task/TaskManager.h"
-#include "service/task/VxlanManager.h"
+#include "task/TaskManager.h"
+#include "task/detail/VxlanManager.h"
 
 #define HTTP_REQUEST_KEY             "hreq_context"
 
@@ -4221,7 +4221,8 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
                 p2p_net_service::instance().get_peer_nodes_map();
         std::vector<std::shared_ptr<peer_node>> vPeers;
         for (auto it = peer_nodes_map.begin(); it != peer_nodes_map.end(); ++it) {
-            vPeers.push_back(it->second);
+            if (it->second->m_connection_status == connection_status::CONNECTED)
+                vPeers.push_back(it->second);
         }
         srand((unsigned int)time(0));
         random_shuffle(vPeers.begin(), vPeers.end());
@@ -4254,7 +4255,8 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
                 p2p_net_service::instance().get_peer_candidates();
         std::vector<std::shared_ptr<peer_candidate>> vPeers;
         for (auto it = peer_candidates.begin(); it != peer_candidates.end(); ++it) {
-            vPeers.push_back(*it);
+            if ((*it)->net_st != net_state::ns_failed && (*it)->net_st != net_state::ns_zombie)
+                vPeers.push_back(*it);
         }
         srand((unsigned int)time(0));
         random_shuffle(vPeers.begin(), vPeers.end());

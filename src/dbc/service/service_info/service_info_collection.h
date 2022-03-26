@@ -2,7 +2,7 @@
 #define DBC_SERVICE_INFO_COLLECTION_H
 
 #include "util/utils.h"
-#include "service/message/matrix_types.h"
+#include "message/matrix_types.h"
 #include "util/filter/simple_expression.h"
 #include <boost/serialization/singleton.hpp>
 

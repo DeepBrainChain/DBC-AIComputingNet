@@ -1,14 +1,15 @@
-#pragma once
+#ifndef DBC_PEER_NODE_H
+#define DBC_PEER_NODE_H
 
 #include "util/utils.h"
 #include "network/utils/endpoint_address.h"
 #include "network/utils/socket_id.h"
-#include "../message/matrix_types.h"
+#include "message/matrix_types.h"
 
 enum peer_node_type
 {
-    NORMAL_NODE = 0, //peer
-    SEED_NODE = 1 //内置种子节点
+    NORMAL_NODE = 0, //config peer ( peer.conf )
+    SEED_NODE = 1  //seed node
 };
 
 enum connection_status
@@ -28,14 +29,14 @@ public:
 
     virtual ~peer_node() = default;
 
-    peer_node(const peer_node &src);
+    peer_node(const peer_node& other);
 
-    peer_node& operator=(const peer_node &src);
+    peer_node& operator=(const peer_node& other);
 
 public:
     peer_node_type m_node_type = NORMAL_NODE;
-
     std::string m_id;
+
     network::socket_id m_sid;
 
     int32_t m_core_version = 0;
@@ -51,3 +52,5 @@ public:
 };
 
 extern void assign_peer_info(dbc::peer_node_info& info, const std::shared_ptr<peer_node>& node);
+
+#endif

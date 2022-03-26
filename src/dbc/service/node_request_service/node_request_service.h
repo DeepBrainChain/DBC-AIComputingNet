@@ -6,10 +6,10 @@
 #include "service_module/service_module.h"
 #include "document.h"
 #include <boost/process.hpp>
-#include "service/task/TaskManager.h"
+#include "task/TaskManager.h"
 #include "util/LruCache.hpp"
-#include "../message/matrix_types.h"
-#include "../message/lan_types.h"
+#include "message/matrix_types.h"
+#include "message/lan_types.h"
 #include "service/service_info/service_info_collection.h"
 #include "util/system_info.h"
 #include "network/protocol/protocol.h"

@@ -2,7 +2,7 @@
 #include <cmath>
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/document.h"
-#include "service/task/TaskMonitorInfo.h"
+#include "task/detail/TaskMonitorInfo.h"
 
 namespace dbcMonitor {
 // 保留两位小数

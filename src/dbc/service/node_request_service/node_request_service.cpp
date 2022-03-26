@@ -4,20 +4,20 @@
 #include "server/server.h"
 #include "config/conf_manager.h"
 #include "service_module/service_message_id.h"
-#include "../message/matrix_types.h"
-#include "../message/protocol_coder/matrix_coder.h"
+#include "message/matrix_types.h"
+#include "message/protocol_coder/matrix_coder.h"
 #include <boost/thread/thread.hpp>
-#include "../message/service_topic.h"
+#include "message/service_topic.h"
 #include <boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include "../message/message_id.h"
+#include "message/message_id.h"
 #include "util/base64.h"
 #include "tweetnacl/tools.h"
 #include "tweetnacl/randombytes.h"
 #include "tweetnacl/tweetnacl.h"
 #include "cpp_substrate.h"
 #include "service/node_monitor_service/node_monitor_service.h"
-#include "service/task/VxlanManager.h"
+#include "task/detail/VxlanManager.h"
 
 std::string get_gpu_spec(const std::string& s) {
     if (s.empty()) {

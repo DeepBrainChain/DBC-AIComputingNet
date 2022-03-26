@@ -72,7 +72,7 @@ namespace network
             
             std::ostringstream errorinfo;
             errorinfo << "error: " << error.value() << " " << error.message();
-            LOG_ERROR << "tcp_connector connect failed: " << errorinfo.str();
+            LOG_ERROR << "connect failed: " << errorinfo.str();
 
             reconnect(errorinfo.str());
 
@@ -95,7 +95,7 @@ namespace network
         int32_t ret = connection_manager::instance().add_channel(m_sid, m_client_channel);
         if (ERR_SUCCESS != ret)
         {
-            LOG_ERROR << "tcp_connector add client_channel failed remote_addr=" << m_connect_addr;
+            LOG_ERROR << "add client_channel failed remote_addr=" << m_connect_addr;
             return;
         }
 
@@ -115,7 +115,7 @@ namespace network
 
             int32_t interval = RECONNECT_INTERVAL << m_reconnect_times;
 
-            LOG_INFO << "tcp_connector reconnect (" << m_reconnect_times << ") after " 
+            LOG_INFO << "reconnect (" << m_reconnect_times << ") after " 
                 << interval << "s, remote_addr=" << m_connect_addr;
 
             m_reconnect_timer.expires_from_now(std::chrono::seconds(interval));
@@ -124,7 +124,7 @@ namespace network
         }
         else
         {
-            LOG_ERROR << "tcp_connector reconnect reach threshold: " << m_reconnect_times
+            LOG_ERROR << "reconnect reach threshold: " << m_reconnect_times
                 << ", remote_addr=" << m_connect_addr;
 
             connect_notify(CLIENT_CONNECT_FAIL);
@@ -153,13 +153,13 @@ namespace network
                 return;
             }
 
-            LOG_ERROR << "tcp_connector reconnect error: " << error.value() << " " << error.message() 
+            LOG_ERROR << "reconnect error: " << error.value() << " " << error.message() 
                 << ", remote_addr:" << m_connect_addr;
             
             return;
         }
 
-        LOG_INFO << "tcp_connector begin to reconnect (" << m_reconnect_times << ") "
+        LOG_INFO << "begin to reconnect (" << m_reconnect_times << ") "
             << ", remote_addr=" << m_connect_addr;
         
         async_connect();

@@ -17,14 +17,12 @@ int32_t matrix_server_socket_channel_handler::start()
 
 }
 
-
 void matrix_server_socket_channel_handler::start_shake_hand_timer_ext()
 {
     m_shake_hand_timer.expires_from_now(std::chrono::seconds(SHAKE_HAND_INTERVAL));
     m_shake_hand_timer.async_wait(boost::bind(&matrix_server_socket_channel_handler::on_shake_hand_timer_expired,
         std::dynamic_pointer_cast<matrix_server_socket_channel_handler>(shared_from_this()), boost::asio::placeholders::error));
 }
-
 
 void matrix_server_socket_channel_handler::on_shake_hand_timer_expired(const boost::system::error_code& error)
 {
@@ -202,7 +200,6 @@ void matrix_server_socket_channel_handler::stop_wait_ver_req_timer()
         LOG_DEBUG << "matrix server socket channel handler stop wait ver req timer, " << m_sid.to_string();
     }
 }
-
 
 void matrix_server_socket_channel_handler::on_ver_req_timer_expired(const boost::system::error_code& error)
 {

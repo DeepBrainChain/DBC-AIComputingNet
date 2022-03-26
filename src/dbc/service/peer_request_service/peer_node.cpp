@@ -1,27 +1,34 @@
 #include "peer_node.h"
 
-peer_node::peer_node(const peer_node &src)
+peer_node::peer_node(const peer_node& other)
 {
-    *this = src;
+    this->m_node_type = other.m_node_type;
+    this->m_id = other.m_id;
+    this->m_sid = other.m_sid;
+    this->m_core_version = other.m_core_version;
+    this->m_protocol_version = other.m_protocol_version;
+    this->m_connected_time = other.m_connected_time;
+    this->m_live_time = other.m_live_time;
+    this->m_connection_status = other.m_connection_status;
+    this->m_peer_addr = other.m_peer_addr;
+    this->m_local_addr = other.m_local_addr;
 }
 
-peer_node& peer_node::operator=(const peer_node &src)
+peer_node& peer_node::operator=(const peer_node& other)
 {
-    if (this == &src)
+    if (this != &other)
     {
-        return *this;
+        this->m_node_type = other.m_node_type;
+        this->m_id = other.m_id;
+        this->m_sid = other.m_sid;
+        this->m_core_version = other.m_core_version;
+        this->m_protocol_version = other.m_protocol_version;
+        this->m_connected_time = other.m_connected_time;
+        this->m_live_time = other.m_live_time;
+        this->m_connection_status = other.m_connection_status;
+        this->m_peer_addr = other.m_peer_addr;
+        this->m_local_addr = other.m_local_addr;
     }
-
-    this->m_id = src.m_id;
-    this->m_sid = src.m_sid;
-    this->m_core_version = src.m_core_version;
-    this->m_protocol_version = src.m_protocol_version;
-    this->m_connected_time = src.m_connected_time;
-    this->m_live_time = src.m_live_time;
-    this->m_connection_status = src.m_connection_status;
-    this->m_peer_addr = src.m_peer_addr;
-    this->m_local_addr = src.m_local_addr;
-    this->m_node_type = src.m_node_type;
 
     return *this;
 }

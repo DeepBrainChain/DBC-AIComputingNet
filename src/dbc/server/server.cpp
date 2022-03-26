@@ -14,7 +14,7 @@
 #include "service/node_monitor_service/node_monitor_service.h"
 #include "service/node_request_service/node_request_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
-#include "service/task/VxlanManager.h"
+#include "task/detail/VxlanManager.h"
 #include "util/system_info.h"
 
 static std::unique_ptr<ECCVerifyHandle> g_ecc_verify_handle;
@@ -293,7 +293,7 @@ void Server::Exit() {
 	node_request_service::instance().exit();
 	rest_api_service::instance().exit();
     node_monitor_service::instance().exit();
-    VmClient::instance().Exit();
+    VmClient::instance().exit();
 	SystemInfo::instance().exit();
 	ExitCrypto();
 	m_running = false;

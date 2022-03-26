@@ -5,14 +5,12 @@ namespace util {
         size_t pos = 0;
         size_t index = str.find_first_of(delim, pos);
         while (index != std::string::npos) {
-            //push back
             vec.push_back(str.substr(pos, index - pos));
 
             pos = index + 1;
             index = str.find_first_of(delim, pos);
         }
 
-        //index is npos, and left string to end
         std::string left = str.substr(pos, std::string::npos);
         if (left.size() > 0) {
             vec.push_back(left);
@@ -39,13 +37,13 @@ namespace util {
         if (str.empty()) {
             return;
         }
-
-        //header
+        
+        //left
         if (str[0] == ' ') {
             str.erase(0, str.find_first_not_of(" "));
         }
 
-        //tail
+        //right
         if (str[str.length() - 1] == ' ') {
             str.erase(str.find_last_not_of(" ") + 1);
         }
