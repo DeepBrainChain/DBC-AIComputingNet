@@ -235,6 +235,11 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
             source_node->LinkEndChild(address_node);
 
             hostdev_node->LinkEndChild(source_node);
+            if (is_windows) {
+                tinyxml2::XMLElement *rom_node = doc.NewElement("rom");
+                rom_node->SetAttribute("bar", "off");
+                hostdev_node->LinkEndChild(rom_node);
+            }
             dev_node->LinkEndChild(hostdev_node);
         }
     }
