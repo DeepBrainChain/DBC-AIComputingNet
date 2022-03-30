@@ -71,8 +71,6 @@ ERRCODE node_request_service::init() {
 	}
 
 	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
-		m_httpclient.connect_chain();
-
 		auto fresult = m_task_scheduler.init();
 		if (fresult.errcode != ERR_SUCCESS) {
 			LOG_ERROR << fresult.errmsg;
@@ -412,16 +410,15 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
 
 void node_request_service::check_authority(const AuthorityParams& params, AuthoriseResult& result) {
-    std::string str_status = m_httpclient.request_machine_status();
-    if (str_status.empty()) {
+    MACHINE_STATUS str_status = HttpDBCChainClient::instance().request_machine_status(ConfManager::instance().GetNodeId());
+    if (str_status == MACHINE_STATUS::MS_NONE) {
         result.success = false;
         result.errmsg = "query machine_status failed";
         return;
     }
 
     // 未验证
-    if (str_status == "addingCustomizeInfo" || str_status == "distributingOrder" ||
-        str_status == "committeeVerifying" || str_status == "committeeRefused") {
+    if (str_status == MACHINE_STATUS::MS_VERIFY) {
         result.machine_status = MACHINE_STATUS::MS_VERIFY;
         auto wallets = parse_wallet(params);
         std::string strWallet = std::get<0>(wallets);
@@ -433,7 +430,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!strMultisigWallet.empty()) {
-            bool ret = m_httpclient.in_verify_time(strMultisigWallet);
+            bool ret = HttpDBCChainClient::instance().in_verify_time(ConfManager::instance().GetNodeId(), strMultisigWallet);
             if (!ret) {
                 result.success = false;
                 result.errmsg = "not in verify time period";
@@ -447,7 +444,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!result.success && !strWallet.empty()) {
-            bool ret = m_httpclient.in_verify_time(strWallet);
+            bool ret = HttpDBCChainClient::instance().in_verify_time(ConfManager::instance().GetNodeId(), strWallet);
             if (!ret) {
                 result.success = false;
                 result.errmsg = "not in verify time period";
@@ -465,14 +462,14 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
     }
     // 验证完，已上线，但未租用
-    else if (str_status == "waitingFulfill" || str_status == "online") {
+    else if (str_status == MACHINE_STATUS::MS_ONLINE) {
         result.machine_status = MACHINE_STATUS::MS_ONLINE;
         m_task_scheduler.deleteAllCheckTasks();
         result.success = false;
         result.errmsg = "machine is not be rented";
     }
     // 租用中
-    else if (str_status == "creating" || str_status == "rented") {
+    else if (str_status == MACHINE_STATUS::MS_RENNTED) {
         result.machine_status = MACHINE_STATUS::MS_RENNTED;
         m_task_scheduler.deleteAllCheckTasks();
 
@@ -491,7 +488,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!strMultisigWallet.empty()) {
-                int64_t rent_end = m_httpclient.request_rent_end(strMultisigWallet);
+                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), strMultisigWallet);
                 if (rent_end > 0) {
                     result.success = true;
                     result.user_role = USER_ROLE::UR_RENTER_WALLET;
@@ -510,7 +507,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!result.success && !strWallet.empty()) {
-                int64_t rent_end = m_httpclient.request_rent_end(strWallet);
+                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), strWallet);
                 if (rent_end > 0) {
                     result.success = true;
                     result.user_role = USER_ROLE::UR_RENTER_WALLET;
@@ -524,7 +521,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 }
             }
         } else {
-            int64_t rent_end = m_httpclient.request_rent_end(rent_wallet);
+            int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), rent_wallet);
             if (rent_end > 0) {
                 result.success = true;
                 result.user_role = USER_ROLE::UR_RENTER_SESSION_ID;

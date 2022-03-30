@@ -16,8 +16,6 @@
 #include "detail/VxlanManager.h"
 
 FResult TaskManager::init() {
-    m_httpclient.connect_chain();
-
     if (!VmClient::instance().init()) {
         return FResult(ERR_ERROR, "connect libvirt tcp service failed");
     }
@@ -179,7 +177,7 @@ bool TaskManager::restore_tasks() {
 
     std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
     for (auto& it : wallets) {
-        int64_t rent_end = m_httpclient.request_rent_end(it);
+        int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), it);
         if (rent_end > 0) {
             cur_renter_wallet = it;
             cur_rent_end = rent_end;
@@ -2528,13 +2526,13 @@ void TaskManager::prune_task_thread_func() {
 
         shell_remove_reject_iptable_from_system();
 
-        std::string machine_status = m_httpclient.request_machine_status();
-        if (machine_status.empty()) continue;
+        MACHINE_STATUS machine_status = HttpDBCChainClient::instance().request_machine_status(
+            ConfManager::instance().GetNodeId());
+        if (machine_status == MACHINE_STATUS::MS_NONE) continue;
 
         auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
         for (auto &it: wallet_renttasks) {
-            if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
-                machine_status == "committeeVerifying" || machine_status == "committeeRefused") {
+            if (machine_status == MACHINE_STATUS::MS_VERIFY) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
@@ -2542,7 +2540,7 @@ void TaskManager::prune_task_thread_func() {
                         close_task(task_id);
                     }
                 }
-            } else if (machine_status == "waitingFulfill" || machine_status == "online") {
+            } else if (machine_status == MACHINE_STATUS::MS_ONLINE) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
@@ -2553,7 +2551,7 @@ void TaskManager::prune_task_thread_func() {
                         delete_task(task_id);
                     }
                 }
-            } else if (machine_status == "creating" || machine_status == "rented") {
+            } else if (machine_status == MACHINE_STATUS::MS_RENNTED) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") != std::string::npos) {
@@ -2563,9 +2561,8 @@ void TaskManager::prune_task_thread_func() {
                 }
             }
 
-            if (machine_status == "waitingFulfill" || machine_status == "online" ||
-                machine_status == "creating" || machine_status == "rented") {
-                int64_t rent_end = m_httpclient.request_rent_end(it.first);
+            if (machine_status == MACHINE_STATUS::MS_ONLINE || machine_status == MACHINE_STATUS::MS_RENNTED) {
+                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), it.first);
                 if (rent_end < 0) {
                     std::vector<std::string> ids = it.second->task_ids;
                     for (auto &task_id: ids) {
@@ -2577,7 +2574,7 @@ void TaskManager::prune_task_thread_func() {
                     // 1小时出120个块
                     int64_t wallet_rent_end = it.second->rent_end;
                     int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
-                    int64_t cur_block = m_httpclient.request_cur_block();
+                    int64_t cur_block = HttpDBCChainClient::instance().request_cur_block();
                     if (cur_block > 0 && reserve_end < cur_block) {
                         ids = it.second->task_ids;
                         for (auto &task_id: ids) {

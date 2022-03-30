@@ -38,7 +38,7 @@ namespace network
         return evhttp_request_get_uri(m_req);
     }
 
-    endpoint_address http_request::get_peer()
+    net_address http_request::get_peer()
     {
         evhttp_connection* con = evhttp_request_get_connection(m_req);
 
@@ -48,7 +48,7 @@ namespace network
             // evhttp retains ownership over returned address string
             evhttp_connection_get_peer(con, (char**) &address, &port);
         }
-        return endpoint_address(address, port);
+        return net_address(address, port);
     }
 
     http_request::REQUEST_METHOD http_request::get_request_method()

@@ -300,7 +300,7 @@ void node_monitor_service::on_update_cur_renter_wallet_timer(const std::shared_p
     std::string cur_renter_wallet;
     std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
     for (auto& it : wallets) {
-        int64_t rent_end = m_httpclient.request_rent_end(it);
+        int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), it);
         if (rent_end > 0) {
             cur_renter_wallet = it;
             break;
