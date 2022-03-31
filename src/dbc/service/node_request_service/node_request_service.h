@@ -4,8 +4,8 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include "service_module/service_module.h"
-#include "document.h"
 #include <boost/process.hpp>
+#include <boost/asio.hpp>
 #include "task/TaskManager.h"
 #include "util/LruCache.hpp"
 #include "message/matrix_types.h"
@@ -167,7 +167,6 @@ private:
 protected:
     TaskMgr m_task_scheduler;
     lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
-    HttpChainClient m_httpclient;
 };
 
 #endif

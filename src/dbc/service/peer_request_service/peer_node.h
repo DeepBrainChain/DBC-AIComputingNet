@@ -2,7 +2,7 @@
 #define DBC_PEER_NODE_H
 
 #include "util/utils.h"
-#include "network/utils/endpoint_address.h"
+#include "network/utils/net_address.h"
 #include "network/utils/socket_id.h"
 #include "message/matrix_types.h"
 
@@ -47,8 +47,8 @@ public:
 
     connection_status m_connection_status = DISCONNECTED;
 
-    network::endpoint_address m_peer_addr;
-    network::endpoint_address m_local_addr;
+    network::net_address m_peer_addr;
+    network::net_address m_local_addr;
 };
 
 extern void assign_peer_info(dbc::peer_node_info& info, const std::shared_ptr<peer_node>& node);

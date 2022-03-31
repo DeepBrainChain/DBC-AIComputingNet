@@ -6,7 +6,7 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/http.h>
-#include "network/utils/endpoint_address.h"
+#include "network/utils/net_address.h"
 #include "util/utils.h"
 #include "../protocol/net_message.h"
 
@@ -38,7 +38,7 @@ namespace network
 
         /** Get endpoint_address(address:ip) for the origin of the http request.
             */
-        endpoint_address get_peer();
+        net_address get_peer();
 
         /** Get request method.
             */

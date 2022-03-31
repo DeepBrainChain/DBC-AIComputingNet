@@ -15,7 +15,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include "network/protocol/thrift_binary.h"
-#include "network/utils/net_address.h"
 #include "util/system_info.h"
 
 #define CHECK_PEER_CANDIDATES_TIMER                 "p2p_timer_check_peer_candidates"
@@ -275,7 +274,7 @@ int32_t p2p_net_service::get_maybe_available_peer_candidates_count() {
 
 
 bool p2p_net_service::exist_peer_node(tcp::endpoint ep) {
-    network::endpoint_address addr(ep);
+    network::net_address addr(ep);
     if (addr.get_ip() == m_listen_ip && addr.get_port() == m_listen_port) {
         return true;
     }

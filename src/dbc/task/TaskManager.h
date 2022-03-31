@@ -7,7 +7,7 @@
 #include "message/matrix_types.h"
 #include "message/vm_task_result_types.h"
 #include "vm/vm_client.h"
-#include "HttpChainClient.h"
+#include "HttpDBCChainClient.h"
 #include "detail/TaskInfoManager.h"
 #include "detail/TaskIptableManager.h"
 #include "detail/WalletSessionIDManager.h"
@@ -186,8 +186,6 @@ protected:
     std::thread* m_prune_thread = nullptr;
     std::mutex m_prune_mtx;
     std::condition_variable m_prune_cond;
-
-    HttpChainClient m_httpclient;
 };
 
 typedef TaskManager TaskMgr;

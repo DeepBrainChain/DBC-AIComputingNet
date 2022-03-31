@@ -7,7 +7,7 @@
 #include "task/detail/TaskInfoManager.h"
 #include "task/detail/WalletRentTaskManager.h"
 #include "task/detail/TaskMonitorInfo.h"
-#include "task/HttpChainClient.h"
+#include "task/HttpDBCChainClient.h"
 #include "hostMonitorInfo.h"
 
 #define MONITOR_DATA_SENDER_TASK_TIMER                                   "monitor_data_sender_task"
@@ -72,8 +72,6 @@ private:
 
     // 当前租用人的钱包地址
     std::string m_cur_renter_wallet;
-
-    HttpChainClient m_httpclient;
 
 };
 

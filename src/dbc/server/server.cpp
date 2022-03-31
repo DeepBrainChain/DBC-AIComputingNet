@@ -17,6 +17,7 @@
 #include "service/peer_request_service/p2p_lan_service.h"
 #include "task/detail/VxlanManager.h"
 #include "util/system_info.h"
+#include "task/HttpDBCChainClient.h"
 
 static std::unique_ptr<ECCVerifyHandle> g_ecc_verify_handle;
 static std::unique_ptr<std::recursive_mutex[]> g_ssl_lock;
@@ -52,13 +53,11 @@ ERRCODE Server::Init(int argc, char *argv[]) {
     LOG_INFO << "begin server init ...";
 
     // Crypto
-    LOG_INFO << "begin to init crypto";
     err = InitCrypto();
     if (ERR_SUCCESS != err) {
         LOG_ERROR << "init crypto failed";
         return err;
     }
-    LOG_INFO << "init crypto success";
 
     // EnvManager
     LOG_INFO << "begin to init EvnManager";
@@ -77,6 +76,8 @@ ERRCODE Server::Init(int argc, char *argv[]) {
         return err;
     }
     LOG_INFO << "init ConfManager success";
+
+    HttpDBCChainClient::instance().init(ConfManager::instance().GetDbcChainDomain());
 
     // SystemInfo
     LOG_INFO << "begin to init SystemInfo";
