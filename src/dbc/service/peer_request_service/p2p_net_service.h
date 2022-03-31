@@ -118,7 +118,7 @@ protected:
     int32_t get_available_peer_candidates(uint32_t count,
                                           std::vector<std::shared_ptr<peer_candidate>> &available_candidates);
 
-    uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = NORMAL_NODE);
+    uint32_t get_available_peer_candidates_count_by_node_type(peer_node_type node_type = PEER_NORMAL_NODE);
 
     std::shared_ptr<peer_node> get_dynamic_disconnect_peer_node();
 

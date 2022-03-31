@@ -101,7 +101,7 @@ FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::str
     info->__set_vxlanVni(vni);
 
     bfs::path shell_path = EnvManager::instance().get_shell_path();
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_CLIENT_NODE) {
+    if (Server::NodeType == NODE_TYPE::CLIENT_NODE) {
         if (ipCidr.empty()) return FResult(ERR_ERROR, "ip cidr can not be empty");
         if (ipCidr.find("192.168.122.") != std::string::npos) return FResult(ERR_ERROR, "ip cidr already exist");
         std::vector<std::string> vecSplit = util::split(ipCidr, "/");
@@ -133,7 +133,7 @@ FResult VxlanManager::CreateNetwork(const std::string &networkId, const std::str
             }
             return fret;
         }
-    } else if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    } else if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
         shell_path /= "network/create_network_mining.sh";
         std::string cmd = shell_path.generic_string() + " " + info->bridgeName + " " + info->vxlanName + " " + info->vxlanVni;
         std::string cmdRet = run_shell(cmd);

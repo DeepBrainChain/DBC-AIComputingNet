@@ -16,7 +16,7 @@ node_monitor_service::~node_monitor_service() {
 ERRCODE node_monitor_service::init() {
     service_module::init();
 
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
         std::string default_monitor = ConfManager::instance().GetDbcMonitorServer();
         std::vector<std::string> vecSplit = util::split(default_monitor, ":");
         if (vecSplit.size() != 2) {
@@ -94,7 +94,7 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
 }
 
 void node_monitor_service::init_timer() {
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
         // 30s
         add_timer(MONITOR_DATA_SENDER_TASK_TIMER, 30 * 1000, 30 * 1000, ULLONG_MAX, "",
             CALLBACK_1(node_monitor_service::on_monitor_data_sender_task_timer, this));

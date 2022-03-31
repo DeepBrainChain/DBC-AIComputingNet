@@ -45,7 +45,7 @@ static std::string net_state_2_string(int8_t st)
 struct peer_candidate
 {
     ip::tcp::endpoint   tcp_ep;
-    peer_node_type  node_type = NORMAL_NODE;
+    peer_node_type  node_type = PEER_NORMAL_NODE;
     std::string     node_id;
     net_state       net_st = ns_idle;
     uint32_t        reconn_cnt = 0;
@@ -57,7 +57,7 @@ struct peer_candidate
     }
 
     peer_candidate(ip::tcp::endpoint ep, net_state _net_state = ns_idle, 
-        peer_node_type _peer_node_type = NORMAL_NODE, uint32_t _reconn_cnt = 0, 
+        peer_node_type _peer_node_type = PEER_NORMAL_NODE, uint32_t _reconn_cnt = 0, 
         time_t _last_conn_tm = time(nullptr), uint32_t _score = 0, std::string _node_id = "")
         : tcp_ep(ep)
         , net_st(_net_state)

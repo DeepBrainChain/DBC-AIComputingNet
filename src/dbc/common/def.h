@@ -16,48 +16,35 @@
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 
-#define MAX_LIST_TASK_COUNT                                     10000
-#define MAX_TASK_COUNT_PER_REQ                                  10
-#define MAX_TASK_COUNT_ON_PROVIDER                              10000
-#define MAX_TASK_COUNT_IN_TRAINING_QUEUE                        1000
-#define MAX_TASK_SHOWN_ON_LIST                                  100
-
 #define GET_LOG_HEAD                                            0
 #define GET_LOG_TAIL                                            1
 #define MAX_NUMBER_OF_LINES                                     100
-#define DEFAULT_NUMBER_OF_LINES                                 100
 #define MAX_LOG_CONTENT_SIZE                                    (8 * 1024)
-
-#define MAX_ENTRY_FILE_NAME_LEN                                 128
-#define MAX_ENGINE_IMGE_NAME_LEN                                128
-
-#define AI_TRAINING_MAX_TASK_COUNT                                  64
 
 #define SERVICE_NAME_AI_TRAINING "ai_training"
 
-
-enum DBC_NODE_TYPE {
-    DBC_COMPUTE_NODE,
-    DBC_CLIENT_NODE,
-    DBC_SEED_NODE
+enum QUERY_PEERS_FLAG
+{
+    FLAG_ACTIVE,
+    FLAG_GLOBAL
 };
 
-enum get_peers_flag
-{
-    flag_active,
-    flag_global
+enum class NODE_TYPE {
+    COMPUTE_NODE,
+    CLIENT_NODE,
+    SEED_NODE
 };
 
 enum ETaskOp {
     T_OP_None,
-    T_OP_Create,    //����
-    T_OP_Start,     //����
-    T_OP_Stop,      //ֹͣ
-    T_OP_ReStart,   //����(reboot domain)
-    T_OP_ForceReboot,  //ǿ������(destroy domain && start domain)
+    T_OP_Create,    //创建
+    T_OP_Start,     //启动
+    T_OP_Stop,      //停止
+    T_OP_ReStart,   //重启(reboot domain)
+    T_OP_ForceReboot,  //强制重启(destroy domain && start domain)
     T_OP_Reset,     //reset
-    T_OP_Delete,    //ɾ��
-    T_OP_CreateSnapshot  //��������
+    T_OP_Delete,    //删除
+    T_OP_CreateSnapshot  //创建快照
 };
 
 struct ETaskEvent {
@@ -67,18 +54,18 @@ struct ETaskEvent {
 };
 
 enum ETaskStatus {
-    TS_ShutOff,     //�ر�״̬
-    TS_Creating,    //���ڴ���
-    TS_Running,     //����������
-    TS_Starting,    //��������
-    TS_Stopping,    //����ֹͣ
-    TS_Restarting,  //��������
-    TS_Resetting,   //����reset
-    TS_Deleting,    //����ɾ��
-    TS_CreatingSnapshot,  //���ڴ�������
-    TS_PMSuspended, //������ѽ���˯��״̬
+    TS_ShutOff,     //关闭状态
+    TS_Creating,    //正在创建
+    TS_Running,     //正在运行中
+    TS_Starting,    //正在启动
+    TS_Stopping,    //正在停止
+    TS_Restarting,  //正在重启
+    TS_Resetting,   //正在reset
+    TS_Deleting,    //正在删除
+    TS_CreatingSnapshot,  //正在创建快照
+    TS_PMSuspended, //虚拟机已进入睡眠状态
 
-    TS_Error = 100,   //����
+    TS_Error = 100,   //出错
     TS_CreateError,
     TS_StartError,
     TS_StopError,
@@ -97,22 +84,21 @@ std::string task_status_string(int32_t status);
 std::string task_operation_string(int32_t op);
 std::string vm_status_string(virDomainState status);
 
-// ϵͳ�̴�С��GB��
+// 系统盘大小（GB）
 static const int32_t g_disk_system_size = 350;
-// �ڴ�Ԥ����С��GB��
+// 内存预留大小（GB）
 static const int32_t g_reserved_memory = 32;
-// cpuԤ��������ÿ������cpu������������
+// cpu预留核数（每个物理cpu的物理核数）
 static const int32_t g_reserved_physical_cores_per_cpu = 1;
-// �������¼�û���
+// 虚拟机登录用户名
 static const char* g_vm_ubuntu_login_username = "dbc";
 static const char* g_vm_windows_login_username = "Administrator";
 
-
 enum MACHINE_STATUS {
     MS_NONE,
-    MS_VERIFY, //��֤�׶�
-    MS_ONLINE, //��֤�����߽׶�
-    MS_RENNTED //������
+    MS_VERIFY, //验证阶段
+    MS_ONLINE, //验证完上线阶段
+    MS_RENNTED //租用中
 };
 
 enum USER_ROLE {
@@ -150,7 +136,7 @@ struct TaskCreateParams {
 
     uint64_t mem_size; // KB
 
-    std::map<int32_t, uint64_t> disks; //������(��λ��KB)��index��1��ʼ
+    std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
 
     std::string vm_xml;
     std::string vm_xml_url;
@@ -158,10 +144,10 @@ struct TaskCreateParams {
     int16_t vnc_port;
     std::string vnc_password;
 
-    std::string operation_system; //����ϵͳ(��generic, ubuntu 18.04, windows 10)��Ĭ��ubuntu������win����Ϊ��windowsϵͳ������ȫСд��
-    std::string bios_mode; //BIOSģʽ(��legacy,uefi)��Ĭ�ϴ�ͳBIOS������ȫСд��
+    std::string operation_system; //操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
+    std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 
-    std::vector<std::string> multicast; //�鲥��ַ(�磺"230.0.0.1:5558")
+    std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
 
     std::string network_name;
     std::string vxlan_vni;
@@ -180,15 +166,15 @@ struct ParseVmXmlParams {
 
     uint64_t mem_size; // KB
 
-    std::map<int32_t, uint64_t> disks; //������(��λ��KB)��index��1��ʼ
+    std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
 
     int16_t vnc_port;
     std::string vnc_password;
 
-    std::string operation_system; //����ϵͳ(��generic, ubuntu 18.04, windows 10)��Ĭ��ubuntu������win����Ϊ��windowsϵͳ������ȫСд��
-    std::string bios_mode; //BIOSģʽ(��legacy,uefi)��Ĭ�ϴ�ͳBIOS������ȫСд��
+    std::string operation_system; //操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
+    std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 
-    std::vector<std::string> multicast; //�鲥��ַ(�磺"230.0.0.1:5558")
+    std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
 };
 
 #endif

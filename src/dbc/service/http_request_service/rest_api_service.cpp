@@ -4216,7 +4216,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
     req_body body;
     body.option = path_list[0];
     if (body.option == "active") {
-        body.flag = flag_active;
+        body.flag = QUERY_PEERS_FLAG::FLAG_ACTIVE;
         std::unordered_map<std::string, std::shared_ptr<peer_node>> peer_nodes_map =
                 p2p_net_service::instance().get_peer_nodes_map();
         std::vector<std::shared_ptr<peer_node>> vPeers;
@@ -4250,7 +4250,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
         reply_peer_nodes_list(peer_nodes_list, data_json);
         httpReq->reply_comm_rest_succ2(data_json);
     } else if (body.option == "global") {
-        body.flag = flag_global;
+        body.flag = QUERY_PEERS_FLAG::FLAG_GLOBAL;
         std::list<std::shared_ptr<peer_candidate>> peer_candidates =
                 p2p_net_service::instance().get_peer_candidates();
         std::vector<std::shared_ptr<peer_candidate>> vPeers;

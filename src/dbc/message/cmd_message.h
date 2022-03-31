@@ -43,7 +43,7 @@ public:
 
 class cmd_get_peer_nodes_req : public network::msg_base {
 public:
-    get_peers_flag flag;
+    QUERY_PEERS_FLAG flag;
 };
 
 class cmd_get_peer_nodes_rsp : public network::msg_base {

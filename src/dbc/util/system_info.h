@@ -67,7 +67,7 @@ public:
 
     virtual ~SystemInfo();
 
-    ERRCODE Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores = 0, int32_t reserved_memory = 0);
+    ERRCODE Init(NODE_TYPE node_type, int32_t reserved_cpu_cores = 0, int32_t reserved_memory = 0);
 
     ERRCODE init();
 
@@ -133,7 +133,7 @@ protected:
     void update_thread_func();
 
 private:
-    DBC_NODE_TYPE m_node_type = DBC_NODE_TYPE::DBC_COMPUTE_NODE;
+    NODE_TYPE m_node_type = NODE_TYPE::COMPUTE_NODE;
     // os
     OS_TYPE m_os_type = OS_TYPE::OS_Ubuntu_1804;
     std::string m_os_name;

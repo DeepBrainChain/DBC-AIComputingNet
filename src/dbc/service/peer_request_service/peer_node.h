@@ -8,8 +8,8 @@
 
 enum peer_node_type
 {
-    NORMAL_NODE = 0, //config peer ( peer.conf )
-    SEED_NODE = 1  //seed node
+    PEER_NORMAL_NODE = 0, //config peer ( peer.conf )
+    PEER_SEED_NODE = 1  //seed node
 };
 
 enum connection_status
@@ -34,7 +34,7 @@ public:
     peer_node& operator=(const peer_node& other);
 
 public:
-    peer_node_type m_node_type = NORMAL_NODE;
+    peer_node_type m_node_type = PEER_NORMAL_NODE;
     std::string m_id;
 
     network::socket_id m_sid;

@@ -200,7 +200,7 @@ ERRCODE p2p_net_service::start_connector() {
         if (is_peer_candidate_exist(ep)) {
             update_peer_candidate_state(ep, ns_in_use);
         } else {
-            add_peer_candidate(ep, ns_in_use, NORMAL_NODE);
+            add_peer_candidate(ep, ns_in_use, PEER_NORMAL_NODE);
         }
     }
 
@@ -490,7 +490,7 @@ void p2p_net_service::on_timer_dyanmic_adjust_network(const std::shared_ptr<core
         }
     }
     else {
-        uint32_t available_normal_nodes_count = get_available_peer_candidates_count_by_node_type(NORMAL_NODE);
+        uint32_t available_normal_nodes_count = get_available_peer_candidates_count_by_node_type(PEER_NORMAL_NODE);
         if (available_normal_nodes_count >= MIN_NORMAL_AVAILABLE_NODE_COUNT) {
             std::shared_ptr<peer_node> node = get_dynamic_disconnect_peer_node();
             if (nullptr == node) {
@@ -577,7 +577,7 @@ void p2p_net_service::add_dns_seeds() {
         ip::tcp::resolver::iterator end;
         for (; it != end; it++) {
             tcp::endpoint ep(it->endpoint().address(), it->endpoint().port());
-            add_peer_candidate(ep, ns_idle, SEED_NODE);
+            add_peer_candidate(ep, ns_idle, PEER_SEED_NODE);
         }
     }
     catch (const boost::exception& e) {
@@ -597,7 +597,7 @@ void p2p_net_service::add_ip_seeds() {
         util::trim(str_port);
 
         tcp::endpoint ep(ip::address::from_string(str_ip), (uint16_t) atoi(str_port.c_str()));
-        add_peer_candidate(ep, ns_idle, SEED_NODE);
+        add_peer_candidate(ep, ns_idle, PEER_SEED_NODE);
     }
 }
 
@@ -877,7 +877,7 @@ int32_t p2p_net_service::broadcast_peer_nodes(std::shared_ptr<peer_node> node) {
         for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); ++it) {
             if (nullptr == it->second
                 || network::SERVER_SOCKET == it->second->m_sid.get_type()
-                || SEED_NODE == it->second->m_node_type) {
+                || PEER_SEED_NODE == it->second->m_node_type) {
                 continue;
             }
 
@@ -893,7 +893,7 @@ int32_t p2p_net_service::broadcast_peer_nodes(std::shared_ptr<peer_node> node) {
 
         std::list<std::shared_ptr<peer_candidate> > tmp_candi_list;
         for (auto it = m_peer_candidates.begin(); (it != m_peer_candidates.end()) && (count < 100);) {
-            if (ns_available == (*it)->net_st && NORMAL_NODE == (*it)->node_type) {
+            if (ns_available == (*it)->net_st && PEER_NORMAL_NODE == (*it)->node_type) {
                 dbc::peer_node_info info;
                 info.peer_node_id = (*it)->node_id;
                 info.live_time_stamp = (*it)->last_conn_tm;
@@ -945,7 +945,7 @@ void p2p_net_service::on_broadcast_peer_nodes(const std::shared_ptr<network::mes
             return;
         }
 
-        if (!add_peer_candidate(ep, ns_available, NORMAL_NODE, node.peer_node_id)) {
+        if (!add_peer_candidate(ep, ns_available, PEER_NORMAL_NODE, node.peer_node_id)) {
             LOG_ERROR << "add peer candidate error: " << ep;
         }
 
@@ -968,7 +968,7 @@ void p2p_net_service::on_broadcast_peer_nodes(const std::shared_ptr<network::mes
 
         auto candidate = get_peer_candidate(ep);
         if (nullptr == candidate) {
-            if (!add_peer_candidate(ep, ns_idle, NORMAL_NODE)) {
+            if (!add_peer_candidate(ep, ns_idle, PEER_NORMAL_NODE)) {
                 LOG_ERROR << "add peer candidate error: " << ep;
             }
 
@@ -1040,7 +1040,7 @@ std::shared_ptr<peer_node> p2p_net_service::get_dynamic_disconnect_peer_node() {
     std::vector<std::shared_ptr<peer_node>> client_connect_peer_nodes;
     for (auto it = m_peer_nodes_map.begin(); it != m_peer_nodes_map.end(); it++) {
         //seed node is disconnected prior
-        if (SEED_NODE == it->second->m_node_type && network::CLIENT_SOCKET == it->second->m_sid.get_type()) {
+        if (PEER_SEED_NODE == it->second->m_node_type && network::CLIENT_SOCKET == it->second->m_sid.get_type()) {
             LOG_DEBUG << "p2p net service get disconnect seed peer node: " << it->second->m_id
                       << it->second->m_sid.to_string();
             return it->second;
@@ -1080,11 +1080,11 @@ std::shared_ptr<peer_candidate> p2p_net_service::get_dynamic_connect_peer_candid
             continue;
         }
 
-        if (ns_available == it->net_st && SEED_NODE == it->node_type) {
+        if (ns_available == it->net_st && PEER_SEED_NODE == it->node_type) {
             seed_node_candidates.push_back(it);
         }
 
-        if (ns_available == it->net_st && NORMAL_NODE == it->node_type) {
+        if (ns_available == it->net_st && PEER_NORMAL_NODE == it->node_type) {
             normal_node_candidates.push_back(it);
         }
     }

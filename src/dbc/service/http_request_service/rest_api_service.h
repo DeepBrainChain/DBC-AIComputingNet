@@ -52,7 +52,7 @@ struct req_body {
 
     // peers
     std::string option;
-    int16_t flag = flag_global;
+    int16_t flag = QUERY_PEERS_FLAG::FLAG_GLOBAL;
 
     // snapshot
     std::string snapshot_name;

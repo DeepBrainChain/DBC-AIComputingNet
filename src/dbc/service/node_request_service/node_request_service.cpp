@@ -66,11 +66,11 @@ std::string get_is_update(const std::string& s) {
 ERRCODE node_request_service::init() {
 	service_module::init();
 
-	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+	if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
 		add_self_to_servicelist();
 	}
 
-	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+	if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
 		auto fresult = m_task_scheduler.init();
 		if (fresult.errcode != ERR_SUCCESS) {
 			LOG_ERROR << fresult.errmsg;
@@ -84,7 +84,7 @@ ERRCODE node_request_service::init() {
 void node_request_service::exit() {
 	service_module::exit();
 
-	if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+	if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
 		m_task_scheduler.exit();
 	}
 }
@@ -124,7 +124,7 @@ void node_request_service::add_self_to_servicelist() {
 }
 
 void node_request_service::init_timer() {
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
         // 10s
         add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, 10 * 1000, ULLONG_MAX, "",
             std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1));
@@ -551,7 +551,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<network
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -679,7 +679,7 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<netw
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -777,7 +777,7 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<networ
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -875,7 +875,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1032,7 +1032,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<network::
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1295,7 +1295,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<network
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1431,7 +1431,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1528,7 +1528,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<network::
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1625,7 +1625,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<networ
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1722,7 +1722,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1819,7 +1819,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<network
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1916,7 +1916,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<network::
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2055,7 +2055,7 @@ void node_request_service::on_node_modify_task_req(const std::shared_ptr<network
 		return;
 	}
 
-	if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+	if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
 		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
 		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
 		return;
@@ -2154,7 +2154,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2277,7 +2277,7 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
         return;
     }
 
-    if (Server::NodeType == DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
         /*
         int32_t count = m_task_scheduler.GetRunningTaskSize();
         std::string state;
@@ -2429,7 +2429,7 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<netwo
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2633,7 +2633,7 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2778,7 +2778,7 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2881,7 +2881,7 @@ void node_request_service::on_node_list_monitor_server_req(const std::shared_ptr
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3011,7 +3011,7 @@ void node_request_service::on_node_set_monitor_server_req(const std::shared_ptr<
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3107,7 +3107,7 @@ void node_request_service::on_node_list_lan_req(const std::shared_ptr<network::m
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3256,7 +3256,7 @@ void node_request_service::on_node_create_lan_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3364,7 +3364,7 @@ void node_request_service::on_node_delete_lan_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != DBC_NODE_TYPE::DBC_COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;

@@ -37,7 +37,7 @@ SystemInfo::~SystemInfo() {
 
 }
 
-ERRCODE SystemInfo::Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_t reserved_memory) {
+ERRCODE SystemInfo::Init(NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_t reserved_memory) {
     m_reserved_cpu_cores = reserved_cpu_cores;
     m_reserved_memory = reserved_memory;
     m_node_type = node_type;
@@ -50,7 +50,7 @@ ERRCODE SystemInfo::Init(DBC_NODE_TYPE node_type, int32_t reserved_cpu_cores, in
 
     init_gpu_info();
 
-    if (m_node_type == DBC_NODE_TYPE::DBC_COMPUTE_NODE)
+    if (m_node_type == NODE_TYPE::COMPUTE_NODE)
         update_disk_info("/data", m_diskinfo);
     else
         update_disk_info("/", m_diskinfo);
@@ -413,7 +413,7 @@ void SystemInfo::update_thread_func() {
         // disk
         do {
             disk_info _disk_info;
-            if (m_node_type == DBC_NODE_TYPE::DBC_COMPUTE_NODE)
+            if (m_node_type == NODE_TYPE::COMPUTE_NODE)
                 update_disk_info("/data", _disk_info);
             else
                 update_disk_info("/", _disk_info);

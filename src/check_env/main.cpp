@@ -3,6 +3,7 @@
 #include "check_images.h"
 #include "util/SystemResourceManager.h"
 #include "../dbc/common/version.h"
+#include "../dbc/common/common.h"
 
 int main(int argc, char** argv) {
     std::cout << "version: " << dbcversion() << std::endl;

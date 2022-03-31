@@ -20,7 +20,7 @@ public:
     void Exit();
 
 public:
-	static DBC_NODE_TYPE NodeType;
+	static NODE_TYPE NodeType;
 
     static std::string NodeName;
 

@@ -33,7 +33,7 @@ void ssl_locking_callback(int mode, int type, const char *file, int line)
     }
 }
 
-DBC_NODE_TYPE Server::NodeType = DBC_NODE_TYPE::DBC_COMPUTE_NODE;
+NODE_TYPE Server::NodeType = NODE_TYPE::COMPUTE_NODE;
 std::string Server::NodeName = "";
 
 ERRCODE Server::Init(int argc, char *argv[]) {
@@ -238,13 +238,13 @@ ERRCODE Server::ParseCommandLine(int argc, char* argv[]) {
     }
     
     if (options.count("compute")) {
-        NodeType = DBC_NODE_TYPE::DBC_COMPUTE_NODE;
+        NodeType = NODE_TYPE::COMPUTE_NODE;
     }
     else if (options.count("client")) {
-        NodeType = DBC_NODE_TYPE::DBC_CLIENT_NODE;
+        NodeType = NODE_TYPE::CLIENT_NODE;
     }
     else if (options.count("seed")) {
-        NodeType = DBC_NODE_TYPE::DBC_SEED_NODE;
+        NodeType = NODE_TYPE::SEED_NODE;
     }
 
     if (options.count("name")) {
