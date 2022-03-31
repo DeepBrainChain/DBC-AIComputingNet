@@ -22,7 +22,7 @@ struct FResult {
     std::string errmsg = "success";
 };
 
-#define FResultSuccess FResult(ERR_SUCCESS, "success")
+#define FResultOk FResult(ERR_SUCCESS, "ok")
 #define FResultError FResult(ERR_ERROR, "error");
 
 

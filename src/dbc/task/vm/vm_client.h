@@ -71,7 +71,7 @@ public:
 
     void ListAllRunningDomains(std::vector<std::string>& domains);
 
-    FResult GetDomainLog(const std::string& domain_name, ETaskLogDirection direction, int32_t linecount, std::string &log_content);
+    FResult GetDomainLog(const std::string& domain_name, QUERY_LOG_DIRECTION direction, int32_t linecount, std::string &log_content);
 
     std::string GetDomainLocalIP(const std::string &domain_name);
 

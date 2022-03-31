@@ -59,7 +59,7 @@ FResult TaskManager::init() {
 		m_prune_thread = new std::thread(&TaskManager::prune_task_thread_func, this);
 	}
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 void TaskManager::exit() {
@@ -91,9 +91,9 @@ FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_
             ImageMgr::instance().ListWalletLocalShareImages(result.rent_wallet, imgsvr, images);
         }
 
-        return FResultSuccess;
+        return FResultOk;
     } catch (std::exception& e) {
-        return FResultSuccess;
+        return FResultOk;
     }
 }
 
@@ -134,7 +134,7 @@ FResult TaskManager::downloadImage(const std::string& wallet,
     }
 
     ImageManager::instance().Download(image_filename, local_dir, imgsvr);
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data) {
@@ -168,31 +168,23 @@ FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_pt
     ImageServer imgsvr;
     imgsvr.from_string(data->image_server);
     ImageManager::instance().Upload(image_fullpath, imgsvr);
-    return FResultSuccess;
+    return FResultOk;
 }
 
 bool TaskManager::restore_tasks() {
-    std::string cur_renter_wallet;
+    std::string cur_renter;
     int64_t cur_rent_end = 0;
 
-    std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
-    for (auto& it : wallets) {
-        int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), it);
-        if (rent_end > 0) {
-            cur_renter_wallet = it;
-            cur_rent_end = rent_end;
-            break;
-        }
-    }
+    HttpDBCChainClient::instance().request_cur_renter(ConfManager::instance().GetNodeId(), cur_renter, cur_rent_end);
 
     // 将不是当前租用者的task都停掉
     //【如果存在当前租用者，就把验证人创建的虚拟机也一起关闭】
     //【如果不存在当前租用者，就先不要关闭验证人的虚拟机】
     auto renttasks = WalletRentTaskMgr::instance().getRentTasks();
     for (auto& it : renttasks) {
-        if (it.first != cur_renter_wallet) {
+        if (it.first != cur_renter) {
             for (auto& id : it.second->task_ids) {
-                if (cur_renter_wallet.empty()) {
+                if (cur_renter.empty()) {
                     if (!util::check_id(id)) continue;
                 }
 
@@ -202,7 +194,7 @@ bool TaskManager::restore_tasks() {
     }
 
     // 如果不存在当前租用者，恢复验证人task
-    if (cur_renter_wallet.empty()) {
+    if (cur_renter.empty()) {
         std::map<std::string, std::shared_ptr<dbc::TaskInfo> > check_tasks;
         for (auto& it : renttasks) {
             for (auto& task_id : it.second->task_ids) {
@@ -228,7 +220,7 @@ bool TaskManager::restore_tasks() {
         do {
             // 将没有归属的task（除了验证人task）都归到当前租用的用户下
             auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
-            auto it = wallet_renttasks.find(cur_renter_wallet);
+            auto it = wallet_renttasks.find(cur_renter);
             if (it == wallet_renttasks.end()) {
                 auto tmp_tasks = TaskInfoMgr::instance().getTasks();
                 for (auto &it: wallet_renttasks) {
@@ -238,7 +230,7 @@ bool TaskManager::restore_tasks() {
                 }
 
                 std::shared_ptr<dbc::rent_task> renttask = std::make_shared<dbc::rent_task>();
-                renttask->rent_wallet = cur_renter_wallet;
+                renttask->rent_wallet = cur_renter;
                 renttask->rent_end = cur_rent_end;
                 for (auto &id: tmp_tasks) {
                     if (util::check_id(id.first)) { // 排除验证人task
@@ -250,7 +242,7 @@ bool TaskManager::restore_tasks() {
         } while(0);
 
         auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
-        auto iter = wallet_renttasks.find(cur_renter_wallet);
+        auto iter = wallet_renttasks.find(cur_renter);
         for (auto& id : iter->second->task_ids) {
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(id);
             if (taskinfo != nullptr) {
@@ -620,7 +612,7 @@ FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr
     ev.op = T_OP_Create;
     ev.image_server = data->image_server;
     add_process_task(ev);
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::parse_create_params(const std::string &additional, USER_ROLE role, TaskCreateParams& params) {
@@ -770,7 +762,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         // task_id
         task_id = util::create_task_id();
-        if (role == USER_ROLE::UR_VERIFIER) {
+        if (role == USER_ROLE::Verifier) {
             task_id = "vm_check_" + std::to_string(time(nullptr));
         }
 
@@ -781,7 +773,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         cpu_cores = atoi(s_cpu_cores.c_str());
 
-        if (role == USER_ROLE::UR_VERIFIER)
+        if (role == USER_ROLE::Verifier)
             cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
 
         // gpu
@@ -791,7 +783,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         gpu_count = atoi(s_gpu_count.c_str());
 
-        if (role == USER_ROLE::UR_VERIFIER)
+        if (role == USER_ROLE::Verifier)
             gpu_count = SystemInfo::instance().GetGpuInfo().size();
 
         // mem
@@ -801,7 +793,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         mem_size = atoi(s_mem_size.c_str()) * 1024L * 1024L;
 
-        if (role == USER_ROLE::UR_VERIFIER)
+        if (role == USER_ROLE::Verifier)
             mem_size = SystemInfo::instance().GetMemInfo().free;
 
         // disk
@@ -811,7 +803,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
         uint64_t disk_size = atoi(s_disk_size.c_str()) * 1024L * 1024L;
 
-        if (role == USER_ROLE::UR_VERIFIER)
+        if (role == USER_ROLE::Verifier)
             disk_size = (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L) * 0.75;
 
         disks[1] = disk_size;
@@ -858,7 +850,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         }
     }
     else {
-        if (role != USER_ROLE::UR_RENTER_WALLET && role != USER_ROLE::UR_RENTER_SESSION_ID) {
+        if (role != USER_ROLE::WalletRenter && role != USER_ROLE::SessionIdRenter) {
             return FResult(ERR_ERROR, "only renter can create task with vm_xml");
         }
 
@@ -1003,7 +995,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.bios_mode = bios_mode;
     params.multicast = multicast;
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads) {
@@ -1223,7 +1215,7 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
         ele_graphics = ele_graphics->NextSiblingElement("graphics");
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 bool TaskManager::check_iptables_port_occupied(const std::string& port) {
@@ -1258,7 +1250,7 @@ FResult TaskManager::check_image(const std::string &image_name) {
         return FResult(ERR_ERROR, "image:" + image_name + " in downloading or uploading, please try again later");
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::check_data_image(const std::string& data_image_name) {
@@ -1272,7 +1264,7 @@ FResult TaskManager::check_data_image(const std::string& data_image_name) {
             return FResult(ERR_ERROR, "image is not a regular file");
         }
     }
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
@@ -1284,7 +1276,7 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) 
         return FResult(ERR_ERROR, "cpu config is invalid");
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string>> &gpus) {
@@ -1317,7 +1309,7 @@ FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string
         }
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
@@ -1330,26 +1322,26 @@ FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
     if (need_size > disk_available)
         return FResult(ERR_ERROR, "no enough disk, can available size: " + std::to_string(disk_available));
     else
-        return FResultSuccess;
+        return FResultOk;
 }
 
 FResult TaskManager::check_operation_system(const std::string& os) {
-    if (os.empty()) return FResultSuccess;
-    if (os == "generic") return FResultSuccess;
-    if (os.find("ubuntu") != std::string::npos) return FResultSuccess;
-    if (os.find("win") != std::string::npos) return FResultSuccess;
+    if (os.empty()) return FResultOk;
+    if (os == "generic") return FResultOk;
+    if (os.find("ubuntu") != std::string::npos) return FResultOk;
+    if (os.find("win") != std::string::npos) return FResultOk;
     return FResult(ERR_ERROR, "unsupported operation system");
 }
 
 FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
-    if (bios_mode.empty()) return FResultSuccess;
-    if (bios_mode == "legacy") return FResultSuccess;
-    if (bios_mode == "uefi") return FResultSuccess;
+    if (bios_mode.empty()) return FResultOk;
+    if (bios_mode == "legacy") return FResultOk;
+    if (bios_mode == "uefi") return FResultOk;
     return FResult(ERR_ERROR, "bios mode only supported [legacy] or [uefi]");
 }
 
 FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) {
-    if (multicast.empty()) return FResultSuccess;
+    if (multicast.empty()) return FResultOk;
 
     for (const auto& address : multicast) {
         std::vector<std::string> vecSplit = util::split(address, ":");
@@ -1361,7 +1353,7 @@ FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) 
             return FResult(ERR_ERROR, "address is not a multicast address");
         }
     }
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::parse_create_snapshot_params(const std::string &additional, const std::string &task_id,
@@ -1511,7 +1503,7 @@ FResult TaskManager::parse_create_snapshot_params(const std::string &additional,
         }
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 std::shared_ptr<dbc::TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
@@ -1552,7 +1544,7 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
         ev.task_id = task_id;
         ev.op = T_OP_Start;
         add_process_task(ev);
-        return FResultSuccess;
+        return FResultOk;
     } else {
         return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
     }
@@ -1578,7 +1570,7 @@ FResult TaskManager::stopTask(const std::string& wallet, const std::string &task
         ev.task_id = task_id;
         ev.op = T_OP_Stop;
         add_process_task(ev);
-        return FResultSuccess;
+        return FResultOk;
     } else {
         return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
     }
@@ -1607,14 +1599,14 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
         ev.task_id = task_id;
         ev.op = force_reboot ? T_OP_ForceReboot : T_OP_ReStart;
         add_process_task(ev);
-        return FResultSuccess;
+        return FResultOk;
     } else {
         return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
     }
 }
 
 FResult TaskManager::resetTask(const std::string& wallet, const std::string &task_id) {
-    return FResultSuccess;
+    return FResultOk;
 
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -1635,7 +1627,7 @@ FResult TaskManager::resetTask(const std::string& wallet, const std::string &tas
         ev.task_id = task_id;
         ev.op = T_OP_Reset;
         add_process_task(ev);
-        return FResultSuccess;
+        return FResultOk;
     } else {
         return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
     }
@@ -1658,7 +1650,7 @@ FResult TaskManager::deleteTask(const std::string& wallet, const std::string &ta
     ev.task_id = task_id;
     ev.op = T_OP_Delete;
     add_process_task(ev);
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr<dbc::node_modify_task_req_data>& data) {
@@ -1874,10 +1866,10 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
         }
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
-FResult TaskManager::getTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines,
+FResult TaskManager::getTaskLog(const std::string &task_id, QUERY_LOG_DIRECTION direction, int32_t nlines,
                                 std::string &log_content) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -2094,7 +2086,7 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
         ev.task_id = task_id;
         ev.op = T_OP_CreateSnapshot;
         add_process_task(ev);
-        return FResultSuccess;
+        return FResultOk;
     } else {
         return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status) + 
             ", please save the job and shutdown task before creating a snapshot");
@@ -2121,7 +2113,7 @@ FResult TaskManager::listTaskSnapshot(const std::string& wallet, const std::stri
     //     return FResult(ERR_ERROR, "task_id not exist");
     // }
     SnapshotManager::instance().listTaskSnapshot(task_id, snaps);
-    return FResultSuccess;
+    return FResultOk;
 }
 
 std::shared_ptr<dbc::snapshotInfo> TaskManager::getTaskSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name) {
@@ -2528,72 +2520,76 @@ void TaskManager::prune_task_thread_func() {
 
         MACHINE_STATUS machine_status = HttpDBCChainClient::instance().request_machine_status(
             ConfManager::instance().GetNodeId());
-        if (machine_status == MACHINE_STATUS::MS_NONE) continue;
+        if (machine_status == MACHINE_STATUS::Unknown) continue;
+
+        std::string cur_renter;
+        int64_t cur_rent_end = 0;
+        HttpDBCChainClient::instance().request_cur_renter(ConfManager::instance().GetNodeId(), cur_renter, cur_rent_end);
+        int64_t cur_block = HttpDBCChainClient::instance().request_cur_block();
 
         auto wallet_renttasks = WalletRentTaskMgr::instance().getRentTasks();
         for (auto &it: wallet_renttasks) {
-            if (machine_status == MACHINE_STATUS::MS_VERIFY) {
+            if (machine_status == MACHINE_STATUS::Verify) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
-                        TASK_LOG_INFO(task_id, "stop task and machine status is " << machine_status);
+                        TASK_LOG_INFO(task_id, "stop task and machine status is " << (int32_t) machine_status);
                         close_task(task_id);
                     }
                 }
-            } else if (machine_status == MACHINE_STATUS::MS_ONLINE) {
+            } 
+            else if (machine_status == MACHINE_STATUS::Online) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") == std::string::npos) {
-                        TASK_LOG_INFO(task_id, "stop task and machine status is " << machine_status);
+                        TASK_LOG_INFO(task_id, "stop task and machine status is " << (int32_t) machine_status);
                         close_task(task_id);
                     } else {
-                        TASK_LOG_INFO(task_id, "delete check task and machine status is " << machine_status);
+                        TASK_LOG_INFO(task_id, "delete check task and machine status is " << (int32_t) machine_status);
                         delete_task(task_id);
                     }
                 }
-            } else if (machine_status == MACHINE_STATUS::MS_RENNTED) {
+            } 
+            else if (machine_status == MACHINE_STATUS::Rented) {
                 std::vector<std::string> ids = it.second->task_ids;
                 for (auto &task_id: ids) {
                     if (task_id.find("vm_check_") != std::string::npos) {
-                        TASK_LOG_INFO(task_id, "delete check task and machine status is " << machine_status);
+                        TASK_LOG_INFO(task_id, "delete check task and machine status is " << (int32_t) machine_status);
                         delete_task(task_id);
                     }
                 }
             }
 
-            if (machine_status == MACHINE_STATUS::MS_ONLINE || machine_status == MACHINE_STATUS::MS_RENNTED) {
-                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), it.first);
-                if (rent_end < 0) {
+            if (machine_status == MACHINE_STATUS::Online || machine_status == MACHINE_STATUS::Rented) {
+                if (it.first != cur_renter) {
                     std::vector<std::string> ids = it.second->task_ids;
                     for (auto &task_id: ids) {
-                        TASK_LOG_INFO(task_id, "stop task and machine status: " << machine_status <<
-                                               " ,request rent end: " << rent_end);
+                        TASK_LOG_INFO(task_id, "stop task and machine status: " << (int32_t) machine_status 
+                            << ", cur_renter:" << cur_renter << ", cur_rent_end:" << cur_rent_end
+                            << ", cur_wallet:" << it.first);
                         close_task(task_id);
                     }
 
                     // 1小时出120个块
                     int64_t wallet_rent_end = it.second->rent_end;
                     int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
-                    int64_t cur_block = HttpDBCChainClient::instance().request_cur_block();
                     if (cur_block > 0 && reserve_end < cur_block) {
                         ids = it.second->task_ids;
                         for (auto &task_id: ids) {
-                            TASK_LOG_INFO(task_id, "delete task and machine status: " << machine_status << 
+                            TASK_LOG_INFO(task_id, "delete task and machine status: " << (int32_t) machine_status << 
                                                    " ,task rent end: " << it.second->rent_end << 
                                                    " ,current block:" << cur_block);
                             delete_task(task_id);
                         }
                     }
-                } else if (rent_end > 0) {
-                    if (rent_end > it.second->rent_end) {
+                } else if (it.first == cur_renter) {
+                    if (cur_rent_end > it.second->rent_end) {
                         int64_t old_rent_end = it.second->rent_end;
-                        it.second->rent_end = rent_end;
-                        WalletRentTaskMgr::instance().updateRentEnd(it.first, rent_end);
+                        it.second->rent_end = cur_rent_end;
+                        WalletRentTaskMgr::instance().updateRentEnd(it.first, cur_rent_end);
                         LOG_INFO << "update rent_end, wallet=" << it.first
-                            << ", update rent_end=old:" << old_rent_end << ",new:" << rent_end;
+                            << ", update rent_end=old:" << old_rent_end << ",new:" << cur_rent_end;
                     }
-                } else {
-                    LOG_INFO << "request_rent_end return 0: wallet=" << it.first;
                 }
             }
         }

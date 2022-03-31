@@ -130,16 +130,16 @@ MACHINE_STATUS HttpDBCChainClient::request_machine_status(const std::string& nod
 
     if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
         machine_status == "committeeVerifying" || machine_status == "committeeRefused") {
-        return MACHINE_STATUS::MS_VERIFY;
+        return MACHINE_STATUS::Verify;
     }
     else if (machine_status == "waitingFulfill" || machine_status == "online") {
-        return MACHINE_STATUS::MS_ONLINE;
+        return MACHINE_STATUS::Online;
     }
     else if (machine_status == "creating" || machine_status == "rented") {
-        return MACHINE_STATUS::MS_RENNTED;
+        return MACHINE_STATUS::Rented;
     }
     else {
-        return MACHINE_STATUS::MS_ONLINE;
+        return MACHINE_STATUS::Online;
     }
 }
 
@@ -223,4 +223,37 @@ int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const s
     }
 
     return rent_end;
+}
+
+void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::string& renter, int64_t& rent_end) {
+    for (auto& it : m_addrs) {
+        httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
+        cli.set_timeout_sec(5);
+        cli.set_read_timeout(10, 0);
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
+            + node_id + R"("]})";
+        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        if (resp != nullptr) {
+            rapidjson::Document doc;
+            doc.Parse(resp->body.c_str());
+            if (!doc.IsObject()) break;
+
+            if (!doc.HasMember("result")) break;
+            const rapidjson::Value& v_result = doc["result"];
+            if (!v_result.IsObject()) break;
+
+            if (!v_result.HasMember("renter")) break;
+            const rapidjson::Value& v_renter = v_result["renter"];
+            if (!v_renter.IsString()) break;
+            renter = v_renter.GetString();
+
+            if (!v_result.HasMember("rentEnd")) break;
+            const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
+            if (!v_rentEnd.IsNumber()) break; 
+            rent_end = v_rentEnd.GetInt64();
+            
+            break;
+        }
+    }
 }

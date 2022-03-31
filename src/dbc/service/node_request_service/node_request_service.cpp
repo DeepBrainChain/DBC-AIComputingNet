@@ -66,11 +66,9 @@ std::string get_is_update(const std::string& s) {
 ERRCODE node_request_service::init() {
 	service_module::init();
 
-	if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
+	if (Server::NodeType == NODE_TYPE::ComputeNode) {
 		add_self_to_servicelist();
-	}
 
-	if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
 		auto fresult = m_task_scheduler.init();
 		if (fresult.errcode != ERR_SUCCESS) {
 			LOG_ERROR << fresult.errmsg;
@@ -84,7 +82,7 @@ ERRCODE node_request_service::init() {
 void node_request_service::exit() {
 	service_module::exit();
 
-	if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
+	if (Server::NodeType == NODE_TYPE::ComputeNode) {
 		m_task_scheduler.exit();
 	}
 }
@@ -124,7 +122,7 @@ void node_request_service::add_self_to_servicelist() {
 }
 
 void node_request_service::init_timer() {
-    if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType == NODE_TYPE::ComputeNode) {
         // 10s
         add_timer(AI_TRAINING_TASK_TIMER, 10 * 1000, 10 * 1000, ULLONG_MAX, "",
             std::bind(&node_request_service::on_training_task_timer, this, std::placeholders::_1));
@@ -336,7 +334,7 @@ FResult node_request_service::check_nonce(const std::string &wallet, const std::
         m_nonceCache.insert(nonce, 1);
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 FResult node_request_service::check_nonce(const std::vector<std::string>& multisig_wallets, int32_t multisig_threshold,
@@ -379,7 +377,7 @@ FResult node_request_service::check_nonce(const std::vector<std::string>& multis
         }
     }
 
-    return FResultSuccess;
+    return FResultOk;
 }
 
 std::tuple<std::string, std::string> node_request_service::parse_wallet(const AuthorityParams& params) {
@@ -411,15 +409,15 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
 void node_request_service::check_authority(const AuthorityParams& params, AuthoriseResult& result) {
     MACHINE_STATUS str_status = HttpDBCChainClient::instance().request_machine_status(ConfManager::instance().GetNodeId());
-    if (str_status == MACHINE_STATUS::MS_NONE) {
+    if (str_status == MACHINE_STATUS::Unknown) {
         result.success = false;
         result.errmsg = "query machine_status failed";
         return;
     }
 
     // 未验证
-    if (str_status == MACHINE_STATUS::MS_VERIFY) {
-        result.machine_status = MACHINE_STATUS::MS_VERIFY;
+    if (str_status == MACHINE_STATUS::Verify) {
+        result.machine_status = MACHINE_STATUS::Verify;
         auto wallets = parse_wallet(params);
         std::string strWallet = std::get<0>(wallets);
         std::string strMultisigWallet = std::get<1>(wallets);
@@ -438,7 +436,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 m_task_scheduler.deleteOtherCheckTasks(strMultisigWallet);
 
                 result.success = true;
-                result.user_role = USER_ROLE::UR_VERIFIER;
+                result.user_role = USER_ROLE::Verifier;
                 result.rent_wallet = strMultisigWallet;
             }
         }
@@ -452,7 +450,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 m_task_scheduler.deleteOtherCheckTasks(strWallet);
 
                 result.success = true;
-                result.user_role = USER_ROLE::UR_VERIFIER;
+                result.user_role = USER_ROLE::Verifier;
                 result.rent_wallet = strWallet;
             }
         }
@@ -462,15 +460,15 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
     }
     // 验证完，已上线，但未租用
-    else if (str_status == MACHINE_STATUS::MS_ONLINE) {
-        result.machine_status = MACHINE_STATUS::MS_ONLINE;
+    else if (str_status == MACHINE_STATUS::Online) {
+        result.machine_status = MACHINE_STATUS::Online;
         m_task_scheduler.deleteAllCheckTasks();
         result.success = false;
         result.errmsg = "machine is not be rented";
     }
     // 租用中
-    else if (str_status == MACHINE_STATUS::MS_RENNTED) {
-        result.machine_status = MACHINE_STATUS::MS_RENNTED;
+    else if (str_status == MACHINE_STATUS::Rented) {
+        result.machine_status = MACHINE_STATUS::Rented;
         m_task_scheduler.deleteAllCheckTasks();
 
         std::string rent_wallet = m_task_scheduler.checkSessionId(params.session_id, params.session_id_sign);
@@ -491,7 +489,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), strMultisigWallet);
                 if (rent_end > 0) {
                     result.success = true;
-                    result.user_role = USER_ROLE::UR_RENTER_WALLET;
+                    result.user_role = USER_ROLE::WalletRenter;
                     result.rent_wallet = strMultisigWallet;
                     result.rent_end = rent_end;
 
@@ -510,7 +508,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), strWallet);
                 if (rent_end > 0) {
                     result.success = true;
-                    result.user_role = USER_ROLE::UR_RENTER_WALLET;
+                    result.user_role = USER_ROLE::WalletRenter;
                     result.rent_wallet = strWallet;
                     result.rent_end = rent_end;
 
@@ -524,7 +522,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), rent_wallet);
             if (rent_end > 0) {
                 result.success = true;
-                result.user_role = USER_ROLE::UR_RENTER_SESSION_ID;
+                result.user_role = USER_ROLE::SessionIdRenter;
                 result.rent_wallet = rent_wallet;
                 result.rent_end = rent_end;
             } else {
@@ -551,7 +549,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<network
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -679,7 +677,7 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<netw
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -777,7 +775,7 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<networ
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -875,7 +873,7 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1032,7 +1030,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<network::
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1295,7 +1293,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<network
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1431,7 +1429,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1528,7 +1526,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<network::
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1625,7 +1623,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<networ
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1722,7 +1720,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1819,7 +1817,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<network
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1916,7 +1914,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<network::
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -1991,12 +1989,12 @@ void node_request_service::task_logs(const network::base_header& header,
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    int16_t head_or_tail = data->head_or_tail;
+    QUERY_LOG_DIRECTION head_or_tail = (QUERY_LOG_DIRECTION) data->head_or_tail;
     int32_t number_of_lines = data->number_of_lines;
 
-    if (GET_LOG_HEAD != head_or_tail && GET_LOG_TAIL != head_or_tail) {
-        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, E_DEFAULT, "req_head_or_tail is invalid:" + head_or_tail);
-        LOG_ERROR << "req_head_or_tail is invalid:" << head_or_tail;
+    if (QUERY_LOG_DIRECTION::Head != head_or_tail && QUERY_LOG_DIRECTION::Tail != head_or_tail) {
+        send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header, E_DEFAULT, "request head_or_tail is invalid");
+        LOG_ERROR << "req_head_or_tail is invalid:" << (int32_t) head_or_tail;
         return;
     }
 
@@ -2007,8 +2005,7 @@ void node_request_service::task_logs(const network::base_header& header,
     }
 
     std::string log_content;
-    auto fresult = m_task_scheduler.getTaskLog(data->task_id, (ETaskLogDirection) head_or_tail,
-                                               number_of_lines, log_content);
+    auto fresult = m_task_scheduler.getTaskLog(data->task_id, head_or_tail, number_of_lines, log_content);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -2055,7 +2052,7 @@ void node_request_service::on_node_modify_task_req(const std::shared_ptr<network
 		return;
 	}
 
-	if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
 		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
 		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
 		return;
@@ -2154,7 +2151,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2224,7 +2221,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<network:
 
 void node_request_service::node_session_id(const network::base_header &header,
                                            const std::shared_ptr<dbc::node_session_id_req_data> &data, const AuthoriseResult& result) {
-    if (result.machine_status == MACHINE_STATUS::MS_RENNTED && result.user_role == USER_ROLE::UR_RENTER_WALLET) {
+    if (result.machine_status == MACHINE_STATUS::Rented && result.user_role == USER_ROLE::WalletRenter) {
         std::string session_id = m_task_scheduler.getSessionId(result.rent_wallet);
         if (session_id.empty()) {
             send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "no session id");
@@ -2277,7 +2274,7 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
         return;
     }
 
-    if (Server::NodeType == NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType == NODE_TYPE::ComputeNode) {
         /*
         int32_t count = m_task_scheduler.GetRunningTaskSize();
         std::string state;
@@ -2429,7 +2426,7 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<netwo
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2633,7 +2630,7 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2690,7 +2687,7 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<net
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_create_snapshot_rsp>(NODE_CREATE_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
@@ -2778,7 +2775,7 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2835,7 +2832,7 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<net
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
@@ -2881,7 +2878,7 @@ void node_request_service::on_node_list_monitor_server_req(const std::shared_ptr
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -2938,7 +2935,7 @@ void node_request_service::on_node_list_monitor_server_req(const std::shared_ptr
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_monitor_server_rsp>(NODE_LIST_MONITOR_SERVER_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
@@ -3011,7 +3008,7 @@ void node_request_service::on_node_set_monitor_server_req(const std::shared_ptr<
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3068,7 +3065,7 @@ void node_request_service::on_node_set_monitor_server_req(const std::shared_ptr<
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_set_monitor_server_rsp>(NODE_SET_MONITOR_SERVER_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
@@ -3107,7 +3104,7 @@ void node_request_service::on_node_list_lan_req(const std::shared_ptr<network::m
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3164,7 +3161,7 @@ void node_request_service::on_node_list_lan_req(const std::shared_ptr<network::m
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_lan_rsp>(NODE_LIST_LAN_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
@@ -3256,7 +3253,7 @@ void node_request_service::on_node_create_lan_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3313,7 +3310,7 @@ void node_request_service::on_node_create_lan_req(const std::shared_ptr<network:
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
@@ -3364,7 +3361,7 @@ void node_request_service::on_node_delete_lan_req(const std::shared_ptr<network:
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::COMPUTE_NODE) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -3421,7 +3418,7 @@ void node_request_service::on_node_delete_lan_req(const std::shared_ptr<network:
         params.session_id_sign = data->session_id_sign;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::UR_NONE || result.user_role == USER_ROLE::UR_VERIFIER) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_lan_rsp>(NODE_DELETE_LAN_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;

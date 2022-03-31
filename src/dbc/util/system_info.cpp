@@ -50,7 +50,7 @@ ERRCODE SystemInfo::Init(NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_
 
     init_gpu_info();
 
-    if (m_node_type == NODE_TYPE::COMPUTE_NODE)
+    if (m_node_type == NODE_TYPE::ComputeNode)
         update_disk_info("/data", m_diskinfo);
     else
         update_disk_info("/", m_diskinfo);
@@ -413,7 +413,7 @@ void SystemInfo::update_thread_func() {
         // disk
         do {
             disk_info _disk_info;
-            if (m_node_type == NODE_TYPE::COMPUTE_NODE)
+            if (m_node_type == NODE_TYPE::ComputeNode)
                 update_disk_info("/data", _disk_info);
             else
                 update_disk_info("/", _disk_info);

@@ -3403,11 +3403,11 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<network::http_reques
 
     // tail or head
     if (head_or_tail == "tail") {
-        body.head_or_tail = GET_LOG_TAIL;
+        body.head_or_tail = QUERY_LOG_DIRECTION::Tail;
     } else if (head_or_tail == "head") {
-        body.head_or_tail = GET_LOG_HEAD;
+        body.head_or_tail = QUERY_LOG_DIRECTION::Head;
     } else {
-        body.head_or_tail = GET_LOG_TAIL;
+        body.head_or_tail = QUERY_LOG_DIRECTION::Tail;
     }
 
     body.task_id = path_list[1];
@@ -3510,7 +3510,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_task_logs_req_ms
     //body
     dbc::node_task_logs_req_data req_data;
     req_data.__set_task_id(body.task_id);
-    req_data.__set_head_or_tail(body.head_or_tail);
+    req_data.__set_head_or_tail((int16_t) body.head_or_tail);
     req_data.__set_number_of_lines(body.number_of_lines);
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
@@ -4213,13 +4213,13 @@ void reply_peer_nodes_list(const std::map<std::string, lan_machine_info> &lan_no
         ss << "\"node_id\":" << "\"" << iter.first << "\"";
         ss << ", \"addr\":" << "\"" << iter.second.local_address << ":" << iter.second.local_port << "\"";
         switch (iter.second.node_type) {
-            case 0:
+            case NODE_TYPE::ComputeNode:
                 ss << ", \"node_type\":" << "\"" << "computer" << "\"";
                 break;
-            case 1:
+            case NODE_TYPE::ClientNode:
                 ss << ", \"node_type\":" << "\"" << "client" << "\"";
                 break;
-            case 2:
+            case NODE_TYPE::SeedNode:
                 ss << ", \"node_type\":" << "\"" << "seed" << "\"";
                 break;
             default:
@@ -4253,7 +4253,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
     req_body body;
     body.option = path_list[0];
     if (body.option == "active") {
-        body.flag = QUERY_PEERS_FLAG::FLAG_ACTIVE;
+        body.flag = QUERY_PEERS_FLAG::Active;
         std::unordered_map<std::string, std::shared_ptr<peer_node>> peer_nodes_map =
                 p2p_net_service::instance().get_peer_nodes_map();
         std::vector<std::shared_ptr<peer_node>> vPeers;
@@ -4287,7 +4287,7 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
         reply_peer_nodes_list(peer_nodes_list, data_json);
         httpReq->reply_comm_rest_succ2(data_json);
     } else if (body.option == "global") {
-        body.flag = QUERY_PEERS_FLAG::FLAG_GLOBAL;
+        body.flag = QUERY_PEERS_FLAG::Global;
         std::list<std::shared_ptr<peer_candidate>> peer_candidates =
                 p2p_net_service::instance().get_peer_candidates();
         std::vector<std::shared_ptr<peer_candidate>> vPeers;

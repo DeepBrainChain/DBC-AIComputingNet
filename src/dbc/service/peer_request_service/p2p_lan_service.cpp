@@ -10,7 +10,7 @@
 bool lan_machine_info::validate() const {
     if (machine_id.empty() || local_address.empty() || local_port == 0) return false;
     if (net_type.empty() || net_flag == 0) return false;
-    if (node_type < DBC_NODE_TYPE::DBC_COMPUTE_NODE || node_type > DBC_NODE_TYPE::DBC_SEED_NODE) return false;
+    if (node_type != NODE_TYPE::ComputeNode && node_type != NODE_TYPE::ClientNode && node_type != NODE_TYPE::SeedNode) return false;
     if (cur_time == 0) return false;
     ip_validator ip_vdr;
     variable_value val_ip(local_address, false);
@@ -41,7 +41,7 @@ std::string lan_machine_info::to_request_json() const {
     write.Key("local_port");
     write.Uint(local_port);
     write.Key("node_type");
-    write.Int(node_type);
+    write.Int((int32_t) node_type);
     // struct timespec ts;
     // clock_gettime(CLOCK_REALTIME, &ts);
     // write.Key("cur_time");
@@ -141,7 +141,9 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
         JSON_PARSE_INT(v_data, "net_flag", lm_info.net_flag);
         lm_info.local_address = addr;
         JSON_PARSE_UINT(v_data, "local_port", lm_info.local_port);
-        JSON_PARSE_INT(v_data, "node_type", lm_info.node_type);
+        int32_t tmp_node_type = 0;
+        JSON_PARSE_INT(v_data, "node_type", tmp_node_type);
+        lm_info.node_type = (NODE_TYPE) tmp_node_type;
         // JSON_PARSE_INT64(v_data, "cur_time", lm_info.cur_time);
         lm_info.cur_time = time(NULL);
         add_lan_node(lm_info);

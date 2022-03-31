@@ -22,6 +22,8 @@ public:
 
     int64_t request_rent_end(const std::string& node_id, const std::string &wallet);
 
+    void request_cur_renter(const std::string& node_id, std::string& renter, int64_t& rent_end);
+
 private:
     std::map<int32_t, network::net_address> m_addrs;
 };

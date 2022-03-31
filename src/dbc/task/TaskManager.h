@@ -51,7 +51,7 @@ public:
     FResult modifyTask(const std::string& wallet, const std::shared_ptr<dbc::node_modify_task_req_data>& data);
 
     FResult
-    getTaskLog(const std::string &task_id, ETaskLogDirection direction, int32_t nlines, std::string &log_content);
+    getTaskLog(const std::string &task_id, QUERY_LOG_DIRECTION direction, int32_t nlines, std::string &log_content);
 
     void listAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
 

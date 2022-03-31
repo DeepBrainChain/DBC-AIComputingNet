@@ -47,12 +47,12 @@ struct req_body {
     int16_t force_reboot = 0;
 
     // task logs
-    int16_t head_or_tail = GET_LOG_TAIL;
+    QUERY_LOG_DIRECTION head_or_tail = QUERY_LOG_DIRECTION::Tail;
     int32_t number_of_lines = 100;
 
     // peers
     std::string option;
-    int16_t flag = QUERY_PEERS_FLAG::FLAG_GLOBAL;
+    QUERY_PEERS_FLAG flag = QUERY_PEERS_FLAG::Global;
 
     // snapshot
     std::string snapshot_name;

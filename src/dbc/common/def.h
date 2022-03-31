@@ -16,24 +16,62 @@
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 
-#define GET_LOG_HEAD                                            0
-#define GET_LOG_TAIL                                            1
-#define MAX_NUMBER_OF_LINES                                     100
-#define MAX_LOG_CONTENT_SIZE                                    (8 * 1024)
+#define MAX_NUMBER_OF_LINES         100
+#define MAX_LOG_CONTENT_SIZE        (8 * 1024)
 
-#define SERVICE_NAME_AI_TRAINING "ai_training"
+#define SERVICE_NAME_AI_TRAINING    "ai_training"
 
-enum QUERY_PEERS_FLAG
-{
-    FLAG_ACTIVE,
-    FLAG_GLOBAL
+
+// 系统盘大小（GB）
+static const int32_t g_disk_system_size = 350;
+// 内存预留大小（GB）
+static const int32_t g_reserved_memory = 32;
+// cpu预留核数（每个物理cpu的物理核数）
+static const int32_t g_reserved_physical_cores_per_cpu = 1;
+// 虚拟机登录用户名
+static const char* g_vm_ubuntu_login_username = "dbc";
+static const char* g_vm_windows_login_username = "Administrator";
+
+
+enum class QUERY_PEERS_FLAG {
+    Active,
+    Global
+};
+
+enum class QUERY_LOG_DIRECTION {
+    Head,
+    Tail
 };
 
 enum class NODE_TYPE {
-    COMPUTE_NODE,
-    CLIENT_NODE,
-    SEED_NODE
+    ComputeNode,
+    ClientNode,
+    SeedNode
 };
+
+enum class MACHINE_STATUS {
+    Unknown,
+    Verify,
+    Online,
+    Rented
+};
+
+enum class USER_ROLE {
+    Unknown,
+    Verifier,
+    WalletRenter,
+    SessionIdRenter
+};
+
+struct AuthoriseResult {
+    bool success = false;
+    std::string errmsg;
+    MACHINE_STATUS machine_status = MACHINE_STATUS::Unknown;
+    USER_ROLE user_role = USER_ROLE::Unknown;
+    std::string rent_wallet;
+    int64_t rent_end = 0;
+};
+
 
 enum ETaskOp {
     T_OP_None,
@@ -75,49 +113,10 @@ enum ETaskStatus {
     TS_CreateSnapshotError
 };
 
-enum ETaskLogDirection {
-    LD_Head,
-    LD_Tail
-};
-
 std::string task_status_string(int32_t status);
 std::string task_operation_string(int32_t op);
 std::string vm_status_string(virDomainState status);
 
-// 系统盘大小（GB）
-static const int32_t g_disk_system_size = 350;
-// 内存预留大小（GB）
-static const int32_t g_reserved_memory = 32;
-// cpu预留核数（每个物理cpu的物理核数）
-static const int32_t g_reserved_physical_cores_per_cpu = 1;
-// 虚拟机登录用户名
-static const char* g_vm_ubuntu_login_username = "dbc";
-static const char* g_vm_windows_login_username = "Administrator";
-
-enum MACHINE_STATUS {
-    MS_NONE,
-    MS_VERIFY, //验证阶段
-    MS_ONLINE, //验证完上线阶段
-    MS_RENNTED //租用中
-};
-
-enum USER_ROLE {
-    UR_NONE,
-    UR_VERIFIER,
-    UR_RENTER_WALLET,
-    UR_RENTER_SESSION_ID
-};
-
-struct AuthoriseResult {
-    bool success = false;
-    std::string errmsg;
-
-    MACHINE_STATUS machine_status;
-    USER_ROLE user_role = USER_ROLE::UR_NONE;
-
-    std::string rent_wallet;
-    int64_t rent_end = 0;
-};
 
 struct TaskCreateParams {
     std::string task_id;

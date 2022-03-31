@@ -133,7 +133,7 @@ protected:
     void update_thread_func();
 
 private:
-    NODE_TYPE m_node_type = NODE_TYPE::COMPUTE_NODE;
+    NODE_TYPE m_node_type = NODE_TYPE::ComputeNode;
     // os
     OS_TYPE m_os_type = OS_TYPE::OS_Ubuntu_1804;
     std::string m_os_name;

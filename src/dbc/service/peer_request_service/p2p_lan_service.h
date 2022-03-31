@@ -2,6 +2,7 @@
 #define DBC_P2P_LAN_SERVICE_H
 
 #include "util/utils.h"
+#include "common/common.h"
 #include <leveldb/db.h>
 #include "service_module/service_module.h"
 #include "multicast/multicast_reveiver.h"
@@ -17,7 +18,7 @@ struct lan_machine_info {
     int32_t net_flag;
     std::string local_address;
     short local_port;
-    int node_type; // DBC_NODE_TYPE
+    NODE_TYPE node_type;
     time_t cur_time;
 
     bool validate() const;

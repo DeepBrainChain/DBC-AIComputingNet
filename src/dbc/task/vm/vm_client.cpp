@@ -1040,7 +1040,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
     }
 
 	virDomainFree(domainPtr);
-	return FResultSuccess;
+	return FResultOk;
 }
 
 int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsigned int undefineFlags) {
@@ -1239,8 +1239,8 @@ virDomainState VmClient::GetDomainStatus(const std::string &domain_name) {
     return vm_status;
 }
 
-FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection direction, int32_t linecount, std::string &log_content) {
-    LOG_INFO << "get domain " << domain_name << " log, direction: " << direction << ", line: " << linecount;
+FResult VmClient::GetDomainLog(const std::string &domain_name, QUERY_LOG_DIRECTION direction, int32_t linecount, std::string &log_content) {
+    LOG_INFO << "get domain " << domain_name << " log, direction: " << (int32_t) direction << ", line: " << linecount;
     std::string latest_log;
     int max_num = -1;
     try {
@@ -1275,7 +1275,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, ETaskLogDirection
     log_content.clear();
     std::ifstream file(latest_log, std::ios_base::in);
     if (file.is_open()) {
-        if (direction == GET_LOG_HEAD) {
+        if (direction == QUERY_LOG_DIRECTION::Head) {
             file.seekg(0, std::ios_base::beg);
         } else {
             file.seekg(-2, std::ios_base::end);
