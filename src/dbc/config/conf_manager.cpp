@@ -97,7 +97,9 @@ ERRCODE ConfManager::ParseConf() {
         ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
         ("image_server", bpo::value<std::vector<std::string>>(), "")
         ("dbc_monitor_server", bpo::value<std::string>()->default_value(g_internal_zabbix_server), "")
-        ("miner_monitor_server", bpo::value<std::string>(), "");
+        ("miner_monitor_server", bpo::value<std::string>(), "")
+        ("multicast_address", bpo::value<std::string>()->default_value("239.255.0.1"), "")
+        ("multicast_port", bpo::value<int32_t>()->default_value(30001), "");
 
     const boost::filesystem::path &conf_path = EnvManager::instance().get_conf_file_path();
     try {
@@ -145,6 +147,9 @@ ERRCODE ConfManager::ParseConf() {
     if (core_args.count("miner_monitor_server") > 0) {
         m_miner_monitor_server = core_args["miner_monitor_server"].as<std::string>();
     }
+
+    m_multicast_address = core_args["multicast_address"].as<std::string>();
+    m_multicast_port = core_args["multicast_port"].as<int32_t>();
 
     variables_map peer_args;
     bpo::options_description peer_opts("peer.conf");

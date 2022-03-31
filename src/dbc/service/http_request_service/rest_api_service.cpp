@@ -15,6 +15,7 @@
 #include "message/message_id.h"
 #include "service/service_info/service_info_collection.h"
 #include "service/peer_request_service/p2p_net_service.h"
+#include "service/peer_request_service/p2p_lan_service.h"
 #include "task/TaskManager.h"
 #include "task/detail/VxlanManager.h"
 
@@ -4198,6 +4199,42 @@ void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list,
     data_json = ss.str();
 }
 
+void reply_peer_nodes_list(const std::map<std::string, lan_machine_info> &lan_nodes, std::string &data_json) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
+    ss << "\"peer_nodes\":[";
+    int peers_count = 0;
+    for (auto& iter : lan_nodes) {
+        if (peers_count > 50) break;
+        if (peers_count > 0) ss << ",";
+        ss << "{";
+        ss << "\"node_id\":" << "\"" << iter.first << "\"";
+        ss << ", \"addr\":" << "\"" << iter.second.local_address << ":" << iter.second.local_port << "\"";
+        switch (iter.second.node_type) {
+            case 0:
+                ss << ", \"node_type\":" << "\"" << "computer" << "\"";
+                break;
+            case 1:
+                ss << ", \"node_type\":" << "\"" << "client" << "\"";
+                break;
+            case 2:
+                ss << ", \"node_type\":" << "\"" << "seed" << "\"";
+                break;
+            default:
+                break;
+        }
+        ss << ", \"net_type\":" << "\"" << iter.second.net_type << "\"";
+        ss << "}";
+
+        peers_count++;
+    }
+    ss << "]}";
+    ss << "}";
+    data_json = ss.str();
+}
+
 void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_request>& httpReq, const std::string &path) {
     if (httpReq->get_request_method() != network::http_request::POST) {
         LOG_ERROR << "http request is not post";
@@ -4283,6 +4320,13 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
 
         std::string data_json;
         reply_peer_nodes_list(peer_nodes_list, data_json);
+        httpReq->reply_comm_rest_succ2(data_json);
+    } else if (body.option == "lan") {
+        // body.flag = flag_active;
+        const std::map<std::string, lan_machine_info>& lan_nodes =
+            p2p_lan_service::instance().get_lan_nodes();
+        std::string data_json;
+        reply_peer_nodes_list(lan_nodes, data_json);
         httpReq->reply_comm_rest_succ2(data_json);
     } else {
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid option. the option is active or global");

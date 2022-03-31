@@ -66,6 +66,10 @@ public:
 
     std::string GetMinerMonitorServer() const { return m_miner_monitor_server; }
 
+    std::string GetMulticastAddress() const { return m_multicast_address; }
+
+    int32_t GetMulticastPort() const { return m_multicast_port; }
+
     const std::vector<std::string> & GetPeers() { return m_peers; }
 
     const std::vector<std::string> &GetInternalIpSeeds() { return m_internal_ip_seeds; }
@@ -116,6 +120,8 @@ private:
     std::map<std::string, ImageServer*> m_image_server;
     std::string m_dbc_monitor_server;
     std::string m_miner_monitor_server;
+    std::string m_multicast_address;
+    int32_t m_multicast_port;
 
     std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;

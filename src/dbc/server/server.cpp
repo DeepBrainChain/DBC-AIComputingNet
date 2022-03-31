@@ -14,6 +14,7 @@
 #include "service/node_monitor_service/node_monitor_service.h"
 #include "service/node_request_service/node_request_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
+#include "service/peer_request_service/p2p_lan_service.h"
 #include "task/detail/VxlanManager.h"
 #include "util/system_info.h"
 
@@ -132,6 +133,15 @@ ERRCODE Server::Init(int argc, char *argv[]) {
         return err;
     }
     LOG_INFO << "init p2p_net_service successful";
+
+    // p2p_lan_service
+    LOG_INFO << "begin to init p2p_lan_service";
+    err = p2p_lan_service::instance().init();
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init p2p_lan_service failed";
+        return err;
+    }
+    LOG_INFO << "init p2p_lan_service successful";
 
     LOG_INFO << "begin to init rest_api_service";
     err = rest_api_service::instance().init();
@@ -288,6 +298,7 @@ void Server::Exit() {
 		m_timer_matrix_manager->exit();
 	}
 	network::connection_manager::instance().exit();
+    p2p_lan_service::instance().exit();
 	p2p_net_service::instance().exit();
 	http_server_service::instance().exit();
 	node_request_service::instance().exit();
