@@ -68,6 +68,7 @@ set(service_src_dir
         dbc/service/node_monitor_service
         dbc/service/node_request_service
         dbc/service/peer_request_service
+        dbc/service/peer_request_service/multicast
         dbc/service/peer_request_service/socket_channel_handler
 )
 
