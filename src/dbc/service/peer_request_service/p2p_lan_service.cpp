@@ -94,9 +94,11 @@ ERRCODE p2p_lan_service::init() {
 }
 
 void p2p_lan_service::exit() {
+	service_module::exit();
+    m_receiver->stop();
     send_machine_exit_request();
     sleep(2);
-	service_module::exit();
+    // m_sender->stop();
     m_io_service_pool->stop();
     m_io_service_pool->exit();
 }
@@ -109,6 +111,7 @@ const std::map<std::string, lan_machine_info>& p2p_lan_service::get_lan_nodes() 
 void p2p_lan_service::add_lan_node(const lan_machine_info& lm_info) {
     if (!lm_info.validate()) return;
     if (lm_info.machine_id == ConfManager::instance().GetNodeId()) return;
+    LOG_INFO << "update machine info of node " << lm_info.machine_id;
     RwMutex::WriteLock wlock(m_mtx);
     m_lan_nodes[lm_info.machine_id] = lm_info;
 }
@@ -117,6 +120,7 @@ void p2p_lan_service::delete_lan_node(const std::string& machine_id) {
     if (machine_id.empty()) return ;
     auto iter = m_lan_nodes.find(machine_id);
     if (iter == m_lan_nodes.end()) return;
+    LOG_INFO << "delete machine info of node " << machine_id;
     RwMutex::WriteLock wlock(m_mtx);
     m_lan_nodes.erase(iter);
 }
@@ -158,7 +162,7 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
 
 void p2p_lan_service::init_timer() {
     // 30second
-    add_timer(AI_MULTICAST_MACHINE_TIMER, 30 * 1000, 60 * 1000, ULLONG_MAX, "",
+    add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 30 * 1000, ULLONG_MAX, "",
         std::bind(&p2p_lan_service::on_multicast_machine_task_timer, this, std::placeholders::_1));
     // 1min
     add_timer(AI_MULTICAST_NETWORK_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
@@ -212,6 +216,7 @@ void p2p_lan_service::send_machine_exit_request() const {
         write.StartObject();
         write.Key("machine_id");
         write.String(m_local_machine_info.machine_id.c_str());
+        write.EndObject();
         write.EndObject();
         m_sender->send(strBuf.GetString());
     }

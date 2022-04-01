@@ -25,6 +25,9 @@ int32_t multicast_receiver::start() {
 }
 
 int32_t multicast_receiver::stop() {
+    boost::system::error_code error;
+    socket_.cancel(error);
+    socket_.close(error);
     return 0;
 }
 

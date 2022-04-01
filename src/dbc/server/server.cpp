@@ -293,7 +293,7 @@ void Server::Idle() {
 void Server::Exit() {
     ImageManager::instance().Exit();
     sleep(3);
-    exit(0);
+    // exit(0);
 
 	if (m_timer_matrix_manager) {
 		m_timer_matrix_manager->exit();
