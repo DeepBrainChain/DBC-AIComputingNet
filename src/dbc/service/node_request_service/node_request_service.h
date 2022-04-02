@@ -10,7 +10,7 @@
 #include "util/bloomlru_filter.h"
 #include "message/matrix_types.h"
 #include "message/lan_types.h"
-#include "service/service_info/service_info_collection.h"
+#include "data/service_info/service_info_collection.h"
 #include "util/system_info.h"
 #include "network/protocol/protocol.h"
 

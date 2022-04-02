@@ -13,12 +13,13 @@
 #include "timer/time_tick_notification.h"
 #include "message/protocol_coder/matrix_coder.h"
 #include "message/message_id.h"
-#include "service/service_info/service_info_collection.h"
+#include "data/service_info/service_info_collection.h"
 #include "service/peer_request_service/p2p_net_service.h"
 #include "service/peer_request_service/p2p_lan_service.h"
-#include "task/TaskManager.h"
 #include "task/detail/VxlanManager.h"
 #include "network/connection_manager.h"
+#include "config/conf_manager.h"
+#include "task/detail/ImageManager.h"
 
 #define HTTP_REQUEST_KEY    "hreq_context"
 

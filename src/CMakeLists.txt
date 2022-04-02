@@ -45,6 +45,7 @@ set(service_src_dir
         dbc/config
         dbc/data/db_types
         dbc/data/db
+        dbc/data/service_info
         dbc/data
         dbc/network/utils
         dbc/network/compress
@@ -63,7 +64,6 @@ set(service_src_dir
         dbc/task/detail
         dbc/task
         dbc/service
-        dbc/service/service_info
         dbc/service/http_request_service
         dbc/service/node_monitor_service
         dbc/service/node_request_service
