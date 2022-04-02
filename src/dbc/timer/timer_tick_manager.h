@@ -5,7 +5,6 @@
 #include "timer_def.h"
 #include "network/utils/io_service_pool.h"
 #include "network/protocol/net_message.h"
-#include "service_module/service_module.h"
 #include <boost/asio/steady_timer.hpp>
 
 using namespace boost::asio;

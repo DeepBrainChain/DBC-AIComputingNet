@@ -1,6 +1,6 @@
 #include "timer_tick_manager.h"
 #include "time_tick_notification.h"
-#include "server/server.h"
+#include "network/topic_manager.h"
 
 std::atomic<uint64_t> timer_tick_manager::m_cur_tick = {0};
 
