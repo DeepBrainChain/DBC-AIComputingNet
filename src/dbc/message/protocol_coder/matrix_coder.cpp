@@ -1,6 +1,5 @@
 #include "matrix_coder.h"
 #include "network/compress/matrix_compress.h"
-#include "service_module/service_message_id.h"
 #include "network/protocol/thrift_compact.h"
 
 matrix_coder::matrix_coder()

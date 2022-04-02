@@ -11,10 +11,7 @@
 #define LOG_DIR_NAME                "logs"
 
 #define CONF_FILE_NAME              "core.conf"
-#define CONTAINER_FILE_NAME         "container.conf"
-#define VM_FILE_NAME                "vm.conf"
 #define PEER_FILE_NAME              "peer.conf"
-
 #define DAT_FILE_NAME               "node.dat"
 
 enum endian_type {

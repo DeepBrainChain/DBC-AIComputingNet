@@ -3,6 +3,8 @@
 
 #include "network/protocol/protocol.h"
 
+#define TIMER_TICK_NOTIFICATION             "time_tick_notification"
+
 class time_tick_notification : public network::msg_base
 {
 public:

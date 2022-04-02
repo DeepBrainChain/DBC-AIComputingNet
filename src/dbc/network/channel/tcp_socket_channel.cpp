@@ -1,5 +1,4 @@
 #include "tcp_socket_channel.h"
-#include "service_module/service_message_id.h"
 #include <boost/exception/all.hpp>
 #include "network/protocol/net_message_def.h"
 #include <boost/bind.hpp>

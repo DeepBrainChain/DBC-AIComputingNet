@@ -40,7 +40,7 @@
 #include "singleton.h"
 #include "rw_lock.h"
 #include "RWMutex.h"
-#include "LruCache.hpp"
+#include "bloomlru_filter.h"
 #include "tweetnacl/tools.h"
 #include "tweetnacl/randombytes.h"
 #include "tweetnacl/tweetnacl.h"

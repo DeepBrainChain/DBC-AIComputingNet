@@ -16,6 +16,8 @@ using namespace boost::asio::ip;
 #define RECONNECT_INTERVAL         2    //2->4->8->16->32->64...
 #define MAX_RECONNECT_TIMES        2
 
+#define CLIENT_CONNECT_NOTIFICATION         "client_connect_notification"
+
 namespace network
 {
     class tcp_connector : public std::enable_shared_from_this<tcp_connector>, boost::noncopyable

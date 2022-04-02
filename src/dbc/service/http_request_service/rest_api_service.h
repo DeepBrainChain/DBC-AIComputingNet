@@ -5,27 +5,25 @@
 #include "service_module/service_module.h"
 #include "network/http/http_server.h"
 #include "timer/timer.h"
-#include "message/cmd_message.h"
+#include "message/matrix_types.h"
 
-static const std::string REST_API_VERSION = "v1.1";
 static const std::string REST_API_URI = "/api/v1";
 
 constexpr int MIN_INIT_HTTP_SERVER_TIME = 5000;    //ms
 constexpr int MAX_WAIT_HTTP_RESPONSE_TIME = 30000; //ms
 constexpr int MAX_SESSION_COUNT = 1024;
 
-struct sign_item {
+struct req_sign_item {
     std::string wallet;
     std::string nonce;
     std::string sign;
 };
 
-struct multisig {
+struct req_multisig {
     std::vector<std::string> wallets;
     int32_t threshold;
-    std::vector<sign_item> signs;
+    std::vector<req_sign_item> signs;
 };
-
 
 struct req_body {
     std::vector<std::string> peer_nodes_list;
@@ -33,7 +31,7 @@ struct req_body {
     std::string wallet;
     std::string nonce;
     std::string sign;
-    multisig multisig_accounts;
+    req_multisig multisig_accounts;
     std::string session_id;
     std::string session_id_sign;
     std::string vm_xml;
@@ -59,6 +57,16 @@ struct req_body {
 
     // vxlan network id
     std::string network_id;
+};
+
+class rsp_peer_node_info {
+public:
+    std::string peer_node_id;
+    int32_t live_time_stamp;
+    int8_t net_st = -1;
+    network::net_address addr;
+    int8_t node_type = 0;
+    std::vector<std::string> service_list;
 };
 
 class rest_api_service : public service_module, public network::http_request_event,
@@ -372,7 +380,7 @@ protected:
 private:
     std::vector<network::http_path_handler> m_path_handlers;
     std::map<std::string, network::response_call_handler> m_rsp_handlers;
-    lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{1000000, 0};
+    bloomlru_filter m_nonce_filter{ 1000000 };
 };
 
 #endif

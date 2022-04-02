@@ -1,6 +1,5 @@
 #include "tcp_connector.h"
 #include "channel/tcp_socket_channel.h"
-#include "service_module/service_message_id.h"
 #include <boost/exception/all.hpp>
 #include "log/log.h"
 #include "connection_manager.h"

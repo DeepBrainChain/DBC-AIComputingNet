@@ -7,6 +7,7 @@
 #include "network/protocol/protocol.h"
 #include "../matrix_types.h"
 #include "../lan_types.h"
+#include "../message_id.h"
 
 #define DEFAULT_DECODE_HEADER_LEN               24
 #define MATRIX_MSG_MIN_READ_LENGTH              8

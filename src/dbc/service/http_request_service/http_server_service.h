@@ -1,14 +1,12 @@
-#ifndef HTTP_SERVER_SERVICE_H
-#define HTTP_SERVER_SERVICE_H
+#ifndef DBC_HTTP_SERVER_SERVICE_H
+#define DBC_HTTP_SERVER_SERVICE_H
 
 #include "util/utils.h"
 #include "network/http/http_server.h"
 
-#define HTTP_SERVER_SERVICE_MODULE                             "http_server_service_module"
-
-constexpr int DEFAULT_HTTP_SERVER_TIMEOUT = 30;
-constexpr size_t MAX_HEADERS_SIZE = 8192;    // Maximum size of http request (request line + headers)
-constexpr unsigned int MAX_BODY_SIZE = 0x02000000;  // max http body size
+#define DEFAULT_HTTP_SERVER_TIMEOUT     30
+#define MAX_HEADERS_SIZE     8192
+#define MAX_BODY_SIZE    0x02000000
 
 class http_server_service : public Singleton<http_server_service> {
 public:
@@ -21,7 +19,7 @@ public:
     void exit();
 
 private:
-    ERRCODE load_rest_config();
+    ERRCODE load_config();
 
     bool init_http_server();
 

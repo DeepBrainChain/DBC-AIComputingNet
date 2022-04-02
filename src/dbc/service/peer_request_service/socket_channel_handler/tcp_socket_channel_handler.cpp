@@ -1,5 +1,4 @@
 #include "tcp_socket_channel_handler.h"
-#include "service_proto_filter.h"
 #include "network/compress/matrix_compress.h"
 #include "message/message_id.h"
 #include "network/topic_manager.h"
@@ -191,7 +190,7 @@ int32_t matrix_socket_channel_handler::on_read(network::channel_handler_context 
 
                     std::string nonce = msg->content->header.__isset.nonce ? msg->content->header.nonce : "";
                     //check msg duplicated
-                    if (!service_proto_filter::get_mutable_instance().check_dup(nonce))
+                    if (!m_nonce_filter.contains(nonce))
                     {
                         if (m_f_ctl != nullptr && m_f_ctl->over_speed(1))
                         {
@@ -296,7 +295,7 @@ int32_t matrix_socket_channel_handler::on_write(network::channel_handler_context
         {
             std::string nonce = (msg.content)->header.__isset.nonce ? (msg.content)->header.nonce : "";
             //insert nonce to avoid receive msg sent by itself
-            service_proto_filter::get_mutable_instance().insert_nonce(nonce);
+            m_nonce_filter.insert(nonce);
 
             LOG_DEBUG << m_sid.to_string() << " matrix socket channel handler send msg: " << msg.get_name() << ", nonce: " << nonce << " buf message:" << buf.to_string();
         }

@@ -24,7 +24,7 @@ static const int MAX_ADDNODE_CONNECTIONS = 168;
 #ifdef FD_SETSIZE
 #undef FD_SETSIZE 
 #endif
-#define FD_SETSIZE 1024 
+#define FD_SETSIZE 1024
 
 namespace network
 {

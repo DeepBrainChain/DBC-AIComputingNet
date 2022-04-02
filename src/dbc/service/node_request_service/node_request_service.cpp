@@ -3,11 +3,9 @@
 #include <boost/exception/all.hpp>
 #include "server/server.h"
 #include "config/conf_manager.h"
-#include "service_module/service_message_id.h"
 #include "message/matrix_types.h"
 #include "message/protocol_coder/matrix_coder.h"
 #include <boost/thread/thread.hpp>
-#include "message/service_topic.h"
 #include <boost/format.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include "message/message_id.h"
@@ -187,12 +185,9 @@ bool node_request_service::check_req_header_nonce(const std::string& nonce) {
         return false;
     }
 
-    if (m_nonceCache.contains(nonce)) {
+    if (m_nonce_filter.contains(nonce)) {
         LOG_ERROR << "header.nonce is already used";
         return false;
-    }
-    else {
-        m_nonceCache.insert(nonce, 1);
     }
 
     return true;
@@ -327,11 +322,9 @@ FResult node_request_service::check_nonce(const std::string &wallet, const std::
         return FResult(ERR_ERROR, "verify sign failed");
     }
 
-    if (m_nonceCache.contains(nonce)) {
+    if (m_nonce_filter.contains(nonce)) {
         LOG_ERROR << "nonce is already exist";
         return FResult(ERR_ERROR, "nonce is already exist");
-    } else {
-        m_nonceCache.insert(nonce, 1);
     }
 
     return FResultOk;
@@ -369,11 +362,9 @@ FResult node_request_service::check_nonce(const std::vector<std::string>& multis
             return FResult(ERR_ERROR, "verify multisig sign failed");
         }
 
-        if (m_nonceCache.contains(it.nonce)) {
+        if (m_nonce_filter.contains(it.nonce)) {
             LOG_ERROR << "multisig nonce is already exist";
             return FResult(ERR_ERROR, "multisig nonce is already exist");
-        } else {
-            m_nonceCache.insert(it.nonce, 1);
         }
     }
 

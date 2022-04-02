@@ -15,6 +15,8 @@ using namespace boost::asio::ip;
 #define DEFAULT_TCP_SOCKET_SEND_BUF_LEN     (32 * 1024)
 #define DEFAULT_TCP_SOCKET_RECV_BUF_LEN     (32 * 1024)
 
+#define TCP_CHANNEL_ERROR                   "tcp_socket_channel_error"
+
 namespace network
 {
     class tcp_socket_channel 

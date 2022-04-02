@@ -4,6 +4,17 @@
 #include <iostream>
 #include <string>
 
+#define VER_REQ                             "ver_req"
+#define VER_RESP                            "ver_resp"
+
+#define SHAKE_HAND_REQ                      "shake_hand_req"
+#define SHAKE_HAND_RESP                     "shake_hand_resp"
+
+#define P2P_GET_PEER_NODES_RESP				"get_peer_nodes_resp"
+
+#define BINARY_FORWARD_MSG                  "binary_forward_message"
+
+
 // list images
 #define NODE_LIST_IMAGES_REQ      "node_list_images_req"
 #define NODE_LIST_IMAGES_RSP      "node_list_images_rsp"
@@ -74,8 +85,6 @@
 #define NODE_SESSION_ID_RSP      "node_session_id_rsp"
 #define NODE_SESSION_ID_TIMER    "node_session_id_timer"
 
-// peer nodes
-
 // list snapshot
 #define NODE_LIST_SNAPSHOT_REQ      "node_list_snapshot_req"
 #define NODE_LIST_SNAPSHOT_RSP      "node_list_snapshot_rsp"
@@ -117,35 +126,7 @@
 #define NODE_DELETE_LAN_TIMER    "node_delete_lan_timer"
 
 // service broadcast
-#define SERVICE_BROADCAST_REQ          "service_broadcast_req"
-
-// vm task thread result
-#define VM_TASK_THREAD_RESULT      "vm_task_thread_result"
-
-// compute node flag
-#define COMPUTE_NODE_FLAG   "compute node"
-
-// def
-#define LIST_ALL_TASKS            0
-#define LIST_SPECIFIC_TASKS       1
-
-#define TASK_RESTART            "task_restart"
-#define NODE_REBOOT             "node_reboot"
-
-enum {
-    MAX_NODE_INFO_MAP_SIZE = 64,
-    MAX_SERVCIE_LIST_SIZE = 10,
-    MAX_ATTR_STRING_LEN = 64,
-    MAX_LONG_ATTR_STRING_LEN = 128,
-    MAX_TIMESTAMP_DRIFT_IN_SECOND = 60,
-    MAX_NDOE_INFO_KVS_SIZE = 10
-};
-
-#define TIMER_INTERVAL_NODE_INFO_COLLECTION           (20*1000)
-#define NODE_INFO_COLLECTION_TIMER                    "node_info_collection_timer"
-#define SERVICE_BROADCAST_TIMER                       "service_broadcast_timer"
-
-static const int32_t MAX_NAME_STR_LENGTH = 16;
+#define SERVICE_BROADCAST_REQ    "service_broadcast_req"
 
 
 #endif //DBC_MESSAGE_ID_H

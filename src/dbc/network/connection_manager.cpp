@@ -5,7 +5,6 @@
 #include "util/utils.h"
 #include "timer/timer_def.h"
 #include <algorithm>
-#include "service_module/service_message_id.h"
 #include "config/conf_manager.h"
 
 namespace network

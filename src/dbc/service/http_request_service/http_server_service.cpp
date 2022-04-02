@@ -11,13 +11,10 @@
 #include "rest_api_service.h"
 
 ERRCODE http_server_service::init() {
-    ERRCODE ret = load_rest_config();
+    ERRCODE ret = load_config();
     if (ret != ERR_SUCCESS) {
+        LOG_ERROR << "load config error";
         return ret;
-    }
-
-    if (m_listen_port == 0) {
-        return ERR_ERROR;
     }
 
     if (!init_http_server()) {
@@ -29,7 +26,7 @@ ERRCODE http_server_service::init() {
     return ERR_SUCCESS;
 }
 
-ERRCODE http_server_service::load_rest_config() {
+ERRCODE http_server_service::load_config() {
     std::string conf_rest_ip = ConfManager::instance().GetHttpListenIp();
     ip_validator ip_vdr;
     variable_value val;
@@ -39,8 +36,7 @@ ERRCODE http_server_service::load_rest_config() {
         return E_DEFAULT;
     }
     m_listen_ip = conf_rest_ip;
-
-    // rest port
+    
     int32_t conf_rest_port = ConfManager::instance().GetHttpListenPort();
     if (conf_rest_port <= 0) {
         LOG_ERROR << "http server init invalid port: " << conf_rest_port;
@@ -49,32 +45,31 @@ ERRCODE http_server_service::load_rest_config() {
         m_listen_port = conf_rest_port;
     }
 
-    LOG_INFO << "rest config: " << "rest ip:" << m_listen_ip << ", rest port:" << m_listen_port;
     return ERR_SUCCESS;
 }
 
 bool http_server_service::init_http_server() {
-    // todo : support acl list in futurre
     raii_event_base base_ctr = obtain_event_base();
-
     raii_evhttp http_ctr = obtain_evhttp(base_ctr.get());
     struct evhttp *http = http_ctr.get();
     if (!http) {
-        LOG_ERROR << "couldn't create evhttp. Exiting.";
+        LOG_ERROR << "couldn't create evhttp";
         return false;
     }
+
     evhttp_set_timeout(http, DEFAULT_HTTP_SERVER_TIMEOUT);
     evhttp_set_max_headers_size(http, MAX_HEADERS_SIZE);
     evhttp_set_max_body_size(http, MAX_BODY_SIZE);
     evhttp_set_gencb(http, http_server_service::http_request_cb, this);
 
     if (!http_bind_addresses(http)) {
-        LOG_ERROR << "Unable to bind any endpoint for RPC server";
+        LOG_ERROR << "Unable to bind listen ip:port for http server";
         return false;
     }
 
     m_event_base = base_ctr.release();
     m_event_http = http_ctr.release();
+
     return true;
 }
 
@@ -82,15 +77,12 @@ bool http_server_service::http_bind_addresses(struct evhttp *http) {
     evhttp_bound_socket *bind_handle = evhttp_bind_socket_with_handle(http, m_listen_ip.c_str(), m_listen_port);
     if (bind_handle) {
         m_bound_sockets.push_back(bind_handle);
-    } else {
-        LOG_ERROR << "Binding RPC failed on address： " << m_listen_ip << " port: " << m_listen_port;
     }
 
     return !m_bound_sockets.empty();
 }
 
 void http_server_service::http_request_cb(struct evhttp_request *req, void *arg) {
-    // Disable reading to work around a libevent bug, fixed in 2.2.0.
     if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
         evhttp_connection *conn = evhttp_request_get_connection(req);
         if (conn) {
@@ -100,19 +92,13 @@ void http_server_service::http_request_cb(struct evhttp_request *req, void *arg)
             }
         }
     }
-
-    assert(arg);
+    
     http_server_service *pthis = reinterpret_cast<http_server_service *>(arg);
     pthis->on_http_request_event(req);
-
 }
 
 void http_server_service::on_http_request_event(struct evhttp_request *req) {
     std::shared_ptr<network::http_request> hreq(new network::http_request(req, m_event_base));
-
-    LOG_DEBUG << "Received a " << hreq->request_method_string(hreq->get_request_method()) << ", request for "
-              << hreq->get_uri() << " from " << hreq->get_peer().get_ip() << std::endl;
-
     rest_api_service::instance().on_http_request_event(hreq);
 }
 
@@ -125,7 +111,6 @@ void http_server_service::start_http_server() {
 bool http_server_service::thread_http_fun(struct event_base *base, struct evhttp *http) {
     rename_thread("dbc-http");
     event_base_dispatch(base);
-    // Event loop will be interrupted by InterruptHTTPServer()
     return event_base_got_break(base) == 0;
 }
 
@@ -145,13 +130,11 @@ void http_server_service::interrupt_http_server() {
 }
 
 void http_server_service::http_reject_request_cb(struct evhttp_request *req, void *) {
-    LOG_INFO << "Rejecting request while shutting down";
     evhttp_send_error(req, HTTP_SERVUNAVAIL, nullptr);
 }
 
 void http_server_service::stop_http_server() {
     if (m_event_base) {
-        LOG_DEBUG << "Waiting for HTTP event thread to exit";
         // Exit the event loop as soon as there are no active events.
         event_base_loopexit(m_event_base, nullptr);
         // Give event loop a few seconds to exit (to send back last RPC responses), then break it
@@ -161,7 +144,6 @@ void http_server_service::stop_http_server() {
         // could be used again (if desirable).
         if (m_thread_result.valid()
             && m_thread_result.wait_for(std::chrono::milliseconds(2000)) == std::future_status::timeout) {
-            LOG_DEBUG << "HTTP event loop did not exit within allotted time, sending loopbreak";
             event_base_loopbreak(m_event_base);
         }
         m_thread_http.join();

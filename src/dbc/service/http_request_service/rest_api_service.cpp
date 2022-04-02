@@ -18,8 +18,9 @@
 #include "service/peer_request_service/p2p_lan_service.h"
 #include "task/TaskManager.h"
 #include "task/detail/VxlanManager.h"
+#include "network/connection_manager.h"
 
-#define HTTP_REQUEST_KEY             "hreq_context"
+#define HTTP_REQUEST_KEY    "hreq_context"
 
 ERRCODE rest_api_service::init() {
     service_module::init();
@@ -108,7 +109,6 @@ void rest_api_service::init_invoker() {
     //m_invokers[BINARY_FORWARD_MSG] = std::bind(&rest_api_service::on_binary_forward, this, std::placeholders::_1);
 }
 
-
 void rest_api_service::on_http_request_event(std::shared_ptr<network::http_request> &hreq) {
     std::string str_uri = hreq->get_uri();
     if (str_uri.substr(0, REST_API_URI.size()) != REST_API_URI) {
@@ -164,12 +164,9 @@ bool rest_api_service::check_rsp_header(const std::shared_ptr<network::message> 
         return false;
     }
 
-    if (m_nonceCache.contains(base->header.nonce)) {
+    if (m_nonce_filter.contains(base->header.nonce)) {
         LOG_ERROR << "header.nonce is already used";
         return false;
-    }
-    else {
-        m_nonceCache.insert(base->header.nonce, 1);
     }
 
     if (base->header.session_id.empty()) {
@@ -387,7 +384,7 @@ static bool parse_req_params(const rapidjson::Document &doc, req_body& httpbody,
                 if (v_signs.IsArray()) {
                     for (rapidjson::SizeType i = 0; i < v_signs.Size(); i++) {
                         const rapidjson::Value& vSign = v_signs[i];
-                        sign_item item;
+                        req_sign_item item;
                         item.wallet = vSign["wallet"].GetString();
                         item.nonce = vSign["nonce"].GetString();
                         item.sign = vSign["sign"].GetString();
@@ -4178,7 +4175,7 @@ void rest_api_service::rest_peers(const std::shared_ptr<network::http_request>& 
     httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid requests uri");
 }
 
-void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list, std::string &data_json) {
+void reply_peer_nodes_list(const std::list<rsp_peer_node_info> &peer_nodes_list, std::string &data_json) {
     std::stringstream ss;
     ss << "{";
     ss << "\"errcode\":0";
@@ -4189,7 +4186,7 @@ void reply_peer_nodes_list(const std::list<cmd_peer_node_info> &peer_nodes_list,
         if (peers_count > 0) ss << ",";
         ss << "{";
         ss << "\"node_id\":" << "\"" << iter.peer_node_id << "\"";
-        ss << ", \"addr\":" << "\"" << iter.addr.ip << ":" << iter.addr.port << "\"";
+        ss << ", \"addr\":" << "\"" << iter.addr.get_ip() << ":" << iter.addr.get_port() << "\"";
         ss << "}";
 
         peers_count++;
@@ -4264,17 +4261,17 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
         srand((unsigned int)time(0));
         random_shuffle(vPeers.begin(), vPeers.end());
 
-        std::list<cmd_peer_node_info> peer_nodes_list;
+        std::list<rsp_peer_node_info> peer_nodes_list;
         for (auto itn = vPeers.begin(); itn != vPeers.end(); ++itn) {
             if (ConfManager::instance().GetNodeId() == (*itn)->m_id ||
                 SystemInfo::instance().GetPublicip() == (*itn)->m_peer_addr.get_ip())
                 continue;
 
-            cmd_peer_node_info node_info;
+            rsp_peer_node_info node_info;
             node_info.peer_node_id = (*itn)->m_id;
             node_info.live_time_stamp = (*itn)->m_live_time;
-            node_info.addr.ip = (*itn)->m_peer_addr.get_ip();
-            node_info.addr.port = (*itn)->m_peer_addr.get_port();
+            node_info.addr.set_ip((*itn)->m_peer_addr.get_ip());
+            node_info.addr.set_port((*itn)->m_peer_addr.get_port());
             node_info.node_type = (int8_t)(*itn)->m_node_type;
             node_info.service_list.clear();
             node_info.service_list.push_back(std::string("ai_training"));
@@ -4298,18 +4295,18 @@ void rest_api_service::rest_get_peer_nodes(const std::shared_ptr<network::http_r
         srand((unsigned int)time(0));
         random_shuffle(vPeers.begin(), vPeers.end());
 
-        std::list<cmd_peer_node_info> peer_nodes_list;
+        std::list<rsp_peer_node_info> peer_nodes_list;
         for (auto it = vPeers.begin(); it != vPeers.end(); ++it) {
             if (ConfManager::instance().GetNodeId() == (*it)->node_id ||
                 SystemInfo::instance().GetPublicip() == (*it)->tcp_ep.address().to_string())
                 continue;
 
-            cmd_peer_node_info node_info;
+            rsp_peer_node_info node_info;
             node_info.peer_node_id = (*it)->node_id;
             node_info.live_time_stamp = 0;
             node_info.net_st = (int8_t)(*it)->net_st;
-            node_info.addr.ip = (*it)->tcp_ep.address().to_string();
-            node_info.addr.port = (*it)->tcp_ep.port();
+            node_info.addr.set_ip((*it)->tcp_ep.address().to_string());
+            node_info.addr.set_port((*it)->tcp_ep.port());
             node_info.node_type = (int8_t)(*it)->node_type;
             node_info.service_list.clear();
             node_info.service_list.push_back(std::string("ai_training"));

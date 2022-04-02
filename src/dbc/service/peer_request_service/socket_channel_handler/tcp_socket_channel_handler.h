@@ -6,8 +6,8 @@
 #include "network/channel/socket_channel_handler.h"
 #include "message/protocol_coder/matrix_coder.h"
 #include "server/server.h"
-#include "service_module/service_message_id.h"
 #include "network/utils/flow_ctrl.h"
+#include "util/bloomlru_filter.h"
 
 using namespace boost::asio;
 
@@ -90,4 +90,6 @@ protected:
 
     network::socket_id m_sid;
     std::shared_ptr<network::flow_ctrl> m_f_ctl = nullptr;
+
+    bloomlru_filter m_nonce_filter { 1000000 };
 };

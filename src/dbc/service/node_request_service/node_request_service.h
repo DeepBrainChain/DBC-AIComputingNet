@@ -7,15 +7,16 @@
 #include <boost/process.hpp>
 #include <boost/asio.hpp>
 #include "task/TaskManager.h"
-#include "util/LruCache.hpp"
+#include "util/bloomlru_filter.h"
 #include "message/matrix_types.h"
 #include "message/lan_types.h"
 #include "service/service_info/service_info_collection.h"
 #include "util/system_info.h"
 #include "network/protocol/protocol.h"
 
-#define AI_TRAINING_TASK_TIMER                                   "training_task"
-#define AI_PRUNE_TASK_TIMER                                      "prune_task"
+#define AI_TRAINING_TASK_TIMER      "training_task"
+#define AI_PRUNE_TASK_TIMER         "prune_task"
+#define SERVICE_BROADCAST_TIMER     "service_broadcast_timer"
 
 namespace bp = boost::process;
 using namespace boost::asio::ip;
@@ -166,7 +167,7 @@ private:
 
 protected:
     TaskMgr m_task_scheduler;
-    lru::Cache<std::string, int32_t, std::mutex> m_nonceCache{ 1000000, 0 };
+    bloomlru_filter m_nonce_filter{ 1000000 };
 };
 
 #endif
