@@ -43,9 +43,8 @@ set(service_src_dir
         dbc/util/crypto
         dbc/util/crypto/ctaes
         dbc/config
-        dbc/data/db_types
-        dbc/data/db
-        dbc/data/service_info
+        dbc/db/db_types
+        dbc/db
         dbc/data
         dbc/network/utils
         dbc/network/compress
@@ -63,13 +62,14 @@ set(service_src_dir
         dbc/task/docker
         dbc/task/detail
         dbc/task
-        dbc/service
+        dbc/service_info
         dbc/service/http_request_service
         dbc/service/node_monitor_service
         dbc/service/node_request_service
         dbc/service/peer_request_service
         dbc/service/peer_request_service/multicast
         dbc/service/peer_request_service/socket_channel_handler
+        dbc/service
 )
 
 foreach(sub_dir ${service_src_dir})

@@ -2,7 +2,7 @@
 #define DBC_WALLETRENTTASK_MANAGER_H
 
 #include "util/utils.h"
-#include "data/db/taskinfo_db.h"
+#include "db/taskinfo_db.h"
 
 class WalletRentTaskManager : public Singleton<WalletRentTaskManager> {
 public:

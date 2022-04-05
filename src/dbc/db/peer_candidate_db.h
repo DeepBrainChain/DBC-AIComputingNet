@@ -5,7 +5,7 @@
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
 #include <boost/filesystem.hpp>
-#include "../db_types/peer_candidate_types.h"
+#include "db_types/peer_candidate_types.h"
 
 namespace bfs = boost::filesystem;
 

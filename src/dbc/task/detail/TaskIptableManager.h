@@ -2,7 +2,7 @@
 #define DBC_TASKIPTABLE_MANAGER_H
 
 #include "util/utils.h"
-#include "data/db/task_iptable_db.h"
+#include "db/task_iptable_db.h"
 
 class TaskIptableManager : public Singleton<TaskIptableManager> {
 public:

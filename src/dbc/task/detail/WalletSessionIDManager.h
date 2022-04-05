@@ -2,7 +2,7 @@
 #define DBC_WALLET_SESSIONID_MANAGER_H
 
 #include "util/utils.h"
-#include "data/db/wallet_sessionid_db.h"
+#include "db/wallet_sessionid_db.h"
 
 class WalletSessionIDManager : public Singleton<WalletSessionIDManager> {
 public:

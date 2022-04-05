@@ -17,6 +17,12 @@
 #include "service/node_monitor_service/node_monitor_service.h"
 #include "task/detail/VxlanManager.h"
 
+#define AI_TRAINING_TASK_TIMER      "training_task"
+#define AI_PRUNE_TASK_TIMER         "prune_task"
+#define SERVICE_BROADCAST_TIMER     "service_broadcast_timer"
+
+#define TIME_SERVICE_INFO_LIST_EXPIRED  300 //second
+
 std::string get_gpu_spec(const std::string& s) {
     if (s.empty()) {
         return "";
@@ -67,10 +73,10 @@ ERRCODE node_request_service::init() {
 	if (Server::NodeType == NODE_TYPE::ComputeNode) {
 		add_self_to_servicelist();
 
-		auto fresult = m_task_scheduler.init();
+		FResult fresult = m_task_scheduler.init();
 		if (fresult.errcode != ERR_SUCCESS) {
 			LOG_ERROR << fresult.errmsg;
-			return E_DEFAULT;
+			return ERR_ERROR;
 		}
 	}
 
@@ -86,17 +92,17 @@ void node_request_service::exit() {
 }
 
 void node_request_service::add_self_to_servicelist() {
-    dbc::node_service_info info;
-    info.service_list.emplace_back(SERVICE_NAME_AI_TRAINING);
+    std::shared_ptr<dbc::node_service_info> info = std::make_shared<dbc::node_service_info>();
+    info->service_list.emplace_back(SERVICE_NAME_AI_TRAINING);
 
     if (!Server::NodeName.empty()) {
-        info.__set_name(Server::NodeName);
+        info->__set_name(Server::NodeName);
     } else {
-        info.__set_name("null");
+        info->__set_name("null");
     }
 
     auto tnow = std::time(nullptr);
-    info.__set_time_stamp(tnow);
+    info->__set_time_stamp(tnow);
 
     std::map<std::string, std::string> kvs;
     kvs["version"] = dbcversion();
@@ -114,9 +120,9 @@ void node_request_service::add_self_to_servicelist() {
     */
 
     kvs["pub_key"] = ConfManager::instance().GetPubKey();
-    info.__set_kvs(kvs);
+    info->__set_kvs(kvs);
 
-    service_info_collection::instance().add(ConfManager::instance().GetNodeId(), info);
+    ServiceInfoManager::instance().add(ConfManager::instance().GetNodeId(), info);
 }
 
 void node_request_service::init_timer() {
@@ -2260,7 +2266,7 @@ void node_request_service::on_prune_task_timer(const std::shared_ptr<core_timer>
 
 void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer)
 {
-    auto s_map_size = service_info_collection::instance().size();
+    auto s_map_size = ServiceInfoManager::instance().size();
     if (s_map_size == 0) {
         return;
     }
@@ -2275,15 +2281,15 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
             state = "busy(" + std::to_string(count) + ")";
         }
 
-        service_info_collection::instance().update(ConfManager::instance().GetNodeId(), "state", state);
+        ServiceInfoManager::instance().update(ConfManager::instance().GetNodeId(), "state", state);
         */
-        service_info_collection::instance().update(ConfManager::instance().GetNodeId(), "version", dbcversion());
-        service_info_collection::instance().update_own_node_time_stamp(ConfManager::instance().GetNodeId());
+        ServiceInfoManager::instance().update(ConfManager::instance().GetNodeId(), "version", dbcversion());
+        ServiceInfoManager::instance().update_time_stamp(ConfManager::instance().GetNodeId());
     }
 
-    service_info_collection::instance().remove_unlived_nodes(ConfManager::TIME_SERVICE_INFO_LIST_EXPIRED);
+    ServiceInfoManager::instance().remove_unlived_nodes(TIME_SERVICE_INFO_LIST_EXPIRED);
 
-    auto service_info_map = service_info_collection::instance().get_change_set();
+    auto service_info_map = ServiceInfoManager::instance().get_change_set();
     if(!service_info_map.empty()) {
         auto service_broadcast_req = create_service_broadcast_req_msg(service_info_map);
         if (service_broadcast_req != nullptr) {
@@ -2292,7 +2298,8 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
     }
 }
 
-std::shared_ptr<network::message> node_request_service::create_service_broadcast_req_msg(const service_info_map& mp) {
+std::shared_ptr<network::message> node_request_service::create_service_broadcast_req_msg(
+    const std::map <std::string, std::shared_ptr<dbc::node_service_info>>& mp) {
     auto req_content = std::make_shared<dbc::service_broadcast_req>();
     // header
     req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
@@ -2311,7 +2318,11 @@ std::shared_ptr<network::message> node_request_service::create_service_broadcast
     exten_info["pub_key"] = ConfManager::instance().GetPubKey();
     req_content->header.__set_exten_info(exten_info);
     // body
-    req_content->body.__set_node_service_info_map(mp);
+    std::map <std::string, dbc::node_service_info> service_infos;
+    for (auto it : mp) {
+        service_infos.insert({ it.first, *it.second });
+    }
+    req_content->body.__set_node_service_info_map(service_infos);
 
     auto req_msg = std::make_shared<network::message>();
     req_msg->set_name(SERVICE_BROADCAST_REQ);
@@ -2340,9 +2351,14 @@ void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<ne
         return;
     }
 
-    service_info_map mp = node_req_msg->body.node_service_info_map;
-
-    service_info_collection::instance().add(mp);
+    std::map<std::string, dbc::node_service_info>& mp = node_req_msg->body.node_service_info_map;
+    std::map<std::string, std::shared_ptr<dbc::node_service_info>> service_infos;
+    for (auto& it : mp) {
+        std::shared_ptr<dbc::node_service_info> ptr = std::make_shared<dbc::node_service_info>();
+        *ptr = it.second;
+        service_infos.insert({ it.first, ptr });
+    }
+    ServiceInfoManager::instance().add(service_infos);
 }
 
 std::string node_request_service::format_logs(const std::string& raw_logs, uint16_t max_lines) {

@@ -7,7 +7,7 @@
 #include <uuid/uuid.h>
 #include "message/message_id.h"
 #include "message/vm_task_result_types.h"
-#include "data/db_types/task_snapshotinfo_types.h"
+#include "db/db_types/task_snapshotinfo_types.h"
 #include "util/utils.h"
 #include <libvirt/libvirt-qemu.h>
 #include "task/detail/VxlanManager.h"

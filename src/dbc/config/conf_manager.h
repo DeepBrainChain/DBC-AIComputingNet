@@ -88,11 +88,6 @@ public:
         return m_proto_capacity;
     }
 
-    // const
-    static const int32_t TIME_SERVICE_INFO_LIST_EXPIRED = 300; // second
-
-    static const int32_t MAX_RECV_SPEED = 0; 
-
 protected:
     ERRCODE ParseConf();
 

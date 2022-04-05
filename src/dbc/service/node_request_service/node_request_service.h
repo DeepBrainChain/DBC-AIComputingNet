@@ -10,13 +10,9 @@
 #include "util/bloomlru_filter.h"
 #include "message/matrix_types.h"
 #include "message/lan_types.h"
-#include "data/service_info/service_info_collection.h"
+#include "service_info/ServiceInfoManager.h"
 #include "util/system_info.h"
 #include "network/protocol/protocol.h"
-
-#define AI_TRAINING_TASK_TIMER      "training_task"
-#define AI_PRUNE_TASK_TIMER         "prune_task"
-#define SERVICE_BROADCAST_TIMER     "service_broadcast_timer"
 
 namespace bp = boost::process;
 using namespace boost::asio::ip;
@@ -111,7 +107,7 @@ protected:
 
     void on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer);
 
-    std::shared_ptr<network::message> create_service_broadcast_req_msg(const service_info_map& mp);
+    std::shared_ptr<network::message> create_service_broadcast_req_msg(const std::map <std::string, std::shared_ptr<dbc::node_service_info>>& mp);
 
     void on_net_service_broadcast_req(const std::shared_ptr<network::message> &msg);
 

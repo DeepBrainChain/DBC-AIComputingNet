@@ -4,7 +4,7 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include <boost/process.hpp>
-#include "data/db_types/network_types.h"
+#include "db/db_types/network_types.h"
 
 class VxlanManager : public Singleton<VxlanManager> {
 public:

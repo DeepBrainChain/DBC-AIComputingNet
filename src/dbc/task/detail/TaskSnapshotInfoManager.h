@@ -2,7 +2,7 @@
 #define DBC_SNAPSHOT_MANAGER_H
 
 #include "util/utils.h"
-#include "data/db_types/task_snapshotinfo_types.h"
+#include "db/db_types/task_snapshotinfo_types.h"
 
 /**
  * m_creating_snapshot 存储正在执行的快照任务和执行失败的快照任务，每个虚拟机只有一个。

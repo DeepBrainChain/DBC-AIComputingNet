@@ -4,7 +4,7 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include <boost/filesystem.hpp>
-#include "../db_types/taskinfo_types.h"
+#include "db_types/taskinfo_types.h"
 
 namespace bfs = boost::filesystem;
 

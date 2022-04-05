@@ -3,7 +3,7 @@
 
 #include "util/utils.h"
 #include "message/matrix_types.h"
-#include "data/db/taskinfo_db.h"
+#include "db/taskinfo_db.h"
 #include "TaskResourceManager.h"
 
 class TaskInfoManager : public Singleton<TaskInfoManager> {

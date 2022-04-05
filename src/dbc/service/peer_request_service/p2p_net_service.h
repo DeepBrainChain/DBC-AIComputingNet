@@ -8,7 +8,7 @@
 #include "peer_node.h"
 #include "peer_candidate.h"
 #include "util/crypto/random.h"
-#include "data/db/peer_candidate_db.h"
+#include "db/peer_candidate_db.h"
 
 using namespace boost::asio::ip;
 

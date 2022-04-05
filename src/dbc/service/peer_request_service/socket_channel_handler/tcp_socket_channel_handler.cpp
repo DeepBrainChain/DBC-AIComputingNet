@@ -3,6 +3,8 @@
 #include "message/message_id.h"
 #include "network/topic_manager.h"
 
+#define MAX_RECV_SPEED  0
+
 matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<network::channel> ch)
     : m_stopped(false)
     , m_coder(std::make_shared<matrix_coder>())
@@ -13,9 +15,9 @@ matrix_socket_channel_handler::matrix_socket_channel_handler(std::shared_ptr<net
     , m_login_success(false)
     , m_sid(ch->id())
 {
-    if (ConfManager::MAX_RECV_SPEED > 0)
+    if (MAX_RECV_SPEED > 0)
     {
-        int32_t recv_speed = ConfManager::MAX_RECV_SPEED;
+        int32_t recv_speed = MAX_RECV_SPEED;
         int32_t cycle = 1;
         int32_t slice = 2;
         m_f_ctl = std::make_shared<network::flow_ctrl>(recv_speed, cycle, slice, ch->get_io_service());
@@ -36,7 +38,7 @@ int32_t matrix_socket_channel_handler::stop()
 {
     m_stopped = true;
     stop_shake_hand_timer();
-    if (ConfManager::MAX_RECV_SPEED > 0 && m_f_ctl != nullptr)
+    if (MAX_RECV_SPEED > 0 && m_f_ctl != nullptr)
     {
         m_f_ctl->stop();
     }

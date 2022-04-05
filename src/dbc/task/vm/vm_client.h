@@ -5,7 +5,7 @@
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 #include "../detail/TaskResourceManager.h"
-#include "data/db_types/taskinfo_types.h"
+#include "db/db_types/taskinfo_types.h"
 #include "../detail/TaskMonitorInfo.h"
 
 namespace dbc {

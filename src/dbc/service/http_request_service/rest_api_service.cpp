@@ -13,7 +13,7 @@
 #include "timer/time_tick_notification.h"
 #include "message/protocol_coder/matrix_coder.h"
 #include "message/message_id.h"
-#include "data/service_info/service_info_collection.h"
+#include "service_info/ServiceInfoManager.h"
 #include "service/peer_request_service/p2p_net_service.h"
 #include "service/peer_request_service/p2p_lan_service.h"
 #include "task/detail/VxlanManager.h"
@@ -712,10 +712,9 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -726,7 +725,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string &head_sessio
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -952,10 +951,9 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -966,7 +964,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string &head_ses
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -1220,10 +1218,9 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -1234,7 +1231,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string &head_sessi
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -1509,10 +1506,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_task_req_ms
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -1523,7 +1519,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_task_req_ms
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -1785,10 +1781,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_task_req_
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -1799,7 +1794,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_task_req_
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -2026,10 +2021,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_start_task_req_m
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -2040,7 +2034,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_start_task_req_m
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -2268,10 +2262,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_stop_task_req_ms
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -2282,7 +2275,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_stop_task_req_ms
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -2525,10 +2518,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_restart_task_req
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -2539,7 +2531,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_restart_task_req
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -2767,10 +2759,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_reset_task_req_m
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -2781,7 +2772,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_reset_task_req_m
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -3009,10 +3000,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_task_req_
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -3023,7 +3013,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_task_req_
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -3251,10 +3241,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_modify_task_req_
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -3265,7 +3254,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_modify_task_req_
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -3534,10 +3523,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_task_logs_req_ms
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -3548,7 +3536,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_task_logs_req_ms
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -3655,28 +3643,29 @@ void rest_api_service::rest_mining_nodes(const std::shared_ptr<network::http_req
 }
 
 // list mining node
-void reply_node_list(const std::shared_ptr<std::map<std::string, dbc::node_service_info>> &service_list,
-                     std::string &data_json) {
+void reply_node_list(const std::map<std::string, std::shared_ptr<dbc::node_service_info>>& service_list, std::string &data_json) {
     std::stringstream ss;
     ss << "{";
     ss << "\"errcode\":0";
     ss << ", \"message\":{";
     ss << "\"mining_nodes\":[";
     int service_count = 0;
-    for (auto &it : *service_list) {
+    for (auto it : service_list) {
         if (service_count > 0) ss << ",";
         ss << "{";
+        /*
         std::string service_list;
-        for (int i = 0; i < it.second.service_list.size(); i++) {
+        for (int i = 0; i < it.second->service_list.size(); i++) {
             if (i > 0) service_list += ",";
-            service_list += it.second.service_list[i];
+            service_list += it.second->service_list[i];
         }
         ss << "\"service_list\":" << "\"" << service_list << "\"";
+        */
         std::string node_id = it.first;
         node_id = util::rtrim(node_id, '\n');
-        ss << ",\"node_id\":" << "\"" << node_id << "\"";
-        ss << ",\"name\":" << "\"" << it.second.name << "\"";
-        std::string ver = it.second.kvs.count("version") ? it.second.kvs["version"] : "N/A";
+        ss << "\"node_id\":" << "\"" << node_id << "\"";
+        ss << ",\"name\":" << "\"" << it.second->name << "\"";
+        std::string ver = it.second->kvs.count("version") ? it.second->kvs["version"] : "N/A";
         ss << ",\"version\":" << "\"" << ver << "\"";
         //ss << ",\"state\":" << "\"" << it.second.kvs["state"] << "\"";
         ss << "}";
@@ -3734,8 +3723,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<network::htt
 
     // all peer_nodes
     if (body.peer_nodes_list.empty()) {
-        std::shared_ptr<std::map<std::string, dbc::node_service_info>> id_2_services =
-                service_info_collection::instance().get_all();
+        auto& id_2_services = ServiceInfoManager::instance().get_all();
         std::string data_json;
         reply_node_list(id_2_services, data_json);
         httpReq->reply_comm_rest_succ2(data_json);
@@ -3831,10 +3819,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_query_node_info_
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -3845,7 +3832,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_query_node_info_
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -4063,10 +4050,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_session_id_req_m
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -4077,7 +4063,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_session_id_req_m
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -4607,10 +4593,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_snapshot_re
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -4621,7 +4606,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_snapshot_re
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -4847,10 +4832,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_snapshot_
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -4861,7 +4845,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_snapshot_
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -5097,10 +5081,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_snapshot_
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -5111,7 +5094,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_snapshot_
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -5354,10 +5337,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_monitor_ser
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -5368,7 +5350,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_monitor_ser
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -5586,10 +5568,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_set_monitor_serv
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -5600,7 +5581,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_set_monitor_serv
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -5900,10 +5881,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_lan_req_msg
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -5914,7 +5894,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_lan_req_msg
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -6153,10 +6133,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_lan_req_m
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -6167,7 +6146,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_lan_req_m
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 
@@ -6407,10 +6386,9 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_lan_req_m
     network::binary_protocol proto(out_buf.get());
     req_data.write(&proto);
 
-    dbc::node_service_info service_info;
-    bool bfound = service_info_collection::instance().find(body.peer_nodes_list[0], service_info);
-    if (bfound) {
-        std::string pub_key = service_info.kvs.count("pub_key") ? service_info.kvs["pub_key"] : "";
+    auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+    if (service_info != nullptr) {
+        std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
@@ -6421,7 +6399,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_lan_req_m
             return nullptr;
         }
     } else {
-        LOG_ERROR << "service_info_collection not found node_id:" << body.peer_nodes_list[0];
+        LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
         return nullptr;
     }
 

@@ -8,7 +8,7 @@
 #include "socket_channel_handler/server_socket_channel_handler.h"
 #include "network/channel/tcp_socket_channel.h"
 #include "timer/timer_def.h"
-#include "data/db_types/peer_candidate_types.h"
+#include "db/db_types/peer_candidate_types.h"
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
