@@ -1,4 +1,5 @@
 #include "def.h"
+#include "util/utils.h"
 
 std::string task_operation_string(int32_t op) {
     std::string operation_string = "none";
@@ -124,4 +125,27 @@ std::string vm_status_string(virDomainState status) {
     }
 
     return status_string;
+}
+
+std::string ImageServer::to_string() {
+    return id + "," + ip + "," + port + "," + modulename;
+}
+
+void ImageServer::from_string(const std::string& str) {
+    std::vector<std::string> val = util::split(str, ",");
+    if (val.size() >= 1) {
+        this->id = val[0];
+    }
+
+    if (val.size() >= 2) {
+        this->ip = val[1];
+    }
+
+    if (val.size() >= 3) {
+        this->port = val[2];
+    }
+
+    if (val.size() >= 4) {
+        this->modulename = val[3];
+    }
 }

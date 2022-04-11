@@ -53,9 +53,29 @@ protected:
 
     void download_image(const network::base_header& header, const std::shared_ptr<dbc::node_download_image_req_data>& data, const AuthoriseResult& result);
 
+    void on_node_download_image_progress_req(const std::shared_ptr<network::message>& msg);
+
+    void download_image_progress(const network::base_header& header, const std::shared_ptr<dbc::node_download_image_progress_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_stop_download_image_req(const std::shared_ptr<network::message>& msg);
+
+    void stop_download_image(const network::base_header& header, const std::shared_ptr<dbc::node_stop_download_image_req_data>& data, const AuthoriseResult& result);
+
     void on_node_upload_image_req(const std::shared_ptr<network::message> &msg);
 
     void upload_image(const network::base_header& header, const std::shared_ptr<dbc::node_upload_image_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_upload_image_progress_req(const std::shared_ptr<network::message>& msg);
+
+    void upload_image_progress(const network::base_header& header, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_stop_upload_image_req(const std::shared_ptr<network::message>& msg);
+
+    void stop_upload_image(const network::base_header& header, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data, const AuthoriseResult& result);
+
+    void on_node_delete_image_req(const std::shared_ptr<network::message>& msg);
+
+    void delete_image(const network::base_header& header, const std::shared_ptr<dbc::node_delete_image_req_data>& data, const AuthoriseResult& result);
 
     void on_node_query_node_info_req(const std::shared_ptr<network::message> &msg);
 

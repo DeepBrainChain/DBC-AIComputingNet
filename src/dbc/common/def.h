@@ -15,6 +15,7 @@
 #include <cstring>
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
+#include <boost/process.hpp>
 
 #define MAX_NUMBER_OF_LINES         100
 #define MAX_LOG_CONTENT_SIZE        (8 * 1024)
@@ -174,6 +175,48 @@ struct ParseVmXmlParams {
     std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 
     std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
+};
+
+
+struct ImageFile {
+    std::string name;
+    int64_t size;  //B
+
+    bool operator == (const ImageFile& other) const {
+        return this->name == other.name && this->size == other.size;
+    }
+
+    bool operator < (const ImageFile& other) const {
+        if (this->name != other.name) {
+            return this->name < other.name;
+        }
+        else {
+            return this->size < other.size;
+        }
+    }
+};
+
+struct ImageServer {
+    std::string ip;
+    std::string port = "873";
+    std::string modulename = "images";
+    std::string id;
+
+    std::string to_string();
+    void from_string(const std::string& str);
+};
+
+struct DownloadImageFile {
+    ImageFile file;
+    std::string local_dir;
+    ImageServer from_server;
+    std::shared_ptr<boost::process::child> process_ptr;
+};
+
+struct UploadImageFile {
+    ImageFile file;
+    ImageServer to_server;
+    std::shared_ptr<boost::process::child> process_ptr;
 };
 
 #endif

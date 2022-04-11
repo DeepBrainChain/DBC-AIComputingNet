@@ -80,7 +80,7 @@ void TaskManager::exit() {
 }
 
 FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
-                                const AuthoriseResult& result, std::vector<std::string> &images) {
+                                const AuthoriseResult& result, std::vector<ImageFile> &images) {
     try {
         ImageServer imgsvr;
         imgsvr.from_string(data->image_server);
@@ -120,11 +120,13 @@ FResult TaskManager::downloadImage(const std::string& wallet,
 		return FResult(ERR_ERROR, "additional no local_dir");
 	}
 
-    std::vector<std::string> images;
+    std::vector<ImageFile> images;
     ImageServer imgsvr;
     imgsvr.from_string(data->image_server);
     ImageManager::instance().ListShareImages(imgsvr, images);
-    auto iter = std::find(images.begin(), images.end(), image_filename);
+    auto iter = std::find_if(images.begin(), images.end(), [image_filename](const ImageFile& iter) {
+        return iter.name == image_filename;
+    });
     if (iter == images.end()) {
         return FResult(ERR_ERROR, "image:" + image_filename + " not exist");
     }
@@ -133,8 +135,67 @@ FResult TaskManager::downloadImage(const std::string& wallet,
         return FResult(ERR_ERROR, "image:" + image_filename + " in downloading");
     }
 
-    ImageManager::instance().Download(image_filename, local_dir, imgsvr);
-    return FResultOk;
+    FResult ret = ImageManager::instance().Download(image_filename, local_dir, imgsvr);
+    if (ret.errcode == ERR_SUCCESS)
+        return FResultOk;
+    else
+        return ret;
+}
+
+FResult TaskManager::downloadImageProgress(const std::string& wallet,
+    const std::shared_ptr<dbc::node_download_image_progress_req_data>& data) {
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return FResult(ERR_ERROR, "additional parse failed");
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+    if (image_filename.empty()) {
+        return FResult(ERR_ERROR, "additional no image_filename");
+    }
+
+    float progress = ImageManager::instance().DownloadProgress(image_filename);
+
+    std::string rsp_json = "{";
+    rsp_json += "\"errcode\":0";
+    rsp_json += ",\"message\":";
+    rsp_json += "{";
+    if (progress < 1.0f) {
+        rsp_json += "\"status\": \"downloading\"";
+        rsp_json += ",\"progress\": \"" + std::to_string(int(progress * 100)) + "%\"";
+    }
+    else {
+        rsp_json += "\"status\": \"done\"";
+        rsp_json += ",\"progress\": \"100%\"";
+    }
+    rsp_json += "}";
+    rsp_json += "}";
+
+    return FResult(ERR_SUCCESS, rsp_json);
+}
+
+FResult TaskManager::stopDownloadImage(const std::string& wallet,
+    const std::shared_ptr<dbc::node_stop_download_image_req_data>& data) {
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return FResult(ERR_ERROR, "additional parse failed");
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+        if (image_filename.empty()) {
+            return FResult(ERR_ERROR, "additional no image_filename");
+        }
+
+    ImageManager::instance().TerminateDownload(image_filename);
+
+    std::string rsp_json = "{";
+    rsp_json += "\"errcode\":0";
+    rsp_json += ",\"message\":\"ok\""; 
+    rsp_json += "}";
+
+    return FResult(ERR_SUCCESS, rsp_json);
 }
 
 FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data) {
@@ -167,7 +228,92 @@ FResult TaskManager::uploadImage(const std::string& wallet, const std::shared_pt
 
     ImageServer imgsvr;
     imgsvr.from_string(data->image_server);
-    ImageManager::instance().Upload(image_fullpath, imgsvr);
+    FResult ret = ImageManager::instance().Upload(image_fullpath, imgsvr);
+    if (ret.errcode == ERR_SUCCESS)
+        return FResultOk;
+    else
+        return ret;
+}
+
+FResult TaskManager::uploadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data) {
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return FResult(ERR_ERROR, "additional parse failed");
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+        if (image_filename.empty()) {
+            return FResult(ERR_ERROR, "additional no image_filename");
+        }
+
+    float progress = ImageManager::instance().UploadProgress(image_filename);
+
+    std::string rsp_json = "{";
+    rsp_json += "\"errcode\":0";
+    rsp_json += ",\"message\":";
+    rsp_json += "{";
+    if (progress < 1.0f) {
+        rsp_json += "\"status\": \"uploading\"";
+        rsp_json += ",\"progress\": \"" + std::to_string(int(progress * 100)) + "%\"";
+    }
+    else {
+        rsp_json += "\"status\": \"done\"";
+        rsp_json += ",\"progress\": \"100%\"";
+    }
+    rsp_json += "}";
+    rsp_json += "}";
+
+    return FResult(ERR_SUCCESS, rsp_json);
+}
+
+FResult TaskManager::stopUploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data) {
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return FResult(ERR_ERROR, "additional parse failed");
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+        if (image_filename.empty()) {
+            return FResult(ERR_ERROR, "additional no image_filename");
+        }
+
+    ImageManager::instance().TerminateUpload(image_filename);
+
+    std::string rsp_json = "{";
+    rsp_json += "\"errcode\":0";
+    rsp_json += ",\"message\":\"ok\"";
+    rsp_json += "}";
+
+    return FResult(ERR_SUCCESS, rsp_json);
+}
+
+FResult TaskManager::deleteImage(const std::string& wallet, const std::shared_ptr<dbc::node_delete_image_req_data>& data) {
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return FResult(ERR_ERROR, "additional parse failed");
+    }
+    std::string image_filename;
+    JSON_PARSE_STRING(doc, "image_filename", image_filename)
+        if (image_filename.empty()) {
+            return FResult(ERR_ERROR, "image_filename is empty");
+        }
+
+    std::string image_fullpath = "/data/" + image_filename;
+
+    if (!boost::filesystem::exists(image_fullpath)) {
+        return FResult(ERR_ERROR, "image file:" + image_filename + " is not exist");
+    }
+
+    if (ImageManager::instance().IsDownloading(image_filename) ||
+        ImageManager::instance().IsUploading(image_fullpath)) {
+        return FResult(ERR_ERROR, "image file is in downloading or uploading, please try again later");
+    }
+
+    ImageManager::instance().DeleteImage(image_fullpath);
+    
     return FResultOk;
 }
 

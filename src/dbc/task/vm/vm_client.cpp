@@ -1170,7 +1170,7 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
                 LOG_INFO << "lookup domain_id:" << ids[i] << " is nullptr";
                 break;
             }
-
+            
             virDomainInfo info;
             if (virDomainGetInfo(domainPtr, &info) < 0) {
                 LOG_INFO << "get domain_info failed";
@@ -1179,23 +1179,7 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
 
             virDomainState vm_status = (virDomainState) info.state;
             if (vm_status == VIR_DOMAIN_RUNNING) {
-                char *szXmlContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
-                if (!szXmlContent) {
-                    break;
-                }
-                tinyxml2::XMLDocument doc;
-                tinyxml2::XMLError err = doc.Parse(szXmlContent);
-                if (err != tinyxml2::XML_SUCCESS) {
-                    LOG_ERROR << "parse xml desc failed";
-                    break;
-                }
-                tinyxml2::XMLElement *root = doc.RootElement();
-                tinyxml2::XMLElement* node_name = root->FirstChildElement("name");
-                if (!node_name) {
-                    LOG_ERROR << "not find name node";
-                    break;
-                }
-                std::string domain_name = node_name->GetText();
+                std::string domain_name = virDomainGetName(domainPtr);
                 domains.push_back(domain_name);
             }
         } while (0);

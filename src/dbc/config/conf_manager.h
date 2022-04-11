@@ -11,16 +11,6 @@ struct peer_seeds {
     uint16_t port;
 };
 
-struct ImageServer {
-    std::string ip;
-    std::string port = "873";
-    std::string modulename = "images";
-    std::string id;
-
-    std::string to_string();
-    void from_string(const std::string& str);
-};
-
 class ConfManager : public Singleton<ConfManager>
 {
 public:

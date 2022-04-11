@@ -29,11 +29,21 @@ public:
     void exit();
 
     FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
-                       const AuthoriseResult& result, std::vector<std::string> &images);
+                       const AuthoriseResult& result, std::vector<ImageFile> &images);
 
     FResult downloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_req_data>& data);
 
+    FResult downloadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_progress_req_data>& data);
+
+    FResult stopDownloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_download_image_req_data>& data);
+
     FResult uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data);
+
+    FResult uploadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data);
+
+    FResult stopUploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data);
+
+    FResult deleteImage(const std::string& wallet, const std::shared_ptr<dbc::node_delete_image_req_data>& data);
 
     FResult createTask(const std::string& wallet, const std::shared_ptr<dbc::node_create_task_req_data>& data,
                        int64_t rent_end, USER_ROLE role, std::string& task_id);

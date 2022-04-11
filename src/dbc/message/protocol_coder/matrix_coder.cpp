@@ -34,9 +34,24 @@ void matrix_coder::init_decode_invoker() {
 
     BIND_DECODE_INVOKER(node_download_image_req)
     BIND_DECODE_INVOKER(node_download_image_rsp)
+    
+    BIND_DECODE_INVOKER(node_download_image_progress_req)
+    BIND_DECODE_INVOKER(node_download_image_progress_rsp)
+
+    BIND_DECODE_INVOKER(node_stop_download_image_req)
+    BIND_DECODE_INVOKER(node_stop_download_image_rsp)
 
     BIND_DECODE_INVOKER(node_upload_image_req)
     BIND_DECODE_INVOKER(node_upload_image_rsp)
+
+    BIND_DECODE_INVOKER(node_upload_image_progress_req)
+    BIND_DECODE_INVOKER(node_upload_image_progress_rsp)
+
+    BIND_DECODE_INVOKER(node_stop_upload_image_req)
+    BIND_DECODE_INVOKER(node_stop_upload_image_rsp)
+
+    BIND_DECODE_INVOKER(node_delete_image_req)
+    BIND_DECODE_INVOKER(node_delete_image_rsp)
 
     BIND_DECODE_INVOKER(node_create_task_req);
     BIND_DECODE_INVOKER(node_create_task_rsp);
@@ -118,8 +133,23 @@ void matrix_coder::init_encode_invoker() {
     BIND_ENCODE_INVOKER(node_download_image_req)
     BIND_ENCODE_INVOKER(node_download_image_rsp)
 
+    BIND_ENCODE_INVOKER(node_download_image_progress_req)
+    BIND_ENCODE_INVOKER(node_download_image_progress_rsp)
+
+    BIND_ENCODE_INVOKER(node_stop_download_image_req)
+    BIND_ENCODE_INVOKER(node_stop_download_image_rsp)
+
     BIND_ENCODE_INVOKER(node_upload_image_req)
     BIND_ENCODE_INVOKER(node_upload_image_rsp)
+
+    BIND_ENCODE_INVOKER(node_upload_image_progress_req)
+    BIND_ENCODE_INVOKER(node_upload_image_progress_rsp)
+
+    BIND_ENCODE_INVOKER(node_stop_upload_image_req)
+    BIND_ENCODE_INVOKER(node_stop_upload_image_rsp)
+
+    BIND_ENCODE_INVOKER(node_delete_image_req)
+    BIND_ENCODE_INVOKER(node_delete_image_rsp)
 
     BIND_ENCODE_INVOKER(node_create_task_req);
     BIND_ENCODE_INVOKER(node_create_task_rsp);

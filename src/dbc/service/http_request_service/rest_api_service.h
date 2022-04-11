@@ -116,6 +116,28 @@ public:
 
     void on_node_download_image_timer(const std::shared_ptr<core_timer> &timer);
 
+    // download progress
+    void rest_download_image_progress(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+    std::shared_ptr<network::message> create_node_download_image_progress_req_msg(const std::string& head_session_id,
+        const req_body& body);
+
+    void on_node_download_image_progress_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+        const std::shared_ptr<network::message>& rsp_msg);
+
+    void on_node_download_image_progress_timer(const std::shared_ptr<core_timer>& timer);
+
+    // stop download
+    void rest_stop_download_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+    std::shared_ptr<network::message> create_node_stop_download_image_req_msg(const std::string& head_session_id,
+        const req_body& body);
+
+    void on_node_stop_download_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+        const std::shared_ptr<network::message>& rsp_msg);
+
+    void on_node_stop_download_image_timer(const std::shared_ptr<core_timer>& timer);
+
     // upload image
     void rest_upload_image(const std::shared_ptr<network::http_request>& httpReq, const std::string &path);
 
@@ -126,6 +148,39 @@ public:
                                   const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_upload_image_timer(const std::shared_ptr<core_timer> &timer);
+
+    // upload progress
+    void rest_upload_image_progress(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+    std::shared_ptr<network::message> create_node_upload_image_progress_req_msg(const std::string& head_session_id,
+        const req_body& body);
+
+    void on_node_upload_image_progress_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+        const std::shared_ptr<network::message>& rsp_msg);
+
+    void on_node_upload_image_progress_timer(const std::shared_ptr<core_timer>& timer);
+
+    // stop upload
+    void rest_stop_upload_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+    std::shared_ptr<network::message> create_node_stop_upload_image_req_msg(const std::string& head_session_id,
+        const req_body& body);
+
+    void on_node_stop_upload_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+        const std::shared_ptr<network::message>& rsp_msg);
+
+    void on_node_stop_upload_image_timer(const std::shared_ptr<core_timer>& timer);
+
+    // delete image
+    void rest_delete_image(const std::shared_ptr<network::http_request>&httpReq, const std::string & path);
+
+    std::shared_ptr<network::message> create_node_delete_image_req_msg(const std::string & head_session_id,
+        const req_body & body);
+
+    void on_node_delete_image_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+        const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_delete_image_timer(const std::shared_ptr<core_timer> &timer);
 
     // /tasks
     void rest_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
