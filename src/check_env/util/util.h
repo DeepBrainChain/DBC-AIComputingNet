@@ -15,7 +15,7 @@ static const char* color_red = "\033[1;31m";
 static const char* color_green = "\033[1;32m";
 static const char* color_reset = "\033[0m";
 
-    #define print(...) \
+    #define print_black(...) \
     do {                       \
     char line[1024] = {0}; \
     snprintf(line, 1024, __VA_ARGS__); \
