@@ -1304,7 +1304,7 @@ void rest_api_service::on_node_download_image_progress_timer(const std::shared_p
     auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         LOG_ERROR << "query download image progress timeout";
-        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "download image timeout");
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "query download image progress timeout");
     }
 
     session->clear();
@@ -2057,7 +2057,7 @@ void rest_api_service::on_node_upload_image_progress_timer(const std::shared_ptr
     auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
     if (nullptr != hreq_context) {
         LOG_ERROR << "query upload image progress timeout";
-        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "upload image timeout");
+        hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "query upload image progress timeout");
     }
 
     session->clear();
