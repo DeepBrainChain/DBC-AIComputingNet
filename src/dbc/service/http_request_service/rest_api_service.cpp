@@ -694,7 +694,7 @@ void rest_api_service::rest_list_images(const std::shared_ptr<network::http_requ
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
@@ -933,7 +933,7 @@ void rest_api_service::rest_download_image(const std::shared_ptr<network::http_r
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -1156,7 +1156,7 @@ void rest_api_service::rest_download_image_progress(const std::shared_ptr<networ
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -1381,7 +1381,7 @@ void rest_api_service::rest_stop_download_image(const std::shared_ptr<network::h
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -1633,7 +1633,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<network::http_req
 
         auto node_req_msg = create_node_upload_image_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
@@ -1649,7 +1649,7 @@ void rest_api_service::rest_upload_image(const std::shared_ptr<network::http_req
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
                                                 body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
@@ -1893,7 +1893,7 @@ void rest_api_service::rest_upload_image_progress(const std::shared_ptr<network:
 
         auto node_req_msg = create_node_upload_image_progress_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
@@ -1909,7 +1909,7 @@ void rest_api_service::rest_upload_image_progress(const std::shared_ptr<network:
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
             body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
@@ -2145,7 +2145,7 @@ void rest_api_service::rest_stop_upload_image(const std::shared_ptr<network::htt
 
         auto node_req_msg = create_node_stop_upload_image_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
@@ -2161,7 +2161,7 @@ void rest_api_service::rest_stop_upload_image(const std::shared_ptr<network::htt
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
             body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
@@ -2383,7 +2383,7 @@ void rest_api_service::rest_delete_image(const std::shared_ptr<network::http_req
 
     auto node_req_msg = create_node_delete_image_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -2399,7 +2399,7 @@ void rest_api_service::rest_delete_image(const std::shared_ptr<network::http_req
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id,
         body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -2689,7 +2689,7 @@ void rest_api_service::rest_list_task(const std::shared_ptr<network::http_reques
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -2950,7 +2950,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<network::http_requ
 
     auto node_req_msg = create_node_create_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -2965,7 +2965,7 @@ void rest_api_service::rest_create_task(const std::shared_ptr<network::http_requ
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -3189,7 +3189,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<network::http_reque
 
     auto node_req_msg = create_node_start_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -3204,7 +3204,7 @@ void rest_api_service::rest_start_task(const std::shared_ptr<network::http_reque
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -3429,7 +3429,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<network::http_reques
 
     auto node_req_msg = create_node_stop_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -3444,7 +3444,7 @@ void rest_api_service::rest_stop_task(const std::shared_ptr<network::http_reques
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -3682,7 +3682,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<network::http_req
 
     auto node_req_msg = create_node_restart_task_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -3697,7 +3697,7 @@ void rest_api_service::rest_restart_task(const std::shared_ptr<network::http_req
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -3941,7 +3941,7 @@ void rest_api_service::rest_reset_task(const std::shared_ptr<network::http_reque
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -4182,7 +4182,7 @@ void rest_api_service::rest_delete_task(const std::shared_ptr<network::http_requ
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -4423,7 +4423,7 @@ void rest_api_service::rest_modify_task(const std::shared_ptr<network::http_requ
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -4704,7 +4704,7 @@ void rest_api_service::rest_task_logs(const std::shared_ptr<network::http_reques
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -5001,7 +5001,7 @@ void rest_api_service::rest_list_mining_nodes(const std::shared_ptr<network::htt
         // session
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
@@ -5235,7 +5235,7 @@ void rest_api_service::rest_node_session_id(const std::shared_ptr<network::http_
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -5775,7 +5775,7 @@ void rest_api_service::rest_list_snapshot(const std::shared_ptr<network::http_re
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -6001,7 +6001,7 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<network::http_
 
     auto node_req_msg = create_node_create_snapshot_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -6016,7 +6016,7 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<network::http_
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -6262,7 +6262,7 @@ void rest_api_service::rest_delete_snapshot(const std::shared_ptr<network::http_
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -6521,7 +6521,7 @@ void rest_api_service::rest_list_monitor_server(const std::shared_ptr<network::h
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -6738,7 +6738,7 @@ void rest_api_service::rest_set_monitor_server(const std::shared_ptr<network::ht
 
     auto node_req_msg = create_node_set_monitor_server_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -6753,7 +6753,7 @@ void rest_api_service::rest_set_monitor_server(const std::shared_ptr<network::ht
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -7063,7 +7063,7 @@ void rest_api_service::rest_list_lan(const std::shared_ptr<network::http_request
         // session
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
@@ -7302,7 +7302,7 @@ void rest_api_service::rest_create_lan(const std::shared_ptr<network::http_reque
 
     auto node_req_msg = create_node_create_lan_req_msg(head_session_id, body);
     if (nullptr == node_req_msg) {
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
         return;
     }
 
@@ -7317,7 +7317,7 @@ void rest_api_service::rest_create_lan(const std::shared_ptr<network::http_reque
     // session
     if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
         remove_timer(timer_id);
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
         return;
     }
 
@@ -7553,7 +7553,7 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<network::http_reque
 
         auto node_req_msg = create_node_delete_lan_req_msg(head_session_id, body);
         if (nullptr == node_req_msg) {
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate node request failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
             return;
         }
 
@@ -7568,7 +7568,7 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<network::http_reque
         // session
         if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
             remove_timer(timer_id);
-            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "creaate request session failed");
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
             return;
         }
 
