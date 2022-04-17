@@ -215,6 +215,7 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
         info->__set_members(members);
         info->__set_lastUseTime(lastUseTime);
         info->__set_nativeFlags(0);
+        info->__set_lastUpdateTime(time(NULL));
         FResult fret = VxlanManager::instance().AddNetworkFromMulticast(std::move(info));
     } else if (request_type == REQUEST_NETWORK_DELETE) {
         std::string machine_id, network_name;
@@ -266,6 +267,7 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
                 info->__set_members(members);
                 info->__set_lastUseTime(lastUseTime);
                 info->__set_nativeFlags(0);
+                info->__set_lastUpdateTime(time(NULL));
                 FResult fret = VxlanManager::instance().AddNetworkFromMulticast(std::move(info));
             }
         }
@@ -568,8 +570,9 @@ void p2p_lan_service::on_multicast_machine_task_timer(const std::shared_ptr<core
 
 void p2p_lan_service::on_multicast_network_task_timer(const std::shared_ptr<core_timer>& timer) {
     send_network_list_request();
-    // 删除超过15天没有虚拟机使用的网络
+    // 删除长时间没有虚拟机使用的网络
     VxlanManager::instance().ClearEmptyNetwork();
+    VxlanManager::instance().ClearExpiredNetwork();
 }
 
 void p2p_lan_service::send_machine_exit_request() const {

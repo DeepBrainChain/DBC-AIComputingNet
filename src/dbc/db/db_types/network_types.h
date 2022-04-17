@@ -26,13 +26,14 @@ namespace dbc {
 class networkInfo;
 
 typedef struct _networkInfo__isset {
-  _networkInfo__isset() : dhcpInterface(false), machineId(false), rentWallet(false), members(false), lastUseTime(false), nativeFlags(false) {}
+  _networkInfo__isset() : dhcpInterface(false), machineId(false), rentWallet(false), members(false), lastUseTime(false), nativeFlags(false), lastUpdateTime(false) {}
   bool dhcpInterface :1;
   bool machineId :1;
   bool rentWallet :1;
   bool members :1;
   bool lastUseTime :1;
   bool nativeFlags :1;
+  bool lastUpdateTime :1;
 } _networkInfo__isset;
 
 class networkInfo : public virtual ::apache::thrift::TBase {
@@ -40,7 +41,7 @@ class networkInfo : public virtual ::apache::thrift::TBase {
 
   networkInfo(const networkInfo&);
   networkInfo& operator=(const networkInfo&);
-  networkInfo() : networkId(), bridgeName(), vxlanName(), vxlanVni(), ipCidr(), ipStart(), ipEnd(), dhcpInterface(), machineId(), rentWallet(), lastUseTime(0), nativeFlags(0) {
+  networkInfo() : networkId(), bridgeName(), vxlanName(), vxlanVni(), ipCidr(), ipStart(), ipEnd(), dhcpInterface(), machineId(), rentWallet(), lastUseTime(0), nativeFlags(0), lastUpdateTime(0) {
   }
 
   virtual ~networkInfo() throw();
@@ -57,6 +58,7 @@ class networkInfo : public virtual ::apache::thrift::TBase {
   std::vector<std::string>  members;
   int64_t lastUseTime;
   int32_t nativeFlags;
+  int64_t lastUpdateTime;
 
   _networkInfo__isset __isset;
 
@@ -85,6 +87,8 @@ class networkInfo : public virtual ::apache::thrift::TBase {
   void __set_lastUseTime(const int64_t val);
 
   void __set_nativeFlags(const int32_t val);
+
+  void __set_lastUpdateTime(const int64_t val);
 
   bool operator == (const networkInfo & rhs) const
   {
@@ -125,6 +129,10 @@ class networkInfo : public virtual ::apache::thrift::TBase {
     if (__isset.nativeFlags != rhs.__isset.nativeFlags)
       return false;
     else if (__isset.nativeFlags && !(nativeFlags == rhs.nativeFlags))
+      return false;
+    if (__isset.lastUpdateTime != rhs.__isset.lastUpdateTime)
+      return false;
+    else if (__isset.lastUpdateTime && !(lastUpdateTime == rhs.lastUpdateTime))
       return false;
     return true;
   }

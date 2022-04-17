@@ -4093,7 +4093,7 @@ void node_request_service::delete_lan(const network::base_header& header, const 
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    FResult fret = VxlanManager::instance().DeleteNetwork(data->network_id);
+    FResult fret = VxlanManager::instance().DeleteNetwork(data->network_id, result.rent_wallet);
     if (fret.errcode == ERR_SUCCESS) {
         send_response_ok<dbc::node_delete_lan_rsp>(NODE_DELETE_LAN_RSP, header);
     } else {

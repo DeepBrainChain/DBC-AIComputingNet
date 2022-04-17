@@ -245,6 +245,7 @@ FResult VxlanManager::CreateNetworkServer(const std::string &networkName, const 
     info->__set_members(members);
     info->__set_lastUseTime(time(NULL));
     info->__set_nativeFlags(NATIVE_FLAGS_DEVICE | NATIVE_FLAGS_DHCPSERVER);
+    info->__set_lastUpdateTime(time(NULL));
 
     if (!UpdateNetworkDb(info)) {
         DeleteVxlanDevice(info->bridgeName, info->vxlanName);
@@ -297,8 +298,15 @@ FResult VxlanManager::AddNetworkFromMulticast(std::shared_ptr<dbc::networkInfo> 
     {
         std::shared_ptr<dbc::networkInfo> old = GetNetwork(info->networkId);
         if (old) {
+            int64_t time = info->lastUpdateTime;
             info->__set_nativeFlags(old->nativeFlags);
-            if (*info == *old) return FResultOk;
+            info->__set_lastUpdateTime(old->lastUpdateTime);
+            if (*info == *old) {
+                RwMutex::WriteLock wlock(m_mtx);
+                old->__set_lastUpdateTime(time);
+                return FResultOk;
+            }
+            info->__set_lastUpdateTime(time);
         }
     }
     
@@ -310,11 +318,14 @@ FResult VxlanManager::AddNetworkFromMulticast(std::shared_ptr<dbc::networkInfo> 
     return FResultOk;
 }
 
-FResult VxlanManager::DeleteNetwork(const std::string &networkName) {
+FResult VxlanManager::DeleteNetwork(const std::string &networkName, const std::string &wallet) {
     {
         RwMutex::WriteLock wlock(m_mtx);
         auto iter = m_networks.find(networkName);
         if (iter != m_networks.end()) {
+            if (iter->second->rentWallet != wallet) {
+                return FResult(ERR_ERROR, "wallet error, you are not the owner of the network");
+            }
             if (!iter->second->members.empty()) {
                 return FResult(ERR_ERROR, "network is in used, please delete task in the network first");
             }
@@ -431,7 +442,7 @@ void VxlanManager::MoveNetworkAck(const std::string &networkName, const std::str
 void VxlanManager::JoinNetwork(const std::string &networkName, const std::string &taskId) {
     std::shared_ptr<dbc::networkInfo> info = GetNetwork(networkName);
     if (!info) return;
-    if (info->machineId != ConfManager::instance().GetNodeId()) return;
+    // if (info->machineId != ConfManager::instance().GetNodeId()) return;
 
     {
         RwMutex::WriteLock wlock(m_mtx);
@@ -447,7 +458,7 @@ void VxlanManager::JoinNetwork(const std::string &networkName, const std::string
 void VxlanManager::LeaveNetwork(const std::string &networkName, const std::string &taskId) {
     std::shared_ptr<dbc::networkInfo> info = GetNetwork(networkName);
     if (!info) return;
-    if (info->machineId != ConfManager::instance().GetNodeId()) return;
+    // if (info->machineId != ConfManager::instance().GetNodeId()) return;
 
     {
         RwMutex::WriteLock wlock(m_mtx);
@@ -466,7 +477,7 @@ void VxlanManager::LeaveNetwork(const std::string &networkName, const std::strin
 }
 
 void VxlanManager::ClearEmptyNetwork() {
-    std::vector<std::string> networks;
+    std::vector<std::pair<std::string, std::string>> networks;
     {
         int64_t cur_time = time(NULL);
         RwMutex::ReadLock rlock(m_mtx);
@@ -476,11 +487,34 @@ void VxlanManager::ClearEmptyNetwork() {
             if (!iter.second->members.empty())
                 continue;
             if (difftime(cur_time, iter.second->lastUseTime) > 1296000)// 60s * 60 * 24 * 15
+                networks.push_back(std::make_pair(iter.first, iter.second->rentWallet));
+        }
+    }
+    for (const auto& iter : networks) {
+        LOG_INFO << "Network " << iter.first <<
+            " has not been used by the virtual machine for a long time and will be deleted";
+        DeleteNetwork(iter.first, iter.second);
+    }
+}
+
+void VxlanManager::ClearExpiredNetwork() {
+    std::vector<std::string> networks;
+    {
+        int64_t cur_time = time(NULL);
+        RwMutex::ReadLock rlock(m_mtx);
+        for (const auto& iter : m_networks) {
+            if (iter.second->machineId == ConfManager::instance().GetNodeId())
+                continue;
+            // if (!iter.second->members.empty())
+            //     continue;
+            if (difftime(cur_time, iter.second->lastUpdateTime) > 259200)// 60s * 60 * 24 * 3
                 networks.push_back(iter.first);
         }
     }
     for (const auto& iter : networks) {
-        DeleteNetwork(iter);
+        LOG_INFO << "Network " << iter <<
+            " has not been updated for a long time and will be deleted";
+        DeleteNetworkFromMulticast(iter, "");
     }
 }
 
@@ -539,6 +573,8 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
                 LOG_ERROR << "load network error, id is empty";
                 continue;
             }
+
+            db_item->__set_lastUpdateTime(time(NULL));
 
             m_networks[db_item->networkId] = db_item;
         }

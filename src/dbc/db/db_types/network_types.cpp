@@ -75,6 +75,11 @@ void networkInfo::__set_nativeFlags(const int32_t val) {
   this->nativeFlags = val;
 __isset.nativeFlags = true;
 }
+
+void networkInfo::__set_lastUpdateTime(const int64_t val) {
+  this->lastUpdateTime = val;
+__isset.lastUpdateTime = true;
+}
 std::ostream& operator<<(std::ostream& out, const networkInfo& obj)
 {
   obj.printTo(out);
@@ -226,6 +231,14 @@ uint32_t networkInfo::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 17:
+        if (ftype == ::apache::thrift::protocol::T_I64) {
+          xfer += iprot->readI64(this->lastUpdateTime);
+          this->__isset.lastUpdateTime = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -323,6 +336,11 @@ uint32_t networkInfo::write(::apache::thrift::protocol::TProtocol* oprot) const 
     xfer += oprot->writeI32(this->nativeFlags);
     xfer += oprot->writeFieldEnd();
   }
+  if (this->__isset.lastUpdateTime) {
+    xfer += oprot->writeFieldBegin("lastUpdateTime", ::apache::thrift::protocol::T_I64, 17);
+    xfer += oprot->writeI64(this->lastUpdateTime);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -343,6 +361,7 @@ void swap(networkInfo &a, networkInfo &b) {
   swap(a.members, b.members);
   swap(a.lastUseTime, b.lastUseTime);
   swap(a.nativeFlags, b.nativeFlags);
+  swap(a.lastUpdateTime, b.lastUpdateTime);
   swap(a.__isset, b.__isset);
 }
 
@@ -360,6 +379,7 @@ networkInfo::networkInfo(const networkInfo& other6) {
   members = other6.members;
   lastUseTime = other6.lastUseTime;
   nativeFlags = other6.nativeFlags;
+  lastUpdateTime = other6.lastUpdateTime;
   __isset = other6.__isset;
 }
 networkInfo& networkInfo::operator=(const networkInfo& other7) {
@@ -376,6 +396,7 @@ networkInfo& networkInfo::operator=(const networkInfo& other7) {
   members = other7.members;
   lastUseTime = other7.lastUseTime;
   nativeFlags = other7.nativeFlags;
+  lastUpdateTime = other7.lastUpdateTime;
   __isset = other7.__isset;
   return *this;
 }
@@ -395,6 +416,7 @@ void networkInfo::printTo(std::ostream& out) const {
   out << ", " << "members="; (__isset.members ? (out << to_string(members)) : (out << "<null>"));
   out << ", " << "lastUseTime="; (__isset.lastUseTime ? (out << to_string(lastUseTime)) : (out << "<null>"));
   out << ", " << "nativeFlags="; (__isset.nativeFlags ? (out << to_string(nativeFlags)) : (out << "<null>"));
+  out << ", " << "lastUpdateTime="; (__isset.lastUpdateTime ? (out << to_string(lastUpdateTime)) : (out << "<null>"));
   out << ")";
 }
 

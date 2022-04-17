@@ -7527,11 +7527,14 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<network::http_reque
 
     // all peer_nodes
     if (body.peer_nodes_list.empty()) {
-        FResult fret = VxlanManager::instance().DeleteNetwork(body.network_name);
-        if (fret.errcode == ERR_SUCCESS)
-            httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"ok\"}");
-        else
-            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"" + fret.errmsg + "\"}");
+        // FResult fret = VxlanManager::instance().DeleteNetwork(body.network_name);
+        // if (fret.errcode == ERR_SUCCESS)
+        //     httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"ok\"}");
+        // else
+        //     httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"" + fret.errmsg + "\"}");
+        // return;
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     } else {
 		// node request

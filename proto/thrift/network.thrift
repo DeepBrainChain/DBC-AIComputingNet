@@ -14,5 +14,6 @@ struct networkInfo {
   13: optional string rentWallet,
   14: optional list<string> members,
   15: optional i64 lastUseTime,
-  16: optional i32 nativeFlags
+  16: optional i32 nativeFlags,
+  17: optional i64 lastUpdateTime
 }

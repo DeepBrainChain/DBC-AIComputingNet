@@ -29,7 +29,7 @@ public:
 
     FResult AddNetworkFromMulticast(std::shared_ptr<dbc::networkInfo> info);
 
-    FResult DeleteNetwork(const std::string &networkName);
+    FResult DeleteNetwork(const std::string &networkName, const std::string &wallet);
 
     void DeleteNetworkFromMulticast(const std::string &networkName, const std::string &machineId);
 
@@ -50,6 +50,9 @@ public:
 
     // 清理长时间没有虚拟机使用的网络
     void ClearEmptyNetwork();
+
+    // 清理长时间没有更新的网络
+    void ClearExpiredNetwork();
 
 protected:
     int32_t InitDb();
