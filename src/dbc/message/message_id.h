@@ -25,10 +25,35 @@
 #define NODE_DOWNLOAD_IMAGE_RSP      "node_download_image_rsp"
 #define NODE_DOWNLOAD_IMAGE_TIMER    "node_download_image_timer"
 
+// download image progress
+#define NODE_DOWNLOAD_IMAGE_PROGRESS_REQ      "node_download_image_progress_req"
+#define NODE_DOWNLOAD_IMAGE_PROGRESS_RSP      "node_download_image_progress_rsp"
+#define NODE_DOWNLOAD_IMAGE_PROGRESS_TIMER    "node_download_image_progress_timer"
+
+// stop download image
+#define NODE_STOP_DOWNLOAD_IMAGE_REQ      "node_stop_download_image_req"
+#define NODE_STOP_DOWNLOAD_IMAGE_RSP      "node_stop_download_image_rsp"
+#define NODE_STOP_DOWNLOAD_IMAGE_TIMER    "node_stop_download_image_timer"
+
 // upload image
 #define NODE_UPLOAD_IMAGE_REQ      "node_upload_image_req"
 #define NODE_UPLOAD_IMAGE_RSP      "node_upload_image_rsp"
 #define NODE_UPLOAD_IMAGE_TIMER    "node_upload_image_timer"
+
+// upload image progress
+#define NODE_UPLOAD_IMAGE_PROGRESS_REQ      "node_upload_image_progress_req"
+#define NODE_UPLOAD_IMAGE_PROGRESS_RSP      "node_upload_image_progress_rsp"
+#define NODE_UPLOAD_IMAGE_PROGRESS_TIMER    "node_upload_image_progress_timer"
+
+// stop upload image
+#define NODE_STOP_UPLOAD_IMAGE_REQ      "node_stop_upload_image_req"
+#define NODE_STOP_UPLOAD_IMAGE_RSP      "node_stop_upload_image_rsp"
+#define NODE_STOP_UPLOAD_IMAGE_TIMER    "node_stop_upload_image_timer"
+
+// delete image
+#define NODE_DELETE_IMAGE_REQ      "node_delete_image_req"
+#define NODE_DELETE_IMAGE_RSP      "node_delete_image_rsp"
+#define NODE_DELETE_IMAGE_TIMER    "node_delete_image_timer"
 
 // create task
 #define NODE_CREATE_TASK_REQ        "node_create_task_req"

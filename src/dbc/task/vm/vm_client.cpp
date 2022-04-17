@@ -1089,9 +1089,6 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
-            if (error) {
-                virFreeError(error);
-            }
         }
     } while(0);
 
@@ -1170,7 +1167,7 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
                 LOG_INFO << "lookup domain_id:" << ids[i] << " is nullptr";
                 break;
             }
-
+            
             virDomainInfo info;
             if (virDomainGetInfo(domainPtr, &info) < 0) {
                 LOG_INFO << "get domain_info failed";
@@ -1179,23 +1176,7 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
 
             virDomainState vm_status = (virDomainState) info.state;
             if (vm_status == VIR_DOMAIN_RUNNING) {
-                char *szXmlContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
-                if (!szXmlContent) {
-                    break;
-                }
-                tinyxml2::XMLDocument doc;
-                tinyxml2::XMLError err = doc.Parse(szXmlContent);
-                if (err != tinyxml2::XML_SUCCESS) {
-                    LOG_ERROR << "parse xml desc failed";
-                    break;
-                }
-                tinyxml2::XMLElement *root = doc.RootElement();
-                tinyxml2::XMLElement* node_name = root->FirstChildElement("name");
-                if (!node_name) {
-                    LOG_ERROR << "not find name node";
-                    break;
-                }
-                std::string domain_name = node_name->GetText();
+                std::string domain_name = virDomainGetName(domainPtr);
                 domains.push_back(domain_name);
             }
         } while (0);
@@ -1333,14 +1314,12 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
                 LOG_INFO << "retry destroy and start domain " << domain_name;
                 if (virDomainDestroy(domainPtr) < 0) {
                     virErrorPtr error = virGetLastError();
-                    LOG_ERROR << "retry destroy domain " << domain_name << " error: " << error ? error->message : "";
-                    if (error) virFreeError(error);
+                    LOG_ERROR << "retry destroy domain " << domain_name << " error: " << (error ? error->message : "");
                     break;
                 }
                 if (virDomainCreate(domainPtr) < 0) {
                     virErrorPtr error = virGetLastError();
-                    LOG_ERROR << "retry create domain " << domain_name << " error: " << error ? error->message : "";
-                    if (error) virFreeError(error);
+                    LOG_ERROR << "retry create domain " << domain_name << " error: " << (error ? error->message : "");
                     break;
                 }
                 sleep(3);
@@ -1641,9 +1620,6 @@ FResult VmClient::CreateSnapshot(const std::string& domain_name, const std::shar
             TASK_LOG_ERROR(domain_name, "virDomainSnapshotCreateXML error: " << (error ? error->message : ""));
             ret_code = error ? error->code : E_VIRT_INTERNAL_ERROR;
             ret_msg = error ? error->message : "virDomainSnapshotCreateXML error";
-            if (error) {
-                virFreeError(error);
-            }
             break;
         }
         ret_code = ERR_SUCCESS;
@@ -1802,7 +1778,6 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
         if (virDomainGetInfo(domain_ptr, &info) < 0) {
             virErrorPtr error = virGetLastError();
             LOG_ERROR << domain_name << " virDomainGetInfo error: " << (error ? error->message : "");
-            // if (error) virFreeError(error);
         } else {
             clock_gettime(CLOCK_REALTIME, &data.domInfo.realTime);
             data.domInfo.state = vm_status_string(static_cast<virDomainState>(info.state));
@@ -1821,7 +1796,6 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
         if (!isActive || virDomainMemoryStats(domain_ptr, stats, 20, 0) < 0) {
             virErrorPtr error = virGetLastError();
             LOG_ERROR << domain_name << " virDomainMemoryStats error: " << (error ? error->message : "");
-            // if (error) virFreeError(error);
             data.memStats.total = info.maxMem;
             data.memStats.unused = info.maxMem;
             data.memStats.available = info.memory;
@@ -1846,7 +1820,6 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
             if (virDomainGetBlockInfo(domain_ptr, disk.first.c_str(), &info, 0) < 0) {
                 virErrorPtr error = virGetLastError();
                 LOG_ERROR << domain_name << " virDomainGetBlockInfo error: " << (error ? error->message : "");
-                // if (error) virFreeError(error);
             } else {
                 dsInfo.capacity = info.capacity;
                 dsInfo.allocation = info.allocation;
@@ -1856,7 +1829,6 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
             if (!isActive || virDomainBlockStats(domain_ptr, disk.first.c_str(), &stats, sizeof(stats)) < 0) {
                 virErrorPtr error = virGetLastError();
                 LOG_ERROR << domain_name << " virDomainBlockStats error: " << (error ? error->message : "");
-                // if (error) virFreeError(error);
                 dsInfo.rd_req = dsInfo.rd_bytes = dsInfo.wr_req = dsInfo.wr_bytes = dsInfo.errs = 0;
             } else {
                 dsInfo.rd_req = stats.rd_req;
@@ -1879,7 +1851,6 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
             if (virDomainInterfaceStats(domain_ptr, diface.name.c_str(), &stats, sizeof(stats)) < 0) {
                 virErrorPtr error = virGetLastError();
                 LOG_ERROR << domain_name << " virDomainInterfaceStats error: " << (error ? error->message : "");
-                // if (error) virFreeError(error);
             } else {
                 clock_gettime(CLOCK_REALTIME, &netInfo.realTime);
                 netInfo.rx_bytes = stats.rx_bytes;

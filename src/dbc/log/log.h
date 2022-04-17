@@ -33,18 +33,18 @@ extern const char* get_short_func_name(const char* func_name);
 #endif
 
 #ifdef LOG_DEBUG_INFO_ADDED
-#define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)        << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
-#define LOG_DEBUG               BOOST_LOG_TRIVIAL(debug)     << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
-#define LOG_INFO                   BOOST_LOG_TRIVIAL(info)          << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
-#define LOG_WARNING         BOOST_LOG_TRIVIAL(warning) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
-#define LOG_ERROR               BOOST_LOG_TRIVIAL(error)       << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
-#define LOG_FATAL                BOOST_LOG_TRIVIAL(fatal)         << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
+#define LOG_TRACE               BOOST_LOG_TRIVIAL(trace) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
+#define LOG_DEBUG               BOOST_LOG_TRIVIAL(debug) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
+#define LOG_INFO                BOOST_LOG_TRIVIAL(info) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
+#define LOG_WARNING             BOOST_LOG_TRIVIAL(warning) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
+#define LOG_ERROR               BOOST_LOG_TRIVIAL(error) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
+#define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | "
 #else
 #define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)
-#define LOG_DEBUG              BOOST_LOG_TRIVIAL(debug)
-#define LOG_INFO                  BOOST_LOG_TRIVIAL(info)
-#define LOG_WARNING         BOOST_LOG_TRIVIAL(warning)
-#define LOG_ERROR              BOOST_LOG_TRIVIAL(error)
+#define LOG_DEBUG               BOOST_LOG_TRIVIAL(debug)
+#define LOG_INFO                BOOST_LOG_TRIVIAL(info)
+#define LOG_WARNING             BOOST_LOG_TRIVIAL(warning)
+#define LOG_ERROR               BOOST_LOG_TRIVIAL(error)
 #define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal)
 #endif
 

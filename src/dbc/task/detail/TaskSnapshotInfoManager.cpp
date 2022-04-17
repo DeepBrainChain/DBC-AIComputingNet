@@ -25,8 +25,7 @@ bool SnapshotManager::init(const std::vector<std::string>& taskids) {
             
             if ((snaps_count = virDomainListAllSnapshots(domainPtr, &snaps, 1 << 10)) < 0) {
                 virErrorPtr err = virGetLastError();
-                LOG_ERROR << "virDomainListAllSnapshots error: " << err ? err->message : "";
-                if (err) virFreeError(err);
+                LOG_ERROR << "virDomainListAllSnapshots error: " << (err ? err->message : "");
                 break;
             }
 

@@ -23,29 +23,6 @@ static std::string g_internal_ip_seeds[] = {
 
 static const char* g_internal_zabbix_server = "116.169.53.132:10051";
 
-std::string ImageServer::to_string() {
-    return id + "," + ip + "," + port + "," + modulename;
-}
-
-void ImageServer::from_string(const std::string& str) {
-    std::vector<std::string> val = util::split(str, ",");
-    if (val.size() >= 1) {
-        this->id = val[0];
-    }
-
-	if (val.size() >= 2) {
-		this->ip = val[1];
-	}
-
-	if (val.size() >= 3) {
-		this->port = val[2];
-	}
-
-	if (val.size() >= 4) {
-		this->modulename = val[3];
-	}
-}
-
 ConfManager::ConfManager() {
     m_proto_capacity.add(network::matrix_capacity::THRIFT_BINARY_C_NAME);
     m_proto_capacity.add(network::matrix_capacity::THRIFT_COMPACT_C_NAME);

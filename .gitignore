@@ -7,7 +7,7 @@
 /cmake-build-debug/
 /cmake-build-release/
 /make/build/
+/proto/thrift/cpp/
 /output/
 
 /deployment/package/
-/proto/thrift/cpp/
