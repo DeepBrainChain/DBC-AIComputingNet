@@ -8,6 +8,7 @@
 #include "multicast/multicast_reveiver.h"
 #include "multicast/multicast_sender.h"
 #include "network/utils/io_service_pool.h"
+#include "db/db_types/network_types.h"
 
 #define AI_MULTICAST_MACHINE_TIMER                                   "multicast_machine_task"
 #define AI_MULTICAST_NETWORK_TIMER                                   "multicast_network_task"
@@ -41,7 +42,23 @@ public:
 
     void delete_lan_node(const std::string& machine_id);
 
+    bool is_same_host(const std::string& machine_id) const;
+
     void on_multicast_receive(const std::string& data, const std::string& addr);
+
+    void send_network_create_request(std::shared_ptr<dbc::networkInfo> info);
+
+    void send_network_delete_request(const std::string& network_name);
+
+    void send_network_list_request();
+
+    void send_network_move_request(std::shared_ptr<dbc::networkInfo> info);
+
+    void send_network_move_ack_request(const std::string& network_name, const std::string& machine_id);
+
+    void send_network_join_request(const std::string& network_name, const std::string& task_id);
+
+    void send_network_leave_request(const std::string& network_name, const std::string& task_id);
 
 protected:
     void init_timer() override;

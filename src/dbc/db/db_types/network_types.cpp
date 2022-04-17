@@ -45,6 +45,36 @@ void networkInfo::__set_ipStart(const std::string& val) {
 void networkInfo::__set_ipEnd(const std::string& val) {
   this->ipEnd = val;
 }
+
+void networkInfo::__set_dhcpInterface(const std::string& val) {
+  this->dhcpInterface = val;
+__isset.dhcpInterface = true;
+}
+
+void networkInfo::__set_machineId(const std::string& val) {
+  this->machineId = val;
+__isset.machineId = true;
+}
+
+void networkInfo::__set_rentWallet(const std::string& val) {
+  this->rentWallet = val;
+__isset.rentWallet = true;
+}
+
+void networkInfo::__set_members(const std::vector<std::string> & val) {
+  this->members = val;
+__isset.members = true;
+}
+
+void networkInfo::__set_lastUseTime(const int64_t val) {
+  this->lastUseTime = val;
+__isset.lastUseTime = true;
+}
+
+void networkInfo::__set_nativeFlags(const int32_t val) {
+  this->nativeFlags = val;
+__isset.nativeFlags = true;
+}
 std::ostream& operator<<(std::ostream& out, const networkInfo& obj)
 {
   obj.printTo(out);
@@ -136,6 +166,66 @@ uint32_t networkInfo::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 8:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->dhcpInterface);
+          this->__isset.dhcpInterface = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 12:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->machineId);
+          this->__isset.machineId = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 13:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->rentWallet);
+          this->__isset.rentWallet = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 14:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->members.clear();
+            uint32_t _size0;
+            ::apache::thrift::protocol::TType _etype3;
+            xfer += iprot->readListBegin(_etype3, _size0);
+            this->members.resize(_size0);
+            uint32_t _i4;
+            for (_i4 = 0; _i4 < _size0; ++_i4)
+            {
+              xfer += iprot->readString(this->members[_i4]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.members = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 15:
+        if (ftype == ::apache::thrift::protocol::T_I64) {
+          xfer += iprot->readI64(this->lastUseTime);
+          this->__isset.lastUseTime = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 16:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->nativeFlags);
+          this->__isset.nativeFlags = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -195,6 +285,44 @@ uint32_t networkInfo::write(::apache::thrift::protocol::TProtocol* oprot) const 
   xfer += oprot->writeString(this->ipEnd);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.dhcpInterface) {
+    xfer += oprot->writeFieldBegin("dhcpInterface", ::apache::thrift::protocol::T_STRING, 8);
+    xfer += oprot->writeString(this->dhcpInterface);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.machineId) {
+    xfer += oprot->writeFieldBegin("machineId", ::apache::thrift::protocol::T_STRING, 12);
+    xfer += oprot->writeString(this->machineId);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.rentWallet) {
+    xfer += oprot->writeFieldBegin("rentWallet", ::apache::thrift::protocol::T_STRING, 13);
+    xfer += oprot->writeString(this->rentWallet);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.members) {
+    xfer += oprot->writeFieldBegin("members", ::apache::thrift::protocol::T_LIST, 14);
+    {
+      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->members.size()));
+      std::vector<std::string> ::const_iterator _iter5;
+      for (_iter5 = this->members.begin(); _iter5 != this->members.end(); ++_iter5)
+      {
+        xfer += oprot->writeString((*_iter5));
+      }
+      xfer += oprot->writeListEnd();
+    }
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.lastUseTime) {
+    xfer += oprot->writeFieldBegin("lastUseTime", ::apache::thrift::protocol::T_I64, 15);
+    xfer += oprot->writeI64(this->lastUseTime);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.nativeFlags) {
+    xfer += oprot->writeFieldBegin("nativeFlags", ::apache::thrift::protocol::T_I32, 16);
+    xfer += oprot->writeI32(this->nativeFlags);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -209,25 +337,46 @@ void swap(networkInfo &a, networkInfo &b) {
   swap(a.ipCidr, b.ipCidr);
   swap(a.ipStart, b.ipStart);
   swap(a.ipEnd, b.ipEnd);
+  swap(a.dhcpInterface, b.dhcpInterface);
+  swap(a.machineId, b.machineId);
+  swap(a.rentWallet, b.rentWallet);
+  swap(a.members, b.members);
+  swap(a.lastUseTime, b.lastUseTime);
+  swap(a.nativeFlags, b.nativeFlags);
+  swap(a.__isset, b.__isset);
 }
 
-networkInfo::networkInfo(const networkInfo& other0) {
-  networkId = other0.networkId;
-  bridgeName = other0.bridgeName;
-  vxlanName = other0.vxlanName;
-  vxlanVni = other0.vxlanVni;
-  ipCidr = other0.ipCidr;
-  ipStart = other0.ipStart;
-  ipEnd = other0.ipEnd;
+networkInfo::networkInfo(const networkInfo& other6) {
+  networkId = other6.networkId;
+  bridgeName = other6.bridgeName;
+  vxlanName = other6.vxlanName;
+  vxlanVni = other6.vxlanVni;
+  ipCidr = other6.ipCidr;
+  ipStart = other6.ipStart;
+  ipEnd = other6.ipEnd;
+  dhcpInterface = other6.dhcpInterface;
+  machineId = other6.machineId;
+  rentWallet = other6.rentWallet;
+  members = other6.members;
+  lastUseTime = other6.lastUseTime;
+  nativeFlags = other6.nativeFlags;
+  __isset = other6.__isset;
 }
-networkInfo& networkInfo::operator=(const networkInfo& other1) {
-  networkId = other1.networkId;
-  bridgeName = other1.bridgeName;
-  vxlanName = other1.vxlanName;
-  vxlanVni = other1.vxlanVni;
-  ipCidr = other1.ipCidr;
-  ipStart = other1.ipStart;
-  ipEnd = other1.ipEnd;
+networkInfo& networkInfo::operator=(const networkInfo& other7) {
+  networkId = other7.networkId;
+  bridgeName = other7.bridgeName;
+  vxlanName = other7.vxlanName;
+  vxlanVni = other7.vxlanVni;
+  ipCidr = other7.ipCidr;
+  ipStart = other7.ipStart;
+  ipEnd = other7.ipEnd;
+  dhcpInterface = other7.dhcpInterface;
+  machineId = other7.machineId;
+  rentWallet = other7.rentWallet;
+  members = other7.members;
+  lastUseTime = other7.lastUseTime;
+  nativeFlags = other7.nativeFlags;
+  __isset = other7.__isset;
   return *this;
 }
 void networkInfo::printTo(std::ostream& out) const {
@@ -240,6 +389,12 @@ void networkInfo::printTo(std::ostream& out) const {
   out << ", " << "ipCidr=" << to_string(ipCidr);
   out << ", " << "ipStart=" << to_string(ipStart);
   out << ", " << "ipEnd=" << to_string(ipEnd);
+  out << ", " << "dhcpInterface="; (__isset.dhcpInterface ? (out << to_string(dhcpInterface)) : (out << "<null>"));
+  out << ", " << "machineId="; (__isset.machineId ? (out << to_string(machineId)) : (out << "<null>"));
+  out << ", " << "rentWallet="; (__isset.rentWallet ? (out << to_string(rentWallet)) : (out << "<null>"));
+  out << ", " << "members="; (__isset.members ? (out << to_string(members)) : (out << "<null>"));
+  out << ", " << "lastUseTime="; (__isset.lastUseTime ? (out << to_string(lastUseTime)) : (out << "<null>"));
+  out << ", " << "nativeFlags="; (__isset.nativeFlags ? (out << to_string(nativeFlags)) : (out << "<null>"));
   out << ")";
 }
 

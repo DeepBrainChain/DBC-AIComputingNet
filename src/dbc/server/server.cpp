@@ -291,23 +291,52 @@ void Server::Idle() {
 }
 
 void Server::Exit() {
+    LOG_INFO << "server begin exited ...";
+
     ImageManager::instance().Exit();
+    LOG_INFO << "ImageManager exited";
     sleep(3);
+
+    VxlanManager::instance().Exit();
+    LOG_INFO << "VxlanManager exited";
     // exit(0);
 
 	if (m_timer_matrix_manager) {
 		m_timer_matrix_manager->exit();
 	}
+    LOG_INFO << "m_timer_matrix_manager exited";
+
 	network::connection_manager::instance().exit();
+    LOG_INFO << "connection_manager exited";
+
     p2p_lan_service::instance().exit();
+    LOG_INFO << "p2p_lan_service exited";
+
 	p2p_net_service::instance().exit();
+    LOG_INFO << "p2p_net_service exited";
+
 	http_server_service::instance().exit();
+    LOG_INFO << "http_server_service exited";
+
 	node_request_service::instance().exit();
+    LOG_INFO << "node_request_service exited";
+
 	rest_api_service::instance().exit();
+    LOG_INFO << "rest_api_service exited";
+
     node_monitor_service::instance().exit();
+    LOG_INFO << "node_monitor_service exited";
+
     VmClient::instance().exit();
+    LOG_INFO << "VmClient exited";
+
 	SystemInfo::instance().exit();
+    LOG_INFO << "SystemInfo exited";
+
 	ExitCrypto();
+    LOG_INFO << "Crypto exited";
+
 	m_running = false;
+    LOG_INFO << "server exited successfully";
 }
 

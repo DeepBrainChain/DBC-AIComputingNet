@@ -148,8 +148,7 @@ struct TaskCreateParams {
 
     std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
 
-    std::string network_name;
-    std::string vxlan_vni;
+    std::string network_name;  // vxlan network name
 };
 
 struct ParseVmXmlParams {
