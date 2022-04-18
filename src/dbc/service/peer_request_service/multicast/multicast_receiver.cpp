@@ -45,9 +45,6 @@ void multicast_receiver::do_receive() {
             p2p_lan_service::instance().on_multicast_receive(
                 std::string(data_.data(), length),
                 sender_endpoint_.address().to_string());
-            LOG_INFO << "receive multicast data from "
-                     << sender_endpoint_.address().to_string()
-                     << ":" << sender_endpoint_.port();
 
             do_receive();
           }

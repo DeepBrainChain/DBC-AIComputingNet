@@ -56,7 +56,7 @@ struct req_body {
     std::string snapshot_name;
 
     // vxlan network id
-    std::string network_id;
+    std::string network_name;
 };
 
 class rsp_peer_node_info {

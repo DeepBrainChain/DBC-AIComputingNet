@@ -168,7 +168,7 @@ void node_request_service::init_invoker() {
     reg_msg_handle(NODE_LIST_MONITOR_SERVER_REQ, CALLBACK_1(node_request_service::on_node_list_monitor_server_req, this));
     reg_msg_handle(NODE_SET_MONITOR_SERVER_REQ, CALLBACK_1(node_request_service::on_node_set_monitor_server_req, this));
     reg_msg_handle(NODE_LIST_LAN_REQ, CALLBACK_1(node_request_service::on_node_list_lan_req, this));
-    //reg_msg_handle(NODE_CREATE_LAN_REQ, CALLBACK_1(node_request_service::on_node_create_lan_req, this));
+    reg_msg_handle(NODE_CREATE_LAN_REQ, CALLBACK_1(node_request_service::on_node_create_lan_req, this));
     reg_msg_handle(NODE_DELETE_LAN_REQ, CALLBACK_1(node_request_service::on_node_delete_lan_req, this));
 }
 
@@ -3790,10 +3790,32 @@ void node_request_service::list_lan(const network::base_header& header, const st
                 ss_networks << ",";
 
             ss_networks << "{";
-            ss_networks << "\"network_id\":" << "\"" << it.second->networkId << "\"";
+            ss_networks << "\"network_name\":" << "\"" << it.second->networkId << "\"";
             ss_networks << ",\"bridge_name\":" << "\"" << it.second->bridgeName << "\"";
             ss_networks << ",\"vxlan_name\":" << "\"" << it.second->vxlanName << "\"";
             ss_networks << ",\"vxlan_vni\":" << "\"" << it.second->vxlanVni << "\"";
+            ss_networks << ",\"ip_cidr\":" << "\"" << it.second->ipCidr << "\"";
+            ss_networks << ",\"ip_start\":" << "\"" << it.second->ipStart << "\"";
+            ss_networks << ",\"ip_end\":" << "\"" << it.second->ipEnd << "\"";
+            ss_networks << ",\"dhcp_interface\":" << "\"" << it.second->dhcpInterface << "\"";
+            ss_networks << ",\"machine_id\":" << "\"" << it.second->machineId << "\"";
+            ss_networks << ",\"rent_wallet\":" << "\"" << it.second->rentWallet << "\"";
+            ss_networks << ",\"members\":" << "[";
+            int memberCounts = 0;
+            for (const auto& task_id : it.second->members) {
+                if (memberCounts > 0) ss_networks << ",";
+                ss_networks << "\"" << task_id << "\"";
+                memberCounts++;
+            }
+            ss_networks << "]";
+            struct tm _tm{};
+            time_t tt = it.second->lastUseTime;
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            ss_networks << ",\"lastUseTime\":" << "\"" << buf << "\"";
+            ss_networks << ",\"native_flags\":" << "\"" << it.second->nativeFlags << "\"";
             ss_networks << "}";
 
             idx++;
@@ -3803,10 +3825,32 @@ void node_request_service::list_lan(const network::base_header& header, const st
         std::shared_ptr<dbc::networkInfo> network = VxlanManager::instance().GetNetwork(data->network_id);
         if (network) {
             ss_networks << "{";
-            ss_networks << "\"network_id\":" << "\"" << network->networkId << "\"";
+            ss_networks << "\"network_name\":" << "\"" << network->networkId << "\"";
             ss_networks << ",\"bridge_name\":" << "\"" << network->bridgeName << "\"";
             ss_networks << ",\"vxlan_name\":" << "\"" << network->vxlanName << "\"";
             ss_networks << ",\"vxlan_vni\":" << "\"" << network->vxlanVni << "\"";
+            ss_networks << ",\"ip_cidr\":" << "\"" << network->ipCidr << "\"";
+            ss_networks << ",\"ip_start\":" << "\"" << network->ipStart << "\"";
+            ss_networks << ",\"ip_end\":" << "\"" << network->ipEnd << "\"";
+            ss_networks << ",\"dhcp_interface\":" << "\"" << network->dhcpInterface << "\"";
+            ss_networks << ",\"machine_id\":" << "\"" << network->machineId << "\"";
+            ss_networks << ",\"rent_wallet\":" << "\"" << network->rentWallet << "\"";
+            ss_networks << ",\"members\":" << "[";
+            int memberCounts = 0;
+            for (const auto& task_id : network->members) {
+                if (memberCounts > 0) ss_networks << ",";
+                ss_networks << "\"" << task_id << "\"";
+                memberCounts++;
+            }
+            ss_networks << "]";
+            struct tm _tm{};
+            time_t tt = network->lastUseTime;
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            ss_networks << ",\"lastUseTime\":" << "\"" << buf << "\"";
+            ss_networks << ",\"native_flags\":" << "\"" << network->nativeFlags << "\"";
             ss_networks << "}";
         } else {
             ret_code = E_DEFAULT;
@@ -3927,11 +3971,22 @@ void node_request_service::on_node_create_lan_req(const std::shared_ptr<network:
 void node_request_service::create_lan(const network::base_header& header, const std::shared_ptr<dbc::node_create_lan_req_data>& data, const AuthoriseResult& result) {
     // send_response_error<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header, ERR_SUCCESS, "AAAAAAAAAAAA");
     // send_response_ok<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header);
+    FResult fret = {ERR_ERROR, "invalid additional param"};
+    rapidjson::Document doc;
+    rapidjson::ParseResult ok = doc.Parse(data->additional.c_str());
+    if (ok && doc.IsObject()) {
+        std::string networkName, vxlanVni, ipCidr;
+        JSON_PARSE_STRING(doc, "network_name", networkName);
+        // JSON_PARSE_STRING(doc, "vxlan_vni", vxlanVni);
+        JSON_PARSE_STRING(doc, "ip_cidr", ipCidr);
+        fret = VxlanManager::instance().CreateNetworkServer(networkName, ipCidr, result.rent_wallet);
+    }
+
     std::stringstream ss;
     ss << "{";
-    ss << "\"errcode\":" << ERR_SUCCESS;
-    ss << ", \"message\":" << data->additional;
-    ss << "}";
+    ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
+    ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
+    ss << "\"}";
 
     const std::map<std::string, std::string>& mp = header.exten_info;
     auto it = mp.find("pub_key");
@@ -4038,16 +4093,10 @@ void node_request_service::delete_lan(const network::base_header& header, const 
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    if (VxlanManager::instance().GetNetwork(data->network_id)) {
-        VxlanManager::instance().DeleteNetwork(data->network_id);
-    } else {
-        ret_code = E_DEFAULT;
-        ret_msg = "network name not exist";
-    }
-
-    if (ret_code == ERR_SUCCESS) {
+    FResult fret = VxlanManager::instance().DeleteNetwork(data->network_id, result.rent_wallet);
+    if (fret.errcode == ERR_SUCCESS) {
         send_response_ok<dbc::node_delete_lan_rsp>(NODE_DELETE_LAN_RSP, header);
     } else {
-        send_response_error<dbc::node_delete_lan_rsp>(NODE_DELETE_LAN_RSP, header, ret_code, ret_msg);
+        send_response_error<dbc::node_delete_lan_rsp>(NODE_DELETE_LAN_RSP, header, E_DEFAULT, fret.errmsg);
     }
 }

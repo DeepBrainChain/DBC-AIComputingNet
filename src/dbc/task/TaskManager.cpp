@@ -14,6 +14,7 @@
 #include "config/conf_manager.h"
 #include "tinyxml2.h"
 #include "detail/VxlanManager.h"
+#include "service/peer_request_service/p2p_lan_service.h"
 
 FResult TaskManager::init() {
     if (!VmClient::instance().init()) {
@@ -633,6 +634,9 @@ void TaskManager::delete_task(const std::string &task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     TaskInfoMgr::instance().delTaskInfo(task_id);
 
+    // leave vxlan network
+    p2p_lan_service::instance().send_network_leave_request(taskinfo->network_name, taskinfo->task_id);
+
     auto iptable = TaskIptableMgr::instance().getIptable(task_id);
     if (iptable != nullptr) {
         std::string host_ip = iptable->host_ip;
@@ -753,6 +757,8 @@ FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr
 
     dbclog::instance().add_task_log_backend(taskinfo->task_id);
 
+    p2p_lan_service::instance().send_network_join_request(createparams.network_name, createparams.task_id);
+
     ETaskEvent ev;
     ev.task_id = taskinfo->task_id;
     ev.op = T_OP_Create;
@@ -866,14 +872,11 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     if (!network_name.empty()) {
         params.network_name = network_name;
-        JSON_PARSE_STRING(doc, "vxlan_vni", params.vxlan_vni)
-        if (!params.vxlan_vni.empty()) {
-            if (!VxlanManager::instance().GetNetwork(network_name)) {
-                FResult fret = VxlanManager::instance().CreateMiningNetwork(network_name, params.vxlan_vni);
-                if (fret.errcode != ERR_SUCCESS) return fret;
-            }
+        FResult fret = VxlanManager::instance().CreateNetworkClient(network_name);
+        if (fret.errcode == ERR_SUCCESS) {
+            // do nothing
         } else {
-            return FResult(ERR_ERROR, "can not find network info");
+            return fret;
         }
     }
 

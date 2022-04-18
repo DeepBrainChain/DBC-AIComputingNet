@@ -2908,34 +2908,34 @@ void rest_api_service::rest_create_task(const std::shared_ptr<network::http_requ
     	body.image_server = it_svr->to_string();
     
     // local area network
-    std::string network_name;
-    JSON_PARSE_STRING(v_additional, "network_name", network_name);
-    if (!network_name.empty()) {
-        std::shared_ptr<dbc::networkInfo> info = VxlanManager::instance().GetNetwork(network_name);
-        if (!info) {
-            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"network name not existed\"}");
-            return;
-        }
-        rapidjson::Document docAdditional;
-        rapidjson::ParseResult ok = docAdditional.Parse(body.additional.c_str());
-        if (!ok) {
-            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"parse additional network failed\"}");
-            return;
-        }
-        rapidjson::Document::AllocatorType &allocator = docAdditional.GetAllocator();
-        // add network info node
-        // rapidjson::Value netInfoObj(rapidjson::kObjectType);//创建一个Object类型的元素
-        // netInfoObj.AddMember("bridge_name", STRING_REF(info->bridgeName), allocator);
-        // netInfoObj.AddMember("vxlan_name", STRING_REF(info->vxlanName), allocator);
-        // netInfoObj.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
-        // docAdditional.AddMember("network_info", netInfoObj, allocator);  //添加object到Document中
-        docAdditional.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
-        //生成字符串
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        docAdditional.Accept(writer);
-        body.additional = buffer.GetString();
-    }
+    // std::string network_name;
+    // JSON_PARSE_STRING(v_additional, "network_name", network_name);
+    // if (!network_name.empty()) {
+    //     std::shared_ptr<dbc::networkInfo> info = VxlanManager::instance().GetNetwork(network_name);
+    //     if (!info) {
+    //         httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"network name not existed\"}");
+    //         return;
+    //     }
+    //     rapidjson::Document docAdditional;
+    //     rapidjson::ParseResult ok = docAdditional.Parse(body.additional.c_str());
+    //     if (!ok) {
+    //         httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"parse additional network failed\"}");
+    //         return;
+    //     }
+    //     rapidjson::Document::AllocatorType &allocator = docAdditional.GetAllocator();
+    //     // add network info node
+    //     rapidjson::Value netInfoObj(rapidjson::kObjectType);//创建一个Object类型的元素
+    //     netInfoObj.AddMember("bridge_name", STRING_REF(info->bridgeName), allocator);
+    //     netInfoObj.AddMember("vxlan_name", STRING_REF(info->vxlanName), allocator);
+    //     netInfoObj.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
+    //     docAdditional.AddMember("network_info", netInfoObj, allocator);  //添加object到Document中
+    //     docAdditional.AddMember("vxlan_vni", STRING_REF(info->vxlanVni), allocator);
+    //     //生成字符串
+    //     rapidjson::StringBuffer buffer;
+    //     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    //     docAdditional.Accept(writer);
+    //     body.additional = buffer.GetString();
+    // }
 
     // session_id wallet
     if (body.session_id.empty() || body.session_id_sign.empty()) {
@@ -6939,13 +6939,16 @@ void vxlan_network_list(std::shared_ptr<dbc::networkInfo> network, std::string &
     ss << "{";
     ss << "\"errcode\":0";
     ss << ", \"message\":{";
-    ss << "\"network_id\":" << "\"" << network->networkId << "\"";
+    ss << "\"network_name\":" << "\"" << network->networkId << "\"";
     ss << ",\"bridge_name\":" << "\"" << network->bridgeName << "\"";
     ss << ",\"vxlan_name\":" << "\"" << network->vxlanName << "\"";
     ss << ",\"vxlan_vni\":" << "\"" << network->vxlanVni << "\"";
     ss << ",\"ip_cidr\":" << "\"" << network->ipCidr << "\"";
     ss << ",\"ip_start\":" << "\"" << network->ipStart << "\"";
     ss << ",\"ip_end\":" << "\"" << network->ipEnd << "\"";
+    ss << ",\"dhcp_interface\":" << "\"" << network->dhcpInterface << "\"";
+    ss << ",\"machine_id\":" << "\"" << network->machineId << "\"";
+    ss << ",\"rent_wallet\":" << "\"" << network->rentWallet << "\"";
     ss << "}}";
     data_json = ss.str();
 }
@@ -6955,18 +6958,21 @@ void vxlan_network_list(const std::map<std::string, std::shared_ptr<dbc::network
     ss << "{";
     ss << "\"errcode\":0";
     ss << ", \"message\":{";
-    ss << "\"network\":[";
+    ss << "\"networks\":[";
     int count = 0;
     for (auto &it : networks) {
         if (count > 0) ss << ",";
         ss << "{";
-        ss << "\"network_id\":" << "\"" << it.second->networkId << "\"";
+        ss << "\"network_name\":" << "\"" << it.second->networkId << "\"";
         ss << ",\"bridge_name\":" << "\"" << it.second->bridgeName << "\"";
         ss << ",\"vxlan_name\":" << "\"" << it.second->vxlanName << "\"";
         ss << ",\"vxlan_vni\":" << "\"" << it.second->vxlanVni << "\"";
         ss << ",\"ip_cidr\":" << "\"" << it.second->ipCidr << "\"";
         ss << ",\"ip_start\":" << "\"" << it.second->ipStart << "\"";
         ss << ",\"ip_end\":" << "\"" << it.second->ipEnd << "\"";
+        ss << ",\"dhcp_interface\":" << "\"" << it.second->dhcpInterface << "\"";
+        ss << ",\"machine_id\":" << "\"" << it.second->machineId << "\"";
+        ss << ",\"rent_wallet\":" << "\"" << it.second->rentWallet << "\"";
         ss << "}";
 
         count++;
@@ -6989,9 +6995,9 @@ void rest_api_service::rest_list_lan(const std::shared_ptr<network::http_request
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
     if (path_list.empty()) {
-        body.network_id = "";
+        body.network_name = "";
     } else if (path_list.size() == 1) {
-        body.network_id = path_list[0];
+        body.network_name = path_list[0];
     } else {
         LOG_ERROR << "path_list's size > 1";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /lan");
@@ -7029,11 +7035,11 @@ void rest_api_service::rest_list_lan(const std::shared_ptr<network::http_request
     // all peer_nodes
     if (body.peer_nodes_list.empty()) {
         std::string data_json;
-        if (body.network_id.empty()) {
+        if (body.network_name.empty()) {
             const std::map<std::string, std::shared_ptr<dbc::networkInfo>> networks = VxlanManager::instance().GetNetworks();
             vxlan_network_list(networks, data_json);
         } else {
-            std::shared_ptr<dbc::networkInfo> network = VxlanManager::instance().GetNetwork(body.network_id);
+            std::shared_ptr<dbc::networkInfo> network = VxlanManager::instance().GetNetwork(body.network_name);
             if (network) {
                 vxlan_network_list(network, data_json);
             } else {
@@ -7092,7 +7098,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_lan_req_msg
 
     // body
     dbc::node_list_lan_req_data req_data;
-    req_data.__set_network_id(body.network_id);
+    req_data.__set_network_id(body.network_name);
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
@@ -7254,26 +7260,6 @@ void rest_api_service::rest_create_lan(const std::shared_ptr<network::http_reque
         return;
     }
 
-    std::string networkName, vxlanVni, ipCidr;
-    FResult fret = {ERR_ERROR, "invalid additional param"};
-    if (doc.HasMember("additional") && doc["additional"].IsObject()) {
-        const rapidjson::Value& obj_add = doc["additional"];
-        if (obj_add.HasMember("network_name") && obj_add["network_name"].IsString())
-            networkName = obj_add["network_name"].GetString();
-        if (obj_add.HasMember("vxlan_vni") && obj_add["vxlan_vni"].IsString())
-            vxlanVni = obj_add["vxlan_vni"].GetString();
-        if (obj_add.HasMember("ip_cidr") && obj_add["ip_cidr"].IsString())
-            ipCidr = obj_add["ip_cidr"].GetString();
-        fret = VxlanManager::instance().CreateClientNetwork(networkName, vxlanVni, ipCidr);
-    }
-    std::stringstream ss;
-    ss << "{";
-    ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
-    ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
-    ss << "\"}";
-    httpReq->reply_comm_rest_succ2(ss.str());
-    return;
-
     req_body body;
 
     std::string strerror;
@@ -7282,6 +7268,29 @@ void rest_api_service::rest_create_lan(const std::shared_ptr<network::http_reque
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
         return;
     }
+
+    // all peer_nodes
+    // if (body.peer_nodes_list.empty()) {
+    //     std::string networkName, vxlanVni, ipCidr;
+    //     FResult fret = {ERR_ERROR, "invalid additional param"};
+    //     if (doc.HasMember("additional") && doc["additional"].IsObject()) {
+    //         const rapidjson::Value& obj_add = doc["additional"];
+    //         if (obj_add.HasMember("network_name") && obj_add["network_name"].IsString())
+    //             networkName = obj_add["network_name"].GetString();
+    //         // if (obj_add.HasMember("vxlan_vni") && obj_add["vxlan_vni"].IsString())
+    //         //     vxlanVni = obj_add["vxlan_vni"].GetString();
+    //         if (obj_add.HasMember("ip_cidr") && obj_add["ip_cidr"].IsString())
+    //             ipCidr = obj_add["ip_cidr"].GetString();
+    //         fret = VxlanManager::instance().CreateNetworkServer(networkName, ipCidr);
+    //     }
+    //     std::stringstream ss;
+    //     ss << "{";
+    //     ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
+    //     ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
+    //     ss << "\"}";
+    //     httpReq->reply_comm_rest_succ2(ss.str());
+    //     return;
+    // }
 
     if (!has_peer_nodeid(body)) {
         LOG_ERROR << "peer_nodeid is empty";
@@ -7434,27 +7443,6 @@ void rest_api_service::on_node_create_lan_rsp(const std::shared_ptr<network::htt
         return;
     }
 
-    if (doc.HasMember("errcode") && doc["errcode"].IsInt() && doc["errcode"].GetInt() == 0) {
-        std::string networkName, vxlanVni, ipCidr;
-        FResult fret = FResultError;
-        if (doc.HasMember("message") && doc["message"].IsObject()) {
-            const rapidjson::Value& obj_msg = doc["message"];
-            if (obj_msg.HasMember("network_name") && obj_msg["network_name"].IsString())
-                networkName = obj_msg["network_name"].GetString();
-            if (obj_msg.HasMember("vxlan_vni") && obj_msg["vxlan_vni"].IsString())
-                vxlanVni = obj_msg["vxlan_vni"].GetString();
-            if (obj_msg.HasMember("ip_cidr") && obj_msg["ip_cidr"].IsString())
-                ipCidr = obj_msg["ip_cidr"].GetString();
-            fret = VxlanManager::instance().CreateClientNetwork(networkName, vxlanVni, ipCidr);
-        }
-        std::stringstream ss;
-        ss << "{";
-        ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
-        ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
-        ss << "\"}";
-        ori_message = ss.str();
-    }
-
     httpReq->reply_comm_rest_succ2(ori_message);
 }
 
@@ -7528,7 +7516,7 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<network::http_reque
     }
 
     req_body body;
-    body.network_id = path_list[1];
+    body.network_name = path_list[1];
 
     std::string strerror;
     if (!parse_req_params(doc, body, strerror)) {
@@ -7539,13 +7527,14 @@ void rest_api_service::rest_delete_lan(const std::shared_ptr<network::http_reque
 
     // all peer_nodes
     if (body.peer_nodes_list.empty()) {
-        if (!VxlanManager::instance().GetNetwork(body.network_id)) {
-            httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"network name not existed\"}");
-            return;
-        }
-
-        VxlanManager::instance().DeleteNetwork(body.network_id);
-        httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"ok\"}");
+        // FResult fret = VxlanManager::instance().DeleteNetwork(body.network_name);
+        // if (fret.errcode == ERR_SUCCESS)
+        //     httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"ok\"}");
+        // else
+        //     httpReq->reply_comm_rest_succ2("{\"errcode\": -1,\"message\": \"" + fret.errmsg + "\"}");
+        // return;
+        LOG_ERROR << "peer_nodeid is empty";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     } else {
 		// node request
@@ -7597,7 +7586,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_lan_req_m
 
     // body
     dbc::node_delete_lan_req_data req_data;
-    req_data.__set_network_id(body.network_id);
+    req_data.__set_network_id(body.network_name);
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
     req_data.__set_additional(body.additional);
     req_data.__set_wallet(body.wallet);
