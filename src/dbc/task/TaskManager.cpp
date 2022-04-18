@@ -2218,12 +2218,11 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     }
-
-    //TODO： check task resource
-    SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
-
+    
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (/*vm_status == VIR_DOMAIN_RUNNING || */vm_status == VIR_DOMAIN_SHUTOFF) {
+        SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
+
         taskinfo->__set_status(TS_CreatingSnapshot);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -2630,6 +2629,7 @@ void TaskManager::process_create_snapshot(const ETaskEvent& ev) {
         LOG_ERROR << "can not find snapshot:" << info->name << " info when creating a snapshot on vm:" << taskinfo->task_id;
         return;
     }
+
     FResult result = VmClient::instance().CreateSnapshot(taskinfo->task_id, info);
     if (result.errcode != ERR_SUCCESS) {
         taskinfo->status = TS_CreateSnapshotError;
